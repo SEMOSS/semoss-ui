@@ -1,1 +1,1 @@
-export * from './Moose'
+export * from './Moose';

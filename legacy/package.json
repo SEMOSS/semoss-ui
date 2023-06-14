@@ -23,7 +23,7 @@
         "@mdi/js": "^6.7.96",
         "@mdi/react": "^1.6.0",
         "@semoss/components": "^1.0.0-alpha.36",
-        "@stitches/react": "^1.2.8",      
+        "@stitches/react": "^1.2.8",
         "@uirouter/angularjs": "1.0.12",
         "ace-builds": "^1.4.11",
         "ag-grid-community": "22.0.0",

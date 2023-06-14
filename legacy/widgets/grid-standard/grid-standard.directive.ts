@@ -617,7 +617,8 @@ function gridStandard($compile, $rootScope, $timeout, semossCoreService) {
                             });
                         } else {
                             sortInfo.push({
-                                alias: output[i].content.columnToSort.content.alias,
+                                alias: output[i].content.columnToSort.content
+                                    .alias,
                                 dir: 'desc',
                             });
                         }
@@ -625,7 +626,7 @@ function gridStandard($compile, $rootScope, $timeout, semossCoreService) {
                 } catch (error) {
                     console.error(
                         'Error occurred while processing sort details:',
-                        error,
+                        error
                     );
                 } finally {
                     console.log('Sort details processed.');
@@ -646,7 +647,7 @@ function gridStandard($compile, $rootScope, $timeout, semossCoreService) {
                         terminal: true,
                     },
                 ],
-                callback,
+                callback
             );
         }
 

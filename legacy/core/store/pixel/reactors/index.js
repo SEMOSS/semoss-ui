@@ -7840,7 +7840,11 @@ const REACTORS = {
      * @desc store alias and description for the recipe step
      * @returns {string} query
      */
-     storeInsightRecipeStepMetadata: function (pixelId, pixelAlias, pixelDescription) {
+    storeInsightRecipeStepMetadata: function (
+        pixelId,
+        pixelAlias,
+        pixelDescription
+    ) {
         var query = 'StoreInsightRecipeStepMetadata(';
 
         query += 'pixelId="' + pixelId + '", ';
@@ -8473,11 +8477,13 @@ const REACTORS = {
      * @param {object} tableDetails - tableDetails => {tableName:{columnName:columnType}}
      * @desc add database structure to physical database
      * @returns {string} query
-    */
-   addDatabaseStructure: function (databaseId, tableDetails) {
-       var query = `AddDatabaseStructure( database=[${JSON.stringify(databaseId)}], metamodelAdd=[${JSON.stringify(tableDetails)}] );`;
-       console.log('query is: ', query)
-       return query;
+     */
+    addDatabaseStructure: function (databaseId, tableDetails) {
+        var query = `AddDatabaseStructure( database=[${JSON.stringify(
+            databaseId
+        )}], metamodelAdd=[${JSON.stringify(tableDetails)}] );`;
+        console.log('query is: ', query);
+        return query;
     },
     /**
      * @name deleteDatabaseStructure
@@ -8488,8 +8494,10 @@ const REACTORS = {
      * @returns {string} query
      */
     deleteDatabaseStructure: function (databaseId, tableDetails) {
-        var query = `DeleteDatabaseStructure( database=[${JSON.stringify(databaseId)}], metamodelDelete=[${JSON.stringify(tableDetails)}] );`;
-        console.log('query is: ', query)
+        var query = `DeleteDatabaseStructure( database=[${JSON.stringify(
+            databaseId
+        )}], metamodelDelete=[${JSON.stringify(tableDetails)}] );`;
+        console.log('query is: ', query);
         return query;
     },
     /**
@@ -8500,9 +8508,11 @@ const REACTORS = {
      * @returns {string} query
      */
     createNewRdbmsInternalDatabase: function (databaseName, databaseDetails) {
-        var query = `CreateNewRdbmsInternalDatabase( database=${JSON.stringify(databaseName)});`;
+        var query = `CreateNewRdbmsInternalDatabase( database=${JSON.stringify(
+            databaseName
+        )});`;
         // var query = `CreateNewRdbmsInternalDatabase( database=[${JSON.stringify(databaseName)}], metamodelAdditions=[${JSON.stringify(databaseDetails)}] );`;
-        console.log('query is: ', query)
+        console.log('query is: ', query);
         return query;
     },
     /**
@@ -8513,25 +8523,34 @@ const REACTORS = {
      * @param {string} column
      * @param {string} dataType
      */
-    editDatabasePropertyDataType: function (databaseId, concept, column, dataType) {
-        var query = `EditDatabasePropertyDataType( database=[${JSON.stringify(databaseId)}], concept=[${JSON.stringify(concept)}], column=[${JSON.stringify(column)}], dataType=[${JSON.stringify(dataType)}] );`;
-        console.log('EditDBPropertyDataType query is: ', query)
+    editDatabasePropertyDataType: function (
+        databaseId,
+        concept,
+        column,
+        dataType
+    ) {
+        var query = `EditDatabasePropertyDataType( database=[${JSON.stringify(
+            databaseId
+        )}], concept=[${JSON.stringify(concept)}], column=[${JSON.stringify(
+            column
+        )}], dataType=[${JSON.stringify(dataType)}] );`;
+        console.log('EditDBPropertyDataType query is: ', query);
         return query;
-     },
+    },
 
-     /**
-      * @name renameColumn
-      * @desc change column name
-      * @param {string} databaseId
-      * @param {string} tableName aka concept
-      * @param {string} columnName
-      * @param {string} newColumnName
-      */
-     renameColumn: function (databaseId, tableName, columnName, newColumnName ) {
-         //  DatabaseRenameColumn(database=["2555ec1b-e1a2-4905-91e0-022dc57fc564"], concept=["ACTIVE_PLANS"], column=["ID"], newValue=["ID2"]);
+    /**
+     * @name renameColumn
+     * @desc change column name
+     * @param {string} databaseId
+     * @param {string} tableName aka concept
+     * @param {string} columnName
+     * @param {string} newColumnName
+     */
+    renameColumn: function (databaseId, tableName, columnName, newColumnName) {
+        //  DatabaseRenameColumn(database=["2555ec1b-e1a2-4905-91e0-022dc57fc564"], concept=["ACTIVE_PLANS"], column=["ID"], newValue=["ID2"]);
         var query = `DatabaseRenameColumn( database=[ "${databaseId}" ], concept=["${tableName}"], column=["${columnName}"], newValue=["${newColumnName}"]);`;
         return query;
-     },
+    },
 
     /**
      * @name renameTable
@@ -8543,10 +8562,7 @@ const REACTORS = {
     renameTable: function (databaseId, tableName, newTableName) {
         var query = `DatabaseRenameTable(database=["${databaseId}"], concept=["${tableName}"], newValue=["${newTableName}"]);`;
         return query;
-    }
-
-
-
+    },
 };
 
 module.exports = REACTORS;

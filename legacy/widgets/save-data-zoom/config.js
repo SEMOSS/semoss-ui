@@ -8,8 +8,8 @@ module.exports = {
     content: {
         template: {
             name: 'save-data-zoom',
-            execute: 'auto'
-        }
+            execute: 'auto',
+        },
     },
     lazy: true,
 };

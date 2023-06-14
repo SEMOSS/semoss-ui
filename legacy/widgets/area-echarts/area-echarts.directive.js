@@ -7,7 +7,12 @@ export default angular
     .module('app.area-echarts.directive', [])
     .directive('areaEcharts', areaEcharts);
 
-areaEcharts.$inject = ['VIZ_COLORS', 'semossCoreService', '$compile', 'optionsService'];
+areaEcharts.$inject = [
+    'VIZ_COLORS',
+    'semossCoreService',
+    '$compile',
+    'optionsService',
+];
 
 function areaEcharts(VIZ_COLORS, semossCoreService, $compile, optionsService) {
     areaChartLink.$inject = ['scope', 'ele', 'attrs', 'ctrl'];
@@ -249,13 +254,13 @@ function areaEcharts(VIZ_COLORS, semossCoreService, $compile, optionsService) {
                 );
             }
 
-                // saving data zoom
+            // saving data zoom
             areaChart.on('dataZoom', () =>
                 EchartsHelper.setDataZoom(
                     areaChart,
                     optionsService,
-                    scope.widgetCtrl.widgetId,
-                ),
+                    scope.widgetCtrl.widgetId
+                )
             );
 
             // it is necessary to initialize comment mode so the nodes are painted

@@ -2,7 +2,7 @@
     "compilerOptions": {
         "paths": {
             "@/*": ["./*"],
-            "@client/*":["../client/*"],
+            "@client/*": ["../client/*"],
             "images/*": ["./core/resources/img/*"]
         },
         // Target latest version of ECMAScript.

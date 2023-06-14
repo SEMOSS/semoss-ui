@@ -8,7 +8,12 @@ export default angular
     .module('app.stack-echarts.directive', [])
     .directive('stackEcharts', stackEcharts);
 
-stackEcharts.$inject = ['VIZ_COLORS', 'semossCoreService', '$compile', 'optionsService'];
+stackEcharts.$inject = [
+    'VIZ_COLORS',
+    'semossCoreService',
+    '$compile',
+    'optionsService',
+];
 
 function stackEcharts(VIZ_COLORS, semossCoreService, $compile, optionsService) {
     stackChartLink.$inject = ['scope', 'ele', 'attrs', 'ctrl'];
@@ -300,10 +305,9 @@ function stackEcharts(VIZ_COLORS, semossCoreService, $compile, optionsService) {
                 EchartsHelper.setDataZoom(
                     stackChart,
                     optionsService,
-                    scope.widgetCtrl.widgetId,
-                ),
+                    scope.widgetCtrl.widgetId
+                )
             );
-        
 
             // it is necessary to initialize comment mode so the nodes are painted
             EchartsHelper.initializeCommentMode({

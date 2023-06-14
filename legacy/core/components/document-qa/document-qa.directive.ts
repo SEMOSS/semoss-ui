@@ -592,8 +592,8 @@ function documentQaDirective(
         }
 
         function html_encode(s) {
-            var ret_val = '';
-            for (let char of s) {
+            let ret_val = '';
+            for (const char of s) {
                 const code = char.codePointAt(0);
                 if (code > 127) {
                     ret_val += '&#' + code + ';';

@@ -660,7 +660,7 @@ angular
             startX: 0,
             endX: 0,
             startY: 0,
-            endY:0
+            endY: 0,
         },
         toggleYAxis: true,
         dataZoomXstart: false,
@@ -887,10 +887,12 @@ angular
             defaultValues: [false],
         },
         'save-data-zoom': {
-            paths: ['view.visualization.tools.shared.saveDataZoom.startX',
-            'view.visualization.tools.shared.saveDataZoom.endX',
-            'view.visualization.tools.shared.saveDataZoom.startY',
-            'view.visualization.tools.shared.saveDataZoom.endY'],
+            paths: [
+                'view.visualization.tools.shared.saveDataZoom.startX',
+                'view.visualization.tools.shared.saveDataZoom.endX',
+                'view.visualization.tools.shared.saveDataZoom.startY',
+                'view.visualization.tools.shared.saveDataZoom.endY',
+            ],
             defaultValues: [0, 0, 0, 0],
         },
         'display-values': {

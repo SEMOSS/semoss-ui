@@ -95,7 +95,7 @@ module.exports = {
             filename: '../index.html',
             template: './docs/template.ejs',
             favicon: 'docs/resources/favicon.png',
-            inject: false
+            inject: false,
         }),
     ],
 };

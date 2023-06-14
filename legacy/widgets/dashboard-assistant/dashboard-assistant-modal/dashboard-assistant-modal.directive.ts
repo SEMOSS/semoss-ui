@@ -12,7 +12,7 @@ dashboardAssistantModalDirective.$inject = [
     '$q',
     'semossCoreService',
     'optionsService',
-    'storeService'
+    'storeService',
 ];
 
 function dashboardAssistantModalDirective(
@@ -47,8 +47,8 @@ function dashboardAssistantModalDirective(
         // --- State/Scope ---
         // Important
         scope.dashboardAssistantModal.page = ''; // 'ASK' | 'QUERY-PARAMS' | 'SECRET-KEY'
-        scope.dashboardAssistantModal.mooseReactorPrefix = '' // text2sql | fillform | docquery
-        
+        scope.dashboardAssistantModal.mooseReactorPrefix = ''; // text2sql | fillform | docquery
+
         scope.dashboardAssistantModal.secretKey = {
             selected: '',
             error: '',
@@ -58,7 +58,7 @@ function dashboardAssistantModalDirective(
             error: '',
         };
 
-        scope.dashboardAssistantModal.widgets = storeService.get('widgets')
+        scope.dashboardAssistantModal.widgets = storeService.get('widgets');
 
         scope.dashboardAssistantModal.frameHasFilter = false;
         scope.dashboardAssistantModal.searchHistory = [];
@@ -90,7 +90,7 @@ function dashboardAssistantModalDirective(
         scope.dashboardAssistantModal.copySqlToClipboard = copySqlToClipboard;
         scope.dashboardAssistantModal.clearQuery = clearQuery;
         scope.dashboardAssistantModal.changePage = changePage;
-        scope.dashboardAssistantModal.revertToOriginal = revertToOriginal
+        scope.dashboardAssistantModal.revertToOriginal = revertToOriginal;
 
         // API Fn's --------------------------------------------------------------
 
@@ -161,17 +161,19 @@ function dashboardAssistantModalDirective(
                 }
 
                 // handle response for the 3 different (NLP) searches
-                if(prefix === 'fillform') {
+                if (prefix === 'fillform') {
                     // output = {label: answer, age: '22'}
                     scope.dashboardAssistantModal.close(); // closes modal
-                    
-                    console.warn('Formatted Response fillform (NLP) sent to form builder', output)
-                   
-                    semossCoreService.emit('ai-fill-form', output);
 
-                } else if(prefix === 'text2sql') {
-                    console.warn('Response for text2sql')
-                    const nestedOutput = output[0].output
+                    console.warn(
+                        'Formatted Response fillform (NLP) sent to form builder',
+                        output
+                    );
+
+                    semossCoreService.emit('ai-fill-form', output);
+                } else if (prefix === 'text2sql') {
+                    console.warn('Response for text2sql');
+                    const nestedOutput = output[0].output;
                     if (
                         nestedOutput.SAMPLE ===
                         'Could not compute data, query is not correct.'
@@ -182,7 +184,7 @@ function dashboardAssistantModalDirective(
                         });
                         return;
                     }
-    
+
                     if (nestedOutput.Query === '') {
                         semossCoreService.emit('alert', {
                             color: 'error',
@@ -190,12 +192,13 @@ function dashboardAssistantModalDirective(
                         });
                         return;
                     }
-    
+
                     // set question in search history
                     const questionObj = {
                         question: {
-                            selected: scope.dashboardAssistantModal.question.selected,
-                            error: ''
+                            selected:
+                                scope.dashboardAssistantModal.question.selected,
+                            error: '',
                         },
                         generatedNLPQuery: nestedOutput.Query,
                         parseSqlQuery: nestedOutput.Query,
@@ -208,55 +211,59 @@ function dashboardAssistantModalDirective(
                         generatedQuery: '',
                         generatedQueryHtml: '',
                     };
-        
+
                     // push new question to history
-                    scope.dashboardAssistantModal.searchHistory.push(questionObj)
-    
-                    parseSql2Wrapper(view, scope.dashboardAssistantModal.searchHistory.length - 1);
+                    scope.dashboardAssistantModal.searchHistory.push(
+                        questionObj
+                    );
+
+                    parseSql2Wrapper(
+                        view,
+                        scope.dashboardAssistantModal.searchHistory.length - 1
+                    );
                 } else if (prefix === 'docquery') {
-                    console.warn('Response for docquery')
+                    console.warn('Response for docquery');
                 }
             });
 
             let pixel = '';
 
             // currently three different NLP searches
-            if(prefix === 'fillform') {
+            if (prefix === 'fillform') {
                 // Works below off of predefined fields in widget
-                const widgets = scope.dashboardAssistantModal.widgets
-                const  formFields: string[] = [];
+                const widgets = scope.dashboardAssistantModal.widgets;
+                const formFields: string[] = [];
 
                 // Only look at this insights widgets
                 Object.entries(widgets).forEach((keyVal) => {
                     const panel = widgets[keyVal[0]];
-                    if(panel.insightID !== scope.widgetCtrl.insightID){
-                        delete widgets[keyVal[0]]
+                    if (panel.insightID !== scope.widgetCtrl.insightID) {
+                        delete widgets[keyVal[0]];
                     }
-                })
-                
+                });
+
                 // Constructing to get our fields at the moment
                 // Does not get respective label/p tag;  Just sends all colums from DataModel
                 Object.entries(widgets).forEach((keyVal) => {
-                    if(widgets[keyVal[0]].active === 'form-builder'){
-                        const data = widgets[keyVal[0]]['view']['form-builder']['options']['json']['data']
+                    if (widgets[keyVal[0]].active === 'form-builder') {
+                        const data =
+                            widgets[keyVal[0]]['view']['form-builder'][
+                                'options'
+                            ]['json']['data'];
                         // push field name
                         Object.keys(data).forEach((k) => {
-                            formFields.push(k)
-                        })
+                            formFields.push(k);
+                        });
                     }
-                })
+                });
 
-                pixel = `Moose ( command = [ "fillform: ${scope.dashboardAssistantModal.question.selected}" ] , form_fields = [${JSON.stringify(
-                    formFields,
-                )}] ) ;`
-
-            } else if(prefix === 'text2sql') {
-                pixel = `Moose(frame=[LastUsedFrame()], command=["text2sql:${
+                pixel = `Moose ( command = [ "fillform: ${
                     scope.dashboardAssistantModal.question.selected
-                }"])`
-
-            } else if(prefix === 'docquery') {
-                pixel = 'docquery pixel'
+                }" ] , form_fields = [${JSON.stringify(formFields)}] ) ;`;
+            } else if (prefix === 'text2sql') {
+                pixel = `Moose(frame=[LastUsedFrame()], command=["text2sql:${scope.dashboardAssistantModal.question.selected}"])`;
+            } else if (prefix === 'docquery') {
+                pixel = 'docquery pixel';
             }
 
             semossCoreService.emit('query-pixel', {
@@ -747,10 +754,9 @@ function dashboardAssistantModalDirective(
                     scope.dashboardAssistantModal.activeQueryIndex
                 ];
 
-                
-            if(!active) return true
-                
-            let baseCase = true
+            if (!active) return true;
+
+            let baseCase = true;
             // JSON.stringify(active.queryParamsCopy) === JSON.stringify(active.queryParamsOriginal)
 
             for (const [key, value] of Object.entries(
@@ -887,53 +893,64 @@ function dashboardAssistantModalDirective(
             scope.dashboardAssistantModal.loading = true;
 
             // check our widgets and see what is present
-            scope.dashboardAssistantModal.mooseReactorPrefix = 'text2sql'
-            
-            const widgets = scope.dashboardAssistantModal.widgets
+            scope.dashboardAssistantModal.mooseReactorPrefix = 'text2sql';
+
+            const widgets = scope.dashboardAssistantModal.widgets;
 
             // Only look at this insights widgets
             Object.entries(widgets).forEach((keyVal) => {
                 const panel = widgets[keyVal[0]];
-                if(panel.insightID !== scope.widgetCtrl.insightID){
-                    delete widgets[keyVal[0]]
+                if (panel.insightID !== scope.widgetCtrl.insightID) {
+                    delete widgets[keyVal[0]];
                 }
-            })
+            });
 
             // determine what prefix to use
             Object.entries(widgets).forEach((keyVal) => {
-                if(widgets[keyVal[0]].active === 'form-builder'){
-                    scope.dashboardAssistantModal.mooseReactorPrefix = 'fillform'
-                }  else if(widgets[keyVal[0]].active === 'docquery') {
-                    scope.dashboardAssistantModal.mooseReactorPrefix = 'docquery'
+                if (widgets[keyVal[0]].active === 'form-builder') {
+                    scope.dashboardAssistantModal.mooseReactorPrefix =
+                        'fillform';
+                } else if (widgets[keyVal[0]].active === 'docquery') {
+                    scope.dashboardAssistantModal.mooseReactorPrefix =
+                        'docquery';
                 }
-            })
+            });
 
-            if(scope.dashboardAssistantModal.mooseReactorPrefix === 'text2sql') {
+            if (
+                scope.dashboardAssistantModal.mooseReactorPrefix === 'text2sql'
+            ) {
                 // check if we have a openai secret key in order to hit
-                determineSecretKey("check")
-    
+                determineSecretKey('check');
+
                 // Store it at insight level
                 const searchHistory = optionsService.get(
                     scope.widgetCtrl.insightID,
                     'search-history'
                 );
-    
+
                 // Previous search history stored on insight
-                if(searchHistory) {
-                    scope.dashboardAssistantModal.searchHistory = searchHistory.history
-    
-                    if(scope.dashboardAssistantModal.searchHistory.length > 0 && searchHistory.activeIndex > -1) {
-                        scope.dashboardAssistantModal.question.selected = scope.dashboardAssistantModal.searchHistory[searchHistory.activeIndex].question.selected
+                if (searchHistory) {
+                    scope.dashboardAssistantModal.searchHistory =
+                        searchHistory.history;
+
+                    if (
+                        scope.dashboardAssistantModal.searchHistory.length >
+                            0 &&
+                        searchHistory.activeIndex > -1
+                    ) {
+                        scope.dashboardAssistantModal.question.selected =
+                            scope.dashboardAssistantModal.searchHistory[
+                                searchHistory.activeIndex
+                            ].question.selected;
                         scope.dashboardAssistantModal.frameHasFilter = true;
                     }
                 }
-    
+
                 filterHistory();
             } else {
-                scope.dashboardAssistantModal.page = 'ASK'
-                scope.dashboardAssistantModal.change({value: 'ASK'})
+                scope.dashboardAssistantModal.page = 'ASK';
+                scope.dashboardAssistantModal.change({ value: 'ASK' });
             }
-
 
             scope.dashboardAssistantModal.loading = false;
         }

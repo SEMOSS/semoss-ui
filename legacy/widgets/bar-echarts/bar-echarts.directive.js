@@ -7,7 +7,12 @@ export default angular
     .module('app.bar-echarts.directive', [])
     .directive('barEcharts', barEcharts);
 
-barEcharts.$inject = ['VIZ_COLORS', 'semossCoreService', '$compile', 'optionsService'];
+barEcharts.$inject = [
+    'VIZ_COLORS',
+    'semossCoreService',
+    '$compile',
+    'optionsService',
+];
 
 function barEcharts(VIZ_COLORS, semossCoreService, $compile, optionsService) {
     barChartLink.$inject = ['scope', 'ele', 'attrs', 'ctrl'];
@@ -59,16 +64,12 @@ function barEcharts(VIZ_COLORS, semossCoreService, $compile, optionsService) {
             setData();
         }
 
-
-
-
         /**
          * @name setData
          * @desc setData for the visualization and paints
          * @returns {void}
          */
         function setData() {
-    
             var selectedLayout = scope.widgetCtrl.getWidget(
                     'view.visualization.layout'
                 ),
@@ -91,15 +92,9 @@ function barEcharts(VIZ_COLORS, semossCoreService, $compile, optionsService) {
                 selectedMode = scope.widgetCtrl.getMode('selected'),
                 mergedArr = [];
 
-            
-
             uiOptions = angular.extend(sharedTools, individualTools);
             uiOptions.colorByValue = colorBy;
             uiOptions.rotateAxis = sharedTools.rotateAxis;
-
-
-        
-            
 
             //Get legend properties
             uiOptions.legend = sharedTools.legend;
@@ -135,7 +130,7 @@ function barEcharts(VIZ_COLORS, semossCoreService, $compile, optionsService) {
                         viewSize: 500,
                     },
                     tasks: tasks,
-                })
+                });
                 // manually syncing the toggleZoomX to the storeService because echarts-helper can automatically set zoom to true based on # of instances in the view
                 semossCoreService.set(
                     'widgets.' +
@@ -149,9 +144,7 @@ function barEcharts(VIZ_COLORS, semossCoreService, $compile, optionsService) {
                 );
                 mergedArr.push(eChartsConfig);
             }
-        
 
-            
             eChartsConfig = EchartsHelper.mergeCharts(mergedArr);
             eChartsConfig.callbacks = scope.widgetCtrl.getEventCallbacks();
 
@@ -221,11 +214,8 @@ function barEcharts(VIZ_COLORS, semossCoreService, $compile, optionsService) {
                 sharedTools = scope.widgetCtrl.getWidget(
                     'view.visualization.tools.shared'
                 ),
-
-                
                 uiOptions = angular.extend(sharedTools, individualTools);
 
-            
             if (barChart) {
                 barChart.clear();
                 barChart.dispose();
@@ -241,10 +231,8 @@ function barEcharts(VIZ_COLORS, semossCoreService, $compile, optionsService) {
                 $compile
             );
 
-            
             // use configuration item and data specified to show chart
             EchartsHelper.setOption(barChart, option);
-
 
             barChart.resize();
 
@@ -252,7 +240,7 @@ function barEcharts(VIZ_COLORS, semossCoreService, $compile, optionsService) {
             initializeEvents();
         }
 
-    /**
+        /**
          * @name initializeEvents
          * @desc creates the event layer
          * @returns {void}
@@ -272,14 +260,13 @@ function barEcharts(VIZ_COLORS, semossCoreService, $compile, optionsService) {
                 pictorialBarExists = true;
             }
 
-
             // saving data zoom
             barChart.on('dataZoom', () =>
                 EchartsHelper.setDataZoom(
                     barChart,
                     optionsService,
-                    scope.widgetCtrl.widgetId,
-                ),
+                    scope.widgetCtrl.widgetId
+                )
             );
             // Context Menu
             barChart.on('contextmenu', function (e) {
@@ -301,7 +288,7 @@ function barEcharts(VIZ_COLORS, semossCoreService, $compile, optionsService) {
                     },
                 });
             }
-        
+
             if (eChartsConfig.options.rotateAxis) {
                 barChart.flipped = true;
             } else {
@@ -348,10 +335,6 @@ function barEcharts(VIZ_COLORS, semossCoreService, $compile, optionsService) {
                 currentMode: eChartsConfig.currentMode,
                 saveCb: eChartsConfig.callbacks.commentMode.onSave,
             });
-
-
-
-
         }
 
         // TODO move to EchartsHelper

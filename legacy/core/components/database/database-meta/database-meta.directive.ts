@@ -5,7 +5,6 @@ import '../database-user/database-user.directive.ts';
 import '../database-details/database-details.directive.ts';
 import '../database-physical/database-physical.directive.ts';
 
-
 import { GRAPH_TYPES } from '@/core/constants.js';
 
 import './database-meta.scss';
@@ -14,7 +13,7 @@ export default angular
     .module('app.database.database-meta', [
         'app.database.database-user',
         'app.database.database-details',
-        'app.database.database-physical'
+        'app.database.database-physical',
     ])
     .directive('databaseMeta', databaseMetaDirective);
 
@@ -50,8 +49,9 @@ function databaseMetaDirective(
     function databaseMetaCtrl() {}
 
     function databaseMetaLink(scope, ele, attrs, ctrl) {
-        const defaultOptions = semossCoreService.visualization.getDefaultOptions();
-        
+        const defaultOptions =
+            semossCoreService.visualization.getDefaultOptions();
+
         scope.databaseCtrl = ctrl[0];
         //scope.database.appInfo = scope.databaseCtrl.appInfo;
 
@@ -123,7 +123,7 @@ function databaseMetaDirective(
             Metamodel: 'metamodel',
             'Replace Data': 'replace',
             'Query Data': 'query',
-            'Modify Data': 'modify'
+            'Modify Data': 'modify',
         };
         scope.databaseMeta.input = {
             query: {
@@ -516,8 +516,7 @@ function databaseMetaDirective(
                         JSON.stringify(scope.databaseMeta.information.metamodel)
                     );
                 }
-                });
-
+            });
 
             semossCoreService.emit('query-pixel', {
                 commandList: [
@@ -545,7 +544,6 @@ function databaseMetaDirective(
                 ],
                 response: message,
             });
-
         }
 
         /**

@@ -160,7 +160,6 @@ function metamodelRelationshipsDirective($timeout, semossCoreService) {
                 alias: '',
                 valid: false,
             };
-
         }
 
         /**
@@ -318,8 +317,6 @@ function metamodelRelationshipsDirective($timeout, semossCoreService) {
                     }
                 );
             }
-
-
 
             // clear out
             scope.metamodelRelationships.relationshipInformation.new = {

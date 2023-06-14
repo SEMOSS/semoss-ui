@@ -318,7 +318,7 @@ module.exports = {
     'toggle-z': require('@/widgets/toggle-z/config.js'),
     'toggle-zoom-x': require('@/widgets/toggle-zoom-x/config.js'),
     'toggle-zoom-y': require('@/widgets/toggle-zoom-y/config.js'),
-    'save-data-zoom':require('@/widgets/save-data-zoom/config.js'),
+    'save-data-zoom': require('@/widgets/save-data-zoom/config.js'),
     traverse: require('@/widgets/traverse/config.js'),
     'treemap-echarts': require('@/widgets/treemap-echarts/config.js'),
     'twitter-search': require('@/widgets/twitter-search/config.js'),

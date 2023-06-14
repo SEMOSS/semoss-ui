@@ -23,7 +23,7 @@ export default angular
     ])
     .directive('metamodel', metamodelDirective);
 
-metamodelDirective.$inject = ['$compile', '$timeout',];
+metamodelDirective.$inject = ['$compile', '$timeout'];
 
 function metamodelDirective(
     $compile: ng.ICompileService,
@@ -50,7 +50,7 @@ function metamodelDirective(
 
     function metamodelCtrl() {}
 
-    function metamodelLink(scope, ele, attrs, ctrl,) {
+    function metamodelLink(scope, ele, attrs, ctrl) {
         let metamodelGraphEle: HTMLElement,
             metamodelEle: HTMLElement,
             metamodelScope,
@@ -377,13 +377,18 @@ function metamodelDirective(
          * @param {boolean} isDelete - is this a delete operation
          * @param {any} colObject - column Object { colType: '', colFormat: ''} // TODO: add defaultFormat and determine what to change about a column
          */
-        function editMetamodel(type: string, options: any, isDelete: boolean, colObject: any ): void {
+        function editMetamodel(
+            type: string,
+            options: any,
+            isDelete: boolean,
+            colObject: any
+        ): void {
             if (scope.metamodel.edit) {
                 scope.metamodel.edit({
                     type: type,
                     options: options,
                     isDelete: isDelete || false,
-                    colObject: colObject
+                    colObject: colObject,
                 });
             }
         }

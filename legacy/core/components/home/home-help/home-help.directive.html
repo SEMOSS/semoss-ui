@@ -41,14 +41,16 @@
                 <div class="home-help__card__content__header">
                     <h5>{{card.title}}</h5>
                 </div>
-                <div class="home-help__card__content__description" 
-                        ng-class="{'home-help__card__content__description__smallFont': homeHelp.helpDropdown.descriptionFontSize === 'small'}">
+                <div
+                    class="home-help__card__content__description"
+                    ng-class="{'home-help__card__content__description__smallFont': homeHelp.helpDropdown.descriptionFontSize === 'small'}"
+                >
                     {{card.description}}
                 </div>
             </div>
         </div>
     </div>
-    <div ng-if="homeHelp.helpDropdown.showContactUsSection"></div>
+    <div ng-if="homeHelp.helpDropdown.showContactUsSection">
         <h4 ng-if="homeHelp.helpDropdown.showContactUsHeading">Contact Us</h4>
         <div
             title="Email Us"
@@ -69,8 +71,10 @@
                 <div class="home-help__card__content__header">
                     <h5>{{homeHelp.helpDropdown.contactUsTitle}}</h5>
                 </div>
-                <div class="home-help__card__content__description" 
-                        ng-class="{'home-help__card__content__description__smallFont': homeHelp.helpDropdown.descriptionFontSize === 'small'}">
+                <div
+                    class="home-help__card__content__description"
+                    ng-class="{'home-help__card__content__description__smallFont': homeHelp.helpDropdown.descriptionFontSize === 'small'}"
+                >
                     {{homeHelp.helpDropdown.contactUsDescription}}
                 </div>
             </div>

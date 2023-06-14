@@ -12,8 +12,10 @@ export default angular
 
 dashboardAssistantDirective.$inject = ['storeService', 'semossCoreService'];
 
-function dashboardAssistantDirective(storeService: StoreService, semossCoreService: SemossCoreService,
-    ) {
+function dashboardAssistantDirective(
+    storeService: StoreService,
+    semossCoreService: SemossCoreService
+) {
     dashboardAssistantCtrl.$inject = [];
     dashboardAssistantLink.$inject = ['scope', 'ele', 'attrs', 'ctrl'];
     return {
@@ -34,12 +36,11 @@ function dashboardAssistantDirective(storeService: StoreService, semossCoreServi
         scope.widgetCtrl = ctrl[0];
         scope.insightCtrl = ctrl[1];
 
-        scope.dashboardAssistant.widgets = storeService.get('widgets')
+        scope.dashboardAssistant.widgets = storeService.get('widgets');
 
-        scope.dashboardAssistant.insightID = scope.widgetCtrl.insightID
-        scope.dashboardAssistant.opts = []
+        scope.dashboardAssistant.insightID = scope.widgetCtrl.insightID;
+        scope.dashboardAssistant.opts = [];
         scope.dashboardAssistant.selectedOpt = 'text2sql';
-
 
         scope.dashboardAssistant.modalHeader = '';
         scope.dashboardAssistant.closeModal = closeModal;
@@ -98,13 +99,13 @@ function dashboardAssistantDirective(storeService: StoreService, semossCoreServi
          * @name fillForm
          * @param answers - answers to fill on form builder
          */
-         const fillForm = (answers) => {
+        const fillForm = (answers) => {
             semossCoreService.emit('ai-fill-form', answers);
-        }
+        };
 
         /**
          * @name filterFrame
-         * @param sql 
+         * @param sql
          */
         const filterFrame = (sql) => {
             scope.widgetCtrl.execute(
@@ -129,19 +130,17 @@ function dashboardAssistantDirective(storeService: StoreService, semossCoreServi
                     }
                 }
             );
-        }
+        };
 
         /**
          * @name unfilterFrame
          */
-         const unfilterFrame = () => {
+        const unfilterFrame = () => {
             scope.widgetCtrl.execute(
                 [
                     {
                         type: 'Pixel',
-                        components: [
-                            `ResetFrameToOriginalName();`,
-                        ],
+                        components: [`ResetFrameToOriginalName();`],
                         terminal: true,
                     },
                 ],
@@ -163,36 +162,38 @@ function dashboardAssistantDirective(storeService: StoreService, semossCoreServi
                     });
                 }
             );
-        }
+        };
 
         // -------------------------
         // CONSTRUCT MOOSE OPTIONS
         // -------------------------
         /**
          * @name constructFillFormFields
-         * @param formWidget 
-         * @returns 
+         * @param formWidget
+         * @returns
          */
         function constructFillFormFields(formWidget): string[] {
-            const formFields: string[] = []
-            const dataObj = formWidget['view']['form-builder']['options']['json']['data']
-            
+            const formFields: string[] = [];
+            const dataObj =
+                formWidget['view']['form-builder']['options']['json']['data'];
+
             // push field name
             Object.keys(dataObj).forEach((k: string) => {
-                formFields.push(k)
-            })
+                formFields.push(k);
+            });
 
-            return formFields
+            return formFields;
         }
 
         /**
          * @name constructDocQAOptions
-         * @param docQAWidget 
+         * @param docQAWidget
          * @returns docqa options
          */
         function constructDocQAOptions(docQAWidget) {
-            const docQAOptions = docQAWidget['view']['document-query']['options']['json']
-            return docQAOptions
+            const docQAOptions =
+                docQAWidget['view']['document-query']['options']['json'];
+            return docQAOptions;
         }
 
         /**
@@ -201,100 +202,120 @@ function dashboardAssistantDirective(storeService: StoreService, semossCoreServi
          */
         function constructOptionsForMoose() {
             let selectedModel = '';
-            const widgets = scope.dashboardAssistant.widgets
+            const widgets = scope.dashboardAssistant.widgets;
             // Only look at this insights widgets
             Object.entries(widgets).forEach((keyVal) => {
                 const panel = widgets[keyVal[0]];
-                if(panel.insightID !== scope.widgetCtrl.insightID){
-                    delete widgets[keyVal[0]]
+                if (panel.insightID !== scope.widgetCtrl.insightID) {
+                    delete widgets[keyVal[0]];
                 }
-            })
+            });
 
             // determine what prefix to use and construct options
-            Object.entries(widgets).forEach(async(keyVal) => {
-                if(widgets[keyVal[0]].active === 'form-builder'){
-                    if(!selectedModel) selectedModel = 'fillform'
-                    const panelFormFields = await constructFillFormFields(widgets[keyVal[0]])
-                    let foundIndex = -1
+            Object.entries(widgets).forEach(async (keyVal) => {
+                if (widgets[keyVal[0]].active === 'form-builder') {
+                    if (!selectedModel) selectedModel = 'fillform';
+                    const panelFormFields = await constructFillFormFields(
+                        widgets[keyVal[0]]
+                    );
+                    let foundIndex = -1;
 
-                    for(let i = 0; i < scope.dashboardAssistant.opts.length; i++) {
-                        if(scope.dashboardAssistant.opts[i].model === 'fillform') {
-                            foundIndex = i
+                    for (
+                        let i = 0;
+                        i < scope.dashboardAssistant.opts.length;
+                        i++
+                    ) {
+                        if (
+                            scope.dashboardAssistant.opts[i].model ===
+                            'fillform'
+                        ) {
+                            foundIndex = i;
                         }
                     }
 
-                    if(foundIndex > -1) {
+                    if (foundIndex > -1) {
                         // fix this dont add new fields if they are already there
                         scope.dashboardAssistant.opts[foundIndex] = {
                             ...scope.dashboardAssistant.opts[foundIndex],
-                            form_fields: [...scope.dashboardAssistant.opts[foundIndex].form_fields, panelFormFields]
-                        }
+                            form_fields: [
+                                ...scope.dashboardAssistant.opts[foundIndex]
+                                    .form_fields,
+                                panelFormFields,
+                            ],
+                        };
                     } else {
-                        scope.dashboardAssistant.opts.push(
-                            {
-                                model: 'fillform',
-                                form_fields: panelFormFields,
-                                callback: fillForm
-                            }
-                        )
+                        scope.dashboardAssistant.opts.push({
+                            model: 'fillform',
+                            form_fields: panelFormFields,
+                            callback: fillForm,
+                        });
                     }
-                }  else if(widgets[keyVal[0]].active === 'document-query') {
-                    if(!selectedModel) selectedModel = 'docqa'
-                    const docQAOptions = await constructDocQAOptions(widgets[keyVal[0]])
-                    let foundIndex = -1
+                } else if (widgets[keyVal[0]].active === 'document-query') {
+                    if (!selectedModel) selectedModel = 'docqa';
+                    const docQAOptions = await constructDocQAOptions(
+                        widgets[keyVal[0]]
+                    );
+                    let foundIndex = -1;
 
-                    for(let i = 0; i < scope.dashboardAssistant.opts.length; i++) {
-                        if(scope.dashboardAssistant.opts[i].model === 'docqa') {
-                            foundIndex = i
+                    for (
+                        let i = 0;
+                        i < scope.dashboardAssistant.opts.length;
+                        i++
+                    ) {
+                        if (
+                            scope.dashboardAssistant.opts[i].model === 'docqa'
+                        ) {
+                            foundIndex = i;
                         }
                     }
 
-                    if(foundIndex > -1) {
+                    if (foundIndex > -1) {
                         scope.dashboardAssistant.opts[foundIndex] = {
                             model: 'docqa',
-                            ...docQAOptions
-                        }
+                            ...docQAOptions,
+                        };
                     } else {
                         scope.dashboardAssistant.opts.push({
                             model: 'docqa',
-                            ...docQAOptions
-                        })
+                            ...docQAOptions,
+                        });
                     }
                 }
-            })
+            });
 
-            scope.dashboardAssistant.selectedOpt = !selectedModel ? 'text2sql' : selectedModel
+            scope.dashboardAssistant.selectedOpt = !selectedModel
+                ? 'text2sql'
+                : selectedModel;
         }
 
         // -------------------------
         // UPDATES WITH LISTENERS
         // -------------------------
         const getUpdatedWidgets = () => {
-            scope.dashboardAssistant.widgets = storeService.get('widgets')
-            constructOptionsForMoose()
-        }
+            scope.dashboardAssistant.widgets = storeService.get('widgets');
+            constructOptionsForMoose();
+        };
 
         function updateDocQAOptions(options) {
-            let foundIndex = -1
+            let foundIndex = -1;
 
-            for(let i = 0; i < scope.dashboardAssistant.opts.length; i++) {
-                if(scope.dashboardAssistant.opts[i].model === 'docqa') {
-                    foundIndex = i
+            for (let i = 0; i < scope.dashboardAssistant.opts.length; i++) {
+                if (scope.dashboardAssistant.opts[i].model === 'docqa') {
+                    foundIndex = i;
                 }
             }
 
-            if(foundIndex > -1) {
+            if (foundIndex > -1) {
                 scope.dashboardAssistant.opts[foundIndex] = {
                     model: 'docqa',
-                    ...options
-                }
+                    ...options,
+                };
             } else {
                 scope.dashboardAssistant.opts.push({
                     model: 'docqa',
-                    ...options
-                })
+                    ...options,
+                });
             }
-
         }
 
         /**
@@ -305,8 +326,8 @@ function dashboardAssistantDirective(storeService: StoreService, semossCoreServi
             buttonEle = ele[0].querySelector('#dashboard-assistant__btn');
             buttonEle.addEventListener('mousedown', mousedown);
             buttonEle.addEventListener('mouseup', mouseup);
-            
-            scope.dashboardAssistant.insightID = scope.widgetCtrl.insightID
+
+            scope.dashboardAssistant.insightID = scope.widgetCtrl.insightID;
             const presentationListener = scope.insightCtrl.on(
                 'updated-presentation',
                 getUpdatedWidgets
@@ -326,10 +347,10 @@ function dashboardAssistantDirective(storeService: StoreService, semossCoreServi
                 model: 'text2sql',
                 frame: 'LastUsedFrame()',
                 callback: filterFrame,
-                unfilter: unfilterFrame
-            })
+                unfilter: unfilterFrame,
+            });
 
-            getUpdatedWidgets()
+            getUpdatedWidgets();
 
             scope.$on('$destroy', function () {
                 presentationListener();

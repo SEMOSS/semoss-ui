@@ -76,7 +76,7 @@ function workspacePanelFilterDirective() {
             scope.workspacePanelFilter.panels.selected = panelId;
 
             // clear the headers and columns
-            scope.workspacePanelFilter.panels.source = "";
+            scope.workspacePanelFilter.panels.source = '';
             scope.workspacePanelFilter.panels.headers = {};
             scope.workspacePanelFilter.panels.columns = {};
 

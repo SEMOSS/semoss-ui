@@ -195,8 +195,7 @@ function config(
         })
         .state('home.settings2', {
             url: '/settings2',
-            template:
-                '<rewrite src="./client/dist/#/settings"></rewrite>',
+            template: '<rewrite src="./client/dist/#/settings"></rewrite>',
         })
         .state('home.scheduler', {
             url: '/jobs',

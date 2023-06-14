@@ -33,7 +33,7 @@ import {
     ImportedDatabaseQueryDataPage,
     ImportedDatabaseReplaceDataPage,
 } from './importedDatabase';
-import { JobsPage } from './jobs';
+// import { JobsPage } from './jobs';
 
 export const Router = observer(() => {
     const { configStore } = useRootStore();
@@ -68,7 +68,7 @@ export const Router = observer(() => {
                         path="social-properties"
                         element={<SocialPropertiesPage />}
                     />
-                    <Route path="jobs" element={<JobsPage />} />
+                    {/* <Route path="jobs" element={<JobsPage />} /> */}
                     <Route path="admin-query" element={<AdminQueryPage />} />
 
                     <Route

@@ -5972,31 +5972,42 @@ overflow: inherit;
                 // listens for moose (NLP) response
                 fillFormListener = semossCoreService.on(
                     'ai-fill-form',
-                    function(answers) {
+                    function (answers) {
                         // WORKS BELOW BASED ON WIDGETS DATA MODEL
                         Object.entries(answers).forEach((keyVal) => {
-                            const dataModel = scope.form.dataModel[keyVal[0]]
-                            if(dataModel) {
-                                const dataTypeToCompare = typeof dataModel.options[dataModel.options.length - 1]
-                                const answerDataType = typeof keyVal[1]
+                            const dataModel = scope.form.dataModel[keyVal[0]];
+                            if (dataModel) {
+                                const dataTypeToCompare =
+                                    typeof dataModel.options[
+                                        dataModel.options.length - 1
+                                    ];
+                                const answerDataType = typeof keyVal[1];
 
-                                if(dataTypeToCompare === answerDataType) {
-                                    dataModel.selected = keyVal[1]
-                                } else { // they do not match
-                                    if(dataTypeToCompare === "number"){
-                                        const convertedAnswer = parseInt(keyVal[1].replace(/\D/g, ''))
-                                        if(typeof convertedAnswer !== dataTypeToCompare) {
-                                            console.warn(`Unable to parse ${answerDataType}:${keyVal[1]} to bound field ${dataTypeToCompare}:${obj.column}`)
+                                if (dataTypeToCompare === answerDataType) {
+                                    dataModel.selected = keyVal[1];
+                                } else {
+                                    // they do not match
+                                    if (dataTypeToCompare === 'number') {
+                                        const convertedAnswer = parseInt(
+                                            keyVal[1].replace(/\D/g, '')
+                                        );
+                                        if (
+                                            typeof convertedAnswer !==
+                                            dataTypeToCompare
+                                        ) {
+                                            console.warn(
+                                                `Unable to parse ${answerDataType}:${keyVal[1]} to bound field ${dataTypeToCompare}:${obj.column}`
+                                            );
                                         } else {
-                                            dataModel.selected = convertedAnswer
+                                            dataModel.selected =
+                                                convertedAnswer;
                                         }
                                     }
                                 }
                             }
-                        })
-
+                        });
                     }
-                )
+                );
 
             if (scope.form.mode === 'build') {
                 setLeftMenu();

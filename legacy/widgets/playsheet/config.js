@@ -1,14 +1,14 @@
 module.exports = {
-    'name': 'Playsheet',
-    'description': 'View playsheet visualizations',
-    'icon': require('images/bar.svg'),
-    'widgetList': {
-        'showOn': 'none'
+    name: 'Playsheet',
+    description: 'View playsheet visualizations',
+    icon: require('images/bar.svg'),
+    widgetList: {
+        showOn: 'none',
     },
-    'view': {
-        'template': {
-            'name': 'playsheet'
-        }
+    view: {
+        template: {
+            name: 'playsheet',
+        },
     },
-    'lazy': true
+    lazy: true,
 };

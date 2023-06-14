@@ -2,10 +2,18 @@ import angular from 'angular';
 
 import './playsheet.scss';
 
-export default angular.module('app.playsheet.directive', [
-]).directive('playsheet', playsheetDirective);
+export default angular
+    .module('app.playsheet.directive', [])
+    .directive('playsheet', playsheetDirective);
 
-playsheetDirective.$inject = ['$compile', '$timeout', 'ENDPOINT', 'semossCoreService', 'monolithService', 'CONFIG'];
+playsheetDirective.$inject = [
+    '$compile',
+    '$timeout',
+    'ENDPOINT',
+    'semossCoreService',
+    'monolithService',
+    'CONFIG',
+];
 
 function playsheetDirective() {
     playsheetCtrl.$inject = [];
@@ -20,10 +28,10 @@ function playsheetDirective() {
         controllerAs: 'playsheet',
         bindToController: {},
         replace: true,
-        link: playsheetLink
+        link: playsheetLink,
     };
 
-    function playsheetCtrl() { }
+    function playsheetCtrl() {}
 
     function playsheetLink(scope, ele, attrs, ctrl) {
         scope.widgetCtrl = ctrl[0];
@@ -36,7 +44,8 @@ function playsheetDirective() {
         function updatePlaysheet(): void {
             let src = '';
 
-            const options = scope.widgetCtrl.getWidget('view.playsheet.options') || {};
+            const options =
+                scope.widgetCtrl.getWidget('view.playsheet.options') || {};
 
             // if (!window.location.origin) {
             //     src = window.location.protocol + '//' + window.location.hostname + (window.location.port ? ':' + window.location.port : '') + window.location.pathname;
@@ -57,7 +66,7 @@ function playsheetDirective() {
             height="100%"
             onmouseover="this.contentWindow.focus()"
             src="${src}"></iframe>
-            `
+            `;
         }
 
         /**

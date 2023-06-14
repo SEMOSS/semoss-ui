@@ -687,25 +687,25 @@ hr {
         margin-right: auto !important;
     }
 
-    &--left{
+    &--left {
         justify-content: start;
 
         & > :first-child {
             margin-left: 0 !important;
         }
-    
+
         & > :last-child {
             margin-right: 0 !important;
         }
     }
 
-    &--right{
+    &--right {
         justify-content: end;
 
         & > :first-child {
             margin-left: 0 !important;
         }
-    
+
         & > :last-child {
             margin-right: 0 !important;
         }

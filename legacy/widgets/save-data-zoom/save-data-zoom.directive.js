@@ -24,7 +24,6 @@ function saveDataZoomDirective(optionsService) {
     function saveDataZoomLink(scope, ele, attrs, ctrl) {
         scope.widgetCtrl = ctrl[0];
 
-
         /**
          * @name initialize
          * @desc function that is called on directive load
@@ -34,7 +33,7 @@ function saveDataZoomDirective(optionsService) {
             let pixel = '';
             const saveDataZoom = optionsService.get(
                 scope.widgetCtrl.widgetId,
-                'saveDataZoom',
+                'saveDataZoom'
             );
             if (saveDataZoom) {
                 pixel +=
@@ -58,19 +57,22 @@ function saveDataZoomDirective(optionsService) {
                     (response) => {
                         const type = response.pixelReturn[0].operationType;
                         if (type.indexOf('ERROR') !== -1) {
-                            scope.widgetCtrl.alert('error', 'Failed to save data zoom');
+                            scope.widgetCtrl.alert(
+                                'error',
+                                'Failed to save data zoom'
+                            );
                         } else {
                             scope.widgetCtrl.alert(
                                 'success',
-                                'Successfully saved data zoom.',
+                                'Successfully saved data zoom.'
                             );
                         }
-                    },
+                    }
                 );
             } else {
                 scope.widgetCtrl.alert(
                     'error',
-                    'Data Zoom has not been changed.',
+                    'Data Zoom has not been changed.'
                 );
             }
         }

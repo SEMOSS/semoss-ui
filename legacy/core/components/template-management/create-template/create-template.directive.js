@@ -119,7 +119,7 @@ function createTemplateDirective(monolithService, semossCoreService) {
             const loadingId =
                     scope.createTemplate.loadingId ||
                     semossCoreService.get('queryInsightID'),
-                path = 'version/assets/template';  
+                path = 'version/assets/template';
 
             // start the file upload
             semossCoreService.emit('start-polling', {

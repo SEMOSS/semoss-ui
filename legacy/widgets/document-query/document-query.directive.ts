@@ -12,7 +12,7 @@ documentQueryDirective.$inject = [
     '$timeout',
     'semossCoreService',
     'monolithService',
-    'messageService'
+    'messageService',
 ];
 
 function documentQueryDirective(
@@ -89,8 +89,8 @@ function documentQueryDirective(
         scope.documentQuery.clearModels = clearModels;
         scope.documentQuery.preprocess = preprocess;
         scope.documentQuery.createModel = createModel;
-        scope.documentQuery.setFieldsForAIAssistant = setFieldsForAIAssistant
-        scope.documentQuery.changeModel = changeModel
+        scope.documentQuery.setFieldsForAIAssistant = setFieldsForAIAssistant;
+        scope.documentQuery.changeModel = changeModel;
 
         // Tabs
         scope.documentQuery.toggleTabs = toggleTabs;
@@ -172,7 +172,9 @@ function documentQueryDirective(
                 scope.documentQuery.history.push(scope.documentQuery.results);
 
                 // Scroll to answer
-                scope.documentQuery.scrollToEle(scope.documentQuery.history.length - 1);
+                scope.documentQuery.scrollToEle(
+                    scope.documentQuery.history.length - 1
+                );
                 scope.documentQuery.search = '';
             });
 
@@ -484,13 +486,12 @@ function documentQueryDirective(
          * @param
          * @desc scroll to chat element
          */
-        function scrollToEle(i:any): void {
-         
+        function scrollToEle(i: any): void {
             $timeout(() => {
-                const answerId = "#answer-"+i;
+                const answerId = '#answer-' + i;
                 const element = angular.element(answerId);
-                if(element[0]){
-                    element[0].scrollIntoView({behavior:"smooth"});
+                if (element[0]) {
+                    element[0].scrollIntoView({ behavior: 'smooth' });
                 }
             });
         }
@@ -544,14 +545,12 @@ function documentQueryDirective(
                         split: split,
                     };
 
-                    const json = await setFieldsForAIAssistant()
+                    const json = await setFieldsForAIAssistant();
 
-                    if(json){
-                        semossCoreService.emit('updated-docqa', json)
+                    if (json) {
+                        semossCoreService.emit('updated-docqa', json);
                     }
                     callback(output, path);
-
-
                 }
             );
         }
@@ -744,44 +743,44 @@ function documentQueryDirective(
          * @desc forms JSON to be used in ai chatbot
          */
         function generateSaveJSON() {
-            if(!scope.documentQuery.folder.path) return false
-            if(!scope.documentQuery.space.app.selected) return false
+            if (!scope.documentQuery.folder.path) return false;
+            if (!scope.documentQuery.space.app.selected) return false;
             return {
                 filePath: scope.documentQuery.folder.path.replace(
                     'version/assets/',
                     ''
                 ),
                 project: scope.documentQuery.space.app.selected,
-                modelType: scope.documentQuery.selectedModel
-            }
+                modelType: scope.documentQuery.selectedModel,
+            };
         }
-        
+
         /**
          * @name setFieldsForAIAssistant
          * @desc forms JSON to be used in ai chatbot
          */
         function setFieldsForAIAssistant() {
-            var pixelComponents = [],
-            insightID = scope.widgetCtrl
-                ? scope.widgetCtrl.insightID
-                : semossCoreService.get('queryInsightID');
+            const pixelComponents = [],
+                insightID = scope.widgetCtrl
+                    ? scope.widgetCtrl.insightID
+                    : semossCoreService.get('queryInsightID');
 
             const savedJson = generateSaveJSON();
-            if(!savedJson) return false
+            if (!savedJson) return false;
 
             const message = semossCoreService.utility.random('query-pixel');
-            
+
             pixelComponents.push({
                 type: 'panel',
                 components: [scope.widgetCtrl.panelId],
             });
-    
+
             pixelComponents.push({
                 type: 'setPanelView',
                 components: [
                     'document-query',
                     {
-                        json: savedJson
+                        json: savedJson,
                     },
                 ],
                 terminal: true,
@@ -793,15 +792,14 @@ function documentQueryDirective(
                 response: message,
             });
 
-            
-            return savedJson
+            return savedJson;
         }
 
         async function changeModel() {
-            const json = await setFieldsForAIAssistant()
+            const json = await setFieldsForAIAssistant();
 
-            if(json){
-                semossCoreService.emit('updated-docqa', json)
+            if (json) {
+                semossCoreService.emit('updated-docqa', json);
             }
         }
 
@@ -811,8 +809,8 @@ function documentQueryDirective(
          * @returns {void}
          */
         function initialize(): void {
-            console.log('setting fields')
-            setFieldsForAIAssistant()
+            console.log('setting fields');
+            setFieldsForAIAssistant();
             let openFn;
             // assign the callback
             scope.$on(

@@ -6086,13 +6086,12 @@ function pipelineDirective(
                 // if we're querying from the database, we will append the count pixel
                 if (
                     tempValues.QUERY_STRUCT &&
-                    (
-                        tempValues.QUERY_STRUCT.qsType === 'ENGINE' ||
-                        tempValues.QUERY_STRUCT.qsType === 'RAW_ENGINE_QUERY' || 
-                        tempValues.QUERY_STRUCT.qsType === 'RAW_JDBC_ENGINE_QUERY' || 
-                        tempValues.QUERY_STRUCT.qsType === 'FRAME' || 
-                        tempValues.QUERY_STRUCT.qsType === 'RAW_FRAME_QUERY'
-                    )
+                    (tempValues.QUERY_STRUCT.qsType === 'ENGINE' ||
+                        tempValues.QUERY_STRUCT.qsType === 'RAW_ENGINE_QUERY' ||
+                        tempValues.QUERY_STRUCT.qsType ===
+                            'RAW_JDBC_ENGINE_QUERY' ||
+                        tempValues.QUERY_STRUCT.qsType === 'FRAME' ||
+                        tempValues.QUERY_STRUCT.qsType === 'RAW_FRAME_QUERY')
                 ) {
                     previewData.totalCountPixelComponents = [
                         {

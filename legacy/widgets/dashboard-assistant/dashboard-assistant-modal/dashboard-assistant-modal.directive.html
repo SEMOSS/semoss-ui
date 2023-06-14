@@ -1,10 +1,13 @@
 <smss-overlay-body class="dashboard-assistant-modal">
     <loading-screen model="dashboardAssistantModal.loading"></loading-screen>
-    
+
     <!-- ISSUE: Need to be able to pass id for label on typeahead, etc.. -->
     <!-- <smss-typeahead id="'daytona'" options="['here', 'there']"></smss-typeahead> -->
 
-    <smss-btn-group class="dashboard-assistant-modal__toggle" ng-show="dashboardAssistantModal.mooseReactorPrefix === 'docquery'">
+    <smss-btn-group
+        class="dashboard-assistant-modal__toggle"
+        ng-show="dashboardAssistantModal.mooseReactorPrefix === 'docquery'"
+    >
         <smss-btn
             ng-click="dashboardAssistantModal.changePage('ASK')"
             class="smss-btn--icon"

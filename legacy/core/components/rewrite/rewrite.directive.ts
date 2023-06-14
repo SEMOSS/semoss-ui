@@ -7,8 +7,7 @@ export default angular
 
 rewriteDirective.$inject = [];
 
-function rewriteDirective(
-) {
+function rewriteDirective() {
     rewriteCtrl.$inject = [];
     rewriteLink.$inject = ['scope'];
 
