@@ -1,0 +1,73 @@
+<div class="grid12">
+    <hr style="margin: 10px 0px 10px 0px;"/>
+</div>
+
+<div class="xs-padding">
+    <p><b>Choose a visual split</b> </p>
+    <select class="ng-pristine form-control"
+            ng-model="toolPanelCtrl.selectedData.uiOptions.splitData"
+            ng-change="singleAxisClusterTools.updateVisualization('splitData', toolPanelCtrl.selectedData.uiOptions.splitData)"
+            ng-options="header.title as  (header.title | reduceStringLength: 35) for header in toolPanelCtrl.selectedData.headers">
+        <option value="">--No Viz Split--</option>
+    </select>
+    <!--<ui-select class='ng-pristine full-width' ng-model="toolPanelCtrl.selectedData.uiOptions.splitData"-->
+               <!--ng-change="singleAxisClusterTools.updateVisualization('splitData', toolPanelCtrl.selectedData.uiOptions.splitData)">-->
+        <!--<ui-select-match class="ui-select-match" placeholder="No Viz Split">-->
+            <!--<span class="overflow-ellipsis-ui-select" ng-bind="$select.selected.title"></span>-->
+        <!--</ui-select-match>-->
+        <!--<ui-select-choices class="ui-select-choices overflow-y-scroll" style="height:90px;"-->
+                           <!--repeat="header in toolPanelCtrl.selectedData.headers | filter: {title: $select.search} track by $index">-->
+            <!--<span class="overflow-ellipsis-ui-select" ng-bind="header.title"></span>-->
+        <!--</ui-select-choices>-->
+    <!--</ui-select>-->
+</div>
+
+<div class="grid12">
+    <hr style="margin: 10px 0px 10px 0px;"/>
+</div>
+
+<div class="xs-padding">
+    <p><b>Choose a color category</b> </p>
+    <select class="ng-pristine form-control"
+            ng-model="toolPanelCtrl.selectedData.uiOptions.colorDataCategory"
+            ng-change="singleAxisClusterTools.getColorSplitOptions();"
+            ng-options="header.title as (header.title | reduceStringLength: 35) for header in toolPanelCtrl.selectedData.headers">
+        <option value="">--No Color Split--</option>
+    </select>
+    <!--<ui-select class='ng-pristine full-width' ng-model="toolPanelCtrl.selectedData.uiOptions.colorDataCategory"-->
+               <!--ng-change="singleAxisClusterTools.getColorSplitOptions()">-->
+        <!--<ui-select-match class="ui-select-match" placeholder="No Color Split">-->
+            <!--<span class="overflow-ellipsis-ui-select" ng-bind="$select.selected.title"></span>-->
+        <!--</ui-select-match>-->
+        <!--<ui-select-choices class="ui-select-choices overflow-y-scroll" style="height:90px;"-->
+                                                <!--repeat="header in toolPanelCtrl.selectedData.headers | filter: {title: $select.search} track by $index">-->
+            <!--<span class="overflow-ellipsis-ui-select" ng-bind="header.title"></span>-->
+        <!--</ui-select-choices>-->
+    <!--</ui-select>-->
+</div>
+
+<div ng-show="singleAxisClusterTools.showColorSplit">
+    <div class="grid12">
+        <hr style="margin: 10px 0px 10px 0px;"/>
+    </div>
+
+    <div class="xs-padding">
+        <p><b>Choose a color instance</b> </p>
+        <select class="ng-pristine form-control"
+                ng-model="toolPanelCtrl.selectedData.uiOptions.colorDataInstance"
+                ng-change="singleAxisClusterTools.updateVisualization('colorDataInstance', toolPanelCtrl.selectedData.uiOptions.colorDataInstance);"
+                ng-options="(data | reduceStringLength: 35) for data in singleAxisClusterTools.colorSplitOptions">
+            <option value="">--No Color Split--</option>
+        </select>
+        <!--<ui-select class='ng-pristine full-width' ng-model="toolPanelCtrl.selectedData.uiOptions.colorDataInstance"-->
+                   <!--ng-change="singleAxisClusterTools.updateVisualization('colorDataInstance', toolPanelCtrl.selectedData.uiOptions.colorDataInstance)">-->
+            <!--<ui-select-match class="ui-select-match" placeholder="No Color Split">-->
+                <!--<span class="overflow-ellipsis-ui-select" ng-bind="$select.selected"></span>-->
+            <!--</ui-select-match>-->
+            <!--<ui-select-choices class="ui-select-choices"-->
+                               <!--repeat="data in singleAxisClusterTools.colorSplitOptions | filter: $select.search track by $index">-->
+                <!--<span class="overflow-ellipsis-ui-select" ng-bind="data"></span>-->
+            <!--</ui-select-choices>-->
+        <!--</ui-select>-->
+    </div>
+</div>

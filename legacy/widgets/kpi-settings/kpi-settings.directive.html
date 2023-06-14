@@ -1,0 +1,205 @@
+<smss-scroll static-x="true">
+    <smss-field>
+        <label> Select Column: </label>
+        <content>
+            <smss-dropdown
+                model="kpiSettings.dimensions.selected"
+                options="kpiSettings.dimensions.options"
+                change="kpiSettings.updateSelectedDimension()"
+            >
+            </smss-dropdown>
+        </content>
+    </smss-field>
+
+    <smss-field>
+        <label>Set Font Color: </label>
+        <content>
+            <smss-color-picker
+                color-theme="kpiSettings.colorTheme"
+                model="kpiSettings.options.kpiColor"
+            >
+            </smss-color-picker>
+        </content>
+    </smss-field>
+
+    <smss-field>
+        <label>Set Background Color: </label>
+        <content>
+            <smss-color-picker
+                color-theme="kpiSettings.colorTheme"
+                model="kpiSettings.options.kpiBackgroundColor"
+            >
+            </smss-color-picker>
+        </content>
+    </smss-field>
+
+    <smss-field>
+        <label> Select Font Family: </label>
+        <content>
+            <smss-dropdown
+                model="kpiSettings.options.kpiFontFamily"
+                display="display"
+                value="value"
+                change="kpiSettings.applyFontFamily()"
+                options="kpiSettings.fontOptions"
+            >
+                <smss-dropdown-toggle>
+                    <div
+                        ng-style="{'font-family': kpiSettings.options.kpiFontFamily}"
+                    >
+                        {{$parent.smssDropdown.getOption($parent.smssDropdown.model).display}}
+                    </div>
+                </smss-dropdown-toggle>
+                <smss-dropdown-list>
+                    <div ng-style="{'font-family': $parent.opt.value}">
+                        {{$parent.opt.display}}
+                    </div>
+                </smss-dropdown-list>
+            </smss-dropdown>
+        </content>
+    </smss-field>
+
+    <smss-field>
+        <label> Set Value Font Size (px): </label>
+        <content>
+            <smss-input
+                ng-model="kpiSettings.options.kpiValueSize"
+                type="number"
+            ></smss-input>
+        </content>
+    </smss-field>
+
+    <smss-field>
+        <label> Set Title Font Size (px): </label>
+        <content>
+            <smss-input
+                ng-model="kpiSettings.options.kpiTitleSize"
+                type="number"
+            ></smss-input>
+        </content>
+    </smss-field>
+
+    <smss-field ng-show="kpiSettings.dimensions.selected !== 'All Dimensions'">
+        <label> Update Title: </label>
+        <content>
+            <smss-textArea
+                ng-model="kpiSettings.options.kpiTitleText"
+            ></smss-textArea>
+        </content>
+    </smss-field>
+
+    <smss-field>
+        <label> Select KPI Alignment: </label>
+        <content>
+            <smss-dropdown
+                model="kpiSettings.options.kpiJustification"
+                display="display"
+                value="value"
+                options="kpiSettings.justificationOptions"
+            >
+            </smss-dropdown>
+        </content>
+    </smss-field>
+
+    <div class="smss-spacing">
+        <smss-checkbox
+            model="kpiSettings.options.kpiVerticalAlign"
+            ng-show="kpiSettings.dimensions.selected === 'All Dimensions'"
+        >
+            Align Vertically
+        </smss-checkbox>
+    </div>
+
+    <div class="smss-spacing">
+        <smss-checkbox model="kpiSettings.options.kpiBorder">
+            Add Border Box
+        </smss-checkbox>
+    </div>
+
+    <smss-field ng-show="kpiSettings.options.kpiBorder">
+        <label>Set Border Color: </label>
+        <content>
+            <smss-color-picker
+                color-theme="kpiSettings.colorTheme"
+                model="kpiSettings.options.kpiBorderColor"
+            >
+            </smss-color-picker>
+        </content>
+    </smss-field>
+
+    <smss-field ng-show="kpiSettings.options.kpiBorder">
+        <label> Set Border Width (px): </label>
+        <content>
+            <smss-input
+                ng-model="kpiSettings.options.kpiBorderWidth"
+                type="number"
+            ></smss-input>
+        </content>
+    </smss-field>
+
+    <smss-field ng-show="kpiSettings.options.kpiBorder">
+        <label> Select Border Style: </label>
+        <content>
+            <smss-dropdown
+                model="kpiSettings.options.kpiBorderStyle"
+                display="display"
+                value="value"
+                options="kpiSettings.borderOptions"
+            >
+            </smss-dropdown>
+        </content>
+    </smss-field>
+
+    <div class="smss-spacing">
+        <smss-checkbox model="kpiSettings.options.kpiAutoScale">
+            Autoscale to Fit
+        </smss-checkbox>
+    </div>
+
+    <div class="smss-spacing" ng-show="!kpiSettings.options.kpiAutoScale">
+        <smss-checkbox model="kpiSettings.options.kpiWrapTitle">
+            Wrap Title Text
+        </smss-checkbox>
+    </div>
+
+    <!--TODO remove when functional team approves-->
+    <!-- <smss-field>
+        <label>Select Format: </label>
+        <content>
+            <smss-dropdown model="kpiSettings.options.kpiFormat"
+                        ng-disabled="kpiSettings.formatDataValuesApplied"
+                        options="['None','$ USD','% Percentage']">
+            </smss-dropdown>
+        </content>
+    </smss-field>
+
+    <smss-field>
+        <content>
+            <smss-checkbox model="kpiSettings.options.kpiRound"
+                        ng-disabled="kpiSettings.formatDataValuesApplied"
+                        >
+                Round Value
+            </smss-checkbox>
+        </content>
+    </smss-field>
+
+    <smss-field ng-show="kpiSettings.options.kpiRound">
+        <label>Enter Decimal Places: </label>
+        <content>
+            <smss-input ng-model="kpiSettings.options.kpiRoundShift"
+                        ng-disabled="kpiSettings.formatDataValuesApplied"
+                        type="number"></smss-input>
+        </content>
+    </smss-field>  
+
+    <br>
+    <div ng-show="kpiSettings.formatDataValuesApplied"><b>*Note:</b>&nbsp;Format Data Values widget must be disabled to change kpi format settings</div>
+    <br> -->
+
+    <div class="smss-action">
+        <!-- <smss-btn ng-click='kpiSettings.reset()'>
+            Reset
+        </smss-btn> -->
+        <smss-btn ng-click="kpiSettings.execute()"> Execute </smss-btn>
+    </div>
+</smss-scroll>

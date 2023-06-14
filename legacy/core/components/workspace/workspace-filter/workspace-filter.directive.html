@@ -1,0 +1,25 @@
+<div id="workspace-filter" class="workspace-filter">
+    <smss-field inline>
+        <label>Filter:</label>
+        <content class="smss-field__content-overflow">
+            <smss-dropdown
+                model="workspaceFilter.frames.selected"
+                options="workspaceFilter.frames.options"
+                placeholder="Select a Frame"
+                change="workspaceFilter.selectFilter(workspaceFilter.frames.selected)"
+                body="false"
+            >
+            </smss-dropdown>
+        </content>
+    </smss-field>
+    <query-struct-filter
+        type="'frame'"
+        source="workspaceFilter.frames.selected"
+        columns="workspaceFilter.frames.columns[workspaceFilter.frames.selected]"
+        filter="workspaceFilter.selectedFrameFilterQS"
+        meta="insightCtrl.meta"
+        register="workspaceFilter.registerFrameFilter(getFilter)"
+    >
+        <smss-btn ng-click="workspaceFilter.applyFilter()"> Apply </smss-btn>
+    </query-struct-filter>
+</div>

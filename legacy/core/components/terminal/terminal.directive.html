@@ -1,0 +1,284 @@
+<div class="terminal">
+    <div
+        class="terminal__wrapper drop-zone"
+        flow-name="terminal.flow"
+        flow-file-added="terminal.openUpload($file);"
+        flow-init="{singleFile: true}"
+        flow-drop
+        flow-drop-enabled="(terminal.options.mode === 'editor' || terminal.options.mode == 'asset')"
+        ng-class="(terminal.options.mode === 'editor' || terminal.options.mode == 'asset') ? dropClass2 : ''"
+        flow-drag-enter="dropClass2='drop-zone--enter'"
+        flow-drag-leave="dropClass2=''"
+    >
+        <div class="terminal__header" ng-if="terminal.location !== 'pipeline'">
+            <div class="terminal__header__section">
+                <span class="terminal__header__title" ng-show="terminal.title">
+                    {{terminal.title}}
+                </span>
+                <smss-field inline class="terminal__header__mode">
+                    <label>Select Mode:</label>
+                    <content>
+                        <smss-radio
+                            model="terminal.options.mode"
+                            change="terminal.updateTerminalMode('repl')"
+                            value="repl"
+                            >REPL</smss-radio
+                        >
+                        <smss-radio
+                            model="terminal.options.mode"
+                            change="terminal.updateTerminalMode('editor')"
+                            value="editor"
+                            >Editor</smss-radio
+                        >
+                    </content>
+                </smss-field>
+            </div>
+            <div
+                class="terminal__header__section"
+                ng-class="{'terminal__header__section--side' : terminal.options.view === 'side'}"
+            >
+                <smss-btn
+                    ng-if="(terminal.location === 'workspace' || terminal.location === 'popup') && terminal.options.view === 'side'"
+                    ng-click="$event.stopPropagation()"
+                    class="smss-btn--icon"
+                    smss-popover
+                    title="Dock Menu"
+                >
+                    <i class="fa fa-ellipsis-v"></i>
+                    <smss-popover-content
+                        class="smss-popover-content--compact"
+                        position="['SW', 'SE']"
+                        closeable="false"
+                    >
+                        <smss-tab-group>
+                            <smss-tab
+                                title="Inline"
+                                class="smss-tab--small"
+                                ng-click="terminal.updateTerminalView('inline')"
+                            >
+                                <i class="fa fa-indent" />
+                            </smss-tab>
+                            <smss-tab
+                                title="Overlay"
+                                class="smss-tab--small"
+                                ng-click="terminal.updateTerminalView('overlay')"
+                            >
+                                <i class="fa fa-window-maximize" />
+                            </smss-tab>
+                            <smss-tab
+                                title="Side"
+                                class="smss-tab--small smss-tab--selected"
+                                ng-click="terminal.updateTerminalView('side')"
+                            >
+                                <i class="fa fa-window-maximize fa-rotate-90" />
+                            </smss-tab>
+                            <smss-tab
+                                title="Pop out into New Window"
+                                class="smss-tab--small"
+                                ng-click="terminal.updateTerminalView('popup');"
+                            >
+                                <i class="fa fa-external-link" />
+                            </smss-tab>
+                        </smss-tab-group>
+                    </smss-popover-content>
+                </smss-btn>
+                <smss-tab-group
+                    ng-if="(terminal.location === 'workspace' || terminal.location === 'popup') && terminal.options.view !== 'side'"
+                >
+                    <smss-tab
+                        title="Inline"
+                        class="smss-tab--small"
+                        ng-click="terminal.updateTerminalView('inline')"
+                        ng-class="{'smss-tab--selected': terminal.options.view === 'inline'}"
+                    >
+                        <i class="fa fa-indent" />
+                    </smss-tab>
+                    <smss-tab
+                        title="Overlay"
+                        class="smss-tab--small"
+                        ng-click="terminal.updateTerminalView('overlay')"
+                        ng-class="{'smss-tab--selected': terminal.options.view === 'overlay'}"
+                    >
+                        <i class="fa fa-window-maximize" />
+                    </smss-tab>
+                    <smss-tab
+                        title="Side"
+                        class="smss-tab--small"
+                        ng-click="terminal.updateTerminalView('side')"
+                        ng-class="{'smss-tab--selected': terminal.options.view === 'side'}"
+                    >
+                        <i class="fa fa-window-maximize fa-rotate-90" />
+                    </smss-tab>
+                    <smss-tab
+                        title="Pop out into New Window"
+                        ng-if="terminal.location !== 'popup'"
+                        class="smss-tab--small"
+                        ng-click="terminal.updateTerminalView('popup');"
+                    >
+                        <i class="fa fa-external-link" />
+                    </smss-tab>
+                    <smss-tab
+                        title="Pop in into Window"
+                        ng-if="terminal.location === 'popup'"
+                        class="smss-tab--small smss-tab--selected"
+                        ng-click="terminal.updateTerminalView('overlay');"
+                    >
+                        <i class="fa fa-external-link fa-rotate-90"></i>
+                    </smss-tab>
+                </smss-tab-group>
+                <smss-btn
+                    ng-show="terminal.location === 'workspace' || terminal.location === 'popup'"
+                    ng-click="terminal.closeTerminal()"
+                    class="smss-btn--icon smss-btn--left"
+                    title="Close Terminal"
+                >
+                    <i class="fa fa-times smss-color--error"></i>
+                </smss-btn>
+            </div>
+        </div>
+        <div
+            class="terminal__content"
+            ng-class="{'terminal__content--pipeline' : terminal.location === 'pipeline'}"
+            id="terminal__content"
+        >
+            <div
+                id="terminal__browser"
+                class="terminal__browser"
+                ng-show="terminal.options.mode === 'editor' || terminal.options.mode == 'asset'"
+            >
+                <smss-scroll>
+                    <terminal-browser
+                        ng-if="terminal.options.mode === 'editor' || terminal.options.mode == 'asset'"
+                    ></terminal-browser>
+                </smss-scroll>
+            </div>
+            <div
+                id="terminal__file"
+                class="terminal__file"
+                ng-show="terminal.options.mode === 'editor' || terminal.options.mode == 'asset'"
+                ng-class="{'terminal__file--full':terminal.options.mode == 'asset'}"
+            >
+                <terminal-file
+                    ng-if="terminal.options.mode === 'editor' || terminal.options.mode == 'asset'"
+                ></terminal-file>
+            </div>
+            <div
+                id="terminal__console"
+                class="terminal__console"
+                ng-show="terminal.options.mode == 'repl' || terminal.options.mode == 'editor'"
+                ng-class="{'terminal__console--full':terminal.options.mode === 'repl'}"
+            >
+                <terminal-console
+                    ng-if="terminal.options.mode == 'repl' || terminal.options.mode == 'editor'"
+                ></terminal-console>
+            </div>
+        </div>
+    </div>
+    <smss-overlay ng-show="terminal.upload.open" open="terminal.upload.open">
+        <smss-overlay-header>Upload</smss-overlay-header>
+        <smss-overlay-body>
+            <div
+                flow-name="terminal.upload.flow"
+                flow-init
+                flow-drop
+                ng-class="dropClass2"
+                flow-drag-enter="dropClass2='drop-zone--enter'"
+                flow-drag-leave="dropClass2=''"
+                class="drop-zone drop-zone--borderless"
+            >
+                <smss-field>
+                    <label> Select File: </label>
+                    <content>
+                        <div
+                            class="drop-zone__container"
+                            ng-class="{'drop-zone__container--upload': terminal.upload.flow.files.length > 0}"
+                        >
+                            <div
+                                class="drop-zone__message"
+                                ng-if="!terminal.upload.flow || terminal.upload.flow.files.length == 0"
+                            >
+                                <div class="drop-zone__message__icon">
+                                    <i class="fa fa-folder"></i>
+                                </div>
+                                <div class="drop-zone__message__text">
+                                    Drag and drop files
+                                </div>
+                                <smss-btn
+                                    class="smss-btn--outline smss-btn--compact"
+                                    flow-btn
+                                    autofocus
+                                    >or upload</smss-btn
+                                >
+                            </div>
+                            <div
+                                ng-repeat="file in terminal.upload.flow.files track by $index"
+                                class="drop-zone__file"
+                            >
+                                <div class="drop-zone__file__icon">
+                                    <i class="fa fa-file"></i>
+                                </div>
+                                <div
+                                    class="drop-zone__file__text"
+                                    title="{{file.name}}"
+                                >
+                                    {{file.name}}
+                                </div>
+                                <smss-btn
+                                    ng-click="importFile.cancelFiles(file)"
+                                    class="smss-btn--outline smss-btn--compact"
+                                >
+                                    Remove
+                                </smss-btn>
+                            </div>
+                        </div>
+                    </content>
+                </smss-field>
+            </div>
+
+            <smss-field>
+                <label> Comment: </label>
+                <content>
+                    <smss-input ng-model="terminal.upload.comment"></smss-input>
+                </content>
+            </smss-field>
+        </smss-overlay-body>
+        <smss-overlay-footer>
+            <smss-btn ng-click="terminal.closeUpload()" class="smss-btn--text">
+                Cancel
+            </smss-btn>
+            <smss-btn ng-click="terminal.saveUpload()"> Upload </smss-btn>
+        </smss-overlay-footer>
+    </smss-overlay>
+    <smss-overlay ng-show="terminal.save.open" open="terminal.save.open">
+        <smss-overlay-header>Save</smss-overlay-header>
+        <smss-overlay-body>
+            <smss-field>
+                <label> Name: </label>
+                <content>
+                    <smss-input
+                        ng-disabled="!terminal.save.selected.new"
+                        ng-model="terminal.save.name"
+                        autofocus
+                    ></smss-input>
+                </content>
+            </smss-field>
+            <smss-field>
+                <label> Comment: </label>
+                <content>
+                    <smss-input ng-model="terminal.save.comment"></smss-input>
+                </content>
+            </smss-field>
+        </smss-overlay-body>
+        <smss-overlay-footer>
+            <smss-btn ng-click="terminal.closeSave()" class="smss-btn--text">
+                Cancel
+            </smss-btn>
+            <smss-btn
+                ng-disabled="!terminal.save.name || !terminal.save.comment"
+                ng-click="terminal.saveSave()"
+            >
+                Save
+            </smss-btn>
+        </smss-overlay-footer>
+    </smss-overlay>
+</div>

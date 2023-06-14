@@ -1,0 +1,37 @@
+@import '~theme';
+
+.smss-file {
+    &__action {
+        color: get-text-color('primary');
+        position: relative;
+        cursor: pointer;
+        &:hover {
+            color: get-text-color('primary--hover');
+        }
+    }
+
+    &__input {
+        display: flex;
+        margin-bottom: get-spacing('md', 'em');
+    }
+
+    &__name {
+        margin-left: get-spacing('xs', 'em');
+    }
+
+    input[type='file'] {
+        border: 0;
+        clip-path: inset(50%);
+        clip: rect(0, 0, 0, 0);
+        height: 1px;
+        overflow: hidden;
+        padding: 0;
+        position: absolute;
+        white-space: nowrap;
+        width: 1px;
+    }
+
+    i {
+        margin-right: get-spacing('xs', 'em');
+    }
+}

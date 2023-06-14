@@ -1,0 +1,57 @@
+<div class="widget-sidebar-pop-out">
+
+    <div class="grid12">
+        <p class="xs-padding border-bottom"><b> Traverse </b></p>
+        <a ng-show="traversePanel.showTraverseMessage" class="traverse-message disabled">
+            <span>Please select data from the graph to view traverse options.</span>
+        </a>
+        <div class="xs-padding" ng-show="!traversePanel.showTraverseMessage">
+            <div class="slider-row pointer"
+                 ng-click="traversePanel.getExternalTraverseOptions()">
+                <i class="pull-left fa"
+                   ng-class="{'fa-caret-down': traversePanel.toggleTraverseEngines, 'fa-caret-right': !traversePanel.toggleTraverseEngines}"></i>
+                <b>Select DB:</b> {{traversePanel.traverseObj.selectedEngine | replaceUnderscores}}
+            </div>
+
+            <div class="panel-collapse pointer border xs-btm-margin" ng-show="traversePanel.toggleTraverseEngines"
+                 ng-click="traversePanel.toggleTraverseEngines = false">
+                <a class="slider-row pointer"
+                   ng-click="traversePanel.dbSelectAll = true; traversePanel.traverseObj.selectedEngine='All_DBs'">
+                    Select All
+                    <i class="pull-right" ng-class="{'fa fa-check': traversePanel.dbSelectAll}"></i>
+                </a>
+                <a class="slider-row pointer" ng-repeat="(key, value) in traversePanel.traverseObj.list"
+                   ng-click="traversePanel.traverseObj.selectedEngine = key" ng-show="key !== 'All_DBs'">
+                    {{key | replaceUnderscores}}
+                    <i class="pull-right"
+                       ng-class="{'fa fa-check': traversePanel.traverseObj.selectedEngine === key && !traversePanel.dbSelectAll}"></i>
+                </a>
+            </div>
+
+            <div class="input-group">
+                <input type="text" class="form-control" placeholder="Search" ng-model="traversePanel.nodeFilter.name"/>
+                <span class="input-group-addon">
+                    <i class="fa fa-search"></i>
+                </span>
+            </div>
+
+            <div class="overflow-auto pointer border">
+                <a class="slider-row"
+                   ng-repeat="node in traversePanel.traverseObj.list[traversePanel.traverseObj.selectedEngine] | filter: traversePanel.nodeFilter"
+                   ng-click="traversePanel.setTraversal(node)">
+                    <span>
+                        {{node.name}}
+                    </span>
+                    <i class="fa fa-arrow-circle-down pull-right"
+                       title="Downstream"
+                       ng-if="node.direction === 'upstream'"></i>
+                    <i class="fa fa-arrow-circle-up pull-right"
+                       title="Upstream"
+                       ng-if="node.direction === 'downstream'"></i>
+                    <span class="xs-font color-gray show">{{node.db[0].name | replaceUnderscores}}</span>
+                </a>
+            </div>
+        </div>
+    </div>
+
+</div>

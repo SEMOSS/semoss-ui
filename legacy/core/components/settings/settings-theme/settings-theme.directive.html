@@ -1,0 +1,182 @@
+<div class="settings-theme">
+    <smss-scroll static-x="true">
+        <div
+            ng-repeat="option in settingsTheme.themes.list"
+            ng-class="{'smss-card-inline--selected': option.id === settingsTheme.themes.active.id}"
+            class="smss-card-inline"
+            ng-click="settingsTheme.selectTheme(option);"
+        >
+            <div class="smss-card-inline__image">
+                <img
+                    ng-if="option.theme.homeImage"
+                    ng-src="{{option.theme.homeImage}}"
+                    alt="Home-Image"
+                />
+            </div>
+            <div class="smss-card-inline__content">
+                <div class="smss-card-inline__content__header">
+                    <h5 class="smss-card-inline__content__header__title">
+                        {{option.name}}
+                    </h5>
+                </div>
+                <div class="smss-card-inline__content__description"></div>
+            </div>
+
+            <div class="smss-card-inline__action">
+                <smss-btn
+                    ng-click="$event.stopPropagation()"
+                    class="smss-btn--icon"
+                    title="Show Menu"
+                    smss-popover
+                >
+                    <i class="fa fa-ellipsis-v"></i>
+                    <smss-popover-content
+                        class="settings-theme__popover"
+                        position="['SW', 'SE']"
+                        model="option.open"
+                    >
+                        <ul class="settings-theme__popover__options">
+                            <li
+                                class="settings-theme__popover__options__option"
+                                ng-click="$event.stopPropagation();settingsTheme.openThemeForm('edit', option);option.open = false;"
+                            >
+                                Edit
+                            </li>
+                            <li
+                                class="settings-theme__popover__options__option"
+                                ng-click="$event.stopPropagation();settingsTheme.deleteTheme(option);"
+                            >
+                                Delete
+                            </li>
+                        </ul>
+                    </smss-popover-content>
+                </smss-btn>
+            </div>
+        </div>
+        <div class="smss-action">
+            <smss-btn ng-click="settingsTheme.openThemeForm('create')">
+                <i class="fa fa-plus"></i>
+                Create New Theme
+            </smss-btn>
+        </div>
+    </smss-scroll>
+
+    <smss-overlay class="settings-theme__form" open="settingsTheme.form.open">
+        <smss-overlay-header>Edit Theme</smss-overlay-header>
+        <smss-overlay-body>
+            <smss-field>
+                <label>Theme Name:</label>
+                <content>
+                    <smss-input ng-model="settingsTheme.form.name"></smss-input>
+                </content>
+            </smss-field>
+            <smss-field>
+                <label>Home Icon Name:</label>
+                <content>
+                    <smss-input
+                        ng-model="settingsTheme.form.theme.homeName"
+                    ></smss-input>
+                </content>
+            </smss-field>
+            <smss-field>
+                <label
+                    >Home Icon Image URL (fixed size of 28 x 28 pixels):</label
+                >
+                <content>
+                    <smss-input
+                        ng-model="settingsTheme.form.theme.homeImage"
+                        placeholder="Enter valid image url (.svg preferred)"
+                    ></smss-input>
+                </content>
+            </smss-field>
+            <smss-field>
+                <label>Main Background Image URL:</label>
+                <content>
+                    <smss-input
+                        ng-model="settingsTheme.form.theme.backgroundImage"
+                        placeholder="Enter valid image url (.png, .jpg, .jpeg, .gif)"
+                    >
+                    </smss-input>
+                </content>
+            </smss-field>
+            <smss-field ng-if="settingsTheme.form.theme.backgroundImage">
+                <label>Main Background Image Opacity:</label>
+                <content>
+                    <smss-slider
+                        model="settingsTheme.form.theme.backgroundImageOpacity"
+                        min="0.01"
+                        max="1"
+                        sensitivity="0.01"
+                        numerical
+                    >
+                    </smss-slider>
+                </content>
+            </smss-field>
+            <smss-field>
+                <label>Visualizations Color Palette:</label>
+                <content>
+                    <smss-dropdown
+                        model="settingsTheme.form.theme.visualizationColorPalette"
+                        options="settingsTheme.color.options"
+                        value="value"
+                        display="display"
+                        placeholder="Semoss"
+                    >
+                        <smss-dropdown-toggle>
+                            <div class="settings-theme__dropdown__text">
+                                {{$parent.smssDropdown.getOption($parent.smssDropdown.model).display}}
+                            </div>
+                            <div class="settings-theme__dropdown__colors">
+                                <div
+                                    class="settings-theme__dropdown__colors__group__options"
+                                    ng-repeat="color in $parent.smssDropdown.getOption($parent.smssDropdown.model).colors"
+                                    ng-style="{'background-color': (color)}"
+                                    title="{{color}}"
+                                ></div>
+                            </div>
+                        </smss-dropdown-toggle>
+                        <smss-dropdown-list>
+                            <div class="settings-theme__dropdown__text">
+                                {{$parent.opt.display}}
+                            </div>
+                            <div class="settings-theme__dropdown__colors">
+                                <div
+                                    class="settings-theme__dropdown__colors__group__options"
+                                    ng-repeat="color in $parent.opt.colors"
+                                    ng-style="{'background-color': (color)}"
+                                    title="{{color}}"
+                                ></div>
+                            </div>
+                        </smss-dropdown-list>
+                    </smss-dropdown>
+                </content>
+            </smss-field>
+        </smss-overlay-body>
+        <smss-overlay-footer>
+            <smss-btn
+                class="smss-btn--text"
+                ng-click="settingsTheme.closeThemeForm();"
+            >
+                Cancel
+            </smss-btn>
+            <smss-btn
+                ng-if="settingsTheme.form.type === 'edit';"
+                ng-click="settingsTheme.editTheme('update');"
+            >
+                Update
+            </smss-btn>
+            <smss-btn
+                ng-if="settingsTheme.form.type === 'edit';"
+                ng-click="settingsTheme.editTheme('new');"
+            >
+                Save as New
+            </smss-btn>
+            <smss-btn
+                ng-if="settingsTheme.form.type === 'create';"
+                ng-click="settingsTheme.createTheme();"
+            >
+                Save
+            </smss-btn>
+        </smss-overlay-footer>
+    </smss-overlay>
+</div>

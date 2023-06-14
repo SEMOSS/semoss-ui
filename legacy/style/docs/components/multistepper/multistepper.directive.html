@@ -1,0 +1,50 @@
+<div>
+    <smss-field>
+        <content>
+            <smss-multistepper>
+                <smss-multistepper-item
+                    ng-repeat="step in steps"
+                    ng-click="updateState(step)"
+                    name="step.name"
+                    state="step.currentState"
+                >
+                    {{step.name}}
+                </smss-multistepper-item>
+            </smss-multistepper>
+            <smss-multistepper vertical style="display: inline-block">
+                <smss-multistepper-item
+                    ng-repeat="step in steps"
+                    name="step.name"
+                    state="step.currentState"
+                >
+                    {{step.name}}
+                </smss-multistepper-item>
+            </smss-multistepper>
+            <smss-multistepper>
+                <smss-multistepper-item state="'optional'">
+                    Optional
+                </smss-multistepper-item>
+            </smss-multistepper>
+            <smss-multistepper>
+                <smss-multistepper-item state="'completed'">
+                    Completed
+                </smss-multistepper-item>
+            </smss-multistepper>
+            <smss-multistepper>
+                <smss-multistepper-item state="'active'">
+                    Active
+                </smss-multistepper-item>
+            </smss-multistepper>
+            <smss-multistepper>
+                <smss-multistepper-item state="'error'">
+                    Error
+                </smss-multistepper-item>
+            </smss-multistepper>
+            <smss-multistepper>
+                <smss-multistepper-item state="'default'" ng-disabled="true">
+                    Disabled
+                </smss-multistepper-item>
+            </smss-multistepper>
+        </content>
+    </smss-field>
+</div>

@@ -1,0 +1,36 @@
+@import '~theme';
+
+.metamodel-relationships {
+    &__join {
+        width: 100%;
+        display: flex;
+        align-items: center;
+        margin: get-spacing('sm', 'rem') 0;
+
+        &__text {
+            width: 8 * get-spacing('sm', 'rem');
+            text-align: center;
+            flex-shrink: 0;
+        }
+        &__dropdown {
+            flex: 1;
+            overflow: hidden;
+            &--margin {
+                margin-right: get-spacing('sm', 'rem');
+            }
+            &--no-margin {
+                margin-right: 0;
+            }
+        }
+        &__btn {
+            margin: 0 get-spacing('sm', 'rem');
+            flex-shrink: 0;
+        }
+        &__spacer {
+            height: get-height('icon', 'rem');
+            width: get-width('icon', 'rem');
+            margin: 0 get-spacing('sm', 'rem');
+            flex-shrink: 0;
+        }
+    }
+}

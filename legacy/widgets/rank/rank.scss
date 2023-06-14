@@ -1,0 +1,14 @@
+@import '~theme';
+
+.rank {
+    &__column {
+        &__content {
+            width: calc(100% - #{get-width('icon', 'em')});
+            padding-left: get-spacing('sm', 'em');
+            padding-bottom: get-spacing('sm', 'em');
+            & .smss-dropdown {
+                margin-bottom: get-spacing('xs', 'em');
+            }
+        }
+    }
+}

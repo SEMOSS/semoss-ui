@@ -1,0 +1,41 @@
+<smss-scroll static-x="true">
+    <smss-field>
+        <label> From: </label>
+        <content>
+            <smss-dropdown
+                options="parcoordsAddCount.overlapSelectedDropDown.list"
+                model="parcoordsAddCount.overlapSelectedDropDown.selected"
+                change="parcoordsAddCount.removeSelected(parcoordsAddCount.overlapSelectedDropDown.selected)"
+            >
+            </smss-dropdown>
+        </content>
+    </smss-field>
+
+    <smss-field>
+        <label> To: </label>
+        <content>
+            <smss-dropdown
+                options="parcoordsAddCount.overlapRelatedDropDown.list"
+                model="parcoordsAddCount.overlapRelatedDropDown.selected"
+            >
+            </smss-dropdown>
+        </content>
+    </smss-field>
+
+    <smss-field>
+        <content>
+            <smss-checkbox model="parcoordsAddCount.uniqueCount">
+                Unique Count
+            </smss-checkbox>
+        </content>
+    </smss-field>
+
+    <div class="smss-action">
+        <smss-btn
+            ng-disabled="!parcoordsAddCount.overlapSelectedDropDown.selected || !parcoordsAddCount.overlapRelatedDropDown.selected"
+            ng-click="parcoordsAddCount.addCount(parcoordsAddCount.overlapSelectedDropDown.selected, parcoordsAddCount.overlapRelatedDropDown.selected, parcoordsAddCount.uniqueCount);"
+        >
+            Execute
+        </smss-btn>
+    </div>
+</smss-scroll>

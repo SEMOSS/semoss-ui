@@ -1,0 +1,70 @@
+@import '~theme';
+
+.pipeline-existing-insights {
+    position: absolute;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+
+    &__top {
+        width: 100%;
+        max-width: 720px;
+        margin: 0 auto;
+        display: flex;
+        align-items: center;
+
+        &__filter {
+            margin-right: get-spacing('sm', 'em');
+            width: get-width('icon', 'em');
+
+            & .smss-dropdown__toggle__icon::after {
+                font-family: FontAwesome;
+                content: '\f0b0';
+                color: get-text-color('default');
+            }
+        }
+
+        &__input {
+            flex: 1;
+
+            &--app {
+                margin-right: get-spacing('sm', 'em');
+            }
+
+            &--search {
+                margin-left: get-spacing('sm', 'em');
+            }
+        }
+
+        &__btn {
+            margin-left: get-spacing('sm', 'em');
+            width: get-width('icon', 'em');
+        }
+    }
+
+    &__content {
+        flex: 1;
+
+        &__cards {
+            max-width: 1200px;
+            display: flex;
+            margin: 0 auto;
+            flex-wrap: wrap;
+
+            &__card {
+                width: calc((100% / 3) - #{get-spacing('gutter', 'em')});
+                margin-right: get-spacing('gutter', 'em');
+                margin-bottom: get-spacing('gutter', 'em');
+            }
+        }
+    }
+    &__actions {
+        & > :last-child {
+            margin-right: $scroll-size !important;
+        }
+    }
+}

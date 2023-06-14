@@ -1,0 +1,49 @@
+<div class="change-image">
+    <div class="change-image__select">
+        <div class="change-image__label">Select from</div>
+        <div class="change-image__images">
+            <div
+                class="change-image__image"
+                ng-repeat="(i, image) in changeImage.images.options"
+                ng-class="{ 
+                    'change-image__image--selected': image.name === changeImage.images.selected.name 
+                }"
+                ng-click="changeImage.selectImage(image)"
+            >
+                <img ng-src="{{image.url}}" alt="{{image.title}}" />
+                <i
+                    class="change-image__delete change-image__delete__background fa fa-circle"
+                    ng-click="changeImage.removeImage()"
+                    ng-if="changeImage.allowDelete"
+                ></i>
+                <i
+                    class="change-image__delete fa fa-minus-circle"
+                    ng-click="changeImage.removeImage()"
+                    ng-if="changeImage.allowDelete"
+                ></i>
+            </div>
+        </div>
+    </div>
+    <div class="change-image__upload">
+        <smss-file
+            file="changeImage.file"
+            on-change="changeImage.setFile(file)"
+        >
+        </smss-file>
+        <div class="change-image__image-cropper" ng-if="changeImage.file">
+            <p>Select the area to use for your profile</p>
+            <smss-image-cropper
+                file="changeImage.file"
+                on-discard="changeImage.removeFile()"
+                on-crop="changeImage.addImage(image)"
+            >
+            </smss-image-cropper>
+        </div>
+    </div>
+    <div class="change-image__action">
+        <smss-btn class="smss-btn--text" ng-click="changeImage.hide()"
+            >Cancel</smss-btn
+        >
+        <smss-btn ng-click="changeImage.save()">Save</smss-btn>
+    </div>
+</div>

@@ -1,0 +1,240 @@
+@import '~theme';
+
+.browser {
+    position: relative;
+    height: 100%;
+    width: 100%;
+    padding: 0 $scroll-size get-spacing('sm', 'em') $scroll-size;
+    overflow: hidden;
+    background: get-background-color('default');
+    display: flex;
+    flex-direction: column;
+
+    &__files {
+        flex: 1;
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+
+        &__content {
+            display: flex;
+            align-items: center;
+        }
+
+        &__search {
+            position: relative;
+            height: get-height('default', 'em');
+            line-height: get-height('default', 'em');
+            flex: 1;
+
+            &__path {
+                position: absolute;
+                top: 0;
+                left: 0;
+                max-width: 80%;
+                z-index: 1;
+                padding: 0 get-spacing('sm', 'em');
+                margin: 0;
+                list-style: none;
+                @include text-overflow();
+
+                & li {
+                    margin: 0;
+                    display: inline;
+                }
+            }
+
+            &__input {
+                position: absolute;
+                top: 0;
+                left: 0;
+                z-index: 0;
+            }
+
+            &__icon {
+                position: absolute;
+                top: 0;
+                right: 0;
+                height: get-height('sm', 'em');
+                line-height: get-height('sm', 'em');
+                width: get-width('icon', 'em');
+                text-align: center;
+                cursor: pointer;
+                color: get-text-color('medium-emphasis');
+
+                &:hover {
+                    color: get-text-color('primary');
+                }
+            }
+        }
+
+        &__top {
+            border-top: 1px solid get-border-color('default');
+            border-right: 1px solid get-border-color('default');
+            border-left: 1px solid get-border-color('default');
+            padding: 0 $scroll-size;
+
+            & .browser__files__row {
+                height: get-height('sm', 'em') - get-spacing('xs', 'em');
+                line-height: get-height('sm', 'em') - get-spacing('xs', 'em');
+            }
+        }
+
+        &__scroll {
+            flex: 1;
+            border: 1px solid get-border-color('default');
+        }
+
+        &__row {
+            display: flex;
+
+            &--active {
+                cursor: pointer;
+                outline: none;
+
+                &:focus-visible {
+                    outline: 1px solid get-border-color('primary');
+                }
+
+                &:hover {
+                    background-color: get-background-color('primary--hover');
+                }
+            }
+
+            & > * {
+                padding-right: get-spacing('sm', 'em');
+            }
+
+            & > *:last-child {
+                padding-right: 0;
+            }
+
+            &__type {
+                width: get-width('icon', 'em');
+                text-align: center;
+                padding: 0 get-spacing('xs', 'em');
+            }
+
+            &__name {
+                flex: 1;
+                @include text-overflow();
+            }
+
+            &__date {
+                text-align: right;
+                width: 12em;
+                @include text-overflow();
+            }
+        }
+    }
+
+    &__toggle {
+        font-size: 1rem;
+        position: relative;
+        @include disabled();
+        display: block;
+        height: get-height('default', 'em');
+        line-height: calc(#{get-height('default', 'em')} - #{2 * $border-size});
+        width: 100%;
+        cursor: pointer;
+        outline: none;
+        background: get-background-color('default');
+        box-shadow: none;
+        border-style: solid;
+        border-color: get-border-color('default');
+        border-radius: $border-radius;
+
+        @if ($border-size==0) {
+            padding: 0;
+            border-top-width: 0;
+            border-right-width: 0;
+            border-bottom-width: 1px;
+            border-left-width: 0;
+
+            &:focus-visible {
+                border-color: get-border-color('primary');
+            }
+
+            &--bordered {
+                padding: 0 0 0 $scroll-size;
+                height: get-height('sm', 'em');
+                line-height: calc(#{get-height('sm', 'em')} - 2px);
+                border-top-width: 1px;
+                border-right-width: 1px;
+                border-bottom-width: 1px;
+                border-left-width: 1px;
+                border-color: get-border-color('default') !important;
+
+                &:focus-visible {
+                    // TODO: determine if this needs to be updated to add another border
+                    position: relative;
+                    z-index: 1;
+                }
+            }
+        } @else {
+            padding: 0 $scroll-size;
+            border-top-width: $border-size;
+            border-right-width: $border-size;
+            border-bottom-width: $border-size;
+            border-left-width: $border-size;
+
+            &:focus-visible {
+                border-color: get-border-color('primary');
+            }
+        }
+
+        &--compact {
+            line-height: calc(#{get-height('default', 'em')} - 2px);
+            width: get-width('icon', 'em');
+            border-top-width: 1px;
+            border-right-width: 1px;
+            border-bottom-width: 1px;
+            border-left-width: 1px;
+            padding: 0;
+
+            & .browser__toggle__text {
+                display: none;
+            }
+
+            &:focus-visible {
+                border-color: get-border-color('primary');
+            }
+        }
+
+        &::after {
+            content: '';
+            display: block;
+            clear: both;
+        }
+
+        &__mark {
+            float: left;
+            display: inline-block;
+            height: 100%;
+            width: get-width('icon', 'em');
+            text-align: center;
+        }
+
+        &__text {
+            font-size: get-font-size('body-regular', 'em');
+            float: left;
+            display: inline-block;
+            height: 100%;
+            width: calc(
+                100% - #{(get-width('icon', 'em') + get-width('icon', 'em'))}
+            );
+            padding-right: get-spacing('sm', 'em');
+            @include text-overflow();
+        }
+    }
+
+    &__popover {
+        height: 400px;
+        width: 400px;
+        outline: none;
+    }
+
+    &__overlay {
+        height: 400px;
+    }
+}

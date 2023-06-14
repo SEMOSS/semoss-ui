@@ -1,0 +1,181 @@
+<div class="export-dashboard">
+    <smss-scroll static-x="true" class="export-dashboard__scroll">
+        <smss-field>
+            <label>Select File Type</label>
+            <content>
+                <smss-dropdown
+                    options="exportDashboard.types.list"
+                    display="display"
+                    value="value"
+                    model="exportDashboard.types.selected"
+                    change="exportDashboard.resetParameters();"
+                >
+                </smss-dropdown>
+            </content>
+        </smss-field>
+        <div
+            ng-if="exportDashboard.parameters.list[exportDashboard.types.selected]"
+        >
+            <smss-field>
+                <label>Current Parameters:</label>
+                <content>
+                    <div class="export-dashboard__added">
+                        <div
+                            ng-repeat="(paramKey, paramValue) in exportDashboard.parameters.added"
+                        >
+                            <smss-field
+                                ng-if="paramValue.component === 'input' || paramValue.component === 'number' || paramValue.component === 'dropdown'"
+                            >
+                                <label>{{paramValue.display}}:</label>
+                                <content class="export-dashboard__parameter">
+                                    <smss-input
+                                        ng-if="paramValue.component === 'input'"
+                                        class="export-dashboard__parameter__component"
+                                        ng-model="paramValue.value"
+                                    ></smss-input>
+                                    <smss-input
+                                        ng-if="paramValue.component === 'number'"
+                                        class="export-dashboard__parameter__component"
+                                        ng-model="paramValue.value"
+                                        type="number"
+                                    ></smss-input>
+                                    <smss-dropdown
+                                        ng-if="paramValue.component === 'dropdown'"
+                                        model="paramValue.value"
+                                        options="paramValue.options"
+                                        class="export-dashboard__parameter__component"
+                                        change="exportDashboard.paramDropdownChanged(paramKey, paramValue.value);"
+                                    >
+                                    </smss-dropdown>
+                                    <smss-btn
+                                        class="smss-btn--icon smss-color--error smss-btn--left"
+                                        ng-click="exportDashboard.deleteParameter(paramKey)"
+                                        title="Delete Parameter"
+                                    >
+                                        <i class="fa fa-trash-o"></i>
+                                    </smss-btn>
+                                </content>
+                            </smss-field>
+                            <smss-field
+                                ng-if="paramValue.component === 'checkbox'"
+                            >
+                                <content class="export-dashboard__parameter">
+                                    <smss-checkbox
+                                        model="paramValue.value"
+                                        class="export-dashboard__parameter__component"
+                                        ng-disabled="paramValue.isDisabled"
+                                    >
+                                        {{paramValue.display}}
+                                    </smss-checkbox>
+                                    <smss-btn
+                                        class="smss-btn--icon smss-color--error smss-btn--left"
+                                        ng-click="exportDashboard.deleteParameter(paramKey)"
+                                        title="Delete Parameter"
+                                    >
+                                        <i class="fa fa-trash-o"></i>
+                                    </smss-btn>
+                                </content>
+                            </smss-field>
+                            <div
+                                ng-if="paramValue.component === 'template'"
+                                class="export-dashboard__template"
+                            >
+                                <div
+                                    class="export-dashboard__template__component"
+                                >
+                                    <smss-field>
+                                        <label>Select Project:</label>
+                                        <content>
+                                            <app-list-dropdown
+                                                model="exportDashboard.selectedApp"
+                                                change="exportDashboard.parameters.added.export_template.value = ''; exportDashboard.getAllTemplates()"
+                                            ></app-list-dropdown>
+                                        </content>
+                                    </smss-field>
+                                    <smss-field>
+                                        <label>Template:</label>
+                                        <content>
+                                            <smss-dropdown
+                                                model="paramValue.value"
+                                                options="paramValue.options"
+                                                class="export-dashboard__parameter__component"
+                                                change="exportDashboard.paramDropdownChanged(paramKey, paramValue.value);"
+                                            >
+                                            </smss-dropdown>
+                                        </content>
+                                    </smss-field>
+                                    <smss-field
+                                        ng-if="!exportDashboard.isPlaceholdersEmpty()"
+                                    >
+                                        <label>Placeholder(s)</label>
+                                        <content>
+                                            <div
+                                                ng-repeat="(paramKey,paramValue) in exportDashboard.templateData"
+                                            >
+                                                <label>{{paramKey}}</label>
+                                                <smss-input
+                                                    ng-model="paramValue[0]"
+                                                ></smss-input>
+                                            </div>
+                                        </content>
+                                    </smss-field>
+                                </div>
+                                <smss-btn
+                                    class="smss-btn--icon smss-color--error smss-btn--left"
+                                    ng-click="exportDashboard.deleteParameter(paramKey)"
+                                    title="Delete Parameter"
+                                >
+                                    <i class="fa fa-trash-o"></i>
+                                </smss-btn>
+                            </div>
+                        </div>
+                        <p
+                            ng-if="exportDashboard.isParametersEmpty()"
+                            class="smss-center smss-small"
+                        >
+                            No parameters. Add parameters below.
+                        </p>
+                    </div>
+                </content>
+            </smss-field>
+            <smss-field>
+                <label> Add Parameter: </label>
+                <content class="export-dashboard__parameter">
+                    <smss-dropdown
+                        model="exportDashboard.parameters.selected"
+                        options="exportDashboard.parameters.filtered"
+                        display="display"
+                        class="export-dashboard__parameter__component"
+                    >
+                    </smss-dropdown>
+                    <smss-btn
+                        class="smss-btn--icon smss-color--success export-dashboard__parameter__btn"
+                        title="Add Parameter"
+                        ng-click="exportDashboard.addParameter();"
+                        ng-disabled="exportDashboard.parameters.selected.length === 0"
+                    >
+                        <i class="fa fa-plus"></i>
+                    </smss-btn>
+                </content>
+            </smss-field>
+            <smss-field ng-if="exportDashboard.isParametersEmpty()">
+                <content>
+                    <smss-btn ng-click="exportDashboard.addAllParameters();">
+                        Add all parameters
+                    </smss-btn>
+                </content>
+            </smss-field>
+        </div>
+    </smss-scroll>
+
+    <div class="smss-action">
+        <smss-btn
+            class="smss-btn--text"
+            ng-if="exportDashboard.PIPELINE"
+            ng-click="exportDashboard.closeExport()"
+        >
+            Cancel
+        </smss-btn>
+        <smss-btn ng-click="exportDashboard.runExport()"> Export </smss-btn>
+    </div>
+</div>

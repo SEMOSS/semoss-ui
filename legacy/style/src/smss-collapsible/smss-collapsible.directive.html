@@ -1,0 +1,15 @@
+<div class="smss-collapsible">
+    <div
+        class="smss-collapsible__header"
+        ng-click="smssCollapsible.select()"
+        ng-class="{'smss-collapsible__header--opened': smssCollapsible.model, 'smss-collapsible__header--closed': !smssCollapsible.model}"
+    >
+        <h6 class="smss-collapsible__header__text" ng-transclude="header"></h6>
+        <div class="smss-collapsible__header__icon"></div>
+    </div>
+    <div
+        class="smss-collapsible__content"
+        ng-if="smssCollapsible.model"
+        ng-transclude="content"
+    ></div>
+</div>

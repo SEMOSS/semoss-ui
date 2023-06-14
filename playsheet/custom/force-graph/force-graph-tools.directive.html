@@ -1,0 +1,54 @@
+<div class="grid12">
+    <hr style="margin: 10px 0px 10px 0px;"/>
+</div>
+
+<!-- node properties button -->
+<button class="btn-half btn-light pull-right" ng-click="forceGraphTools.togglePropertiesTable()"
+        title="Show Properties Table"
+        aria-label="Show Properties Table">
+    Properties
+</button>
+
+<!-- unlocks nodes on the network graph -->
+<button class="btn-quarter btn-light pull-left pointer" ng-click="forceGraphTools.unFreezeAllNodes()"
+        title="Unlock Graph"
+        aria-label="Unlock Graph">
+    <i class="fa fa-unlock-alt"></i>
+</button>
+
+<!-- freezes nodes on the network graph -->
+<button class="btn-quarter btn-light pull-left pointer" ng-click="forceGraphTools.freezeAllNodes()" title="Lock Graph" aria-label="Lock Graph">
+    <i class="fa fa-lock"></i>
+</button>
+
+<div class="grid12">
+    <hr style="margin: 10px 0px 10px 0px;"/>
+</div>
+
+<!-- Highlight adjacent, upstream, downstream -->
+<div class="grid12">
+    <div class="grid9" ng-class="{'disabled': forceGraphTools.isEmpty(toolPanelCtrl.selectedItem)}">
+        <select class="font-family xs-top-margin ng-pristine full-width form-control"
+                ng-options="(highlightOpt.display | reduceStringLength: 25) for highlightOpt in forceGraphTools.highlightOptions.list"
+                ng-change="forceGraphTools.highlightAdjacent(forceGraphTools.highlightOptions.selected)"
+                ng-model="forceGraphTools.highlightOptions.selected">
+            <option value="">--Select Highlight Option--</option>
+        </select>
+    </div>
+    <!-- Reset edges (clear all highlighting) -->
+    <button class="btn-quarter btn-light pull-right pointer" ng-click="forceGraphTools.resetHighlighting()"
+            title="Reset Graph"
+            ng-if="toolPanelCtrl.selectedData.layout !== 'prerna.ui.components.specific.tap.InterfaceGraphPlaySheet'">
+        Reset
+    </button>
+</div>
+
+<!-- tools for data network visualization -->
+<div class="grid12">
+    <datanetworktools
+            ng-if="toolPanelCtrl.selectedData.layout === 'prerna.ui.components.specific.tap.InterfaceGraphPlaySheet'"></datanetworktools>
+</div>
+
+<div class="grid12">
+    <hr style="margin: 10px 0px 10px 0px;"/>
+</div>

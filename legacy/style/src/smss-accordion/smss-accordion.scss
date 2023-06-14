@@ -1,0 +1,232 @@
+@import '~theme';
+
+$accordion-spacer: 4px;
+$header-height: to-em(36px);
+.smss-accordion {
+    position: relative;
+    height: 400px;
+    width: 100%;
+    font-size: 1rem;
+    overflow: hidden;
+    border: 1px solid get-border-color('default');
+    border-radius: $border-radius;
+    &--disabled,
+    &:disabled,
+    &[disabled='disabled'] {
+        cursor: default;
+        pointer-events: none;
+        color: get-text-color('disabled') !important;
+        background: get-background-color('disabled--light') !important;
+        & .smss-accordion-item,
+        .smss-accordion-item__header,
+        .smss-accordion-item__header__text,
+        .smss-accordion-item__content {
+            color: get-text-color('disabled') !important;
+            background: get-background-color('disabled--light') !important;
+        }
+    }
+
+    &--white .smss-accordion-item__header {
+        background: get-background-color('default');
+    }
+}
+
+.smss-accordion-item {
+    position: absolute;
+    font-size: 1rem;
+
+    &__resizer {
+        position: absolute;
+        top: -2px;
+        right: 0;
+        bottom: 0;
+        left: 0;
+        width: auto;
+        height: 2px;
+        background-color: transparent;
+        z-index: 1;
+        outline: none;
+        cursor: ns-resize;
+
+        &--rotated {
+            top: 0;
+            right: 0;
+            bottom: 0;
+            left: -2px;
+            width: 2px;
+            height: auto;
+            cursor: ew-resize;
+        }
+    }
+
+    &__header {
+        position: absolute;
+        top: 0;
+        right: 0;
+        bottom: auto;
+        left: 0;
+        height: $header-height;
+        line-height: $header-height;
+        width: auto;
+        outline: none;
+        background: get-background-color('light');
+        cursor: pointer;
+        width: 100%;
+        padding: 0 to-em(12px);
+        display: flex;
+        border: $border-size solid transparent;
+        border-bottom: $border-size solid get-border-color('default');
+
+        &:hover {
+            background: get-background-color('primary--hover');
+        }
+
+        &:focus-visible {
+            border-color: get-border-color('primary');
+        }
+
+        &--rotated {
+            top: 0;
+            right: auto;
+            bottom: 0;
+            left: 0;
+            height: auto;
+            width: $header-height;
+            padding: to-em(12px) 0;
+            flex-direction: column;
+            border: 0;
+            border-right: 1px solid get-border-color('default');
+        }
+
+        &__spacer {
+            position: absolute;
+            top: 0;
+            right: 0;
+            bottom: auto;
+            left: 0;
+            height: $accordion-spacer;
+            width: auto;
+            z-index: 1;
+            border-top: 1px solid get-border-color('default');
+            border-left: none;
+            background: transparent;
+            cursor: ns-resize;
+            outline: none;
+
+            &--rotated {
+                top: 0;
+                right: auto;
+                bottom: 0;
+                left: 0;
+                height: auto;
+                width: $accordion-spacer;
+                border-top: none;
+                border-left: 1px solid get-border-color('default');
+                cursor: ew-resize;
+            }
+        }
+
+        &__text {
+            flex: 1;
+            z-index: 0;
+            @include no-select();
+            @include text-overflow();
+            text-transform: uppercase;
+            color: get-text-color('medium-emphasis');
+            line-height: inherit;
+            padding: 0;
+            padding-right: get-spacing('sm', 'em');
+
+            &--rotated {
+                padding: 0;
+                padding-bottom: get-spacing('sm', 'em');
+                & span {
+                    position: absolute;
+                    transform-origin: top left;
+                    transform: rotate(-90deg) translate(-100%, 0);
+                }
+            }
+        }
+
+        &__chevron {
+            z-index: 0;
+            outline: 0;
+            @include no-select();
+            font-size: get-font-size('body-small', 'em');
+
+            &:after {
+                font-style: normal;
+                font-family: FontAwesome;
+                content: '\f077';
+            }
+
+            &--closed {
+                &:after {
+                    font-style: normal;
+                    font-family: FontAwesome;
+                    content: '\f078';
+                }
+            }
+
+            &--rotated {
+                transform: rotate(-90deg);
+
+                & .smss-accordion-it__header__chevron-closed {
+                    transform: rotate(90deg);
+                }
+            }
+        }
+    }
+
+    &__content {
+        position: absolute;
+        top: $header-height;
+        right: 0;
+        bottom: 0;
+        left: 0;
+        padding: get-spacing('xs', 'em') 0;
+        outline: 0;
+        background: get-background-color('default');
+        overflow: hidden;
+
+        &--rotated {
+            top: 0;
+            right: 0;
+            bottom: 0;
+            left: $header-height;
+            padding: 0 get-spacing('xs', 'em');
+        }
+
+        &--closed {
+            visibility: hidden;
+        }
+    }
+    &--disabled,
+    &:disabled,
+    &[disabled='disabled'] {
+        cursor: default;
+        pointer-events: none;
+        color: get-text-color('disabled') !important;
+        background: get-background-color('disabled--light') !important;
+        & .smss-accordion-item__header,
+        .smss-accordion-item__header__text,
+        .smss-accordion-item__content {
+            color: get-text-color('disabled') !important;
+            background: get-background-color('disabled--light') !important;
+        }
+    }
+}
+
+.smss-accordion
+    > .smss-accordion-item:first-child
+    > .smss-accordion-item__resizer {
+    display: none;
+}
+
+.smss-accordion
+    > .smss-accordion-item:first-child
+    > .smss-accordion-item__header
+    > .smss-accordion-item__header__spacer {
+    cursor: default;
+    border: none;
+}

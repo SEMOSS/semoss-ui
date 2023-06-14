@@ -1,0 +1,54 @@
+<div class="view">
+    <div class="view__layer" ng-show="view.open">
+        <view-layer></view-layer>
+    </div>
+    <div class="view__menu" ng-class="{'view__menu--layer': view.open}">
+        <div class="view__menu__section__header">
+            <smss-tab-group class="view__menu__section__header__group">
+                <smss-tab
+                    ng-click="view.updateTab('VISUAL')"
+                    class="view__menu__section__header__tab"
+                    ng-class="{'smss-tab--selected': view.selectedTab === 'VISUAL'}"
+                    title="Visualizations"
+                >
+                    VISUAL
+                </smss-tab>
+                <smss-tab
+                    ng-click="view.updateTab('DATA')"
+                    class="view__menu__section__header__tab"
+                    ng-class="{'smss-tab--selected': view.selectedTab === 'DATA'}"
+                    title="Data"
+                >
+                    DATA
+                </smss-tab>
+                <smss-tab
+                    ng-click="view.updateTab('TOOL')"
+                    class="view__menu__section__header__tab"
+                    ng-class="{'smss-tab--selected': view.selectedTab === 'TOOL'}"
+                    title="Additional Tools"
+                >
+                    TOOLS
+                </smss-tab>
+            </smss-tab-group>
+            <smss-btn
+                class="smss-btn--icon"
+                title="{{view.open ? 'Hide Layers' : 'Show Layers'}}"
+                ng-click="view.open = !view.open"
+            >
+                <span ng-show="view.open">
+                    <i class="fa fa-eye-slash"></i>
+                </span>
+                <span ng-show="!view.open">
+                    <i class="fa fa-eye"></i>
+                </span>
+            </smss-btn>
+        </div>
+        <div class="view__menu__section__content">
+            <view-layout ng-show="view.selectedTab === 'VISUAL'"></view-layout>
+            <view-dimensions
+                ng-show="view.selectedTab === 'DATA'"
+            ></view-dimensions>
+            <view-tools ng-show="view.selectedTab === 'TOOL'"></view-tools>
+        </div>
+    </div>
+</div>

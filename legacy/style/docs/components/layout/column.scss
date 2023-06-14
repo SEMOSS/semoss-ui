@@ -1,0 +1,5 @@
+@import '~theme';
+.column-cell {
+    text-align: center;
+    border: 1px solid get-border-color('default');
+}

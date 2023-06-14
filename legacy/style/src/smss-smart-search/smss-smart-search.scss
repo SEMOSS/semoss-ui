@@ -1,0 +1,97 @@
+@import '~theme';
+$icon-width: get-width('icon', 'em') + 4 * get-spacing('xs', 'em');
+.smss-smart-search {
+    position: relative;
+    font-size: 1rem;
+
+    &__icon {
+        position: absolute;
+        top: 0;
+        width: get-width('icon', 'em');
+        height: get-width('icon', 'em');
+        margin: get-spacing('sm', 'em');
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        &--search {
+            // margin-left: 1em;
+            // margin-top: .5em;
+            left: 0;
+            pointer-events: none;
+            color: get-text-color('low-emphasis');
+        }
+
+        &--clear {
+            height: 2em;
+            width: 2em;
+            top: -2px;
+            right: 1.5rem;
+            color: get-text-color('low-emphasis');
+            &:hover {
+                cursor: pointer;
+                color: get-text-color('primary');
+            }
+        }
+
+        &--speech {
+            top: -2px;
+            right: 0;
+            color: get-text-color('low-emphasis');
+            height: 2em;
+            width: 2em;
+            border: 0;
+            &:hover {
+                cursor: pointer;
+                color: get-text-color('primary');
+            }
+            &:focus {
+                outline: none;
+            }
+        }
+    }
+
+    &__input {
+        padding: 1.5em rescale($icon-width, 1em, 0.875em);
+    }
+
+    &__underline {
+        display: none;
+        height: 1px;
+        width: 100%;
+        background: transparent;
+        border-bottom: 1px solid get-border-color('primary');
+        box-shadow: get-box-shadow('focus', 'primary');
+        position: absolute;
+        left: 0;
+        bottom: 0;
+    }
+
+    &--inline {
+        & .smss-smart-search__input {
+            border-top-color: transparent;
+            border-left-color: transparent;
+            border-right-color: transparent;
+            border-radius: 0;
+            &:focus {
+                box-shadow: none;
+                border-bottom-color: transparent;
+                & + .smss-smart-search__underline {
+                    display: block;
+                }
+            }
+        }
+    }
+
+    &--disabled,
+    &:disabled,
+    &[disabled='disabled'] {
+        & .smss-smart-search__icon {
+            @include no-events();
+            color: get-text-color('disabled');
+        }
+
+        &.smss-smart-search--inline .smss-smart-search__input {
+            border-radius: $border-radius $border-radius 0 0;
+        }
+    }
+}

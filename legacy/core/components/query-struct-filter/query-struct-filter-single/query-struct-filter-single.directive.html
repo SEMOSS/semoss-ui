@@ -1,0 +1,101 @@
+<div class="query-struct-filter-single">
+    <div
+        class="query-struct-filter-single__column"
+        title="{{queryStructFilterSingle.filter.selected.alias}}"
+    >
+        <smss-dropdown
+            class="smss-dropdown--bordered"
+            display="alias"
+            model="queryStructFilterSingle.filter.selected"
+            options="queryStructFilterCtrl.availableColumns"
+            change="queryStructFilterSingle.selectColumn(queryStructFilterSingle.filter.selected)"
+            body="false"
+        >
+        </smss-dropdown>
+    </div>
+    <div class="query-struct-filter-single__column">
+        <smss-dropdown
+            class="smss-dropdown--bordered"
+            display="display"
+            value="value"
+            model="queryStructFilterSingle.filter.comparator"
+            options="queryStructFilterSingle.filter.comparatorOptions"
+            change="queryStructFilterSingle.selectComparator(queryStructFilterSingle.filter.comparator)"
+            body="false"
+        >
+        </smss-dropdown>
+    </div>
+    <div
+        class="query-struct-filter-single__column query-struct-filter-single__column--field"
+    >
+        <div
+            ng-if="(queryStructFilterSingle.filter.comparator === '==' || queryStructFilterSingle.filter.comparator === '!=')"
+        >
+            <smss-multiselect
+                search-term="queryStructFilterSingle.filter.equality.search"
+                search="queryStructFilterSingle.searchEquality(search)"
+                model="queryStructFilterSingle.filter.equality.model"
+                options="queryStructFilterSingle.filter.equality.options"
+                loading="queryStructFilterSingle.filter.equality.loading"
+                scroll="queryStructFilterSingle.getMoreEquality()"
+                nowrap
+                body="false"
+            ></smss-multiselect>
+        </div>
+
+        <div
+            ng-if="(queryStructFilterSingle.filter.comparator === '<' || queryStructFilterSingle.filter.comparator === '<=' || queryStructFilterSingle.filter.comparator === '>' || queryStructFilterSingle.filter.comparator === '>=') && (queryStructFilterSingle.filter.selected.type === 'NUMBER' || queryStructFilterSingle.filter.selected.type === 'DOUBLE' || queryStructFilterSingle.filter.selected.type === 'INT')"
+        >
+            <smss-input
+                ng-model="queryStructFilterSingle.filter.numerical.model"
+                type="number"
+            >
+            </smss-input>
+        </div>
+
+        <div
+            ng-if="(queryStructFilterSingle.filter.comparator === '<' || queryStructFilterSingle.filter.comparator === '<=' || queryStructFilterSingle.filter.comparator === '>' || queryStructFilterSingle.filter.comparator === '>=') && (queryStructFilterSingle.filter.selected.type === 'DATE')"
+        >
+            <smss-date-picker
+                class="smss-date-picker--bordered"
+                model="queryStructFilterSingle.filter.date.model"
+                body="false"
+            >
+            </smss-date-picker>
+        </div>
+
+        <div
+            ng-if="(queryStructFilterSingle.filter.comparator === '<' || queryStructFilterSingle.filter.comparator === '<=' || queryStructFilterSingle.filter.comparator === '>' || queryStructFilterSingle.filter.comparator === '>=') && (queryStructFilterSingle.filter.selected.type === 'TIMESTAMP')"
+        >
+            <smss-input
+                ng-model="queryStructFilterSingle.filter.timestamp.model"
+            >
+            </smss-input>
+        </div>
+
+        <div
+            ng-if="queryStructFilterSingle.filter.comparator === '?like' || queryStructFilterSingle.filter.comparator === '?begins' || queryStructFilterSingle.filter.comparator === '?ends'"
+        >
+            <smss-typeahead
+                class="smss-typeahead--bordered"
+                model="queryStructFilterSingle.filter.match.model"
+                options="queryStructFilterSingle.filter.match.options"
+                search="queryStructFilterSingle.searchMatch()"
+                loading="queryStructFilterSingle.filter.match.loading"
+                scroll="queryStructFilterSingle.getMoreMatch()"
+                body="false"
+            >
+            </smss-typeahead>
+        </div>
+    </div>
+    <div
+        class="query-struct-filter-single__action query-struct-filter-single__action--right"
+    >
+        <smss-btn
+            ng-click="queryStructFilterCtrl.deleteFilter(queryStructFilterSingle.key)"
+            class="smss-btn--icon smss-btn--compact"
+        >
+            <i class="fa fa-trash-o"></i>
+        </smss-btn>
+    </div>
+</div>

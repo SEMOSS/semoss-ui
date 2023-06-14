@@ -1,0 +1,22 @@
+<div>
+    <smss-field>
+        <label>Color Picker</label>
+        <content>
+            <smss-color-picker
+                placeholder="Select Color"
+                model="colorPickerValue"
+            ></smss-color-picker>
+        </content>
+        <description>{{colorPickerValue}}</description>
+    </smss-field>
+    <smss-field>
+        <label>Color Picker</label>
+        <content>
+            <smss-color-picker
+                ng-disabled="true"
+                model="colorPickerValue"
+            ></smss-color-picker>
+        </content>
+        <description>{{colorPickerValue}}</description>
+    </smss-field>
+</div>

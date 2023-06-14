@@ -1,0 +1,44 @@
+<div class="alert">
+    <smss-field class="smss-spacing">
+        <content>
+            <smss-search
+                placeholder="Search alerts..."
+                model="alert.search"
+                change="alert.renderAlert()"
+            >
+            </smss-search>
+        </content>
+    </smss-field>
+    <smss-field class="alert__checklist">
+        <label>Filter Alerts by Type:</label>
+        <content>
+            <smss-checklist
+                model="alert.filter"
+                change="alert.renderAlert()"
+                options="[{'display': 'Error', value:'error'}, {'display': 'Primary', value:'primary'},  {'display': 'Success', value:'success'}, {'display': 'Warn', value:'warn'}]"
+                multiple
+                display="display"
+                value="value"
+            >
+            </smss-checklist>
+        </content>
+    </smss-field>
+    <div class="smss-spacing alert__scroll">
+        <smss-scroll class="alert__scroll__scroll" static-x="true">
+            <div
+                class="smss-caption--center"
+                ng-show="alert.messages.length === 0"
+            >
+                No messages.
+            </div>
+            <smss-alert
+                ng-repeat="message in alert.rendered track by $index"
+                color="message.color"
+                ng-model="message.open"
+                closeable="false"
+            >
+                <smss-alert-label> {{message.text}} </smss-alert-label>
+            </smss-alert>
+        </smss-scroll>
+    </div>
+</div>

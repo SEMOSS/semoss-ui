@@ -1,0 +1,261 @@
+<div
+    class="import drop-zone"
+    flow-name="import.flow"
+    flow-init="{singleFile: true}"
+    flow-drop
+    flow-drop-enabled="import.first.selected !== 'file'"
+    flow-file-added="import.sendFile($file);"
+    ng-class="dropClass2"
+    flow-drag-enter="import.first.selected !== 'file' ? dropClass2='drop-zone--enter' : dropClass2=''"
+    flow-drag-leave="dropClass2=''"
+    ng-if="import.loaded"
+>
+    <div ng-if="!import.replace" class="import__breadcrumb">
+        <smss-breadcrumb>
+            <smss-breadcrumb-item
+                ng-click="import.navigateToCatalog()"
+                title="View all databases"
+                >Data Catalog</smss-breadcrumb-item
+            >
+            <smss-breadcrumb-item>Add Database</smss-breadcrumb-item>
+        </smss-breadcrumb>
+    </div>
+    <smss-accordion
+        class="import__accordion"
+        rotated
+        resizable
+        ng-if="!import.replace"
+    >
+        <smss-accordion-item
+            name="import.accordionSettings.first.name"
+            size="import.accordionSettings.first.size"
+        >
+            <smss-scroll static-x="true">
+                <div
+                    class="smss-block"
+                    ng-class="{'smss-block--selected': item.value === import.first.selected}"
+                    title="{{item.name}}"
+                    ng-repeat="item in import.first.list track by $index"
+                    ng-click="import.selectFirstStep(item);"
+                    ng-hide="item.hidden"
+                >
+                    <div class="smss-block__image">
+                        <img ng-src="{{item.image}}" />
+                    </div>
+                    <div class="smss-block__text">
+                        <span>{{item.name}}</span>
+                    </div>
+                </div>
+            </smss-scroll>
+        </smss-accordion-item>
+        <smss-accordion-item
+            name="import.accordionSettings.second.name"
+            size="import.accordionSettings.second.size"
+        >
+            <div
+                class="import__accordion__section"
+                ng-if="import.first.selected === 'add'"
+            >
+                <smss-field>
+                    <content>
+                        <smss-search
+                            placeholder="Search available databases..."
+                            model="import.app.searchTerm"
+                            change="import.searchApp()"
+                        >
+                        </smss-search>
+                    </content>
+                </smss-field>
+                <smss-scroll
+                    class="import__accordion__section__scroll"
+                    static-x="true"
+                >
+                    <div
+                        class="smss-block"
+                        ng-class="{'smss-block--selected': item.value === import.app.selected}"
+                        title="{{item.name}}"
+                        ng-repeat="item in import.app.searched"
+                        ng-click="import.selectApp(item);"
+                    >
+                        <div class="smss-block__image">
+                            <img ng-src="{{item.image}}" />
+                        </div>
+                        <div class="smss-block__text">
+                            <span>{{item.name}}</span>
+                        </div>
+                    </div>
+                </smss-scroll>
+            </div>
+
+            <div
+                class="import__accordion__section"
+                ng-if="import.first.selected === 'external'"
+            >
+                <smss-field>
+                    <content>
+                        <smss-search
+                            placeholder="Search available external connectors..."
+                            model="import.external.searchTerm"
+                            change="import.searchExternal()"
+                        >
+                        </smss-search>
+                    </content>
+                </smss-field>
+                <smss-scroll
+                    class="import__accordion__section__scroll"
+                    static-x="true"
+                >
+                    <div
+                        class="smss-block"
+                        ng-class="{'smss-block--selected': item.value === import.external.selected}"
+                        title="{{item.name}}"
+                        ng-repeat="item in import.external.searched"
+                        ng-click="import.selectExternal(item);"
+                    >
+                        <div class="smss-block__image">
+                            <img ng-src="{{item.image}}" />
+                        </div>
+                        <div class="smss-block__text">
+                            <span>{{item.name}}</span>
+                        </div>
+                    </div>
+                </smss-scroll>
+            </div>
+
+            <div
+                class="import__accordion__section"
+                ng-if="import.first.selected === 'file'"
+            >
+                <smss-field>
+                    <content>
+                        <smss-search
+                            placeholder="Search available file types..."
+                            model="import.file.searchTerm"
+                            change="import.searchFile()"
+                        >
+                        </smss-search>
+                    </content>
+                </smss-field>
+                <smss-scroll
+                    class="import__accordion__section__scroll"
+                    static-x="true"
+                >
+                    <div
+                        class="smss-block"
+                        ng-class="{'smss-block--selected': item.value === import.file.selected}"
+                        title="{{item.name}}"
+                        ng-repeat="item in import.file.searched"
+                        ng-click="import.selectFile(item);"
+                    >
+                        <div class="smss-block__image">
+                            <img ng-src="{{item.image}}" />
+                        </div>
+                        <div class="smss-block__text">
+                            <span>{{item.name}}</span>
+                        </div>
+                    </div>
+                </smss-scroll>
+            </div>
+
+            <import-copy
+                class="import__accordion__wrapper"
+                ng-if="import.first.selected === 'copy' && import.accordionSettings.second.size > 0"
+            ></import-copy>
+            <import-app
+                class="import__accordion__wrapper"
+                ng-if="import.first.selected === 'upload' && import.accordionSettings.second.size > 0"
+            ></import-app>
+        </smss-accordion-item>
+        <smss-accordion-item
+            name="import.accordionSettings.third.name"
+            size="import.accordionSettings.third.size"
+        >
+            <import-add
+                class="import__accordion__wrapper"
+                ng-if="import.first.selected === 'add' && import.app.selected && import.accordionSettings.third.size > 0"
+                app-id="import.app.selected"
+            ></import-add>
+
+            <div
+                class="smss-caption--center"
+                ng-if="import.first.selected === 'add' && !import.app.selected && import.accordionSettings.third.size > 0"
+            >
+                <span> Select Database from the Menu</span>
+            </div>
+
+            <import-file
+                class="import__accordion__wrapper"
+                ng-if="import.first.selected === 'file' && import.file.selected && import.accordionSettings.third.size > 0 && (import.file.selected === 'CSV' || import.file.selected === 'EXCEL' || import.file.selected === 'TSV')"
+                sent-file-data="import.fileData"
+                file-type="import.file.selected"
+            ></import-file>
+
+            <import-file-graph-old
+                class="import__accordion__wrapper"
+                sent-file-data="import.fileData"
+                file-type="import.file.selected"
+                ng-if="import.first.selected === 'file' && import.file.selected && import.accordionSettings.third.size > 0  && (import.file.selected === 'NEO4J')"
+            ></import-file-graph-old>
+
+            <import-file-graph
+                class="import__accordion__wrapper"
+                sent-file-data="import.fileData"
+                file-type="import.file.selected"
+                ng-if="import.first.selected === 'file' && import.file.selected && import.accordionSettings.third.size > 0  && (import.file.selected === 'TINKER')"
+            ></import-file-graph>
+
+            <import-file-table
+                class="import__accordion__wrapper"
+                sent-file-data="import.fileData"
+                file-type="import.file.selected"
+                ng-if="import.first.selected === 'file' && import.file.selected && import.accordionSettings.third.size > 0  && (import.file.selected === 'SQLITE' || import.file.selected === 'H2_DB')"
+            ></import-file-table>
+
+            <div
+                class="smss-caption--center"
+                ng-if="import.first.selected === 'file' && !import.file.selected && import.accordionSettings.third.size > 0"
+            >
+                <span> Select a Filetype from the Menu</span>
+            </div>
+
+            <import-external
+                class="import__accordion__wrapper"
+                ng-if="import.first.selected === 'external' && import.external.selected && import.accordionSettings.third.size > 0 && !(import.external.selected === 'DATASTAX')"
+                driver="import.external.selected"
+            ></import-external>
+
+            <import-external-datastax
+                class="import__accordion__wrapper"
+                ng-if="import.first.selected === 'external' && import.external.selected && import.accordionSettings.third.size > 0 && (import.external.selected === 'DATASTAX')"
+                driver="import.external.selected"
+            ></import-external-datastax>
+
+            <div
+                class="smss-caption--center"
+                ng-if="import.first.selected === 'external' && !import.external.selected && import.accordionSettings.third.size > 0"
+            >
+                <span> Select an External Database from the Menu </span>
+            </div>
+
+            <div
+                class="smss-caption--center"
+                ng-if="import.first.selected === 'copy' && import.accordionSettings.third.size > 0"
+            >
+                <span> Copy Database using the Previous Screen </span>
+            </div>
+            <div
+                class="smss-caption--center"
+                ng-if="import.first.selected === 'upload' && import.accordionSettings.third.size > 0"
+            >
+                <span> Upload Database using the Previous Screen </span>
+            </div>
+        </smss-accordion-item>
+    </smss-accordion>
+
+    <import-file
+        class="import__accordion__wrapper"
+        ng-if="import.replace"
+        sent-file-data="import.fileData"
+        file-type="import.file.selected"
+    ></import-file>
+</div>

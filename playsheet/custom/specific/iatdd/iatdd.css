@@ -1,0 +1,173 @@
+/** IATDD QUEUING CLASSES **/
+.sm-perc-horz-margin{
+    margin-right: 5%;
+    margin-left: 5%;
+}
+
+.horz-center {
+    margin-right: auto;
+    margin-left: auto;
+}
+
+.iatdd-border-green{
+    border: 2px solid #15B994 !important;
+}
+
+.iatdd-button {
+    min-height: 30px;
+    height: auto;
+    width: 30%;
+    border-radius: 3px;
+    font-size: 15px;
+}
+
+.iatdd-vendor-button {
+    min-height: 30px;
+    height: auto;
+    width: 20%;
+    border-radius: 3px;
+    font-size: 15px;
+}
+
+.iatdd-queuing-heatmap {
+    border: 1px solid #CCCCCC;
+    height: calc(70% - 20px);
+    left: 1%;
+    top: calc(28% + 20px);
+    width: 67%;
+}
+
+.iatdd-queuing-text-box{
+    border: 1px solid #ccc;
+    height: 28%;
+    left: 1%;
+    width: 67%;
+}
+
+.iatdd-queuing-linegraph {
+    border: 1px solid #ccc;
+    right: 1%;
+    top: 90px;
+    width: 36%;
+    height: calc(93% - 40px);
+}
+
+.header-font-size{
+    font-size: 17px;
+}
+
+.iatdd-queuing-overall-score{
+    position: absolute;
+    font-size: 17px;
+    height: calc(100% - 110px);
+    width: 20%;
+    min-width: 190px;
+    margin-left: 2%;
+}
+
+.iatdd-queuing-cost{
+    font-size: 17px;
+    height: calc(100% - 110px);
+    width: 75%;
+    margin-left: 23%;
+}
+
+.iatdd-queuing-form{
+    border: 1px solid #ccc;
+    padding: 10px;
+    right: 1%;
+    top: 50px;
+    width: 30%;
+    height: calc(100% - 65px);
+    background-color: #FFFFFF;
+    z-index: 20;
+    overflow-y: auto;
+}
+
+.iatdd-queuing-form-grid {
+    position: relative;
+    height: auto;
+    overflow: hidden;
+}
+
+@media screen and (max-width: 1600px){
+    .iatdd-queuing-overall-score{
+        font-size: 13px;
+    }
+
+    .iatdd-queuing-cost{
+        font-size: 13px;
+    }
+
+    .header-font-size{
+        font-size: 13px;
+    }
+
+    .iatdd-queuing-linegraph {
+        height: calc(91% - 40px);
+    }
+
+    .iatdd-queuing-form{
+        height: calc(91% - 40px);
+    }
+}
+
+@media screen and (max-width: 1350px) {
+    .iatdd-queuing-cost{
+        margin-left: 200px;
+    }
+}
+
+@media screen and (min-width: 1921px) {
+    .iatdd-queuing-overall-score{
+        margin-top: 15px;
+        height: calc(100% - 160px);
+    }
+
+    .iatdd-queuing-cost{
+        margin-top: 15px;
+        height: calc(100% - 160px);
+    }
+
+    .iatdd-queuing-linegraph {
+        height: calc(93% - 48px);
+    }
+
+    .iatdd-queuing-form{
+        height: calc(93% - 48px);
+    }
+
+    .iatdd-queuing-heatmap{
+        top: calc(40% + 20px);
+    }
+
+    .iatdd-queuing-overall-score{
+        font-size: 18px;
+    }
+
+    .iatdd-queuing-cost{
+        font-size: 18px;
+    }
+
+    .header-font-size{
+        font-size: 18px;
+    }
+}
+
+@media screen and (min-width: 2001px){
+    .iatdd-queuing-overall-score{
+        margin-top: 40px;
+    }
+
+    .iatdd-queuing-cost{
+        margin-top: 40px;
+    }
+
+    .iatdd-queuing-linegraph {
+        height: calc(95% - 53px);
+    }
+
+    .iatdd-queuing-form{
+        height: calc(95% - 53px);
+    }
+}

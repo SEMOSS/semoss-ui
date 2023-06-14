@@ -1,0 +1,571 @@
+.prd-select-panel {
+}
+
+.prd-syst-cap-togg {
+    position: fixed;
+    width: 303px;
+    top: 2px;
+    z-index: 1;
+    background-color: white;
+    border-bottom: 1px solid #ccc;
+}
+
+/*test class*/
+.special-prd-panel {
+    /* bottom:300px; */
+}
+
+.prd-panel {
+    /* position: absolute; */
+    /* width: 100%; */
+    /* bottom: 100px; */
+    height: 100%;
+}
+
+.prd-init-select-panel {
+    width: 100%;
+    margin-bottom: 20px;
+}
+
+.cap-select-panel {
+    height: 200px;
+    overflow: auto;
+    border: 1px solid #ccc;
+    cursor: pointer;
+}
+
+.prd-alg-type-selections {
+    width: 19em;
+    text-align: center;
+    padding-bottom: 25px;
+}
+
+.prd-alg-type-selection {
+    text-align: center;
+    width: 27%;
+}
+
+.prd-check {
+    margin-left: auto;
+    /* margin-right: auto; */
+    font-size: 12px;
+    width: 103px;
+    /* margin: 4px 17px; */
+}
+
+.prd-systitle-decom {
+    color: #DB0000;
+    font-size: large;
+}
+
+.prd-systitle-modern {
+    color: #009900;
+    font-size: large;
+}
+
+.prd-systitle-modern.duplicity {
+    color: #808080;
+}
+
+.prd-syspanel-decom {
+    color: #FF6600;
+    cursor: pointer;
+}
+
+.prd-syspanel-modern {
+    color: #0066CC;
+    cursor: pointer;
+}
+
+.prd-syspanel-none {
+    cursor: pointer;
+}
+
+.prd-param-input {
+    margin-left: auto;
+    margin-right: auto;
+    width: 100%;
+    text-align: center;
+    font-size: 12px;
+    display: inline-block;
+}
+
+.prd-system-panel {
+    margin-left: 10px;
+    margin-right: 10px;
+    /* margin-bottom: 100px; */
+    margin-top: 10px;
+    border: 1px solid #ccc;
+    height: 35%;
+    border-radius: 3px;
+}
+
+.prd-system-panel-table {
+    width: 100%;
+    margin-bottom: 7px;
+}
+
+.prd-system-select-panel {
+    margin-left: 3px;
+    margin-right: 3px;
+    margin-bottom: 3px;
+    margin-top: 6px;
+    border: 1px solid #ccc;
+    max-height: 183px;
+    overflow: auto;
+}
+
+.prd-system-panel-header {
+    border: 1px solid #ccc;
+    border-bottom: none;
+    text-align: center;
+    padding: 4px;
+    border-radius: 2px 2px 0px 0px;
+    background-color: rgb(238, 238, 238);
+}
+
+.prd-sys-update-btn {
+    margin-left: auto;
+    margin-right: auto;
+    text-align: center;
+    border-bottom: 1px solid #CCC;
+    padding-bottom: 5px;
+}
+
+.prd-force-buttons {
+    padding: 0px 3px;
+    padding-bottom: 36px;
+}
+
+.prd-panel-bottom {
+    bottom: 43px;
+    /* position: absolute; */
+    /* background-color: #EEEEEE; */
+    padding: 5px 7px;
+    width: 100%;
+}
+
+.prd-chkbx-row {
+    width: 50%;
+}
+
+.prd-chkbx-data {
+    height: 7px;
+}
+
+.prd-info-box {
+    border: 1px solid #CCC;
+    /* border-radius: 3px; */
+    padding: 9px 9px;
+    /* background-color: rgb(250, 250, 250); */
+    height: 100%;
+    width: 100%;
+    overflow: hidden;
+
+    overflow-y: auto;
+    z-index: 100;
+    /* position: relative; */
+}
+
+fieldset.prd-container {
+    height: 100%;
+    width: 100%;
+    position: absolute;
+    overflow: hidden;
+}
+
+legend.prd-container-legend {
+    font-size: 14px;
+    background-color: white;
+    color: #494B5F;
+    font-family: Roboto, sans-serif;
+    padding: 6px 8px;
+    width: 100%;
+    border-bottom: 1px solid #ccc;
+    position: absolute;
+    display: block;
+    z-index: 1;
+    height: 29px;
+}
+
+.split-overlay {
+    position: absolute;
+    top: 25%;
+    left: 20%;
+    width: 70%;
+}
+
+.data-overlay {
+    float: left;
+}
+
+.blu-overlay {
+    float: right;
+}
+
+.prd-system-coverage {
+    position: absolute;
+    bottom: 15px;
+    height: 50%;
+    left: 52%;
+    width: 45%;
+    border: 1px solid #ccc;
+    overflow: auto;
+}
+
+.prd-action-map {
+    position: absolute;
+    left: 15px;
+    bottom: 15px;
+    width: 50.2%;
+    height: 74%;
+    overflow: hidden;
+    border: 1px solid #ccc;
+}
+
+.prd-action-map-container {
+    height: 98%;
+    margin-top: 2%;
+    overflow: hidden;
+}
+
+.prd-budget-info {
+    position: absolute;
+    top: 50px;
+    width: 24%;
+    height: 16.5%;
+    left: 15px;
+}
+
+.prd-recommend-decommission {
+    position: absolute;
+    padding-left: 10px;
+    height: 22%;
+    width: 24%;
+    right: 15px;
+    top: 50px;
+}
+
+.prd-data-blu-info {
+    position: absolute;
+    padding-left: 10px;
+    width: 26.3%;
+    height: 16.5%;
+    left: 25%;
+    top: 50px;
+}
+
+.prd-table {
+    margin: 2px;
+}
+
+.prd-health-systems {
+    position: absolute;
+    border: 1px solid #ccc;
+    width: 45%;
+    height: 40%;
+    top: 50px;
+    left: 52%;
+}
+
+.prd-overview-info {
+    position: absolute;
+    padding-left: 10px;
+    height: 20%;
+    width: 24%;
+    left: 27%;
+    top: 50px;
+}
+
+.prd-overview-budget {
+    position: absolute;
+    top: 50px;
+    left: 15px;
+    height: 20%;
+    width: 24%;
+}
+
+.prd-cost-info {
+    position: absolute;
+    bottom: 15px;
+    left: 53%;
+    width: 45%;
+    height: 72%;
+    overflow: hidden;
+    border: 1px solid #ccc;
+}
+
+.prd-overview-action-map {
+    position: absolute;
+    border: 1px solid #ccc;
+    bottom: 15px;
+    left: 15px;
+    width: 50%;
+    height: 70%;
+    overflow: hidden;
+}
+
+.prd-appgrid {
+    position: absolute;
+    height: 100%;
+    padding-top: 5%;
+    width: 100%;
+}
+
+.prd-sustainment-info {
+    position: absolute;
+    height: 48%;
+    width: 100%;
+    bottom: 0%;
+}
+
+.prd-capability-appgrid {
+    position: absolute;
+    height: 87%;
+    width: 100%;
+    bottom: 0%;
+}
+
+.prd-becom-budget {
+    font-size: 20px;
+}
+
+.prd-run-opt-btn {
+    width: 140px;
+}
+
+.prd-run-opt-btn.no-data .text {
+    position: relative;
+    left: 4px;
+}
+
+.prd-run-opt-btn .icons span {
+    position: relative;
+    left: 13px;
+}
+
+.prd-coverage-legend {
+    position: absolute;
+    right: 20px;
+    bottom: 20px;
+}
+
+.coverage-legend-content {
+    position: absolute;
+    height: 90px;
+    width: 180px;
+}
+
+.coverage-size-legend {
+    left: 1em;
+    bottom: 1em;
+    position: absolute;
+    height: 120px;
+    width: 250px;
+    background-color: #FFFFFF;
+    opacity: 0.9;
+    border-radius: 7px;
+    border: 1px solid #ccc;
+    padding: 0.5em;
+    font-size: 0.85em;
+    pointer-events: none;
+}
+
+.coverage-node-legend {
+    right: 1em;
+    bottom: 1em;
+    position: absolute;
+    height: 90px;
+    width: 200px;
+    background-color: #FFFFFF;
+    opacity: 0.9;
+    border-radius: 7px;
+    border: 1px solid #ccc;
+    padding: 0.5em;
+    font-size: 0.85em;
+    pointer-events: none;
+}
+
+.coverage-tooltip {
+    max-width: 245px;
+}
+
+.hover-div {
+    border:1px solid #ccc;
+    background-color: white;
+    color: rgb(107, 107, 107);
+    border-radius: 4px;
+    margin-top: -22px;
+    width: 200px;
+    position: absolute;
+    max-height: 250px;
+    left: 99%;
+    z-index: 1000;
+    -webkit-box-shadow: 4px 4px 7px -1px rgba(82, 82, 82, 1);
+    -moz-box-shadow: 4px 4px 7px -1px rgba(61, 61, 61, 1);
+    box-shadow: 4px 4px 7px -1px rgba(121, 121, 121, 1);
+}
+
+.hover-div.system {
+    border:1px solid #ccc;
+    background-color: white;
+    color: rgb(107, 107, 107);
+    border-radius: 4px;
+    margin-top: 0px;
+    font-size: 12px;
+    width: 100%;
+    max-width: 700px;
+    max-height: 1250px;
+    left: 40%;
+    transition-delay: .7s;
+    transition: all .3s ease;
+    position: fixed;
+    z-index: 100;
+    -webkit-box-shadow: 4px 4px 7px -1px rgba(82, 82, 82, 1);
+    -moz-box-shadow: 4px 4px 7px -1px rgba(61, 61, 61, 1);
+    box-shadow: 3px 3px 6px -1px rgb(179, 179, 179);
+}
+
+.hover-header {
+    /* border: 1px solid #595959; */
+    padding: 4px 8px;
+    background: #4A4A4A;
+    /* font-weight: bold; */
+    font-size: 13px;
+    margin: 0px;
+    color: white;
+}
+
+.hover-content {
+    max-height: 224px;
+    overflow: auto;
+}
+
+.hover-content.system {
+    width: 100%;
+
+    border: 1px solid #ccc;
+}
+
+.arrow-left {
+    border-right: 15px solid #4A4A4A;
+    position: absolute;
+    left: 96%;
+    margin-top: -20px;
+    /* border-left: 48px solid transparent; */
+    border-top: 10px solid transparent;
+    border-bottom: 10px solid transparent;
+    z-index: 1000;
+}
+
+.prd-graph-label {
+    font-weight: bold;
+    text-align: center;
+    height: 10%;
+    padding-top: 5.5%;
+}
+
+.toggle-switch {
+    position: absolute;
+    margin-left: 25%;
+    margin: 15px;
+}
+
+.toggle-switch.map {
+    margin-left: 31%;
+    margin-top: 3%;
+    z-index: 1;
+}
+
+.toggle-switch.datablucov {
+    margin-left: 25%;
+}
+
+.esrimap-legend-title.prd-overview {
+    text-align: center;
+}
+
+.esrimap-legend.prd-overview {
+    height: 125px;
+    width: 460px;
+    bottom: 86px;
+}
+
+.esrimap-legend-content.prd-overview {
+    width: 500px;
+}
+
+.esrimap-legend.prd-system {
+    height: 100px;
+    width: 340px;
+    bottom: 90px;
+}
+
+.esrimap-legend-title.prd-system {
+    text-align: center;
+}
+
+.esrimap-legend-content.prd-system {
+    width: 500px;
+}
+
+.esrimap-legend.prd-system.decom {
+    height: 55px;
+}
+
+.esrimap-legend.prd-overview.capcoverage {
+    height: 100px;
+    width: 350px;
+    bottom: 90px;
+}
+
+.port-rat-left-panel {
+    overflow-y: hidden;
+    position: absolute;
+    top: 0px;
+    width: 300px;
+    bottom: 0px;
+    left: 35px;
+    padding: 0 0;
+    background-color: white;
+    overflow-y: auto;
+    border-right: 1px solid #ccc;
+    -webkit-transition: all 0.3s ease;
+    -moz-transition: all 0.3s ease;
+    transition: all 0.3s ease;
+    -webkit-box-shadow: 0px 0px 4px 2px rgba(0, 0, 0, 0.11);
+    -moz-box-shadow: 0px 0px 4px 2px rgba(0, 0, 0, 0.11);
+    box-shadow: 0px 0px 1px 2px rgba(0, 0, 0, 0.13);
+}
+
+.port-rat-select-panel {    
+    position: absolute;
+    overflow-y: auto;
+    top: 29px;
+    right: 0px;
+    bottom: 0px;
+    left: 0px;
+}
+
+.port-rat-viz-title-bar {
+    position: absolute;
+    top: 0px;
+    width: 100%;
+    height: 29px;
+    z-index: 2;
+    color: #494b5f;
+    background-color: white;
+    border-bottom: 1px solid #e7e7e7;
+    min-width: 200px;
+    font-size: 16px;
+    padding-top: 6px;
+    padding-left: 13px;
+}
+
+.port-rat-canvas-wrapper {
+    position: absolute;
+    top: 0;
+    right: 0;
+    bottom: 0;    
+    left: 337px;
+}

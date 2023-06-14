@@ -1,0 +1,60 @@
+@import '~theme';
+
+.edit-assisted-query {
+    &__menu {
+        &__header {
+            padding: 0 get-spacing('md', 'em');
+            height: get-spacing('xxl', 'em');
+            line-height: get-spacing('xxl', 'em');
+            font-size: 1.25rem;
+            background: #f6f6f6;
+            color: var(--color-primary-100);
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+        &__close-icon {
+            cursor: pointer;
+            &:hover {
+                color: get-text-color('primary');
+            }
+
+            &:focus-visible {
+                outline: none;
+                border-color: get-border-color('primary');
+            }
+        }
+        &__text {
+            margin: get-spacing('xs', 'em') get-spacing('sm', 'em');
+        }
+        &__list {
+            overflow-y: auto;
+            list-style: none;
+            padding: get-spacing('sm', 'em');
+            margin: 0;
+            &__option {
+                padding: 0 get-spacing('md', 'em');
+                margin: 0;
+                height: get-spacing('xxl', 'em') / 2;
+                line-height: get-spacing('xxl', 'em') / 2;
+                overflow: hidden;
+                text-overflow: ellipsis;
+                white-space: nowrap;
+            }
+        }
+        &__error-text {
+            font-size: x-small;
+            color: var(--color-error-100);
+        }
+        &__error-border {
+            border-color: var(--color-error-100);
+        }
+    }
+
+    &__submit__btn {
+        margin: get-spacing('md', 'em') get-spacing('sm', 'em');
+    }
+    &__pointer {
+        cursor: pointer;
+    }
+}

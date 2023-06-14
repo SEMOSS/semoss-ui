@@ -1,0 +1,49 @@
+@import '~theme';
+
+.import {
+    position: absolute;
+    top: 0;
+    right: 0;
+    left: 0;
+    bottom: 0;
+
+    &__breadcrumb {
+        margin: get-spacing('gutter', 'rem');
+        margin-bottom: get-spacing('md', 'rem');
+        height: get-height('md', 'rem');
+    }
+
+    &__accordion {
+        position: absolute;
+        top: get-height('md', 'rem') + get-spacing('gutter', 'rem') +
+            get-spacing('md', 'rem');
+        left: 0;
+        right: 0;
+        bottom: 0;
+        overflow: hidden;
+        height: inherit;
+        width: inherit;
+
+        &__section {
+            position: relative;
+            height: 100%;
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+
+            &__scroll {
+                flex: 1;
+            }
+        }
+
+        &__wrapper {
+            position: absolute;
+            top: get-height('default', 'rem');
+            right: 0;
+            bottom: 0;
+            left: 0;
+            padding: get-spacing('sm', 'em') / 2;
+            overflow: hidden;
+        }
+    }
+}

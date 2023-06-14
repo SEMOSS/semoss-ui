@@ -1,0 +1,222 @@
+<div class="smss-date-picker">
+    <div class="smss-date-picker__trigger" smss-popover ng-disabled="disabled">
+        <smss-input
+            ng-if="!compact"
+            placeholder="{{placeholder}}"
+            ng-model="input.searchTerm"
+            ng-change="validateDate(input.searchTerm)"
+            ng-disabled="disabled"
+            tabindex="{{disabled ? -1 : 0}}"
+        ></smss-input>
+        <div
+            id="smss-date-picker__toggle"
+            class="smss-date-picker__toggle"
+            ng-disabled="disabled"
+            tabindex="{{disabled ? -1 : 0}}"
+            ng-class="{'smss-date-picker__toggle--compact': compact}"
+        >
+            <i class="smss-date-picker__toggle__icon"></i>
+
+            <smss-popover-content
+                model="open"
+                show="showPicker(contentEle)"
+                ng-show="formatHasYear"
+                hide="hidePicker(contentEle)"
+                position="['SW', 'SE', 'NW','NE']"
+            >
+                <div
+                    id="smss-date-picker__picker"
+                    class="smss-date-picker__picker"
+                    ng-class="{'smss-date-picker__picker--wide': timestamp.show}"
+                    ng-click="$event.stopPropagation()"
+                >
+                    <div class="smss-date-picker__picker__control">
+                        <div
+                            class="smss-date-picker__picker__control__title"
+                            ng-class="{'smss-date-picker__picker__control__title--arrow-up' : level !== 'day'}"
+                            tabindex="0"
+                            ng-click="exitLevel()"
+                            ng-keyup="$event.keyCode === 13 && exitLevel()"
+                        >
+                            <span>{{title}}</span>
+                        </div>
+                        <div
+                            class="smss-date-picker__picker__control__left"
+                            tabindex="0"
+                            ng-click="previousLevel()"
+                            ng-keyup="$event.keyCode === 13 && previousLevel()"
+                        ></div>
+                        <div
+                            class="smss-date-picker__picker__control__right"
+                            tabindex="0"
+                            ng-click="nextLevel()"
+                            ng-keyup="$event.keyCode === 13 && nextLevel()"
+                        ></div>
+                        <!-- <div class="ssmss-clear"></div> -->
+                    </div>
+                    <div class="smss-date-picker__picker__selection">
+                        <div ng-if="level === 'day'">
+                            <div
+                                title="{{w.name}}"
+                                class="smss-date-picker__picker__selection__option smss-date-picker__picker__selection__option--small smss-date-picker__picker__selection__option--bold smss-date-picker__picker__selection__option--no-hover"
+                                ng-repeat="w in week track by $index"
+                            >
+                                <span>{{w.abbreviation}}</span>
+                            </div>
+                        </div>
+                        <div ng-if="level === 'day'">
+                            <div
+                                title="{{item.title}}"
+                                tabindex="0"
+                                class="smss-date-picker__picker__selection__option smss-date-picker__picker__selection__option--small smss-date-picker__picker__selection__option--circle"
+                                ng-class="{'smss-date-picker__picker__selection__option--selected': (item.year === year && item.month === month && item.day === day), 
+                                            'smss-date-picker__picker__selection__option--faded': (item.year !== renderedYear || item.month !== renderedMonth),
+                                            'smss-date-picker__picker__selection__option--today' : (item.year === today.year && item.month === today.month && item.day === today.day)}"
+                                ng-click="enterLevel(item.year, item.month, item.day)"
+                                ng-keyup="$event.keyCode === 13 && enterLevel(item.year, item.month, item.day)"
+                                ng-repeat="item in items track by $index"
+                            >
+                                <span> {{item.display}}</span>
+                            </div>
+                        </div>
+                        <div ng-if="level === 'month'">
+                            <div
+                                title="{{item.title}}"
+                                tabindex="0"
+                                class="smss-date-picker__picker__selection__option smss-date-picker__picker__selection__option--large smss-date-picker__picker__selection__option--semibold"
+                                ng-class="{'smss-date-picker__picker__selection__option--selected': (item.year === year && item.month === month)}"
+                                ng-click="enterLevel(item.year, item.month, 1)"
+                                ng-keyup="$event.keyCode === 13 && enterLevel(item.year, item.month, 1)"
+                                ng-repeat="item in items track by $index"
+                            >
+                                <span> {{item.display}}</span>
+                            </div>
+                        </div>
+                        <div ng-if="level === 'year'">
+                            <div
+                                title="{{item.title}}"
+                                tabindex="0"
+                                class="smss-date-picker__picker__selection__option smss-date-picker__picker__selection__option--semibold"
+                                ng-class="{'smss-date-picker__picker__selection__option--selected': (item.year === year)}"
+                                ng-click="enterLevel(item.year, 0, 1)"
+                                ng-keyup="$event.keyCode === 13 && enterLevel(item.year, 0, 1)"
+                                ng-repeat="item in items track by $index"
+                            >
+                                <span> {{item.display}}</span>
+                            </div>
+                        </div>
+                        <div class="smss-clear"></div>
+                    </div>
+                    <div
+                        class="smss-date-picker__picker__timestamp-title"
+                        ng-if="level === 'day' && timestamp.show"
+                    >
+                        <h6
+                            class="smss-date-picker__picker__timestamp-title__left"
+                        >
+                            Enter Timestamp:
+                        </h6>
+                        <div
+                            class="smss-date-picker__picker__timestamp-title__button"
+                        >
+                            <smss-btn
+                                class="smss-btn--icon"
+                                title="Reset Timestamp Selection"
+                                ng-click="resetTimestamp()"
+                            >
+                                <i class="fa fa-undo"></i>
+                            </smss-btn>
+                            <smss-btn
+                                class="smss-btn--icon"
+                                title="Save Timestamp Selection"
+                                ng-click="saveTimestamp()"
+                            >
+                                <i class="fa fa-check smss-color--success"></i>
+                            </smss-btn>
+                        </div>
+                    </div>
+                    <div
+                        class="smss-date-picker__picker__timestamp"
+                        ng-show="timestamp.show && level === 'day'"
+                    >
+                        <div class="smss-date-picker__picker__timestamp__group">
+                            <h6
+                                class="smss-date-picker__picker__timestamp__group__title"
+                            >
+                                Hr:
+                            </h6>
+                            <smss-input
+                                ng-if="timestamp.hrCycle === '12'"
+                                ng-model="timestamp.hr"
+                                type="number"
+                                min="1"
+                                step="1"
+                                max="12"
+                                class="smss-date-picker__picker__timestamp__group__selection"
+                            >
+                            </smss-input>
+                            <smss-input
+                                ng-if="timestamp.hrCycle === '24'"
+                                ng-model="timestamp.hr"
+                                type="number"
+                                min="0"
+                                step="1"
+                                max="23"
+                                class="smss-date-picker__picker__timestamp__group__selection"
+                            >
+                            </smss-input>
+                        </div>
+                        <div class="smss-date-picker__picker__timestamp__group">
+                            <h6
+                                class="smss-date-picker__picker__timestamp__group__title"
+                            >
+                                Min:
+                            </h6>
+                            <smss-input
+                                ng-model="timestamp.min"
+                                type="number"
+                                min="0"
+                                step="1"
+                                max="59"
+                                class="smss-date-picker__picker__timestamp__group__selection"
+                            >
+                            </smss-input>
+                        </div>
+                        <div class="smss-date-picker__picker__timestamp__group">
+                            <h6
+                                class="smss-date-picker__picker__timestamp__group__title"
+                            >
+                                Sec:
+                            </h6>
+                            <smss-input
+                                ng-model="timestamp.sec"
+                                type="number"
+                                min="0"
+                                step="1"
+                                max="59"
+                                class="smss-date-picker__picker__timestamp__group__selection"
+                            >
+                            </smss-input>
+                        </div>
+                        <div
+                            class="smss-date-picker__picker__timestamp__time-period"
+                            tabindex="0"
+                            ng-click="switchTimeperiod()"
+                            ng-if="timestamp.hrCycle === '12'"
+                        >
+                            <span>{{timestamp.a}}</span>
+                        </div>
+                    </div>
+                </div>
+            </smss-popover-content>
+        </div>
+        <smss-popover-content
+            model="showError"
+            position="['N', 'S']"
+            closeable="false"
+            disable-events="true"
+        >
+            <div class="smss-small smss-color--error">{{errorMessage}}</div>
+        </smss-popover-content>
+    </div>
+</div>

@@ -1,0 +1,9 @@
+node_modules
+.DS_Store
+dist
+*.local
+.project
+.history
+.eslintcache
+index.html
+index.html.gz

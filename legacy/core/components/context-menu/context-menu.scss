@@ -1,0 +1,52 @@
+@import '~theme';
+
+$option-height: get-height('sm', 'em') - get-spacing('sm', 'em') / 2;
+
+.context-menu {
+    position: absolute;
+    z-index: 8600;
+    opacity: 0;
+    background: get-background-color('default');
+    border: 1px solid get-border-color('default');
+    box-shadow: get-box-shadow('popover', 'default');
+
+    &__content {
+        // max-width: 250px;
+        // min-width: 150px;
+        width: 225px;
+        height: auto;
+
+        &__header {
+            width: 100%;
+            height: get-height('sm', 'em');
+            line-height: get-height('sm', 'em');
+            padding: 0 2 * get-spacing('sm', 'em');
+            background: get-background-color('light');
+            color: get-text-color('primary');
+            @include text-overflow();
+        }
+
+        &__options {
+            list-style: none;
+            padding: 0;
+            margin-block-start: get-spacing('sm', 'em') / 2;
+            margin-block-end: get-spacing('sm', 'em') / 2;
+
+            &__general {
+                border-top: 1px solid get-border-color('default');
+            }
+
+            &__option {
+                padding: 0 get-spacing('sm', 'em') * 2;
+                height: $option-height;
+                line-height: $option-height;
+                @include text-overflow();
+                cursor: pointer;
+
+                &:hover {
+                    background: get-background-color('primary--hover');
+                }
+            }
+        }
+    }
+}

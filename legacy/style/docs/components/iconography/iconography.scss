@@ -1,0 +1,28 @@
+@import '~theme';
+
+.iconography-section {
+    background: get-background-color('default');
+    border: 1px solid get-border-color('default');
+    margin-bottom: 2em;
+    padding: 1em;
+
+    &__wrapper {
+        padding: get-spacing('sm', 'em') 0;
+    }
+
+    &__rule {
+        padding: get-spacing('sm', 'em');
+        border: 1px solid get-border-color('default');
+        margin: 2 * get-spacing('sm', 'em') 0;
+    }
+
+    & img {
+        height: 14px;
+        vertical-align: middle;
+    }
+
+    & svg {
+        height: 14px;
+        vertical-align: middle;
+    }
+}

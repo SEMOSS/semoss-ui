@@ -1,0 +1,21 @@
+<smss-scroll static-x="true">
+    <div
+        class="smss-color--error"
+        title="SEMOSS must be open inside of the Tableau Web Data Connector for importing to function properly."
+    >
+        SEMOSS must be open inside of the Tableau Web Data Connector for
+        importing to function properly.
+    </div>
+
+    <smss-field>
+        <label> Choose Number Of Instances To Import Into Tableau </label>
+        <content>
+            <smss-input type="number" ng-model="tableauConnect.numToCollect">
+            </smss-input>
+        </content>
+    </smss-field>
+
+    <div class="smss-action">
+        <smss-btn ng-click="tableauConnect.connect()">Connect</smss-btn>
+    </div>
+</smss-scroll>

@@ -1,0 +1,19 @@
+/* For the filter section of the tool panel */
+.filter-panel-content {
+    position: inherit;
+    background-color: #FFF;
+    overflow: auto;
+    height:100%;
+}
+
+.filter-header {
+    border-radius: 3px;
+    font-size: 12px;
+    color: #444;
+    padding: 4px 7px;
+    border-bottom: 1px solid #ccc;
+}
+
+.filter-slider {
+    padding: 20px;
+}

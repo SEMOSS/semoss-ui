@@ -1,0 +1,143 @@
+<smss-scroll static-x="true">
+    <p class="smss-spacing">
+        Add multiple target lines to your visualization. Note start and end
+        symbol selection will be applied to all target lines.
+    </p>
+    <smss-field ng-if="markLine.lines.length > 0">
+        <label> Applied Target Lines: </label>
+        <content>
+            <smss-scroll static-x="true" class="mark-line__container">
+                <div
+                    class="mark-line__rule"
+                    ng-repeat="line in markLine.lines track by $index"
+                >
+                    <div class="smss-left smss-text mark-line__rule__color">
+                        <span
+                            class="mark-line__rule__color__block"
+                            ng-style="{'background-color': line.color}"
+                        ></span>
+                    </div>
+                    <div
+                        class="smss-left smss-text mark-line__rule__text"
+                        ng-if="line.label.name"
+                    >
+                        {{line.label.name}}: {{line.type}} = {{line.value}}
+                    </div>
+                    <div
+                        class="smss-left smss-text mark-line__rule__text"
+                        ng-if="!line.label.name"
+                    >
+                        {{line.type}} = {{line.value}}
+                    </div>
+                    <smss-btn
+                        ng-click="markLine.removeFromAppliedLines($index); $event.stopPropagation()"
+                        title="Remove area"
+                        class="smss-btn--icon smss-color--error"
+                    >
+                        <i class="fa fa-times"></i>
+                    </smss-btn>
+                </div>
+            </smss-scroll>
+        </content>
+    </smss-field>
+    <smss-field ng-if="markLine.layout === 'Scatter'">
+        <label> Select Line Type: </label>
+        <content>
+            <smss-dropdown
+                model="markLine.lineType.selected"
+                display="display"
+                value="value"
+                options="markLine.lineType.options"
+            >
+            </smss-dropdown>
+        </content>
+    </smss-field>
+    <smss-field ng-if="markLine.layout === 'Scatter'">
+        <label> {{markLine.lineType.selected}} Value: </label>
+        <content>
+            <smss-input type="number" ng-model="markLine.value"> </smss-input>
+        </content>
+    </smss-field>
+    <smss-field
+        ng-if="markLine.layout === 'Line' || markLine.layout === 'Column' || markLine.layout === 'Area' || markLine.layout === 'Stack' || markLine.layout === 'MultiLine'"
+    >
+        <label> Y-Axis Value: </label>
+        <content>
+            <smss-input type="number" ng-model="markLine.value"> </smss-input>
+        </content>
+    </smss-field>
+
+    <smss-field>
+        <label> Enter Line Name: </label>
+        <content>
+            <smss-input
+                type="text"
+                ng-model="markLine.label.name"
+                placeholder="Target"
+            >
+            </smss-input>
+        </content>
+    </smss-field>
+
+    <smss-field>
+        <content>
+            <smss-checkbox model="markLine.label.show">
+                Show Name
+            </smss-checkbox>
+        </content>
+    </smss-field>
+
+    <smss-field>
+        <label> Select Line Color: </label>
+        <content>
+            <smss-color-picker
+                color-theme="markLine.theme"
+                model="markLine.selectedColor"
+            >
+            </smss-color-picker>
+        </content>
+    </smss-field>
+
+    <smss-field>
+        <label> Select Line Style: </label>
+        <content>
+            <smss-dropdown
+                model="markLine.lineStyle.selected"
+                display="display"
+                value="value"
+                options="markLine.lineStyle.options"
+            >
+            </smss-dropdown>
+        </content>
+    </smss-field>
+
+    <smss-field>
+        <label>Select Line Start Symbol:</label>
+        <content>
+            <smss-dropdown
+                model="markLine.symbol.start"
+                display="display"
+                value="value"
+                options="markLine.symbolOptions"
+            >
+            </smss-dropdown>
+        </content>
+    </smss-field>
+
+    <smss-field>
+        <label>Select Line End Symbol:</label>
+        <content>
+            <smss-dropdown
+                model="markLine.symbol.end"
+                display="display"
+                value="value"
+                options="markLine.symbolOptions"
+            >
+            </smss-dropdown>
+        </content>
+    </smss-field>
+    <div>&nbsp;</div>
+    <div class="smss-action">
+        <smss-btn ng-click="markLine.execute(true)"> Execute </smss-btn>
+    </div>
+</smss-scroll>

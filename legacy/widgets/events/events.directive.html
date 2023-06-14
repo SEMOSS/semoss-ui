@@ -1,0 +1,379 @@
+<!--Shows you all the events currently active for each action-->
+<smss-scroll ng-if="events.showActiveEvents" static-x="true">
+    <p class="smss-spacing">
+        Create custom events (trigger and action) and enable/disable default
+        events.
+    </p>
+    <div ng-repeat="(key, value) in events.eventData">
+        <smss-field>
+            <label> {{events.eventNameMapping[key]}}: </label>
+            <content>
+                <div
+                    ng-repeat="(event, eventInfo) in value track by $index"
+                    class="events-group"
+                    title="{{eventInfo[0].query}}"
+                >
+                    <div
+                        class="events-group__text"
+                        ng-class="{'events-group__disabled': eventInfo[0].disabled}"
+                    >
+                        <span ng-if="eventInfo[0].default"
+                            >Default Event:
+                        </span>
+                        {{event}} {{event === 'Unfilter' && eventInfo[0].default
+                        || event === 'Filter' && eventInfo[0].default ? 'Frame'
+                        : ''}} {{eventInfo[0].disabled ? '(Disabled)' : ''}}
+                    </div>
+
+                    <smss-btn
+                        class="smss-btn--icon smss-btn--right"
+                        ng-disabled="eventInfo[0].default"
+                        ng-click="events.editEvent(key, event)"
+                        title="Edit event"
+                    >
+                        <i class="fa fa-edit"></i>
+                    </smss-btn>
+
+                    <smss-btn
+                        class="smss-btn--icon"
+                        ng-if="eventInfo[0].default"
+                        ng-click="events.toggleEventDisabled(key, event)"
+                        title="{{eventInfo[0].disabled ? 'Enable event' : 'Disable event'}}"
+                    >
+                        <i
+                            ng-class="{'fa-ban': !eventInfo[0].disabled, 'fa-check': eventInfo[0].disabled}"
+                            class="fa"
+                        ></i>
+                    </smss-btn>
+
+                    <smss-btn
+                        class="smss-btn--icon"
+                        ng-if="!eventInfo[0].default"
+                        ng-click="events.removeEvent(key, event)"
+                        title="Delete event"
+                    >
+                        <i class="fa fa-trash-o"></i>
+                    </smss-btn>
+                </div>
+            </content>
+        </smss-field>
+    </div>
+
+    <smss-btn
+        ng-click="events.showActiveEvents = false; events.resetValues()"
+        class="smss-right"
+    >
+        Add Custom Event
+    </smss-btn>
+</smss-scroll>
+
+<!--Screen for adding new listener events-->
+
+<smss-scroll
+    ng-if="!events.showActiveEvents"
+    class="events-add-content"
+    static-x="true"
+>
+    <smss-field>
+        <label> Event Name: </label>
+        <content>
+            <smss-input type="text" ng-model="events.name"></smss-input>
+        </content>
+    </smss-field>
+
+    <smss-field>
+        <label>Trigger:</label>
+        <content>
+            <smss-dropdown
+                options="events.actions.list"
+                display="name"
+                model="events.actions.selected"
+                change="events.selectAction()"
+            >
+            </smss-dropdown>
+        </content>
+    </smss-field>
+
+    <smss-field ng-show="events.actions.selected.name !== 'Key Press'">
+        <content>
+            <smss-checkbox model="events.keyBinding.bindToKey">
+                Bind to Key
+            </smss-checkbox>
+        </content>
+    </smss-field>
+
+    <smss-field
+        ng-show="events.actions.selected.name !== 'Key Press' && events.keyBinding.bindToKey"
+    >
+        <label>Select Key to Bind To:</label>
+        <content>
+            <smss-dropdown
+                options="events.keyBinding.list"
+                model="events.keyBinding.selected"
+                display="name"
+            >
+            </smss-dropdown>
+        </content>
+    </smss-field>
+
+    <smss-field ng-show="events.actions.selected.name === 'Key Press'">
+        <label>Keys:</label>
+        <content>
+            <smss-input
+                ng-model-options="{updateOn: 'keyup'}"
+                ng-model="events.keysToBind.value"
+                ng-keydown="events.registerKeys($event); $event.preventDefault()"
+                ng-keyup="events.setKeysToBind()"
+            >
+            </smss-input>
+        </content>
+    </smss-field>
+
+    <smss-field>
+        <label>Apply Trigger to:</label>
+        <content>
+            <smss-dropdown
+                options="events.applyTo.list"
+                model="events.applyTo.selected"
+                change="events.setAccordion()"
+            >
+            </smss-dropdown>
+        </content>
+    </smss-field>
+
+    <smss-field ng-if="events.applyTo.selected === 'Specific Panels'">
+        <label>Select Panel to Run Script on:</label>
+        <content>
+            <smss-dropdown
+                options="events.clones.list"
+                display="name"
+                model="events.clones.selected"
+                change="events.updateAccordion()"
+                mouseover="events.mouseover(option)"
+                mouseleave="events.mouseleave(option)"
+            >
+            </smss-dropdown>
+        </content>
+    </smss-field>
+
+    <div ng-show="events.accordionArr.length > 0">
+        <div
+            ng-repeat="item in events.accordionArr track by $index"
+            name="item.name"
+            height="item.height"
+        >
+            <!-- accordion content -->
+            <smss-field>
+                <label>Event:</label>
+                <content>
+                    <smss-dropdown
+                        options="item.eventsList"
+                        model="item.selectedEvent"
+                        display="name"
+                        change="events.selectEvent(item.selectedEvent, item)"
+                    >
+                    </smss-dropdown>
+                </content>
+            </smss-field>
+
+            <smss-field ng-show="item.selectedEvent.name === 'Open URL'">
+                <label>Open as:</label>
+                <content>
+                    <smss-dropdown
+                        options="item.openTypes.list"
+                        model="item.openTypes.selected"
+                        change="events.selectOpenType(item)"
+                    >
+                    </smss-dropdown>
+                </content>
+            </smss-field>
+
+            <!-- Action input for closing a popout -->
+            <div
+                ng-show="item.openTypes.selected === 'Popup' && item.selectedEvent.name === 'Open URL'"
+            >
+                <smss-field>
+                    <label>Close Popup with:</label>
+                    <content>
+                        <smss-dropdown
+                            options="events.actions.list"
+                            display="name"
+                            model="item.popoutClose.action"
+                        >
+                        </smss-dropdown>
+                    </content>
+                </smss-field>
+
+                <smss-field
+                    ng-show="item.popoutClose.action.name === 'Key Press'"
+                >
+                    <label>Keys:</label>
+                    <content>
+                        <smss-input
+                            ng-model-options="{updateOn: 'keyup'}"
+                            ng-model="item.popoutClose.keysToBind.value"
+                            ng-keydown="events.registerKeys($event); $event.preventDefault()"
+                            ng-keyup="events.setKeysToBind(true, item)"
+                        >
+                        </smss-input>
+                    </content>
+                </smss-field>
+            </div>
+
+            <smss-field
+                ng-show="item.selectedEvent.name === 'Filter Column' || item.selectedEvent.name === 'Highlight Column' || item.selectedEvent.name === 'Custom Script'"
+            >
+                <content>
+                    <smss-checkbox
+                        model="item.specifyColumn"
+                        change="events.specifyColumn(item)"
+                    >
+                        Specify Column
+                    </smss-checkbox>
+                </content>
+            </smss-field>
+
+            <smss-field ng-show="item.specifyColumn">
+                <label>Select a Specific Column:</label>
+                <content>
+                    <smss-dropdown
+                        options="events.headers.list"
+                        model="item.headers.selected"
+                        display="alias"
+                        value="alias"
+                    >
+                    </smss-dropdown>
+                </content>
+            </smss-field>
+
+            <smss-field>
+                <content>
+                    <smss-checkbox model="item.specifyViz">
+                        Specify Visualizations (default is all)
+                    </smss-checkbox>
+                </content>
+            </smss-field>
+
+            <smss-field ng-if="item.specifyViz">
+                <label>Select Visualizations:</label>
+                <content>
+                    <smss-checklist
+                        class="smss-checklist--short"
+                        model="events.selectedVisuals"
+                        options="events.visualizations"
+                        searchable
+                        multiple
+                    >
+                    </smss-checklist>
+                </content>
+            </smss-field>
+
+            <div ng-show="item.selectedEvent.name === 'Open URL'">
+                <smss-field>
+                    <label>Enter URL:</label>
+                    <content>
+                        <smss-input
+                            ng-model="item.url.link"
+                            aria-placeholder="Enter URL"
+                            placeholder="Enter URL"
+                        >
+                        </smss-input>
+                    </content>
+                </smss-field>
+
+                <div ng-show="item.openTypes.selected === 'Popup'">
+                    <smss-field>
+                        <label>Width:</label>
+                        <content>
+                            <smss-input
+                                type="number"
+                                ng-model="item.url.width"
+                                aria-placeholder="Enter Width"
+                                placeholder="Enter Width"
+                            >
+                            </smss-input>
+                        </content>
+                    </smss-field>
+
+                    <smss-field>
+                        <label>Height:</label>
+                        <content>
+                            <smss-input
+                                type="number"
+                                ng-model="item.url.height"
+                                aria-placeholder="Enter Height"
+                                placeholder="Enter Height"
+                            >
+                            </smss-input>
+                        </content>
+                    </smss-field>
+                </div>
+            </div>
+
+            <div ng-if="item.selectedEvent.name === 'Open Insight'">
+                <smss-field>
+                    <label> Select Project: </label>
+                    <content>
+                        <smss-dropdown
+                            options="events.apps.list"
+                            model="events.apps.selected"
+                            change="events.getInsights(events.apps.selected)"
+                            display="project_name"
+                            value="project_id"
+                        >
+                        </smss-dropdown>
+                    </content>
+                </smss-field>
+
+                <smss-field>
+                    <label> Select an Insight: </label>
+                    <content>
+                        <smss-dropdown
+                            options="events.insights.list"
+                            model="events.insights.selected"
+                            display="name"
+                            value="app_insight_id"
+                        >
+                        </smss-dropdown>
+                    </content>
+                </smss-field>
+            </div>
+
+            <smss-field ng-show="item.selectedEvent.name === 'Custom Script'">
+                <content>
+                    <smss-checkbox model="item.refresh">
+                        Refresh Visualization
+                    </smss-checkbox>
+                </content>
+            </smss-field>
+
+            <smss-field>
+                <content>
+                    <smss-checkbox model="events.showAdvanced">
+                        Show Script
+                    </smss-checkbox>
+                </content>
+            </smss-field>
+            <smss-field ng-show="events.showAdvanced">
+                <label>Script:</label>
+                <content>
+                    <smss-textarea
+                        class="smss-textarea--resize-vertical"
+                        ng-model="item.query"
+                        aria-placeholder="Enter Pixel Query"
+                        placeholder="Enter Pixel Query"
+                    >
+                    </smss-textarea>
+                </content>
+            </smss-field>
+        </div>
+    </div>
+</smss-scroll>
+
+<div class="smss-action" ng-if="!events.showActiveEvents">
+    <smss-btn ng-click="events.showActiveEvents = true;" class="smss-btn--text">
+        Back
+    </smss-btn>
+
+    <smss-btn ng-click="events.addEvent()"> Execute </smss-btn>
+</div>

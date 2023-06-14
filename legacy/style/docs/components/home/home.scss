@@ -1,0 +1,96 @@
+@import '~theme';
+
+$sidebar-width: 200px;
+$sidebar-logo: 70px;
+
+.home {
+    position: absolute;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    background: get-background-color('light');
+
+    &__nav {
+        position: absolute;
+        top: 0;
+        bottom: 0;
+        left: 0;
+        width: $sidebar-width;
+        border-right: 1px solid get-border-color('default');
+        background: get-background-color('default');
+
+        &__logo {
+            background: get-background-color('nav');
+            fill: get-background-color('default');
+            stroke: get-text-color('white');
+            height: $sidebar-logo;
+            line-height: 8;
+            width: 100%;
+            text-align: center;
+
+            svg {
+                height: 50px;
+            }
+        }
+
+        &__menu {
+            height: calc(100% - #{$sidebar-logo});
+            padding: get-spacing('sm', 'em');
+            overflow-y: auto;
+        }
+
+        &__header {
+            margin: 0;
+        }
+
+        &__list {
+            list-style: none;
+            padding: 0;
+            margin: 0.5em 0;
+
+            & li {
+                padding: 0.125em 0 0.125em 2em;
+                margin: 0;
+                cursor: pointer;
+
+                & a {
+                    font-size: 1em;
+                }
+
+                &:hover {
+                    background: get-background-color('primary--hover');
+                }
+            }
+        }
+    }
+
+    &__contents {
+        position: absolute;
+        top: 0;
+        bottom: 0;
+        left: $sidebar-width;
+        right: 0;
+        padding: 2em 10% 0 10%;
+        overflow: auto;
+
+        &__section {
+            background: get-background-color('default');
+            border: 1px solid get-border-color('default');
+            margin-bottom: 2em;
+            padding: 1em;
+        }
+    }
+}
+
+@media only screen and (max-width: 1024px) {
+    .home {
+        &__contents {
+            &__section {
+                &__logo {
+                    width: 80%;
+                }
+            }
+        }
+    }
+}

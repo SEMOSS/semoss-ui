@@ -1,0 +1,36 @@
+@import '~theme';
+
+.pipeline-app-filter-single {
+    display: flex;
+    align-items: center;
+
+    &__column {
+        width: 30%;
+        margin-right: get-spacing('sm', 'em') / 2;
+        @include text-overflow();
+    }
+
+    &__comparator {
+        width: 16 * get-spacing('sm', 'em');
+        margin-left: get-spacing('sm', 'em') / 2;
+        margin-right: get-spacing('sm', 'em') / 2;
+    }
+
+    &__field {
+        position: relative;
+        margin-left: get-spacing('sm', 'em') / 2;
+        flex: 1;
+        overflow: hidden;
+        text-align: left;
+
+        &__checklist {
+            height: 25 * get-spacing('sm', 'em');
+            overflow: hidden;
+
+            &__checklist {
+                height: calc(100% - #{get-height('sm', 'em')});
+                border-top-width: 0 !important;
+            }
+        }
+    }
+}

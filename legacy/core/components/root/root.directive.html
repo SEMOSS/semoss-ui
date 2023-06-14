@@ -1,0 +1,15 @@
+<div class="root__alert">
+    <smss-alert
+        ng-repeat="alert in root.alert.messages track by alert.id"
+        color="alert.color"
+        ng-model="alert.open"
+    >
+        <smss-alert-label> {{alert.text}} </smss-alert-label>
+    </smss-alert>
+</div>
+
+<cookie-banner ng-if="root.OPTIONAL_COOKIES"></cookie-banner>
+<session-timer></session-timer>
+<redirect-insight></redirect-insight>
+
+<ui-view autoscroll="false"></ui-view>

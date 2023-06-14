@@ -1,0 +1,33 @@
+@import '~theme';
+$btn-group: get-height('sm', 'em') + get-spacing('sm', 'em');
+.events-group {
+    position: relative;
+    width: 100%;
+    display: flex;
+    align-items: center;
+    height: get-height('default', 'rem');
+    line-height: calc(#{get-height('default', 'rem')} - 2px);
+    margin-bottom: get-spacing('md', 'rem');
+
+    &__text {
+        border-radius: $border-radius;
+        padding-left: $scroll-size;
+        border: 1px solid get-border-color('default');
+        @include text-overflow();
+        background: rgba(0, 0, 0, 0.03);
+        height: 100%;
+        line-height: inherit;
+        flex: 1;
+        font-size: get-font-size('body-regular', 'rem');
+        margin-right: get-spacing('sm', 'rem');
+    }
+    &__disabled {
+        background-color: get-background-color('error--hover');
+    }
+}
+.events-add-content {
+    position: relative;
+    height: calc(100% - #{$btn-group});
+    width: 100%;
+    overflow: auto;
+}

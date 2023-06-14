@@ -1,0 +1,47 @@
+@import '~theme';
+
+.query-struct-filter-group {
+    display: flex;
+    flex-direction: column;
+    gap: get-spacing('sm', 'rem');
+    flex-wrap: wrap;
+    width: 100%;
+
+    &--nested {
+        padding: get-spacing('sm', 'rem');
+        border: 1px solid get-border-color('default');
+        border-radius: $border-radius;
+    }
+
+    &__content {
+        display: flex;
+        // align-items: center;
+        gap: get-spacing('sm', 'rem');
+
+        &--nested {
+            padding: get-spacing('sm', 'rem');
+        }
+
+        &__dropdown {
+            margin-top: get-spacing('sm', 'rem');
+            width: get-spacing('sm', 'rem') * 10;
+        }
+
+        &__values {
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            gap: get-spacing('sm', 'rem');
+        }
+    }
+
+    &__footer {
+        display: flex;
+        align-items: center;
+        gap: get-spacing('sm', 'rem');
+
+        &__spacer {
+            flex: 1;
+        }
+    }
+}

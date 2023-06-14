@@ -1,0 +1,103 @@
+<div class="pipeline-app-filter-single">
+    <div
+        class="pipeline-app-filter-single__column"
+        title="{{pipelineAppFilterSingle.filter.selected.column}}"
+    >
+        {{pipelineAppFilterSingle.filter.selected.column}}
+    </div>
+    <div class="pipeline-app-filter-single__comparator">
+        <smss-dropdown
+            class="smss-dropdown--bordered"
+            display="value"
+            value="value"
+            model="pipelineAppFilterSingle.filter.comparator"
+            options="pipelineAppFilterSingle.filter.comparatorOptions"
+            change="pipelineAppFilterSingle.selectComparator(pipelineAppFilterSingle.filter.comparator)"
+        >
+        </smss-dropdown>
+    </div>
+    <div class="pipeline-app-filter-single__field">
+        <div
+            ng-if="(pipelineAppFilterSingle.filter.comparator === '==' || pipelineAppFilterSingle.filter.comparator === '!=')"
+            class="pipeline-app-filter-single__field__checklist"
+        >
+            <smss-search
+                model="pipelineAppFilterSingle.filter.equality.search"
+                change="pipelineAppFilterSingle.searchEquality()"
+                autofocus
+            >
+            </smss-search>
+            <smss-checklist
+                class="pipeline-app-filter-single__field__checklist__checklist"
+                model="pipelineAppFilterSingle.filter.equality.model"
+                options="pipelineAppFilterSingle.filter.equality.options"
+                loading="pipelineAppFilterSingle.filter.equality.loading"
+                scroll="pipelineAppFilterSingle.getMoreEquality()"
+                multiple
+            >
+            </smss-checklist>
+        </div>
+
+        <div
+            ng-if="(pipelineAppFilterSingle.filter.comparator === '<' || pipelineAppFilterSingle.filter.comparator === '<=' || pipelineAppFilterSingle.filter.comparator === '>' || pipelineAppFilterSingle.filter.comparator === '>=') && (pipelineAppFilterSingle.filter.selected.type === 'NUMBER' || pipelineAppFilterSingle.filter.selected.type === 'DOUBLE' || pipelineAppFilterSingle.filter.selected.type === 'INT')"
+        >
+            <div class="smss-text smss-small">&nbsp;</div>
+            <smss-input
+                ng-model="pipelineAppFilterSingle.filter.numerical.model"
+                type="number"
+                autofocus
+            >
+            </smss-input>
+            <div class="smss-text smss-small">
+                Min: {{pipelineAppFilterSingle.filter.numerical.min}}, Max:
+                {{pipelineAppFilterSingle.filter.numerical.max}}
+            </div>
+        </div>
+
+        <div
+            ng-if="(pipelineAppFilterSingle.filter.comparator === '<' || pipelineAppFilterSingle.filter.comparator === '<=' || pipelineAppFilterSingle.filter.comparator === '>' || pipelineAppFilterSingle.filter.comparator === '>=') && (pipelineAppFilterSingle.filter.selected.type === 'DATE')"
+        >
+            <div class="smss-text smss-small">&nbsp;</div>
+            <smss-date-picker
+                class="smss-date-picker--bordered"
+                model="pipelineAppFilterSingle.filter.date.model"
+                autofocus
+            >
+            </smss-date-picker>
+            <div class="smss-text smss-small">
+                Min: {{pipelineAppFilterSingle.filter.date.min}}, Max:
+                {{pipelineAppFilterSingle.filter.date.max}}
+            </div>
+        </div>
+
+        <div
+            ng-if="(pipelineAppFilterSingle.filter.comparator === '<' || pipelineAppFilterSingle.filter.comparator === '<=' || pipelineAppFilterSingle.filter.comparator === '>' || pipelineAppFilterSingle.filter.comparator === '>=') && (pipelineAppFilterSingle.filter.selected.type === 'TIMESTAMP')"
+        >
+            <div class="smss-text smss-small">&nbsp;</div>
+            <smss-input
+                ng-model="pipelineAppFilterSingle.filter.timestamp.model"
+                autofocus
+            >
+            </smss-input>
+            <div class="smss-text smss-small">
+                Min: {{pipelineAppFilterSingle.filter.timestamp.min}}, Max:
+                {{pipelineAppFilterSingle.filter.timestamp.max}}
+            </div>
+        </div>
+
+        <div
+            ng-if="pipelineAppFilterSingle.filter.comparator === '?like' || pipelineAppFilterSingle.filter.comparator === '?begins' || pipelineAppFilterSingle.filter.comparator === '?ends'"
+        >
+            <smss-typeahead
+                class="smss-typeahead--bordered"
+                model="pipelineAppFilterSingle.filter.match.model"
+                options="pipelineAppFilterSingle.filter.match.options"
+                search="pipelineAppFilterSingle.searchMatch()"
+                loading="pipelineAppFilterSingle.filter.match.loading"
+                scroll="pipelineAppFilterSingle.getMoreMatch()"
+                autofocus
+            >
+            </smss-typeahead>
+        </div>
+    </div>
+</div>

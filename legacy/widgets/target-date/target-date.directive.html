@@ -1,0 +1,65 @@
+<smss-scroll static-x="true">
+    <smss-field class="target-date__holder" ng-if="targetDate.dates.length > 0">
+        <label> Applied Dates: </label>
+        <content>
+            <smss-scroll static-x="true" class="target-date__container">
+                <div
+                    class="target-date__rule"
+                    ng-repeat="date in targetDate.dates track by $index"
+                >
+                    <div class="target-date__rule__color">
+                        <span
+                            class="target-date__rule__color__block"
+                            ng-style="{'background-color': date.color}"
+                        ></span>
+                    </div>
+                    <div class="target-date__rule__text">
+                        {{date.label}} : {{date.date}}
+                    </div>
+                    <smss-btn
+                        ng-click="targetDate.removeFromAppliedDates($index); $event.stopPropagation()"
+                        title="Remove rule"
+                        class="smss-btn--icon smss-color--error"
+                    >
+                        <i class="fa fa-times"></i>
+                    </smss-btn>
+                </div>
+            </smss-scroll>
+        </content>
+    </smss-field>
+
+    <smss-field>
+        <label> Select Target Date: </label>
+        <content>
+            <smss-date-picker model="targetDate.date" format="'YYYY-MM-DD'">
+            </smss-date-picker>
+        </content>
+    </smss-field>
+
+    <smss-field>
+        <label> Enter Target Label: </label>
+        <content>
+            <smss-input
+                type="text"
+                ng-model="targetDate.label"
+                placeholder="Target"
+            >
+            </smss-input>
+        </content>
+    </smss-field>
+
+    <smss-field>
+        <label> Select Line/Label Color: </label>
+        <content>
+            <smss-color-picker
+                color-theme="targetDate.theme"
+                model="targetDate.selectedColor"
+            >
+            </smss-color-picker>
+        </content>
+    </smss-field>
+
+    <div class="smss-action">
+        <smss-btn ng-click="targetDate.execute(true)"> Execute </smss-btn>
+    </div>
+</smss-scroll>

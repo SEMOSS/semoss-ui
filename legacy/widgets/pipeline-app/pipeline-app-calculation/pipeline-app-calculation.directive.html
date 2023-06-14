@@ -1,0 +1,92 @@
+<div class="pipeline-app-calculation">
+    <div class="pipeline-app-calculation__header">
+        <smss-field class="pipeline-app-calculation__header__name">
+            <label>
+                Enter Name of Calculated Column:
+                <span class="smss-color--error">*</span>
+            </label>
+            <content>
+                <smss-input
+                    ng-model="pipelineAppCalculation.name"
+                    autofocus
+                ></smss-input>
+            </content>
+        </smss-field>
+
+        <smss-tab-group class="pipeline-app-calculation__header__toggle">
+            <smss-tab
+                ng-class="{'smss-tab--selected': pipelineAppCtrl.calculation.type === 'Simple'}"
+                ng-click="pipelineAppCalculation.changeCalculationType('Simple')"
+                >Basic</smss-tab
+            >
+            <smss-tab
+                ng-class="{'smss-tab--selected': pipelineAppCtrl.calculation.type === 'Advanced'}"
+                ng-click="pipelineAppCalculation.changeCalculationType('Advanced')"
+                >Advanced</smss-tab
+            >
+        </smss-tab-group>
+    </div>
+    <div class="pipeline-app-calculation__content">
+        <!-- Advanced Calculation -->
+        <!-- ng-show on purpose... because functions are registered to the scope-->
+        <div
+            class="pipeline-app-calculation__advanced"
+            ng-show="pipelineAppCtrl.calculation.type === 'Advanced'"
+        >
+            <div class="pipeline-app-calculation__advanced__formula">
+                <formula
+                    menu="pipelineAppCalculation.formula.menu"
+                    tree="pipelineAppCalculation.formula.tree"
+                    register="pipelineAppCalculation.registerFormula(updateTree, getTree)"
+                ></formula>
+            </div>
+        </div>
+        <!-- Simple Calculation -->
+        <div ng-if="pipelineAppCtrl.calculation.type === 'Simple'">
+            <smss-field>
+                <label>
+                    Select Column: <span class="smss-color--error">*</span>
+                </label>
+                <content>
+                    <smss-dropdown
+                        model="pipelineAppCalculation.simple.column.selected"
+                        options="pipelineAppCalculation.simple.column.options"
+                        display="column"
+                    ></smss-dropdown>
+                </content>
+            </smss-field>
+            <smss-field>
+                <label>
+                    Select Calculation: <span class="smss-color--error">*</span>
+                </label>
+                <content>
+                    <smss-dropdown
+                        model="pipelineAppCalculation.simple.function.selected"
+                        options="pipelineAppCalculation.simple.function.options"
+                        display="display"
+                    ></smss-dropdown>
+                </content>
+            </smss-field>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <div class="smss-action">
+        <smss-btn
+            ng-click="pipelineAppCalculation.cancelCalculation()"
+            class="smss-btn--text"
+        >
+            Cancel
+        </smss-btn>
+        <smss-btn
+            ng-click="pipelineAppCalculation.clearCalculation()"
+            class="smss-btn--outline"
+            ng-show="pipelineAppCtrl.calculation.type === 'Advanced'"
+        >
+            Clear
+        </smss-btn>
+        <smss-btn ng-click="pipelineAppCalculation.updateCalculation()">
+            {{pipelineAppCalculation.action}}
+        </smss-btn>
+    </div>
+</div>

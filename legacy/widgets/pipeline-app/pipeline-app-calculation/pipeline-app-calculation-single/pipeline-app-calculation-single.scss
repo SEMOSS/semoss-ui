@@ -1,0 +1,17 @@
+@import '~theme';
+
+.pipeline-app-calculation-single {
+    display: flex;
+    align-items: center;
+
+    &__column {
+        width: 100%;
+        margin-right: get-spacing('sm', 'em') / 2;
+        @include text-overflow();
+    }
+
+    &__custom {
+        display: flex;
+        width: 100%;
+    }
+}

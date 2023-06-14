@@ -1,0 +1,75 @@
+<div class="upload-image">
+    <div class="upload-image__flex">
+        <div
+            class="upload-image__display"
+            ng-click="uploadImage.showUploadOverlay = true"
+        >
+            <img
+                ng-src="{{uploadImage.image.url}}"
+                title="{{uploadImage.image.title}}"
+            />
+            <div class="text">Change image</div>
+        </div>
+    </div>
+
+    <smss-overlay
+        ng-if="uploadImage.showUploadOverlay"
+        open="uploadImage.showUploadOverlay"
+        exit="uploadImage.closeImageUpload()"
+    >
+        <smss-overlay-header>Change Image</smss-overlay-header>
+        <smss-overlay-body>
+            <div class="upload-image__select">
+                <div class="upload-image__label">Select from</div>
+                <div class="upload-image__images">
+                    <div
+                        class="upload-image__image"
+                        ng-repeat="(i, image) in uploadImage.images.options"
+                        ng-class="{ 
+                                    'upload-image__image--selected': image.name === uploadImage.images.selected.name 
+                                }"
+                        ng-click="uploadImage.selectImage(image)"
+                    >
+                        <img ng-src="{{image.url}}" alt="{{image.title}}" />
+                        <i
+                            class="upload-image__delete upload-image__delete__background fa fa-circle"
+                            ng-click="uploadImage.removeImage()"
+                            ng-if="uploadImage.allowDelete"
+                        ></i>
+                        <i
+                            class="upload-image__delete fa fa-minus-circle"
+                            ng-click="uploadImage.removeImage()"
+                            ng-if="uploadImage.allowDelete"
+                        ></i>
+                    </div>
+                </div>
+            </div>
+            <div class="upload-image__upload">
+                <smss-file
+                    file="uploadImage.file"
+                    on-change="uploadImage.setFile(file)"
+                >
+                </smss-file>
+                <div ng-if="uploadImage.file">
+                    <p>Select the area to use for your image</p>
+                    <smss-image-cropper
+                        file="uploadImage.file"
+                        on-discard="uploadImage.removeFile()"
+                        on-crop="uploadImage.addImage(image)"
+                    >
+                    </smss-image-cropper>
+                </div>
+            </div>
+        </smss-overlay-body>
+        <smss-overlay-footer>
+            <div class="upload-image__action">
+                <smss-btn
+                    class="smss-btn--text"
+                    ng-click="uploadImage.closeImageUpload()"
+                    >Cancel</smss-btn
+                >
+                <smss-btn ng-click="uploadImage.save()">Save</smss-btn>
+            </div>
+        </smss-overlay-footer>
+    </smss-overlay>
+</div>

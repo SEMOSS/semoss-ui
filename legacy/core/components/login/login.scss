@@ -1,0 +1,343 @@
+@import '~theme';
+$login-icon: get-spacing('sm', 'em') * 5;
+$bottom-size: get-spacing('sm', 'em') * 5;
+$dot-size: get-spacing('sm', 'em');
+$circle-size: $dot-size * 6;
+$logo-height: get-spacing('sm', 'em') * 4;
+
+.login {
+    position: absolute;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    background-size: cover;
+    overflow: auto;
+
+    // &__particle {
+    //     position: absolute;
+    //     top: 0;
+    //     right: 0;
+    //     bottom: 0;
+    //     left: 0;
+    //     overflow: hidden;
+    //     background: get-background-color("primary");
+    // }
+    &__headline {
+        display: flex;
+        align-items: center;
+        height: 20%;
+
+        &__text {
+            color: get-text-color('primary');
+            white-space: normal;
+        }
+    }
+
+    &__content {
+        height: calc(100% - 20% - #{$logo-height});
+        flex-grow: 1;
+        display: flex;
+        flex-direction: column;
+    }
+
+    &__choices {
+        flex-grow: 1;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+    }
+
+    &__form {
+        flex-grow: 1;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+    }
+
+    &__box {
+        height: 100%;
+        width: 100%;
+        background: get-background-color('default');
+        overflow: hidden;
+        display: flex;
+        flex-wrap: wrap;
+        align-items: stretch;
+        z-index: 1;
+
+        &__left {
+            position: relative;
+            width: 35%;
+            padding: 0 get-spacing('sm', 'em') * 2;
+            max-height: 100%;
+            overflow: auto;
+
+            &__content {
+                position: relative;
+                height: 100%;
+                width: 80%;
+                margin: auto;
+                padding: get-spacing('sm', 'em');
+                display: flex;
+                flex-direction: column;
+
+                &__bottom {
+                    margin: get-spacing('sm', 'em') 0;
+                    color: get-text-color('high-emphasis');
+
+                    &:hover {
+                        cursor: pointer;
+                        color: get-text-color('primary');
+                        text-decoration: underline;
+                    }
+
+                    &:focus {
+                        outline: none;
+                    }
+
+                    &:focus-visible {
+                        outline: 1px solid get-border-color('primary');
+                    }
+                }
+            }
+        }
+
+        &__right {
+            width: 65%;
+            position: relative;
+            background: get-background-color('light');
+
+            &__content {
+                position: relative;
+                height: 100%;
+                width: 100%;
+                overflow: auto;
+                padding: get-spacing('sm', 'em');
+                display: flex;
+                flex-direction: column;
+                justify-content: center;
+
+                &__video {
+                    background-color: get-background-color('default');
+                    margin: 25px auto;
+                    width: 70%;
+                    height: 315px;
+                    position: relative;
+
+                    &:before {
+                        background: url('~images/design_dots.svg');
+                        content: '';
+                        width: 200px;
+                        height: 200px;
+                        display: block;
+                        position: absolute;
+                        top: -110px;
+                        right: -60px;
+                        background-repeat: no-repeat;
+                    }
+
+                    &__youtube {
+                        height: 100%;
+                        width: 100%;
+                        position: absolute;
+                    }
+                }
+
+                &__header {
+                    font-size: 26px;
+                    text-align: center;
+                    margin: 10px 10px 0 10px;
+                }
+
+                &__description {
+                    font-size: 16px;
+                    text-align: center;
+                    margin: 10px 15px 0 15px;
+                    color: get-text-color('medium-emphasis');
+                }
+
+                &__carousel {
+                    margin: 10px 10px 0 10px;
+                    text-align: center;
+
+                    &__dot {
+                        height: $dot-size;
+                        width: $dot-size;
+                        margin: 10px $circle-size/2;
+                        background-color: get-text-color(
+                            'medium-emphasis'
+                        ); // TODO: should this use a background color instead?
+                        display: inline-block;
+                        cursor: pointer;
+                        position: relative;
+
+                        &:focus {
+                            outline: none;
+                        }
+
+                        &:focus-visible {
+                            outline: 1px solid get-border-color('primary');
+                        }
+
+                        &:hover {
+                            box-shadow: 0px 0px 0px 2px
+                                get-text-color('medium-emphasis'); // TODO: should this use a boxshadow function instead?
+                        }
+
+                        &:after {
+                            height: $circle-size;
+                            width: $circle-size;
+                            border-radius: 50%;
+                            content: '';
+                            transition: linear 0.3s;
+                            display: block;
+                            position: absolute;
+                            background: get-text-color('primary');
+                            opacity: 0;
+                            top: -1 * ($circle-size/2 - $dot-size/2);
+                            left: -1 * ($circle-size/2 - $dot-size/2);
+                        }
+
+                        &--active {
+                            background-color: get-text-color('primary');
+
+                            &:hover {
+                                box-shadow: none;
+                            }
+
+                            &:after {
+                                opacity: 0.1;
+                                transition: 0.4s linear;
+                            }
+                        }
+                    }
+                }
+
+                &__control-left {
+                    position: absolute;
+                    top: 0;
+                    left: 0;
+                    bottom: 0;
+                    width: 30px;
+                    color: #777777;
+                    cursor: pointer;
+                    display: flex;
+                    justify-content: center;
+                    align-items: center;
+                    outline: none;
+                    opacity: 0.25;
+
+                    &:hover {
+                        opacity: 1;
+                    }
+                }
+
+                &__control-right {
+                    position: absolute;
+                    top: 0;
+                    right: 0;
+                    bottom: 0;
+                    width: 30px;
+                    color: #777777;
+                    cursor: pointer;
+                    display: flex;
+                    justify-content: center;
+                    align-items: center;
+                    outline: none;
+                    opacity: 0.25;
+
+                    &:hover {
+                        opacity: 1;
+                    }
+                }
+
+                &__version {
+                    position: absolute;
+                    right: get-spacing('sm', 'em');
+                    bottom: get-spacing('sm', 'em');
+                    color: get-text-color('medium-emphasis');
+                }
+            }
+        }
+    }
+
+    &__logo {
+        height: $logo-height;
+
+        & img {
+            height: 100%;
+            width: auto;
+        }
+    }
+
+    &__block {
+        border: none;
+        background: get-background-color('light');
+        margin: 0 0 get-spacing('sm', 'em') 0;
+        text-align: center;
+    }
+
+    &__spacer {
+        width: 100%;
+        height: get-height('sm', 'em');
+        line-height: get-height('sm', 'em');
+        text-align: center;
+        position: relative;
+
+        &:before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 0;
+            right: 0;
+            border-bottom: 1px solid get-border-color('default');
+            z-index: -1;
+        }
+
+        &__text {
+            width: 40px;
+            background: get-background-color('default');
+            margin: auto;
+        }
+    }
+
+    &__popover {
+        position: absolute;
+        top: calc(-200px + #{get-height('sm', 'em')});
+        right: 0;
+        height: 200px;
+        width: 150px;
+        padding: get-spacing('sm', 'em');
+        color: get-text-color('default');
+        background: get-background-color('default');
+        border: 1px solid get-border-color('default');
+        z-index: 1;
+        overflow: auto;
+    }
+
+    &__register {
+        color: get-text-color('high-emphasis');
+        margin: get-spacing('sm', 'em') 0;
+
+        &__link {
+            color: get-text-color('primary');
+
+            &:hover {
+                cursor: pointer;
+                text-decoration: underline;
+            }
+
+            &:focus {
+                outline: none;
+            }
+
+            &:focus-visible {
+                outline: 1px solid get-border-color('primary');
+            }
+        }
+    }
+}

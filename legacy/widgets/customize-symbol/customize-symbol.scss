@@ -1,0 +1,28 @@
+@import '~theme';
+
+.customize-symbol {
+    &__applied {
+        max-height: 200px;
+        padding: get-spacing('sm', 'rem') $scroll-size;
+        overflow-y: auto;
+        border: 1px solid get-border-color('default');
+
+        &__readable {
+            margin: get-spacing('sm', 'rem') 0;
+
+            &__rules {
+                height: get-height('sm', 'rem');
+                line-height: calc(#{get-height('sm', 'rem')} - 2px);
+                padding-left: get-spacing('sm', 'rem');
+                font-size: get-font-size('body-regular', 'rem');
+                @include text-overflow();
+
+                &__img {
+                    width: 15px;
+                    height: 15px;
+                    vertical-align: middle;
+                }
+            }
+        }
+    }
+}

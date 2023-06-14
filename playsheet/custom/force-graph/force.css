@@ -1,0 +1,179 @@
+.table-container {
+    table-layout: fixed;
+    position: absolute;
+    z-index: 2;
+    background-color: #ffffff;
+    bottom: 0;
+    height: 50%;
+}
+
+.base-table-header {
+    padding: 2px 6px;
+    font-weight: bold;
+    color: #222;
+    background-color: #d3d3d3;
+    border-top-left-radius: 2px;
+    border-top-right-radius: 2px;
+}
+
+.base-table-content .table > tbody > tr > td {
+    padding: 2px 6px;
+}
+
+.base-table-content .table > thead > tr > th {
+    padding: 2px 6px;
+}
+
+.traverse-dropdown {
+  width: 200px;
+  margin-right: 5px;
+  margin-left: 5px;
+}
+
+/* Table css for special force graph table. Should be removed once we have one table */
+.prop-row {
+    border-top: 1px solid #ccc;
+    background-color: white;
+    overflow: auto;
+    padding-top: 5px;
+    position: relative;
+}
+
+.side-padding {
+    padding-left: 1%;
+    padding-right: 1%;
+}
+
+.prop-table {
+    width: 31%;
+    float: left;
+    margin-left: 5px;
+    margin-right: 5px;
+    border: 1px solid #ccc;
+    overflow: auto;
+}
+
+.prop-table.prop-wide {
+    width: 31%;
+}
+
+.prop-table .select2-container {
+    width: 30%;
+}
+
+.prop-table-wrapper {
+    height: 317px;
+    overflow-y: auto;
+}
+
+.table-half {
+    width: 50%;
+}
+
+input[type="radio"].prop-radio {
+    width: 15px;
+    display: block;
+    margin: 0 auto;
+}
+
+.tiny-column {
+    width: 10%;
+    font-size: 10px;
+}
+
+.tiny-column i {
+    cursor: pointer;
+}
+
+.traverse-message {
+    display: block;
+    padding-left: 9px;
+    color: #223c57;
+    font-size: 13px;
+    font-style: italic;
+    text-decoration: none;
+    font-style: italic;
+}
+
+.tab-badge {
+    background-color: #15b994;
+    color: white;
+    border-radius: 50%;
+    font-size: 10px;
+    right: 8px;
+    text-align: center;
+    position: absolute;
+    transition:all .1s ease-in;
+    line-height: 17px;
+}
+
+.tab-badge.gray {
+    background-color:gray;
+}
+
+.tab-badge.shown {
+    padding: 2px 7px;
+}
+
+.tab-badge.tabcontrols {
+    right: 3px;
+}
+
+.badge-notify{
+    color: #38B449;
+}
+
+.tab-badge.tabpulse {
+    -webkit-animation: tab-badge-pulse 1s linear;
+    -webkit-animation-iteration-count: 1;
+    transition:all .1s linear;
+    /*background-color: #21bc46; */
+    color: white;
+    border-radius: 50%;
+    font-size: 10px;
+    right: 6px;
+    padding: 8px 14px;
+    margin-top: -4px;
+    margin-right: 0px;
+    text-align: center;
+    position: absolute;
+}
+
+.tab-badge.tabcontrols.tabpulse {
+    right: -1px;
+}
+
+.tab-badge.centered {
+    position: relative;
+    display: inline-block;
+}
+
+@-webkit-keyframes tab-badge-pulse {
+    0% {
+        background-color: #15b994;
+        color: white;
+    }
+    90% {
+        background-color:#15b994;
+        color: white;
+    }
+    100% {
+        background-color: #15b994;
+        color: white;
+    }
+}
+
+.graph-prop-table-resizer {
+    position: absolute;
+    height: 3px;
+    bottom: 50%;
+    left: 0;
+    right: 0;
+    z-index: 3;
+    background-color: #ccc;
+    cursor: n-resize;
+}
+
+.graph-prop-table-resizer:hover {
+    background-color: #666;
+}

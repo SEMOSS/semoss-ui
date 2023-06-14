@@ -1,0 +1,19 @@
+<div class="cookie-banner" ng-if="cookieBanner.open">
+    <div class="cookie-banner__content">
+        <h4 class="cookie-banner__content__header">Notice:</h4>
+        We use cookies to enhance your browsing experience, serve personalized
+        content, and analyze our traffic. Please accept or reject optional
+        cookies.
+
+        <div class="cookie-banner__content__footer">
+            <smss-btn
+                class="smss-btn--outline smss-btn--right"
+                ng-click="cookieBanner.reject()"
+            >
+                Reject
+            </smss-btn>
+
+            <smss-btn ng-click="cookieBanner.accept()"> Accept </smss-btn>
+        </div>
+    </div>
+</div>

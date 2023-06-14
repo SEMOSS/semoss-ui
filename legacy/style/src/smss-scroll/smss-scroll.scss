@@ -1,0 +1,79 @@
+@import '~theme';
+/* ** NEED TO STANDARDIZE SCROLLS BETWEEN BROWSERS ** */
+
+.smss-scroll {
+    position: relative;
+    box-sizing: border-box;
+    height: 100%;
+    width: 100%;
+    font-size: 1rem;
+    overflow: hidden;
+
+    &__outer {
+        box-sizing: border-box;
+        height: calc(100% + 0px);
+        width: calc(100% + 0px);
+        overflow-x: scroll;
+        overflow-y: scroll;
+
+        &::-webkit-scrollbar {
+            height: 0;
+            width: 0;
+        }
+    }
+
+    &__inner {
+        box-sizing: border-box;
+        height: 100%;
+        width: 100%;
+        padding: 2px;
+    }
+
+    &__track {
+        position: absolute;
+        display: none;
+        background: get-scroll-color('track');
+        @include transition(linear);
+        right: 0;
+        bottom: 0;
+        opacity: 0;
+
+        &--y {
+            top: 0;
+            width: ($scroll-size - 4px);
+        }
+
+        &--x {
+            left: 0;
+            height: ($scroll-size - 4px);
+        }
+    }
+
+    &__thumb {
+        position: absolute;
+        height: 100%;
+        width: 100%;
+        background: get-scroll-color('thumb');
+        border-radius: $border-radius;
+
+        &:hover {
+            background: get-scroll-color('thumb--hover');
+        }
+
+        &--y {
+            // TODO: this gets overriden by webkit-- do we still need it?
+            top: 0;
+            height: ($scroll-size - 4px);
+        }
+
+        &--x {
+            // TODO: this gets overriden by webkit-- do we still need it?
+            left: 0;
+            width: ($scroll-size - 4px);
+        }
+    }
+}
+
+.smss-scroll:hover > .smss-scroll__track {
+    opacity: 1;
+}

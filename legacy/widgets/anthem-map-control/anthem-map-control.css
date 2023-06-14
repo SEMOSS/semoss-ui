@@ -1,0 +1,43 @@
+.anthem-map-control {
+    position: relative;
+    height: 100%;
+    padding: 0 12px;
+    overflow-x: hidden;
+    overflow-y: auto;
+}
+
+.anthem-map-control__image {
+    position: relative;
+    margin-top: 16px;
+    height: 28px;
+    margin-bottom: 16px;
+    width: 100%;
+    overflow: hidden;
+}
+
+.anthem-map-control__image__a {
+    height: 100%;
+    margin: 0 auto;
+    display: block;
+}
+
+.anthem-map-control__image__h {
+    position: absolute;
+    width: 50%;
+    left: 50%;
+}
+
+.anthem-map-control__gender {
+    min-height: 100px;
+    height: calc(30% - 96px / 3);
+}
+
+.anthem-map-control__age {
+    min-height: 100px;
+    height: calc(30% - 96px / 3);
+}
+
+.anthem-map-control__diagnosis {
+    min-height: 100px;
+    height: calc(40% - 96px / 3);
+}

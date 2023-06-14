@@ -1,0 +1,168 @@
+<smss-scroll static-x="true">
+    <h3>Build or Predict from a Random Forest Model</h3>
+
+    <smss-field>
+        <content class="smss-row analytics-random-forest__flex">
+            <smss-radio
+                model="analyticsRandomForest.isPredictMode"
+                ng-value="false"
+                change="analyticsRandomForest.updateInstances()"
+            >
+                Build
+            </smss-radio>
+            <smss-radio
+                model="analyticsRandomForest.isPredictMode"
+                ng-value="true"
+                change="analyticsRandomForest.updateInstances()"
+            >
+                Predict
+            </smss-radio>
+        </content>
+    </smss-field>
+
+    <!-- Predict -->
+    <div ng-if="analyticsRandomForest.isPredictMode">
+        <smss-field>
+            <label> Select file: </label>
+            <content>
+                <browser-asset
+                    model="analyticsRandomForest.predFile"
+                    layout="overlay"
+                >
+                    <!--TODO: change back to layout="popover" and fix layout bug. Temporarily switched to overlay because the overlay gets cut off in the current view-->
+                </browser-asset>
+            </content>
+        </smss-field>
+
+        <smss-field>
+            <label
+                >Null values are not allowed. Select how to handle them:</label
+            >
+            <content>
+                <smss-dropdown
+                    model="analyticsRandomForest.nullHandleType"
+                    options="analyticsRandomForest.nullHandleOptions"
+                >
+                </smss-dropdown>
+            </content>
+        </smss-field>
+    </div>
+
+    <!-- Build -->
+    <div ng-if="!analyticsRandomForest.isPredictMode">
+        <smss-field>
+            <label>Select a column:</label>
+            <content>
+                <smss-dropdown
+                    model="analyticsRandomForest.instances.selectedInstance"
+                    options="analyticsRandomForest.instances.options"
+                    change="analyticsRandomForest.updateAttributes(analyticsRandomForest.instances.selectedInstance)"
+                    placeholder="Select One"
+                >
+                </smss-dropdown>
+            </content>
+        </smss-field>
+
+        <smss-field>
+            <label>Select attributes (Minimum of 2):</label>
+            <content>
+                <smss-checklist
+                    class="smss-checklist--short"
+                    model="analyticsRandomForest.attributes.selectedAttributes"
+                    options="analyticsRandomForest.attributes.options"
+                    searchable
+                    multiple
+                    quickselect
+                >
+                </smss-checklist>
+            </content>
+        </smss-field>
+
+        <smss-field>
+            <label>Create model file:</label>
+            <content>
+                <browser-asset
+                    model="analyticsRandomForest.buildFile"
+                    layout="overlay"
+                >
+                </browser-asset>
+            </content>
+        </smss-field>
+
+        <smss-field>
+            <label
+                >Null values are not allowed. Select how to handle them:</label
+            >
+            <content>
+                <smss-dropdown
+                    model="analyticsRandomForest.nullHandleType"
+                    options="analyticsRandomForest.nullHandleOptions"
+                >
+                </smss-dropdown>
+            </content>
+        </smss-field>
+
+        <smss-field>
+            <content>
+                <smss-checkbox
+                    model="analyticsRandomForest.advancedSettingsStatus"
+                    name="Advanced Settings: "
+                >
+                    Advanced Settings:
+                </smss-checkbox>
+            </content>
+        </smss-field>
+
+        <smss-field ng-show="analyticsRandomForest.advancedSettingsStatus">
+            <label>Sample Size:</label>
+            <content>
+                <smss-input
+                    ng-model="analyticsRandomForest.sampleSize"
+                    type="number"
+                >
+                </smss-input>
+            </content>
+        </smss-field>
+
+        <smss-field ng-show="analyticsRandomForest.advancedSettingsStatus">
+            <label>Sample Blocks:</label>
+            <content>
+                <smss-input
+                    ng-model="analyticsRandomForest.sampleBlocks"
+                    type="number"
+                >
+                </smss-input>
+            </content>
+        </smss-field>
+
+        <smss-field ng-show="analyticsRandomForest.advancedSettingsStatus">
+            <label>Tree Depth:</label>
+            <content>
+                <smss-input
+                    ng-model="analyticsRandomForest.treeDepth"
+                    type="number"
+                    min="2"
+                >
+                </smss-input>
+            </content>
+        </smss-field>
+    </div>
+
+    <!-- Execute -->
+    <div class="smss-action">
+        <smss-btn
+            ng-if="!analyticsRandomForest.isPredictMode"
+            ng-disabled="analyticsRandomForest.checkRequiredValues('build')"
+            ng-click="analyticsRandomForest.execute()"
+        >
+            Build Model
+        </smss-btn>
+        <smss-btn
+            ng-if="analyticsRandomForest.isPredictMode"
+            ng-disabled="analyticsRandomForest.checkRequiredValues('predict')"
+            ng-click="analyticsRandomForest.execute()"
+        >
+            Predict
+        </smss-btn>
+    </div>
+</smss-scroll>

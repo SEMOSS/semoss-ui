@@ -1,0 +1,361 @@
+@import '~theme';
+$gutter: 30%;
+$footer-height: get-height('default', 'rem') + 2 * get-spacing('xs', 'rem');
+
+.builder {
+    position: absolute;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    overflow: hidden;
+
+    .dndDragginSource {
+        display: none;
+    }
+
+    &__content {
+        position: absolute;
+        top: 0;
+        right: 0;
+        bottom: $footer-height;
+        left: 0;
+    }
+
+    &__footer {
+        position: absolute;
+        right: 0;
+        bottom: 0;
+        left: 0;
+        height: $footer-height;
+        padding: get-spacing('xs', 'rem') get-spacing('sm', 'rem');
+        background: get-background-color('default');
+    }
+
+    &__apps {
+        &__first {
+            position: absolute;
+            top: 0;
+            right: 0;
+            bottom: 0;
+            left: 0;
+
+            &__inner {
+                position: absolute;
+                padding: 0 get-spacing('sm', 'rem');
+                height: 100%;
+                width: 100%;
+                background: get-background-color('default');
+            }
+        }
+
+        &__main {
+            position: relative;
+            width: 100%;
+            height: calc(100% - #{get-height('default', 'rem')});
+        }
+
+        &__accordion {
+            height: 100%;
+
+            &__item {
+                position: relative;
+                height: 100%;
+                width: 100%;
+
+                &__search {
+                    height: calc(100% - 36px);
+                }
+            }
+        }
+    }
+
+    &__build {
+        &__first {
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            left: 0;
+            width: 15%;
+
+            &__inner {
+                position: absolute;
+                margin: get-spacing('sm', 'rem');
+                padding: get-spacing('sm', 'rem');
+                height: calc(100% - #{get-spacing('sm', 'rem') * 2});
+                width: calc(100% - #{get-spacing('sm', 'rem') * 2});
+                border: 1px solid get-border-color('default');
+                background: get-background-color('light');
+            }
+        }
+
+        &__second {
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            left: 15%;
+            width: 50%;
+
+            &__inner {
+                position: absolute;
+                margin: get-spacing('sm', 'rem');
+                padding: get-spacing('sm', 'rem');
+                height: calc(100% - #{get-spacing('sm', 'rem') * 2});
+                width: calc(100% - #{get-spacing('sm', 'rem') * 2});
+                border: 1px solid get-border-color('default');
+                background: get-background-color('default');
+            }
+        }
+
+        &__third {
+            position: absolute;
+            overflow: auto;
+            top: 0;
+            bottom: 0;
+            left: 65%;
+            width: 35%;
+
+            &__inner {
+                position: absolute;
+                margin: get-spacing('sm', 'rem');
+                padding: get-spacing('sm', 'rem');
+                height: calc(100% - #{get-spacing('sm', 'rem') * 2});
+                width: calc(100% - #{get-spacing('sm', 'rem') * 2});
+                border: 1px solid get-border-color('default');
+                background: get-background-color('light');
+
+                &__content {
+                    height: calc(100% - 52px);
+                    overflow-y: auto;
+                }
+            }
+        }
+    }
+
+    &__left {
+        height: calc(100% - 52px);
+        overflow-y: auto;
+        overflow-x: hidden;
+        padding-left: 0;
+        list-style: none;
+
+        &__item {
+            line-height: get-height('sm', 'rem');
+            height: get-height('sm', 'rem');
+            width: 100%;
+            margin: get-spacing('sm', 'rem') * 0.5 0;
+            padding: 0 get-spacing('sm', 'rem');
+            cursor: move;
+            outline: none;
+            display: block;
+            background: get-background-color('default');
+            overflow: hidden;
+            border: 1px solid get-border-color('default');
+
+            &:hover {
+                background: get-background-color('light');
+            }
+
+            &__img {
+                display: inline-block;
+                width: 32px;
+
+                & img {
+                    position: relative;
+                    height: get-height('sm', 'rem') - get-spacing('sm', 'rem');
+                    display: block;
+                    margin: get-spacing('sm', 'rem') / 2 auto;
+                }
+            }
+
+            &__text {
+                display: inline-block;
+                width: calc(100% - 32px);
+                @include text-overflow();
+            }
+        }
+    }
+
+    &__middle {
+        height: calc(100% - 119px);
+        position: relative;
+        overflow-y: auto;
+        overflow-x: hidden;
+        padding-left: 0;
+        list-style: none;
+
+        &__footer {
+            position: absolute;
+            bottom: 0;
+            left: 50%;
+        }
+
+        &--dragging {
+            border: 1px dashed get-border-color('default');
+        }
+
+        &--empty {
+            &::after {
+                background-color: get-background-color('light');
+                border: 1px solid get-border-color('default');
+                line-height: 200px;
+                display: block;
+                position: absolute;
+                height: 200px;
+                width: 100%;
+                margin: get-spacing('sm', 'rem') * 0.5 0;
+                text-align: center;
+                @include text-overflow();
+                content: 'Start by dragging a new item here.';
+            }
+        }
+
+        .dndPlaceholder {
+            height: get-height('sm', 'rem') * 2;
+            width: 100%;
+            margin: get-spacing('sm', 'rem') * 0.5 0;
+            cursor: move;
+            outline: none;
+            display: block;
+            background: get-background-color('default');
+            border: 1px dashed get-border-color('default');
+        }
+
+        &__item {
+            position: relative;
+            cursor: pointer;
+            outline: none;
+            padding: get-spacing('sm', 'rem') * 0.5;
+
+            &--selected {
+                background-color: get-background-color('light');
+                border-left: 4px solid get-border-color('primary');
+            }
+
+            &--highlighted {
+                border: 1px solid get-border-color('primary');
+            }
+
+            &__times {
+                line-height: 2 * get-spacing('sm', 'rem');
+                height: 2 * get-spacing('sm', 'rem');
+                width: 1.5 * get-spacing('sm', 'rem');
+                text-align: center;
+                cursor: pointer;
+                color: get-text-color('medium-emphasis');
+
+                &:hover {
+                    color: get-text-color('primary');
+                }
+
+                &:focus-visible {
+                    outline: 1px solid get-outline-color('primary');
+                }
+            }
+        }
+    }
+
+    &__push {
+        &__holder {
+            height: calc(100% - 36px);
+            overflow-y: auto;
+            overflow-x: hidden;
+
+            &--dragging {
+                border: 2px dashed get-border-color('default');
+            }
+        }
+
+        &__items {
+            position: relative;
+            cursor: pointer;
+            outline: none;
+            margin: get-spacing('sm', 'rem');
+            padding: get-spacing('sm', 'rem') * 0.5;
+            background-color: get-background-color('light');
+            border: 1px solid get-border-color('default');
+
+            &__inner {
+                min-height: 100px;
+                height: 100%;
+                width: 100%;
+                padding: get-spacing('sm', 'rem') * 0.5;
+                background: get-background-color('default');
+                border: 1px solid get-border-color('default');
+            }
+
+            &__parameter {
+                max-width: 100%;
+                margin: get-spacing('sm', 'rem');
+                padding: get-spacing('sm', 'rem') * 0.5;
+                @include text-overflow();
+                background: get-background-color('default');
+                border: 1px solid get-border-color('default');
+
+                &--highlighted {
+                    border: 1px solid get-border-color('primary');
+                }
+            }
+        }
+    }
+
+    &__action {
+        padding: 0;
+        width: calc(#{get-height('sm', 'rem')} - 2px);
+        text-align: center;
+        background-color: transparent;
+    }
+
+    &__drag {
+        line-height: get-height('sm', 'rem');
+        height: get-height('sm', 'rem');
+        width: calc(100% - #{get-height('sm', 'rem')});
+        cursor: move;
+
+        &__handle {
+            line-height: get-height('sm', 'rem');
+            height: get-height('sm', 'rem');
+            width: get-height('sm', 'rem');
+            text-align: center;
+        }
+
+        &__text {
+            width: calc(100% - #{get-height('sm', 'rem')});
+        }
+    }
+
+    &__new {
+        background-color: get-background-color('light');
+        border: 1px solid get-border-color('default');
+        line-height: 200px;
+        height: 200px;
+        width: 100%;
+        margin: get-spacing('sm', 'rem') * 0.5 0;
+        text-align: center;
+        @include text-overflow();
+    }
+
+    &__text {
+        line-height: get-height('sm', 'rem');
+        width: calc(100% - #{get-height('sm', 'rem')});
+        @include text-overflow();
+    }
+
+    &__checklist {
+        &__info {
+            color: get-text-color('primary');
+            text-align: center;
+            width: 24px;
+            margin: 0 8px 0 0;
+        }
+
+        &__text {
+            width: calc(100% - 32px);
+        }
+    }
+
+    &__insight {
+        position: absolute;
+        left: 45%;
+    }
+}

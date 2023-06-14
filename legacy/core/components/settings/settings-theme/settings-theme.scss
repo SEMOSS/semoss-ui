@@ -1,0 +1,65 @@
+/* Theme Settings Page */
+
+@import '~theme';
+
+.settings-theme {
+    position: absolute;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    overflow: hidden;
+
+    &__popover {
+        &__options {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+
+            &__option {
+                cursor: pointer;
+                @include text-overflow();
+                height: get-height('default', 'em');
+                line-height: get-height('default', 'em');
+                padding: 0 to-em(12px);
+                margin: 0;
+
+                &:hover {
+                    background: get-background-color('primary--hover');
+                }
+            }
+        }
+    }
+
+    &__dropdown {
+        &__colors {
+            float: left;
+            display: inline-block;
+            line-height: calc(#{get-height('sm', 'em')} - 2px);
+            height: 100%;
+            width: calc(100% - 120px);
+            padding: get-spacing('sm', 'em') / 2 0;
+            @include text-overflow();
+
+            &__group {
+                display: flex;
+
+                &__options {
+                    height: 18px;
+                    width: 18px;
+                    display: inline-block;
+                    background: transparent;
+                }
+            }
+        }
+
+        &__text {
+            float: left;
+            display: inline-block;
+            line-height: calc(#{get-height('sm', 'em')} - 2px);
+            height: 100%;
+            width: 120px;
+            @include text-overflow();
+        }
+    }
+}

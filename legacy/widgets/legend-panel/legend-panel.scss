@@ -1,0 +1,144 @@
+@import '~theme';
+
+.legend-panel {
+    padding: get-spacing('sm', 'em');
+    max-height: 100%;
+    overflow: auto;
+
+    &--horizontal {
+        max-width: 100%;
+        white-space: nowrap;
+
+        & .legend-panel__labels {
+            display: inline-block;
+        }
+    }
+
+    &__labels {
+        outline: none;
+        padding: get-spacing('sm', 'em');
+
+        &__text {
+            line-height: 1em;
+        }
+
+        &__icon {
+            padding-right: get-spacing('xs', 'em');
+            &--bordered {
+                // For IE
+                text-shadow: 0 0 2px get-text-color('default');
+                // Other browsers
+                -webkit-text-stroke-width: 1px;
+                -webkit-text-stroke-color: get-text-color('default');
+            }
+        }
+    }
+
+    &__toggle {
+        position: absolute;
+        top: 0;
+        right: 0;
+        z-index: 1;
+        visibility: hidden;
+        opacity: 0.25;
+
+        &:hover {
+            opacity: 1;
+        }
+    }
+
+    &__edit {
+        position: absolute;
+        top: 0;
+        right: 0;
+        bottom: 0;
+        left: 0;
+        display: flex;
+        flex-direction: column;
+        padding: get-spacing('xs', 'rem');
+
+        &__top {
+            display: flex;
+            padding: 0 get-spacing('scroll', 'rem');
+
+            &__search {
+                flex: 1;
+            }
+        }
+
+        &__content {
+            flex: 1;
+        }
+
+        &__list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+
+            & .dndDraggingSource {
+                display: none;
+            }
+
+            & .dndPlaceholder {
+                height: get-spacing('sm', 'em');
+                width: 100%;
+                background: get-background-color('primary--hover');
+                border: 1px solid get-border-color('default');
+            }
+
+            & .dndDragover {
+                background: get-background-color('primary--hover');
+            }
+
+            &__item {
+                margin: get-spacing('md', 'em') 0;
+                padding: get-spacing('xs', 'em') get-spacing('xs', 'em')
+                    get-spacing('xs', 'em') 0;
+                border: 1px solid get-border-color('default');
+                border-radius: $border-radius;
+                display: flex;
+                align-items: center;
+
+                & > * {
+                    margin-right: get-spacing('sm', 'em');
+                }
+
+                & > :first-child {
+                    margin-left: get-spacing('sm', 'em');
+                }
+
+                &__drag {
+                    cursor: move;
+                    cursor: grab;
+                }
+
+                &__color {
+                    width: 150px;
+                }
+
+                &__label {
+                    flex: 1;
+                    text-align: center;
+                    margin: 0 get-spacing('sm', 'em');
+                }
+
+                & .smss-color-picker__toggle {
+                    border-color: transparent;
+                    &:hover {
+                        border-color: get-border-color('default');
+                    }
+                }
+            }
+        }
+    }
+}
+
+@supports (-webkit-text-stroke-width: 1px) {
+    .legend-panel__labels__icon--bordered {
+        text-shadow: none;
+    }
+}
+
+.widget-view:hover .legend-panel__toggle {
+    visibility: visible;
+}

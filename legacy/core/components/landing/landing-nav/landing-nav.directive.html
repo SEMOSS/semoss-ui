@@ -1,0 +1,187 @@
+<div class="landing-nav">
+    <div class="landing-nav__top">
+        <div
+            ng-repeat="(key, value) in landingCtrl.view.options"
+            class="landing-nav__item"
+            ng-class="{'landing-nav__item--selected': landingCtrl.view.selected === value.value}"
+            ng-click="landingCtrl.changeView(value.value, $event)"
+            ng-if="value.menuDisplay"
+        >
+            <h4>
+                <i ng-if="value.icon" class="fa fa-{{value.icon}}"></i>
+                {{value.menuDisplay}}
+            </h4>
+        </div>
+        <div
+            class="landing-nav__item landing-nav__item--all"
+            ng-class="{'landing-nav__item--selected': landingCtrl.view.selected === 'ALL',
+                'landing-nav__item--opened': landingCtrl.projects.isOpen}"
+            ng-click="landingCtrl.changeView('ALL', $event)"
+        >
+            <h4>
+                <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    viewBox="0 0 389.91 435.38"
+                >
+                    <path
+                        class="cls-1"
+                        d="M269.59,350.44v75.33H311.2V350.44a85.35,85.35,0,1,0-41.61,0Z"
+                        transform="translate(-205.05 -182.31)"
+                    />
+                    <path
+                        class="cls-1"
+                        d="M407.33,439.16l-53.59,36a85.33,85.33,0,1,0,19.58,37l57.39-38.61Z"
+                        transform="translate(-205.05 -182.31)"
+                    />
+                    <path
+                        class="cls-1"
+                        d="M509.6,313.29a85,85,0,0,0-59,23.74l-58.91-35.49-21.47,35.64,58.2,35.07a85.34,85.34,0,1,0,81.15-59Z"
+                        transform="translate(-205.05 -182.31)"
+                    />
+                </svg>
+                My Insights
+            </h4>
+            <smss-btn
+                ng-click="landingCtrl.projects.isOpen = !landingCtrl.projects.isOpen; $event.stopPropagation();"
+                class="smss-btn--icon"
+            >
+                <i
+                    ng-if="landingCtrl.projects.isOpen"
+                    class="fa fa-chevron-up"
+                    title="Hide Projects"
+                ></i>
+                <i
+                    ng-if="!landingCtrl.projects.isOpen"
+                    class="fa fa-chevron-down"
+                    title="Show Projects"
+                ></i>
+            </smss-btn>
+        </div>
+        <div ng-show="landingCtrl.projects.isOpen" class="landing-nav__scroll">
+            <smss-search
+                model="landingCtrl.projects.searchTerm"
+                change="landingCtrl.searchProjects()"
+                placeholder="Search projects..."
+                inline
+            ></smss-search>
+            <div
+                class="smss-caption--center landing-nav__empty"
+                ng-if="landingCtrl.projects.filtered.length == 0 && landingCtrl.projects.searchTerm.length > 0"
+            >
+                No projects found for "{{landingCtrl.projects.searchTerm}}",
+                please try another one.
+            </div>
+            <div
+                class="smss-caption--center landing-nav__empty"
+                ng-if="landingCtrl.projects.filtered.length == 0 && landingCtrl.projects.searchTerm.length == 0"
+            >
+                No projects found. Create a new project.
+            </div>
+            <smss-scroll static-x="true" class="landing-nav__scroll__content">
+                <div
+                    ng-repeat="app in landingCtrl.projects.filtered"
+                    ng-click="landingNav.navigate('home.landing.project', {projectId: app.project_id, projectName: app.project_name});"
+                    class="landing-nav__projects"
+                    ng-class="{'landing-nav__projects--selected': landingCtrl.projects.selected === app.project_id}"
+                    title="Filter by {{app.project_name}}"
+                >
+                    <span class="landing-nav__projects__text">
+                        <i class="fa fa-folder-o"></i>{{app.project_name}}
+                    </span>
+                    <smss-btn
+                        ng-click="$event.stopPropagation()"
+                        ng-if="app.permission && app.permission !== 3"
+                        class="smss-btn--icon landing-nav__projects__button"
+                        smss-popover
+                        title="Show Menu"
+                    >
+                        <i class="fa fa-ellipsis-v"></i>
+                        <smss-popover-content
+                            class="landing__popover smss-popover-content--compact"
+                            position="['SW', 'SE']"
+                            model="app.openMenu"
+                            closeable="false"
+                        >
+                            <ul class="landing__popover__options">
+                                <li
+                                    class="landing__popover__options__option"
+                                    ng-click="landingNav.navigate('home.landing.project.manage', {projectId: app.project_id, projectName: app.project_name}); app.openMenu = false;"
+                                >
+                                    <i
+                                        class="fa fa-cog smss-color--primary"
+                                    ></i>
+                                    <span>Manage</span>
+                                </li>
+                                <li
+                                    class="landing__popover__options__option"
+                                    ng-click="landingCtrl.openAppDelete(app)"
+                                    ng-if="app.permission === 1"
+                                >
+                                    <i
+                                        class="fa fa-trash-o smss-color--primary"
+                                    ></i>
+                                    <span>Delete</span>
+                                </li>
+                            </ul>
+                        </smss-popover-content>
+                    </smss-btn>
+                </div>
+            </smss-scroll>
+            <div
+                class="landing-nav__btns"
+                ng-if="!(landingCtrl.adminOnlyProjectAdd && !landingCtrl.adminUser)"
+            >
+                <smss-btn
+                    class="smss-btn--text"
+                    ng-click="landingCtrl.openCreateProject()"
+                >
+                    <i class="fa fa-plus"></i>New project
+                </smss-btn>
+                <smss-btn
+                    class="smss-btn--text"
+                    ng-click="landingCtrl.openUploadProject()"
+                >
+                    <i class="fa fa-plus"></i>Upload project
+                </smss-btn>
+            </div>
+        </div>
+    </div>
+    <div class="landing-nav__bottom">
+        <smss-collapsible
+            class="landing-nav__collapse smss-collapsible--white"
+            model="landingNav.tags.isOpen"
+        >
+            <smss-collapsible-header>Filter by</smss-collapsible-header>
+            <smss-collapsible-content class="landing-nav__scroll">
+                <smss-search
+                    model="landingNav.tags.searchTerm"
+                    change="landingNav.searchTags(searchTerm)"
+                    placeholder="Search tags..."
+                    inline
+                ></smss-search>
+                <div
+                    class="smss-caption--center landing-nav__empty"
+                    ng-if="landingNav.tags.filtered.length == 0 && landingNav.tags.searchTerm.length > 0"
+                >
+                    No tags found for "{{landingNav.tags.searchTerm}}", please
+                    try another one.
+                </div>
+                <div
+                    class="smss-caption--center landing-nav__empty"
+                    ng-if="landingNav.tags.filtered.length == 0 && landingNav.tags.searchTerm.length == 0"
+                >
+                    No tags found. Add tags to your insights to filter.
+                </div>
+                <div class="landing-nav__scroll__content">
+                    <smss-checklist
+                        model="landingCtrl.tags.selected"
+                        options="landingNav.tags.filtered"
+                        change="landingCtrl.searchInsights()"
+                        multiple
+                    >
+                    </smss-checklist>
+                </div>
+            </smss-collapsible-content>
+        </smss-collapsible>
+    </div>
+</div>

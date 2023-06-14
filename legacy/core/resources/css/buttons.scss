@@ -1,0 +1,10 @@
+@import '~theme';
+.content {
+    position: absolute;
+    top: 0;
+    right: 0;
+    bottom: 50px;
+    left: 0;
+    overflow: auto;
+    background-color: #fefefe;
+}

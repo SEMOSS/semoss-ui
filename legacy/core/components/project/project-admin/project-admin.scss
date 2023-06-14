@@ -1,0 +1,93 @@
+@import '~theme';
+
+.project-admin {
+    height: 100%;
+    width: 100%;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+
+    &__top {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        & .smss-search {
+            width: 205px;
+        }
+    }
+
+    &__table-header {
+        padding: get-spacing('sm', 'rem') 0;
+        display: flex;
+        align-items: center;
+        border-bottom: 1px solid get-border-color('default');
+        font-size: get-font-size('body-regular', 'rem');
+    }
+
+    &__col {
+        @include text-overflow();
+    }
+
+    &__row {
+        height: get-height('image', 'rem');
+        width: 100%;
+        border-top: 1px solid transparent;
+        border-bottom: 1px solid get-border-color('default');
+        display: flex;
+        align-items: center;
+        font-size: get-font-size('body-regular', 'rem');
+        &:last-child {
+            border-bottom-color: transparent;
+        }
+    }
+
+    &__selectall {
+        display: flex;
+        align-items: center;
+        & .smss-checkbox {
+            width: get-width('square', 'rem') + 2 * get-spacing('sm', 'rem');
+        }
+        &__text {
+            flex: 1;
+            @include text-overflow();
+        }
+    }
+
+    &__btn {
+        text-align: right;
+    }
+
+    &__insights {
+        flex: 1;
+        overflow: auto;
+    }
+
+    &__overlay {
+        &__grid td {
+            border: none;
+        }
+    }
+
+    &__partial {
+        cursor: pointer;
+        & .smss-checkbox__mark--checked {
+            background: get-background-color('primary') !important;
+            border-color: get-background-color('primary') !important;
+            &:after {
+                content: '\f068';
+            }
+        }
+    }
+
+    &__checkbox {
+        cursor: pointer;
+        & .smss-checkbox__mark {
+            background: get-background-color('default') !important;
+            border-color: get-border-color('dark') !important;
+            &--checked {
+                background: get-background-color('primary') !important;
+                border-color: get-background-color('primary') !important;
+            }
+        }
+    }
+}

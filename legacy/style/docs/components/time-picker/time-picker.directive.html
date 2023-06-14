@@ -1,0 +1,35 @@
+<div>
+    <smss-field>
+        <label> Default ({{timePicker1.format}}): </label>
+        <content>
+            <smss-time-picker model="timePicker1.value"></smss-time-picker>
+        </content>
+    </smss-field>
+    <smss-field>
+        <label> Disabled: </label>
+        <content>
+            <smss-time-picker
+                model="timePicker1.value"
+                ng-disabled="timePickerDisabled"
+            ></smss-time-picker>
+        </content>
+    </smss-field>
+    <smss-field>
+        <label> Custom Format ({{timePicker2.format}}): </label>
+        <content>
+            <smss-time-picker
+                model="timePicker2.value"
+                format="timePicker2.format"
+            ></smss-time-picker>
+        </content>
+    </smss-field>
+    <smss-field>
+        <label> Custom Format ({{timePicker3.format}}): </label>
+        <content>
+            <smss-time-picker
+                model="timePicker3.value"
+                format="timePicker3.format"
+            ></smss-time-picker>
+        </content>
+    </smss-field>
+</div>

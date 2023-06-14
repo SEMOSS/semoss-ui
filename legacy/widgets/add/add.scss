@@ -1,0 +1,34 @@
+@import '~theme';
+
+.add {
+    position: absolute;
+    top: 0;
+    left: get-spacing('scroll', 'em');
+    bottom: 0;
+    right: get-spacing('scroll', 'em');
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+
+    &__name {
+        display: flex;
+        align-items: center;
+
+        &__icon {
+            width: get-width('icon', 'em');
+        }
+    }
+
+    &__content {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        width: 100%;
+        overflow: hidden;
+
+        &__formula {
+            flex: 1;
+            overflow: hidden;
+        }
+    }
+}

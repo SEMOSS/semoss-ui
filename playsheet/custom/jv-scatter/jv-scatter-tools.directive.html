@@ -1,0 +1,38 @@
+
+<div class="grid12">
+    <div class="grid6">
+        <button id="ScatterPlotZIndex" class="btn-full btn-light pull-right sm-hor-padding"
+                ng-click="jvScatterTools.updateVisualization('toggleZ', !toolPanelCtrl.selectedData.uiOptions.toggleZ)"
+                ng-class="{'toggled': toolPanelCtrl.selectedData.uiOptions.toggleZ}">
+            Toggle Z-Index
+        </button>
+    </div>
+    <div class="grid6">
+        <button id="DrawQuadrants" class="btn-full btn-light pull-right sm-hor-padding"
+                ng-click="jvScatterTools.updateVisualization('lineGuide', !toolPanelCtrl.selectedData.uiOptions.lineGuide)"
+                ng-class="{'toggled': !toolPanelCtrl.selectedData.uiOptions.lineGuide}">
+            Toggle Quadrants
+        </button>
+    </div>
+</div>
+
+<div class="grid12">
+    <hr style="margin: 10px 0px 10px 0px;"/>
+</div>
+
+<div class="grid12">
+    <div class="grid6">
+        <button id="scatterPlotXReversed" class="btn-full btn-light pull-right sm-padding"
+                ng-click="jvScatterTools.updateVisualization('xReversed', !toolPanelCtrl.selectedData.uiOptions.xReversed)"
+                ng-class="{'toggled': toolPanelCtrl.selectedData.uiOptions.xReversed}">
+            Reverse X Axis
+        </button>
+    </div>
+    <div class="grid6">
+        <button id="scatterPlotYReversed" class="btn-full btn-light pull-right sm-padding"
+                ng-click="jvScatterTools.updateVisualization('yReversed', !toolPanelCtrl.selectedData.uiOptions.yReversed)"
+                ng-class="{'toggled': toolPanelCtrl.selectedData.uiOptions.yReversed}">
+            Reverse Y Axis
+        </button>
+    </div>
+</div>

@@ -1,0 +1,105 @@
+<smss-overlay
+    ng-if="editAssistedQuery.open"
+    open="editAssistedQuery.open"
+    disable-click="editAssistedQuery.disableClick"
+>
+    <smss-overlay-header class="smms-row">
+        <div class="smss-col smss-col--11">Changes Detected</div>
+        <div class="smss-col smss-col--1 edit-assisted-query__menu__close-icon">
+            <i class="fa fa-times" ng-click="editAssistedQuery.close()"></i>
+        </div>
+    </smss-overlay-header>
+    <smss-overlay-body>
+        <span class="smss-spacing"
+            >The system detects some changes. Do you want to:</span
+        >
+
+        <smss-field>
+            <content>
+                <smss-radio
+                    model="editAssistedQuery.saveType"
+                    value="new"
+                    name="frameChange"
+                    change="editAssistedQuery.onSelectType()"
+                    >Create a new frame</smss-radio
+                >
+                <smss-input
+                    ng-if="editAssistedQuery.saveType=='new'"
+                    ng-class="{'smss-border--error' : (editAssistedQuery.duplicateFrameName || editAssistedQuery.incorrectName)}"
+                    ng-model="editAssistedQuery.newFrameName.name"
+                    type="text"
+                    ng-change="editAssistedQuery.onNewType(editAssistedQuery.newFrameName)"
+                ></smss-input>
+            </content>
+            <description
+                class="smss-color--error"
+                ng-show="editAssistedQuery.saveType=='new'"
+            >
+                <span ng-show="editAssistedQuery.duplicateFrameName"
+                    >Frame already exists</span
+                >
+                <span ng-show="editAssistedQuery.incorrectName"
+                    >Frame name must start with a Alphabet</span
+                >
+            </description>
+        </smss-field>
+
+        <smss-field
+            ng-hide="editAssistedQuery.newInsight || editAssistedQuery.options.length==0"
+        >
+            <content>
+                <smss-radio
+                    model="editAssistedQuery.saveType"
+                    value="edit"
+                    name="frameChange"
+                    change="editAssistedQuery.onSelectType()"
+                    >Update frame</smss-radio
+                >
+                <smss-dropdown
+                    ng-if="editAssistedQuery.saveType=='edit'"
+                    model="editAssistedQuery.selected"
+                    options="editAssistedQuery.options"
+                    change="editAssistedQuery.onFrameNameSelect(editAssistedQuery.selected)"
+                >
+                    <smss-dropdown-toggle
+                        title="{{editAssistedQuery.displayText}}"
+                        class="app-list-dropdown__item"
+                    >
+                        <div class="app-list-dropdown__item__img">
+                            <img ng-src="{{editAssistedQuery.seletedImg}}" />
+                        </div>
+                        <div class="app-list-dropdown__item__text">
+                            {{editAssistedQuery.displayText}}
+                        </div>
+                    </smss-dropdown-toggle>
+                    <smss-dropdown-list
+                        title="{{$parent.opt.databaseName}}{{' > '}}{{$parent.opt.frameName}}"
+                        class="app-list-dropdown__item"
+                    >
+                        <div class="app-list-dropdown__item__img">
+                            <img ng-src="{{$parent.opt.databaseImg}}" />
+                        </div>
+                        <div class="app-list-dropdown__item__text">
+                            {{$parent.opt.databaseName}}{{' >
+                            '}}{{$parent.opt.frameName}}
+                        </div>
+                    </smss-dropdown-list>
+                </smss-dropdown>
+            </content>
+            <description
+                class="smss-color--error"
+                ng-show="editAssistedQuery.saveType=='edit'"
+            >
+                <span ng-show="!editAssistedQuery.isFrameSelected"
+                    >Select a frame to update</span
+                >
+            </description>
+        </smss-field>
+    </smss-overlay-body>
+    <smss-overlay-footer>
+        <smss-btn class="smss-btn--text" ng-click="editAssistedQuery.close()">
+            Cancel
+        </smss-btn>
+        <smss-btn ng-click="editAssistedQuery.confirm()"> Confirm </smss-btn>
+    </smss-overlay-footer>
+</smss-overlay>

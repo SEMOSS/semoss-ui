@@ -1,0 +1,32 @@
+<div class="sm-margin">
+    <ng-form name="clusteringForm">
+        <div>
+            <div class="sm-tabs cust-tabs full-width pointer">
+                <a ng-class="{'tab-selected': standard}"
+                   ng-click="standard = true;"
+                   ng-init="standard= true">Optimize</a>
+
+                <a ng-click="standard = false;"
+                   ng-class="{'tab-selected':!standard}">Customize</a>
+                <div class="cust-tabs-toggle" ng-class="{'tab-selected': standard}"></div>
+            </div>
+        </div>
+        <div ng-class="{'visible': standard, 'hidden':!standard}">
+            <!--         <p class="information" style="margin:5px 10px;">Determines optimal number of clusters.</p> -->
+        </div>
+        <div ng-if="!standard">
+            <div class="input-group sm-font" style="margin:5px 0px;">
+                <span class="input-group-addon sm-font" style="width:185px">Maximize Number of Clusters</span>
+                <input type="number"
+                       name="clusterNumberForm"
+                       class="form-control"
+                       ng-model="analyticsPanel.selectedRoutine.options.clusterNumber"
+                       ng-blur="analyticsPanel.setOptions('subsetSize', analyticsPanel.selectedRoutine.options.clusterNumber);"
+                       min="2" max="50">
+            </div>
+            <!--<div class="input-group" style="margin:5px 0px;color:red;font-size:12px" ng-show="clusteringoptionsctrl.analyticsPanelForm.clusteringForm.clusterNumberForm.$invalid">-->
+                <!--Maximize Clusters Must be an Integer from 2 to 50.-->
+            <!--</div>-->
+        </div>
+    </ng-form>
+</div>

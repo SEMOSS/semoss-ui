@@ -1,0 +1,63 @@
+@import '~theme';
+$settings-icon: get-spacing('sm', 'rem') * 5;
+
+.settings-list-item {
+    cursor: default;
+    width: calc(100% - #{$scroll-size});
+    padding: get-spacing('xs', 'rem') get-spacing('md', 'rem');
+    border-bottom: 1px solid get-border-color('default');
+    border-left: 3px solid get-border-color('white');
+
+    &:hover {
+        background: get-background-color('primary--hover');
+    }
+
+    &--selected {
+        border-left: 3px solid get-border-color('primary');
+    }
+
+    &__text {
+        width: calc(100% - 2 *#{$settings-icon});
+        display: inline-block;
+
+        &--100w {
+            width: 100%;
+        }
+
+        &__title {
+            &__left {
+                width: 80%;
+                height: get-height('default', 'rem');
+                line-height: get-height('default', 'rem');
+                overflow: hidden;
+                text-overflow: ellipsis;
+            }
+
+            &__middle {
+                width: 10%;
+                height: get-height('default', 'rem');
+                line-height: get-height('default', 'rem');
+                overflow: hidden;
+                text-overflow: ellipsis;
+            }
+
+            &__right {
+                width: 20%;
+
+                .smss-btn {
+                    border: none !important;
+                }
+            }
+        }
+
+        &__description {
+            color: get-text-color('low-emphasis');
+        }
+    }
+
+    &__action {
+        width: 2 * $settings-icon;
+        display: inline-block;
+        color: get-text-color('low-emphasis');
+    }
+}

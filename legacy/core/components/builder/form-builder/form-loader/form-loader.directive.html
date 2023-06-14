@@ -1,0 +1,19 @@
+<div id="{{'form-content-' + form.uniqueId}}" class="form-loader">
+    <!-- <div class="{{item.class}}" ng-style="item.style"
+        ng-repeat="item in form.content.items track by $index">
+        <div class="form__middle__item__dynamic" dynamic="form.cleanHTML(item.html, $index)"></div>
+    </div> -->
+    <ul class="form-loader__content" ng-style="form.formBackground">
+        <li
+            class="form-loader__middle__item {{item.class}}"
+            ng-style="item.style"
+            ng-repeat="item in form.content.items track by $index"
+        >
+            <div
+                class="form-loader__middle__item__dynamic"
+                ng-init="html = form.cleanHTML(item.html, $index)"
+                dynamic="html"
+            ></div>
+        </li>
+    </ul>
+</div>

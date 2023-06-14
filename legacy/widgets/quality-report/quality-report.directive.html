@@ -1,0 +1,180 @@
+<smss-scroll static-x="true">
+    <p class="smss-spacing">
+        Specify rules to determing the quality of your data, identify errors,
+        and generate a report.
+    </p>
+
+    <!-- RESULTS -->
+    <div class="smss-spacing" ng-if="qualityReport.results.length > 0">
+        <smss-field class="smss-field smss-clear">
+            <label class="smss-left quality-report__applied-rules__title">
+                Applied Rules:
+            </label>
+            <content>
+                <smss-btn
+                    class="smss-btn smss-btn--outline smss-right"
+                    ng-click="qualityReport.generateReport();"
+                    title="Create a Quality Report Dashbaord showing results from the rules below"
+                >
+                    Generate Report
+                </smss-btn>
+            </content>
+        </smss-field>
+        <div class="quality-report__applied-rules__table">
+            <table>
+                <tr>
+                    <th title="Specified rule to run">Rule</th>
+                    <th title="Specified column to run the rule on">Column</th>
+                    <th
+                        title="Percentage of entries within the column that pass the rule"
+                    >
+                        Pass Rate
+                    </th>
+                    <th title="Highlight errors (red) directly in data">
+                        Highlight Errors
+                    </th>
+                    <th class="smss--icon"></th>
+                </tr>
+                <tr ng-if="qualityReport.results.length == 0">
+                    <td colspan="5">
+                        You have no applied rules. Please add a rule below to
+                        generate a report.
+                    </td>
+                </tr>
+                <tr
+                    ng-if="qualityReport.results.length > 0"
+                    ng-repeat="result in qualityReport.results track by $index"
+                >
+                    <td title="{{result.rule}}">{{result.rule}}</td>
+                    <td title="{{result.column}}">{{result.column}}</td>
+                    <td
+                        title="{{result.errors}} errors found in {{result.total}} entries"
+                    >
+                        {{result.passRate}}
+                    </td>
+                    <td>
+                        <smss-checkbox
+                            ng-disabled="result.errors === 0;"
+                            model="result.cbv.applied"
+                            change="qualityReport.updateCBV(result)"
+                        >
+                        </smss-checkbox>
+                    </td>
+                    <td>
+                        <smss-btn
+                            ng-click="qualityReport.removeRule($index);"
+                            title="Delete rule"
+                            class="smss-btn--icon"
+                        >
+                            <i class="fa fa-trash-o"></i>
+                        </smss-btn>
+                    </td>
+                </tr>
+            </table>
+        </div>
+    </div>
+    <!-- RULES -->
+    <smss-field>
+        <label> Select a Rule: </label>
+        <content>
+            <smss-dropdown
+                model="qualityReport.rules.selected"
+                display="name"
+                options="qualityReport.rules.options"
+                change="qualityReport.setRule()"
+                placeholder="None Selected"
+            >
+            </smss-dropdown>
+        </content>
+    </smss-field>
+
+    <!-- OPTIONS (Formats) -->
+    <smss-field
+        ng-if="qualityReport.ruleHasBeenSet && qualityReport.optionType === 'checklist'"
+    >
+        <label> Select Accepted Formats: </label>
+        <content>
+            <smss-checklist
+                model="qualityReport.rules.selected.selectedOptions"
+                options="qualityReport.rules.selected.ruleOptions"
+                change="qualityReport.setOptions('options');"
+                display="displayName"
+                value="pixelName"
+                multiple
+            >
+            </smss-checklist>
+        </content>
+    </smss-field>
+
+    <smss-field
+        ng-if="qualityReport.ruleHasBeenSet && qualityReport.optionType === 'input'"
+    >
+        <label> Specify Accepted Formats: </label>
+        <content>
+            <div class="smss-clear" ng-if="qualityReport.specifiedOptions">
+                <div
+                    class="smss-text smss-center smss-left quality-report__input"
+                    title="Accepted Formats: {{qualityReport.specifiedOptions}}"
+                >
+                    {{qualityReport.specifiedOptions}}
+                </div>
+                <smss-btn
+                    class="smss-right smss-btn--icon smss-color--error"
+                    ng-click="qualityReport.clearOption();"
+                    title="Clear all of the accepted formats"
+                >
+                    <i class="fa fa-times"></i>
+                </smss-btn>
+            </div>
+
+            <div class="smss-clear">
+                <smss-input
+                    class="smss-left quality-report__input"
+                    ng-model="qualityReport.newOption"
+                    enter-key="qualityReport.addOption()"
+                    placeholder="Enter one accepted value"
+                >
+                </smss-input>
+                <smss-btn
+                    class="smss-right smss-btn--icon smss-color--success"
+                    ng-click="qualityReport.addOption();"
+                    ng-disabled="!qualityReport.newOption"
+                    title="Add value as an accepted format"
+                >
+                    <i class="fa fa-plus"></i>
+                </smss-btn>
+            </div>
+        </content>
+    </smss-field>
+
+    <!-- COLUMN -->
+    <smss-field ng-if="qualityReport.ruleHasBeenSet">
+        <label> Select a Column to Run Rule On: </label>
+        <content>
+            <smss-dropdown
+                model="qualityReport.columns.selected"
+                display="name"
+                change="qualityReport.setOptions('column');"
+                options="qualityReport.columns.options"
+                placeholder="None Selected"
+            >
+            </smss-dropdown>
+        </content>
+    </smss-field>
+
+    <!-- EXECUTE -->
+    <div class="smss-action">
+        <smss-btn
+            class="smss-btn--text"
+            ng-if="qualityReport.PIPELINE"
+            ng-click="pipelineComponentCtrl.closeComponent()"
+            >Cancel</smss-btn
+        >
+        <smss-btn
+            ng-click="qualityReport.getResults()"
+            ng-disabled="!qualityReport.rules.selected || !qualityReport.allFieldsSelected"
+        >
+            Apply Rule
+        </smss-btn>
+    </div>
+</smss-scroll>

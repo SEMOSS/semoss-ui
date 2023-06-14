@@ -1,0 +1,568 @@
+<smss-accordion class="pipeline__edit__accordion" resizable>
+    <smss-accordion-item
+        name="'Recommended Data to Add'"
+        size="federate.frameInfo.importHeight"
+    >
+        <div class="federate">
+            <div ng-if="federate.step === 'source'" class="federate__sections">
+                <div class="federate__add">
+                    <div class="federate__add__traversed">
+                        <div class="federate__add__traversed__label">
+                            Traversing From:
+                        </div>
+                        <span
+                            ng-repeat="column in federate.source.traversedMeta"
+                            class="federate__add__traversed__column"
+                        >
+                            <span>{{column.name}} </span>
+                            <span
+                                ng-show="column.dbList.length > 0 && federate.appMapping[column.dbList[0]]"
+                                class="smss-small smss-color--medium-emphasis"
+                            >
+                                <span>(</span>
+                                <span
+                                    ng-repeat="db in column.dbList track by $index"
+                                >
+                                    {{federate.appMapping[db]}}
+                                    <span
+                                        ng-show="$index !== column.dbList.length - 1"
+                                        >,
+                                    </span>
+                                </span>
+                                <span>)</span>
+                            </span>
+                        </span>
+                        <div
+                            class="federate__add__traversed__empty"
+                            ng-if="federate.source.traversedMeta.length === 0"
+                        >
+                            Select traversal column(s) below.
+                        </div>
+                    </div>
+                    <smss-field class="federate__add__scroll">
+                        <label> Select column(s) to traverse from: </label>
+                        <content>
+                            <smss-checklist
+                                model="federate.source.selected"
+                                options="federate.source.frameHeaders"
+                                display="displayName"
+                                change="federate.getTraversedColumns()"
+                                searchable
+                                multiple
+                            >
+                            </smss-checklist>
+                        </content>
+                    </smss-field>
+                </div>
+            </div>
+
+            <div ng-if="federate.step === 'join'" class="federate__sections">
+                <div class="federate__joins">
+                    <div class="federate__joins__database">
+                        <smss-field inline>
+                            <label> Select Database: </label>
+                            <content>
+                                <smss-dropdown
+                                    display="database_name"
+                                    model="federate.add.apps.selected"
+                                    change="federate.resetSelections();federate.setJoinOptions(); federate.getMetamodel(federate.add.apps.selected)"
+                                    options="federate.add.apps.list"
+                                >
+                                    <smss-dropdown-toggle
+                                        class="federate__dropdown"
+                                    >
+                                        <div
+                                            class="smss-left federate__dropdown__img"
+                                        >
+                                            <img
+                                                ng-src="{{federate.add.apps.selected.appImage}}"
+                                            />
+                                        </div>
+                                        <div
+                                            class="smss-left federate__dropdown__text"
+                                            title="{{$parent.opt.database_name}}"
+                                        >
+                                            {{$parent.smssDropdown.model.database_name}}
+                                        </div>
+                                    </smss-dropdown-toggle>
+                                    <smss-dropdown-list
+                                        class="federate__dropdown"
+                                    >
+                                        <div
+                                            class="smss-left federate__dropdown__img"
+                                        >
+                                            <img
+                                                ng-src="{{$parent.opt.appImage}}"
+                                            />
+                                        </div>
+                                        <div
+                                            class="smss-left federate__dropdown__text"
+                                            title="{{$parent.opt.appImage}}"
+                                        >
+                                            {{$parent.opt.database_name}}
+                                        </div>
+                                    </smss-dropdown-list>
+                                </smss-dropdown>
+                            </content>
+                        </smss-field>
+
+                        <div class="federate__joins__database__traverse-toggle">
+                            <smss-checkbox
+                                model="federate.add.isFreeTraversal"
+                                change="federate.toggleTraversal()"
+                                >Manual Traverse</smss-checkbox
+                            >
+                        </div>
+                    </div>
+                    <div class="federate__joins__join">
+                        <p class="smss-small smss-color--low-emphasis">
+                            Join your existing data with new data below.
+                        </p>
+                        <div class="smss-row">
+                            <div
+                                class="smss-col smss-col--6 federate__joins__join__label"
+                            >
+                                Select column from existing data:
+                            </div>
+                            <div
+                                class="smss-col smss-col--6 federate__joins__join__label"
+                            >
+                                Select column from new data:
+                            </div>
+                        </div>
+                        <div
+                            ng-repeat="join in federate.joins.list track by $index"
+                            class="smss-row smss-spacing"
+                        >
+                            <div class="smss-spacing smss-col smss-col--5">
+                                <smss-dropdown
+                                    model="join.frameColumns.selected"
+                                    options="join.frameColumns.list"
+                                    display="displayName"
+                                    searchable
+                                >
+                                </smss-dropdown>
+                            </div>
+                            <div class="smss-col smss-col--1">
+                                <smss-btn
+                                    title="{{federate.joins.joinTypes[join.joinType].display}}"
+                                    id="federate-join-btn"
+                                    class="smss-btn--icon federate__joins__join__button"
+                                    smss-popover
+                                >
+                                    <img
+                                        ng-src="{{federate.joins.joinTypes[join.joinType].img}}"
+                                    />
+                                    <smss-popover-content
+                                        class="federate__popover"
+                                        position="['S', 'N']"
+                                    >
+                                        <div class="smss-action">
+                                            <smss-btn
+                                                ng-repeat="(k, v) in federate.joins.joinTypes"
+                                                title="{{v.display}}"
+                                                class="smss-btn--icon"
+                                                ng-class="{'smss-btn--selected': join.joinType === k}"
+                                                ng-click="join.joinType = k; "
+                                            >
+                                                <img ng-src="{{v.img}}" />
+                                            </smss-btn>
+                                        </div>
+                                    </smss-popover-content>
+                                </smss-btn>
+                            </div>
+                            <div class="smss-col smss-col--5">
+                                <smss-dropdown
+                                    model="join.mergeColumns.selected"
+                                    options="join.mergeColumns.list"
+                                    display="alias"
+                                    searchable
+                                >
+                                </smss-dropdown>
+                            </div>
+                            <div class="smss-col smss-col--1">
+                                <smss-btn
+                                    class="smss-btn--icon federate__joins__join__button"
+                                    ng-click="federate.removeJoin(join.id)"
+                                    ng-disabled="join.disabled"
+                                >
+                                    <i
+                                        class="fa fa-times smss-color--error"
+                                    ></i>
+                                </smss-btn>
+                            </div>
+                        </div>
+                        <div class="smss-spacing">
+                            <smss-btn
+                                ng-click="federate.addNewJoin()"
+                                class="smss-right"
+                                >Add Join</smss-btn
+                            >
+                        </div>
+                    </div>
+                    <div class="federate__joins__select">
+                        <div class="federate__joins__select__third">
+                            <div class="federate__joins__select__header">
+                                Existing data:
+                            </div>
+                            <div class="federate__joins__select__list">
+                                <div
+                                    class="federate__list smss-text"
+                                    ng-repeat="column in federate.source.frameHeaders"
+                                >
+                                    {{column.alias | replaceUnderscores}}
+                                </div>
+                            </div>
+                        </div>
+                        <div class="federate__joins__select__third">
+                            <div class="federate__joins__select__header">
+                                <div class="smss-clear">
+                                    Select data to add:
+                                    <div class="smss-right">
+                                        <smss-btn
+                                            class="smss-btn--text"
+                                            ng-click="federate.toggleTableExpand(false)"
+                                            ng-show="federate.add.showAll"
+                                            title="Collapse all tables"
+                                        >
+                                            Collapse All
+                                            <i class="fa fa-minus"></i>
+                                        </smss-btn>
+
+                                        <smss-btn
+                                            class="smss-btn--text"
+                                            ng-click="federate.toggleTableExpand(true)"
+                                            ng-show="!federate.add.showAll"
+                                            title="Expand all tables"
+                                        >
+                                            Expand All
+                                            <i class="fa fa-plus"></i>
+                                        </smss-btn>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="federate__joins__select__list">
+                                <div
+                                    ng-repeat="tableInfo in federate.add.options[federate.add.apps.selected.database_id].tables"
+                                >
+                                    <div
+                                        class="federate__add__table-header"
+                                        ng-click="tableInfo.show = !tableInfo.show"
+                                    >
+                                        <div
+                                            class="federate__add__table-header__text"
+                                        >
+                                            {{tableInfo.tableName |
+                                            replaceUnderscores}}
+                                        </div>
+                                        <smss-btn
+                                            class="smss-btn--icon"
+                                            ng-show="!tableInfo.show"
+                                            title="Collapse all tables"
+                                        >
+                                            <i class="fa fa-chevron-up"></i>
+                                        </smss-btn>
+                                        <smss-btn
+                                            class="smss-btn--icon"
+                                            ng-show="tableInfo.show"
+                                            title="Expand all tables"
+                                        >
+                                            <i class="fa fa-chevron-down"></i>
+                                        </smss-btn>
+                                    </div>
+                                    <div
+                                        ng-show="tableInfo.show"
+                                        class="federate__add__table-header__content"
+                                    >
+                                        <smss-checklist
+                                            model="tableInfo.selected"
+                                            options="tableInfo.options"
+                                            display="alias"
+                                            change="federate.setJoinOptions(); federate.highlight()"
+                                            searchable
+                                            quickselect
+                                            multiple
+                                        >
+                                        </smss-checklist>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div
+                            class="federate__joins__select__third"
+                            ng-class="{'federate__joins__select__highlight': federate.joins.highlight}"
+                        >
+                            <div class="federate__joins__select__header">
+                                Combined data:
+                            </div>
+                            <div class="federate__joins__select__list">
+                                <div
+                                    class="federate__list smss-text"
+                                    ng-repeat="column in federate.joins.combinedColumns"
+                                >
+                                    {{column.alias | replaceUnderscores}}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div
+                ng-if="federate.step === 'overview'"
+                class="federate__sections federate__overflow federate__overview"
+            >
+                <div class="federate__overview__left">
+                    <div class="federate__overview__header">Existing Data:</div>
+                    <div class="federate__overview__content">
+                        <div
+                            class="federate__list smss-text"
+                            ng-repeat="column in federate.overview.frameHeaders"
+                        >
+                            {{column.alias}}
+                        </div>
+                    </div>
+                </div>
+                <div class="federate__overview__right">
+                    <div class="federate__overview__header">
+                        <div class="smss-clear">
+                            Added Data:
+                            <div class="smss-right">
+                                <smss-btn
+                                    class="smss-right smss-btn--text"
+                                    ng-click="federate.toggleDbExpand(false)"
+                                    ng-show="federate.overview.showAll"
+                                    title="Collapse all databases"
+                                >
+                                    Collapse All
+                                    <i class="fa fa-minus"></i>
+                                </smss-btn>
+                                <smss-btn
+                                    class="smss-right smss-btn--text"
+                                    ng-click="federate.toggleDbExpand(true)"
+                                    ng-show="!federate.overview.showAll"
+                                    title="Expand all databases"
+                                >
+                                    Expand All
+                                    <i class="fa fa-plus"></i>
+                                </smss-btn>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="federate__overview__content">
+                        <div
+                            ng-repeat="db in federate.overview.database track by $index"
+                        >
+                            <div
+                                class="federate__overview__right__table-header"
+                                ng-click="db.show = !db.show"
+                            >
+                                <div
+                                    class="federate__overview__right__table-header__text"
+                                >
+                                    <div
+                                        class="federate__overview__right__table-header__img"
+                                    >
+                                        <img ng-src="{{db.appImage}}" />
+                                    </div>
+                                    {{db.database_name}}
+                                </div>
+                                <div>
+                                    <smss-btn
+                                        ng-show="!db.show"
+                                        class="smss-btn--icon"
+                                        ng-click="federate.toggleDbExpand(true)"
+                                        ng-show="!federate.overview.showAll"
+                                        title="Expand all databases"
+                                    >
+                                        <i class="fa fa-chevron-up"></i>
+                                    </smss-btn>
+                                    <smss-btn
+                                        ng-show="db.show"
+                                        class="smss-btn--icon"
+                                        ng-click="federate.toggleDbExpand(true)"
+                                        ng-show="!federate.overview.showAll"
+                                        title="Expand all databases"
+                                    >
+                                        <i class="fa fa-chevron-down"></i>
+                                    </smss-btn>
+                                </div>
+                            </div>
+                            <div
+                                ng-show="db.show"
+                                class="federate__overview__right__table-header__content"
+                            >
+                                <div
+                                    class="federate__overview__right__table-header__joins"
+                                >
+                                    <div
+                                        ng-repeat="join in db.joins track by $index"
+                                    >
+                                        <smss-popover>
+                                            <div
+                                                class="smss-spacing federate__overview__right__joins"
+                                            >
+                                                <div
+                                                    class="federate__overview__right__joins__left"
+                                                >
+                                                    {{join.frameColumn}}
+                                                </div>
+                                                <smss-btn
+                                                    class="smss-btn--icon federate__overview__right__joins__middle"
+                                                    title="{{federate.joins.joinTypes[join.joinType].display}}"
+                                                    id="federate-join-btn"
+                                                >
+                                                    <img
+                                                        ng-src="{{federate.joins.joinTypes[join.joinType].img}}"
+                                                    />
+                                                </smss-btn>
+                                                <div
+                                                    class="federate__overview__right__joins__right"
+                                                >
+                                                    {{join.mergeColumn}}
+                                                </div>
+                                            </div>
+                                            <smss-popover-content
+                                                class="federate__popover"
+                                                target="#federate-join-btn"
+                                                position="['S', 'N']"
+                                            >
+                                                <div class="smss-action">
+                                                    <smss-btn
+                                                        ng-repeat="(k, v) in federate.joins.joinTypes"
+                                                        title="{{v.display}}"
+                                                        class="smss-btn--icon"
+                                                        ng-class="{'smss-btn--selected': join.joinType === k}"
+                                                        ng-click="join.joinType = k; "
+                                                    >
+                                                        <img
+                                                            ng-src="{{v.img}}"
+                                                        />
+                                                    </smss-btn>
+                                                </div>
+                                            </smss-popover-content>
+                                        </smss-popover>
+                                    </div>
+                                </div>
+
+                                <div
+                                    class="smss-clear"
+                                    ng-repeat="column in db.list"
+                                    ng-hide="column.hide"
+                                >
+                                    <div class="smss-left">
+                                        {{column.alias}}
+                                    </div>
+                                    <div class="smss-right">
+                                        <!-- <smss-btn ng-click="" ng-disabled="true"><i class="fa fa-filter"></i></smss-btn> -->
+                                        <smss-btn
+                                            class="smss-right smss-btn--icon"
+                                            ng-click="federate.removeColumn(db.list, column, db)"
+                                        >
+                                            <i
+                                                class="fa fa-times smss-color--error"
+                                            ></i>
+                                        </smss-btn>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="smss-action">
+                <div ng-if="federate.step === 'source'">
+                    <smss-btn
+                        class="smss-btn--text"
+                        ng-click="federate.cancel()"
+                    >
+                        Cancel
+                    </smss-btn>
+                    <smss-btn
+                        class="smss-btn--text"
+                        ng-click="federate.navigate('overview', 'backward')"
+                        ng-if="federate.overview.database.length > 0"
+                    >
+                        Back
+                    </smss-btn>
+                    <smss-btn
+                        ng-click="federate.navigate('join', 'forward')"
+                        ng-disabled="!federate.source.selected.length > 0"
+                    >
+                        Next
+                    </smss-btn>
+                </div>
+                <div ng-if="federate.step === 'join'">
+                    <smss-btn
+                        class="smss-btn--text"
+                        ng-click="federate.cancel()"
+                    >
+                        Cancel
+                    </smss-btn>
+                    <smss-btn
+                        class="smss-btn--text"
+                        ng-click="federate.navigate('source', 'backward')"
+                    >
+                        Back
+                    </smss-btn>
+                    <smss-btn
+                        class="smss-btn--text"
+                        ng-disabled="federate.isJoinDisabled()"
+                        ng-click="federate.addData()"
+                    >
+                        Queue Data
+                    </smss-btn>
+                    <smss-btn
+                        ng-disabled="federate.isJoinDisabled()"
+                        ng-click="federate.setOverview(); federate.importData()"
+                    >
+                        Import
+                    </smss-btn>
+                </div>
+                <div ng-if="federate.step === 'overview'">
+                    <smss-btn
+                        class="smss-btn--text"
+                        ng-click="federate.cancel()"
+                    >
+                        Cancel
+                    </smss-btn>
+                    <smss-btn
+                        class="smss-btn--text"
+                        ng-click="federate.addMore()"
+                    >
+                        Add More
+                    </smss-btn>
+                    <smss-btn
+                        class="smss-btn--text"
+                        ng-click="federate.previewData()"
+                    >
+                        Preview
+                    </smss-btn>
+                    <smss-btn ng-click="federate.importData()">
+                        Import
+                    </smss-btn>
+                    <smss-btn ng-click="federate.visualize()">
+                        Visualize
+                    </smss-btn>
+                </div>
+            </div>
+        </div>
+    </smss-accordion-item>
+    <smss-accordion-item
+        name="'Preview'"
+        ng-if="federate.step === 'overview'"
+        size="federate.frameInfo.previewHeight"
+    >
+        <div
+            class="pipeline__edit__accordion__content pipeline__edit__accordion__preview"
+        >
+            <div class="pipeline__edit__accordion__header">
+                <p class="smss-small">
+                    The preview uses a subset of your data and may not be
+                    accurately represented below.
+                </p>
+            </div>
+            <preview></preview>
+        </div>
+    </smss-accordion-item>
+</smss-accordion>

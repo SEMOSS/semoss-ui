@@ -1,0 +1,24 @@
+@import '~theme';
+
+.color-section {
+    background: get-background-color('default');
+    border: 1px solid get-border-color('default');
+    margin-bottom: 2em;
+    padding: 1em;
+
+    &__container {
+        &__block {
+            float: left;
+            width: 33%;
+            padding: get-spacing('sm', 'em');
+            min-width: calc(100px + #{2 * get-spacing('sm', 'em')});
+            text-align: center;
+
+            &__swatch {
+                width: 100%;
+                height: 100px;
+                margin: auto;
+            }
+        }
+    }
+}

@@ -1,0 +1,156 @@
+.esriheatmap-legend {
+    left: 1em;
+    bottom: 2em;
+    position: absolute;
+    height: 265px;
+    width: 210px;
+    background-color: #FFFFFF;
+    opacity: 0.85;
+    border-radius: 7px;
+    padding: 1em;
+    font-size: 0.85em;
+}
+
+.esriheatmap-legend-bar {
+    margin: 0px;
+    margin-top: 0px;
+    margin-bottom: 0px;
+}
+
+/*Esri Map Legends*/
+.esrimap-scalebar {
+    left: 1em;
+    bottom: 0.5em;
+    position: absolute;
+    height: 72px;
+    width: 185px;
+    opacity: 0.85;
+    border-radius: 7px;
+    border-style: solid;
+    border-color: rgb(215, 215, 215);
+    background-color: rgba(255, 255, 255, 0.88);
+    border-width: 1px;
+    padding: 0.5em;
+    font-size: 0.85em;
+    box-shadow: 0 0 3px rgba(0, 0, 0, 0.29),0 3px 7px rgba(0, 0, 0, 0.4);
+    -webkit-box-shadow: 0 0 3px rgba(0, 0, 0, 0.29),0 3px 7px rgba(0, 0, 0, 0.4);          
+    -moz-box-shadow: 0 0 3px rgba(0, 0, 0, 0.29),0 3px 7px rgba(0, 0, 0, 0.4); 
+}
+
+.esrimap-scalebar-title {
+    font-weight: bolder;
+}
+
+.esrimap-legend {
+    left: 1em;
+    bottom: 8.5em;
+    position: absolute;
+    height: 100px;
+    width: 250px;
+    background-color: #FFFFFF;
+    opacity: 0.85;
+    border-radius: 7px;
+    border-style: solid;
+    border-color: rgb(215, 215, 215);
+    background-color: rgba(255, 255, 255, 0.88);
+    border-width: 1px;
+    padding: 0.5em;
+    font-size: 0.85em;
+    box-shadow: 0 0 3px rgba(0, 0, 0, 0.29),0 3px 7px rgba(0, 0, 0, 0.4);
+    -webkit-box-shadow: 0 0 3px rgba(0, 0, 0, 0.29),0 3px 7px rgba(0, 0, 0, 0.4);          
+    -moz-box-shadow: 0 0 3px rgba(0, 0, 0, 0.29),0 3px 7px rgba(0, 0, 0, 0.4);
+}
+
+.esrimap-heatlegend {
+    left: 1em;
+    bottom: 8.5em;
+    position: absolute;
+    height: 75px;
+    width: 250px;
+    background-color: #FFFFFF;
+    opacity: 0.85;
+    border-radius: 7px;
+    border-style: solid;
+    border-color: rgb(215, 215, 215);
+    background-color: rgba(255, 255, 255, 0.88);
+    border-width: 1px;
+    padding: 0.5em;
+    font-size: 0.85em;
+    box-shadow: 0 0 3px rgba(0, 0, 0, 0.29),0 3px 7px rgba(0, 0, 0, 0.4);
+    -webkit-box-shadow: 0 0 3px rgba(0, 0, 0, 0.29),0 3px 7px rgba(0, 0, 0, 0.4);          
+    -moz-box-shadow: 0 0 3px rgba(0, 0, 0, 0.29),0 3px 7px rgba(0, 0, 0, 0.4);
+}
+
+.esrimap-legend-title {
+    font-weight: bolder;
+}
+
+.esrimap-legend-bar {
+    margin: 0px;
+    margin-top: 0px;
+    margin-bottom: 0px;
+}
+
+.esrimap-legend-content {
+    position: absolute;
+    height: 100px;
+    width: 235px;
+    bottom: 0px;
+}
+
+/*Search*/
+.arcgis-search {
+    display: block;
+    position: absolute;
+    z-index: 2;
+    top: 20px;
+    left: 74px;
+}
+
+/*Beginning of esri map modifications*/
+.esriSimpleSliderTL {
+    z-index: 0 !important;
+}
+
+.esriControlsBR {
+    z-index: 0 !important;
+}
+
+.esriScalebar {
+    z-index: 2;
+}
+
+/*Beginning of search box modifications*/
+.search-group *,
+.search-group *:before,
+.search-group *:after {
+    -webkit-box-sizing: content-box;
+    box-sizing: content-box;
+}
+
+.arcgisSearch .searchClear {
+    background-color: #E5E5E5;
+}
+
+.arcgisSearch .esriIconZoom {
+    background-image: url("finding.png");
+    background-size: 20px 20px;
+}
+
+.esriIconZoom:before {
+    content: "";
+}
+
+.arcgisSearch .searchGroup .searchInput,
+.arcgisSearch .searchBtn,
+.arcgisSearch .noResultsMenu,
+.arcgisSearch .suggestionsMenu {
+    border: 1px solid #003300;
+    background-color: #E5E5E5;
+}
+
+.arcgisSearch .noValueText {
+    color: red;
+    font-size: 14px;
+}
+/*End of search box modifications*/

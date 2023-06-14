@@ -1,0 +1,152 @@
+<div class="worksheet-settings" id="worksheet-settings">
+    <div class="smss-spacing worksheet-settings__header">
+        <h3 class="worksheet-settings__header__title">Sheet Settings</h3>
+        <smss-btn
+            class="smss-btn--icon"
+            title="Copy Insight Config to Clipboard"
+            ng-click="worksheetSettings.copyInsightConfig()"
+        >
+            <i class="fa fa-clipboard"></i>
+        </smss-btn>
+    </div>
+    <smss-field>
+        <label> Update Name: </label>
+        <content>
+            <smss-input
+                ng-model="worksheetSettings.sheetLabel"
+                placeholder="Enter a new name"
+            ></smss-input>
+        </content>
+    </smss-field>
+    <div class="smss-collapsible-group">
+        <smss-collapsible>
+            <smss-collapsible-header> Decoration </smss-collapsible-header>
+            <smss-collapsible-content>
+                <smss-field inline>
+                    <label> Background Color: </label>
+                    <content>
+                        <smss-color-picker
+                            color-theme="worksheetSettings.theme"
+                            model="worksheetSettings.config.backgroundColor"
+                            container="#worksheet-settings"
+                        >
+                        </smss-color-picker>
+                    </content>
+                </smss-field>
+            </smss-collapsible-content>
+        </smss-collapsible>
+
+        <smss-collapsible>
+            <smss-collapsible-header> Sizing </smss-collapsible-header>
+            <smss-collapsible-content>
+                <smss-field inline>
+                    <label> Height: </label>
+                    <content class="smss-clear">
+                        <div class="worksheet-settings__split">
+                            <smss-btn
+                                title="Grow the sheet to fit the content"
+                                class="smss-btn--icon smss-btn--outline smss-btn--right"
+                                ng-click="worksheetSettings.scale()"
+                            >
+                                <i class="fa fa-arrows-v"></i>
+                            </smss-btn>
+                            <smss-input
+                                type="number"
+                                class="worksheet-settings__split__input"
+                                ng-model="worksheetSettings.size.height.number"
+                            ></smss-input>
+                            <smss-tab-group>
+                                <smss-tab
+                                    class="smss-tab--small"
+                                    ng-class="{'smss-tab--selected': worksheetSettings.size.height.unit === '%'}"
+                                    ng-click="worksheetSettings.size.height.unit = '%'"
+                                    >%</smss-tab
+                                >
+                                <smss-tab
+                                    class="smss-tab--small"
+                                    ng-class="{'smss-tab--selected': worksheetSettings.size.height.unit === 'px'}"
+                                    ng-click="worksheetSettings.size.height.unit = 'px'"
+                                    >px</smss-tab
+                                >
+                                <smss-tab
+                                    class="smss-tab--small"
+                                    ng-class="{'smss-tab--selected': worksheetSettings.size.height.unit === 'em'}"
+                                    ng-click="worksheetSettings.size.height.unit = 'em'"
+                                    >em</smss-tab
+                                >
+                            </smss-tab-group>
+                        </div>
+                    </content>
+                </smss-field>
+                <smss-field inline>
+                    <label> Width: </label>
+                    <content class="smss-clear">
+                        <div class="worksheet-settings__split">
+                            <smss-input
+                                type="number"
+                                class="worksheet-settings__split__input"
+                                ng-model="worksheetSettings.size.width.number"
+                            ></smss-input>
+                            <smss-tab-group>
+                                <smss-tab
+                                    class="smss-tab--small"
+                                    ng-class="{'smss-tab--selected': worksheetSettings.size.width.unit === '%'}"
+                                    ng-click="worksheetSettings.size.width.unit = '%'"
+                                    >%</smss-tab
+                                >
+                                <smss-tab
+                                    class="smss-tab--small"
+                                    ng-class="{'smss-tab--selected': worksheetSettings.size.width.unit === 'px'}"
+                                    ng-click="worksheetSettings.size.width.unit = 'px'"
+                                    >px</smss-tab
+                                >
+                                <smss-tab
+                                    class="smss-tab--small"
+                                    ng-class="{'smss-tab--selected': worksheetSettings.size.width.unit === 'em'}"
+                                    ng-click="worksheetSettings.size.width.unit = 'em'"
+                                    >em</smss-tab
+                                >
+                            </smss-tab-group>
+                        </div>
+                    </content>
+                </smss-field>
+            </smss-collapsible-content>
+        </smss-collapsible>
+
+        <smss-collapsible ng-show="worksheetSettings.golden">
+            <smss-collapsible-header> Golden </smss-collapsible-header>
+            <smss-collapsible-content>
+                <div class="smss-spacing">
+                    <smss-toggle model="worksheetSettings.config.hideHeaders">
+                        Hide Tabs
+                    </smss-toggle>
+                </div>
+
+                <div class="smss-spacing">
+                    <smss-toggle model="worksheetSettings.config.hideGutters">
+                        Hide Gutters
+                    </smss-toggle>
+                </div>
+
+                <smss-field
+                    class="smss-field"
+                    ng-show="!worksheetSettings.config.hideGutters"
+                >
+                    <label> Golden Gutter Size: </label>
+                    <content>
+                        <smss-input
+                            ng-model="worksheetSettings.config.gutterSize"
+                            type="number"
+                            step="1"
+                            placeholder="Enter Border Size"
+                        >
+                        </smss-input>
+                    </content>
+                </smss-field>
+            </smss-collapsible-content>
+        </smss-collapsible>
+    </div>
+    <div class="smss-action">
+        <smss-btn ng-click="worksheetSettings.save()"> Save </smss-btn>
+    </div>
+</div>

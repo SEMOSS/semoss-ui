@@ -1,0 +1,72 @@
+<div>
+    <smss-field style="height: 200px">
+        <label>Checklist</label>
+        <content>
+            <smss-checklist
+                model="checklist1.value"
+                quickselect
+                multiple
+                searchable
+                options="checklist1.options"
+            >
+            </smss-checklist>
+        </content>
+        <description>Description</description>
+    </smss-field>
+    <smss-field style="height: 200px">
+        <label>Checklist (no search)</label>
+        <content>
+            <smss-checklist
+                model="checklist1.value"
+                quickselect
+                multiple
+                options="checklist1.options"
+            >
+            </smss-checklist>
+        </content>
+    </smss-field>
+    <smss-field style="height: 200px">
+        <label>Checklist (no search or quickselect)</label>
+        <content>
+            <smss-checklist
+                model="checklist1.value"
+                multiple
+                options="checklist1.options"
+            >
+            </smss-checklist>
+        </content>
+    </smss-field>
+    <smss-field style="height: 200px">
+        <label>Disabled Checklist</label>
+        <content>
+            <smss-checklist
+                model="checklist2.value"
+                display="display"
+                value="value"
+                options="checklist2.options"
+                searchable
+                quickselect
+                multiple
+                ng-disabled="checklist2.disabled"
+            >
+            </smss-checklist>
+        </content>
+    </smss-field>
+    <smss-field style="height: 200px">
+        <label>Custom Option</label>
+        <content>
+            <smss-checklist
+                model="checklist2.value"
+                display="display"
+                value="value"
+                options="checklist2.options"
+                multiple
+            >
+                <smss-checklist-label>
+                    <i class="fa fa-star"></i>
+                    {{$parent.opt.display}} - {{$parent.opt.value}}
+                </smss-checklist-label>
+            </smss-checklist>
+        </content>
+    </smss-field>
+</div>

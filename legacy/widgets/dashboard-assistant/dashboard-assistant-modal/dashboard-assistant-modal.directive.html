@@ -1,0 +1,256 @@
+<smss-overlay-body class="dashboard-assistant-modal">
+    <loading-screen model="dashboardAssistantModal.loading"></loading-screen>
+    
+    <!-- ISSUE: Need to be able to pass id for label on typeahead, etc.. -->
+    <!-- <smss-typeahead id="'daytona'" options="['here', 'there']"></smss-typeahead> -->
+
+    <smss-btn-group class="dashboard-assistant-modal__toggle" ng-show="dashboardAssistantModal.mooseReactorPrefix === 'docquery'">
+        <smss-btn
+            ng-click="dashboardAssistantModal.changePage('ASK')"
+            class="smss-btn--icon"
+            ng-class="{'smss-btn--selected': dashboardAssistantModal.page === 'ASK'}"
+            title="Change to filter"
+        >
+            <i class="fa fa-search"></i>
+        </smss-btn>
+        <smss-btn
+            ng-click="dashboardAssistantModal.changePage('DOC_QUERY')"
+            class="smss-btn--icon"
+            ng-class="{'smss-btn--selected': dashboardAssistantModal.page === 'DOC_QUERY'}"
+            title="Change to document QA"
+        >
+            <i class="fa fa-file-o"></i>
+        </smss-btn>
+    </smss-btn-group>
+    <!-- Secret Key Page -->
+    <div
+        class="dashboard-assistant-modal__page__content"
+        ng-show="dashboardAssistantModal.page === 'SECRET-KEY'"
+    >
+        <div>
+            <smss-field class="dashboard-assistant-modal__field">
+                <label>Enter your OpenAI Secret Key to access Ask Moose</label>
+                <content>
+                    <smss-input
+                        ng-model="dashboardAssistantModal.secretKey.selected"
+                        placeholder="Ex: eZ-stYe7832rCmISudVr1JyZDlT6BlCkdj0RMWXDSpwvOe0TNoASNt"
+                        ng-class="{'smss-border--error': dashboardAssistantModal.secretKey.error}"
+                    ></smss-input>
+                </content>
+                <description>
+                    <span
+                        class="smss-color--error"
+                        title="{{dashboardAssistantModal.secretKey.error}}"
+                        ng-show="dashboardAssistantModal.secretKey.error"
+                    >
+                        {{dashboardAssistantModal.secretKey.error}}
+                    </span>
+                </description>
+            </smss-field>
+        </div>
+
+        <div>
+            <smss-btn
+                ng-disabled="dashboardAssistantModal.secretKey.selected.length === 0"
+                title="Activate Secret Key"
+                ng-click="dashboardAssistantModal.determineSecretKey('activate')"
+            >
+                Activate
+            </smss-btn>
+        </div>
+    </div>
+
+    <!-- Search Page -->
+    <div
+        class="dashboard-assistant-modal__page__content"
+        ng-show="dashboardAssistantModal.page === 'ASK' || dashboardAssistantModal.page === 'DOC_QUERY'"
+    >
+        <!-- Search Field -->
+        <div class="dashboard-assistant-modal__search-box">
+            <smss-field class="dashboard-assistant-modal__field">
+                <label
+                    >Ask a question to {{dashboardAssistantModal.page === 'ASK'
+                    ? 'filter' : 'query' }} your data</label
+                >
+                <content>
+                    <smss-popover
+                        class="dashboard-assistant-modal__search-box__input"
+                    >
+                        <smss-smart-search
+                            id="search-input"
+                            class="dashboard-assistant-modal__search-box__input"
+                            placeholder="Ex: Who has the highest risk of heart attack"
+                            model="dashboardAssistantModal.question.selected"
+                            ng-keydown="dashboardAssistantModal.filterAndPreview($event);"
+                            change="dashboardAssistantModal.filterHistory();"
+                            clear="dashboardAssistantModal.clearQuery(); scope.dashboardAssistantModal.visible = false;"
+                        >
+                        </smss-smart-search>
+                        <smss-popover-content
+                            ng-show="dashboardAssistantModal.searchHistory.length > 0 && dashboardAssistantModal.loading === false && dashboardAssistantModal.filteredHistory.length > 0"
+                            class="dashboard-assistant-modal__search-history"
+                            model="dashboardAssistantModal.visible"
+                            target="#search-input"
+                            position="['SW']"
+                        >
+                            <smss-list
+                                class="dashboard-assistant-modal__history-list"
+                                options="dashboardAssistantModal.filteredHistory"
+                                click="dashboardAssistantModal.question.selected = option; dashboardAssistantModal.closeHistory()"
+                            >
+                                <smss-list-header>Recent</smss-list-header>
+                            </smss-list>
+                        </smss-popover-content>
+                    </smss-popover>
+                </content>
+            </smss-field>
+        </div>
+
+        <!-- Question Actions -->
+        <div ng-show="dashboardAssistantModal.page === 'ASK'">
+            <smss-btn
+                ng-disabled="dashboardAssistantModal.question.selected.length === 0"
+                ng-click="dashboardAssistantModal.executeNLPQuery('frame')"
+            >
+                Ask
+            </smss-btn>
+            <smss-btn
+                ng-click="dashboardAssistantModal.executeNLPQuery('preview')"
+                class="smss-btn--outline"
+                title="Clear query"
+                ng-show="dashboardAssistantModal.mooseReactorPrefix === 'text2sql'"
+                ng-disabled="dashboardAssistantModal.question.selected.length === 0"
+            >
+                Preview
+            </smss-btn>
+            <smss-btn
+                title="Reset Frame"
+                class="smss-btn--text"
+                ng-show="dashboardAssistantModal.frameHasFilter"
+                ng-click="dashboardAssistantModal.resetFrame()"
+            >
+                Reset Frame
+            </smss-btn>
+        </div>
+
+        <!-- Edit SQL -->
+        <div
+            class="dashboard-assistant-modal__edit-sql"
+            ng-show="dashboardAssistantModal.showPreview && dashboardAssistantModal.editSql === true && dashboardAssistantModal.page === 'ASK'"
+        >
+            <!-- Edit query -->
+            <smss-scroll class="dashboard-assistant-modal__edit-sql__left">
+                <div
+                    class="dashboard-assistant-modal__edit-sql__left__inner"
+                    dynamic="dashboardAssistantModal.searchHistory[dashboardAssistantModal.activeQueryIndex].generatedQueryHtml"
+                />
+            </smss-scroll>
+
+            <!-- Actions -->
+            <div class="dashboard-assistant-modal__edit-sql__right">
+                <div class="dashboard-assistant-modal__edit-sql__right__action">
+                    <smss-btn
+                        title="Revert to original"
+                        class="smss-btn--icon"
+                        ng-disabled="dashboardAssistantModal.queryHasEdits()"
+                        ng-click="dashboardAssistantModal.revertToOriginal()"
+                    >
+                        <i class="fa fa-undo" aria-hidden="true"></i>
+                    </smss-btn>
+                </div>
+                <div class="dashboard-assistant-modal__edit-sql__right__action">
+                    <smss-btn
+                        title="Filter frame"
+                        class="smss-btn--icon"
+                        ng-click="dashboardAssistantModal.executeGeneratedQueryChanges()"
+                    >
+                        <i class="fa fa-arrow-circle-right"></i>
+                    </smss-btn>
+                </div>
+            </div>
+        </div>
+
+        <!-- Preview SQL -->
+        <div
+            class="dashboard-assistant-modal__preview-sql"
+            ng-show="dashboardAssistantModal.showPreview && dashboardAssistantModal.editSql === false && dashboardAssistantModal.page === 'ASK'"
+        >
+            <div class="dashboard-assistant-modal__preview-sql__left">
+                <div
+                    class="dashboard-assistant-modal__preview-sql__left__sql"
+                    dynamic="dashboardAssistantModal.previewSQL"
+                />
+            </div>
+
+            <!-- Actions -->
+            <div class="dashboard-assistant-modal__preview-sql__right">
+                <div
+                    class="dashboard-assistant-modal__preview-sql__right__action"
+                >
+                    <smss-btn
+                        title="Copy the generated sql"
+                        class="smss-btn--icon"
+                        ng-click="dashboardAssistantModal.copySqlToClipboard(dashboardAssistantModal.previewSQL)"
+                    >
+                        <i class="fa fa-copy"></i>
+                    </smss-btn>
+                </div>
+                <div
+                    class="dashboard-assistant-modal__preview-sql__right__action"
+                >
+                    <smss-btn
+                        title="Edit the generated SQL"
+                        class="smss-btn--icon"
+                        ng-click="dashboardAssistantModal.editSql = true"
+                    >
+                        <i class="fa fa-file-code-o"></i>
+                    </smss-btn>
+                </div>
+            </div>
+        </div>
+
+        <!-- Preview data table -->
+        <div
+            class="dashboard-assistant-modal__preview"
+            ng-show="dashboardAssistantModal.showPreview && dashboardAssistantModal.page === 'ASK'"
+        >
+            <preview></preview>
+        </div>
+    </div>
+
+    <!-- Search Params -->
+    <div
+        class="dashboard-assistant-modal__page__content"
+        ng-show="dashboardAssistantModal.page === 'QUERY-PARAMS'"
+    >
+        <h3>Search Query</h3>
+
+        <smss-scroll static-x="true" class="dashboard-assistant-modal__query">
+            <div
+                class="dashboard-assistant-modal__query__inner"
+                dynamic="dashboardAssistantModal.searchHistory[dashboardAssistantModal.activeQueryIndex].generatedQueryHtml"
+            />
+        </smss-scroll>
+        <div class="smss-action">
+            <smss-btn
+                class="smss-btn--text"
+                ng-click="dashboardAssistantModal.changePage('ASK')"
+            >
+                Back
+            </smss-btn>
+            <smss-btn
+                ng-click="dashboardAssistantModal.executeGeneratedQueryChanges()"
+            >
+                Filter
+            </smss-btn>
+        </div>
+    </div>
+
+    <!-- Document QA -->
+    <div
+        class="dashboard-assistant-modal__page__content"
+        ng-show="dashboardAssistantModal.page === 'DOC_QUERY'"
+    >
+        <document-qa search="dashboardAssistantModal.question.selected" />
+    </div>
+</smss-overlay-body>

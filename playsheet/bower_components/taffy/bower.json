@@ -1,0 +1,18 @@
+{
+  "name": "taffy",
+  "version": "0.0.0",
+  "homepage": "https://github.com/bahaa/taffydb",
+  "authors": [
+    "Bahaa Zaid <bahaa.zaid@radius60.com>"
+  ],
+  "description": "TaffyDB",
+  "main": "taffy-min.js",
+  "license": "BSD",
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "bower_components",
+    "test",
+    "tests"
+  ]
+}

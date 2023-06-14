@@ -1,0 +1,194 @@
+<div class="import-file-flat">
+    <h3>Data Selection</h3>
+    <smss-scroll class="import-file-flat__content" static-x="true">
+        <div
+            ng-repeat="file in importFileCtrl.parsedFiles track by $index"
+            class="import-file-flat__file"
+        >
+            <div class="import-file-flat__header">
+                <h6>File Name:</h6>
+                {{file.fileName}}
+            </div>
+            <div
+                class="import-file-flat__file__sheet"
+                ng-repeat="(sheetId, sheet) in file.sheets"
+            >
+                <div class="import-file-flat__header">
+                    <div
+                        class="import-file-flat__file__sheet__title"
+                        ng-click="sheet.closed = !sheet.closed"
+                    >
+                        <i
+                            class="fa"
+                            ng-class="{'fa-caret-down': !sheet.closed, 'fa-caret-right': sheet.closed}"
+                        ></i>
+                        <h6>Sheet Name:</h6>
+                        {{sheet.alias}}
+                    </div>
+                    <smss-btn
+                        class="smss-btn--text"
+                        ng-click="$event.stopPropagation(); importFileFlat.toggleSheet(sheet);"
+                        title="{{sheet.selected ? 'Unselect sheet' : 'Select sheet'}}"
+                    >
+                        {{sheet.selected ? 'Unselect' : 'Select'}}
+                    </smss-btn>
+                </div>
+
+                <div
+                    ng-if="!sheet.closed"
+                    class="import-file-flat__file__sheet__content"
+                >
+                    <div ng-if="importFileCtrl.fileType === 'EXCEL'">
+                        <smss-field>
+                            <label>Selected Table:</label>
+                            <content>
+                                <smss-dropdown
+                                    model="sheet.selectedTable"
+                                    options="sheet.availableTables"
+                                >
+                                </smss-dropdown>
+                            </content>
+                        </smss-field>
+                        <smss-field
+                            ng-if="sheet.selectedTable  === 'Custom Range'"
+                        >
+                            <label> Custom Range: </label>
+                            <content
+                                class="import-file-flat__file__sheet__custom"
+                            >
+                                <smss-input
+                                    class="import-file-flat__file__sheet__custom__input"
+                                    ng-model="sheet.customRange"
+                                ></smss-input>
+                                <smss-btn
+                                    class="smss-btn--outline"
+                                    ng-click="importFileFlat.previewCustomRange(sheet, file)"
+                                >
+                                    Preview
+                                </smss-btn>
+                            </content>
+                        </smss-field>
+                    </div>
+                    <div
+                        ng-repeat="(tableId, table) in sheet.tables"
+                        ng-if="sheet.selectedTable  === tableId"
+                    >
+                        <smss-field>
+                            <label>
+                                Table Name:
+                                <span
+                                    class="import-file-flat__file__sheet__text"
+                                    >{{table.alias}}</span
+                                >
+                            </label>
+                            <content>
+                                <div
+                                    class="import-file-flat__file__sheet__table"
+                                >
+                                    <table class="smss--sticky">
+                                        <tr>
+                                            <th
+                                                class="import-file-flat__file__sheet__table__col-1"
+                                            >
+                                                Name
+                                            </th>
+                                            <th
+                                                class="import-file-flat__file__sheet__table__col-2"
+                                            >
+                                                Data Type
+                                            </th>
+                                            <th class="smss--icon"></th>
+                                        </tr>
+                                        <tr
+                                            ng-repeat="(columnId, column) in table.columns"
+                                        >
+                                            <td>
+                                                <smss-input
+                                                    type="text"
+                                                    class="import-file-flat__file__sheet__table__input smss-left"
+                                                    ng-disabled="!column.selected"
+                                                    ng-model="column.alias"
+                                                ></smss-input>
+
+                                                <span
+                                                    class="import-file-flat__file__sheet__table__icon smss-left smss-color--error"
+                                                    ng-show="(column.type === 'DATE' || column.type === 'TIMESTAMP') && !column.typeFormat && column.selected"
+                                                    title="{{column.alias}} is missing a data format"
+                                                >
+                                                    <i
+                                                        class="fa fa-exclamation-triangle"
+                                                    ></i>
+                                                </span>
+
+                                                <span
+                                                    class="import-file-flat__file__sheet__table__icon smss-left smss-color--error"
+                                                    ng-show="!column.alias && column.selected"
+                                                    title="Name is required"
+                                                >
+                                                    <i
+                                                        class="fa fa-exclamation-triangle"
+                                                    ></i>
+                                                </span>
+                                            </td>
+                                            <td>
+                                                <span
+                                                    class="import-file-flat__file__sheet__table__icon"
+                                                    ng-if="!(column.type === 'NUMBER' && column.typeFormat)"
+                                                    >{{column.type}}</span
+                                                >
+                                                <span
+                                                    class="import-file-flat__file__sheet__table__icon"
+                                                    ng-if="column.type === 'NUMBER' && column.typeFormat"
+                                                    >{{column.typeFormat}}</span
+                                                >
+                                                <smss-btn
+                                                    class="smss-btn--icon smss-right"
+                                                    ng-disabled="!column.selected"
+                                                    ng-click="importFileFlat.editColumn(column);"
+                                                    ><i class="fa fa-edit"></i
+                                                ></smss-btn>
+                                            </td>
+                                            <td>
+                                                <smss-btn
+                                                    class="smss-btn--icon"
+                                                    ng-class="{'smss-color--error': column.selected, 'smss-color--success': !column.selected}"
+                                                    ng-click="column.selected = !column.selected"
+                                                    title="{{column.selected ? 'Remove column' : 'Add column'}}"
+                                                >
+                                                    <i
+                                                        class="fa"
+                                                        ng-class="{'fa-plus': !column.selected, 'fa-times':column.selected}"
+                                                    ></i>
+                                                </smss-btn>
+                                            </td>
+                                        </tr>
+                                    </table>
+                                </div>
+                            </content>
+                        </smss-field>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </smss-scroll>
+
+    <div class="smss-spacing smss-clear">
+        <smss-btn
+            class="smss-left smss-btn--outline"
+            ng-click="importFileCtrl.setFile();"
+        >
+            Back
+        </smss-btn>
+
+        <smss-btn class="smss-right" ng-click="importFileFlat.importData()">
+            Import
+        </smss-btn>
+    </div>
+
+    <metamodel-column
+        ng-if="importFileFlat.column.open"
+        open="importFileFlat.column.open"
+        column="importFileFlat.column.selected"
+        change="importFileFlat.changeColumn(type, typeFormat, alias, description, logical)"
+    ></metamodel-column>
+</div>

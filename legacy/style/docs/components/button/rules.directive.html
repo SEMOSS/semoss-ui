@@ -1,0 +1,84 @@
+<div class="btn-rules">
+    <div class="btn-rules__section">
+        <h3>Priority</h3>
+        <p>
+            Primary actions should represent moving forward or have the highest
+            priority (e.g. submit, save, add). Secondary actions represent
+            moving backwards or lower priority than primary actions (e.g. back,
+            cancel). Buttons with a primary action should always be on the
+            right.
+        </p>
+        <div class="btn-rules__section__container">
+            <div class="btn-rules__section__container--half">
+                <h5 class="smss-center">DO</h5>
+                <div class="smss-action">
+                    <smss-btn>Cancel</smss-btn>
+                    <smss-btn>Submit</smss-btn>
+                </div>
+            </div>
+            <div class="btn-rules__section__container--half">
+                <h5 class="smss-center">DON'T</h5>
+                <div class="smss-action">
+                    <smss-btn>Submit</smss-btn>
+                    <smss-btn>Cancel</smss-btn>
+                </div>
+                <div class="smss-action">
+                    <smss-btn>Submit</smss-btn>
+                    <smss-btn>Cancel</smss-btn>
+                </div>
+                <div class="smss-action">
+                    <smss-btn>Cancel</smss-btn>
+                    <smss-btn>Submit</smss-btn>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="btn-rules__section">
+        <h3>Button Groups</h3>
+        <p>
+            Use smss-btn-group to group together buttons with related actions.
+        </p>
+        <div>
+            <h5>Examples</h5>
+            <div class="smss-btn-group">
+                <smss-btn>Show</smss-btn>
+                <smss-btn>Hide</smss-btn>
+            </div>
+            <div class="smss-btn-group">
+                <smss-btn
+                    ><img
+                        src="../../resources/plus.svg"
+                        height="16px"
+                        style="padding-top: 5px"
+                /></smss-btn>
+                <smss-btn
+                    ><img
+                        src="../../resources/edit.svg"
+                        height="16px"
+                        style="padding-top: 5px"
+                /></smss-btn>
+                <smss-btn
+                    ><img
+                        src="../../resources/trash.svg"
+                        height="16px"
+                        style="padding-top: 5px"
+                /></smss-btn>
+            </div>
+        </div>
+    </div>
+    <div class="btn-rules__section">
+        <h3>Button Placement</h3>
+        <p>
+            The placement of buttons on a screen depends on the button's
+            purpose:
+        </p>
+        <ul>
+            <li>Action buttons place center.</li>
+            <li>
+                Navigation buttons place on the sides. Buttons representing
+                moving forward go on the right. Buttons representing moving
+                backward go on the left.
+            </li>
+        </ul>
+    </div>
+</div>

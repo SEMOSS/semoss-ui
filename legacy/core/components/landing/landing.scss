@@ -1,0 +1,224 @@
+@import '~theme';
+$side-nav: 216px;
+.landing {
+    position: relative;
+    height: 100%;
+    width: 100%;
+    max-width: 1440px;
+    margin: 0 auto;
+    padding-top: get-spacing('gutter', 'rem');
+    display: flex;
+    font-size: 1rem;
+
+    &__left {
+        height: calc(100% - #{get-spacing('gutter', 'rem')});
+        width: $side-nav;
+        margin-left: get-spacing('gutter', 'rem');
+    }
+
+    &__manage {
+        overflow: hidden;
+        margin: get-spacing('md', 'rem');
+        margin-bottom: get-spacing('gutter', 'rem');
+        height: calc(
+            100% - #{get-height('default', 'rem')} - #{get-spacing(
+                    'gutter',
+                    'rem'
+                )} - #{get-spacing('md', 'rem')}
+        );
+        border-radius: $border-radius;
+    }
+
+    &__right {
+        width: calc(100% - #{$side-nav} - #{get-spacing('gutter', 'rem')});
+        height: 100%;
+        &__top {
+            height: get-height('default', 'rem');
+            width: 100%;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding-left: get-spacing('md', 'rem');
+            padding-right: get-spacing('lg', 'rem');
+            &__container {
+                display: flex;
+                align-items: center;
+            }
+            &__title {
+                min-width: 100px;
+                color: get-text-color('medium-emphasis');
+                margin-right: get-spacing('md', 'rem');
+                @include text-overflow();
+            }
+            &__input {
+                max-width: 200px;
+                min-width: 150px;
+                margin-right: get-spacing('md', 'rem');
+            }
+        }
+        &__tags {
+            display: flex;
+            align-items: center;
+            height: get-height('icon', 'rem');
+            margin-top: get-spacing('md', 'rem');
+            padding-left: get-spacing('md', 'rem');
+            padding-right: get-spacing('lg', 'rem');
+            & > i {
+                color: get-text-color('primary');
+                font-size: get-height('icon--compact', 'rem');
+            }
+            & h6 {
+                margin: 0 get-spacing('sm', 'rem');
+            }
+            & .smss-tag {
+                margin-right: get-spacing('sm', 'rem');
+                &:last-child {
+                    margin: 0;
+                }
+            }
+            &__container {
+                overflow: hidden;
+                margin-right: get-spacing('xs', 'rem');
+            }
+            & .smss-scroll__inner {
+                display: flex;
+                align-items: center;
+            }
+        }
+        &__bottom {
+            height: calc(
+                100% - #{get-height('default', 'rem')} - #{get-spacing(
+                        'gutter',
+                        'rem'
+                    )}
+            );
+            width: 100%;
+            overflow: scroll;
+            overflow-x: hidden;
+            padding-top: 1px;
+            padding-left: get-spacing('md', 'rem');
+            margin-top: get-spacing('gutter', 'rem');
+            position: relative;
+
+            &--short {
+                height: calc(
+                    100% - #{get-height('default', 'rem')} - #{get-spacing(
+                            'gutter',
+                            'rem'
+                        )} - #{get-height('icon', 'rem') +
+                        get-spacing('md', 'rem')}
+                );
+            }
+        }
+    }
+
+    &__insight-container {
+        width: 100%;
+        display: flex;
+        flex-direction: column;
+        &--card-grid {
+            flex-direction: row;
+            flex-wrap: wrap;
+        }
+    }
+    &__card--empty {
+        border: 2px dashed get-border-color('default');
+        background: transparent;
+        justify-content: center;
+        align-items: center;
+        color: get-text-color('low-emphasis');
+        box-shadow: none;
+        font-size: get-font-size('body-regular', 'rem');
+
+        i {
+            margin-right: get-spacing('sm', 'rem');
+        }
+
+        &:hover {
+            box-shadow: none;
+            border-color: get-border-color('primary');
+        }
+    }
+    &__card-grid {
+        width: 266px;
+        margin-right: get-spacing('gutter', 'rem');
+        margin-bottom: get-spacing('gutter', 'rem');
+        flex-shrink: 0;
+    }
+    &__card-inline {
+        width: calc(100% - #{get-spacing('gutter', 'rem')});
+        margin-right: get-spacing('gutter', 'rem');
+        margin-bottom: get-spacing('md', 'rem');
+    }
+
+    &__sub-heading {
+        display: flex;
+        align-items: baseline;
+        width: 100%;
+        margin-bottom: get-spacing('md', 'rem');
+        white-space: nowrap;
+        & h3 {
+            color: get-text-color('medium-emphasis');
+        }
+        & h5 {
+            margin-left: get-spacing('md', 'rem');
+            color: get-text-color('primary');
+            &:hover {
+                cursor: pointer;
+            }
+        }
+    }
+
+    &__popover {
+        &__options {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+            &__option {
+                cursor: pointer;
+                @include text-overflow();
+                height: get-height('default', 'rem');
+                line-height: get-height('default', 'rem');
+                padding: 0 to-em(12px);
+                margin: 0;
+                &:hover {
+                    background: get-background-color('primary--hover');
+                }
+            }
+        }
+    }
+
+    &__empty {
+        text-align: center;
+        height: 76px;
+        width: 100%;
+        position: absolute;
+        top: 50%;
+        margin-top: -76px;
+
+        & i {
+            font-size: 30px;
+            margin: 5px;
+            color: get-text-color('low-emphasis');
+        }
+
+        & p {
+            font-size: get-font-size('body-large', 'rem');
+            color: get-text-color('medium-emphasis');
+            margin-top: get-spacing('md', 'rem');
+            line-height: 20px;
+        }
+    }
+}
+
+@media only screen and (max-width: 1440px) {
+    .landing__card-grid {
+        width: calc(25% - #{get-spacing('gutter', 'rem')});
+    }
+}
+
+@media only screen and (max-width: 1279px) {
+    .landing__card-grid {
+        width: 224px;
+    }
+}

@@ -1,0 +1,38 @@
+<div class="smss-overlay">
+    <div
+        class="smss-overlay__background"
+        ng-class="{'smss-overlay__background--disableclick':disableClick}"
+        ng-click="disableClick ? '' : exit()"
+    ></div>
+    <div class="smss-overlay__wrapper" ng-class="size">
+        <div class="smss-overlay__wrapper__header" ng-show="isHeaderPresent">
+            <h3
+                class="smss-overlay__wrapper__header__text"
+                ng-transclude="header"
+            ></h3>
+            <div
+                class="smss-overlay__wrapper__header__times"
+                ng-hide="disableClick"
+                ng-click="disableClick ? '' : exit()"
+            >
+                <i class="fa fa-times"></i>
+            </div>
+        </div>
+        <div
+            class="smss-overlay__wrapper__body"
+            id="overlay-body"
+            ng-class="{'smss-overlay__wrapper__body--overflow': isOverflow}"
+        >
+            <div
+                class="smss-overlay__wrapper__body__content"
+                ng-transclude="body"
+                id="overlay-body-content"
+            ></div>
+        </div>
+        <div
+            class="smss-overlay__wrapper__footer"
+            ng-transclude="footer"
+            ng-show="isFooterPresent"
+        ></div>
+    </div>
+</div>

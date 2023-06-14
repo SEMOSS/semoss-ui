@@ -1,0 +1,162 @@
+<smss-scroll static-x="true">
+    <smss-field
+        ng-if="customizeSymbol.selectedLayout !== 'GraphGL'"
+        ng-if="customizeSymbol.rules.length > 0"
+    >
+        <label> Applied:</label>
+        <content>
+            <div class="customize-symbol__applied">
+                <div
+                    class="smss-caption--center"
+                    ng-if="customizeSymbol.rules.length == 0"
+                >
+                    No symbol styles.
+                </div>
+                <div
+                    ng-repeat="rule in customizeSymbol.rules track by $index"
+                    class="smss-row customize-symbol__applied__readable"
+                    ng-click="customizeSymbol.updateRule($index)"
+                >
+                    <div class="smss-col smss-col--10">
+                        <div
+                            ng-if="rule.instances.length === 0"
+                            class="customize-symbol__applied__readable__rules"
+                        >
+                            <img
+                                ng-if="rule.symbol.indexOf('.') === -1"
+                                class="customize-symbol__applied__readable__rules__img"
+                                ng-src="widgets/customize-symbol/img/{{rule.symbol}}.svg"
+                            />
+                            <img
+                                ng-if="rule.symbol.indexOf('.') !== -1"
+                                class="customize-symbol__applied__readable__rules__img"
+                                ng-src="widgets/customize-symbol/img/image.svg"
+                            />
+                            {{rule.dimension}}
+                        </div>
+                        <div
+                            ng-if="rule.instances.length !== 0"
+                            class="customize-symbol__applied__readable__rules"
+                        >
+                            <img
+                                ng-if="rule.symbol.indexOf('.') === -1"
+                                class="customize-symbol__applied__readable__rules__img"
+                                ng-src="widgets/customize-symbol/img/{{rule.symbol}}.svg"
+                            />
+                            <img
+                                ng-if="rule.symbol.indexOf('.') !== -1"
+                                class="customize-symbol__applied__readable__rules__img"
+                                ng-src="widgets/customize-symbol/img/image.svg"
+                            />
+                            Instances of {{rule.dimension}}
+                        </div>
+                    </div>
+                    <div class="smss-col smss-col--2">
+                        <smss-btn
+                            class="smss-btn--icon smss-color--error smss-right"
+                            ng-click="customizeSymbol.removeFromAppliedRules($index);"
+                        >
+                            <i class="fa fa-times"></i>
+                        </smss-btn>
+                    </div>
+                </div>
+            </div>
+        </content>
+    </smss-field>
+
+    <smss-field ng-if="customizeSymbol.selectedLayout !== 'GraphGL'">
+        <label>Select a Dimension:</label>
+        <content>
+            <smss-dropdown
+                model="customizeSymbol.selectedHeader"
+                options="customizeSymbol.headers"
+                change="customizeSymbol.getUniqueInstances()"
+                placeholder="All Nodes"
+            >
+            </smss-dropdown>
+        </content>
+    </smss-field>
+
+    <smss-field
+        ng-if="(customizeSymbol.viewTypes[0] !== 'noneExist' && customizeSymbol.selectedHeader !== 'All Nodes') || customizeSymbol.showInstances;"
+    >
+        <label>Select Instances:</label>
+        <content>
+            <smss-checklist
+                class="smss-checklist--short"
+                model="customizeSymbol.instances"
+                options="customizeSymbol.viewTypes"
+                searchable
+                multiple
+                quickselect
+            >
+            </smss-checklist>
+        </content>
+        <!-- TODO
+            add scroll (grab next 500) with loading -->
+    </smss-field>
+
+    <smss-field>
+        <label>Select a Symbol:</label>
+        <content>
+            <smss-dropdown
+                model="customizeSymbol.selectedSymbol"
+                options="customizeSymbol.symbols"
+                placeholder="Circle"
+            >
+            </smss-dropdown>
+        </content>
+    </smss-field>
+
+    <smss-field ng-if="customizeSymbol.selectedSymbol === 'Custom URL';">
+        <label>Insert Image URL:</label>
+        <content>
+            <smss-input
+                type="text"
+                ng-model="customizeSymbol.url"
+                placeholder=".png, .svg, .jpg"
+            >
+            </smss-input>
+        </content>
+    </smss-field>
+
+    <smss-field>
+        <label>Select Symbol Size:</label>
+        <content>
+            <smss-slider
+                model="customizeSymbol.symbolSize"
+                min="5"
+                max="80"
+                numerical
+            >
+            </smss-slider>
+        </content>
+    </smss-field>
+
+    <smss-field ng-if="customizeSymbol.selectedLayout !== 'GraphGL';">
+        <content>
+            <smss-checkbox model="customizeSymbol.specifyColor">
+                Specify Symbol Color
+            </smss-checkbox>
+        </content>
+    </smss-field>
+
+    <smss-field
+        ng-if="customizeSymbol.selectedLayout !== 'GraphGL' && customizeSymbol.specifyColor;"
+    >
+        <label> Symbol Color:</label>
+        <content>
+            <smss-color-picker
+                color-theme="customizeSymbol.theme"
+                model="customizeSymbol.selectedColor"
+            >
+            </smss-color-picker>
+        </content>
+    </smss-field>
+
+    <div class="smss-action">
+        <smss-btn ng-click="customizeSymbol.executeGroup(true)">
+            Execute
+        </smss-btn>
+    </div>
+</smss-scroll>

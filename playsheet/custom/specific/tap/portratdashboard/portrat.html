@@ -1,0 +1,17 @@
+<!-- MHS Portfolio Rationalization Panels -->
+<div ng-if="prd.loadScreen" class="loading-overlay"><br>
+    <loading-screen loading-screen-show="prd.loadScreen"></loading-screen>
+</div>
+
+<div class="port-rat-left-panel">
+    <div ng-show="prd.showParamPanel">
+        <portratparampanel></portratparampanel>
+    </div>
+    <div ng-show="prd.showSelectPanel">
+        <portratselectpanel></portratselectpanel>
+    </div>
+</div>
+
+<div ng-if="prd.showDash" class="port-rat-canvas-wrapper">
+    <portratdashboard></portratdashboard>
+</div>

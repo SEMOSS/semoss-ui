@@ -1,0 +1,157 @@
+@import '~theme';
+
+[ng\:cloak],
+[ng-cloak],
+[data-ng-cloak],
+[x-ng-cloak],
+.ng-cloak,
+.x-ng-cloak {
+    display: none !important;
+}
+
+code {
+    background: get-background-color('default');
+    color: get-text-color('default');
+}
+
+/* positioning */
+.fixed {
+    position: fixed;
+    z-index: 10;
+}
+
+.absolute {
+    position: absolute;
+}
+
+.relative {
+    position: relative;
+}
+
+.absolute-size {
+    position: absolute;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    right: 0;
+}
+
+.right {
+    right: 0;
+}
+
+.top {
+    top: 0;
+}
+
+.left {
+    left: 0;
+}
+
+.bottom {
+    bottom: 0;
+}
+
+/* font styles */
+.center {
+    text-align: center;
+}
+
+.no-bold {
+    font-weight: 100;
+}
+
+.bold {
+    font-weight: bold !important;
+}
+
+.italic {
+    font-style: italic;
+}
+
+/* cursor */
+.pointer {
+    cursor: pointer;
+}
+
+.pointer:focus {
+    outline: none;
+}
+
+.link {
+    color: #0c5f98;
+}
+
+.link:hover {
+    text-decoration: underline;
+}
+
+.pointer-cursor {
+    cursor: pointer;
+}
+
+.pointer-cursor:focus {
+    outline: none;
+}
+
+.default-cursor {
+    cursor: default;
+}
+
+.text-cursor {
+    cursor: text;
+}
+
+.auto-cursor {
+    cursor: auto;
+}
+
+/* borders */
+.border {
+    border: 1px solid get-border-color('default');
+}
+
+.border-bottom {
+    border-bottom: 1px solid get-border-color('default');
+}
+
+.border-top {
+    border-top: 1px solid get-border-color('default');
+}
+
+.border-left {
+    border-left: 1px solid get-border-color('default');
+}
+
+.border-right {
+    border-right: 1px solid get-border-color('default');
+}
+
+/* accordion */
+.accordion {
+    border: 1px solid #dddddd;
+    border-top: none;
+    margin-top: -23px;
+    padding-right: 14px;
+}
+
+/* visibility */
+.hidden {
+    visibility: hidden;
+}
+
+.visible {
+    visibility: visible;
+}
+
+/* font colors and sizes */
+a.disabled {
+    color: #bdbdbd;
+    cursor: default;
+    pointer-events: none;
+    text-decoration: none;
+}
+
+.nowrap {
+    white-space: nowrap;
+}

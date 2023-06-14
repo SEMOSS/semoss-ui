@@ -1,0 +1,182 @@
+<div class="terminal-console">
+    <div class="terminal-console__content">
+        <div class="terminal-console__content__background">
+            <img
+                ng-if="terminalConsole.state.context === 'R'"
+                src="~images/R_logo.png"
+            />
+            <img
+                ng-if="terminalConsole.state.context === 'Python'"
+                src="~images/python-logo.png"
+            />
+            <img
+                ng-if="terminalConsole.state.context === 'Shell'"
+                src="~images/command-prompt.png"
+            />
+        </div>
+        <div
+            id="terminal-console__content__editor"
+            class="terminal-console__content__editor"
+        ></div>
+    </div>
+
+    <div class="terminal-console__toolbar">
+        <smss-popover>
+            <smss-btn
+                id="terminal-console__toolbar__settings"
+                title="Show Console Settings"
+                class="terminal-console__toolbar__group smss-btn--icon"
+            >
+                <i class="fa fa-gears"></i>
+            </smss-btn>
+            <smss-popover-content
+                class="terminal-console__toolbar__settings__content"
+                target="#terminal-console__toolbar__settings"
+            >
+                <smss-field title="Show the Raw Output">
+                    <content>
+                        <smss-checkbox
+                            change="terminalConsole.changeState();"
+                            model="terminalConsole.state.rawOutput"
+                        >
+                            Raw Output
+                        </smss-checkbox>
+                    </content>
+                </smss-field>
+                <smss-field
+                    title="Limit the amount of results returned"
+                    inline
+                    class="terminal-console__toolbar__settings__limit"
+                >
+                    <label> Row Limit: </label>
+                    <content>
+                        <smss-input
+                            id="terminal-console__toolbar__settings__max-records"
+                            type="number"
+                            ng-model="terminalConsole.state.maxRecords"
+                            ng-change="terminalConsole.changeState();"
+                        >
+                        </smss-input>
+                    </content>
+                </smss-field>
+                <div class="smss-spacing">
+                    <smss-checkbox
+                        model="terminalConsole.state.wordWrap"
+                        change="terminalConsole.changeWordWrap();"
+                        >Word Wrap
+                    </smss-checkbox>
+                </div>
+            </smss-popover-content>
+        </smss-popover>
+        <smss-popover>
+            <smss-btn-group class="terminal-console__toolbar__group">
+                <smss-btn
+                    class="smss-btn--icon smss-btn--compact"
+                    title="Pixel"
+                    ng-class="{'smss-btn--selected':terminalConsole.state.context === 'Pixel'}"
+                    ng-click="terminalConsole.changeContext('Pixel');"
+                    title="Change console context to Pixel"
+                >
+                    <i class="fa fa-code"></i>
+                </smss-btn>
+                <smss-btn
+                    class="smss-btn--icon smss-btn--compact"
+                    title="R"
+                    ng-click="terminalConsole.changeContext('R');"
+                    ng-class="{'smss-btn--selected':terminalConsole.state.context === 'R'}"
+                    title="Change console context to R"
+                >
+                    <img src="~images/R_logo.png" />
+                </smss-btn>
+                <smss-btn
+                    class="smss-btn--icon smss-btn--compact"
+                    title="Python"
+                    ng-click="terminalConsole.changeContext('Python');"
+                    ng-class="{'smss-btn--selected':terminalConsole.state.context === 'Python'}"
+                    title="Change console context to Python"
+                >
+                    <img src="~images/python-logo.png" />
+                </smss-btn>
+                <smss-btn
+                    class="smss-btn--icon smss-btn--compact"
+                    title="Shell"
+                    ng-click="terminalConsole.changeContext('Shell');"
+                    ng-class="{'smss-btn--selected':terminalConsole.state.context === 'Shell}"
+                    title="Change console context to Shell"
+                >
+                    <img src="~images/command-prompt.png" />
+                </smss-btn>
+                <smss-btn
+                    id="terminal-console__toolbar__advanced"
+                    class="smss-btn--icon smss-btn--compact"
+                    title="Advanced Commands"
+                >
+                    <i class="fa fa-ellipsis-h"></i>
+                </smss-btn>
+            </smss-btn-group>
+            <smss-popover-content
+                class="terminal-console__toolbar__advanced__content"
+                target="#terminal-console__toolbar__advanced"
+            >
+                <smss-field title="Refresh Frame">
+                    <label> Refresh Headers </label>
+                    <content class="smss-field__content-overflow">
+                        <smss-dropdown
+                            placeholder="Select Frame"
+                            class="smss-left terminal-console__toolbar__advanced__input"
+                            model="terminalConsole.advanced.refresh"
+                            options="terminalConsole.frames"
+                            body="false"
+                        >
+                        </smss-dropdown>
+
+                        <smss-btn
+                            class="smss-btn--icon smss-right"
+                            ng-click="terminalConsole.refreshFrameHeaders();"
+                        >
+                            <i class="fa fa-refresh"></i>
+                        </smss-btn>
+                    </content>
+                </smss-field>
+                <smss-field
+                    ng-show="terminalConsole.state.context === 'R' || terminalConsole.state.context === 'Python'"
+                    title="Generate Frame from Variable"
+                >
+                    <label>
+                        Create Frame from {{terminalConsole.state.context}}
+                        Variable
+                    </label>
+                    <content class="smss-clear">
+                        <smss-input
+                            placeholder="Enter Variable"
+                            class="smss-left terminal-console__toolbar__advanced__input"
+                            ng-model="terminalConsole.advanced.variable"
+                            ng-keydown="$event.keyCode === 13 && terminalConsole.generateFrameFromVariable()"
+                        ></smss-input>
+                        <smss-btn
+                            class="smss-btn--icon smss-right"
+                            ng-click="terminalConsole.generateFrameFromVariable();"
+                        >
+                            <i class="fa fa-check"></i>
+                        </smss-btn>
+                    </content>
+                </smss-field>
+            </smss-popover-content>
+        </smss-popover>
+        <smss-btn
+            class="smss-btn--icon terminal-console__toolbar__group"
+            title="Copy Recipe to Clipboard"
+            ng-click="terminalConsole.copy()"
+        >
+            <i class="fa fa-download"></i>
+        </smss-btn>
+        <smss-btn
+            title="Submit"
+            aria-label="Submit"
+            class="smss-btn--compact"
+            ng-click="terminalConsole.execute();"
+        >
+            Submit
+        </smss-btn>
+    </div>
+</div>

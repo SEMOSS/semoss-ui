@@ -1,0 +1,349 @@
+@import '~theme';
+
+$pipeline-preview: 240px;
+$pipeline-gutter: 24px;
+$pipeline-landing: 144px;
+$pipeline-side: get-width('icon', 'rem') + (2 * get-spacing('xs', 'rem')); // 1 button + side margin (32px)
+$pipeline-box: (4 * get-width('icon', 'rem'))+ (3 * get-spacing('xs', 'rem')); // 4 buttons + margin in between each button (108px)
+$pipeline-action: get-height('default', 'rem'); // 32px
+$pipeline-endpoint: get-height('sm', 'rem') - get-spacing('sm', 'rem');
+$pipeline-height: $pipeline-box + $pipeline-action; // 144px
+$pipeline-width: $pipeline-box + 2 * $pipeline-side; // 172px
+
+.pipeline {
+    position: absolute;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    left: 0;
+
+    &__left {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: $sidebar;
+        height: 100%;
+        padding: 0;
+        border: 1px solid get-border-color('default');
+        border-bottom: none;
+        background: get-background-color('default');
+        display: flex;
+        flex-direction: column;
+
+        &__search {
+            padding: get-spacing('sm', 'rem');
+        }
+
+        &__accordion {
+            position: relative;
+            flex: 1;
+            width: 100%;
+            overflow: hidden;
+            border-right: none;
+            border-left: none;
+            border-radius: 0;
+        }
+
+        &__block {
+            cursor: move;
+            border-bottom: 1px solid get-border-color('default');
+        }
+    }
+
+    &__content {
+        position: absolute;
+        top: 0;
+        right: 0;
+        bottom: 0;
+        left: $sidebar;
+        background: get-background-color('default');
+        border-top: 1px solid get-border-color('default');
+
+        &__workspace {
+            position: absolute;
+            top: 0;
+            right: 0;
+            bottom: 0;
+            left: 0;
+            overflow: auto;
+            z-index: 0;
+        }
+
+        &__position {
+            position: absolute;
+            left: get-spacing('sm', 'rem');
+            bottom: get-spacing('sm', 'rem');
+            z-index: 1;
+            background: get-background-color('light');
+        }
+    }
+
+    &__zone {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: auto;
+        bottom: 0;
+        z-index: -1;
+
+        &__spacer {
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            right: ($pipeline-gutter - 4px)/2;
+            width: 4px;
+            background: white;
+        }
+    }
+
+    &__component {
+        position: absolute;
+        top: 0;
+        left: 0;
+        height: $pipeline-height;
+        width: $pipeline-width;
+        z-index: 1;
+        outline: none;
+        display: flex;
+
+        &--disabled,
+        &:disabled,
+        &[disabled='disabled'] {
+            .pipeline__component__box {
+                background: get-background-color('disabled');
+                @include no-select();
+            }
+        }
+
+        &__side {
+            position: relative;
+            height: $pipeline-box;
+            width: $pipeline-side;
+
+            &__holder {
+                position: absolute;
+                width: 100%;
+                display: flex;
+                flex-direction: column;
+            }
+
+            &__btn {
+                margin: 0 get-spacing('xs', 'rem');
+                padding: 0;
+            }
+        }
+
+        &__content {
+            height: 100%;
+            width: calc(100% - #{$pipeline-side * 2});
+        }
+
+        &__box {
+            height: $pipeline-box;
+            width: 100%;
+            border: 1px solid get-border-color('default');
+            background: get-background-color('default');
+            border-radius: $border-radius;
+            display: flex;
+            flex-direction: column;
+
+            &--replay {
+                outline: 1px solid get-outline-color('primary');
+            }
+
+            &__action {
+                width: 100%;
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+
+                &__icon {
+                    &--drag {
+                        cursor: move;
+                    }
+                    &--close {
+                        color: get-text-color('error');
+                        &:hover {
+                            color: get-text-color('error--hover');
+                        }
+                    }
+                }
+            }
+
+            &__warning {
+                background: get-background-color('warn');
+                outline: 2px solid get-outline-color('warn');
+            }
+
+            &__error {
+                background: get-background-color('error');
+                outline: 2px solid get-outline-color('error');
+            }
+
+            &__img {
+                flex: 1;
+                overflow: hidden;
+                text-align: center;
+
+                & img {
+                    height: 100%;
+                    width: auto;
+                    max-width: 100%;
+                }
+            }
+
+            &__text {
+                padding: 0 get-spacing('sm', 'rem');
+                margin-bottom: get-spacing('sm', 'rem');
+                text-align: center;
+            }
+        }
+
+        &__action {
+            height: $pipeline-action;
+            width: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            visibility: hidden;
+
+            & .smss-btn {
+                background: get-background-color('light');
+                margin-right: get-spacing('xs', 'rem');
+                &:last-child {
+                    margin-right: 0;
+                }
+                &:hover {
+                    background: get-background-color('primary--hover');
+                }
+            }
+        }
+        &:hover {
+            & .pipeline__component__action {
+                visibility: visible;
+            }
+        }
+    }
+
+    &__plumbing {
+        &__endpoint {
+            z-index: 2;
+            cursor: pointer;
+            margin-left: -1 * $pipeline-endpoint/2;
+        }
+
+        &__connector {
+            & path {
+                stroke: get-border-color('dark');
+            }
+        }
+
+        &__overlay {
+            stroke: get-border-color('dark');
+            fill: get-border-color('dark');
+        }
+    }
+
+    &__preview {
+        position: absolute;
+        top: 100%;
+        left: $sidebar;
+        height: 0%;
+        width: calc(100% - #{$sidebar});
+        padding: 0 $scroll-size;
+        border-top: 1px solid get-border-color('default');
+        background: get-background-color('default');
+        display: flex;
+        flex-direction: column;
+
+        &__header {
+            display: flex;
+            align-items: center;
+
+            &__title {
+                flex: 1;
+                @include text-overflow();
+            }
+        }
+
+        &__grid {
+            flex: 1;
+            overflow: hidden;
+        }
+    }
+
+    &__federate {
+        & > .smss-overlay__wrapper {
+            top: 10%;
+            right: 1%;
+            bottom: 10%;
+            left: 1%;
+            transform: none;
+            width: inherit;
+            height: inherit;
+            max-height: 100%;
+            padding: 0;
+        }
+    }
+
+    &__edit {
+        & > .smss-overlay__wrapper {
+            top: 2.5%;
+            right: 1%;
+            bottom: 2.5%;
+            left: 1%;
+            transform: none;
+            width: inherit;
+            height: inherit;
+            max-height: 100%;
+            padding: 0;
+        }
+
+        &__accordion {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            overflow: hidden;
+            height: inherit;
+            width: inherit;
+
+            &__header {
+                display: flex;
+                justify-content: space-between;
+                align-items: flex-start;
+                padding: 0 get-spacing('sm', 'rem');
+
+                &__count {
+                    display: flex;
+                    width: 160px;
+                    margin-left: get-spacing('sm', 'rem');
+
+                    &__ele {
+                        width: 80px !important;
+                    }
+                }
+            }
+
+            &__content {
+                position: relative;
+                height: 100%;
+                width: 100%;
+            }
+
+            &__preview {
+                display: flex;
+                flex-direction: column;
+            }
+        }
+    }
+
+    &__landing {
+        & > .smss-overlay__wrapper {
+            width: 95%;
+            height: 95%;
+            max-height: 95%;
+        }
+    }
+}

@@ -1,0 +1,58 @@
+@import '~theme';
+
+.view-tools {
+    position: absolute;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    right: 0;
+    display: flex;
+    flex-direction: column;
+
+    &__container {
+        height: 100%;
+        width: 100%;
+        display: flex;
+        flex-direction: column;
+        &__back {
+            height: get-height('default', 'rem');
+            width: 100%;
+            display: flex;
+            align-items: center;
+            padding: 0 get-spacing('scroll', 'rem');
+            border-bottom: 1px solid get-border-color('default');
+            &__text {
+                margin-left: get-spacing('sm', 'rem');
+                flex: 1;
+                @include text-overflow();
+            }
+        }
+    }
+
+    &__search {
+        position: relative;
+        padding-left: get-spacing('scroll', 'rem');
+        padding-right: get-spacing('scroll', 'rem');
+
+        &__clear {
+            position: absolute;
+            right: get-spacing('scroll', 'rem');
+            top: (get-height('default', 'rem') - get-height('icon', 'rem')) / 2 +
+                get-spacing('xs', 'rem');
+        }
+    }
+
+    &__scroll {
+        flex: 1;
+    }
+
+    &__block {
+        border-bottom: 1px solid get-border-color('default');
+    }
+
+    &__hidden {
+        position: relative;
+        height: 100%;
+        visibility: hidden;
+    }
+}

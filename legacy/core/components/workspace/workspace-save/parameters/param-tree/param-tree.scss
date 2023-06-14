@@ -1,0 +1,130 @@
+@import '~theme';
+$block: get-height('default', 'em') + get-spacing('sm', 'em');
+$vertical: calc(
+    (#{$block} / 2) + #{get-spacing('sm', 'em')}
+); // half the tree_header height + li padding
+$horizontal: get-height('default', 'em');
+$left: calc(#{$block}/ 2 * -1);
+
+.param-tree {
+    position: relative;
+
+    & ul {
+        position: relative;
+        list-style: none;
+        padding-left: $block;
+        margin: 0;
+
+        // Makes the last vertical line short
+        & li:last-child::after {
+            height: $vertical;
+        }
+    }
+
+    // Draws the lines
+    & li {
+        position: relative;
+        margin: 0;
+        padding: get-spacing('sm', 'em') 0;
+
+        &::before {
+            content: '';
+            position: absolute;
+            left: $left;
+            top: $vertical;
+            width: $horizontal;
+            height: 0;
+            border-top: 1px solid get-border-color('dark');
+        }
+
+        &::after {
+            content: '';
+            position: absolute;
+            left: $left;
+            height: 100%;
+            width: 0;
+            top: 0px;
+            border-left: 1px solid get-border-color('dark');
+        }
+    }
+
+    // Removes lines for first unordered list
+    & > ul {
+        padding: 0;
+
+        & > li {
+            &::before {
+                content: none;
+            }
+
+            &::after {
+                content: none;
+            }
+        }
+    }
+
+    &__header {
+        height: $block;
+        line-height: $block;
+        padding-left: $horizontal/2;
+
+        & i {
+            cursor: pointer;
+            vertical-align: middle;
+        }
+
+        &__active {
+            color: get-text-color('primary');
+        }
+
+        &__text {
+            max-width: calc(100% - 6em);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            vertical-align: middle;
+
+            display: inline-block;
+            padding: 0 get-spacing('sm', 'em');
+            height: get-height('default', 'em');
+            line-height: get-height('default', 'em');
+            border: 1px solid get-border-color('default');
+            border-radius: $border-radius;
+            background: get-background-color('default');
+            font-size: get-font-size('body-regular', 'em');
+        }
+
+        &__overflow {
+            overflow: hidden;
+            max-width: calc(100% - 1em);
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        &__buttons {
+            visibility: hidden;
+        }
+
+        &:hover {
+            color: get-text-color('primary');
+
+            & .param-tree__header__buttons {
+                visibility: visible;
+            }
+        }
+
+        &--disabled,
+        &:disabled,
+        &[disabled='disabled'] {
+            color: get-text-color('default') !important;
+
+            & .param-tree__header__buttons {
+                visibility: hidden !important;
+            }
+        }
+
+        &--selected {
+            color: get-text-color('primary') !important;
+        }
+    }
+}

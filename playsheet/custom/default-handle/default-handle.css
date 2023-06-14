@@ -1,0 +1,31 @@
+.dh-params-list {
+	list-style-type: none;
+    overflow-y: auto;
+    -webkit-padding-start: 0px;
+    /* display: flex; */
+    /* flex-direction: column; */
+    height: calc(100% - 100px);
+}
+
+.handle-option {
+    width: 90%
+}
+
+.info-icon {
+    width: 5%;
+}
+
+.handle-body-height {
+    max-height: calc(100% - 75px);
+    height: auto;
+}
+
+.icon-rectangles {
+    width: 34px;
+    height: 30px;
+    text-align: center;
+}
+
+.icon-rectangles.selected {
+    border-color: #14236C !important;
+}

@@ -1,0 +1,77 @@
+<smss-scroll static-x="true">
+    <div class="smss-spacing smss-small">
+        In order to connect your insight’s data to Tableau, please do the
+        following:
+        <ol>
+            <li>
+                If running HTTP on a different port, please modify the value.
+            </li>
+            <li>
+                Specify a password to protect your data. This will be re-entered
+                in Tableau to secure the connection.
+            </li>
+            <li>Hit "Set" and a new box will open with a URL. Copy the URL.</li>
+            <li>Open up Tableau's Web Data Connector UI and enter the URL.</li>
+            <li>
+                A page should load and will ask you for the password set in step
+                2.
+            </li>
+            <li>
+                After you enter your password and hit submit, Tableau will start
+                to load the data for you to start visualizing.
+            </li>
+        </ol>
+    </div>
+    <smss-field>
+        <label> HTTP Port: </label>
+        <content>
+            <div class="smss-row">
+                <div class="smss-col smss-col--11">
+                    <smss-input ng-model="share.port"></smss-input>
+                </div>
+                <div class="smss-col smss-col--1">&nbsp;</div>
+            </div>
+        </content>
+    </smss-field>
+
+    <smss-field>
+        <label> User Password: </label>
+        <content>
+            <div class="smss-row">
+                <div class="smss-col smss-col--11">
+                    <smss-input
+                        ng-model="share.secret"
+                        type="password"
+                    ></smss-input>
+                </div>
+                <div class="smss-col smss-col--1">
+                    <smss-btn
+                        ng-click="share.setSecret()"
+                        class="share-btn"
+                        ng-disabled="share.port !== 0 && !share.port || share.secret !== 0 && !share.secret"
+                        >Set</smss-btn
+                    >
+                </div>
+            </div>
+        </content>
+    </smss-field>
+
+    <smss-field ng-if="share.shareURL">
+        <label> Share URL: </label>
+        <content>
+            <div class="smss-row">
+                <div class="smss-col smss-col--11">
+                    <smss-input ng-model="share.shareURL" readonly></smss-input>
+                </div>
+                <div class="smss-col smss-col--1">
+                    <smss-btn
+                        class="share-btn"
+                        ng-click="share.copyText(share.shareURL)"
+                    >
+                        <i class="fa fa-clipboard"></i>
+                    </smss-btn>
+                </div>
+            </div>
+        </content>
+    </smss-field>
+</smss-scroll>

@@ -1,0 +1,68 @@
+@import '~theme';
+
+.smss-tab {
+    height: get-height('button', 'em');
+    font-size: 1rem;
+    padding: 0 get-spacing('md', 'em');
+    text-align: center;
+    cursor: pointer;
+    display: inline-block;
+    background: transparent;
+    @include no-select();
+    margin: 0;
+    outline: none;
+    box-shadow: none;
+    border: $border-size solid transparent;
+    border-bottom: 2px solid transparent;
+    color: get-text-color('low-emphasis');
+    overflow: hidden;
+    font-weight: get-font-weight('semibold');
+
+    & > * {
+        font-size: get-font-size('body-regular', 'em');
+        display: inline-block;
+        line-height: calc(
+            #{rescale(get-font-size('body-regular', 'em'), 1em, 0.875em)} + 2px
+        );
+        margin: rescale(get-spacing('sm', 'em'), 1em, 0.875em) 0;
+        width: 100%;
+        @include text-overflow();
+    }
+
+    &:hover {
+        background: get-background-color('primary--hover') !important;
+        border-bottom-color: get-border-color('dark');
+
+        &.smss-tab--selected {
+            border-bottom-color: get-border-color('primary');
+        }
+    }
+
+    &:focus-visible {
+        border-color: get-border-color('primary') !important;
+    }
+
+    &--small {
+        min-width: auto;
+        padding: 0 get-spacing('sm', 'em');
+    }
+
+    &--selected {
+        color: get-text-color('high-emphasis');
+        border-bottom-color: get-border-color('primary');
+    }
+
+    &--sheet {
+        background: get-background-color('light');
+        border-right: $border-size solid get-border-color('dark');
+        border-bottom: $border-size solid transparent !important;
+        color: get-text-color('medium-emphasis');
+        padding: 0 get-spacing('sm', 'em');
+        text-align: left;
+
+        &.smss-tab--selected {
+            color: get-text-color('high-emphasis');
+            background: get-background-color('default');
+        }
+    }
+}

@@ -1,0 +1,143 @@
+<div id="graph-canvas" class="absolute" style="background: white">
+    <div class="sm-margin" id="scorecardTile">
+
+        <div class="scorecard-title-bar">
+            <div class="scorecard-title-text xl-font inline xs-top-margin"></div>
+            <!--<div class="master-param-list">-->
+                <!--<div class="param-dropdown">-->
+                    <!--<div class="btn-group sm-neg-top-margin" dropdown>-->
+                        <!--<button class="btn btn-flat dropdown-toggle" type="button">-->
+                            <!--{{data.systemName | shortenValueFilter | replaceUnderscores}}-->
+                            <!--<span class="caret"></span>-->
+                        <!--</button>-->
+                        <!--<ul class="dropdown-menu scorecard-dropdown">-->
+                            <!--<div class="keepopen">-->
+                                <!--<input type="search" placeholder="Filter by System" class="scorecard-filter"-->
+                                       <!--ng-model="metamodelCreator.filterHeaderList">-->
+                            <!--</div>-->
+                            <!--<div class="scrollable-menu scorecard-menu">-->
+                                <!--<li ng-repeat="param in systems.list | filter:metamodelCreator.filterHeaderList track by $index"-->
+                                    <!--class="pointer" ng-class="{'selectedParam': paramList.selectedName == param}">-->
+                                    <!--<a href ng-click="selectParam(param)">-->
+                                        <!--{{param | shortenAndReplaceUnderscores}}-->
+                                    <!--</a>-->
+                                <!--</li>-->
+                            <!--</div>-->
+                        <!--</ul>-->
+                    <!--</div>-->
+                <!--</div>-->
+            </div>
+
+        </div>
+
+        <div class="scorecard-banner">
+
+            <div class="grid8">
+                <div class="scorecard-system-name">{{data.systemName | replaceUnderscores}}</div>
+            </div>
+            <div class="grid4">
+                <div class="bold lg-font sm-vert-margin">
+                    <i class="fa fa-circle scorecard-fa-2"
+                       ng-class="data.overallReadinessAssessment == 'Simple' ? 'green' : data.overallReadinessAssessment == 'Moderate' ? 'blue' : 'orange'"></i>
+                    <!--<div class="scorecard-circle inline md-side-margin" ng-class="data.overallReadinessAssessment == 'Simple' ? 'scorecard-bg-green' : data.overallReadinessAssessment == 'Moderate' ? 'ui-match' : 'scorecard-bg-red'"></div>-->
+                    <div class="inline">
+                        Overall Readiness Assessment<br/>
+                        <div class="xxl-font">{{data.overallReadinessAssessment}}</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="grid12 force-btm-margin">
+            <div class="scorecard-info-box">
+                <div class="scorecard-tile">
+                    <div class="grid6">
+                        <div class="lg-font ">
+                            <div class="bold">System Description</div>
+                            <div class="reg-font scorecard-description-scroll">{{data.systemDescription |
+                                replaceUnderscores}}
+                            </div>
+                            <div ng-show="!data.systemDescription">This system does not have a description</div>
+                        </div>
+                    </div>
+                    <div class="grid6">
+                        <div class="bold lg-font sm-btm-margin">System Information</div>
+                        <ul class="">
+                            <li class="col-xs-6 reg-font" ng-repeat="systemInfo in data.systemInformation">
+                                <span>{{systemInfo[0]}}</span>
+                                <span><b>{{systemInfo[1]}}</b></span>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="grid6" ng-repeat="archtype in data.archtypes">
+            <div class="scorecard-info-box">
+                <div class="scorecard-tile">
+                    <div class="bold lg-font sm-btm-margin">
+                        {{archtype.name | replaceUnderscores}}
+                    </div>
+                    <div class="scorecard-scroll">
+                        <ul class="list-unstyled">
+
+                            <li class="scorecard-li lg-font" ng-repeat="i in [0,1,2,3]"
+                                ng-show="archtype.riskStatus[i]">
+                                <i class="fa fa-circle scorecard-fa"
+                                   ng-class="archtype.riskStatus[i].risk == 'Below Average' ? 'green' : archtype.riskStatus[i].risk == 'Average' ? 'blue' : 'orange'"></i>
+                                <span>{{archtype.riskStatus[i].details[0] | replaceUnderscores}}</span>
+                                <span><b>{{archtype.riskStatus[i].details[1] | replaceUnderscores}}</b></span>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="grid10 force-top-margin">
+            <div class="scorecard-info-box " ng-show="data.unknownItems.length > 0">
+                <div class="scorecard-tile">
+                    <div class="bold lg-font sm-btm-margin">
+                        Unknown Items
+                    </div>
+                    <ul class="list-unstyled">
+
+                        <li class="scorecard-li col-xs-3 lg-font" ng-repeat="unknownItem in data.unknownItems">
+                            <i class="fa fa-circle scorecard-fa"
+                               ng-class="unknownItem.risk == 'Below Average' ? 'green' : unknownItem.risk == 'Average' ? 'blue' : 'orange'"></i>
+                            <span>{{unknownItem.details[0] | replaceUnderscores}}</span>
+                            <span><b>{{unknownItem.details[1] | replaceUnderscores}}</b></span>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+        <div class="grid2 force-top-margin">
+            <div class="scorecard-info-box scorecard-legend">
+                <div class="scorecard-tile">
+                    <div class="bold lg-font sm-btm-margin ">
+                        Key
+                    </div>
+
+                    <div class="grid6">Below Average:<br/>Average:<br/>Above Average:</div>
+
+                    <div class="grid6">
+                        <i class="fa fa-circle scorecard-fa green"></i><br/>
+                        <i class="fa fa-circle scorecard-fa blue"></i><br/>
+                        <i class="fa fa-circle scorecard-fa orange"></i>
+                    </div>
+
+                    <button ng-click="scorecard.saveTile()" class="grid12 btn-light"
+                            title="Save"> Save Scorecard &nbsp;&nbsp;&nbsp;
+                        <i class="fa fa-file-image-o"></i>
+                        <!--     Save SVG -->
+                    </button>
+                </div>
+            </div>
+
+        </div>
+
+    </div>
+
+</div>

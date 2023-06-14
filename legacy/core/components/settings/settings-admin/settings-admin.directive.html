@@ -1,0 +1,872 @@
+<div class="settings__content">
+    <div class="settings__content__item">
+        <div class="settings__content__item__content">
+            <smss-tab-group class="settings__content__item__content__tabs">
+                <smss-tab
+                    id="admin-{{tab}}"
+                    ng-class="{'smss-tab--selected': settingsAdmin.selectedAdminTab ===  tab}"
+                    ng-repeat="tab in settingsAdmin.adminTabs"
+                    ng-click="settingsAdmin.switchAdminTabs(tab);"
+                >
+                    {{tab}}
+                </smss-tab>
+            </smss-tab-group>
+            <div class="settings__content__item__left smss-col--5">
+                <div class="settings__content__item__header">
+                    <smss-search
+                        ng-if="settingsAdmin.selectedAdminTab === 'Projects'"
+                        class="settings__content__item__search"
+                        placeholder="Search projects..."
+                        model="settingsAdmin.searchAdminProjects.name"
+                    >
+                    </smss-search>
+                    <smss-search
+                        ng-if="settingsAdmin.selectedAdminTab === 'Databases'"
+                        class="settings__content__item__search"
+                        placeholder="Search databases..."
+                        model="settingsAdmin.searchAdminDBs.name"
+                    >
+                    </smss-search>
+                    <smss-search
+                        ng-if="settingsAdmin.selectedAdminTab === 'Members'"
+                        class="settings__content__item__search"
+                        placeholder="Search members..."
+                        model="settingsAdmin.searchAdminUsers"
+                    >
+                    </smss-search>
+                    <smss-btn
+                        class="smss-btn--text smss-right"
+                        ng-if="settingsAdmin.selectedAdminTab === 'Members'"
+                        ng-click="settingsAdmin.openAddUserOverlay();"
+                    >
+                        <i class="fa fa-plus"></i> Add New Member
+                    </smss-btn>
+                </div>
+                <!--PROJECTS: Left Side-->
+                <div
+                    class="settings__list"
+                    ng-if="settingsAdmin.selectedAdminTab === 'Projects'"
+                >
+                    <smss-scroll static-x="true">
+                        <settings-list-item
+                            ng-repeat="item in settingsCtrl.projectAdminOwnInfo | filter: settingsAdmin.searchAdminProjects as projectResults"
+                            item="item"
+                            type="'Projects'"
+                            selected="item === settingsCtrl.project"
+                            admin="settingsCtrl.TRUE"
+                            ng-click="settingsAdmin.updateSelectedItem(item, 'Projects');"
+                        >
+                        </settings-list-item>
+                        <p
+                            class="smss-color--low-emphasis"
+                            ng-if="projectResults.length === 0"
+                        >
+                            No projects, please try again.
+                        </p>
+                    </smss-scroll>
+                </div>
+                <!--DATABASES: Left Side-->
+                <div
+                    class="settings__list"
+                    ng-if="settingsAdmin.selectedAdminTab === 'Databases'"
+                >
+                    <smss-scroll static-x="true">
+                        <settings-list-item
+                            ng-repeat="item in settingsCtrl.DBAdminOwnInfo | filter: settingsAdmin.searchAdminDBs as databaseResults"
+                            item="item"
+                            type="'Databases'"
+                            selected="item === settingsCtrl.db"
+                            admin="settingsCtrl.TRUE"
+                            ng-click="settingsAdmin.updateSelectedItem(item, 'Databases');"
+                        >
+                        </settings-list-item>
+                        <p
+                            class="smss-color--low-emphasis"
+                            ng-if="databaseResults.length === 0"
+                        >
+                            No databases, please try again.
+                        </p>
+                    </smss-scroll>
+                </div>
+                <!--USERS: Left Side-->
+                <div
+                    class="settings__list"
+                    ng-if="settingsAdmin.selectedAdminTab === 'Members'"
+                >
+                    <smss-scroll static-x="true">
+                        <div
+                            class="settings-list-item"
+                            ng-class="{'settings-list-item--selected': user == settingsAdmin.user}"
+                            ng-click="settingsAdmin.updateUserData(user); settingsAdmin.overlay.resetEditUser = true;"
+                            ng-repeat="user in settingsCtrl.allUsers | filter: settingsAdmin.searchAdminUsers as userResults track by $index"
+                        >
+                            <div
+                                class="settings-list-item__text settings-list-item__text--100w settings__font--small"
+                            >
+                                <div class="smss-row">
+                                    <div
+                                        class="smss-col smss-col--3 settings-list-item__text__title__middle"
+                                        title="{{user.id}}"
+                                    >
+                                        {{user.id}}
+                                    </div>
+                                    <div
+                                        class="smss-col smss-col--5 settings-list-item__text__title__left"
+                                        title="{{user.name}}"
+                                    >
+                                        {{(user.name === 'null' || user.name ===
+                                        '') ? 'Not Set' : user.name}} &nbsp;
+                                        <i
+                                            class="fa fa-user-plus settings__font--small settings__font--gray"
+                                            ng-if="user.admin"
+                                        ></i>
+                                    </div>
+                                    <div
+                                        class="smss-col smss-col--3 settings-list-item__text__title__middle"
+                                        title="{{user.email}}"
+                                    >
+                                        {{(user.email === 'null' || user.email
+                                        === '') ? 'Not Set' : user.email}}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <p
+                            class="smss-color--low-emphasis"
+                            ng-if="userResults.length === 0"
+                        >
+                            No members, please try again.
+                        </p>
+                    </smss-scroll>
+                </div>
+            </div>
+            <!--PROJECTS: Right Side-->
+            <div
+                class="settings__content__item__right smss-col--7"
+                ng-if="settingsAdmin.selectedAdminTab === 'Projects'"
+            >
+                <div class="settings__content__item__right__header">
+                    {{settingsCtrl.project.name}}
+                </div>
+                <smss-tab-group class="settings__content__item__content__tabs">
+                    <smss-tab
+                        ng-class="{'smss-tab--selected': settingsAdmin.selectedItemTab ===  tab}"
+                        ng-repeat="tab in settingsAdmin.itemTabs"
+                        ng-click="settingsAdmin.selectedItemTab = tab; settingsCtrl.selectedInsight = null;"
+                    >
+                        {{tab}}
+                    </smss-tab>
+                </smss-tab-group>
+                <div class="settings__content__item__right__content">
+                    <div
+                        class="smss-row settings__font--default settings__font--small"
+                        ng-if="settingsAdmin.selectedItemTab === 'Insight Permissions'"
+                    >
+                        <div
+                            class="smss-left settings__content__item__right__content__insights"
+                        >
+                            <smss-breadcrumb class="smss-breadcrumb--compact">
+                                <smss-breadcrumb-item
+                                    ng-click="settingsCtrl.selectedInsight = null"
+                                    >Insights</smss-breadcrumb-item
+                                >
+                                <smss-breadcrumb-item
+                                    >{{!settingsCtrl.selectedInsight ? 'All' :
+                                    settingsCtrl.selectedInsight.name}}</smss-breadcrumb-item
+                                >
+                            </smss-breadcrumb>
+                        </div>
+                        <div
+                            class="smss-right settings__font--small"
+                            ng-if="settingsCtrl.selectedInsight"
+                        >
+                            <smss-toggle
+                                class="smss-toggle--small"
+                                ng-init="privacyState = !settingsCtrl.selectedInsight.insight_global"
+                                model="privacyState"
+                                change="settingsCtrl.selectedInsight.insight_global = !settingsCtrl.selectedInsight.insight_global; settingsCtrl.setInsightGlobal(settingsCtrl.project.project_id, settingsCtrl.selectedInsight.project_insight_id, settingsCtrl.selectedInsight.insight_global, true)"
+                            >
+                                Insight Privacy &nbsp;
+                                <i class="fa fa-lock"></i>
+                            </smss-toggle>
+                        </div>
+                    </div>
+                    <div class="settings__content__item__padding">
+                        <div class="settings__content__item__search">
+                            <smss-search
+                                ng-if="settingsAdmin.selectedItemTab === 'Project Permissions' && settingsCtrl.permissionInfo.length > 0"
+                                placeholder="Search users..."
+                                model="settingsAdmin.userSearchterm"
+                            >
+                            </smss-search>
+                            <smss-search
+                                ng-if="settingsAdmin.selectedItemTab === 'Insight Permissions' && !settingsCtrl.selectedInsight  && !settingsCtrl.noInsights"
+                                placeholder="Search insights..."
+                                model="settingsAdmin.insightSearchterm"
+                            >
+                            </smss-search>
+                            <smss-search
+                                ng-if="settingsAdmin.selectedItemTab === 'Insight Permissions' && settingsCtrl.selectedInsight && !settingsCtrl.noInsightUsers"
+                                placeholder="Search users..."
+                                model="settingsAdmin.insightUserSearchterm"
+                            >
+                            </smss-search>
+                        </div>
+                        <!--Add Users to App-->
+                        <smss-btn
+                            class="smss-btn--text smss-right"
+                            ng-if="settingsAdmin.selectedItemTab === 'Project Permissions' && !settingsCtrl.allUserAccess"
+                            ng-click="settingsCtrl.openAddUserPermOverlay(settingsCtrl.project, 'Projects', true);"
+                        >
+                            <i class="fa fa-plus"></i>Add Members
+                        </smss-btn>
+                        <!--Add Users to Insight-->
+                        <smss-btn
+                            class="smss-btn--text smss-right"
+                            ng-if="settingsAdmin.selectedItemTab === 'Insight Permissions' && settingsCtrl.selectedInsight && !settingsCtrl.allUserAccess"
+                            ng-click="settingsCtrl.getInsightUsersNoCredentials(true, settingsCtrl.project.project_id, settingsCtrl.selectedInsight.project_insight_id); settingsCtrl.overlay.openAddInsightPermissions = true;"
+                        >
+                            <i class="fa fa-plus"></i>Add Members
+                        </smss-btn>
+                    </div>
+                    <div
+                        class="settings__content__item__right__content__table"
+                        ng-if="settingsAdmin.selectedItemTab === 'Project Permissions'"
+                    >
+                        <div
+                            class="smss-center"
+                            ng-if="settingsCtrl.permissionInfo.length === 0"
+                        >
+                            No members have access to this project yet.
+                        </div>
+                        <smss-scroll
+                            ng-if="settingsCtrl.permissionInfo.length > 0"
+                        >
+                            <settings-table
+                                admin="settingsCtrl.TRUE"
+                                item="settingsCtrl.project"
+                                users="settingsCtrl.permissionInfo"
+                                searchterm="settingsAdmin.userSearchterm"
+                                type="'Projects'"
+                            >
+                            </settings-table>
+                        </smss-scroll>
+                    </div>
+                    <settings-insights
+                        ng-if="settingsAdmin.selectedAdminTab === 'Projects' && settingsAdmin.selectedItemTab === 'Insight Permissions'"
+                        class="settings__content__item__right__content__fill"
+                        insight-searchterm="settingsAdmin.insightSearchterm"
+                        user-searchterm="settingsAdmin.insightUserSearchterm"
+                    ></settings-insights>
+                </div>
+            </div>
+            <!--DATABASES: Right Side-->
+            <div
+                class="settings__content__item__right smss-col--7"
+                ng-if="settingsAdmin.selectedAdminTab === 'Databases'"
+            >
+                <div class="settings__content__item__right__header">
+                    {{settingsCtrl.db.name}}
+                </div>
+                <div class="settings__content__item__right__content">
+                    <div class="settings__content__item__padding">
+                        <div class="settings__content__item__search">
+                            <smss-search
+                                ng-if="settingsCtrl.permissionInfo.length > 0"
+                                placeholder="Search users..."
+                                model="settingsAdmin.userSearchterm"
+                            >
+                            </smss-search>
+                        </div>
+                        <!--Add Users to DB-->
+                        <smss-btn
+                            class="smss-btn--text smss-right"
+                            ng-if="!settingsCtrl.allUserAccess"
+                            ng-click="settingsCtrl.openAddUserPermOverlay(settingsCtrl.db, 'Databases', true);"
+                        >
+                            <i class="fa fa-plus"></i>Add Members
+                        </smss-btn>
+                    </div>
+                    <div class="settings__content__item__right__content__table">
+                        <div
+                            class="smss-center"
+                            ng-if="settingsCtrl.permissionInfo.length === 0"
+                        >
+                            No members have access to this database yet.
+                        </div>
+                        <smss-scroll
+                            ng-if="settingsCtrl.permissionInfo.length > 0"
+                        >
+                            <settings-table
+                                admin="settingsCtrl.TRUE"
+                                item="settingsCtrl.db"
+                                users="settingsCtrl.permissionInfo"
+                                searchterm="settingsAdmin.userSearchterm"
+                                type="'Databases'"
+                            >
+                            </settings-table>
+                        </smss-scroll>
+                    </div>
+                </div>
+            </div>
+            <!--USERS: Right Side-->
+            <div
+                class="settings__content__item__right smss-col--7"
+                ng-if="settingsAdmin.selectedAdminTab === 'Members'"
+            >
+                <div class="settings__content__item__right__header">
+                    {{settingsAdmin.user.name}} &nbsp;
+                    <smss-btn
+                        title="Delete User"
+                        class="smss-btn--icon settings__font--gray"
+                        ng-click="settingsAdmin.overlay.openDeleteUser = true;"
+                    >
+                        <i class="fa fa-trash-o"></i>
+                    </smss-btn>
+                    <div class="smss-right">
+                        <smss-toggle
+                            class="smss-toggle--small"
+                            model="settingsAdmin.updateUser.admin"
+                            change="settingsAdmin.updateUser.makeadmin = settingsAdmin.updateUser.admin; settingsAdmin.updateUserInfo();"
+                        >
+                            Admin &nbsp;<i class="fa fa-user-plus"></i>
+                        </smss-toggle>
+                    </div>
+                </div>
+                <smss-tab-group class="settings__content__item__content__tabs">
+                    <smss-tab
+                        ng-class="{'smss-tab--selected': settingsAdmin.selectedAdminUserTab ===  tab}"
+                        ng-repeat="tab in settingsAdmin.adminUserTabs"
+                        ng-click="settingsAdmin.selectedAdminUserTab = tab;"
+                    >
+                        {{tab}}
+                    </smss-tab>
+                </smss-tab-group>
+                <div class="settings__content__item__right__content">
+                    <div class="smss-clear">
+                        <div
+                            class="settings__content__item__search"
+                            ng-if="settingsAdmin.selectedAdminUserTab === 'Projects' || settingsAdmin.selectedAdminUserTab === 'Databases'"
+                        >
+                            <smss-search
+                                placeholder="Search"
+                                model="settingsCtrl.searchAdminUserApps.name"
+                            >
+                            </smss-search>
+                        </div>
+                        <smss-btn
+                            class="smss-right smss-btn--text"
+                            ng-if="settingsAdmin.selectedAdminUserTab === 'Projects' && !settingsCtrl.allAppAccess"
+                            ng-click="settingsCtrl.overlay.openAddAppPermissions = true;"
+                        >
+                            Add Projects
+                        </smss-btn>
+
+                        <smss-btn
+                            class="smss-right smss-btn--text"
+                            ng-if="settingsAdmin.selectedAdminUserTab === 'Databases' && !settingsCtrl.allAppAccess"
+                            ng-click="settingsCtrl.overlay.openAddAppPermissions = true;"
+                        >
+                            Add Databases
+                        </smss-btn>
+                    </div>
+
+                    <smss-scroll
+                        static-x="true"
+                        ng-if="settingsAdmin.selectedAdminUserTab === 'Member Settings'"
+                    >
+                        <form
+                            ng-if="settingsAdmin.resetForm(updateUserForm)"
+                            name="updateUserForm"
+                        >
+                            <smss-field>
+                                <label> User ID: </label>
+                                <content>
+                                    <smss-input
+                                        type="text"
+                                        name="userId"
+                                        placeholder="User ID"
+                                        ng-model="settingsAdmin.updateUser.id"
+                                    ></smss-input>
+                                </content>
+                            </smss-field>
+                            <smss-field>
+                                <label> Username: </label>
+                                <content>
+                                    <smss-input
+                                        type="text"
+                                        name="username"
+                                        placeholder="Username"
+                                        ng-model="settingsAdmin.updateUser.username"
+                                        required
+                                    ></smss-input>
+                                </content>
+                            </smss-field>
+                            <smss-field
+                                ng-hide="settingsAdmin.updateUser.type === 'Cac'"
+                            >
+                                <label> Name: </label>
+                                <content>
+                                    <smss-input
+                                        type="text"
+                                        name="name"
+                                        placeholder="Name"
+                                        ng-model="settingsAdmin.updateUser.name"
+                                        required
+                                    ></smss-input>
+                                </content>
+                                <description class="smss-color--error">
+                                    <span
+                                        ng-messages="updateUserForm.name.$error"
+                                        ng-if="updateUserForm.name.$dirty"
+                                    >
+                                        <span ng-message="required"
+                                            >Name is required
+                                        </span>
+                                    </span>
+                                </description>
+                            </smss-field>
+
+                            <smss-field
+                                ng-hide="settingsAdmin.updateUser.type === 'Cac'"
+                            >
+                                <label> Password: </label>
+                                <content>
+                                    <smss-input
+                                        type="password"
+                                        id="psw"
+                                        name="userPassword"
+                                        placeholder="********"
+                                        ng-model="settingsAdmin.updateUser.password"
+                                        required
+                                        ng-minlength="8"
+                                        ng-keyup="settingsAdmin.passwordValidate()"
+                                        ng-blur="settingsAdmin.showValidation = false"
+                                    ></smss-input>
+                                    <div
+                                        id="settings-message"
+                                        class="settings__popover"
+                                        required
+                                        ng-show="settingsAdmin.showValidation"
+                                    >
+                                        <div class="smss-text">
+                                            <span class="smss-small">
+                                                Password must:</span
+                                            >
+                                        </div>
+                                        <ul class="smss-small">
+                                            <li id="letter">
+                                                have <b>one letter</b>
+                                            </li>
+                                            <li id="capital">
+                                                have <b>one capital</b>
+                                            </li>
+                                            <li id="number">
+                                                have <b>one number</b>
+                                            </li>
+                                            <li id="special">
+                                                have
+                                                <b>one special character</b>
+                                            </li>
+                                            <li id="length">
+                                                be a minimum of
+                                                <b>8 characters</b>
+                                            </li>
+                                        </ul>
+                                    </div>
+                                </content>
+                                <description class="smss-color--error">
+                                    <span
+                                        ng-messages="updateUserForm.userPassword.$error"
+                                        ng-if="updateUserForm.userPassword.$dirty"
+                                    >
+                                        <div ng-message="required">
+                                            Password is required
+                                        </div>
+                                        <div ng-message="minlength">
+                                            Password is too short
+                                        </div>
+                                    </span>
+                                </description>
+                            </smss-field>
+
+                            <smss-field>
+                                <label> Email: </label>
+                                <content>
+                                    <smss-input
+                                        type="text"
+                                        name="userEmail"
+                                        placeholder="Email"
+                                        ng-model="settingsAdmin.updateUser.email"
+                                        required
+                                    ></smss-input>
+                                </content>
+                                <description class="smss-color--error">
+                                    <span
+                                        ng-messages="updateUserForm.userEmail.$error"
+                                        ng-if="updateUserForm.userEmail.$dirty"
+                                    >
+                                        <span ng-message="required"
+                                            >Email is required
+                                        </span>
+                                    </span>
+                                </description>
+                            </smss-field>
+
+                            <smss-field>
+                                <label> Phone Number: </label>
+                                <content>
+                                    <smss-input
+                                        type="text"
+                                        name="phone"
+                                        placeholder="Phone Number"
+                                        ng-pattern="/^[()-.\s0-9]{8,}$/"
+                                        ng-model="settingsAdmin.updateUser.phone"
+                                    ></smss-input>
+                                </content>
+                                <description class="smss-color--error">
+                                    <span
+                                        ng-messages="updateUserForm.phone.$error"
+                                        ng-if="updateUserForm.phone.$dirty"
+                                    >
+                                        <span ng-message="pattern"
+                                            >Please enter a valid phone number
+                                        </span>
+                                    </span>
+                                </description>
+                            </smss-field>
+
+                            <smss-field>
+                                <label> Phone Extension: </label>
+                                <content>
+                                    <smss-input
+                                        type="text"
+                                        name="phoneextension"
+                                        placeholder="Phone Extension"
+                                        ng-pattern="/^[+0-9]{0,6}$/"
+                                        ng-model="settingsAdmin.updateUser.phoneextension"
+                                    ></smss-input>
+                                </content>
+                                <description class="smss-color--error">
+                                    <span
+                                        ng-messages="updateUserForm.phoneextension.$error"
+                                        ng-if="updateUserForm.phoneextension.$dirty"
+                                    >
+                                        <span ng-message="pattern"
+                                            >Please enter a valid phone
+                                            extension
+                                        </span>
+                                    </span>
+                                </description>
+                            </smss-field>
+
+                            <smss-field>
+                                <label> Country Code: </label>
+                                <content>
+                                    <smss-input
+                                        type="text"
+                                        name="countrycode"
+                                        placeholder="Country Code"
+                                        ng-pattern="/^[+0-9]{0,6}$/"
+                                        ng-model="settingsAdmin.updateUser.countrycode"
+                                    ></smss-input>
+                                </content>
+                                <description class="smss-color--error">
+                                    <span
+                                        ng-messages="updateUserForm.countrycode.$error"
+                                        ng-if="updateUserForm.countrycode.$dirty"
+                                    >
+                                        <span ng-message="pattern"
+                                            >Please enter a valid country code
+                                        </span>
+                                    </span>
+                                </description>
+                            </smss-field>
+
+                            <smss-field>
+                                <label> Type: </label>
+                                <content>
+                                    <smss-dropdown
+                                        model="settingsAdmin.updateUser.type"
+                                        name="userType"
+                                        options="['Adfs', 'Cac', 'Dropbox', 'Github', 'Gitlab', 'Google', 'Ms', 'Native', 'Saml', 'Siteminder', 'Surveymonkey', 'Windows_user', 'Generic']"
+                                    >
+                                    </smss-dropdown>
+                                </content>
+                            </smss-field>
+
+                            <smss-field>
+                                <content>
+                                    <smss-checkbox
+                                        name="userPublisher"
+                                        model="settingsAdmin.updateUser.publisher"
+                                    >
+                                        Publisher
+                                    </smss-checkbox>
+                                </content>
+                            </smss-field>
+                            <smss-field>
+                                <content>
+                                    <smss-checkbox
+                                        name="userExporter"
+                                        model="settingsAdmin.updateUser.exporter"
+                                    >
+                                        Exporter
+                                    </smss-checkbox>
+                                </content>
+                            </smss-field>
+
+                            <div>
+                                <smss-btn
+                                    ng-click="settingsAdmin.updateUserInfo(updateUserForm); settingsAdmin.editEmailMode = false; settingsAdmin.editNameMode=false; settingsAdmin.overlay.resetEditUser = true;"
+                                >
+                                    Update
+                                </smss-btn>
+                                <smss-btn
+                                    class="smss-btn--text"
+                                    ng-click="settingsAdmin.overlay.resetEditUser = true; settingsAdmin.editNameMode = false; settingsAdmin.editEmailMode = false; settingsAdmin.updateUserData(settingsAdmin.user);"
+                                >
+                                    Cancel
+                                </smss-btn>
+                            </div>
+                        </form>
+                    </smss-scroll>
+                    <settings-permissions
+                        user="settingsAdmin.userProject.user"
+                        type="settingsAdmin.selectedAdminUserTab"
+                        accessall="settingsAdmin.accessAll"
+                        ng-if="settingsAdmin.selectedAdminUserTab !== 'Member Settings'"
+                        class="settings__content__item__right__content__fill"
+                    >
+                    </settings-permissions>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<smss-overlay
+    class="settings__overlay--wide"
+    open="settingsAdmin.overlay.openAddUser"
+    exit="settingsAdmin.addUserList = [{}]; settingsAdmin.closeAddUserOverlay();"
+>
+    <smss-overlay-header>Add Member</smss-overlay-header>
+    <smss-overlay-body>
+        <form
+            ng-if="settingsAdmin.resetUserForm(addUserForm)"
+            name="addUserForm"
+        >
+            <div class="smss-row settings__font--gray">
+                Enter the data of the members you would like to add:
+            </div>
+            <div class="smss-row">&nbsp;</div>
+            <div class="smss-row">
+                <smss-field class="smss-col smss-col--2">
+                    <content>User ID</content>
+                </smss-field>
+                <smss-field class="smss-col smss-col--2">
+                    <content>Name</content>
+                </smss-field>
+                <smss-field class="smss-col smss-col--2">
+                    <content>Email</content>
+                </smss-field>
+                <smss-field class="smss-col settings__overlay__width13">
+                    <content>Type</content>
+                </smss-field>
+                <smss-field class="smss-col smss-col--1">
+                    <content>Admin</content>
+                </smss-field>
+                <smss-field class="smss-col smss-col--1">
+                    <content>Publisher</content>
+                </smss-field>
+                <smss-field class="smss-col smss-col--1">
+                    <content>Exporter</content>
+                </smss-field>
+                <smss-field
+                    class="smss-col smss-col--2"
+                    ng-if="settingsAdmin.displayPasswordHeader"
+                >
+                    <content>Password</content>
+                </smss-field>
+            </div>
+            <div
+                class="smss-row"
+                ng-repeat="addUser in settingsAdmin.addUserList track by $index"
+            >
+                <smss-field class="smss-col smss-col--2">
+                    <content>
+                        <smss-input
+                            type="text"
+                            name="Id"
+                            placeholder="User ID"
+                            ng-model="addUser.cacId"
+                            required
+                        >
+                        </smss-input>
+                    </content>
+                    <description>
+                        <span
+                            class="smss-color--error"
+                            ng-messages="addUserForm.Id.$error"
+                            ng-if="addUserForm.Id.$dirty"
+                        >
+                            <span ng-message="required">
+                                User ID is required
+                            </span>
+                        </span>
+                    </description>
+                </smss-field>
+                <smss-field class="smss-col smss-col--2">
+                    <content>
+                        <smss-input
+                            type="text"
+                            name="name"
+                            placeholder="Name"
+                            ng-model="addUser.name"
+                        >
+                        </smss-input>
+                    </content>
+                </smss-field>
+                <smss-field class="smss-col smss-col--2">
+                    <content>
+                        <smss-input
+                            type="text"
+                            name="Email"
+                            placeholder="Email"
+                            ng-model="addUser.email"
+                        >
+                        </smss-input>
+                    </content>
+                </smss-field>
+                <smss-field class="smss-col settings__overlay__width13">
+                    <content>
+                        <smss-dropdown
+                            model="addUser.type"
+                            name="userType"
+                            placeholder="Type"
+                            change="settingsAdmin.setPasswordHeaderVisibility()"
+                            options="['Adfs', 'Cac', 'Dropbox', 'Github', 'Gitlab', 'Google', 'Ms', 'Native', 'Saml', 'Siteminder', 'Surveymonkey', 'Windows_user', 'Generic']"
+                        >
+                        </smss-dropdown>
+                    </content>
+                </smss-field>
+                <smss-field class="smss-col smss-col--1">
+                    <content>
+                        <smss-checkbox name="userAdmin" model="addUser.admin">
+                        </smss-checkbox>
+                    </content>
+                </smss-field>
+                <smss-field class="smss-col smss-col--1">
+                    <content>
+                        <smss-checkbox
+                            name="userPublisher"
+                            model="addUser.publisher"
+                        >
+                        </smss-checkbox>
+                    </content>
+                </smss-field>
+                <smss-field class="smss-col smss-col--1">
+                    <content>
+                        <smss-checkbox
+                            name="userExporter"
+                            model="addUser.exporter"
+                        >
+                        </smss-checkbox>
+                    </content>
+                </smss-field>
+                <smss-field class="smss-col smss-col--2">
+                    <content>
+                        <smss-input
+                            ng-if="addUser.type === 'Native'"
+                            type="password"
+                            name="userPassword"
+                            placeholder="********"
+                            ng-model="addUser.password"
+                            ng-minlength="8"
+                            ng-blur="settingsAdmin.showValidation = false"
+                        >
+                        </smss-input>
+                    </content>
+                </smss-field>
+                <smss-field class="smss-col settings__overlay__width3">
+                    <content>
+                        <smss-btn
+                            ng-if="settingsAdmin.addUserList.length > 1"
+                            class="smss-btn--icon smss-right settings__font--gray"
+                            title="Remove Row"
+                            ng-click="settingsAdmin.addUserList.splice($index, 1)"
+                        >
+                            <i class="fa fa-trash-o"></i>
+                        </smss-btn>
+                    </content>
+                </smss-field>
+            </div>
+            <div class="smss-row">
+                <smss-btn
+                    class="smss-btn--text"
+                    ng-click="settingsAdmin.addUserList.push({}); "
+                >
+                    Add Row
+                </smss-btn>
+            </div>
+        </form>
+    </smss-overlay-body>
+    <smss-overlay-footer>
+        <smss-btn
+            class="smss-btn--text"
+            ng-click="settingsAdmin.addUserList = [{}]; settingsAdmin.closeAddUserOverlay(); "
+        >
+            Cancel
+        </smss-btn>
+        <smss-btn ng-click="settingsAdmin.addCacUser();"> Add </smss-btn>
+    </smss-overlay-footer>
+</smss-overlay>
+
+<smss-overlay open="settingsAdmin.overlay.openDeleteUser" size="sm">
+    <smss-overlay-header>Remove Member</smss-overlay-header>
+    <smss-overlay-body
+        >Are you sure you want to remove
+        {{settingsAdmin.user.name}}?</smss-overlay-body
+    >
+    <smss-overlay-footer>
+        <smss-btn
+            class="smss-btn--text"
+            ng-click="settingsAdmin.overlay.openDeleteUser = false"
+        >
+            Cancel
+        </smss-btn>
+        <smss-btn
+            class="smss-btn--error"
+            ng-click="settingsAdmin.removeAdminUser(settingsAdmin.user.id, settingsAdmin.user.type); settingsAdmin.overlay.openDeleteUser = false;"
+        >
+            Remove Member
+        </smss-btn>
+    </smss-overlay-footer>
+</smss-overlay>
+
+<smss-overlay
+    ng-if="settingsAdmin.selectedItemTab === 'Project Permissions'"
+    open="settingsCtrl.accessAllOverlay.show"
+    size="sm"
+>
+    <smss-overlay-header>Edit Permissions</smss-overlay-header>
+    <smss-overlay-body
+        >Give {{settingsCtrl.accessAllOverlay.permission}} access to all members
+        for
+        {{settingsCtrl.accessAllOverlay.givePermissionTo.name}}?</smss-overlay-body
+    >
+    <smss-overlay-footer>
+        <smss-btn
+            class="smss-btn--text"
+            ng-click="settingsCtrl.accessAllOverlay.show = false"
+        >
+            Cancel
+        </smss-btn>
+        <smss-btn
+            ng-click="settingsAdmin.savePermissionsAll(settingsCtrl.accessAllOverlay.isNewAdd, settingsCtrl.accessAllOverlay.permission, settingsCtrl.accessAllOverlay.givePermissionTo, settingsCtrl.accessAllOverlay.type);
+                  settingsCtrl.accessAllOverlay.show = false; settingsCtrl.addUserPermissionsOverlay.show = false;"
+        >
+            Add Permissions
+        </smss-btn>
+    </smss-overlay-footer>
+</smss-overlay>

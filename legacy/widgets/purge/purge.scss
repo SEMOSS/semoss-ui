@@ -1,0 +1,19 @@
+@import '~theme';
+
+.purge {
+    &__filters {
+        height: 100%;
+
+        &__left {
+            width: 25%;
+        }
+
+        &__right {
+            width: 50%;
+        }
+    }
+
+    &__add {
+        margin-right: get-spacing('sm', 'rem');
+    }
+}

@@ -1,0 +1,121 @@
+@import '~theme';
+
+.smss-tag {
+    height: get-height('icon', 'em');
+    font-size: 1rem;
+    background: get-background-color('light');
+    color: get-text-color('medium-emphasis');
+    display: flex;
+    align-items: center;
+    white-space: nowrap;
+    padding: 0 get-spacing('sm', 'em');
+    border: $border-size solid transparent;
+    border-radius: $border-radius;
+    outline: none;
+    font-weight: get-font-weight('semibold');
+    text-align: center;
+    @include disabled();
+
+    &__label {
+        flex: 1;
+        @include text-overflow();
+    }
+
+    & > * {
+        font-size: to-rem(12px);
+    }
+
+    & i {
+        margin-left: get-spacing('sm', 'em');
+    }
+
+    &:hover {
+        cursor: pointer;
+        background: get-background-color('disabled');
+        color: get-text-color('medium-emphasis');
+    }
+
+    &:focus-visible {
+        border-color: get-border-color('primary');
+    }
+
+    &--compact {
+        height: calc(#{get-height('label', 'rem')} + 2 *#{$border-size});
+        padding: 0 get-spacing('xs', 'em');
+        .smss-tag__label {
+            vertical-align: top;
+        }
+    }
+
+    &--teal {
+        color: get-accent-color('teal--dark');
+        background: get-accent-color('teal--light');
+        &:hover {
+            color: get-accent-color('teal--dark');
+            background: get-accent-color('teal--light--hover');
+        }
+    }
+
+    &--orange {
+        color: get-accent-color('orange--dark');
+        background: get-accent-color('orange--light');
+        &:hover {
+            color: get-accent-color('orange--dark');
+            background: get-accent-color('orange--light--hover');
+        }
+    }
+
+    &--purple {
+        color: get-accent-color('purple--dark');
+        background: get-accent-color('purple--light');
+        &:hover {
+            color: get-accent-color('purple--dark');
+            background: get-accent-color('purple--light--hover');
+        }
+    }
+
+    &--blue {
+        color: get-accent-color('blue--dark');
+        background: get-accent-color('blue--light');
+        &:hover {
+            color: get-accent-color('blue--dark');
+            background: get-accent-color('blue--light--hover');
+        }
+    }
+
+    &--yellow {
+        color: get-accent-color('yellow--dark');
+        background: get-accent-color('yellow--light');
+        &:hover {
+            color: get-accent-color('yellow--dark');
+            background: get-accent-color('yellow--light--hover');
+        }
+    }
+
+    &--pink {
+        color: get-accent-color('pink--dark');
+        background: get-accent-color('pink--light');
+        &:hover {
+            color: get-accent-color('pink--dark');
+            background: get-accent-color('pink--light--hover');
+        }
+    }
+
+    &--violet {
+        color: get-accent-color('violet--dark');
+        background: get-accent-color('violet--light');
+        &:hover {
+            color: get-accent-color('violet--dark');
+            background: get-accent-color('violet--light--hover');
+        }
+    }
+
+    &--olive {
+        color: get-accent-color('olive--dark');
+        background: get-accent-color('olive--light');
+        &:hover {
+            color: get-accent-color('olive--dark');
+            background: get-accent-color('olive--light--hover');
+        }
+    }
+}

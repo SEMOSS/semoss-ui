@@ -1,0 +1,30 @@
+<div>
+    <smss-field>
+        <content>
+            <smss-accordion resizable>
+                <smss-accordion-item
+                    ng-repeat="item in accordion1 track by $index"
+                    ng-disabled="item.disabled"
+                    name="item.name"
+                    size="item.height"
+                >
+                    {{item.content}}
+                </smss-accordion-item>
+            </smss-accordion>
+        </content>
+    </smss-field>
+    <smss-field>
+        <content>
+            <smss-accordion resizable rotated>
+                <smss-accordion-item
+                    ng-repeat="item in accordion2 track by $index"
+                    ng-disabled="item.disabled"
+                    name="item.name"
+                    size="item.height"
+                >
+                    {{item.content}}
+                </smss-accordion-item>
+            </smss-accordion>
+        </content>
+    </smss-field>
+</div>

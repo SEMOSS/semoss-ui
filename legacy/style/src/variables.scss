@@ -1,0 +1,303 @@
+$scroll-size: 12px;
+$field-label: 2em;
+$field-description: 2em;
+$field-padding: 0.25em;
+$field-width: 10em;
+$card-size: 10em;
+$stepper-height: 5em;
+$sidebar: 240px;
+
+// NEW VARIABLES (WIP)
+/*** Start - General ***/
+
+$root: 16px;
+
+/*** End - General ***/
+
+/*** Start - Height ***/
+$height: (
+    'default': to-rem(32px),
+    'xs': to-rem(24px),
+    'sm': to-rem(28px),
+    'md': to-rem(32px),
+    'lg': to-rem(36px),
+    'xl': to-rem(40px),
+    'icon': to-rem(24px),
+    'icon--compact': to-rem(20px),
+    'icon--nav': to-rem(56px),
+    'square': to-rem(18px),
+    'circle': to-rem(20px),
+    'button': to-rem(32px),
+    'button--compact': to-rem(24px),
+    'card': to-rem(216px),
+    'card--inline': to-rem(84px),
+    'image': to-rem(60px),
+    'textarea': to-rem(72px),
+    'block': to-rem(48px),
+    'label': to-rem(16px),
+    'description': to-rem(12px),
+    'tile': to-rem(72px),
+);
+
+/*** End - Height ***/
+
+/*** Start - Width ***/
+$width: (
+    'sm': to-rem(28px),
+    'md': to-rem(32px),
+    'lg': to-rem(36px),
+    'xl': to-rem(40px),
+    'icon': to-rem(24px),
+    'icon--compact': to-rem(20px),
+    'icon--nav': to-rem(48px),
+    'square': to-rem(18px),
+    'circle': to-rem(20px),
+    'button': to-rem(64px),
+    'button--compact': to-rem(40px),
+    'min': to-rem(64px),
+    'tab': to-rem(88px),
+    'tab--container': to-rem(120px),
+    'image': to-rem(60px),
+    'card--caption': to-rem(100px),
+    'label': to-rem(160px),
+    'tile': to-rem(96px),
+);
+
+/*** End - Width ***/
+
+/*** Start - Spacing ***/
+$spacing: (
+    'xxs': to-rem(2px),
+    'xs': to-rem(4px),
+    'sm': to-rem(8px),
+    'md': to-rem(16px),
+    'lg': to-rem(24px),
+    'xl': to-rem(32px),
+    'xxl': to-rem(40px),
+    'gutter': to-rem(20px),
+    'scroll': to-rem(12px),
+);
+
+/*** End - Spacing ***/
+/*** Start - Font ***/
+
+$font-family: 'Inter', sans-serif;
+
+$line-height: 1.2;
+$line-height--large: 1.5;
+
+$font-size: (
+    'h1': to-rem(32px),
+    'h2': to-rem(28px),
+    'h3': to-rem(20px),
+    'h4': to-rem(16px),
+    'h5': to-rem(16px),
+    'h6': to-rem(14px),
+    'h7': to-rem(12px),
+    'h8': to-rem(9px),
+    'body-large': to-rem(16px),
+    'body-regular': to-rem(14px),
+    'body-small': to-rem(12px),
+    'body-xsmall': to-rem(10px),
+);
+
+$font-weight: (
+    'light': 300,
+    'regular': 400,
+    'medium': 500,
+    'semibold': 600,
+    'bold': 700,
+);
+
+/*** End - Font ***/
+
+/*** Start - Color ***/
+
+// DO NOT USE COLOR
+$color: (
+    'primary-100': rgba(64, 160, 255, 1),
+    'primary-70': rgba(121, 189, 255, 1),
+    'primary-50': rgba(159, 207, 255, 1),
+    'primary-30': rgba(198, 227, 255, 1),
+    'primary-10': rgba(236, 246, 255, 1),
+    'warn-100': rgba(250, 159, 44, 1),
+    'warn-70': rgba(251, 188, 107, 1),
+    'warn-30': rgba(254, 226, 192, 1),
+    'warn-10': rgba(254, 246, 233, 1),
+    'error-100': rgba(248, 76, 52, 1),
+    'error-70': rgba(250, 130, 113, 1),
+    'error-30': rgba(253, 201, 194, 1),
+    'error-10': rgba(254, 237, 235, 1),
+    'success-100': rgba(63, 168, 117, 1),
+    'success-70': rgba(121, 194, 158, 1),
+    'success-30': rgba(197, 229, 214, 1),
+    'success-10': rgba(236, 246, 241, 1),
+    'grey-1': rgba(30, 30, 30, 1),
+    'grey-2': rgba(92, 92, 92, 1),
+    'grey-3': rgba(142, 142, 142, 1),
+    'grey-4': rgba(189, 189, 189, 1),
+    'grey-5': rgba(217, 217, 217, 1),
+    'grey-6': rgba(246, 246, 246, 1),
+    'white': rgba(255, 255, 255, 1),
+    'shadow': rgba(92, 92, 92, 0.2),
+    'backdrop': rgba(30, 30, 30, 0.7),
+);
+
+$text-color: (
+    'default': var(--color-grey-2),
+    'high-emphasis': var(--color-grey-1),
+    'medium-emphasis': var(--color-grey-2),
+    'low-emphasis': var(--color-grey-3),
+    'light': var(--color-grey-5),
+    'disabled': var(--color-grey-4),
+    'primary': var(--color-primary-100),
+    'primary--hover': var(--color-primary-70),
+    'warn': var(--color-warn-100),
+    'warn--hover': var(--color-warn-70),
+    'error': var(--color-error-100),
+    'error--hover': var(--color-error-70),
+    'success': var(--color-success-100),
+    'success--hover': var(--color-success-70),
+    'link': var(--color-primary-100),
+    'link--hover': var(--color-primary-70),
+    'white': var(--color-white),
+);
+
+$background-color: (
+    'default': var(--color-white),
+    'disabled': var(--color-grey-5),
+    'disabled--light': var(--color-grey-6),
+    'disabled--dark': var(--color-grey-4),
+    'dark': var(--color-grey-3),
+    'light': var(--color-grey-6),
+    'overlay': var(--color-backdrop),
+    'border': var(--color-grey-5),
+    'divider': var(--color-grey-5),
+    'primary': var(--color-primary-100),
+    'primary--light': var(--color-primary-50),
+    'primary--hover-dark': var(--color-primary-70),
+    'primary--hover': var(--color-primary-10),
+    'warn': var(--color-warn-100),
+    'warn--light': var(--color-warn-30),
+    'warn--hover-dark': var(--color-warn-70),
+    'warn--hover': var(--color-warn-10),
+    'error': var(--color-error-100),
+    'error--light': var(--color-error-30),
+    'error--hover-dark': var(--color-error-70),
+    'error--hover': var(--color-error-10),
+    'success': var(--color-success-100),
+    'success--light': var(--color-success-30),
+    'success--hover-dark': var(--color-success-70),
+    'success--hover': var(--color-success-10),
+    'nav': var(--color-grey-1),
+    'nav--hover': var(--color-grey-2),
+    'transparent': transparent,
+);
+
+$border-color: (
+    'default': var(--color-grey-5),
+    'disabled': var(--color-grey-5),
+    'light': var(--color-grey-6),
+    'medium': var(--color-grey-4),
+    'dark': var(--color-grey-3),
+    'primary': var(--color-primary-100),
+    'primary--hover': var(--color-primary-70),
+    'warn': var(--color-warn-100),
+    'warn--hover': var(--color-warn-70),
+    'error': var(--color-error-100),
+    'error--hover': var(--color-error-70),
+    'success': var(--color-success-100),
+    'success--hover': var(--color-success-70),
+    'transparent': transparent,
+    'white': var(--color-white),
+);
+
+$box-shadow-color: (
+    'default': var(--color-shadow),
+    'primary': var(--color-primary-30),
+    'warn': var(--color-warn-30),
+    'error': var(--color-error-30),
+    'success': var(--color-success-30),
+);
+
+$scroll-color: (
+    'track': transparent,
+    'thumb': var(--color-grey-4),
+    'thumb--hover': var(--color-grey-3),
+);
+
+$accent-color: (
+    'teal--dark': rgba(23, 193, 193, 1),
+    'teal--light': rgba(232, 249, 249, 1),
+    'teal--light--hover': rgba(185, 236, 236, 1),
+    'orange--dark': rgba(255, 190, 118, 1),
+    'orange--light': rgba(255, 242, 228, 1),
+    'orange--light--hover': rgba(255, 236, 214, 1),
+    'purple--dark': rgba(151, 95, 228, 1),
+    'purple--light': rgba(245, 239, 252, 1),
+    'purple--light--hover': rgba(224, 207, 247, 1),
+    'blue--dark': rgba(64, 160, 255, 1),
+    'blue--light': rgba(234, 246, 255, 1),
+    'blue--light--hover': rgba(198, 227, 255, 1),
+    'red--dark': rgba(243, 102, 124, 1),
+    'red--light': rgba(254, 240, 242, 1),
+    'yellow--dark': rgba(246, 189, 22, 1),
+    'yellow--light': rgba(254, 248, 232, 1),
+    'yellow--light--hover': rgba(252, 235, 185, 1),
+    'pink--dark': rgba(205, 84, 152, 1),
+    'pink--light': rgba(250, 238, 245, 1),
+    'pink--light--hover': rgba(240, 204, 224, 1),
+    'violet--dark': rgba(111, 111, 198, 1),
+    'violet--light': rgba(241, 241, 249, 1),
+    'violet--light--hover': rgba(212, 212, 238, 1),
+    'olive--dark': rgba(169, 179, 89, 1),
+    'olive--light': rgba(246, 247, 238, 1),
+    'olive--light--hover': rgba(229, 232, 205, 1),
+);
+
+$gradient-color: (
+    'green':
+        linear-gradient(
+            135.86deg,
+            #5ef382 9.22%,
+            #17c1c1 91.57%,
+            #28cdb2 91.57%
+        ),
+    'orange': linear-gradient(135.76deg, #fbd44b 15.36%, #f3667c 90.98%),
+    'blue': linear-gradient(317.97deg, #975fe4 11.36%, #4394e4 97.6%),
+);
+
+/*** End - Color ***/
+
+/*** Start - Shadow ***/
+$box-shadow-size: (
+    'focus': 0px 2px 4px 2px,
+    'popover': 0px 8px 16px 0px,
+    'overlay': 0px 4px 8px 0px,
+    'raised': 0px 1px 2px 0px,
+    'highlight': 0px 0px 8px 4px,
+);
+/*** End - Shadow ***/
+
+/*** Start - Border ***/
+
+$border-size: 1px;
+$border-radius: 4px;
+
+/*** End - Border ***/
+
+// exporting variables to use in the settings.service for themes
+:export {
+    defaultMenu: map-get($color, 'grey-1');
+    defaultMenuDark: map-get($color, 'grey-2');
+    defaultPrimary: map-get($color, 'primary-100');
+    defaultPrimaryLight: map-get($color, 'primary-10');
+    defaultPrimaryDark: map-get($color, 'primary-70');
+    defaultBackground: map-get($color, 'grey-6');
+    defaultHighlight: map-get($color, 'primary-100');
+    backgroundAlt: map-get($color, 'white');
+    borderColor: map-get($color, 'grey-5');
+    scrollSize: $scroll-size;
+    spacingSize: map-get($spacing, 'sm');
+    fontSize: $root;
+}

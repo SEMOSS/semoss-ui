@@ -1,0 +1,83 @@
+<div>
+    <smss-field>
+        <label>Default dropdown</label>
+        <content>
+            <smss-dropdown
+                placeholder="Select Value"
+                model="dropdown1"
+                value="value"
+                display="display"
+                options="options.complex"
+            >
+            </smss-dropdown>
+        </content>
+    </smss-field>
+    <smss-field>
+        <label>Disabled dropdown</label>
+        <content>
+            <smss-dropdown
+                placeholder="Select Value"
+                model="dropdown1"
+                value="value"
+                display="display"
+                options="options.complex"
+                ng-disabled="true"
+            >
+            </smss-dropdown>
+        </content>
+    </smss-field>
+    <smss-field>
+        <label>Compact Dropdown</label>
+        <content>
+            <smss-dropdown
+                model="dropdown2"
+                options="options.simple"
+                compact
+                searchable="false"
+            >
+            </smss-dropdown>
+        </content>
+    </smss-field>
+    <smss-field>
+        <label>Custom toggle and list options</label>
+        <content>
+            <smss-dropdown
+                model="dropdown3"
+                ng-disabled="dropdown2 === 'disable dropdown 3'"
+                options="options.complex"
+                max-options="3"
+            >
+                <smss-dropdown-toggle>
+                    Model: {{$parent.smssDropdown.model.display}}
+                </smss-dropdown-toggle>
+                <smss-dropdown-list>
+                    Display: {{$parent.opt.display}} - Value:
+                    {{$parent.opt.value}}
+                    <span ng-repeat="item in $parent.opt.items">
+                        Item {{item}}
+                    </span>
+                </smss-dropdown-list>
+            </smss-dropdown>
+        </content>
+        <description>Transcluded Dropdown {{dropdown3}}</description>
+    </smss-field>
+
+    <smss-field>
+        <label>Dropdown with Action</label>
+        <content>
+            <smss-dropdown
+                model="dropdown2"
+                search="log(search)"
+                options="options.simple"
+                body="true"
+                searchable="false"
+            >
+                <smss-dropdown-action>
+                    <smss-btn ng-click="actionFunction()">
+                        <i class="fa fa-plus"></i>Insert This
+                    </smss-btn>
+                </smss-dropdown-action>
+            </smss-dropdown>
+        </content>
+    </smss-field>
+</div>

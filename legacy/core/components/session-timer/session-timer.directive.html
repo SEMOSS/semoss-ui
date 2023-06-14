@@ -1,0 +1,27 @@
+<smss-overlay open="sessionTimer.session.open" disable-click="true">
+    <smss-overlay-header>
+        <span ng-show="sessionTimer.session.timer > 0">
+            Warning - Ending Session</span
+        >
+    </smss-overlay-header>
+    <smss-overlay-body>
+        <div ng-show="sessionTimer.session.timer > 0">
+            Your session is ending in ...
+            {{(sessionTimer.session.timerDisplay)}} seconds.
+        </div>
+        <div ng-show="sessionTimer.session.timer <= 0">
+            Your session has ended. You will be redirected in ...
+            {{(sessionTimer.session.redirectTimerDisplay)}} seconds.
+        </div>
+    </smss-overlay-body>
+    <smss-overlay-footer>
+        <div ng-show="sessionTimer.session.timer > 0">
+            <smss-btn ng-click="sessionTimer.endSession()">
+                End Session
+            </smss-btn>
+            <smss-btn ng-click="sessionTimer.continueSession()">
+                Continue Session
+            </smss-btn>
+        </div>
+    </smss-overlay-footer>
+</smss-overlay>

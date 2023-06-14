@@ -1,0 +1,44 @@
+<div class="lookup-generate">
+    <smss-scroll class="lookup-generate__scroll" static-x="true">
+        <smss-field>
+            <label>Select Column:</label>
+            <content>
+                <smss-dropdown
+                    model="lookupGenerate.selected"
+                    options="lookupGenerate.headers"
+                    display="alias"
+                    value="alias"
+                >
+                </smss-dropdown>
+            </content>
+            <description
+                >This column will be used to generate the lookup
+                table.</description
+            >
+        </smss-field>
+        <smss-field>
+            <label> Select Lookup: </label>
+            <content>
+                <browser-asset
+                    model="lookupGenerate.file"
+                    layout="popover"
+                ></browser-asset>
+            </content>
+        </smss-field>
+    </smss-scroll>
+    <div class="smss-action">
+        <smss-btn
+            class="smss-btn--text"
+            ng-if="lookupGenerate.PIPELINE"
+            ng-click="lookupGenerate.cancel()"
+        >
+            Cancel
+        </smss-btn>
+        <smss-btn
+            ng-disabled="!lookupGenerate.file || !lookupGenerate.file.path"
+            ng-click="lookupGenerate.execute();"
+        >
+            Execute
+        </smss-btn>
+    </div>
+</div>

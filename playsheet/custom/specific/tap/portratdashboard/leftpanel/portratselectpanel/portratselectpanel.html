@@ -1,0 +1,27 @@
+<div>
+    <!--<loading-screen loading-screen-name="portratselectpanelctrl.loadingScreenName"></loading-screen>-->
+    <!-- Start Selection Panel -->
+    <div ng-class="{'visible': portratselectpanelctrl.selectedTab ==='Systems'}">
+        <a ng-click="portratselectpanelctrl.showParamPanel();">
+            <div class="dropdown-header">         
+                <i class="fa fa-arrow-circle-left fa-2" style="margin-right: 10px;"> </i>
+                <b>Select parameters</b>
+                <i class="fa fa-cog fa-2 pull-right" style="margin-top: 2px;"></i>            
+            </div>
+        </a>
+        <div class="port-rat-select-panel">
+            <a ng-if="portratselectpanelctrl.systemList.length > 0" ng-click="portratselectpanelctrl.getSystemData(sys)"
+               ng-repeat="sys in portratselectpanelctrl.systemList | filter: { 'name': info.filterData } track by $index" class="slider-row insight">
+                <span class="{{sys.name}} icon-browse"></span>
+                <i title="{{sys.ind}}"
+                   class="prd-circle fa fa-circle"
+                   ng-class="{'prd-syspanel-decom': sys.ind === 'Recommended Consolidation', 
+                              'prd-syspanel-modern': sys.ind === 'Recommended Sustain'}">                            
+                </i>
+                <span class="prd-sys-name" title="{{sys.name}}"> {{sys.name | replaceUnderscores}}</span>
+                <i ng-class="{'fa-check': portratselectpanelctrl.insightTurnsToCheckMark === sys.name, 'fa-angle-right': portratselectpanelctrl.insightTurnsToCheckMark !== sys.name}"
+                   class="pull-right fa"></i>
+            </a>
+        </div>
+    </div>
+</div>

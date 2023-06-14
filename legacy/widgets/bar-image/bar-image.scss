@@ -1,0 +1,50 @@
+@import '~theme';
+
+.bar-image {
+}
+
+/**** Old ****/
+.bar-image-applied {
+    margin-bottom: 5px;
+    padding: 10px;
+    border: 1px solid get-border-color('default');
+}
+
+.bar-image-applied::after {
+    display: block;
+    clear: both;
+    content: ' ';
+}
+
+.bar-image-readable-rules {
+    float: left;
+    width: 70%;
+    text-align: center;
+    padding: 4px 8px;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    overflow: hidden;
+}
+
+.bar-image-readable-right {
+    float: right;
+    width: 10%;
+}
+
+.bar-image-readable-operator {
+    width: 10%;
+}
+
+.bar-image-rule-values {
+    float: left;
+    width: 95%;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    overflow: hidden;
+}
+
+.bar-image-img {
+    float: left;
+    width: 15px;
+    height: 15px;
+}

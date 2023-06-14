@@ -1,0 +1,12 @@
+{
+    "extends": [".eslintrc.json", "plugin:@typescript-eslint/recommended"],
+    "parser": "@typescript-eslint/parser",
+    "plugins": ["@typescript-eslint"],
+    "parserOptions": {
+        "sourceType": "module"
+    },
+    "rules": {
+        "@typescript-eslint/no-use-before-define": 0,
+        "valid-jsdoc": 0
+    }
+}

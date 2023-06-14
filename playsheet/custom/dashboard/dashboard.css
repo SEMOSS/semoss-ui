@@ -1,0 +1,59 @@
+.dashboard-table {
+    width: auto;
+    height: auto;
+    margin: 5px 10px 0px 10px;
+}
+
+.dashboard-tr-header {
+    margin:0;
+    padding: 0;
+    list-style-type: none;
+    display: table;
+    table-layout: fixed;
+    width:100%;
+    background-color: white;
+    overflow: hidden;
+    height: 100%;
+    position:absolute;
+}
+.dashboard-td-header {
+	display: table-cell;
+    border: 5px solid white;
+    border-collapse: separate;
+    border-spacing: 10px;
+    padding: 10px;
+    margin: 10px;
+    height: 100%;
+    text-align: center;
+    vertical-align: top;
+    background: #04386e;
+}
+.dashboard-leafs {
+	border: 2px solid black;
+    text-align: top;
+    background-color: #15b994;
+    overflow: hidden;
+    margin: 2px;
+    padding: 2px;
+    list-style-type: none;
+    table-layout: fixed;
+    width: 100%;
+    color: white;
+}
+.dashboard-table-box {
+    text-align: top;
+    background-color: #ffffff;
+    overflow: hidden;
+    margin: 5px;
+    padding: 0;
+    list-style-type: none;
+    display: table;
+    table-layout: fixed;
+    width:100%;
+}
+
+
+.white-header {
+    color: #FFF;
+    font-size: 1.25em;
+}

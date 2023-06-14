@@ -1,0 +1,96 @@
+<div class="widget-sidebar-pop-out">
+
+    <loading-screen loading-screen-show="analyticsPanel.loadScreen"></loading-screen>
+
+    <div class="grid12">
+        <div>
+            <!--Routine Selection-->
+            <form name="analyticsPanelForm">
+                <div class="dropdown-header"
+                     ng-click="analyticsPanel.isRoutineListCollapsed = !analyticsPanel.isRoutineListCollapsed">
+                    <i class="fa"
+                       ng-class="{'fa-caret-down': analyticsPanel.isRoutineListCollapsed === false, 'fa-caret-right': analyticsPanel.isRoutineListCollapsed === true}"></i>
+                    Select Routine:
+                    <span> {{analyticsPanel.selectedRoutine.title}}</span>
+                </div>
+                <a ng-repeat="rout in analyticsPanel.routinesList track by $index"
+                   ng-show="(analyticsPanel.isRoutineListCollapsed === false)"
+                   ng-click="analyticsPanel.setRoutine(rout.routineName); analyticsPanel.isRoutineListCollapsed = true"
+                   class="slider-row slider-row-analytics">
+                    <span style="width:75%">{{rout.title}}</span> <i class="glyphicon glyphicon-info-sign opacity"
+                                                                     ng-click="$event.stopPropagation(); rout.moreInfo=!rout.moreInfo"
+                                                                     style="z-index:10"></i>
+                    <p class="information analytice-routine-info" ng-show="rout.moreInfo">{{rout.description}}</p>
+                </a>
+
+                <div class="dropdown-header"
+                     ng-click="analyticsPanel.isParameterListCollaped = !analyticsPanel.isParameterListCollaped"
+                     ng-show="analyticsPanel.selectedRoutine">
+                    <i class="fa"
+                       ng-class="{'fa-caret-down': analyticsPanel.isParameterListCollaped === false, 'fa-caret-right': analyticsPanel.isParameterListCollaped === true}"></i>
+                    Customize
+                </div>
+                <div ng-show="analyticsPanel.isParameterListCollaped === false">
+                    <div class="sm-margin">
+                        <p class="information"
+                           ng-show="analyticsPanel.selectedRoutine.restrictToNumerical">
+                            NOTE: Columns Must be Numerical Values
+                        </p>
+                    </div>
+
+                    <div>
+                        <div dynamic="analyticsPanel.routineContent"></div>
+                    </div>
+                    <div class="sm-margin" ng-if="analyticsPanel.selectedRoutine.targetInstance">
+
+                        <label class="sm-font">*Select Instance:</label>
+
+                        <select class="form-control" ng-model="analyticsPanel.selectedRoutine.targetInstanceValue"
+                                ng-change="analyticsPanel.selectInstance()" required>
+                            <option ng-repeat="param in analyticsPanel.params track by $index"
+                                    value="{{param.header.title}}"
+                                    ng-hide="param.hideParam">
+                                {{param.header.filteredTitle||param.header.title | reduceStringLength: 35}}
+                            </option>
+                        </select>
+
+                    </div>
+                    <div ng-if="analyticsPanel.selectedRoutine.filterInstance"
+                         class="analytics-filter-content sm-margin border">
+                        <div class="analytics-filter-header"
+                             ng-click="analyticsPanel.isFilterParamCollapsed = !analyticsPanel.isFilterParamCollapsed"
+                             slide-toggle="#slide-down-filterParams">
+                            <i class="fa"
+                               ng-class="{'fa-caret-down': analyticsPanel.isFilterParamCollapsed === false, 'fa-caret-right': analyticsPanel.isFilterParamCollapsed === true}"></i>
+                            Filter Params
+                            <i class="fa fa-filter pull-right"></i>
+                        </div>
+                        <div ng-hide="analyticsPanel.isFilterParamCollapsed">
+                            <a class="slider-row"
+                               ng-click="$event.stopPropagation(); analyticsPanel.selectAllFilterParam()">
+                                <i class="fa"
+                                   ng-class="{'fa-square-o': !analyticsPanel.filterSelectAll, 'fa-check-square-o': analyticsPanel.filterSelectAll}"></i>
+                                Select All
+                            </a>
+                            <a ng-click="analyticsPanel.selectFilterParam(param)"
+                               ng-repeat="param in analyticsPanel.filterParams track by $index" class="slider-row"
+                               ng-class="{'disabled': param.header.title === analyticsPanel.selectedRoutine.targetInstanceValue}"
+                               ng-hide="param.hideParam">
+                                <span>{{param.header.filteredTitle||param.header.title}}</span>
+                                <i ng-show="param.isSelected" class="pull-right fa fa-check"></i>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </form>
+            <div class="sm-vert-padding xs-top-margin center">
+                <a class="btn btn-blue xs-padding submit-alg" ng-click="analyticsPanel.runAlgorithm();"
+                   ng-class="{'disabled': analyticsPanel.disableAlgorithmButtons || analyticsPanel.$invalid || !analyticsPanel.selectedRoutine}"
+                   type="submit">
+                    <span>Run Algorithm</span>
+                </a>
+            </div>
+        </div>
+    </div>
+
+</div>

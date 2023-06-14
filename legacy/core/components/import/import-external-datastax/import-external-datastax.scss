@@ -1,0 +1,32 @@
+@import '~theme';
+
+.import-external-datastax {
+    position: relative;
+    height: 100%;
+    width: 100%;
+    overflow: hidden;
+    max-width: 70vw;
+    margin: auto;
+    flex-direction: column;
+
+    &__content {
+        position: relative;
+        flex: 1;
+        width: 100%;
+
+        &__relationship {
+            &__btn {
+                position: absolute;
+                z-index: 1;
+                width: get-spacing('sm', 'em') * 4;
+                height: get-height('sm', 'em');
+
+                &__relationship {
+                    top: get-spacing('sm', 'em');
+                    right: get-spacing('sm', 'em') +
+                        (get-spacing('sm', 'em') + get-spacing('sm', 'em') * 4);
+                }
+            }
+        }
+    }
+}

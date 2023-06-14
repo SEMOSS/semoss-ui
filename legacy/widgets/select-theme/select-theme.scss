@@ -1,0 +1,47 @@
+@import '~theme';
+$theme-width: to-rem(250px);
+.select-theme {
+    padding: get-spacing('sm', 'rem');
+
+    &__reset {
+        display: block;
+        margin-left: auto;
+    }
+
+    &__theme {
+        margin: get-spacing('md', 'rem') auto;
+        width: $theme-width;
+        padding: get-spacing('sm', 'rem');
+
+        &:hover {
+            cursor: pointer;
+        }
+
+        &--selected {
+            border-radius: $border-radius;
+            border: 1px solid get-border-color('primary');
+        }
+    }
+
+    &__color {
+        display: flex;
+        height: get-spacing('sm', 'rem');
+        width: 100%;
+        overflow: hidden;
+        margin-top: get-spacing('sm', 'rem');
+        margin-bottom: get-spacing('xs', 'rem');
+        &__square {
+            height: 100%;
+            flex: 1;
+        }
+    }
+
+    &__image {
+        height: auto;
+        width: 100%;
+        & img {
+            height: 100%;
+            width: 100%;
+        }
+    }
+}

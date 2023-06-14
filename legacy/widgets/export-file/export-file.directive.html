@@ -1,0 +1,37 @@
+<div class="export-file">
+    <smss-scroll static-x="true" class="export-file__scroll">
+        <smss-field>
+            <label>Select File Type</label>
+            <content>
+                <smss-dropdown
+                    options="exportFile.types.list"
+                    display="display"
+                    value="value"
+                    model="exportFile.types.selected"
+                >
+                </smss-dropdown>
+            </content>
+        </smss-field>
+
+        <smss-field ng-show="exportFile.types.selected === 'ToTxt'">
+            <label>Delimiter</label>
+            <content>
+                <smss-input
+                    ng-model="exportFile.delimiter"
+                    placeholder="Enter a delimiter"
+                ></smss-input>
+            </content>
+        </smss-field>
+    </smss-scroll>
+
+    <div class="smss-action">
+        <smss-btn
+            class="smss-btn--text"
+            ng-if="exportFile.PIPELINE"
+            ng-click="exportFile.closeExport()"
+        >
+            Cancel
+        </smss-btn>
+        <smss-btn ng-click="exportFile.runExport()"> Export </smss-btn>
+    </div>
+</div>

@@ -1,0 +1,172 @@
+<div class="column-cleaner">
+    <p class="smss-spacing">
+        Condense values in a column by matching similar values.
+    </p>
+
+    <smss-field>
+        <label> Select Column to Pull Values From: </label>
+        <content>
+            <smss-dropdown
+                options="columnCleaner.frameHeaders"
+                model="columnCleaner.frameHeaderSelection"
+                change="columnCleaner.createFrame = true; columnCleaner.resetValues(); columnCleaner.clearRenderedValues();"
+                autofocus
+            >
+            </smss-dropdown>
+        </content>
+    </smss-field>
+    <smss-field>
+        <label> Adjust Similarity Threshold (%): </label>
+        <content>
+            <div class="column-cleaner__similarity">
+                <smss-slider
+                    model="columnCleaner.similarity"
+                    class="column-cleaner__similarity__slider"
+                    numerical
+                >
+                </smss-slider>
+                <smss-btn
+                    class="smss-btn--text smss-btn--compact"
+                    ng-click="columnCleaner.getFrameValues();"
+                    >Get Values</smss-btn
+                >
+            </div>
+        </content>
+    </smss-field>
+
+    <div class="smss-row">
+        <div class="smss-col smss-col--8">
+            <smss-field>
+                <label>Search</label>
+                <content>
+                    <smss-search
+                        placeholder=""
+                        model="columnCleaner.searchTerm"
+                        change="columnCleaner.getFrameValues();"
+                    >
+                    </smss-search>
+                </content>
+            </smss-field>
+        </div>
+
+        <div class="smss-col smss-col--3">
+            <smss-field>
+                <label>Size</label>
+                <content>
+                    <smss-input
+                        type="number"
+                        ng-model="columnCleaner.maxSize"
+                        ng-model-options="{ debounce: 1000 }"
+                        ng-change="columnCleaner.getFrameValues();"
+                        min="0"
+                    >
+                    </smss-input>
+                </content>
+            </smss-field>
+        </div>
+        <div class="smss-col smss-col--1">
+            <smss-field>
+                <label></label>
+                <content>
+                    <smss-btn
+                        ng-click="columnCleaner.toggleSort();"
+                        class="smss-btn--icon"
+                        title="Sort by Similarity"
+                    >
+                        <i
+                            class="fa fa-sort-amount-desc"
+                            ng-show="columnCleaner.sortDirection === 'asc'"
+                        ></i>
+                        <i
+                            class="fa fa-sort-amount-asc"
+                            ng-show="columnCleaner.sortDirection === 'desc'"
+                        ></i>
+                    </smss-btn>
+                </content>
+            </smss-field>
+        </div>
+    </div>
+
+    <smss-list
+        class="column-cleaner__list"
+        loading=""
+        scroll=""
+        options="columnCleaner.renderedValues"
+    >
+        <smss-list-header class="smss-row">
+            <div class="smss-col smss-col--2 smss-text">Similarity</div>
+            <div
+                class="smss-col smss-col--4 smss-text smss-center"
+                title="Current Value"
+            >
+                Current Value
+            </div>
+            <div class="smss-col smss-col--1">&nbsp;</div>
+            <div
+                class="smss-col smss-col--4 smss-text smss-center"
+                title="Replacement Value"
+            >
+                Replacement Value
+            </div>
+            <div class="smss-col smss-col--1">&nbsp;</div>
+        </smss-list-header>
+        <smss-list-label class="smss-row column-cleaner__list__label">
+            <div
+                class="smss-col smss-col--2 smss-list__text column-cleaner__list__bar"
+            >
+                <div
+                    class="column-cleaner__list__bar__block"
+                    ng-style="{'width': ($parent.opt.distance)}"
+                ></div>
+            </div>
+            <div
+                class="smss-col smss-col--4 smss-list__text smss-center"
+                title="{{$parent.opt.right | toStr}}"
+            >
+                {{$parent.opt.right | toStr}}
+            </div>
+            <div class="smss-col smss-col--1">
+                <smss-btn
+                    class="smss-btn--icon"
+                    title="Switch current value and replacement value"
+                    ng-click="columnCleaner.switchCols($parent.opt);"
+                >
+                    <i class="fa fa-arrows-h"></i>
+                </smss-btn>
+            </div>
+            <div
+                class="smss-col smss-col--4 smss-list__text smss-center"
+                title="{{$parent.opt.left | toStr}}"
+            >
+                {{$parent.opt.left | toStr}}
+            </div>
+            <div class="smss-col smss-col--1">
+                <smss-btn
+                    class="smss-btn--icon"
+                    ng-click="columnCleaner.removeMatch($parent.opt);"
+                >
+                    <i class="fa fa-times smss-color--error"></i>
+                </smss-btn>
+            </div>
+        </smss-list-label>
+    </smss-list>
+    <div class="smss-action column-cleaner__buttons">
+        <smss-btn
+            class="smss-btn--text"
+            ng-if="columnCleaner.PIPELINE"
+            ng-click="columnCleaner.cancel()"
+        >
+            Cancel
+        </smss-btn>
+        <!-- <smss-btn ng-if="columnCleaner.PIPELINE"
+                  ng-click="columnCleaner.loadPreview()">
+            Preview
+        </smss-btn> -->
+        <smss-btn
+            ng-click="columnCleaner.execute();"
+            ng-disabled="columnCleaner.renderedValues.length === 0"
+        >
+            Execute
+        </smss-btn>
+    </div>
+</div>

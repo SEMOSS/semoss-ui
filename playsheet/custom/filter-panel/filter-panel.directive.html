@@ -1,0 +1,45 @@
+<div class="widget-sidebar-pop-out">
+    <!-- filter accordion lists -->
+    <div class="filter-panel-content floating-body full-width full-height">
+        <!-- repeats throught the list of table data headers and options for each -->
+        <div ng-repeat="(title, opt) in filterPanel.filter" ng-class="{'disabled': opt.isDisabled}">
+            <!-- Column Header -->
+            <div class="dropdown-header overflow-ellipsis settings-header pointer" title="{{title | replaceUnderscores}}"
+                 ng-click="filterPanel.toggleOption(title, opt)">
+                <i class="fa" ng-class="{'fa-caret-down': !opt.isCollapsed, 'fa-caret-right': opt.isCollapsed}"></i>
+                {{title | replaceUnderscores | reduceStringLength: 30}}
+                <!--<i class="fa fa-filter pull-right" ng-class="{'filtered-blue': opt.isFiltered}"></i>-->
+            </div>
+            <!-- Column Values (Data) -->
+            <div ng-if="!opt.isCollapsed" class="border-top">
+                <button class="btn btn-full btn-green" ng-click="filterPanel.applyFilter(title)">
+                    Apply Filter
+                </button>
+                <!--<slider class="filter-slider" ng-if="opt.useSlider" ng-model="opt.selectedRange" range="true" min="opt.minMax.absMin" max="opt.minMax.absMax" value="opt.selectedRange" step="opt.minMax.step"></slider>-->
+                <!--<button class="btn btn-full" ng-if="opt.minMax" ng-click="filterPanel.toggleSlider(title)">-->
+                    <!--&lt;!&ndash;<div ng-if="opt.useSlider">Use List</div>&ndash;&gt;-->
+                    <!--&lt;!&ndash;<div ng-if="!opt.useSlider">Use Slider</div>&ndash;&gt;-->
+                <!--</button>-->
+                <!--<div ng-if="!opt.useSlider">-->
+                    <div class="xs-padding">
+                        <input class="form-control" ng-model="nodeFilter" type="text" placeholder="Search">
+                    </div>
+                    <div class="border-bottom border-top">
+                        <a class="slider-row" ng-click="filterPanel.selectAll(title)">
+                            <i class="fa" ng-class="{'fa-square-o': !filterPanel.filter[title].selectAll, 'fa-check-square-o': filterPanel.filter[title].selectAll}"></i>
+                            Select All
+                        </a>
+                        <a ng-click="filterPanel.filterItemSelect(title, optVal)"
+                           ng-repeat="optVal in opt.list | orderBy:'toString()' | filter: nodeFilter track by $index" class="slider-row">
+                            <span class="pointer" title="{{optVal.value | shortenAndReplaceUnderscores}}">
+                                {{optVal.value | shortenAndReplaceUnderscores | reduceStringLength: 30}}
+                            </span>
+                            <i class="pull-right fa"
+                               ng-class="{'fa-square-o': !optVal.selected, 'fa-check-square-o': optVal.selected}"></i>
+                        </a>
+                    </div>
+                <!--</div>-->
+            </div>
+        </div>
+    </div>
+</div>

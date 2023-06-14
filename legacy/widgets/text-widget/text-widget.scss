@@ -1,0 +1,53 @@
+@import '~theme';
+
+.text-widget {
+    &--editing {
+        height: 100%;
+        background-color: get-background-color('default');
+    }
+
+    &__edit {
+        position: relative;
+        padding: 0 10%;
+        height: 100;
+
+        &__textarea {
+            height: 100%;
+            width: 100%;
+            overflow-y: auto;
+        }
+    }
+
+    &__toggle {
+        position: absolute;
+        top: 0;
+        right: 0;
+        z-index: 1;
+        visibility: hidden;
+        opacity: 0.25;
+        &:hover {
+            opacity: 1;
+        }
+    }
+
+    &__loading {
+        position: absolute;
+        background-color: get-background-color('default');
+        top: 0;
+        bottom: 0;
+        left: 0;
+        right: 0;
+    }
+
+    &__table {
+        height: 200px;
+        overflow: auto;
+        &__clip {
+            text-overflow: clip;
+        }
+    }
+}
+
+.widget-view:hover .text-widget__toggle {
+    visibility: visible;
+}

@@ -1,0 +1,35 @@
+<div id="worksheet" class="worksheet">
+    <div
+        class="worksheet__content"
+        ng-class="{'worksheet__content--presentation': worksheet.presentation}"
+    >
+        <div id="worksheet__golden" class="worksheet__golden"></div>
+
+        <panel
+            ng-repeat="(panelId, options) in worksheet.panels"
+            ng-if="options.config.type !== worksheet.PANEL_TYPES.GOLDEN"
+            panel-id="options.panelId"
+            sheet-id="worksheet.sheetId"
+        >
+        </panel>
+
+        <div
+            ng-if="!worksheet.hasPanels()"
+            class="worksheet__content__blank-sheet"
+        >
+            <p>No panels present. Please add one to view it here.</p>
+            <div class="worksheet__content__blank-sheet__add">
+                <smss-btn
+                    ng-click="worksheet.addPanel($event, 'visualization', true)"
+                >
+                    <i class="fa fa-plus"></i> Add Visualization
+                </smss-btn>
+            </div>
+        </div>
+    </div>
+
+    <panel-mask
+        ng-if="!worksheet.presentation"
+        sheet-id="worksheet.sheetId"
+    ></panel-mask>
+</div>

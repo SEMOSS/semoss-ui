@@ -1,0 +1,216 @@
+<div class="settings__content">
+    <div class="settings__content__item">
+        <!--NOTE: this section looks weird because I unindented the content to re-align it -->
+        <div class="settings__content__item__content">
+            <div class="settings__content__item__left smss-col--5">
+                <div
+                    class="settings__content__item__header settings__content__item__search"
+                >
+                    <smss-search
+                        placeholder="Search {{settingsGeneral.type.toLowerCase()}}..."
+                        model="searchApps.name"
+                    >
+                    </smss-search>
+                </div>
+                <!--Left Side-->
+                <div class="settings__list--height95">
+                    <smss-scroll static-x="true">
+                        <div class="settings__list__title">
+                            Author/Editor {{settingsGeneral.type}}:
+                        </div>
+                        <settings-list-item
+                            ng-repeat="item in settingsGeneral.items | filter: settingsGeneral.filterResults(false) | filter: searchApps as authorEditorResults"
+                            item="item"
+                            type="settingsGeneral.type"
+                            admin="settingsCtrl.FALSE"
+                            selected="item === settingsGeneral.selected"
+                            ng-click="settingsGeneral.updateSelectedItem(item, settingsGeneral.type)"
+                        >
+                        </settings-list-item>
+                        <p
+                            class="smss-color--low-emphasis"
+                            ng-if="authorEditorResults.length === 0"
+                        >
+                            No {{settingsGeneral.type.toLowerCase()}} with this
+                            permission, please try again.
+                        </p>
+                        <div class="settings__list__title">
+                            Read-Only {{settingsGeneral.type}}:
+                        </div>
+                        <settings-list-item
+                            ng-repeat="item in settingsGeneral.items | filter: settingsGeneral.filterResults(true) | filter: searchApps as viewerResults"
+                            item="item"
+                            type="settingsGeneral.type"
+                            admin="settingsCtrl.FALSE"
+                            selected="item === settingsGeneral.selected"
+                            ng-click="settingsGeneral.updateSelectedItem(item, settingsGeneral.type)"
+                        >
+                        </settings-list-item>
+                        <p
+                            class="smss-color--low-emphasis"
+                            ng-if="viewerResults.length === 0"
+                        >
+                            No {{settingsGeneral.type.toLowerCase()}} with this
+                            permission, please try again.
+                        </p>
+                    </smss-scroll>
+                </div>
+            </div>
+            <!--Right Side-->
+            <div
+                class="settings__content__item__right settings__content__item__right--height95 smss-col--7"
+            >
+                <div class="settings__content__item__right__header">
+                    {{settingsGeneral.selected.name}}
+                </div>
+                <div
+                    class="settings__content__item__right__content"
+                    ng-if="settingsGeneral.selected.permissions.viewer"
+                >
+                    <div class="settings__content__item__padding">
+                        <br />You do not have permission to view/edit the member
+                        permissions for this project.
+                    </div>
+                </div>
+                <smss-tab-group
+                    class="settings__content__item__content__tabs"
+                    ng-if="settingsGeneral.type === 'Projects' && !settingsGeneral.selected.permissions.viewer"
+                >
+                    <smss-tab
+                        ng-class="{'smss-tab--selected': settingsGeneral.selectedItemTab ===  tab}"
+                        ng-repeat="tab in settingsGeneral.itemTabs"
+                        ng-click="settingsGeneral.selectedItemTab = tab; settingsCtrl.selectedInsight = null;"
+                    >
+                        {{tab}}
+                    </smss-tab>
+                </smss-tab-group>
+                <div
+                    class="settings__content__item__right__content"
+                    ng-if="!settingsGeneral.selected.permissions.viewer"
+                >
+                    <!--For Projects Only: Insight Header-->
+                    <div
+                        class="smss-row settings__font--default"
+                        ng-if="settingsGeneral.type === 'Projects' && settingsGeneral.selectedItemTab === 'Insight Permissions'  && !settingsCtrl.noInsights"
+                    >
+                        <div
+                            class="smss-left settings__content__item__right__content__insights"
+                        >
+                            <smss-breadcrumb class="smss-breadcrumb--compact">
+                                <smss-breadcrumb-item
+                                    ng-click="settingsCtrl.selectedInsight = null"
+                                    >Insights</smss-breadcrumb-item
+                                >
+                                <smss-breadcrumb-item
+                                    >{{!settingsCtrl.selectedInsight ? 'All' :
+                                    settingsCtrl.selectedInsight.name}}</smss-breadcrumb-item
+                                >
+                            </smss-breadcrumb>
+                        </div>
+                        <div
+                            class="smss-right"
+                            ng-if="settingsCtrl.selectedInsight"
+                        >
+                            <smss-toggle
+                                class="smss-toggle--small"
+                                ng-init="privacyState = !settingsCtrl.selectedInsight.insight_global"
+                                model="privacyState"
+                                change="settingsCtrl.selectedInsight.insight_global = !settingsCtrl.selectedInsight.insight_global; settingsCtrl.setInsightGlobal(settingsGeneral.selected.project_id, settingsCtrl.selectedInsight.project_insight_id, settingsCtrl.selectedInsight.insight_global, false)"
+                            >
+                                Insight Privacy &nbsp;
+                                <i class="fa fa-lock"></i>
+                            </smss-toggle>
+                        </div>
+                    </div>
+                    <div class="settings__content__item__padding">
+                        <div class="settings__content__item__search">
+                            <smss-search
+                                ng-if="settingsGeneral.selectedItemTab === 'Project Permissions'"
+                                placeholder="Search members..."
+                                model="settingsGeneral.userSearchterm"
+                            >
+                            </smss-search>
+                            <smss-search
+                                ng-if="settingsGeneral.selectedItemTab === 'Insight Permissions' && !settingsCtrl.selectedInsight && !settingsCtrl.noInsights"
+                                placeholder="Search insights..."
+                                model="settingsGeneral.insightSearchterm"
+                            >
+                            </smss-search>
+                            <smss-search
+                                ng-if="settingsGeneral.selectedItemTab === 'Insight Permissions' && settingsCtrl.selectedInsight && !settingsCtrl.noInsightUsers"
+                                placeholder="Search members..."
+                                model="settingsGeneral.insightUserSearchterm"
+                            >
+                            </smss-search>
+                        </div>
+                        <!--Add Users to Project/DB-->
+                        <!--TODO: confirm this shows up correctly-->
+                        <smss-btn
+                            class="smss-btn--text smss-right"
+                            ng-if="settingsGeneral.selectedItemTab === 'Project Permissions' && !settingsCtrl.allUserAccess"
+                            ng-click="settingsCtrl.openAddUserPermOverlay(settingsGeneral.selected, settingsGeneral.type, false);"
+                        >
+                            <!--TODO: allUserAccess is not updating properly on first load-->
+                            <i class="fa fa-plus"></i>Add Members
+                        </smss-btn>
+                        <!--Add Users to Insight-->
+                        <smss-btn
+                            class="smss-btn--text smss-right"
+                            ng-if="settingsGeneral.selectedItemTab === 'Insight Permissions' && settingsCtrl.selectedInsight && !settingsCtrl.allUserAccess"
+                            ng-click="settingsCtrl.getInsightUsersNoCredentials(false, settingsGeneral.selected.project_id, settingsCtrl.selectedInsight.project_insight_id); settingsCtrl.overlay.openAddInsightPermissions = true;"
+                        >
+                            <i class="fa fa-plus"></i>Add Members
+                        </smss-btn>
+                    </div>
+                    <div
+                        class="settings__content__item__right__content__table"
+                        ng-if="settingsGeneral.selectedItemTab === 'Project Permissions'"
+                    >
+                        <smss-scroll>
+                            <settings-table
+                                users="settingsCtrl.tempPerm"
+                                item="settingsGeneral.selected"
+                                admin="settingsCtrl.FALSE"
+                                searchterm="settingsGeneral.userSearchterm"
+                                type="settingsGeneral.type"
+                            >
+                            </settings-table>
+                        </smss-scroll>
+                    </div>
+                    <settings-insights
+                        ng-if="settingsGeneral.type === 'Projects' && settingsGeneral.selectedItemTab === 'Insight Permissions'"
+                        class="settings__content__item__right__content__fill"
+                        insight-searchterm="settingsGeneral.insightSearchterm"
+                        user-searchterm="settingsGeneral.insightUserSearchterm"
+                    ></settings-insights>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!--TODO: update demote functions-->
+<smss-overlay
+    open="settingsCtrl.warnSelfDemote"
+    size="sm"
+    exit="settingsGeneral.closeWarnSelfDemote();"
+>
+    <smss-overlay-header>Edit Permission</smss-overlay-header>
+    <smss-overlay-body
+        >Are you sure you want to demote your own privileges?</smss-overlay-body
+    >
+    <smss-overlay-footer>
+        <smss-btn
+            class="smss-btn--text"
+            ng-click="settingsGeneral.closeWarnSelfDemote();"
+        >
+            Cancel
+        </smss-btn>
+        <smss-btn
+            class="smss-btn--error"
+            ng-click="settingsCtrl.demoteSelf(settingsGeneral.type)"
+        >
+            Demote Privileges
+        </smss-btn>
+    </smss-overlay-footer>
+</smss-overlay>

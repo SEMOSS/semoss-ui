@@ -1,0 +1,277 @@
+<div class="color-by-value smss-collapsible-group">
+    <smss-collapsible
+        model="true"
+        class="color-by-value__collapsible--borderless"
+    >
+        <smss-collapsible-header> Applied Rules </smss-collapsible-header>
+        <smss-collapsible-content>
+            <div
+                class="color-by-value__applied__scroll"
+                ng-if="colorByValue.appliedRules.length > 0"
+            >
+                <table>
+                    <thead>
+                        <th class="color-by-value__applied__header">Column</th>
+                        <th>Applied Rule</th>
+                        <th class="smss-center smss--icon"></th>
+                        <th class="smss-center smss--icon"></th>
+                    </thead>
+                    <tbody>
+                        <tr
+                            ng-repeat="rule in colorByValue.appliedRules track by $index"
+                        >
+                            <td title="{{rule.colorOn}}">{{rule.colorOn}}</td>
+                            <td title="{{colorByValue.getFilterStr(rule)}}">
+                                {{colorByValue.getFilterStr(rule)}}
+                            </td>
+                            <td class="smss-center smss--icon">
+                                <smss-btn
+                                    ng-click="colorByValue.editRule($index); $event.stopPropagation()"
+                                    title="Edit rule"
+                                    ng-disabled="rule.queued"
+                                    class="smss-btn--icon"
+                                >
+                                    <i class="fa fa-pencil"></i>
+                                </smss-btn>
+                            </td>
+                            <td class="smss-center smss--icon">
+                                <smss-btn
+                                    ng-click="colorByValue.removeRule(rule.name); $event.stopPropagation()"
+                                    title="Remove rule"
+                                    class="smss-btn--icon smss-color--error"
+                                >
+                                    <i class="fa fa-times"></i>
+                                </smss-btn>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            <div
+                class="smss-caption--center"
+                ng-if="colorByValue.appliedRules.length === 0"
+            >
+                No Applied Rules
+            </div>
+        </smss-collapsible-content>
+    </smss-collapsible>
+    <smss-collapsible model="true" class="color-by-value__collapsible--flex">
+        <smss-collapsible-header> New Rule </smss-collapsible-header>
+        <smss-collapsible-content>
+            <div class="color-by-value__new">
+                <!-- queued rules -->
+                <div
+                    class="color-by-value__new__scroll"
+                    ng-show="colorByValue.queuedRules.length > 0"
+                >
+                    <table class="smss--sticky color-by-value__table">
+                        <thead>
+                            <th>Column to Color</th>
+                            <th>Applied Rule</th>
+                            <th class="smss-center smss--icon"></th>
+                        </thead>
+                        <tbody
+                            ng-repeat="rule in colorByValue.queuedRules track by $index"
+                        >
+                            <tr>
+                                <td title="{{rule.colorOn}}">
+                                    {{colorByValue.colorOn.selected.alias}}
+                                </td>
+                                <td
+                                    title="{{rule.where.alias}} {{rule.operator.value}} {{rule.values}}"
+                                >
+                                    {{rule.where.alias}} {{rule.operator.value}}
+                                    {{rule.values}}
+                                </td>
+                                <td class="smss-center smss--icon">
+                                    <smss-btn
+                                        ng-click="colorByValue.removeFromQueue($index)"
+                                        title="Remove rule"
+                                        class="smss-btn--icon smss-color--error"
+                                    >
+                                        <i class="fa fa-times"></i>
+                                    </smss-btn>
+                                </td>
+                            </tr>
+                            <tr ng-if="colorByValue.queuedRules[$index + 1]">
+                                <td colspan="3">
+                                    <smss-dropdown
+                                        model="rule.queuedLogic"
+                                        options="['AND', 'OR']"
+                                    >
+                                        <smss-dropdown-toggle>
+                                            <div class="smss-center">
+                                                {{$parent.smssDropdown.model}}
+                                            </div>
+                                        </smss-dropdown-toggle>
+                                    </smss-dropdown>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                <!-- new rule to add -->
+                <div class="color-by-value__new__content">
+                    <div class="smss-row">
+                        <smss-field class="smss-col smss-col--6">
+                            <label> Select Column to Color: </label>
+                            <content>
+                                <smss-dropdown
+                                    model="colorByValue.colorOn.selected"
+                                    display="alias"
+                                    options="colorByValue.colorOn.options"
+                                    ng-disabled="colorByValue.highlightRow"
+                                >
+                                </smss-dropdown>
+                            </content>
+                        </smss-field>
+                        <smss-field class="smss-col smss-col--6">
+                            <label> Select Color: </label>
+                            <content>
+                                <smss-color-picker
+                                    color-theme="colorByValue.selectedColor.options"
+                                    model="colorByValue.selectedColor.selected"
+                                >
+                                </smss-color-picker>
+                            </content>
+                        </smss-field>
+                    </div>
+                    <smss-field ng-if="colorByValue.gridLayout">
+                        <content>
+                            <smss-checkbox model="colorByValue.highlightRow">
+                                Color Entire Row
+                            </smss-checkbox>
+                        </content>
+                    </smss-field>
+                    <smss-field ng-if="colorByValue.gridLayout">
+                        <content>
+                            <smss-checkbox model="colorByValue.restrict">
+                                Restrict
+                            </smss-checkbox>
+                        </content>
+                        <description>
+                            Restrict column to color to be based on the filtered
+                            values.
+                        </description>
+                    </smss-field>
+                    <div class="smss-row">
+                        <smss-field class="smss-col smss-col--6">
+                            <label> Select Column of Values: </label>
+                            <content>
+                                <smss-dropdown
+                                    model="colorByValue.selectedColumn.selected"
+                                    display="alias"
+                                    options="colorByValue.selectedColumn.options"
+                                    change="colorByValue.updateSelected()"
+                                >
+                                </smss-dropdown>
+                            </content>
+                        </smss-field>
+                        <smss-field class="smss-col smss-col--6">
+                            <label> Select Comparator: </label>
+                            <content>
+                                <smss-dropdown
+                                    model="colorByValue.operator"
+                                    options="colorByValue.selectedColumn.selected.operators"
+                                    display="display"
+                                    change="colorByValue.updateOperator()"
+                                >
+                                </smss-dropdown>
+                            </content>
+                        </smss-field>
+                    </div>
+                    <smss-field
+                        ng-if="colorByValue.values.type === 'numerical' || colorByValue.values.type === 'date' ||colorByValue.values.type === 'timestamp'"
+                    >
+                        <content>
+                            <div
+                                class="smss-text"
+                                ng-show="!colorByValue.selectedColumn.selected.derived"
+                            >
+                                <span class="smss-small">
+                                    Max: {{colorByValue.maxNumericalValue}}
+                                </span>
+                            </div>
+                            <div
+                                class="smss-text"
+                                ng-show="!colorByValue.selectedColumn.selected.derived"
+                            >
+                                <span class="smss-small">
+                                    Min: {{colorByValue.minNumericalValue}}
+                                </span>
+                            </div>
+                        </content>
+                    </smss-field>
+                    <smss-field
+                        ng-if="colorByValue.values.type === 'numerical'"
+                    >
+                        <label> Enter Filter Value: </label>
+                        <content>
+                            <smss-input
+                                id="filter-numerical"
+                                type="number"
+                                ng-model="colorByValue.values.selected"
+                            ></smss-input>
+                        </content>
+                    </smss-field>
+                    <smss-field ng-if="colorByValue.values.type === 'date'">
+                        <label> Enter Filter Value: </label>
+                        <content>
+                            <smss-date-picker
+                                format="'YYYY-MM-DD'"
+                                model="colorByValue.values.selected"
+                            >
+                            </smss-date-picker>
+                        </content>
+                    </smss-field>
+                    <!-- <smss-field ng-if="colorByValue.values.type === 'timestamp'">
+                        <label> Enter Filter Value: </label>
+                        <content>
+                            <smss-date-picker format="'YYYY-MM-DD'" model="colorByValue.values.selected">
+                
+                            </smss-date-picker>
+                        </content>
+                    </smss-field> -->
+                    <smss-field ng-if="colorByValue.values.type === 'search'">
+                        <label> Enter Value: </label>
+                        <content>
+                            <smss-input
+                                ng-model="colorByValue.values.selected"
+                            ></smss-input>
+                        </content>
+                    </smss-field>
+                    <smss-field
+                        class="color-by-value__new__content__full"
+                        ng-if="colorByValue.values.type === 'list'"
+                    >
+                        <label> Select Values: </label>
+                        <content>
+                            <smss-checklist
+                                model="colorByValue.values.selected"
+                                options="colorByValue.instances.options"
+                                loading="colorByValue.instances.loading"
+                                scroll="colorByValue.getMoreInstances()"
+                                search="colorByValue.searchInstances(search)"
+                                searchable
+                                multiple
+                                class="color-by-value__checklist"
+                            >
+                            </smss-checklist>
+                        </content>
+                    </smss-field>
+                </div>
+                <div class="smss-action">
+                    <smss-btn
+                        ng-click="colorByValue.addToQueue()"
+                        class="smss-btn--outline"
+                    >
+                        Queue
+                    </smss-btn>
+                    <smss-btn ng-click="colorByValue.applyRule()">
+                        Execute
+                    </smss-btn>
+                </div>
+            </div>
+        </smss-collapsible-content>
+    </smss-collapsible>
+</div>

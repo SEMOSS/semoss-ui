@@ -1,0 +1,99 @@
+/* This stylesheet will contain the classes for generic visualizations */
+
+.semoss-d3-tip {
+    z-index: 10000;
+    margin: 0;
+    padding: 5px;
+    min-width: 200px;
+    background-color: #FFFFFF;
+    border: 1px solid rgba(122,122,122,0.6);
+    -webkit-border-radius: 5px;
+    -moz-border-radius: 5px;
+    border-radius: 5px;
+    -webkit-box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+    -moz-box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+    -o-box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+    box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+    color: #000000;
+}
+
+/* Creates a small triangle extender for the tooltip */
+.semoss-d3-tip:after {
+    display: none;
+}
+
+/*!* For tooltips *!*/
+
+.d3-tip {
+    z-index: 10000;
+    padding: 12px;
+    margin-top: -7px;
+    font-family: sans-serif;
+    font-size: 12px;
+    font-weight: bold;
+    line-height: 1.4;
+    color: #fff;
+    background: rgba(0, 0, 0, 0.8);
+    border-radius: 3px;
+}
+
+/* Creates a small triangle extender for the tooltip */
+.d3-tip:after {
+    position: absolute;
+    display: inline;
+    width: 100%;
+    font-size: 10px;
+    line-height: 1;
+    color: rgba(0, 0, 0, 0.8);
+    text-align: center;
+    content: "\25BC";
+    box-sizing: border-box;
+}
+
+/* Style northward tooltips differently */
+.d3-tip.n:after {
+    top: 98%;
+    left: 0;
+    margin: -1px 0 0 0;
+}
+
+.light {
+    color: #bbb;
+}
+
+/* added styles below for scatterplot directive for x,y axis styles */
+.axis {
+    shape-rendering: crispEdges;
+}
+
+.x.axis line {
+    stroke: #000;
+}
+
+.y.axis line {
+    stroke: #000;
+}
+
+.circleBase {
+    border-radius: 50%;
+    behavior: url(PIE.htc); /* remove if you don't care about IE8 */
+}
+.d3-tooltip-circle {
+    width: 10px;
+    height: 10px;
+    border: 1px solid black;
+}
+.semoss-d3-tip-content {
+    display: inline-block;
+}
+
+.link {
+    fill: none;
+    stroke: #000;
+    stroke-opacity: .2;
+    stroke-width: 1.5px;
+}
+
+.link:hover{
+    stroke-opacity: .5;
+}

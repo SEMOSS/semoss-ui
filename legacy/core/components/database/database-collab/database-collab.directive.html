@@ -1,0 +1,270 @@
+<div class="database-collab" id="database-collab__semoss-tour-database-collab">
+    <div ng-if="!databaseCollab.authenticated">
+        <div class="smss-action">
+            <smss-btn ng-click="databaseCollab.login()"
+                >Log into Github</smss-btn
+            >
+        </div>
+    </div>
+    <div ng-if="databaseCollab.authenticated">
+        <smss-accordion class="database-collab-accordion-container" resizable>
+            <smss-accordion-item
+                name="'Choose a repository'"
+                ng-disabled="databaseCollab.accordionSettings.repo.disabled"
+                size="databaseCollab.accordionSettings.repo.height"
+            >
+                <div class="database-collab-accordion-content">
+                    <div class="smss-spacing">
+                        <smss-btn
+                            class="smss-left"
+                            ng-disabled="!databaseCollab.engines.isGit"
+                            ng-click="databaseCollab.toggleRepo()"
+                        >
+                            {{databaseCollab.repos.custom ? ' Back' : 'Create
+                            Repo'}}
+                        </smss-btn>
+                        <smss-btn
+                            class="smss-btn--left smss-right"
+                            ng-disabled="!databaseCollab.engines.isGit && databaseCollab.repos.custom"
+                            ng-click="databaseCollab.dropRepo(false)"
+                        >
+                            Drop Local
+                        </smss-btn>
+                        <smss-btn
+                            class="smss-right"
+                            ng-disabled="!databaseCollab.engines.isGit && databaseCollab.repos.custom"
+                            ng-click="databaseCollab.deleteRepo(false)"
+                        >
+                            Delete Remote
+                        </smss-btn>
+                    </div>
+                    <smss-field ng-if="!databaseCollab.repos.custom">
+                        <content>
+                            <smss-dropdown
+                                display="name"
+                                value="name"
+                                model="databaseCollab.repos.selected"
+                                options="databaseCollab.repos.options"
+                                change="databaseCollab.selectRepo(model);"
+                                placeholder="Select a remote repository"
+                            >
+                            </smss-dropdown>
+                        </content>
+                    </smss-field>
+                    <div ng-if="databaseCollab.repos.custom">
+                        <smss-field>
+                            <label> New Repo: </label>
+                            <content class="smss-clear">
+                                <smss-input
+                                    class="smss-left database-collab-custom-repo-input"
+                                    ng-change="databaseCollab.validateRepo()"
+                                    ng-model="databaseCollab.repos.user"
+                                    placeholder="Enter a user"
+                                ></smss-input>
+                                <div
+                                    class="smss-left database-collab-custom-repo-seperator"
+                                >
+                                    /
+                                </div>
+                                <smss-input
+                                    class="smss-left database-collab-custom-repo-input"
+                                    ng-change="databaseCollab.validateRepo()"
+                                    ng-model="databaseCollab.repos.name"
+                                    placeholder="Enter a new remote repository"
+                                ></smss-input>
+                            </content>
+                        </smss-field>
+
+                        <smss-field>
+                            <content>
+                                <smss-checkbox
+                                    model="databaseCollab.databaseSync"
+                                >
+                                    Sync Database
+                                </smss-checkbox>
+                            </content>
+                        </smss-field>
+
+                        <div class="smss-action">
+                            <smss-btn
+                                ng-click="databaseCollab.createRepo(false)"
+                                ng-disabled="!databaseCollab.repos.valid"
+                            >
+                                Create
+                            </smss-btn>
+                        </div>
+                    </div>
+                </div>
+            </smss-accordion-item>
+            <smss-accordion-item
+                ng-disabled="databaseCollab.accordionSettings.settings.disabled"
+                name="'Edit repository settings'"
+                size="databaseCollab.accordionSettings.settings.height"
+            >
+                <div class="database-collab-accordion-content">
+                    <smss-field class="smss-field--inline smss-row">
+                        <label class="smss-col smss-col--10">
+                            Current Team member(s):
+                        </label>
+                        <content class="smss-col smss-col--2">
+                            <smss-btn
+                                class="smss-right"
+                                ng-click="databaseCollab.getTeam()"
+                            >
+                                <i class="fa fa-refresh"></i>
+                            </smss-btn>
+                        </content>
+                    </smss-field>
+                    <table class="database-collab-team-grid">
+                        <tbody>
+                            <tr
+                                ng-repeat="member in databaseCollab.members track by $index"
+                            >
+                                <td title="{{member}}">{{member}}</td>
+                                <td class="smss--icon">
+                                    <smss-btn
+                                        class="smss-btn--block"
+                                        ng-click="databaseCollab.removeMember(member)"
+                                    >
+                                        <i class="fa fa-times"></i>
+                                    </smss-btn>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                    <smss-field>
+                        <label> New Member: </label>
+                        <content>
+                            <smss-checklist
+                                model="databaseCollab.member.selected"
+                                options="databaseCollab.member.options"
+                                search="databaseCollab.searchMember(model)"
+                                loading="databaseCollab.member.loading"
+                                searchable
+                            >
+                                <smss-checklist-label>
+                                    {{$parent.opt.id}}
+                                </smss-checklist-label>
+                            </smss-checklist>
+                        </content>
+                    </smss-field>
+                    <div class="smss-action">
+                        <smss-btn ng-click="databaseCollab.addMember()">
+                            Add
+                        </smss-btn>
+                    </div>
+                </div>
+            </smss-accordion-item>
+            <smss-accordion-item
+                name="'Sync'"
+                ng-disabled="databaseCollab.accordionSettings.sync.disabled"
+                size="databaseCollab.accordionSettings.sync.height"
+            >
+                <div class="database-collab-accordion-content">
+                    <smss-field class="smss-field--inline smss-row">
+                        <label class="smss-col smss-col--10">
+                            Changed Files:
+                        </label>
+                        <content class="smss-col smss-col--2">
+                            <smss-btn
+                                class="smss-right"
+                                ng-click="databaseCollab.getStatus()"
+                            >
+                                <i class="fa fa-refresh"></i>
+                            </smss-btn>
+                        </content>
+                    </smss-field>
+
+                    <div
+                        ng-if="databaseCollab.files.options.length === 0"
+                        class="database-collab-diff-no-changes"
+                    >
+                        No Changed Files
+                    </div>
+                    <smss-checklist
+                        ng-if="databaseCollab.files.options.length > 0"
+                        class="database-collab-diff-checklist"
+                        model="databaseCollab.files.selected"
+                        options="databaseCollab.files.options"
+                        searchable
+                        quickselect
+                        multiple
+                    >
+                        <smss-checklist-label>
+                            <div
+                                class="smss-checklist__option__label__text database-collab-diff-checklist-icon"
+                                title="{{$parent.opt.fileType}}"
+                            >
+                                <i
+                                    class="fa"
+                                    ng-class="{'fa-trash-o': $parent.opt.fileType === 'DEL',
+                             'fa-file': $parent.opt.fileType === 'NEW',                                   
+                             'fa-plus': $parent.opt.fileType === 'ADD',
+                             'fa-exclamation-circle': $parent.opt.fileType === 'MOD',
+                             'fa-times': $parent.opt.fileType === 'CON'}"
+                                ></i>
+                            </div>
+                            <div
+                                class="smss-checklist__option__label__text database-collab-diff-checklist-text"
+                            >
+                                {{$parent.opt.fileName}}
+                            </div>
+                        </smss-checklist-label>
+                    </smss-checklist>
+                    <smss-field>
+                        <content>
+                            <smss-checkbox model="databaseCollab.databaseSync">
+                                Sync Database
+                            </smss-checkbox>
+                        </content>
+                    </smss-field>
+                    <div class="smss-action">
+                        <smss-btn ng-click="databaseCollab.pull()">
+                            Pull
+                        </smss-btn>
+                        <smss-btn
+                            ng-disabled="databaseCollab.files.selected.length === 0"
+                            ng-click="databaseCollab.syncSpecific(false)"
+                        >
+                            Sync Specific
+                        </smss-btn>
+                        <smss-btn
+                            ng-disabled="databaseCollab.files.options.length === 0 && !databaseCollab.databaseSync"
+                            ng-click="databaseCollab.syncAll(false)"
+                        >
+                            Sync All
+                        </smss-btn>
+                    </div>
+                </div>
+            </smss-accordion-item>
+        </smss-accordion>
+        <smss-overlay open="databaseCollab.validation.open" size="sm">
+            <smss-overlay-header>Confirm Action</smss-overlay-header>
+            <smss-overlay-body>
+                <smss-field>
+                    <label> {{databaseCollab.validation.title}} </label>
+                    <content>
+                        <smss-input
+                            ng-model="databaseCollab.validation.name"
+                            ng-change="databaseCollab.checkValidation()"
+                        ></smss-input>
+                    </content>
+                </smss-field>
+            </smss-overlay-body>
+            <smss-overlay-footer>
+                <smss-btn
+                    class="smss-btn--text"
+                    ng-click="databaseCollab.validation.open = false"
+                >
+                    Cancel
+                </smss-btn>
+                <smss-btn
+                    ng-disabled="!databaseCollab.validation.valid"
+                    ng-click="databaseCollab.confirmValidation()"
+                >
+                    Confirm
+                </smss-btn>
+            </smss-overlay-footer>
+        </smss-overlay>
+    </div>
+</div>

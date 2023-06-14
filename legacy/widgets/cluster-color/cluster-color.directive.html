@@ -1,0 +1,20 @@
+<smss-scroll static-x="true">
+    <div ng-if="clusterColor.frameType !== 'GRAPH'">
+        There are no available clusters using your current frame type. Try
+        switching to "graph" frame type.
+    </div>
+    <smss-field
+        ng-if="clusterColor.frameType === 'GRAPH'"
+        ng-click="clusterColor.updateLayout();"
+    >
+        <label> Select Graph Cluster Method: </label>
+        <content>
+            <smss-checklist
+                class="smss-checklist--short"
+                model="clusterColor.layoutSelected"
+                options="clusterColor.layoutOptions"
+            >
+            </smss-checklist>
+        </content>
+    </smss-field>
+</smss-scroll>

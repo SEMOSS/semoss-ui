@@ -1,0 +1,125 @@
+<smss-scroll static-x="true">
+    <p class="smss-spacing">Compute the difference between dates.</p>
+
+    <!-- values to use -->
+    <smss-field>
+        <label> Compute the difference between: </label>
+        <content>
+            <smss-dropdown
+                model="cleanDateDiff.inputDateUse"
+                options="cleanDateDiff.options"
+                placeholder="None Selected"
+                display="display"
+                value="value"
+            >
+            </smss-dropdown>
+        </content>
+    </smss-field>
+
+    <!-- start date column -->
+    <smss-field
+        ng-if="cleanDateDiff.inputDateUse === 'none' || cleanDateDiff.inputDateUse === 'end'"
+    >
+        <label> Select a start date column: </label>
+        <content>
+            <smss-dropdown
+                display="alias"
+                value="alias"
+                model="cleanDateDiff.selectedStartColumn"
+                options="cleanDateDiff.headers"
+                placeholder="None Selected"
+            >
+            </smss-dropdown>
+        </content>
+    </smss-field>
+
+    <!-- input field if an end date is required -->
+    <smss-field ng-if="cleanDateDiff.inputDateUse === 'end'">
+        <label> Select end date: </label>
+        <content>
+            <smss-date-picker
+                model="cleanDateDiff.inputDate"
+                format="'YYYY-MM-DD'"
+            >
+            </smss-date-picker>
+        </content>
+    </smss-field>
+
+    <!-- input field if a start date is required -->
+    <smss-field ng-if="cleanDateDiff.inputDateUse === 'start'">
+        <label> Provide start date: </label>
+        <content>
+            <smss-date-picker
+                model="cleanDateDiff.inputDate"
+                format="'YYYY-MM-DD'"
+            >
+            </smss-date-picker>
+        </content>
+    </smss-field>
+
+    <!-- end date column -->
+    <smss-field
+        ng-if="cleanDateDiff.inputDateUse === 'none' || cleanDateDiff.inputDateUse === 'start'"
+    >
+        <label> Select an end date column: </label>
+        <content>
+            <smss-dropdown
+                display="alias"
+                value="alias"
+                model="cleanDateDiff.selectedEndColumn"
+                options="cleanDateDiff.headers"
+                placeholder="None Selected"
+            >
+            </smss-dropdown>
+        </content>
+    </smss-field>
+
+    <!-- unit of measure -->
+    <smss-field>
+        <label> Select a unit of measure: </label>
+        <content>
+            <smss-dropdown
+                model="cleanDateDiff.selectedUnit"
+                options="cleanDateDiff.units"
+                placeholder="None Selected"
+                display="display"
+                value="value"
+            >
+            </smss-dropdown>
+        </content>
+    </smss-field>
+
+    <smss-field>
+        <label> Enter new column name: </label>
+        <content>
+            <smss-input ng-model="cleanDateDiff.newColName"> </smss-input>
+        </content>
+    </smss-field>
+
+    <div class="smss-action">
+        <smss-btn
+            class="smss-btn--text"
+            ng-if="cleanDateDiff.PIPELINE"
+            ng-click="cleanDateDiff.cancel()"
+        >
+            Cancel
+        </smss-btn>
+        <!-- <smss-btn ng-if="cleanDateDiff.PIPELINE"
+                  ng-disabled="cleanDateDiff.selectedUnit === '' || cleanDateDiff.inputDateUse ==='' || cleanDateDiff.newColName === '' ||
+            (cleanDateDiff.inputDateUse === 'none' && (cleanDateDiff.selectedStartColumn === '' || cleanDateDiff.selectedEndColumn === '')) ||
+            (cleanDateDiff.inputDateUse === 'end' && (cleanDateDiff.selectedStartColumn === '' || cleanDateDiff.inputDate === null)) ||
+            (cleanDateDiff.inputDateUse === 'start' && (cleanDateDiff.inputDate === null || cleanDateDiff.selectedEndColumn === ''))"
+                  ng-click="cleanDateDiff.loadPreview()">
+            Preview
+        </smss-btn> -->
+        <smss-btn
+            ng-disabled="cleanDateDiff.selectedUnit === '' || cleanDateDiff.inputDateUse ==='' || cleanDateDiff.newColName === '' ||
+            (cleanDateDiff.inputDateUse === 'none' && (cleanDateDiff.selectedStartColumn === '' || cleanDateDiff.selectedEndColumn === '')) ||
+            (cleanDateDiff.inputDateUse === 'end' && (cleanDateDiff.selectedStartColumn === '' || cleanDateDiff.inputDate === null)) ||
+            (cleanDateDiff.inputDateUse === 'start' && (cleanDateDiff.inputDate === null || cleanDateDiff.selectedEndColumn === ''))"
+            ng-click="cleanDateDiff.submit()"
+        >
+            Execute
+        </smss-btn>
+    </div>
+</smss-scroll>

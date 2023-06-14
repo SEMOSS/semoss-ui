@@ -1,0 +1,12 @@
+@import '~theme';
+
+.upload-project {
+    & .smss-overlay__wrapper {
+        width: 100%;
+        max-width: 600px;
+    }
+
+    &__content {
+        flex: 1;
+    }
+}

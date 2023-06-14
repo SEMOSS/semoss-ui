@@ -1,0 +1,582 @@
+<div class="login">
+    <!-- <div id="login__particle"
+        class="login__particle"></div> -->
+    <div class="login__box">
+        <div class="login__box__left">
+            <div
+                class="login__box__left__content"
+                ng-class="{'login__box__left__content--bottom':login.userRegistration && login.loginMethod.native}"
+            >
+                <div class="login__logo">
+                    <img
+                        ng-if="login.theme.isLoginImageUrl && !login.theme.loginImage"
+                        src="../../resources/img/new_logo_dark.svg"
+                        alt="semoss_logo"
+                    />
+                    <img
+                        ng-if="login.theme.isLoginImageUrl && login.theme.loginImage"
+                        ng-src="{{login.theme.loginImage}}"
+                        alt="logo"
+                    />
+                    <div
+                        ng-if="!login.theme.isLoginImageUrl"
+                        dynamic="login.theme.loginImage"
+                    ></div>
+                    <div
+                        ng-if="login.RIBBON_MESSAGE"
+                        style="text-align: center"
+                    >
+                        {{login.RIBBON_MESSAGE}}
+                    </div>
+                </div>
+                <div class="login__headline">
+                    <h1
+                        class="login__headline__text"
+                        ng-if="!login.theme.loginAndSignupTextCustomHtml"
+                    >
+                        <span ng-show="login.activeTab === 0"
+                            >Welcome!<br />Register below.</span
+                        >
+                        <span ng-show="login.activeTab === 1"
+                            >Welcome back!<br />
+                            Log in below.</span
+                        >
+                    </h1>
+                    <div
+                        ng-if="login.theme.loginAndSignupTextCustomHtml"
+                        dynamic="login.theme.loginAndSignupTextCustomHtml"
+                    ></div>
+                </div>
+
+                <div
+                    ng-show="login.activeTab === 0 && login.loginMethod.native"
+                    class="login__content"
+                >
+                    <form
+                        ng-submit="login.signUpUser(signupForm)"
+                        name="signupForm"
+                    >
+                        <smss-field>
+                            <label>
+                                First Name:<span class="smss-color--error"
+                                    >*</span
+                                >
+                            </label>
+                            <content>
+                                <smss-input
+                                    type="text"
+                                    name="userFirstName"
+                                    placeholder="First Name"
+                                    required
+                                    ng-model="login.registration.userFirstName"
+                                >
+                                </smss-input>
+                            </content>
+                            <description class="smss-color--error">
+                                <div
+                                    ng-messages="signupForm.userFirstName.$error"
+                                >
+                                    <span
+                                        ng-message="required"
+                                        ng-show="signupForm.userFirstName.$dirty"
+                                        >First Name is required
+                                    </span>
+                                </div>
+                            </description>
+                        </smss-field>
+                        <smss-field>
+                            <label>
+                                Last Name:<span class="smss-color--error"
+                                    >*</span
+                                >
+                            </label>
+                            <content>
+                                <smss-input
+                                    type="text"
+                                    name="userLastName"
+                                    placeholder="Last Name"
+                                    required
+                                    ng-model="login.registration.userLastName"
+                                ></smss-input>
+                            </content>
+                            <description class="smss-color--error">
+                                <div
+                                    ng-messages="signupForm.userLastName.$error"
+                                >
+                                    <span
+                                        ng-show="signupForm.userLastName.$dirty"
+                                        ng-message="required"
+                                        >Last Name is required
+                                    </span>
+                                </div>
+                            </description>
+                        </smss-field>
+                        <smss-field>
+                            <label>
+                                Username:<span class="smss-color--error"
+                                    >*</span
+                                >
+                            </label>
+                            <content>
+                                <smss-input
+                                    type="text"
+                                    name="userSignUPName"
+                                    placeholder="Username"
+                                    required
+                                    ng-model="login.registration.userSignUPName"
+                                ></smss-input>
+                            </content>
+                            <description class="smss-color--error">
+                                <div
+                                    ng-messages="signupForm.userSignUPName.$error"
+                                >
+                                    <span
+                                        ng-message="required"
+                                        ng-show="signupForm.userSignUPName.$dirty"
+                                        >Username is required
+                                    </span>
+                                </div>
+                            </description>
+                        </smss-field>
+                        <smss-field>
+                            <label>
+                                Email:<span class="smss-color--error">*</span>
+                            </label>
+                            <content>
+                                <smss-input
+                                    type="email"
+                                    name="userSignUPEmail"
+                                    placeholder="Email"
+                                    ng-pattern="/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/"
+                                    required
+                                    ng-model="login.registration.userSignUPEmail"
+                                >
+                                </smss-input>
+                            </content>
+                            <description class="smss-color--error">
+                                <div
+                                    ng-messages="signupForm.userSignUPEmail.$error"
+                                >
+                                    <span
+                                        ng-show="signupForm.userSignUPEmail.$dirty"
+                                        ng-message="required"
+                                    >
+                                        Email is required
+                                    </span>
+                                    <span
+                                        ng-show="signupForm.userSignUPEmail.$dirty"
+                                        ng-message="pattern"
+                                    >
+                                        Please enter valid Email
+                                    </span>
+                                </div>
+                            </description>
+                        </smss-field>
+                        <smss-field>
+                            <label> Phone: </label>
+                            <content>
+                                <smss-input
+                                    type="phone"
+                                    name="userSignUPPhone"
+                                    placeholder="Phone Number"
+                                    ng-pattern="/^[()-.\s0-9]{8,}$/"
+                                    ng-model="login.registration.userSignUPPhone"
+                                >
+                                </smss-input>
+                            </content>
+                            <description class="smss-color--error">
+                                <div
+                                    ng-messages="signupForm.userSignUPPhone.$error"
+                                >
+                                    <span
+                                        ng-show="signupForm.userSignUPPhone.$dirty"
+                                        ng-message="pattern"
+                                    >
+                                        Please enter valid Phone Number
+                                    </span>
+                                </div>
+                            </description>
+                        </smss-field>
+                        <smss-field>
+                            <label> Phone Extension: </label>
+                            <content>
+                                <smss-input
+                                    type="phoneextension"
+                                    name="userSignUPPhoneextension"
+                                    placeholder="Phone Extension"
+                                    ng-pattern="/^[+0-9]{0,6}$/"
+                                    ng-model="login.registration.userSignUPPhoneextension"
+                                >
+                                </smss-input>
+                            </content>
+                            <description class="smss-color--error">
+                                <div
+                                    ng-messages="signupForm.userSignUPPhoneextension.$error"
+                                >
+                                    <span
+                                        ng-show="signupForm.userSignUPPhoneextension.$dirty"
+                                        ng-message="pattern"
+                                    >
+                                        Please enter valid Phone Extension
+                                    </span>
+                                </div>
+                            </description>
+                        </smss-field>
+                        <smss-field>
+                            <label> Country Code: <span></span> </label>
+                            <content>
+                                <smss-input
+                                    type="countrycode"
+                                    name="userSignUPCountrycode"
+                                    placeholder="Country Code: +"
+                                    ng-pattern="/^[+0-9]{0,6}$/"
+                                    ng-model="login.registration.userSignUPCountrycode"
+                                >
+                                </smss-input>
+                            </content>
+                            <description class="smss-color--error">
+                                <div
+                                    ng-messages="signupForm.userSignUPCountrycode.$error"
+                                >
+                                    <span
+                                        ng-show="signupForm.userSignUPCountrycode.$dirty"
+                                        ng-message="pattern"
+                                    >
+                                        Please enter valid Country Code
+                                    </span>
+                                </div>
+                            </description>
+                        </smss-field>
+                        <smss-field>
+                            <label>
+                                Password:<span class="smss-color--error"
+                                    >*</span
+                                >
+                            </label>
+                            <content>
+                                <smss-input
+                                    type="password"
+                                    id="psw"
+                                    name="userSignUPPassword"
+                                    placeholder="Password"
+                                    ng-keyup="login.passwordValidate(login.registration.userSignUPPassword)"
+                                    ng-model="login.registration.userSignUPPassword"
+                                    ng-minlength="8"
+                                ></smss-input>
+                                <div
+                                    id="login-message"
+                                    class="login__popover"
+                                    ng-show="login.passwordInvalid"
+                                >
+                                    <div class="smss-text">
+                                        <span class="smss-small">
+                                            Password must:
+                                        </span>
+                                    </div>
+                                    <ul class="smss-small">
+                                        <li>have <b>one letter</b></li>
+                                        <li>have <b>one capital</b></li>
+                                        <li>have <b>one number</b></li>
+                                        <li>
+                                            have <b>one special character</b>
+                                        </li>
+                                        <li>
+                                            be a minimum of <b>8 characters</b>
+                                        </li>
+                                    </ul>
+                                </div>
+                            </content>
+                            <description class="smss-color--error">
+                                <div
+                                    ng-messages="signupForm.userSignUPPassword.$error"
+                                >
+                                    <span
+                                        class="smss-color--error"
+                                        ng-show="login.passwordInvalid"
+                                    >
+                                        Password is not valid
+                                    </span>
+                                </div>
+                            </description>
+                        </smss-field>
+                        <smss-field>
+                            <label>
+                                Confirm Password:<span class="smss-color--error"
+                                    >*</span
+                                >
+                            </label>
+                            <content>
+                                <smss-input
+                                    type="password"
+                                    name="userConfirmPassword"
+                                    placeholder="Confirm Password"
+                                    required
+                                    ng-model="login.registration.userConfirmPassword"
+                                >
+                                </smss-input>
+                            </content>
+                            <description class="smss-color--error">
+                                <div
+                                    ng-messages="signupForm.userConfirmPassword.$error"
+                                >
+                                    <span
+                                        ng-show="signupForm.userConfirmPassword.$dirty && login.registration.userSignUPPassword !== login.registration.userConfirmPassword"
+                                    >
+                                        Passwords do not match!
+                                    </span>
+                                </div>
+                            </description>
+                        </smss-field>
+                        <div class="smss-action">
+                            <smss-btn
+                                class="smss-btn--text"
+                                ng-click="login.activeTab = 1"
+                                type="button"
+                            >
+                                Cancel
+                            </smss-btn>
+                            <smss-btn
+                                type="submit"
+                                ng-disabled="(signupForm.userSignUPName.$invalid || signupForm.userSignUPPassword.$invalid
+                                ||signupForm.userConfirmPassword.$invalid || signupForm.userSignUPEmail.$invalid)"
+                                >Register
+                            </smss-btn>
+                        </div>
+                    </form>
+                </div>
+                <div ng-show="login.activeTab === 1" class="login__content">
+                    <div class="login__form">
+                        <form
+                            name="loginForm"
+                            ng-show="login.loginMethod.native"
+                            ng-submit="login.userLogin()"
+                        >
+                            <smss-field>
+                                <label>
+                                    Username:<span class="smss-color--error"
+                                        >*</span
+                                    >
+                                </label>
+                                <content>
+                                    <smss-input
+                                        type="text"
+                                        name="userLoginName"
+                                        placeholder="Username"
+                                        required
+                                        ng-model="login.registration.userLoginName"
+                                    >
+                                    </smss-input>
+                                </content>
+                                <description class="smss-color--error">
+                                    <div
+                                        ng-messages="loginForm.userLoginName.$error"
+                                    >
+                                        <span
+                                            ng-message="required"
+                                            ng-show="loginForm.userLoginName.$dirty"
+                                            >Username is required
+                                        </span>
+                                    </div>
+                                </description>
+                            </smss-field>
+                            <smss-field>
+                                <label>
+                                    Password:<span class="smss-color--error"
+                                        >*</span
+                                    >
+                                </label>
+                                <content>
+                                    <smss-input
+                                        type="password"
+                                        name="userLoginPassword"
+                                        placeholder="Password"
+                                        required
+                                        ng-model="login.registration.userLoginPassword"
+                                    >
+                                    </smss-input>
+                                </content>
+                                <description class="smss-color--error">
+                                    <div
+                                        class="smss-left"
+                                        ng-messages="loginForm.userLoginPassword.$error"
+                                    >
+                                        <span
+                                            ng-show="loginForm.userLoginPassword.$dirty"
+                                            ng-message="required"
+                                            >Password is required
+                                        </span>
+                                    </div>
+                                    <a
+                                        class="smss-right"
+                                        ng-click="login.openOverlay()"
+                                        >Forgot Password?</a
+                                    >
+                                </description>
+                            </smss-field>
+
+                            <div class="smss-action">
+                                <smss-btn
+                                    class="smss-btn--block"
+                                    type="submit"
+                                    ng-disabled="(!login.registration.userLoginName || !login.registration.userLoginName)"
+                                >
+                                    Log In
+                                </smss-btn>
+                            </div>
+                        </form>
+                    </div>
+                    <div class="login__spacer" ng-show="login.isMultiLogin()">
+                        <div class="login__spacer__text">or</div>
+                    </div>
+                    <div class="login__choices">
+                        <div
+                            ng-repeat="(provider, show) in login.loginMethod"
+                            ng-if="show && provider !== 'native' && provider !== 'registration'"
+                            class="smss-block login__block"
+                            ng-click="login.userLoginAuth(provider)"
+                        >
+                            <div class="smss-block__image">
+                                <img
+                                    ng-src="./legacy/core/resources/img/{{provider}}.png"
+                                    onerror="this.src = './legacy/core/resources/img/other.png'"
+                                />
+                            </div>
+                            <div class="smss-block__text">
+                                <span
+                                    >{{login.nameMapping[provider] ||
+                                    provider}}</span
+                                >
+                            </div>
+                        </div>
+                        <div class="login__actions">
+                            <div
+                                class="login__register"
+                                ng-show="login.activeTab === 1 && login.userRegistration && login.loginMethod.native"
+                            >
+                                Don't have an account?
+                                <span
+                                    class="login__register__link"
+                                    ng-click="login.activeTab = 0"
+                                    >Register Now</span
+                                >
+                            </div>
+                            <div
+                                class="login__box__left__content__bottom"
+                                ng-show="login.activeTab === 1"
+                                ng-click="login.openLoginInfoOverlay()"
+                            >
+                                Why log in?
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="login__box__right">
+            <div
+                ng-if="login.theme.loginCenterHTML"
+                dynamic="login.theme.loginCenterHTML"
+            ></div>
+            <div
+                ng-if="!login.theme.loginCenterHTML"
+                class="login__box__right__content"
+            >
+                <div class="login__box__right__content__video">
+                    <iframe
+                        class="login__box__right__content__video__youtube"
+                        id="walkthroughVideo"
+                        frameborder="0"
+                        allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture"
+                        allowfullscreen
+                        ng-src="{{login.currentWalkthroughSection.link}}"
+                    >
+                    </iframe>
+                </div>
+                <div class="login__box__right__content__header">
+                    {{login.currentWalkthroughSection.header}}
+                </div>
+                <div class="login__box__right__content__description">
+                    {{login.currentWalkthroughSection.description}}
+                </div>
+                <div class="login__box__right__content__carousel">
+                    <span
+                        class="login__box__right__content__carousel__dot"
+                        ng-click="login.updateWalkthroughContent('overview')"
+                        ng-class="{'login__box__right__content__carousel__dot--active': login.currentWalkthroughSection.title === 'overview'}"
+                    >
+                    </span>
+                    <span
+                        class="login__box__right__content__carousel__dot"
+                        ng-click="login.updateWalkthroughContent('dashboard')"
+                        ng-class="{'login__box__right__content__carousel__dot--active': login.currentWalkthroughSection.title === 'dashboard'}"
+                    >
+                    </span>
+                    <span
+                        class="login__box__right__content__carousel__dot"
+                        ng-click="login.updateWalkthroughContent('r')"
+                        ng-class="{'login__box__right__content__carousel__dot--active': login.currentWalkthroughSection.title === 'r'}"
+                    >
+                    </span>
+                    <span
+                        class="login__box__right__content__carousel__dot"
+                        ng-click="login.updateWalkthroughContent('python')"
+                        ng-class="{'login__box__right__content__carousel__dot--active': login.currentWalkthroughSection.title === 'python'}"
+                    >
+                    </span>
+                    <span
+                        class="login__box__right__content__carousel__dot"
+                        ng-click="login.updateWalkthroughContent('tableau')"
+                        ng-class="{'login__box__right__content__carousel__dot--active': login.currentWalkthroughSection.title === 'tableau'}"
+                    >
+                    </span>
+                    <span
+                        class="login__box__right__content__carousel__dot"
+                        ng-click="login.updateWalkthroughContent('git')"
+                        ng-class="{'login__box__right__content__carousel__dot--active': login.currentWalkthroughSection.title === 'git'}"
+                    >
+                    </span>
+                </div>
+                <div
+                    class="login__box__right__content__control-left"
+                    ng-if="login.walkthroughIdx !== 0"
+                    ng-click="login.updateWalkthroughContent('left')"
+                >
+                    <i class="fa fa-chevron-left"></i>
+                </div>
+                <div
+                    class="login__box__right__content__control-right"
+                    ng-if="login.walkthroughIdx !== login.walkthroughContent.length - 1"
+                    ng-click="login.updateWalkthroughContent('right')"
+                >
+                    <i class="fa fa-chevron-right"></i>
+                </div>
+                <div
+                    ng-if="login.version"
+                    class="login__box__right__content__version"
+                    title="Release Date: {{login.version.date}}"
+                >
+                    <span class="smss-small">{{login.version.version}}</span>
+                </div>
+            </div>
+        </div>
+    </div>
+    <smss-overlay open="login.overlay.open" size="sm">
+        <smss-overlay-header>Forgot your password?</smss-overlay-header>
+        <smss-overlay-body>
+            Please contact your administrator to reset password.
+        </smss-overlay-body>
+        <smss-overlay-footer>
+            <smss-btn ng-click="login.closeOverlay()"> Ok </smss-btn>
+        </smss-overlay-footer>
+    </smss-overlay>
+    <smss-overlay open="login.infoOverlay" size="sm">
+        <smss-overlay-header>Why login?</smss-overlay-header>
+        <smss-overlay-body>
+            SEMOSS creates a private environment for every user and needs a way
+            to identify the user.
+        </smss-overlay-body>
+        <smss-overlay-footer>
+            <smss-btn ng-click="login.closeLoginInfoOverlay()"> Ok </smss-btn>
+        </smss-overlay-footer>
+    </smss-overlay>
+</div>

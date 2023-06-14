@@ -1,0 +1,22 @@
+<div class="grid-delta-search">
+    <smss-search
+        placeholder="Search..."
+        model="query"
+        change="search()"
+        keyup="nextIfEnter(event)"
+        clear="clear()"
+    >
+    </smss-search>
+    <div class="grid-delta-search-navigator" ng-if="query">
+        <span ng-show="searchResults.total > 0">
+            {{searchResults.current + 1}}/{{searchResults.total}} |
+        </span>
+        <span ng-show="searchResults.total === 0"> 0/0 | </span>
+        <smss-btn class="smss-btn--icon" ng-click="prev()">
+            <i class="fa fa-chevron-up"></i>
+        </smss-btn>
+        <smss-btn class="smss-btn--icon" ng-click="next()">
+            <i class="fa fa-chevron-down"></i>
+        </smss-btn>
+    </div>
+</div>

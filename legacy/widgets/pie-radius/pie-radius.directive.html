@@ -1,0 +1,23 @@
+<smss-scroll static-x="true">
+    <p class="smss-small">Customize the shape and style of the bars.</p>
+
+    <smss-field>
+        <label> Set Pie Radius (%): </label>
+        <content>
+            <smss-slider
+                model="pieRadius.outerRadius"
+                min="0"
+                max="100"
+                numerical
+            >
+            </smss-slider>
+        </content>
+    </smss-field>
+
+    <div class="smss-action">
+        <smss-btn class="smss-btn--text" ng-click="pieRadius.execute(false)">
+            Reset
+        </smss-btn>
+        <smss-btn ng-click="pieRadius.execute(true)"> Execute </smss-btn>
+    </div>
+</smss-scroll>

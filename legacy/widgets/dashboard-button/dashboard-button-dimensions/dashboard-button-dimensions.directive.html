@@ -1,0 +1,351 @@
+<smss-scroll static-x="true" class="dashboard-button-dimensions">
+    <smss-tab-group>
+        <smss-tab
+            ng-click="dashboardButtonDimensions.page = 'Button'"
+            ng-class="{'smss-tab--selected': dashboardButtonDimensions.page === 'Button'}"
+        >
+            Edit Button
+        </smss-tab>
+        <smss-tab
+            ng-click="dashboardButtonDimensions.page = 'Style'"
+            ng-class="{'smss-tab--selected': dashboardButtonDimensions.page === 'Style'}"
+        >
+            Edit Style
+        </smss-tab>
+    </smss-tab-group>
+    <div
+        ng-show="dashboardButtonDimensions.page === 'Button'"
+        class="smss-spacing"
+    >
+        <smss-field>
+            <label>Button Label:</label>
+            <content>
+                <smss-input
+                    ng-model="dashboardButtonDimensions.options.label"
+                ></smss-input>
+            </content>
+        </smss-field>
+        <smss-field>
+            <label>Click Event:</label>
+            <content>
+                <smss-dropdown
+                    model="dashboardButtonDimensions.options.event"
+                    options="dashboardButtonDimensions.eventOptions"
+                    change="dashboardButtonDimensions.eventUpdated()"
+                >
+                </smss-dropdown>
+            </content>
+        </smss-field>
+        <!-- Export to File -->
+        <div
+            ng-if="dashboardButtonDimensions.options.event === 'Export to File'"
+        >
+            <smss-field>
+                <label>Select File Type:</label>
+                <content>
+                    <smss-dropdown
+                        model="dashboardButtonDimensions.options.eventOptions.file"
+                        options="dashboardButtonDimensions.fileOptions"
+                        change="dashboardButtonDimensions.getInitialScript();"
+                    ></smss-dropdown>
+                </content>
+            </smss-field>
+            <smss-field
+                ng-if="dashboardButtonDimensions.options.eventOptions.file && dashboardButtonDimensions.options.eventOptions.file === 'Text'"
+            >
+                <label>Enter Delimiter:</label>
+                <content>
+                    <smss-input
+                        ng-model="dashboardButtonDimensions.options.eventOptions.delimiter"
+                    ></smss-input>
+                </content>
+            </smss-field>
+        </div>
+        <!-- Export Dashboard -->
+        <div
+            ng-if="dashboardButtonDimensions.options.event === 'Export Dashboard'"
+        >
+            <smss-field>
+                <label>Select type:</label>
+                <content>
+                    <smss-dropdown
+                        model="dashboardButtonDimensions.options.eventOptions.dashboard"
+                        options="dashboardButtonDimensions.dashboardOptions"
+                        change="dashboardButtonDimensions.getInitialScript();"
+                    ></smss-dropdown>
+                </content>
+            </smss-field>
+        </div>
+        <!-- Export Image -->
+        <div ng-if="dashboardButtonDimensions.options.event === 'Export Image'">
+            <smss-field>
+                <label>Export Type:</label>
+                <content>
+                    <smss-radio
+                        model="dashboardButtonDimensions.options.eventOptions.imageType"
+                        value="Sheet"
+                        >Sheet</smss-radio
+                    >
+                    <smss-radio
+                        model="dashboardButtonDimensions.options.eventOptions.imageType"
+                        value="Panel"
+                        >Panel</smss-radio
+                    >
+                </content>
+            </smss-field>
+            <smss-field
+                ng-if="dashboardButtonDimensions.options.eventOptions.imageType === 'Sheet'"
+            >
+                <label>Select Sheet:</label>
+                <content>
+                    <smss-dropdown
+                        model="dashboardButtonDimensions.options.eventOptions.imageId"
+                        options="dashboardButtonDimensions.image.sheetOptions"
+                        value="sheetId"
+                        display="sheetLabel"
+                    ></smss-dropdown>
+                </content>
+            </smss-field>
+            <smss-field
+                ng-if="dashboardButtonDimensions.options.eventOptions.imageType === 'Panel'"
+            >
+                <label>Select Panel:</label>
+                <content>
+                    <smss-dropdown
+                        model="dashboardButtonDimensions.options.eventOptions.imageId"
+                        options="dashboardButtonDimensions.image.panelOptions"
+                        mouseover="dashboardButtonDimensions.mouseoverPanel(option)"
+                        mouseleave="dashboardButtonDimensions.mouseleavePanel(option)"
+                    ></smss-dropdown>
+                </content>
+            </smss-field>
+        </div>
+        <!-- Open URL -->
+        <div ng-if="dashboardButtonDimensions.options.event === 'Open URL'">
+            <smss-field>
+                <label>Enter URL:</label>
+                <content>
+                    <smss-input
+                        ng-model="dashboardButtonDimensions.options.eventOptions.url"
+                    ></smss-input>
+                </content>
+            </smss-field>
+        </div>
+        <!-- Open Insight -->
+        <div ng-if="dashboardButtonDimensions.options.event === 'Open Insight'">
+            <smss-field>
+                <label>Select Database:</label>
+                <content>
+                    <smss-dropdown
+                        model="dashboardButtonDimensions.options.eventOptions.appId"
+                        options="dashboardButtonDimensions.appOptions"
+                        change="dashboardButtonDimensions.getInsights()"
+                        display="project_name"
+                        value="project_id"
+                    >
+                    </smss-dropdown>
+                </content>
+            </smss-field>
+            <smss-field>
+                <label>Select Insight:</label>
+                <content>
+                    <smss-dropdown
+                        model="dashboardButtonDimensions.options.eventOptions.insightId"
+                        options="dashboardButtonDimensions.insightOptions"
+                        display="name"
+                        value="app_insight_id"
+                    >
+                    </smss-dropdown>
+                </content>
+            </smss-field>
+        </div>
+        <!-- Custom Script -->
+        <smss-field
+            ng-if="dashboardButtonDimensions.options.event === 'Custom Script'"
+        >
+            <label>Custom Script:</label>
+            <content>
+                <smss-textarea
+                    ng-model="dashboardButtonDimensions.options.eventOptions.script"
+                ></smss-textarea>
+            </content>
+        </smss-field>
+        <div
+            class="smss-spacing"
+            ng-if="dashboardButtonDimensions.options.event !== 'Custom Script'"
+        >
+            <smss-checkbox model="dashboardButtonDimensions.showScript"
+                >Show Script</smss-checkbox
+            >
+        </div>
+        <smss-field
+            ng-if="dashboardButtonDimensions.showScript && dashboardButtonDimensions.options.event !== 'Custom Script'"
+        >
+            <label>Script:</label>
+            <content>
+                <smss-textarea
+                    ng-model="dashboardButtonDimensions.options.eventScript"
+                ></smss-textarea>
+            </content>
+        </smss-field>
+    </div>
+
+    <!-- Style -->
+    <div
+        ng-show="dashboardButtonDimensions.page === 'Style'"
+        class="smss-spacing"
+    >
+        <smss-field>
+            <label>Background Color:</label>
+            <content>
+                <smss-color-picker
+                    model="dashboardButtonDimensions.options.style.background"
+                ></smss-color-picker>
+            </content>
+        </smss-field>
+        <div class="smss-collapsible-group">
+            <smss-collapsible>
+                <smss-collapsible-header>
+                    Border Style
+                </smss-collapsible-header>
+                <smss-collapsible-content>
+                    <smss-field>
+                        <label>Style:</label>
+                        <content>
+                            <smss-dropdown
+                                model="dashboardButtonDimensions.options.style.border.style"
+                                options="dashboardButtonDimensions.borderStyles"
+                            ></smss-dropdown>
+                        </content>
+                    </smss-field>
+                    <smss-field>
+                        <label>Width:</label>
+                        <content
+                            class="dashboard-button-dimensions__style__inline"
+                        >
+                            <smss-input
+                                ng-model="dashboardButtonDimensions.options.style.border.width.size"
+                                ng-disabled="dashboardButtonDimensions.options.style.border.style === 'none'"
+                                class="dashboard-button-dimensions__style__inline__ele"
+                            ></smss-input>
+                            <smss-dropdown
+                                model="dashboardButtonDimensions.options.style.border.width.unit"
+                                options="dashboardButtonDimensions.borderUnits"
+                                ng-disabled="dashboardButtonDimensions.options.style.border.style === 'none'"
+                                class="dashboard-button-dimensions__style__inline__ele"
+                            ></smss-dropdown>
+                        </content>
+                    </smss-field>
+                    <smss-field>
+                        <label>Color:</label>
+                        <content>
+                            <smss-color-picker
+                                model="dashboardButtonDimensions.options.style.border.color"
+                                ng-disabled="dashboardButtonDimensions.options.style.border.style === 'none'"
+                            ></smss-color-picker>
+                        </content>
+                    </smss-field>
+                </smss-collapsible-content>
+            </smss-collapsible>
+            <smss-collapsible>
+                <smss-collapsible-header> Font Style </smss-collapsible-header>
+                <smss-collapsible-content>
+                    <smss-field>
+                        <label>Font Color:</label>
+                        <content>
+                            <smss-color-picker
+                                model="dashboardButtonDimensions.options.style.color"
+                            ></smss-color-picker>
+                        </content>
+                    </smss-field>
+                    <smss-field>
+                        <label>Font Size:</label>
+                        <content
+                            class="dashboard-button-dimensions__style__inline"
+                        >
+                            <smss-input
+                                ng-model="dashboardButtonDimensions.options.style.fontSize.size"
+                                type="number"
+                                class="dashboard-button-dimensions__style__inline__ele"
+                            ></smss-input>
+                            <smss-dropdown
+                                model="dashboardButtonDimensions.options.style.fontSize.unit"
+                                options="dashboardButtonDimensions.cssUnits"
+                                class="dashboard-button-dimensions__style__inline__ele"
+                            ></smss-dropdown>
+                        </content>
+                    </smss-field>
+                </smss-collapsible-content>
+            </smss-collapsible>
+            <smss-collapsible>
+                <smss-collapsible-header> Size </smss-collapsible-header>
+                <smss-collapsible-content>
+                    <smss-field>
+                        <label>Height:</label>
+                        <content
+                            class="dashboard-button-dimensions__style__inline"
+                        >
+                            <smss-input
+                                ng-model="dashboardButtonDimensions.options.style.height.size"
+                                type="number"
+                                class="dashboard-button-dimensions__style__inline__ele"
+                            ></smss-input>
+                            <smss-dropdown
+                                model="dashboardButtonDimensions.options.style.height.unit"
+                                options="dashboardButtonDimensions.cssUnits"
+                                class="dashboard-button-dimensions__style__inline__ele"
+                            ></smss-dropdown>
+                        </content>
+                    </smss-field>
+                    <smss-field>
+                        <label>Width:</label>
+                        <content
+                            class="dashboard-button-dimensions__style__inline"
+                        >
+                            <smss-input
+                                ng-model="dashboardButtonDimensions.options.style.width.size"
+                                type="number"
+                                class="dashboard-button-dimensions__style__inline__ele"
+                            ></smss-input>
+                            <smss-dropdown
+                                model="dashboardButtonDimensions.options.style.width.unit"
+                                options="dashboardButtonDimensions.cssUnits"
+                                class="dashboard-button-dimensions__style__inline__ele"
+                            ></smss-dropdown>
+                        </content>
+                    </smss-field>
+                </smss-collapsible-content>
+            </smss-collapsible>
+        </div>
+        <smss-collapsible>
+            <smss-collapsible-header> Alignment </smss-collapsible-header>
+            <smss-collapsible-content>
+                <smss-field>
+                    <label>Horizontal:</label>
+                    <content>
+                        <smss-dropdown
+                            model="dashboardButtonDimensions.options.style.alignment.horizontal"
+                            options="['left', 'center', 'right']"
+                        ></smss-dropdown>
+                    </content>
+                </smss-field>
+            </smss-collapsible-content>
+        </smss-collapsible>
+    </div>
+
+    <div class="smss-action">
+        <smss-btn
+            class="smss-btn--text"
+            ng-if="dashboardButtonDimensions.page === 'Style'"
+            ng-click="dashboardButtonDimensions.resetStyle();"
+        >
+            Reset Style
+        </smss-btn>
+        <smss-btn
+            ng-click="dashboardButtonDimensions.createButton()"
+            ng-disabled="dashboardButtonDimensions.disableButton()"
+        >
+            Update
+        </smss-btn>
+    </div>
+</smss-scroll>

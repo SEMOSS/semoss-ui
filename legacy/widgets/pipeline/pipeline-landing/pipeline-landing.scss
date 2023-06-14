@@ -1,0 +1,24 @@
+@import '~theme';
+
+.pipeline-landing {
+    &__selection {
+        height: 100%;
+        width: 100%;
+    }
+
+    &__accordion {
+        height: 100%;
+        width: 100%;
+
+        &__wrapper {
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+            width: 100%;
+
+            &__section {
+                flex: 1;
+            }
+        }
+    }
+}

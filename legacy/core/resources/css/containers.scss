@@ -1,0 +1,126 @@
+@import '~theme';
+
+.drop-zone {
+    @include transition();
+
+    &__button {
+        position: absolute;
+        top: 0;
+        right: 0;
+        z-index: 1;
+    }
+
+    &__container {
+        position: relative;
+        border: 2px dashed get-border-color('default');
+        height: 150px;
+        width: 100%;
+        overflow-x: hidden;
+        overflow-y: auto;
+        padding: get-spacing('lg', 'rem');
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        justify-content: center;
+        border-radius: $border-radius;
+        background: get-background-color('default');
+
+        &--upload {
+            border: 1px solid get-border-color('default');
+        }
+    }
+
+    &--enter {
+        border: 2px dashed get-border-color('default');
+
+        & .drop-zone__container {
+            border-color: get-border-color('primary');
+        }
+    }
+
+    &--exit {
+        border: none;
+    }
+
+    &--upload {
+        border: 1px solid get-border-color('default');
+
+        & .drop-zone__container {
+            border: 1px solid get-border-color('default');
+        }
+    }
+
+    &--borderless {
+        border: none !important;
+    }
+
+    &__message {
+        width: 100%;
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        text-align: center;
+
+        &__text {
+            width: 100%;
+            font-size: get-font-size('body-regular', 'rem');
+            color: get-text-color('low-emphasis');
+            margin-bottom: get-spacing('md', 'rem');
+            @include text-overflow();
+        }
+
+        &__icon {
+            font-size: get-height('icon', 'rem');
+            color: get-text-color('light');
+            margin-bottom: get-spacing('xs', 'rem');
+        }
+
+        & .drop-zone__message__text,
+        .drop-zone__message__icon,
+        .smss-btn {
+            flex-shrink: 0;
+        }
+    }
+
+    &__file {
+        height: 100px;
+        width: 100px;
+        margin: get-spacing('sm', 'rem');
+        padding: get-spacing('xs', 'rem');
+        overflow: hidden;
+        background: get-background-color('default');
+        text-align: center;
+
+        &__text {
+            width: 100%;
+            font-size: get-font-size('body-regular', 'rem');
+            @include text-overflow();
+            margin-bottom: get-spacing('md', 'rem');
+        }
+
+        &__icon {
+            font-size: get-height('icon', 'rem');
+            color: get-text-color('medium-emphasis');
+            margin-bottom: get-spacing('xs', 'rem');
+        }
+
+        &--single {
+            height: 100%;
+            width: 100%;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+
+            & .drop-zone__file__text,
+            .drop-zone__file__icon,
+            .smss-btn {
+                flex-shrink: 0;
+            }
+        }
+    }
+}

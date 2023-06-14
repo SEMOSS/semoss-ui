@@ -1,0 +1,70 @@
+<div
+    class="smss-multiselect"
+    ng-class="{'smss-multiselect--opened': smssMultiselect.open, 'smss-multiselect--nowrap': smssMultiselect.nowrap}"
+    id="smssMultiselectEle"
+    tabindex="{{smssMultiselect.disabled ? -1 : 0}}"
+>
+    <div
+        class="smss-multiselect__popover"
+        ng-disabled="smssMultiselect.disabled"
+        tabindex="-1"
+        smss-popover
+    >
+        <div
+            class="smss-multiselect__popover__trigger"
+            id="smss-multiselect__trigger"
+            ng-class="{'smss-multiselect__popover__trigger--filled': smssMultiselect.model.length > 0}"
+        >
+            <div
+                ng-repeat="tag in smssMultiselect.model track by $index"
+                class="smss-multiselect__popover__trigger__tag"
+            >
+                <smss-tag
+                    label="smssMultiselect.setView(tag)"
+                    on-close="smssMultiselect.changeMultiselect(tag)"
+                    click="smssMultiselect.toggleMultiselectList()"
+                    show-close="true"
+                    ng-disabled="smssMultiselect.disabled"
+                    class="smss-tag--{{smssMultiselect.tags.mapping[tag]}}"
+                ></smss-tag>
+            </div>
+            <smss-input
+                class="smss-multiselect__popover__trigger__input"
+                id="smss-multiselect__input"
+                placeholder="{{smssMultiselect.model.length === 0 ? smssMultiselect.placeholder : ''}}"
+                ng-model="smssMultiselect.searchTerm"
+                ng-change="smssMultiselect.searchMultiselect()"
+                ng-keydown="smssMultiselect.searchMultiselectKeydown($event)"
+                autocomplete="off"
+            >
+            </smss-input>
+        </div>
+        <smss-popover-content
+            class="smss-multiselect__popover__list"
+            show="smssMultiselect.showMultiselect(contentEle);"
+            hide="smssMultiselect.hideMultiselect(contentEle)"
+            model="smssMultiselect.open"
+            position="['SW', 'SE', 'NW','NE']"
+            closeable="false"
+            width="auto"
+            spacing="0"
+        >
+            <div class="smss-multiselect__popover__list__scroll">
+                <smss-loading model="smssMultiselect.loading" />
+                <smss-checklist
+                    model="smssMultiselect.model"
+                    options="smssMultiselect.filtered"
+                    change="smssMultiselect.changeMultiselect({model, delta, opt}, false)"
+                    mouseover="smssMultiselect.mouseover({option})"
+                    mouseleave="smssMultiselect.mouseleave({option})"
+                    multiple
+                    quickselect
+                >
+                    <smss-checklist-label
+                        >{{smssMultiselect.setView($parent.opt)}}</smss-checklist-label
+                    >
+                </smss-checklist>
+            </div>
+        </smss-popover-content>
+    </div>
+</div>

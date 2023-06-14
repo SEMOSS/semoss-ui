@@ -1,0 +1,110 @@
+<smss-overlay
+    class="home-intro"
+    open="homeIntro.open"
+    exit="homeIntro.closeIntro()"
+    size="lg"
+    ng-if="!homeIntro.homeIntroObj.homeIntroHtml"
+>
+    <smss-overlay-header>
+        <div class="home-intro__header">
+            <h1>Welcome to {{homeIntro.name}}</h1>
+            <h5>
+                Accelerate your enterprise from business intelligence to
+                intelligent business.
+            </h5>
+            <div class="home-intro__header__actions">
+                <smss-btn ng-click="homeIntro.action('insight')"
+                    >Create new insight</smss-btn
+                >
+                <smss-btn
+                    class="smss-btn--outline home-intro__header__actions__btn"
+                    ng-click="homeIntro.action('import')"
+                    >Upload data catalog</smss-btn
+                >
+                <smss-checkbox
+                    model="homeIntro.hideIntro"
+                    change="homeIntro.toggleShowIntro()"
+                    >Don't show again</smss-checkbox
+                >
+            </div>
+        </div>
+    </smss-overlay-header>
+    <smss-overlay-body>
+        <div class="home-intro__content">
+            <h3>Getting started</h3>
+            <div class="home-intro__content__cards">
+                <div
+                    class="home-intro__content__cards__card"
+                    ng-repeat="card in homeIntro.infoCards track by $index"
+                    ng-click="homeIntro.action(card.click)"
+                    ng-class="{'home-intro__content__cards__card--blue': $first, 'home-intro__content__cards__card--purple': $last}"
+                >
+                    <!-- ng-class="{'home-intro__content__cards__card--teal': $first, 'home-intro__content__cards__card--blue': $index === 1, 'home-intro__content__cards__card--purple': $index === 2, 'home-intro__content__cards__card--orange': $last}">-->
+                    <div
+                        ng-class="{'home-intro__content__cards__card__image': card.image !== 'homeIntroImage'}"
+                    >
+                        <div
+                            ng-if="card.image === 'homeIntroImage' && !homeIntro.theme.isHomeIntroImageUrl"
+                            dynamic="homeIntro.theme.homeIntroImage"
+                        ></div>
+
+                        <img
+                            ng-src="{{homeIntro.theme.homeIntroImage}}"
+                            ng-if="card.image === 'homeIntroImage' && homeIntro.theme.isHomeIntroImageUrl"
+                        />
+
+                        <i
+                            ng-if="card.image !== 'homeIntroImage' && card.image !== 'logo'"
+                            class="fa fa-{{card.image}}"
+                        ></i>
+
+                        <svg
+                            ng-if="card.image === 'logo'"
+                            class="home__topbar__logo__svg"
+                            xmlns="http://www.w3.org/2000/svg"
+                            viewBox="0 0 389.91 435.38"
+                        >
+                            <path
+                                class="cls-1"
+                                d="M269.59,350.44v75.33H311.2V350.44a85.35,85.35,0,1,0-41.61,0Z"
+                                transform="translate(-205.05 -182.31)"
+                            />
+                            <path
+                                class="cls-1"
+                                d="M407.33,439.16l-53.59,36a85.33,85.33,0,1,0,19.58,37l57.39-38.61Z"
+                                transform="translate(-205.05 -182.31)"
+                            />
+                            <path
+                                class="cls-1"
+                                d="M509.6,313.29a85,85,0,0,0-59,23.74l-58.91-35.49-21.47,35.64,58.2,35.07a85.34,85.34,0,1,0,81.15-59Z"
+                                transform="translate(-205.05 -182.31)"
+                            />
+                        </svg>
+                        <!-- <img ng-src="card.image" alt=""> -->
+                    </div>
+                    <div class="home-intro__content__cards__card__content">
+                        <div
+                            class="home-intro__content__cards__card__content__top"
+                        >
+                            <h5
+                                class="home-intro__content__cards__card__content__top__title"
+                            >
+                                {{card.title}}
+                            </h5>
+                        </div>
+                        <div
+                            class="home-intro__content__cards__card__content__description"
+                        >
+                            {{card.description}}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </smss-overlay-body>
+</smss-overlay>
+
+<div
+    ng-if="homeIntro.homeIntroObj.homeIntroHtml"
+    dynamic="homeIntro.homeIntroObj.homeIntroHtml"
+></div>

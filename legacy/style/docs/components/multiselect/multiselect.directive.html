@@ -1,0 +1,36 @@
+<div>
+    <smss-field>
+        <label>Multiselect 1:</label>
+        <content>
+            <smss-multiselect
+                model="multiselect1.model"
+                options="multiselect1.options"
+                change="multiselect1.change({model, delta, value,searchTerm})"
+                placeholder="Search tags"
+            ></smss-multiselect>
+        </content>
+    </smss-field>
+    <smss-field>
+        <label>Multiselect 1 (disabled):</label>
+        <content>
+            <smss-multiselect
+                model="multiselect1.model"
+                options="multiselect1.options"
+                placeholder="Search tags"
+                ng-disabled="multiselect1.disabled"
+            ></smss-multiselect>
+        </content>
+    </smss-field>
+    <smss-field>
+        <label>Multiselect 2 (no wrap):</label>
+        <content>
+            <smss-multiselect
+                model="multiselect2.model"
+                value="display"
+                display="display"
+                options="multiselect2.options"
+                nowrap
+            ></smss-multiselect>
+        </content>
+    </smss-field>
+</div>

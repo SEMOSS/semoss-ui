@@ -1,0 +1,40 @@
+<smss-field>
+    <label>Source Database:</label>
+    <content>
+        <smss-dropdown
+            display="display"
+            value="value"
+            model="job.jobTypeTemplate.sourceApp"
+            options="allApps"
+        >
+        </smss-dropdown>
+    </content>
+</smss-field>
+
+<smss-field>
+    <label>Target Database:</label>
+    <content>
+        <smss-dropdown
+            display="display"
+            value="value"
+            model="job.jobTypeTemplate.targetApp"
+            options="allApps"
+        >
+        </smss-dropdown>
+    </content>
+</smss-field>
+
+<smss-field>
+    <label>Target Table:</label>
+    <content>
+        <smss-typeahead model="job.jobTypeTemplate.field" options="allFields">
+        </smss-typeahead>
+    </content>
+</smss-field>
+
+<smss-field>
+    <label>Query:</label>
+    <content>
+        <smss-textarea ng-model="job.jobTypeTemplate.query"></smss-textarea>
+    </content>
+</smss-field>

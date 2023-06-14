@@ -1,0 +1,75 @@
+<div>
+    <div class="smss-spacing">
+        <smss-btn>Default</smss-btn>
+        <smss-btn ng-disabled="btnDisabled">Default</smss-btn>
+    </div>
+    <div class="smss-spacing">
+        <smss-btn class="smss-btn--warn">Warn</smss-btn>
+        <smss-btn class="smss-btn--warn" ng-disabled="btnDisabled"
+            >Warn</smss-btn
+        >
+    </div>
+    <div class="smss-spacing">
+        <smss-btn class="smss-btn--error">Error</smss-btn>
+        <smss-btn class="smss-btn--error" ng-disabled="btnDisabled"
+            >Error</smss-btn
+        >
+    </div>
+    <div class="smss-spacing">
+        <smss-btn class="smss-btn--success">Success</smss-btn>
+        <smss-btn class="smss-btn--success" ng-disabled="btnDisabled"
+            >Success</smss-btn
+        >
+    </div>
+    <div class="smss-spacing">
+        <smss-btn class="smss-btn--text">Text</smss-btn>
+        <smss-btn class="smss-btn--text" ng-disabled="btnDisabled"
+            >Text</smss-btn
+        >
+        <smss-btn class="smss-btn--text"
+            ><i class="fa fa-trash-o"></i>Text with Icon</smss-btn
+        >
+        <smss-btn class="smss-btn--text" ng-disabled="btnDisabled"
+            ><i class="fa fa-trash-o"></i>Text with Icon</smss-btn
+        >
+    </div>
+    <div class="smss-spacing">
+        <smss-btn class="smss-btn--outline">Outlined</smss-btn>
+        <smss-btn class="smss-btn--outline" ng-disabled="btnDisabled"
+            >Outlined</smss-btn
+        >
+    </div>
+    <div class="smss-spacing">
+        <smss-btn class="smss-btn--icon"
+            ><i class="fa fa-trash-o"></i
+        ></smss-btn>
+        <smss-btn class="smss-btn--icon" ng-disabled="btnDisabled"
+            ><i class="fa fa-trash-o"></i
+        ></smss-btn>
+    </div>
+    <div class="smss-spacing" style="display: flex">
+        <div class="smss-btn-group" style="margin-right: 20px">
+            <smss-btn
+                ng-class="{'smss-btn--selected': selectedBtn == 'GRID'}"
+                ng-click="selectedBtn = 'GRID';"
+                ><i class="fa fa-th-large"></i
+            ></smss-btn>
+            <smss-btn
+                ng-class="{'smss-btn--selected': selectedBtn == 'LIST'}"
+                ng-click="selectedBtn = 'LIST';"
+                ><i class="fa fa-th-list"></i
+            ></smss-btn>
+        </div>
+        <div class="smss-btn-group">
+            <smss-btn ng-disabled="btnDisabled"
+                ><i class="fa fa-th-large"></i
+            ></smss-btn>
+            <smss-btn ng-disabled="btnDisabled"
+                ><i class="fa fa-th-list"></i
+            ></smss-btn>
+        </div>
+    </div>
+    <div class="smss-spacing">
+        <smss-btn class="smss-btn--block">Block</smss-btn>
+    </div>
+</div>

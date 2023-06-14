@@ -1,0 +1,97 @@
+@import '~theme';
+
+.color-by-value {
+    position: absolute;
+    top: 0;
+    left: $scroll-size;
+    bottom: 0;
+    right: $scroll-size;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+
+    &__applied {
+        &__scroll {
+            max-height: 100px;
+            overflow-y: auto;
+            overflow-x: hidden;
+        }
+        &__header {
+            width: 100px;
+        }
+    }
+
+    &__new {
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+        &__scroll {
+            max-height: 150px;
+            overflow-y: auto;
+            overflow-x: hidden;
+        }
+        &__content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow: auto;
+
+            &__full {
+                flex: 1;
+                overflow: hidden;
+                min-height: 200px;
+            }
+        }
+    }
+
+    &__collapsible {
+        &--flex {
+            flex: 1;
+            overflow: hidden;
+
+            & .smss-collapsible__content {
+                display: flex;
+                flex-direction: column;
+                height: 100%;
+
+                & smss-collapsible-content {
+                    display: flex;
+                    flex-direction: column;
+                    height: 100%;
+                }
+            }
+        }
+        &--borderless {
+            & .smss-collapsible__header {
+                border-top-color: transparent;
+            }
+        }
+    }
+
+    &__holder {
+        position: relative;
+        flex: 1;
+        height: 200px;
+    }
+
+    &__table {
+        background: get-background-color('default');
+    }
+
+    &__checklist {
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+
+        &__search {
+            border-bottom-right-radius: 0;
+            border-bottom-left-radius: 0;
+        }
+
+        &__content {
+            flex: 1;
+            overflow: hidden;
+        }
+    }
+}

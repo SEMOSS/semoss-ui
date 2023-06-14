@@ -1,0 +1,35 @@
+<!-- Request Users Overlay -->
+<smss-overlay
+    hide="requestDatabase.hideRequest();"
+    size="sm"
+    ng-if="requestDatabase.open"
+    open="requestDatabase.open"
+    exit="requestDatabase.open = false;"
+>
+    <smss-overlay-header>Request Access</smss-overlay-header>
+    <smss-overlay-body>
+        <smss-field>
+            <content class="request-database__new__temp">
+                <smss-dropdown
+                    model="requestDatabase.tempUser.permission"
+                    options="requestDatabase.permissions"
+                    display="display"
+                    searchable="false"
+                    placeholder="Select Role"
+                >
+                </smss-dropdown>
+            </content>
+        </smss-field>
+    </smss-overlay-body>
+    <smss-overlay-footer>
+        <smss-btn
+            ng-click="requestDatabase.hideRequest();"
+            class="smss-btn--text"
+            >Cancel</smss-btn
+        >
+        <smss-btn
+            ng-click="requestDatabase.requestAccess(); requestDatabase.hideRequest();"
+            >Submit</smss-btn
+        >
+    </smss-overlay-footer>
+</smss-overlay>

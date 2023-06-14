@@ -1,0 +1,30 @@
+<div id="sysSimContent">
+    <table width="100%" style="margin-left:-8px" class="table table-condensed">
+        <thead>
+        <tr>
+            <th colspan="4">
+                Similarity Category (%)
+            </th>
+        </tr>
+        </thead>
+        <tbody>
+        <tr ng-repeat="(key, category) in sysdupTools.similarityCategories track by $index">
+            <td width="4%">
+                <input type="checkbox" ng-model="category.checked"></input>
+            </td>
+            <td width="90%" class="sm-font">
+                {{::key | replaceUnderscores}}
+            </td>
+            <td width="5%">
+                <input type="number" ng-model="category.value" min="0" max="100"
+                       ng-disabled="!category.checked">
+                </input>
+            </td>
+        </tr>
+        </tbody>
+    </table>
+    <div class="btn btn-light" style="margin-left:25px" id="simRefreshBtn" ng-click="refresh()">
+        Refresh Heat Map
+    </div>
+    <div id="simBarCanvas"></div>
+</div>

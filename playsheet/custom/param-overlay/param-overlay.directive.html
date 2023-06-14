@@ -1,0 +1,90 @@
+<!-- Backdrop -->
+<div ng-click="paramOverlay.hideParamOverlay()" class="param-overlay-backdrop"></div>
+
+<!-- Panel -->
+<div class="param-overlay-wrapper modal-content">
+
+    <div class="param-overlay-loading-widget" id="param-overlay-loading-widget">
+        <div class="param-overlay-loading-wrapper">
+            <div>Loading Data...</div>
+            <div class="param-overlay-loading-container">
+                <div class="param-overlay-loading-bar"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Header -->
+    <div class="sm-padding border-bottom xl-font">
+        Select Parameter(s)
+    </div>
+
+    <!-- Body -->
+    <div class="sm-padding overflow-y-auto" style="height: calc(100% - 94px);">
+        <div class="row sm-margin full-height">
+            <div class="grid12 full-height" style="position:relative">
+                <div class="param-grid">
+                    <div class="grid6 param-grid-design"
+                         ng-repeat="opt in paramOverlay.paramOptions | toArray | orderBy: '$key' track by $index">
+                        <div class="dropdown-header param-selection-dropdown-header overflow-ellipsis" ng-init="opt.isCollapsed = false"
+                             ng-click="opt.isCollapsed = !opt.isCollapsed">
+                            <span class="pointer overflow-ellipsis font-family" title="{{opt.type}}">
+                                <i class="fa"
+                                ng-class="{'fa-caret-down': opt.isCollapsed === false, 'fa-caret-right': opt.isCollapsed === true}"></i>
+                                    <b>{{opt.type | replaceUnderscores | reduceStringLength: 20}} ({{opt.selectAmount}})</b>
+                            </span>
+                            <span class="pointer overflow-ellipsis font-family"
+                                  title="{{opt.selected | shortenAndReplaceUnderscores}}"
+                                  ng-show="opt.selected || opt.selected === 0">- {{opt.selected | shortenAndReplaceUnderscores}}
+                            </span>
+                        </div>
+
+                        <input type="text" placeholder="Filter"
+                               class="param-selection-text-input font-family ng-pristine ng-valid ng-touched sm-top-margin"
+                               ng-model="opt.filterInput"
+                               focus-input="opt.focusIsActive"
+                               ng-show="opt.isCollapsed === false"
+                               ng-focus="opt.focusIsActive = true"
+                               ng-blur="opt.focusIsActive = false">
+
+                        <div class="param-max-height infinite-scroll" ng-show="opt.isCollapsed === false">
+                            <div infinite-scroll="paramOverlay.loadMore()"
+                                 infinite-scroll-distance="0"
+                                 infinite-scroll-container="'.infinite-scroll'"
+                                 infinite-scroll-use-document-bottom="false"
+                                 infinite-scroll-immediate-check="false">
+                                <a ng-click="paramOverlay.registerSelectedParam(opt,uri)"
+                                   ng-repeat="uri in opt.list | filter:opt.filterInput | orderBy:'toString()' track by $index"
+                                   class="slider-row">
+                                    <span class="font-family" title="{{uri | shortenAndReplaceUnderscores}}">
+                                        {{uri | shortenAndReplaceUnderscores | reduceStringLength : 25}}
+                                    </span>
+                                    <i ng-show="paramOverlay.isSelected(opt.selected, uri)"
+                                       class="pull-right fa fa-check"></i>
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer & Buttons -->
+    <div class="full-width xs-padding border-top absolute bottom">
+        <button class="xxs-margin btn btn-green md-btn pull-left"
+             ng-click="paramOverlay.hideParamOverlay();" ng-hide="true">
+            Cancel
+        </button>
+
+        <button class="xxs-margin btn btn-green md-btn pull-right" ng-show="paramOverlay.showRunBtn()"
+                 ng-click="paramOverlay.runParams()" ng-disabled="paramOverlay.disableRun()">
+            Run
+        </button>
+
+        <button class="xxs-margin btn btn-green md-btn pull-right" ng-show="true"
+                ng-click="paramOverlay.hideParamOverlay()">
+            Run
+        </button>
+    </div>    
+
+</div>

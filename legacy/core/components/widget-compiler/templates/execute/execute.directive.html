@@ -1,0 +1,9 @@
+<div class="smss-action {{handle.view.attributes.container}}">
+    <smss-btn
+        ng-repeat="button in handle.model.defaultOptions"
+        ng-click="onButtonClick(button)"
+        class="{{handle.view.attributes[button]}}"
+    >
+        <span>{{button}}</span>
+    </smss-btn>
+</div>

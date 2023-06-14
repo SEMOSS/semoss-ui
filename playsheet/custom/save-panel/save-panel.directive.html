@@ -1,0 +1,140 @@
+<div class="widget-sidebar-pop-out">
+    <img align="left" width="70" height="70" class="sm-padding chart-type img-responsive"
+         ng-src="{{savePanel.srcLocation}}">
+    <div class="xs-padding">
+        <h4 class="modal-title border-bottom sm-vert-padding">Publish Visualization</h4>
+    </div>
+    <div class="sm-padding no-top-padding overflow-y-auto full-width save-panel-body">
+        <div class="form-group">
+            <br>
+
+            <div ng-if="savePanel.isDbInsight">
+                <label class="control-label">*Select a Database:</label>
+
+                <select class="ng-pristine form-control"
+                        ng-options="engine.name | replaceUnderscores for engine in savePanel.engines.list"
+                        ng-init="savePanel.engines.selected = savePanel.engines.list[0]"
+                        ng-change="savePanel.getPerspectivesForEngine(savePanel.engines.selected)"
+                        ng-model="savePanel.engines.selected"
+                        ng-disabled="!savePanel.fromCreate">
+                    <option value="">-- Select a Database --</option>
+                </select>
+            </div>
+
+            <div ng-if="!savePanel.isDbInsight">
+                <label class="control-label">*Enter a Database Name:</label>
+                <input class="form-control" type="text" ng-model="savePanel.newDbName" ng-change="savePanel.validateDbName()">
+
+                <p ng-show="!savePanel.validDbName && savePanel.invalidDbNameSpecialCharacters"
+                   class="label label-danger">Database Name Cannot Contain Special Characters</p>
+
+                <p ng-show="!savePanel.validDbName && savePanel.invalidDbNameAlreadyExists"
+                   class="label label-danger">Database Name Already Exists</p>
+
+            </div>
+
+            <div class="publishViz md-top-padding">
+                <label class="control-label">*Enter an Insight Title:</label>
+                <input class="form-control" type="text" ng-model="savePanel.newQuestionTitle"
+                       placeholder="e.g. How many movies were made in the year 2013?"
+                       ng-disabled="!savePanel.engines.selected">
+            </div>
+            <br>
+
+            <div class="panel-default panel-heading panel">
+                <b>
+                    <a data-toggle="collapse" class="pointer hide-a" data-parent="#accordion"
+                       data-target="#collapseOne" ng-click="showParameters = !showParameters">
+                        Select Filters
+                        <button class="glyphicon glyphicon-info-sign btn-xs pointer-cursor"
+                                title="Select concepts you want to be able to filter by."
+                                style="background-color: transparent; outline: none; border: none">
+                        </button>
+                        <i class="xs-top-padding sm-icon pull-right"
+                           ng-class="{'fa fa-chevron-right': !showParameters, 'fa fa-chevron-down': showParameters}"></i>
+                    </a>
+                </b>
+            </div>
+
+            <div id="collapseOne" class="panel-collapse" ng-show="showParameters">
+                <!--<label ng-show="savePanel.filtered" class="control-label"> Select Dynamic Filters: </label>
+                <button ng-show="savePanel.filtered" class="glyphicon glyphicon-info-sign btn-xs"
+                        popover-placement="right"
+                        popover="Create a dynamic filter in the new insight through a select menu."
+                        popover-trigger="focus"
+                        style="background-color: Transparent; outline: none; border: none">
+                </button>-->
+
+                <div class="publishViz-table accordion panel-body filter-overflow">
+                    <table ng-show="savePanel.filtered" class="table table-condensed table-striped md-top-margin">
+                        <thead>
+                            <tr>
+                                <th width="30%">Selected Item</th>
+                                <th width="30%">Filtered Values</th>
+                                <th width="30%" style="text-align: center;">Use Dynamic Filter</th>
+                            </tr>
+                        <thead>
+                        <tbody ng-repeat="header in savePanel.availableParameters.list track by $index"
+                               ng-show="header.ind">
+                            <tr ng-show="header.ind">
+                                <i class="fa pull-right pointer" ng-show="header.ind && !header.selected"
+                                   ng-click="toggledb=!toggledb"
+                                   ng-class="{'fa-chevron-down': toggledb, 'fa-chevron-up': !toggledb}"
+                                   title="View Filtered Values for {{header.title}}"></i>
+                                <td style="overflow: hidden;text-overflow: ellipsis;">{{header.title |
+                                    replaceUnderscores}}
+                                </td>
+                                <td style="overflow: hidden;text-align: center;">
+                                    <input ng-model="header.selected" ng-change="!header.selected" type="checkbox">
+                                </td>
+                            </tr>
+                            <!--Filter Options -->
+                            <tr ng-repeat="option in header.filteredValues track by $index"
+                                ng-show="!toggledb && !header.selected">
+                                <td style="border-top: none"></td>
+                                <td style="overflow: hidden;text-overflow: ellipsis; border-top: none;">{{option |
+                                    shortenValueFilter | replaceUnderscores}}
+                                </td>
+                                <td style="border-top: none"></td>
+                            </tr>
+                        </tbody>
+                    </table>
+
+                    <table ng-show="showParameters" class="table table-condensed table-striped">
+                        <thead>
+                        <tr>
+                            <th width="30%">Selected Item</th>
+                            <!--<th width="30%">Filtered Values</th>-->
+                            <th width="30%" style="text-align: center;">Use Dynamic Filter</th>
+                        </tr>
+                        <thead>
+
+                        <tbody ng-repeat="header in savePanel.availableParameters.list track by $index"
+                               ng-show="!header.ind">
+                        <tr ng-show="!header.ind">
+                            <td style="text-overflow: ellipsis;">{{header.title | replaceUnderscores}}</td>
+                            <!--<td style="text-overflow: ellipsis;">
+                                <span> {{header.selected ? 'None1' : 'None1'}} </span>
+                            </td>-->
+                            <td width="30%" style="text-align: center">
+                                <input ng-model="header.selected" ng-change="!header.selected" type="checkbox">
+                            </td>
+                        </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="border-top sm-padding absolute bottom full-width">
+        <button class="md-btn btn-light pull-left" ng-click="savePanel.cancel()">Cancel</button>
+        <button class="md-btn btn-blue pull-right" ng-show="!savePanel.fromCreate"
+                ng-disabled="savePanel.newQuestionTitle === ''"
+                ng-click="savePanel.saveViz('edit')">Save
+        </button>
+        <button class="md-btn btn-blue" style="margin-left: 27px;"
+                ng-disabled="savePanel.newQuestionTitle === '' || !(savePanel.isDbInsight || (savePanel.newDbName && savePanel.validDbName))"
+                ng-click="savePanel.saveViz('new')">Save As New
+        </button>
+    </div>
+</div>

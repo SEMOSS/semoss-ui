@@ -1,0 +1,19 @@
+[
+    {
+        "name": "Share / Export",
+        "widgets": [
+            "collaboration",
+            "embed-link",
+            "export-external",
+            "export-file",
+            "export-dashboard",
+            "export-jpeg",
+            "export-svg",
+            "export-pdf",
+            "send-email",
+            "share",
+            "write-to-database"
+        ],
+        "height": 100
+    }
+]

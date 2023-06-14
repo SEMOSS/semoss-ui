@@ -1,0 +1,48 @@
+@import '~theme';
+
+.traverse {
+    display: flex;
+    flex-direction: column;
+    position: absolute;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    overflow: hidden;
+
+    &__message {
+        height: get-height('default', 'rem');
+    }
+
+    &__container {
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+        position: relative;
+        overflow: hidden;
+
+        &__half {
+            position: relative;
+            flex: 1;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+
+            &__scroll {
+                flex: 1;
+                border: 1px solid get-border-color('default');
+
+                &__block {
+                    border-bottom: 1px solid get-border-color('default');
+                }
+            }
+        }
+
+        &__checklist {
+            flex: 1;
+            position: relative;
+            height: auto;
+            overflow: hidden;
+        }
+    }
+}

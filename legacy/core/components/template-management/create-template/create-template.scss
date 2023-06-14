@@ -1,0 +1,10 @@
+@import '~theme';
+
+.create-template {
+    &__drop {
+        position: relative;
+        flex: 1;
+        height: 200px;
+        width: 100%;
+    }
+}

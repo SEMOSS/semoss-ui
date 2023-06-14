@@ -1,0 +1,80 @@
+@import '~theme';
+
+.view-layout {
+    position: absolute;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+
+    &__search {
+        padding: $scroll-size;
+        padding-bottom: get-spacing('md', 'rem');
+    }
+
+    &__group-heading {
+        color: get-text-color('medium-emphasis');
+        margin-bottom: get-spacing('sm', 'rem');
+    }
+
+    &__list {
+        flex: 1;
+
+        &__content {
+            display: flex;
+            flex-wrap: wrap;
+            align-content: flex-start;
+            padding-bottom: get-spacing('sm', 'rem');
+        }
+    }
+
+    &__tile {
+        margin-right: get-spacing('sm', 'rem');
+        margin-bottom: get-spacing('sm', 'rem');
+        width: calc(25% - #{get-spacing('sm', 'rem')});
+
+        &__recommendation {
+            position: absolute;
+            right: get-spacing('xs', 'rem');
+            top: get-spacing('xs', 'rem');
+            z-index: 1;
+            font-size: get-font-size('body-regular', 'rem');
+        }
+
+        &__filler {
+            width: get-width('tile', 'em');
+            height: get-height('tile', 'em');
+        }
+
+        &--1col {
+            width: calc(100% - #{get-spacing('sm', 'rem')});
+        }
+
+        &--2col {
+            width: calc(50% - #{get-spacing('sm', 'rem')});
+        }
+
+        &--3col {
+            width: calc(33.33333% - #{get-spacing('sm', 'rem')});
+        }
+
+        &--4col {
+            width: calc(25% - #{get-spacing('sm', 'rem')});
+        }
+
+        &--5col {
+            width: calc(20% - #{get-spacing('sm', 'rem')});
+        }
+
+        &--6col {
+            width: calc(16.66666% - #{get-spacing('sm', 'rem')});
+        }
+
+        &--7col {
+            width: calc(14.28571% - #{get-spacing('sm', 'rem')});
+        }
+    }
+}

@@ -1,0 +1,88 @@
+<div class="pipeline-landing__selection">
+    <smss-accordion class="pipeline-landing__accordion" rotated resizable>
+        <smss-accordion-item
+            name="pipelineLanding.accordionSettings.first.name"
+            size="pipelineLanding.accordionSettings.first.size"
+        >
+            <div class="pipeline-landing__accordion__wrapper">
+                <smss-scroll
+                    static-x="true"
+                    class="pipeline-landing__accordion__wrapper__section"
+                >
+                    <div
+                        class="smss-block"
+                        ng-repeat="item in pipelineLanding.start track by $index"
+                        ng-class="{'smss-block--selected': item.id === pipelineLanding.accordionSettings.first.selected}"
+                        title="{{item.name}}: {{item.description}}"
+                        ng-click="pipelineLanding.searchLanding(item)"
+                    >
+                        <div class="smss-block__image">
+                            <img ng-src="{{item.icon}}" />
+                        </div>
+                        <div class="smss-block__text">
+                            <span>{{::item.name}}</span>
+                        </div>
+                    </div>
+                </smss-scroll>
+            </div>
+        </smss-accordion-item>
+        <smss-accordion-item
+            name="pipelineLanding.accordionSettings.second.name"
+            size="pipelineLanding.accordionSettings.second.size"
+        >
+            <div
+                class="pipeline-landing__accordion__wrapper"
+                ng-if="pipelineLanding.accordionSettings.first.selected !== 'pipeline-existing-insight'"
+                flow-name="pipelineLanding.fileData"
+                flow-init="{singleFile: true}"
+                flow-file-added="pipelineLanding.onFileDrop($file)"
+                flow-drop
+                ng-class="dropClass2"
+                flow-drag-enter="dropClass2='drop-zone--enter'"
+                flow-drag-leave="dropClass2=''"
+            >
+                <div class="smss-spacing">
+                    <smss-search
+                        placeholder="Search..."
+                        model="pipelineLanding.searched"
+                        change="pipelineLanding.searchLanding()"
+                        autofocus
+                    >
+                    </smss-search>
+                </div>
+                <smss-scroll
+                    static-x="true"
+                    class="pipeline-landing__accordion__wrapper__section"
+                >
+                    <div
+                        class="smss-block"
+                        ng-repeat="item in pipelineLanding.rendered"
+                        title="{{item.name}}: {{item.description}}"
+                        ng-click="pipelineLanding.selectLanding(item)"
+                    >
+                        <div class="smss-block__image">
+                            <img ng-src="{{item.icon}}" />
+                        </div>
+                        <div class="smss-block__text">
+                            <span>{{::item.name | replaceUnderscores}}</span>
+                        </div>
+                    </div>
+                    <div
+                        class="smss-caption--center"
+                        ng-if="pipelineLanding.rendered.length === 0"
+                    >
+                        No results, please try again.
+                    </div>
+                </smss-scroll>
+            </div>
+            <div class="pipeline-landing__accordion__wrapper">
+                <div
+                    class="pipeline-landing__accordion__wrapper__section"
+                    ng-if="pipelineLanding.accordionSettings.first.selected === 'pipeline-existing-insight'"
+                >
+                    <pipeline-existing-insight></pipeline-existing-insight>
+                </div>
+            </div>
+        </smss-accordion-item>
+    </smss-accordion>
+</div>

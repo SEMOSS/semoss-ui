@@ -1,0 +1,200 @@
+<div>
+    <!-- Map layer selection drop-down -->
+    <div class="dhmsm-map-base-layer">
+        <select ng-model="dhmsmdeploymenttools.selectedLayer.selected"
+                ng-change="dhmsmdeploymenttools.updateBaseLayer(dhmsmdeploymenttools.selectedLayer.selected)"
+                class="inline-select2 threequarter-width">
+            <option value="">Select Base Layer</option>
+            <option ng-repeat="(layerDisplay, layer) in dhmsmdeploymenttools.layers" value="{{layer}}">
+                {{layerDisplay}}
+            </option>
+        </select>
+    </div>
+
+    <!-- Report selection pane -->
+    <div class="dhmsm-tab-select">
+        <div class="deployment-map-title">
+            Analysis Tabs
+        </div>
+        <div class="deployment-map-buttons">
+            <div class="btn-group">
+                <label class="btn btn-light sm-btn" ng-model="viewSelection"
+                       ng-class="{toggled: viewSelection === 'System'}"
+                       ng-click="dhmsmdeploymenttools.changeView(viewSelectionSystem)"
+                       btn-radio="'System'">System</label>
+                <label class="btn btn-light sm-btn" ng-model="viewSelection"
+                       ng-class="{toggled: viewSelection === 'Site'}"
+                       ng-click="dhmsmdeploymenttools.changeView(viewSelectionSite)" btn-radio="'Site'">Site</label>
+                <label class="btn btn-light sm-btn" ng-model="viewSelection"
+                       ng-class="{toggled: viewSelection === 'Map'}"
+                       ng-click="dhmsmdeploymenttools.changeView(viewSelectionMap)" btn-radio="'Map'">Map</label>
+            </div>
+        </div>
+    </div>
+
+    <!-- slider for filtering data -->
+    <div ng-if="createSlider" class="tool-slider">
+        <div class="slider-title">Select Year</div>
+        <div class="clearfix"></div>
+        <slider tooltiptoggle="show" id="yearSlider{{dhmsmdeploymentmaptools.containerClass}}"
+                ng-model="dhmsmdeploymenttools.selectedYear"
+                value="yearMin" min="yearMin"
+                step="hop" max="yearMax"
+                ng-change="dhmsmdeploymenttools.yearUpdater(dhmsmdeploymenttools.selectedYear)">
+        </slider>
+        <b class="pull-left">{{yearMin}}</b>
+        <b class="pull-right">{{yearMax}}</b>
+    </div>
+
+    <!-- Table for configuring overall deployment schedule -->
+    <!--
+    <div class="dhmsm-overall-select">
+        <div class="sm-font deployment-map-title">
+            Set Overall Deployment Time
+        </div>
+        <div ng-class="{'dhmsm-config-table-disabled': dhmsmdeploymenttools.regionSelectionEnabled}">
+            <table class="full-width sm-font deployment-config-table">
+                <tr class="light-border sm-padding">
+                    <td><b>{{dhmsmdeploymenttools.deploymentDefaultRegions.West.id}}</b></td>
+                    <td></td>
+                </tr>
+                <tr>
+                    <td>
+                        <div class="sm-top-padding sm-btm-padding center">
+                            <b>FY:</b>
+                            <select ng-model="dhmsmdeploymenttools.deploymentDefaultRegions.West.year" class="inline-select2"
+                                    style="width: 80px;"
+                                    ng-disabled="dhmsmdeploymenttools.regionSelectionEnabled"
+                                    ng-options="value for value in dhmsmdeploymenttools.yearList">
+                            </select>
+                        </div>
+                    </td>
+                    <td>
+                        <div class="sm-top-padding sm-btm-padding center">
+                            <b>Q:</b>
+                            <select ng-model="dhmsmdeploymenttools.deploymentDefaultRegions.West.quarter" class="inline-select2"
+                                    style="width: 80px;"
+                                    ng-disabled="dhmsmdeploymenttools.regionSelectionEnabled"
+                                    ng-options="value for value in dhmsmdeploymenttools.quarterList">
+                            </select>
+                        </div>
+                    </td>
+                </tr>
+                <tr class="sm-padding light-border">
+                    <td><b>{{dhmsmdeploymenttools.deploymentDefaultRegions.Pacific.id}}</b></td>
+                    <td></td>
+                </tr>
+                <tr>
+                    <td>
+                        <div class="sm-top-padding sm-btm-padding center">
+                            <b> FY:</b>
+                            <select ng-model="dhmsmdeploymenttools.deploymentDefaultRegions.Pacific.year" class="inline-select2"
+                                    style="width: 80px;"
+                                    ng-disabled="dhmsmdeploymenttools.regionSelectionEnabled"
+                                    ng-options="value for value in dhmsmdeploymenttools.yearList">
+                            </select>
+                        <div>
+                    </td>
+                    <td>
+                        <div class="sm-top-padding sm-btm-padding center">
+                            <b>Q:</b>
+                            <select ng-model="dhmsmdeploymenttools.deploymentDefaultRegions.Pacific.quarter" class="inline-select2"
+                                    style="width: 80px;"
+                                    ng-disabled="dhmsmdeploymenttools.regionSelectionEnabled"
+                                    ng-options="value for value in dhmsmdeploymenttools.quarterList">
+                            </select>
+                        </div>
+                    </td>
+                </tr>
+            </table>
+        </div>
+    </div>
+	-->
+
+    <!-- Table for configuring deployment schedule by region -->
+    <!--
+    <div class="dhmsm-region-select">
+        <div class="sm-font deployment-map-title pointer"
+             ng-click="dhmsmdeploymenttools.regionSelectionEnabled = !dhmsmdeploymenttools.regionSelectionEnabled">
+            <i style="color: black;" class=" fa"
+                   ng-class="{'fa-chevron-right': dhmsmdeploymenttools.regionSelectionEnabled, 'fa-chevron-down': !dhmsmdeploymenttools.regionSelectionEnabled}"></i>
+            Set Deployment Times By Region
+        </div>
+        <div ng-show="dhmsmdeploymenttools.regionSelectionEnabled">
+            <table class="sm-top-margin full-width sm-font deployment-config-table"
+                   ng-repeat="(regionKey, region) in dhmsmdeploymenttools.regions">
+                <tr class="deployment-config-table">
+                    <td><b class="sm-font">{{regionKey}}</b></td>
+                    <td></td>
+                </tr>
+                <tr>
+                    <td><b>Start Date</b></td>
+                    <td></td>
+                </tr>
+                <tr>
+                    <td>
+                        <div class="sm-top-padding sm-btm-padding center">
+                            <b>FY:</b>
+                            <select ng-model="region.startYear" class="inline-select2"
+                                    style="width: 80px;"
+                                    ng-options="value for value in dhmsmdeploymenttools.yearList">
+                            </select>
+                        </div>
+                    </td>
+                    <td>
+                        <div class="sm-top-padding sm-btm-padding center">
+                            <b>Q:</b>
+                            <select ng-model="region.startQuarter" class="inline-select2"
+                                    style="width: 80px;"
+                                    ng-options="value for value in dhmsmdeploymenttools.quarterList">
+                            </select>
+                        </div>
+                    </td>
+                </tr>
+                <tr>
+                    <td><b>End Date</b></td>
+                    <td></td>
+                </tr>
+                <tr>
+                    <td>
+                        <div class="sm-top-padding sm-btm-padding center">
+                            <b>FY:</b>
+                            <select ng-model="region.endYear" class="inline-select2"
+                                    style="width: 80px;"
+                                    ng-options="value for value in dhmsmdeploymenttools.yearList">
+                            </select>
+                        </div>
+                    </td>
+                    <td>
+                        <div class="sm-top-padding sm-btm-padding center">
+                            <b>Q:</b>
+                            <select ng-model="region.endQuarter" class="inline-select2"
+                                    style="width: 80px;"
+                                    ng-options="value for value in dhmsmdeploymenttools.quarterList">
+                            </select>
+                        </div>
+                    </td>
+                </tr>
+            </table>
+        </div>
+    </div>
+-->
+
+    <!-- Report buttons -->
+    <!--
+    <div>
+        <button class="btn-half btn-light pull-left" ng-click="dhmsmdeploymenttools.restoreDefaults()">
+            Restore Defaults
+        </button>
+        <button class="btn-half btn-light pull-right" ng-click="dhmsmdeploymenttools.createNewStrategy()">
+            Update Strategy
+        </button>
+    </div>
+    -->
+    <br>
+    <!-- Special CSV Export for DHMSM Deployment: 2 tables -->
+    <button class="btn-sixth btn-light pull-left" ng-click="dhmsmdeploymenttools.dhmsmCSVExport()" alt="Export to CSV"
+            title="Export to CSV">
+        <i class="glyphicon glyphicon-export"> </i>
+    </button>
+</div>

@@ -1,0 +1,35 @@
+{
+    "version": "1.0.0",
+    "description": "SEMOSS Analytics Platform",
+    "main": "index.js",
+    "scripts": {
+        "preinstall": "npx only-allow pnpm",
+        "start": "pnpm run dev",
+        "dev": "run-p dev:legacy dev:client",
+        "dev:legacy": "cd ./legacy && pnpm run dev",
+        "dev:client": "cd ./client && pnpm run dev",
+        "build": "run-p build:legacy build:client",
+        "build:legacy": "cd ./legacy && pnpm run build",
+        "build:client": "cd ./client && pnpm run build",
+        "lint": "run-p lint:legacy lint:client",
+        "lint:legacy": "cd ./legacy && pnpm run lint",
+        "lint:client": "cd ./client && pnpm run lint",
+        "lint:fix": "run-p lint:legacy:fix lint:client:fix",
+        "lint:legacy:fix": "cd ./legacy && pnpm run lint:fix",
+        "lint:client:fix": "cd ./client && pnpm run lint:fix",
+        "format": "run-p format:legacy format:client",
+        "format:legacy": "cd ./legacy && pnpm run format",
+        "format:client": "cd ./client && pnpm run format",
+        "format:fix": "run-p format:legacy:fix format:client:fix",
+        "format:legacy:fix": "cd ./legacy && pnpm run format:fix",
+        "format:client:fix": "cd ./client && pnpm run format:fix",
+        "fix": "run-s format:fix lint:fix"
+    },
+    "author": "",
+    "license": "GPL-2.0",
+    "dependencies": {},
+    "devDependencies": {
+        "cross-env": "^7.0.3",
+        "npm-run-all": "^4.1.5"
+    }
+}

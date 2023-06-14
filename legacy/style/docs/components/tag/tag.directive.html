@@ -1,0 +1,30 @@
+<div style="display: flex; flex-wrap: wrap">
+    <smss-tag label="tagValue1" style="margin: 4px"></smss-tag>
+    <smss-tag
+        label="tagValue2"
+        class="smss-tag--compact"
+        style="margin: 4px"
+    ></smss-tag>
+    <smss-tag
+        label="tagValue3"
+        ng-disabled="tagDisabled"
+        style="margin: 4px"
+    ></smss-tag>
+    <smss-tag
+        label="tagValue4"
+        show-close="true"
+        style="margin: 4px"
+    ></smss-tag>
+    <smss-tag
+        label="tagValue4"
+        show-close="true"
+        style="margin: 4px"
+        ng-disabled="tagDisabled"
+    ></smss-tag>
+    <smss-tag
+        ng-repeat="tag in tagColors"
+        ng-class="'smss-tag--{{tag}}'"
+        label="tag"
+        style="margin: 4px"
+    ></smss-tag>
+</div>

@@ -1,0 +1,57 @@
+@import '~theme';
+
+.format-data-values {
+    position: absolute;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    right: 0;
+
+    &__holder {
+        position: relative;
+        height: 200px;
+    }
+
+    &__dropdown {
+        &__icon {
+            margin-top: get-spacing('xs', 'em');
+            &--double {
+                width: 1.5 * get-width('icon', 'em');
+            }
+            &:hover {
+                background: transparent;
+                color: get-text-color('default');
+            }
+        }
+
+        &__text {
+            padding: 0 get-spacing('xs', 'em');
+            width: calc(100% - #{get-width('icon', 'em')});
+            @include text-overflow();
+            &--double {
+                width: calc(100% - 1.5 * #{get-width('icon', 'em')});
+            }
+        }
+    }
+
+    &__container {
+        border: 1px solid get-border-color('default');
+    }
+
+    &__rule {
+        height: auto;
+        padding: get-spacing('xs', 'em') 0;
+
+        &.smss-clear {
+            padding: 0;
+            border: 1px solid get-border-color('default');
+            border-radius: $border-radius;
+        }
+
+        &__text {
+            width: calc(
+                100% - #{2 * get-width('icon', 'em') - get-spacing('sm', 'em')}
+            );
+        }
+    }
+}
