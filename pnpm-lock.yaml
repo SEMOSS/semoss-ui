@@ -61,6 +61,9 @@ importers:
       react-router-dom:
         specifier: ^6.3.0
         version: 6.3.0(react-dom@17.0.2)(react@17.0.2)
+      semoss-components:
+        specifier: link:../../semoss-components
+        version: link:../../semoss-components
     devDependencies:
       '@types/node':
         specifier: ^16.11.47
@@ -6470,7 +6473,7 @@ packages:
       lodash: 4.17.21
       pretty-error: 4.0.0
       tapable: 2.2.1
-      webpack: 5.81.0(webpack-cli@5.0.2)
+      webpack: 5.81.0(webpack-cli@4.10.0)
     dev: true
 
   /htmlparser2@6.1.0:
@@ -7517,7 +7520,7 @@ packages:
       webpack: ^5.0.0
     dependencies:
       schema-utils: 4.0.1
-      webpack: 5.81.0(webpack-cli@5.0.2)
+      webpack: 5.81.0(webpack-cli@4.10.0)
     dev: true
 
   /minimalistic-assert@1.0.1:

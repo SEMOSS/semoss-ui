@@ -14,7 +14,7 @@ import {
 import { useRootStore } from '@/hooks';
 
 import { useForm } from 'react-hook-form';
-import { Field } from '../components/form';
+import { Field } from '../../components/form';
 
 const StyledContainer = styled('div', {
     margin: '0 auto',

@@ -1,3 +1,4 @@
+export const JobsPage = '';
 // import { Field } from '@/components/form';
 // import { useAPI, useRootStore, useSettings } from '@/hooks';
 // import {

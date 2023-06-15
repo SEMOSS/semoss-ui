@@ -1,3 +1,4 @@
+export const JobsFunctions = '';
 // export interface Insight {
 //     app_id: string;
 //     app_insight_id: string;

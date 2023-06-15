@@ -1,14 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import {
-    styled,
-    Input,
-    Button,
-    Icon,
-    Grid,
-    Dropdown,
-} from '@semoss/components';
-import { theme } from '@/theme';
-import { Card } from '@/components/ui';
+import { useState, useEffect } from 'react';
+import { styled, Input, Grid, Card, Typography } from 'semoss-components';
 import {
     mdiAccountGroup,
     mdiClipboardTextOutline,
@@ -22,91 +13,16 @@ import { useNavigate } from 'react-router-dom';
 import { useSettings } from '@/hooks';
 import { LoadingScreen } from '@/components/ui';
 
-const StyledContainer = styled('div', {
-    margin: '0 auto',
-    paddingLeft: theme.space[8],
-    paddingRight: theme.space[8],
-    paddingBottom: theme.space[8],
-    '@sm': {
-        maxWidth: '640px',
-    },
-    '@md': {
-        maxWidth: '768px',
-    },
-    '@lg': {
-        maxWidth: '1024px',
-    },
-    '@xl': {
-        maxWidth: '1280px',
-    },
-    '@xxl': {
-        maxWidth: '1536px',
-    },
-});
-
-const StyledSearch = styled('div', {
+const StyledSearch = styled('div')({
     width: '50%',
-    // display: 'flex',
-    // alignItems: 'center',
 });
 
-const StyledCard = styled(Card, {
-    '&:hover': {
-        cursor: 'pointer',
-        boxShadow: '20',
-    },
-});
-
-const StyledCardHeader = styled(Card.Header, {
-    display: 'flex',
-    alignItems: 'center',
-    paddingBottom: theme.space['0'],
-    // border: 'solid black',
-});
-
-const StyledCardContent = styled(Card.Content, {
-    // border: 'solid black',
-    fontSize: theme.fontSizes.sm,
-    height: '8rem',
-});
-
-const StyledCardFooter = styled(Card.Footer, {
+const StyledSetHeader = styled('div')(({ theme }) => ({
     display: 'flex',
     justifyContent: 'space-between',
     alignItems: 'center',
-    height: '1rem',
-    paddingRight: theme.space['0'],
-});
-
-const StyledHeaderIcon = styled(Icon, {
-    height: '2rem',
-    width: '2rem',
-    marginRight: '.5rem',
-    display: 'flex',
-    alignItems: 'center',
-});
-
-const StyledSet = styled('div', {
-    // borderBottomWidth: theme.borderWidths.default,
-    // borderBottomColor: theme.colors['grey-4'],
-    // paddingBottom: theme.space['8'],
-    // marginBottom: theme.space['12'],
-});
-
-const StyledSetHeader = styled('div', {
-    display: 'flex',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: theme.space['8'],
-});
-
-const StyledDescription = styled('div', {
-    color: theme.colors['grey-1'],
-    fontSize: theme.fontSizes.sm,
-    width: '100%',
-    maxWidth: '50%',
-    marginBottom: theme.space['8'],
-});
+    marginBottom: theme.spacing(4),
+}));
 
 const cardsArr = [
     {
@@ -211,7 +127,7 @@ const cardsArr = [
     // },
 ];
 
-export const SettingsPage = () => {
+export const SettingsIndexPage = () => {
     const navigate = useNavigate();
     const [cards, setCards] = useState(cardsArr);
     const [search, setSearch] = useState<string>('');
@@ -246,66 +162,43 @@ export const SettingsPage = () => {
     }
 
     return (
-        <StyledContainer>
-            <StyledDescription>
+        <>
+            <Typography variant="subtitle1">
                 View and make changes to settings at the database, project, and
                 insight level.
                 {adminMode
                     ? ' As an admin conduct queries on SEMOSS specific databases as well as view and edit existing social properties'
                     : ''}
-            </StyledDescription>
-            <StyledSet>
-                <StyledSetHeader>
-                    <StyledSearch>
-                        <Input
-                            onChange={(e: string) => {
-                                setSearch(e);
-                            }}
-                            placeholder={'Search....'}
-                            // Move to Header
-                        ></Input>
-                    </StyledSearch>
-                </StyledSetHeader>
-            </StyledSet>
-
-            <Grid>
+            </Typography>
+            <StyledSetHeader>
+                <StyledSearch>
+                    <Input
+                        onChange={(e) => {
+                            setSearch(e.target.value);
+                        }}
+                        placeholder={'Search....'}
+                        // Move to Header
+                    ></Input>
+                </StyledSearch>
+            </StyledSetHeader>
+            <Grid container spacing={2}>
                 {cards.map((c, i) => {
                     return c.adminPortal && !adminMode ? (
                         <div key={i}></div>
                     ) : (
-                        <Grid.Item
-                            key={i}
-                            responsive={{
-                                sm: 12,
-                                md: 6,
-                                lg: 4,
-                                xl: 3,
-                            }}
-                        >
-                            <StyledCard onClick={() => navigate(c.route)}>
-                                <StyledCardHeader>
-                                    <StyledHeaderIcon
-                                        path={c.icon}
-                                    ></StyledHeaderIcon>
-                                    <div>{c.title}</div>
-                                </StyledCardHeader>
-                                <StyledCardContent>
-                                    {c.description}
-                                </StyledCardContent>
-                                {/* <StyledCardFooter>
-                                    <p>
-                                        <b>{c.pendingRequests} </b> Pending
-                                        Requests
-                                    </p>
-                                    <IconDiv>
-                                        <Icon path={mdiDotsVertical}></Icon>
-                                    </IconDiv>
-                                </StyledCardFooter> */}
-                            </StyledCard>
-                        </Grid.Item>
+                        <Grid item key={i} sm={12} md={6} lg={4} xl={3}>
+                            <Card onClick={() => navigate(c.route)}>
+                                <Card.Header title={c.title} />
+                                <Card.Content sx={{ marginTop: -2 }}>
+                                    <Typography variant="caption">
+                                        {c.description}
+                                    </Typography>
+                                </Card.Content>
+                            </Card>
+                        </Grid>
                     );
                 })}
             </Grid>
-        </StyledContainer>
+        </>
     );
 };

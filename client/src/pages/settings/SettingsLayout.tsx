@@ -1,40 +1,24 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Outlet, useLocation, matchPath } from 'react-router-dom';
+import { styled, Typography } from 'semoss-components';
+
+import { useRootStore } from '@/hooks';
+import { SettingsContext } from '@/contexts';
 import { Page } from '@/components/ui/';
-import { theme } from '@/theme';
-import { styled, Breadcrumb } from '@semoss/components';
 
-import { SettingsIndex } from './SettingsIndex';
-
-const StyledTitleGroup = styled('div', {
+const Stack = styled('div')(({ theme }) => ({
     display: 'flex',
     flexDirection: 'column',
-    // alignItems: 'center',
-    gap: theme.space['4'],
-});
-
-const StyledTitle = styled('h1', {
-    flex: '1',
-    color: theme.colors['grey-1'],
-    fontSize: theme.fontSizes.xxl,
-    fontWeight: theme.fontWeights.semibold,
-});
-
-const StyledSpaceBetween = styled('div', {
-    display: 'flex',
-    justifyContent: 'space-between',
-});
-
-const StyledAdminMode = styled('div', {
-    display: 'flex',
-    fontSize: theme.fontSizes.md,
-    gap: '.5rem',
-});
+    gap: theme.spacing(1),
+}));
 
 export const SettingsLayout = () => {
+    const { monolithStore } = useRootStore();
     const { pathname } = useLocation();
 
+    // track the active breadcrumbs
     const [crumbs, setCrumbs] = useState([]);
+    const [adminMode, setAdminMode] = useState(false);
 
     useEffect(() => {
         const c = [];
@@ -121,6 +105,22 @@ export const SettingsLayout = () => {
         };
     }, [pathname]);
 
+    // check if the user is an admin on load
+    useEffect(() => {
+        monolithStore
+            .isAdminUser()
+            .then((response) => {
+                if (response) {
+                    setAdminMode(true);
+                } else {
+                    setAdminMode(false);
+                }
+            })
+            .catch(() => {
+                setAdminMode(false);
+            });
+    }, []);
+
     /**
      * Check if a path is active
      * @param path - path to check against
@@ -147,27 +147,31 @@ export const SettingsLayout = () => {
     // };
 
     return (
-        <SettingsIndex>
+        <SettingsContext.Provider
+            value={{
+                adminMode: adminMode,
+            }}
+        >
             <Page
                 header={
                     <>
-                        <StyledTitleGroup>
-                            <StyledTitle>Settings</StyledTitle>
-                            <Breadcrumb>
+                        <Stack>
+                            <Typography variant="h5">Settings</Typography>
+                            <div>
                                 {crumbs.map((c, i) => {
                                     return (
-                                        <Breadcrumb.Item key={i} href={c.href}>
+                                        <a key={i} href={c.href}>
                                             {c.display}
-                                        </Breadcrumb.Item>
+                                        </a>
                                     );
                                 })}
-                            </Breadcrumb>
-                        </StyledTitleGroup>
+                            </div>
+                        </Stack>
                     </>
                 }
             >
                 <Outlet />
             </Page>
-        </SettingsIndex>
+        </SettingsContext.Provider>
     );
 };

@@ -1,49 +1,28 @@
 import React, { useEffect, useState } from 'react';
-import { theme } from '@/theme';
-import { styled, Scroll } from '@semoss/components';
+import { styled, Container } from 'semoss-components';
 
-const StyledHeader = styled('div', {
+const StyledPage = styled('div')(() => ({
+    height: '100%',
+    width: '100%',
+    overflowX: 'hidden',
+    overflowY: 'auto',
+}));
+
+const StyledPageHeader = styled('div', {
+    shouldForwardProp: (prop) => prop !== 'stuck',
+})<{
+    /** Track if the page header is stuck */
+    stuck: boolean;
+}>(({ theme, stuck }) => ({
     position: 'sticky',
     top: '-1px',
     paddingTop: '1px',
-    marginTop: theme.space['8'],
     // Checkout user permissions, and the stacked avatars
     zIndex: '10',
-    variants: {
-        stuck: {
-            true: {
-                background: theme.colors.background,
-                borderBottomWidth: theme.borderWidths.default,
-                borderBottomColor: theme.colors['grey-4'],
-            },
-            false: {},
-        },
-    },
-});
-
-const StyledContainer = styled('div', {
-    margin: '0 auto',
-    paddingLeft: theme.space[8],
-    paddingRight: theme.space[8],
-    paddingTop: theme.space[4],
-    paddingBottom: theme.space[4],
-    zIndex: '1',
-    '@sm': {
-        maxWidth: '640px',
-    },
-    '@md': {
-        maxWidth: '768px',
-    },
-    '@lg': {
-        maxWidth: '1024px',
-    },
-    '@xl': {
-        maxWidth: '1280px',
-    },
-    '@xxl': {
-        maxWidth: '1536px',
-    },
-});
+    borderBottom: stuck ? 1 : 'none',
+    borderBottomColor: theme.palette.grey['500'],
+    marginBottom: theme.spacing(2),
+}));
 
 export interface PageProps {
     /** Content to include in the header */
@@ -79,16 +58,16 @@ export const Page = (props: PageProps): JSX.Element => {
     }, [headerElement]);
 
     return (
-        <Scroll horizontal={false}>
+        <StyledPage>
             {header && (
-                <StyledHeader
+                <StyledPageHeader
                     ref={(node) => setHeaderElement(node)}
                     stuck={stuck}
                 >
-                    <StyledContainer>{header}</StyledContainer>
-                </StyledHeader>
+                    <Container maxWidth="md">{header}</Container>
+                </StyledPageHeader>
             )}
-            <StyledContainer>{children}</StyledContainer>
-        </Scroll>
+            <Container maxWidth="md">{children}</Container>
+        </StyledPage>
     );
 };

@@ -17,14 +17,7 @@ import {
 } from './database';
 import { ImportPage } from './ImportPage';
 
-import { SettingsLayout, TempSettings } from './settings';
-import { SettingsPage } from './SettingsPage';
-import { DatabasePermissionsPage } from './DatabasePermissionsPage';
-import { InsightPermissionsPage } from './InsightPermissionsPage';
-import { ProjectPermissionsPage } from './ProjectPermissionsPage';
-import { MemberSettingsPage } from './MemberSettingsPage';
-import { AdminQueryPage } from './AdminQueryPage';
-import { SocialPropertiesPage } from './SocialPropertiesPage';
+import { SettingsRouter } from './settings';
 import {
     ImportedDatabaseLayout,
     ImportedDatabaseAccessPage,
@@ -47,55 +40,7 @@ export const Router = observer(() => {
         <Routes>
             <Route path="/" element={<AuthenticatedLayout />}>
                 <Route index element={<TempPage title={'Home'} />} />
-                <Route path="settings" element={<SettingsLayout />}>
-                    <Route index element={<SettingsPage />} />
-
-                    <Route
-                        path="database-permissions"
-                        element={<DatabasePermissionsPage />}
-                    />
-
-                    <Route
-                        path="project-permissions"
-                        element={<ProjectPermissionsPage />}
-                    />
-                    <Route
-                        path="insight-permissions"
-                        element={<InsightPermissionsPage />}
-                    />
-                    <Route path="members" element={<MemberSettingsPage />} />
-                    <Route
-                        path="social-properties"
-                        element={<SocialPropertiesPage />}
-                    />
-                    {/* <Route path="jobs" element={<JobsPage />} /> */}
-                    <Route path="admin-query" element={<AdminQueryPage />} />
-
-                    <Route
-                        path="external-connections"
-                        element={<TempSettings type={'external-connections'} />}
-                    />
-                    <Route
-                        path="teams"
-                        element={<TempSettings type={'teams'} />}
-                    />
-                    <Route
-                        path="teams-management"
-                        element={<TempSettings type={'teams-management'} />}
-                    />
-                    <Route
-                        path="teams-permissions"
-                        element={<TempSettings type={'teams-permissions'} />}
-                    />
-                    <Route
-                        path="my-profile"
-                        element={<TempSettings type={'my-profile'} />}
-                    />
-                    <Route
-                        path="theme"
-                        element={<TempSettings type={'theme'} />}
-                    />
-                </Route>
+                <Route path="settings/*" element={<SettingsRouter />} />
                 <Route path="catalog" element={<CatalogPage />} />
                 <Route path="import" element={<ImportPage />} />
                 <Route path="importedDatabase" element={<Outlet />}>

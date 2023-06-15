@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react';
 import { styled, theme, Select, Icon } from '@semoss/components';
 import { mdiClipboardTextOutline } from '@mdi/js';
 
-import { useRootStore, useAPI, useSettings } from '../hooks';
+import { useRootStore, useAPI, useSettings } from '../../hooks';
 import { LoadingScreen } from '@/components/ui';
 import { Permissions } from '@/components/database';
 
