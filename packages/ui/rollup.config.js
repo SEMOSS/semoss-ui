@@ -1,15 +1,12 @@
 import resolve from "@rollup/plugin-node-resolve";
 import commonjs from "@rollup/plugin-commonjs";
 import typescript from "@rollup/plugin-typescript";
-import alias from "@rollup/plugin-alias";
 
 import bundleSize from "rollup-plugin-bundle-size";
 import postcss from "rollup-plugin-postcss";
-import dts from "rollup-plugin-dts";
 import del from "rollup-plugin-delete";
 
-// eslint-disable-next-line @typescript-eslint/no-var-requires
-const packageJson = require("./package.json");
+import packageJson from "./package.json";
 
 const config = [
     // Outputs separate declarations files and builds
@@ -36,17 +33,6 @@ const config = [
             bundleSize(),
         ],
         external: ["react", "react-dom"],
-    },
-    // Bundles into one declaration file
-    {
-        input: "./dist/types/index.d.ts",
-        output: [{ file: "dist/index.d.ts", format: "es" }],
-        external: [/\.css$/],
-        plugins: [
-            alias(),
-            dts(),
-            del({ targets: "dist/types", hook: "buildEnd" }),
-        ],
     },
 ];
 

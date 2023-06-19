@@ -1,7 +1,5 @@
-import { Input, InputProps } from './FileUpload';
+import { Input, InputProps } from "./FileUpload";
 
-export type {
-    InputProps
-};
+export type { InputProps };
 
 export { Input as FileUpload };

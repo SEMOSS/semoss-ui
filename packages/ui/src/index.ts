@@ -36,4 +36,4 @@ export * from "./components/Tabs";
 export * from "./components/Tooltip";
 export * from "./components/Typography";
 export * from "./components/ThemeProvider";
-export * from './components/TextArea'
+export * from "./components/TextArea";

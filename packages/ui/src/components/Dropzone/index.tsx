@@ -1,7 +1,5 @@
 import { DropzoneArea, DropzoneAreaProps } from "./Dropzone";
 
-export type {
-    DropzoneAreaProps
-}
+export type { DropzoneAreaProps };
 
-export { DropzoneArea}
+export { DropzoneArea };

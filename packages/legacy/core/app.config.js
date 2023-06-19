@@ -195,7 +195,8 @@ function config(
         })
         .state('home.settings2', {
             url: '/settings2',
-            template: '<rewrite src="./packages/client/dist/#/settings"></rewrite>',
+            template:
+                '<rewrite src="./packages/client/dist/#/settings"></rewrite>',
         })
         .state('home.scheduler', {
             url: '/jobs',
@@ -251,7 +252,8 @@ function config(
         })
         .state('home.catalog2', {
             url: '/catalog2',
-            template: '<rewrite src="./packages/client/dist/#/catalog"></rewrite>',
+            template:
+                '<rewrite src="./packages/client/dist/#/catalog"></rewrite>',
         })
         .state('home.catalog', {
             url: '/catalog',
