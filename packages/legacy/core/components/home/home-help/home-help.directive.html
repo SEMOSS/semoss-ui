@@ -1,0 +1,92 @@
+<div class="home-help">
+    <div ng-if="homeHelp.helpDropdown.showUserGuideSection">
+        <h4>User Guides</h4>
+        <div
+            ng-repeat="card in homeHelp.infoCards track by $index"
+            title="Open {{card.title}}"
+            ng-click="homeHelp.action(card.click)"
+            class="home-help__card"
+            ng-class="'home-help__card--{{card.color}}'"
+        >
+            <div class="home-help__card__image">
+                <i
+                    ng-if="card.image !== 'logo'"
+                    class="fa fa-{{card.image}}"
+                ></i>
+                <!-- <img ng-src="card.image" alt=""> -->
+                <svg
+                    ng-if="card.image === 'logo'"
+                    class="home__topbar__logo__svg"
+                    xmlns="http://www.w3.org/2000/svg"
+                    viewBox="0 0 389.91 435.38"
+                >
+                    <path
+                        class="cls-1"
+                        d="M269.59,350.44v75.33H311.2V350.44a85.35,85.35,0,1,0-41.61,0Z"
+                        transform="translate(-205.05 -182.31)"
+                    />
+                    <path
+                        class="cls-1"
+                        d="M407.33,439.16l-53.59,36a85.33,85.33,0,1,0,19.58,37l57.39-38.61Z"
+                        transform="translate(-205.05 -182.31)"
+                    />
+                    <path
+                        class="cls-1"
+                        d="M509.6,313.29a85,85,0,0,0-59,23.74l-58.91-35.49-21.47,35.64,58.2,35.07a85.34,85.34,0,1,0,81.15-59Z"
+                        transform="translate(-205.05 -182.31)"
+                    />
+                </svg>
+            </div>
+            <div class="home-help__card__content">
+                <div class="home-help__card__content__header">
+                    <h5>{{card.title}}</h5>
+                </div>
+                <div
+                    class="home-help__card__content__description"
+                    ng-class="{'home-help__card__content__description__smallFont': homeHelp.helpDropdown.descriptionFontSize === 'small'}"
+                >
+                    {{card.description}}
+                </div>
+            </div>
+        </div>
+    </div>
+    <div ng-if="homeHelp.helpDropdown.showContactUsSection">
+        <h4 ng-if="homeHelp.helpDropdown.showContactUsHeading">Contact Us</h4>
+        <div
+            title="Email Us"
+            ng-click="homeHelp.action('contact')"
+            class="home-help__card home-help__card--red"
+        >
+            <div class="home-help__card__image">
+                <i
+                    class="fa fa-envelope-o"
+                    ng-if="!homeHelp.helpDropdown.contactUsIcon"
+                ></i>
+                <div
+                    ng-if="homeHelp.helpDropdown.contactUsIcon"
+                    dynamic="homeHelp.helpDropdown.contactUsIcon"
+                ></div>
+            </div>
+            <div class="home-help__card__content">
+                <div class="home-help__card__content__header">
+                    <h5>{{homeHelp.helpDropdown.contactUsTitle}}</h5>
+                </div>
+                <div
+                    class="home-help__card__content__description"
+                    ng-class="{'home-help__card__content__description__smallFont': homeHelp.helpDropdown.descriptionFontSize === 'small'}"
+                >
+                    {{homeHelp.helpDropdown.contactUsDescription}}
+                </div>
+            </div>
+        </div>
+    </div>
+    <div
+        class="smss-spacing smss-center"
+        title="Version: {{homeHelp.version.version}}, Release Date: {{homeHelp.version.date}}"
+        ng-if="homeHelp.version"
+    >
+        <div class="home-help__text">
+            {{homeHelp.version.version}} {{homeHelp.version.date}}
+        </div>
+    </div>
+</div>

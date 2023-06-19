@@ -1,0 +1,118 @@
+@import '~theme';
+
+.smss-alert {
+    @include disabled();
+    position: relative;
+    display: flex;
+    width: 100%;
+    font-size: 1rem;
+    padding: get-spacing('sm', 'em') * 1.5;
+    margin: get-spacing('sm', 'em') 0;
+    border-left: 4px solid get-border-color('primary');
+    background: get-background-color('default');
+    box-shadow: get-box-shadow('raised', 'default');
+    border-radius: $border-radius;
+
+    &__icon {
+        width: get-width('circle', 'em');
+        height: auto;
+        color: get-text-color('primary');
+        &:after {
+            font-size: 1.25em;
+            font-style: normal;
+            font-family: FontAwesome;
+            content: '\f05a';
+        }
+    }
+
+    &--inline {
+        border: none;
+        background: get-background-color('primary--hover');
+        box-shadow: none;
+        border-radius: 0px;
+        color: get-text-color('high-emphasis');
+
+        .smss-alert__icon {
+            margin-left: auto;
+        }
+
+        .smss-alert__content {
+            margin-right: auto;
+            width: auto;
+        }
+
+        &.smss-alert--success {
+            background: get-background-color('success--hover');
+        }
+
+        &.smss-alert--warn {
+            background: get-background-color('warn--hover');
+        }
+
+        &.smss-alert--error {
+            background: get-background-color('error--hover');
+        }
+    }
+
+    &--success {
+        border-left-color: get-border-color('success');
+
+        & .smss-alert__icon {
+            color: get-text-color('success');
+            &:after {
+                content: '\f058';
+            }
+        }
+    }
+
+    &--warn {
+        border-left-color: get-border-color('warn');
+
+        & .smss-alert__icon {
+            color: get-text-color('warn');
+            &:after {
+                content: '\f071';
+            }
+        }
+    }
+
+    &--error {
+        border-left-color: get-border-color('error');
+
+        & .smss-alert__icon {
+            color: get-text-color('error');
+            &:after {
+                content: '\f06a';
+            }
+        }
+    }
+
+    &__content {
+        height: auto;
+        width: calc(100% - #{get-width('circle', 'em')});
+        font-size: get-font-size('body-regular', 'em');
+        padding: 0 get-spacing('sm', 'em');
+
+        &--closable {
+            width: calc(
+                100% - #{1.5 * get-width('icon', 'em')} - #{get-width(
+                        'circle',
+                        'em'
+                    )}
+            );
+        }
+    }
+
+    &__times {
+        width: get-width('icon', 'em');
+        text-align: center;
+        cursor: pointer;
+
+        &:after {
+            font-size: 1em;
+            font-style: normal;
+            font-family: FontAwesome;
+            content: '\f00d';
+        }
+    }
+}

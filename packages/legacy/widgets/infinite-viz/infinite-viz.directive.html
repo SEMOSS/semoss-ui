@@ -1,0 +1,40 @@
+<smss-scroll static-x="true">
+    <smss-field>
+        <label>Incrementer</label>
+        <content>
+            <smss-input
+                type="number"
+                class="smss-input"
+                placeholder="Set an Incrementer"
+                ng-change="infiniteViz.setIncrementer(infiniteViz.limit)"
+                ng-model="infiniteViz.limit"
+            ></smss-input>
+        </content>
+        <description
+            ng-show="infiniteViz.limit <= -2"
+            class="smss-color--error"
+        >
+            Incrementer must be valid
+        </description>
+    </smss-field>
+
+    <div class="smss-spacing">
+        <smss-checkbox
+            model="infiniteViz.hideCounts"
+            change="infiniteViz.toggleCountView()"
+            >Hide Counts</smss-checkbox
+        >
+    </div>
+    <div class="smss-center">
+        Total # of Records: {{infiniteViz.dataCounts.total}}
+    </div>
+
+    <div class="smss-action">
+        <smss-btn
+            ng-disabled="infiniteViz.limit <= -2"
+            ng-click="infiniteViz.load()"
+        >
+            Refresh Data
+        </smss-btn>
+    </div>
+</smss-scroll>

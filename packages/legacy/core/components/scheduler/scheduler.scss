@@ -1,0 +1,172 @@
+@import '~theme';
+
+.scheduler {
+    &__content {
+        background: get-background-color('default');
+        position: absolute;
+        top: get-spacing('xs', 'rem');
+        right: get-spacing('xs', 'rem');
+        left: get-spacing('xs', 'rem');
+        bottom: get-spacing('xs', 'rem');
+        border: 1px solid get-border-color('default');
+        overflow: hidden;
+        border-radius: $border-radius;
+        font-size: 1rem;
+        display: flex;
+        flex-direction: column;
+        padding: get-spacing('sm', 'rem');
+        z-index: 0;
+
+        &__header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: get-spacing('sm', 'rem') get-spacing('scroll', 'rem');
+        }
+
+        &__table {
+            width: 100%;
+
+            tr {
+                background: get-background-color('default');
+            }
+
+            &__width10 {
+                width: 10%;
+            }
+
+            &__width15 {
+                width: 15%;
+            }
+
+            &__width20 {
+                width: 20%;
+            }
+
+            &__select-all {
+                width: get-width('icon', 'rem') + get-spacing('lg', 'rem');
+            }
+
+            &__actions {
+                width: get-width('icon', 'rem') * 3 + get-spacing('xl', 'rem');
+            }
+
+            &__latest {
+                display: inline-block;
+                border: 1px solid get-border-color('success');
+                color: get-text-color('success');
+                text-align: center;
+                border-radius: $border-radius;
+                width: 80%;
+            }
+
+            &__dropdown {
+                display: inline-block;
+                padding-right: 0px;
+
+                .smss-dropdown {
+                    display: inline-block;
+                    font-weight: normal;
+
+                    &__toggle--compact {
+                        border: 0px;
+                        background: transparent;
+                        width: auto;
+                        padding-left: get-spacing('xs', 'rem');
+                    }
+                }
+            }
+
+            &__inactive {
+                color: get-text-color('low-emphasis');
+                border: 1px solid get-text-color('low-emphasis');
+                border-radius: $border-radius;
+                display: inline-block;
+                padding: 0 get-spacing('sm', 'rem');
+            }
+        }
+
+        &__scroll {
+            flex: 1;
+            overflow: hidden;
+
+            & .smss-scroll__inner {
+                padding-top: 0;
+            }
+        }
+
+        &__search {
+            padding: 0 get-spacing('scroll', 'rem');
+        }
+    }
+
+    &__time {
+        &__dropdown {
+            width: get-width('min', 'rem');
+            margin-right: get-spacing('sm', 'rem');
+        }
+
+        &__spacer {
+            width: get-spacing('sm', 'rem');
+            margin-right: get-spacing('sm', 'rem');
+            text-align: center;
+        }
+    }
+
+    &__added {
+        background: get-background('default');
+        border-width: $border-size;
+        border-style: solid;
+        border-color: get-border-color('default');
+        border-radius: $border-radius;
+        padding: get-spacing('sm', 'rem');
+        border-radius: $border-radius;
+    }
+
+    &__parameter {
+        display: flex;
+        justify-content: space-between;
+        padding: get-spacing('sm', 'rem');
+
+        &__component {
+            flex: 1;
+        }
+
+        & .smss-btn {
+            margin: get-spacing('xs', 'rem');
+        }
+    }
+
+    &__template {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        border-width: $border-size;
+        border-style: solid;
+        border-color: get-border-color('default');
+        border-radius: $border-radius;
+
+        &__component {
+            flex: 1;
+        }
+    }
+
+    &__placeholder {
+        flex: 1;
+    }
+
+    &__overlay {
+        &__tabs {
+            margin-bottom: get-spacing('md', 'rem');
+        }
+        &__body {
+            overflow-y: hidden;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+        }
+        & .smss-overlay__wrapper {
+            height: 80%;
+        }
+    }
+}

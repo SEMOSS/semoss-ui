@@ -1,0 +1,128 @@
+@import '~theme';
+
+.database-meta {
+    height: 100%;
+    position: relative;
+    width: 100%;
+
+    &__warning {
+        position: absolute;
+        z-index: 1;
+        bottom: 0;
+        width: 100%;
+    }
+
+    &__content {
+        inset: 0 0 0 1px;
+        position: absolute;
+        height: 100%;
+        width: 100%;
+        display: flex;
+        flex-direction: column;
+
+        &__header {
+            z-index: 1;
+            width: 100%;
+            margin-bottom: get-spacing('lg', 'rem');
+        }
+
+        &__body {
+            width: 100%;
+            flex: 1;
+            position: relative;
+            overflow: hidden;
+            border-radius: $border-radius;
+
+            &__smss {
+                height: 100%;
+                width: 100%;
+                overflow: auto;
+                display: flex;
+                flex-direction: column;
+                &__field {
+                    flex-basis: 75%;
+                }
+                &__btn {
+                    display: flex;
+                    justify-content: center;
+                    margin-top: 1em;
+                }
+            }
+
+            &__query {
+                height: 100%;
+                width: 100%;
+                overflow-x: hidden;
+                overflow-y: auto;
+
+                &__textbox {
+                    width: 100%;
+                    height: 200px;
+                    border: 1px solid get-border-color('default');
+                }
+
+                &__results {
+                    max-height: 65vh;
+                    width: 100%;
+                    margin-left: $scroll-size * 2;
+                    overflow: auto;
+
+                    th {
+                        width: $field-width;
+                    }
+
+                    td {
+                        width: $field-width;
+                    }
+                }
+            }
+
+            & .import__accordion__wrapper {
+                top: 0;
+            }
+        }
+    }
+
+    &__btn {
+        position: absolute;
+        z-index: 1;
+        top: 0;
+
+        &--overlays {
+            left: calc(200px + #{get-spacing('sm', 'rem')});
+        }
+
+        &--actions {
+            right: 0;
+            & .smss-btn:first-child {
+                margin-right: get-spacing('sm', 'rem');
+            }
+        }
+    }
+
+    &__overlay {
+        & .smss-overlay__wrapper {
+            height: 80%;
+        }
+
+        &__content {
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+
+            &__flex {
+                flex: 1;
+                overflow: hidden;
+
+                &__half {
+                    height: 100%;
+
+                    &__checklist {
+                        position: relative;
+                    }
+                }
+            }
+        }
+    }
+}

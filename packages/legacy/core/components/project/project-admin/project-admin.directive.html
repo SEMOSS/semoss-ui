@@ -1,0 +1,211 @@
+<div class="project-admin">
+    <loading-screen model="projectAdmin.loading"></loading-screen>
+    <div class="project-admin__top">
+        <smss-search
+            model="projectAdmin.insights.input"
+            change="projectAdmin.getInsights(true)"
+            placeholder="Search insights..."
+        ></smss-search>
+        <div>
+            <smss-btn ng-click="projectAdmin.optimize()" class="smss-btn--text">
+                Optimize Project
+            </smss-btn>
+            <smss-btn
+                ng-click="projectAdmin.defaultOverlay = true; projectAdmin.getDatabaseListForDefaultInsights()"
+            >
+                Add Insights
+            </smss-btn>
+        </div>
+    </div>
+    <div class="smss-row project-admin__table-header">
+        <div class="smss-col smss-col--4 project-admin__selectall">
+            <smss-checkbox
+                model="projectAdmin.selectionState.isAll"
+                change="projectAdmin.selectAll(model)"
+                ng-show="!projectAdmin.selectionState.isPartial"
+            >
+            </smss-checkbox>
+            <div
+                ng-click="projectAdmin.selectAll(true)"
+                ng-show="projectAdmin.selectionState.isPartial"
+                class="project-admin__partial"
+            >
+                <smss-checkbox
+                    ng-disabled="true"
+                    model="projectAdmin.selectionState.isPartial"
+                >
+                </smss-checkbox>
+            </div>
+            <div class="project-admin__selectall__text">Insight Name</div>
+        </div>
+        <div class="smss-col smss-col--4 project-admin__col">Last Updated</div>
+    </div>
+    <div class="project-admin__insights" id="project-admin__scroll">
+        <div
+            ng-if="projectAdmin.insights.results.length == 0"
+            class="smss-caption--center"
+        >
+            <span ng-if="projectAdmin.insights.input.length === 0"
+                >No insights, click the top right button to add one.</span
+            >
+            <span ng-if="projectAdmin.insights.input.length > 0"
+                >No insights matched your search, please try again.</span
+            >
+        </div>
+        <div
+            ng-repeat="insight in projectAdmin.insights.results"
+            class="smss-row project-admin__row"
+        >
+            <div class="smss-col smss-col--4 project-admin__selectall">
+                <div
+                    ng-click="projectAdmin.selectInsight(insight)"
+                    class="project-admin__checkbox"
+                >
+                    <smss-checkbox
+                        ng-disabled="true"
+                        model="projectAdmin.isSelected(insight)"
+                    ></smss-checkbox>
+                </div>
+                <div class="project-admin__selectall__text">
+                    {{insight.name || replaceUnderscores}}
+                </div>
+            </div>
+            <div class="smss-col smss-col--4 project-admin__col">
+                {{insight.displayDate}}
+            </div>
+            <div class="smss-col smss-col--4 project-admin__btn">
+                <smss-btn
+                    title="Edit"
+                    ng-click="projectAdmin.openEdit(insight)"
+                    class="smss-btn--icon"
+                >
+                    <i class="fa fa-edit"></i>
+                </smss-btn>
+                <smss-btn
+                    class="smss-btn--icon"
+                    ng-click="projectAdmin.openDelete(insight)"
+                >
+                    <i class="fa fa-trash-o"></i>
+                </smss-btn>
+            </div>
+        </div>
+    </div>
+    <div
+        class="smss-spacing"
+        ng-show="projectAdmin.insights.selected.length > 0"
+    >
+        <smss-btn class="smss-btn--error" ng-click="projectAdmin.openDelete()">
+            Delete
+        </smss-btn>
+        <smss-btn class="smss-btn--text" ng-click="projectAdmin.multiSaveImg()">
+            Create Images
+        </smss-btn>
+    </div>
+    <smss-overlay open="projectAdmin.defaultOverlay">
+        <smss-overlay-header>Add Default Insights</smss-overlay-header>
+        <smss-overlay-body>
+            <smss-field>
+                <label>Select Database For Insights:</label>
+                <content>
+                    <smss-dropdown
+                        ng-if="projectAdmin.defaultOverlay"
+                        searchable
+                        quickselect
+                        display="database_name"
+                        value="database_id"
+                        options="projectAdmin.listOfDatabasesForDefaultInsights"
+                        model="projectAdmin.selectedDatabaseForDefaultInsights"
+                    >
+                    </smss-dropdown>
+                </content>
+            </smss-field>
+            <smss-field style="height: 200px">
+                <label>Select Insights:</label>
+                <content>
+                    <smss-checklist
+                        ng-if="projectAdmin.defaultOverlay"
+                        searchable
+                        multiple
+                        quickselect
+                        display="display"
+                        value="value"
+                        options="projectAdmin.defaultInsightOptions"
+                        model="projectAdmin.selectedDefaultInsights"
+                    >
+                    </smss-checklist>
+                </content>
+            </smss-field>
+        </smss-overlay-body>
+        <smss-overlay-footer>
+            <smss-btn
+                ng-click="projectAdmin.defaultOverlay = false"
+                class="smss-btn--text"
+                >Cancel</smss-btn
+            >
+            <smss-btn ng-click="projectAdmin.addDefaultInsights()"
+                >Add</smss-btn
+            >
+        </smss-overlay-footer>
+    </smss-overlay>
+    <smss-overlay size="md" open="projectAdmin.delete.open">
+        <smss-overlay-header>
+            <span ng-if="!projectAdmin.delete.tempInsight"
+                >Delete Insights</span
+            >
+            <span ng-if="projectAdmin.delete.tempInsight">Delete Insight</span>
+        </smss-overlay-header>
+        <smss-overlay-body>
+            <p>
+                <span ng-if="!projectAdmin.delete.tempInsight"
+                    >Do you want to delete the following insights?</span
+                >
+                <span ng-if="projectAdmin.delete.tempInsight"
+                    >Do you want to delete
+                    "{{projectAdmin.delete.tempInsight.name}}"?</span
+                >
+                <span class="smss-text smss-color--error"
+                    >Warning: Action is Permanent</span
+                >
+            </p>
+            <div ng-if="!projectAdmin.delete.tempInsight">
+                <table class="project-admin__overlay__grid">
+                    <tbody>
+                        <tr
+                            ng-repeat="insight in projectAdmin.insights.selected track by $index"
+                        >
+                            <td title="{{insight.name}}">{{insight.name}}</td>
+                            <td class="smss--icon">
+                                <smss-btn
+                                    class="smss-btn--icon smss-color--error"
+                                    ng-click="projectAdmin.spliceInsight($index)"
+                                    title="Remove"
+                                >
+                                    <i class="fa fa-times"></i>
+                                </smss-btn>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </smss-overlay-body>
+        <smss-overlay-footer>
+            <smss-btn
+                ng-click="projectAdmin.closeDelete()"
+                class="smss-btn--text"
+            >
+                Cancel
+            </smss-btn>
+            <smss-btn
+                class="smss-btn--error"
+                ng-disabled="!projectAdmin.delete.tempInsight && (!projectAdmin.insights.selected || projectAdmin.insights.selected.length === 0)"
+                ng-click="projectAdmin.deleteInsights();"
+            >
+                Delete
+            </smss-btn>
+        </smss-overlay-footer>
+    </smss-overlay>
+    <edit-insight
+        open="projectAdmin.edit.open"
+        insight="projectAdmin.edit.insight"
+    ></edit-insight>
+</div>

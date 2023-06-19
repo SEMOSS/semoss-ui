@@ -1,0 +1,23 @@
+<label class="smss-toggle" ng-class="{'smss-toggle--disabled':disabled}">
+    <input
+        id="smss-toggle__input"
+        class="smss-toggle__input"
+        name="{{name}}"
+        tabindex="{{disabled ? -1: 0}}"
+        ng-disabled="disabled"
+        ng-required="required"
+        ng-keyup="keyup($event)"
+        ng-change="update()"
+        ng-model="model"
+        type="checkbox"
+    />
+    <span
+        class="smss-toggle__mark"
+        ng-class="{'smss-toggle__mark--checked': model}"
+    >
+        <div class="smss-toggle__mark__thumb" />
+    </span>
+    <div class="smss-toggle__text">
+        <ng-transclude></ng-transclude>
+    </div>
+</label>

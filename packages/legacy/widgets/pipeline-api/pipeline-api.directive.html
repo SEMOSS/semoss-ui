@@ -1,0 +1,414 @@
+<div class="pipeline-api">
+    <smss-scroll
+        ng-if="pipelineApi.step === 1"
+        static-x="true"
+        class="pipeline-api__content"
+    >
+        <smss-field>
+            <label> Enter URL:<span class="smss-color--error">*</span> </label>
+            <content>
+                <smss-input
+                    ng-model="pipelineApi.api.url"
+                    ng-change="pipelineApi.validateSelected();"
+                >
+                </smss-input>
+            </content>
+        </smss-field>
+        <smss-field>
+            <label>
+                Select Request Type:<span class="smss-color--error">*</span>
+            </label>
+            <content>
+                <smss-radio
+                    model="pipelineApi.api.type"
+                    change="pipelineApi.updateType()"
+                    value="get"
+                    name="GET"
+                >
+                    GET
+                </smss-radio>
+                <smss-radio
+                    model="pipelineApi.api.type"
+                    change="pipelineApi.updateType()"
+                    value="post"
+                    name="POST"
+                >
+                    POST
+                </smss-radio>
+            </content>
+        </smss-field>
+
+        <smss-field>
+            <label> Enter Request Headers: </label>
+            <content>
+                <div class="pipeline-api__table">
+                    <table class="smss--sticky">
+                        <tr>
+                            <th class="pipeline-api__table__col-1">Key</th>
+                            <th class="pipeline-api__table__col-2">Value</th>
+                            <th class="pipeline-api__table__col-3">&nbsp;</th>
+                        </tr>
+                        <tr
+                            ng-repeat="header in pipelineApi.api.headers track by $index"
+                        >
+                            <td>
+                                <smss-input
+                                    type="text"
+                                    ng-model="header.key"
+                                ></smss-input>
+                            </td>
+                            <td>
+                                <smss-input
+                                    type="text"
+                                    ng-model="header.value"
+                                ></smss-input>
+                            </td>
+                            <td>
+                                <smss-btn
+                                    class="smss-color--error smss-btn--icon"
+                                    ng-click="pipelineApi.removeHeader($index)"
+                                >
+                                    <i class="fa fa-times"></i>
+                                </smss-btn>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>
+                                <smss-input
+                                    type="text"
+                                    ng-keydown="$event.keyCode === 13 && pipelineApi.addHeader()"
+                                    ng-model="pipelineApi.header.key"
+                                ></smss-input>
+                            </td>
+                            <td>
+                                <smss-input
+                                    type="text"
+                                    ng-keydown="$event.keyCode === 13 && pipelineApi.addHeader()"
+                                    ng-model="pipelineApi.header.value"
+                                ></smss-input>
+                            </td>
+                            <td>
+                                <smss-btn
+                                    class="smss-color--success smss-btn--icon"
+                                    ng-disabled="pipelineApi.header.key.length === 0 || pipelineApi.header.value.length === 0"
+                                    ng-click="pipelineApi.addHeader()"
+                                >
+                                    <i class="fa fa-plus"></i>
+                                </smss-btn>
+                            </td>
+                        </tr>
+                    </table>
+                </div>
+            </content>
+        </smss-field>
+
+        <smss-field ng-if="pipelineApi.api.type === 'post'">
+            <label> Enter Post Body: </label>
+            <content>
+                <div class="pipeline-api__table">
+                    <table class="smss--sticky">
+                        <tr>
+                            <th class="pipeline-api__table__col-1">Key</th>
+                            <th class="pipeline-api__table__col-2">Value</th>
+                            <th class="pipeline-api__table__col-3">&nbsp;</th>
+                        </tr>
+                        <tr
+                            ng-repeat="pair in pipelineApi.api.body track by $index"
+                        >
+                            <td>
+                                <smss-input
+                                    type="text"
+                                    ng-model="pair.key"
+                                ></smss-input>
+                            </td>
+                            <td>
+                                <smss-textarea
+                                    type="text"
+                                    class="smss-textarea--resize-vertical"
+                                    ng-model="pair.value"
+                                ></smss-textarea>
+                            </td>
+                            <td>
+                                <smss-btn
+                                    class="smss-color--error smss-btn--icon"
+                                    ng-click="pipelineApi.removeBody($index)"
+                                >
+                                    <i class="fa fa-times"></i>
+                                </smss-btn>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>
+                                <smss-input
+                                    type="text"
+                                    ng-keydown="$event.keyCode === 13 && pipelineApi.addBody()"
+                                    ng-model="pipelineApi.body.key"
+                                ></smss-input>
+                            </td>
+                            <td>
+                                <smss-textarea
+                                    type="text"
+                                    class="smss-textarea--resize-vertical"
+                                    ng-keydown="$event.keyCode === 13 && pipelineApi.addBody()"
+                                    ng-model="pipelineApi.body.value"
+                                ></smss-textarea>
+                            </td>
+                            <td>
+                                <smss-btn
+                                    class="smss-color--success smss-btn--icon"
+                                    ng-disabled="pipelineApi.body.key.length === 0 && pipelineApi.body.value.length === 0"
+                                    ng-click="pipelineApi.addBody()"
+                                >
+                                    <i class="fa fa-plus"></i>
+                                </smss-btn>
+                            </td>
+                        </tr>
+                    </table>
+                </div>
+            </content>
+        </smss-field>
+        <div class="smss-caption smss-color--error">* are required</div>
+    </smss-scroll>
+    <div ng-if="pipelineApi.step === 2" class="pipeline-api__content smss-row">
+        <div class="smss-col smss-col--4 pipeline-api__content__col">
+            <smss-field inline>
+                <label> Current JSON: </label>
+                <content></content>
+            </smss-field>
+            <smss-object-viewer
+                class="pipeline-api__json"
+                model="pipelineApi.json.rendered"
+            ></smss-object-viewer>
+        </div>
+        <div class="smss-col smss-col--4 pipeline-api__content__col">
+            <smss-field>
+                <label> Select Root (optional): </label>
+                <content>
+                    <smss-dropdown
+                        model="pipelineApi.root.selected"
+                        options="pipelineApi.root.options"
+                        change="pipelineApi.updateRoot()"
+                    >
+                    </smss-dropdown>
+                </content>
+            </smss-field>
+
+            <smss-field inline>
+                <label> Available Column(s): </label>
+                <content>
+                    <smss-btn
+                        class="smss-right pipeline-api__available__btn smss-btn--text"
+                        ng-click="pipelineApi.addAll()"
+                    >
+                        Add All
+                    </smss-btn>
+                </content>
+            </smss-field>
+            <!-- <smss-field>
+                <content>
+                    <smss-input ng-model="pipelineApi.available.search"
+                                placeholder="Search available">
+                    </smss-input>
+                </content>
+            </smss-field> -->
+            <smss-scroll
+                static-x="true"
+                class="pipeline-api__available__scroll"
+            >
+                <table
+                    class="pipeline-api__available__table"
+                    ng-repeat="option in pipelineApi.available.options track by $index"
+                >
+                    <thead>
+                        <tr
+                            title="{{optio.alias}}"
+                            class="pipeline-api__available__table__row"
+                            ng-click="pipelineApi.addSelected(option);"
+                        >
+                            <th
+                                class="smss-center pipeline-api__available__table__col-1"
+                            >
+                                <img src="~images/brackets.svg" />
+                            </th>
+                            <th>{{option.alias}}</th>
+                            <th
+                                class="smss-center pipeline-api__available__table__col-3"
+                            >
+                                <smss-btn
+                                    title="Add {{option.alias}}"
+                                    class="smss-btn--icon"
+                                    ng-click="$event.stopPropagation(); pipelineApi.addSelected(option);"
+                                >
+                                    <i
+                                        class="fa fa-plus smss-color--success"
+                                    ></i>
+                                </smss-btn>
+                            </th>
+                        </tr>
+                    </thead>
+                </table>
+            </smss-scroll>
+        </div>
+        <div class="smss-col smss-col--4 pipeline-api__content__col">
+            <smss-field inline>
+                <label> Selected Column(s): </label>
+                <content>
+                    <smss-btn
+                        class="smss-right smss-btn--text"
+                        ng-disabled=""
+                        ng-click="pipelineApi.clearAll()"
+                    >
+                        Clear All
+                    </smss-btn>
+                </content>
+            </smss-field>
+            <smss-scroll static-x="true" class="pipeline-api__selected__scroll">
+                <table
+                    ng-repeat="column in pipelineApi.selected.columns track by $index"
+                    class="pipeline-api__selected__table"
+                >
+                    <thead>
+                        <tr class="pipeline-api__selected__table__row">
+                            <th class="smss-clear">
+                                <smss-input
+                                    title="Alias the column"
+                                    ng-model="column.alias"
+                                    placeholder="Alias {{column.relativePath}}"
+                                    ng-change="pipelineApi.updateSelectedAlias()"
+                                    class="smss-left pipeline-api__selected__table__col-1__input"
+                                ></smss-input>
+                                <div
+                                    class="smss-left smss-text smss-center pipeline-api__selected__table__col-1__icon"
+                                >
+                                    <i
+                                        ng-show="column.hasAliasError"
+                                        title="Invalid Alias"
+                                        class="fa fa-exclamation-triangle smss-color--warn"
+                                    ></i>
+                                </div>
+                            </th>
+                            <th
+                                class="pipeline-api__selected__table__col-2"
+                            ></th>
+                            <th class="pipeline-api__selected__table__col-3">
+                                <smss-btn
+                                    ng-click="pipelineApi.removeSelected($index)"
+                                    class="smss-btn--icon"
+                                >
+                                    <i
+                                        class="fa fa-times smss-color--error"
+                                    ></i>
+                                </smss-btn>
+                            </th>
+                        </tr>
+                    </thead>
+                </table>
+            </smss-scroll>
+        </div>
+    </div>
+    <div class="smss-action smss-clear pipeline-api__actions">
+        <smss-popover>
+            <smss-btn
+                id="pipeline-api__advanced"
+                title="Advanced options"
+                class="smss-btn--icon"
+            >
+                <i class="fa fa-cog"></i>
+            </smss-btn>
+            <smss-popover-content
+                class="pipeline-api__advanced__popover"
+                target="#pipeline-api__advanced"
+            >
+                <smss-field>
+                    <label>
+                        {{pipelineComponentCtrl.data.state === 'executed' ?
+                        'Frame Type:' : 'Select Frame Type:'}}
+                    </label>
+                    <content class="smss-field__content-overflow">
+                        <smss-dropdown
+                            ng-if="pipelineComponentCtrl.data.state !== 'executed'"
+                            options="[{'display': 'Grid', 'value': 'GRID'}, {'display': 'Graph', 'value': 'GRAPH'}, {'display': 'Live', 'value': 'NATIVE'}, {'display': 'R', 'value': 'R'}, {'display': 'Python', 'value': 'PY'}]"
+                            display="display"
+                            value="value"
+                            model="pipelineApi.frameType"
+                            change="pipelineApi.updateFrame(pipelineApi.frameType)"
+                            body="false"
+                        >
+                        </smss-dropdown>
+                        <span
+                            ng-if="pipelineComponentCtrl.data.state === 'executed'"
+                            >{{pipelineApi.frameType}}</span
+                        >
+                    </content>
+                </smss-field>
+                <smss-field>
+                    <label>
+                        {{pipelineComponentCtrl.data.state === 'executed' ?
+                        'Frame Name:' : 'Enter Frame Name:'}}
+                    </label>
+                    <content>
+                        <smss-input
+                            ng-if="pipelineComponentCtrl.data.state !== 'executed'"
+                            ng-model="pipelineApi.customFrameName.name"
+                            ng-change="pipelineApi.validateFrameName()"
+                        ></smss-input>
+                        <span
+                            ng-if="pipelineComponentCtrl.data.state === 'executed'"
+                            >{{pipelineApi.customFrameName.name}}</span
+                        >
+                    </content>
+                    <description>
+                        <span
+                            class="smss-color--error"
+                            ng-show="pipelineApi.customFrameName.message"
+                        >
+                            {{pipelineApi.customFrameName.message}}</span
+                        >
+                    </description>
+                </smss-field>
+            </smss-popover-content>
+        </smss-popover>
+        <smss-btn
+            class="smss-btn--text"
+            ng-click="pipelineComponentCtrl.closeComponent()"
+        >
+            Cancel
+        </smss-btn>
+        <smss-btn
+            ng-if="pipelineApi.step === 2"
+            ng-click="pipelineApi.resetData()"
+            class="smss-btn--text"
+        >
+            Back
+        </smss-btn>
+        <smss-btn
+            ng-disabled="!pipelineApi.valid"
+            ng-click="pipelineApi.previewApi(); pipelineComponentCtrl.expandPreviewComponent();"
+            class="smss-btn--outline"
+        >
+            Preview
+        </smss-btn>
+        <smss-btn
+            ng-if="pipelineApi.step === 1"
+            ng-disabled="pipelineApi.api.url.length === 0 || !pipelineApi.api.type"
+            ng-click="pipelineApi.getData()"
+        >
+            Next
+        </smss-btn>
+        <smss-btn
+            ng-if="pipelineApi.step === 2"
+            ng-disabled="!pipelineApi.valid || !pipelineApi.customFrameName.valid"
+            ng-click="pipelineApi.importApi()"
+            class="smss-btn--outline"
+        >
+            Import
+        </smss-btn>
+        <smss-btn
+            ng-if="pipelineApi.step === 2"
+            ng-disabled="!pipelineApi.valid || !pipelineApi.customFrameName.valid"
+            ng-click="pipelineApi.importApi(true)"
+        >
+            Visualize
+        </smss-btn>
+    </div>
+</div>

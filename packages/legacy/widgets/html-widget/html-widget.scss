@@ -1,0 +1,97 @@
+@import '~theme';
+$html-widget-files: 250px;
+
+.html-widget {
+    position: absolute;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    overflow: hidden;
+
+    &__editor {
+        position: absolute;
+        top: 0;
+        left: 0;
+        height: 100%;
+        width: 50%;
+        overflow: hidden;
+        border-top: 1px solid get-border-color('default');
+        border-right: 1px solid get-border-color('default');
+        border-bottom: 1px solid get-border-color('default');
+        background: get-background-color('default');
+        display: flex;
+        flex-direction: column;
+        padding: 0 $scroll-size;
+
+        &__view {
+            display: flex;
+            flex-direction: column;
+            flex: 1;
+            overflow: hidden;
+            margin-bottom: get-spacing('sm', 'em');
+
+            &__header {
+                display: flex;
+                flex-direction: row;
+                align-items: center;
+                height: get-height('default', 'em');
+
+                &__title {
+                    flex: 1;
+                }
+            }
+
+            &__content {
+                flex: 1;
+                overflow: auto;
+
+                & .smss-textarea {
+                    height: 100%;
+                    resize: none;
+                }
+            }
+        }
+    }
+
+    &__content {
+        position: absolute;
+        top: 0;
+        left: 50%;
+        height: 100%;
+        width: 50%;
+        overflow: hidden;
+        z-index: 0;
+
+        &--presentation {
+            left: 0 !important;
+            width: 100% !important;
+        }
+
+        &__compiled {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            overflow: auto;
+        }
+    }
+
+    &__toggle {
+        position: absolute;
+        top: 0;
+        right: 0;
+        visibility: hidden;
+        opacity: 0.2;
+        z-index: 1;
+
+        &:hover {
+            opacity: 1;
+        }
+    }
+}
+
+.widget-view:hover .html-widget__toggle {
+    visibility: visible;
+}

@@ -1,0 +1,388 @@
+<div class="database-meta">
+    <div class="database-meta__content">
+        <div class="database-meta__content__header">
+            <smss-tab-group>
+                <smss-tab
+                    id="database__semoss-tour-{{databaseMeta.tourId[tab]}}"
+                    ng-class="{'smss-tab--selected': databaseMeta.selectedTab ===  tab}"
+                    ng-repeat="tab in databaseMeta.tabs track by $index"
+                    ng-click="databaseMeta.toggleTabs(tab)"
+                    ng-if="!(
+                            ((databaseCtrl.loggedInUser.permission === 'READ_ONLY' || databaseCtrl.loggedInUser.permission === '') && tab === 'Replace Data') ||
+                            ((databaseCtrl.loggedInUser.permission === 'READ_ONLY' || databaseCtrl.loggedInUser.permission === '') && tab === 'Modify Data') ||
+                            ((databaseCtrl.loggedInUser.permission === 'READ_ONLY' || databaseCtrl.loggedInUser.permission === '') && tab === 'Query Data') ||
+                            ((databaseCtrl.loggedInUser.permission === 'READ_ONLY' || databaseCtrl.loggedInUser.permission === '') && tab === 'Access') || 
+                            (databaseCtrl.loggedInUser.permission !== 'OWNER' && tab === 'Update SMSS')
+                        )"
+                >
+                    {{tab}}
+                </smss-tab>
+            </smss-tab-group>
+        </div>
+        <div
+            class="database-meta__content__body"
+            ng-if="databaseMeta.selectedTab ===  'Details'"
+        >
+            <database-details
+                database="databaseCtrl.appInfo"
+                info="databaseMeta.appInfo"
+            ></database-details>
+        </div>
+        <div
+            class="database-meta__content__body"
+            ng-if="databaseMeta.selectedTab ===  'Access'"
+        >
+            <database-user database="databaseMeta.appId"></database-user>
+        </div>
+        <div
+            class="database-meta__content__body"
+            ng-if="databaseMeta.selectedTab === 'Metamodel'"
+        >
+            <div
+                class="database-meta__warning"
+                ng-init="showAlert = true;"
+                ng-if="databaseMeta.information.externalDb && (databaseMeta.information.metamodel.externalChangesApplied || databaseMeta.localChangesApplied)"
+            >
+                <smss-alert color="'warn'" ng-model="showAlert" inline>
+                    <smss-alert-label>
+                        {{databaseMeta.information.metamodel.externalChangesApplied
+                        ? 'Save External Changes before editing metamodel
+                        properties or positions.' : 'Save local changes to
+                        metamodel before syncing external changes'}}
+                    </smss-alert-label>
+                </smss-alert>
+            </div>
+            <div class="database-meta__btn database-meta__btn--overlays">
+                <smss-btn
+                    class="smss-btn--text"
+                    title="Synchronize External Changes to Database"
+                    ng-if="(databaseCtrl.loggedInUser.permission !== 'READ_ONLY' && databaseCtrl.loggedInUser.permission !== '')"
+                    ng-show="databaseMeta.information.externalDb"
+                    ng-disabled="databaseMeta.localChangesApplied"
+                    ng-click="databaseMeta.getExternalTablesAndViews();"
+                >
+                    <i class="fa fa-refresh"></i>
+                    Refresh Data
+                </smss-btn>
+
+                <smss-btn
+                    class="smss-btn--text"
+                    title="Add or Remove Tables"
+                    ng-if="(databaseCtrl.loggedInUser.permission !== 'READ_ONLY' && databaseCtrl.loggedInUser.permission !== '')"
+                    ng-click="databaseMeta.information.showEditTables = true"
+                >
+                    <i class="fa fa-table"></i>
+                    Edit Tables
+                </smss-btn>
+
+                <smss-btn
+                    class="smss-btn--text"
+                    title="Add or Remove Relationships"
+                    ng-if="(databaseCtrl.loggedInUser.permission !== 'READ_ONLY' && databaseCtrl.loggedInUser.permission !== '')"
+                    ng-click="databaseMeta.information.showEditRelationships = true"
+                >
+                    <i class="fa fa-link"></i>
+                    Edit Relationships
+                </smss-btn>
+            </div>
+
+            <div class="database-meta__btn database-meta__btn--actions">
+                <smss-btn
+                    class="smss-btn--outline"
+                    title="Reset Changes"
+                    ng-disabled="!databaseMeta.hasMetamodelChanged()"
+                    ng-if="(databaseCtrl.loggedInUser.permission !== 'READ_ONLY' && databaseCtrl.loggedInUser.permission !== '')"
+                    ng-click="databaseMeta.resetMetamodel()"
+                >
+                    Reset
+                </smss-btn>
+
+                <smss-btn
+                    title="Save Changes"
+                    ng-disabled="!databaseMeta.hasMetamodelChanged()"
+                    ng-click="databaseMeta.saveMetamodel()"
+                    ng-if="(databaseCtrl.loggedInUser.permission !== 'READ_ONLY' && databaseCtrl.loggedInUser.permission !== '')"
+                >
+                    Save
+                </smss-btn>
+            </div>
+
+            <metamodel-tables
+                ng-if="databaseMeta.information.showEditTables"
+                metamodel="databaseMeta.information.metamodel"
+                all-tables="databaseMeta.information.allTables"
+                open="databaseMeta.information.showEditTables"
+            ></metamodel-tables>
+
+            <metamodel-relationships
+                ng-if="databaseMeta.information.showEditRelationships"
+                metamodel="databaseMeta.information.metamodel"
+                type="databaseMeta.information.type"
+                open="databaseMeta.information.showEditRelationships"
+            ></metamodel-relationships>
+
+            <metamodel-table
+                ng-if="databaseMeta.information.showEditTable"
+                metamodel="databaseMeta.information.metamodel"
+                all-tables="databaseMeta.information.allTables"
+                selected-table="databaseMeta.information.selectedTable"
+                open="databaseMeta.information.showEditTable"
+                app="databaseMeta.appInfo"
+            ></metamodel-table>
+
+            <metamodel-column
+                ng-if="databaseMeta.information.showEditColumn"
+                app-id="databaseMeta.appId"
+                open="databaseMeta.information.showEditColumn"
+                column="databaseMeta.information.metamodel.tables[databaseMeta.information.selectedTable].columns[databaseMeta.information.selectedColumn]"
+                change="databaseMeta.changeColumn(type, typeFormat, alias, description, logical)"
+                type="databaseMeta.information.type"
+            ></metamodel-column>
+
+            <metamodel-column-table
+                ng-if="databaseMeta.information.showEditColumnTable"
+                metamodel="databaseMeta.information.metamodel"
+                all-tables="databaseMeta.information.allTables"
+                selected-table="databaseMeta.information.selectedTable"
+                app-id="databaseMeta.appId"
+                open="databaseMeta.information.showEditColumnTable"
+                change="databaseMeta.changeColumnTable(type, typeFormat, alias, description, logical)"
+                type="databaseMeta.information.type"
+            ></metamodel-column-table>
+            <!-- <smss-overlay class="database-meta__overlay"
+                          ng-if="databaseMeta.information.showEditColumnTable"
+                          open="databaseMeta.information.showEditColumnTable"
+                          size="lg">
+                <smss-overlay-header>
+                    Edit {{databaseMeta.information.metamodel.tables[databaseMeta.information.selectedTable].table}} ({{databaseMeta.information.metamodel.tables[databaseMeta.information.selectedTable].alias}})
+                </smss-overlay-header>
+                <smss-overlay-body>
+
+                </smss-overlay-body>
+            </smss-overlay> -->
+
+            <smss-overlay
+                class="database-meta__overlay"
+                ng-if="databaseMeta.information.external.open"
+                open="databaseMeta.information.external.open"
+            >
+                <smss-overlay-header>Sync Changes</smss-overlay-header>
+                <smss-overlay-body>
+                    <div class="smss-row database-meta__overlay__content">
+                        <smss-field>
+                            <content>
+                                <p>
+                                    Select tables and views below to sync with
+                                    external database changes.
+                                    <i class="smss-color--low-emphasis"
+                                        ><b>Note:</b> any local changes made to
+                                        selected table and view properties will
+                                        be overwritten by sync</i
+                                    >
+                                </p>
+                            </content>
+                        </smss-field>
+                        <div
+                            class="smss-row database-meta__overlay__content__flex"
+                        >
+                            <smss-field
+                                class="smss-col smss-col--6 database-meta__overlay__content__flex__half"
+                            >
+                                <label> Select Tables: </label>
+                                <content>
+                                    <smss-checklist
+                                        class="database-meta__overlay__content__flex__half__checklist"
+                                        model="databaseMeta.information.external.tableModel"
+                                        options="databaseMeta.information.external.tableOptions"
+                                        searchable
+                                        quickselect
+                                        multiple
+                                    ></smss-checklist>
+                                </content>
+                            </smss-field>
+                            <smss-field
+                                class="smss-col smss-col--6 database-meta__overlay__content__flex__half"
+                            >
+                                <label> Select Views: </label>
+                                <content>
+                                    <smss-checklist
+                                        class="database-meta__overlay__content__half__checklist"
+                                        model="databaseMeta.information.external.viewModel"
+                                        options="databaseMeta.information.external.viewOptions"
+                                        searchable
+                                        quickselect
+                                        multiple
+                                    ></smss-checklist>
+                                </content>
+                            </smss-field>
+                        </div>
+                    </div>
+                </smss-overlay-body>
+                <smss-overlay-footer>
+                    <smss-btn
+                        ng-click="databaseMeta.loadExternalMetamodel();"
+                        ng-disabled="databaseMeta.information.external.tableModel.length === 0 && databaseMeta.information.external.viewModel.length === 0"
+                    >
+                        Apply
+                    </smss-btn>
+                </smss-overlay-footer>
+            </smss-overlay>
+            <metamodel
+                metamodel="databaseMeta.information.metamodel"
+                edit="databaseMeta.editItem(type, options)"
+                type="databaseMeta.information.type"
+                hide-controls="databaseCtrl.loggedInUser.permission === 'READ_ONLY' || databaseCtrl.loggedInUser.permission === ''"
+                hide-delete="true"
+            ></metamodel>
+        </div>
+        <div
+            class="database-meta__content__body"
+            ng-if="databaseMeta.selectedTab === 'Replace Data'"
+        >
+            <import
+                ng-if="databaseMeta.loadImport"
+                replace="databaseMeta.appInfo"
+            ></import>
+        </div>
+        <div
+            class="database-meta__content__body database-meta__content__body__query"
+            ng-if="databaseMeta.selectedTab === 'Query Data'"
+        >
+            <div class="smss-clear">
+                <div class="smss-col smss-col--4 smss-left">
+                    <smss-field>
+                        <label> Query: </label>
+                        <content>
+                            <smss-textarea
+                                class="smss-left database-meta__content__body__query__textbox"
+                                title="Query Input"
+                                placeholder="Query Input"
+                                ng-model="databaseMeta.input.query.value"
+                                ng-change="databaseMeta.verifyQuery()"
+                                autofocus
+                            >
+                            </smss-textarea>
+                        </content>
+                        <description>
+                            <span
+                                class="smss-color--error"
+                                ng-if="databaseMeta.input.query.error"
+                            >
+                                {{databaseMeta.input.query.error}}
+                            </span>
+                        </description>
+                    </smss-field>
+
+                    <smss-field inline ng-if="databaseMeta.input.collect.show">
+                        <label> Max # Rows to Collect: </label>
+                        <content>
+                            <smss-input
+                                type="number"
+                                min="1"
+                                step="1"
+                                title="Search Databases"
+                                ng-model="databaseMeta.input.collect.value"
+                            >
+                            </smss-input>
+                        </content>
+                        <description>
+                            <span
+                                class="smss-color--error"
+                                ng-if="databaseMeta.input.collect.error"
+                            >
+                                {{databaseMeta.input.collect.error}}
+                            </span>
+                        </description>
+                    </smss-field>
+
+                    <div class="smss-action">
+                        <smss-btn ng-click="databaseMeta.verifyRequest()">
+                            Execute Query
+                        </smss-btn>
+                    </div>
+                </div>
+                <div class="smss-col smss-col--8">
+                    <div class="database-meta__content__body__query__results">
+                        <p
+                            class="smss-spacing smss-center"
+                            ng-if="!databaseMeta.display"
+                        >
+                            Execute a query to display the results here.
+                        </p>
+                        <div
+                            class="smss-spacing smss-color--error"
+                            ng-if="databaseMeta.display === 'error'"
+                        >
+                            {{databaseMeta.error}}
+                        </div>
+                        <div
+                            class="smss-spacing smss-center smss-color--success"
+                            ng-if="databaseMeta.display === 'success'"
+                        >
+                            Successful query!
+                        </div>
+                        <table ng-if="databaseMeta.display === 'table'">
+                            <thead>
+                                <tr>
+                                    <th
+                                        ng-repeat="header in databaseMeta.headers track by $index"
+                                        title="{{header}}"
+                                    >
+                                        {{header}}
+                                    </th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr
+                                    ng-repeat="row in databaseMeta.values track by $index"
+                                >
+                                    <td
+                                        ng-repeat="value in row track by $index"
+                                        title="{{value}}"
+                                    >
+                                        {{value}}
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div
+            class="database-meta__content__body"
+            ng-if="databaseMeta.selectedTab ===  'Modify Data'"
+        >
+            <div>
+                <database-physical
+                    physical="databaseMeta.information.metamodel"
+                    edit="databaseMeta.editItem(type, options)"
+                    type="databaseMeta.information.type"
+                    hide-controls="databaseCtrl.loggedInUser.permission === 'READ_ONLY' || databaseCtrl.loggedInUser.permission === ''"
+                ></database-physical>
+            </div>
+        </div>
+        <div
+            class="database-meta__content__body__smss"
+            ng-if="databaseMeta.selectedTab === 'Update SMSS'"
+        >
+            <div class="database-meta__content__body__smss__field">
+                <smss-field style="height: 100% !important">
+                    <label>SMSS File:</label>
+                    <content>
+                        <smss-textarea
+                            ng-model="databaseMeta.smssText"
+                            style="height: 100% !important"
+                        >
+                        </smss-textarea>
+                    </content>
+                </smss-field>
+            </div>
+            <div class="database-meta__content__body__smss__btn">
+                <smss-btn ng-click="databaseMeta.updateSmssFile()">
+                    Update
+                </smss-btn>
+            </div>
+        </div>
+    </div>
+</div>

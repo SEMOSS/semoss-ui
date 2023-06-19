@@ -1,0 +1,51 @@
+<div class="anthem-map-control">
+    <div class="anthem-map-control__image">
+        <img
+            class="anthem-map-control__image__a"
+            src="widgets/anthem-map-control/anthem.jpg"
+        />
+    </div>
+
+    <smss-field class="anthem-map-control__gender">
+        <label>Filter By Gender:</label>
+        <content>
+            <smss-checklist
+                model="anthemMapControl.gender.selected"
+                options="anthemMapControl.gender.options"
+                change="anthemMapControl.changeGender()"
+                multiple
+            >
+            </smss-checklist>
+        </content>
+    </smss-field>
+
+    <smss-field class="anthem-map-control__age">
+        <label>Filter By Age Group:</label>
+        <content>
+            <smss-checklist
+                model="anthemMapControl.age.selected"
+                options="anthemMapControl.age.options"
+                change="anthemMapControl.changeAge()"
+                multiple
+            >
+            </smss-checklist>
+        </content>
+    </smss-field>
+
+    <smss-field class="anthem-map-control__diagnosis">
+        <label>Select Diagnosis:</label>
+        <content>
+            <smss-checklist
+                model="anthemMapControl.diagnosis.selected"
+                options="anthemMapControl.diagnosis.options"
+                change="anthemMapControl.changeDiagnosis()"
+                searchable
+                multiple
+            >
+            </smss-checklist>
+        </content>
+    </smss-field>
+    <div class="smss-action">
+        <smss-btn ng-click="anthemMapControl.resetState()"> Reset </smss-btn>
+    </div>
+</div>

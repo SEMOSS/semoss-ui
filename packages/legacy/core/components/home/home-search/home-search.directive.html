@@ -1,0 +1,90 @@
+<ng-transclude></ng-transclude>
+
+<div id="home-search__append" class="home-search__append">
+    <div class="home-search__background"></div>
+    <div id="home-search__content" class="home-search__content">
+        <loading-screen model="homeSearch.options.loading"></loading-screen>
+        <div class="home-search__bar">
+            <smss-search
+                id="home-search__bar__input"
+                class="home-search__bar__input"
+                placeholder="Search insights..."
+                model="homeSearch.options.input"
+                change="homeSearch.changeSearch();"
+            >
+            </smss-search>
+            <smss-btn
+                ng-click="homeSearch.openNlpSearch()"
+                title="Open NLP Search"
+                class="smss-btn--icon"
+            >
+                <i class="fa fa-bar-chart"></i>
+            </smss-btn>
+            <smss-btn
+                ng-click="homeSearch.apps.show = !homeSearch.apps.show"
+                class="smss-btn--icon"
+                title="Toggle filter to show what projects you can filter on"
+                ng-class="{'smss-btn--selected': homeSearch.apps.show}"
+            >
+                <i class="fa fa-filter"></i>
+            </smss-btn>
+        </div>
+
+        <smss-field class="home-search__filter" ng-if="homeSearch.apps.show">
+            <label> Filter by Project: </label>
+            <content>
+                <smss-checklist
+                    model="homeSearch.apps.selected"
+                    options="homeSearch.apps.raw"
+                    change="homeSearch.toggleApps()"
+                    searchable
+                    multiple
+                    display="project_name"
+                >
+                </smss-checklist>
+            </content>
+        </smss-field>
+
+        <smss-field>
+            <label>Results:</label>
+            <content>
+                <div
+                    class="home-search__list__insights"
+                    id="home-search__list__insights--results"
+                >
+                    <div
+                        class="smss-caption--center"
+                        ng-show="homeSearch.options.results.length === 0"
+                    >
+                        No Results
+                    </div>
+                    <div
+                        class="smss-block home-search__list__insights__block"
+                        title="{{insight.name}}"
+                        ng-click="homeSearch.createViz($event, insight)"
+                        ng-repeat="insight in homeSearch.options.results track by $index"
+                    >
+                        <div class="smss-block__image">
+                            <img
+                                ng-src="{{homeSearch.getVizSvg(insight.layout)}}"
+                                alt="{{homeSearch.getVizSvg(insight.layout)}}"
+                            />
+                        </div>
+                        <div class="smss-block__text">
+                            <div class="smss-block__text__title">
+                                <span> {{insight.name}}</span>
+                            </div>
+                            <div class="smss-block__text__description">
+                                <span>
+                                    {{insight.project_name ?
+                                    insight.project_name : insight.app_name |
+                                    replaceUnderscores}}</span
+                                >
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </content>
+        </smss-field>
+    </div>
+</div>

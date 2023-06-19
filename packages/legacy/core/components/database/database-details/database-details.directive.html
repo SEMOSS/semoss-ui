@@ -1,0 +1,51 @@
+<div class="database-details">
+    <div class="database-details__page">
+        <div class="database-details__top">
+            <smss-field
+                ng-show="databaseDetails.editMode || item.new.length"
+                ng-repeat="item in databaseDetails.fieldOptions track by $index"
+                title="{{item.metakey}}"
+                id="{{item.metakey}}"
+            >
+                <label ng-show="item.display_options !== 'markdown'">
+                    {{item.metakey | camelCaseToTitleCase}}
+                </label>
+                <content>
+                    <div ng-switch="item.display_options">
+                        <div
+                            class="database__info__tags"
+                            ng-switch-when="single-checklist|multi-checklist|single-select|multi-select|multi-typeahead|checklist"
+                            ng-switch-when-separator="|"
+                        >
+                            <smss-tag
+                                ng-repeat="p in item.new"
+                                label="p"
+                                ng-class="'smss-tag--' + item.mapping[p]"
+                            >
+                            </smss-tag>
+                        </div>
+                        <div
+                            class="database__info__tags"
+                            ng-switch-when="input|textarea|single-typeahead"
+                            ng-switch-when-separator="|"
+                        >
+                            {{item.new}}
+                        </div>
+                    </div>
+                </content>
+            </smss-field>
+            <smss-field ng-if="!!databaseDetails.markdown.new">
+                <content>
+                    <div class="database-details__content">
+                        <div class="database-details__content__col">
+                            <div
+                                marked="databaseDetails.markdown.new"
+                                compile="true"
+                            ></div>
+                        </div>
+                    </div>
+                </content>
+            </smss-field>
+        </div>
+    </div>
+</div>

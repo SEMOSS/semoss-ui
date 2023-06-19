@@ -1,0 +1,26 @@
+<smss-scroll static-x="true">
+    <smss-field
+        ng-if="!(changeLayout.frameType !== 'GRAPH' && (changeLayout.vizType === 'standard' || changeLayout.selectedLayout === 'GraphGL'))"
+    >
+        <label> Select Graph Layout: </label>
+        <content>
+            <smss-checklist
+                class="smss-checklist--short"
+                model="changeLayout.layoutSelected"
+                searchable
+                options="changeLayout.layoutOptions"
+            >
+            </smss-checklist>
+        </content>
+    </smss-field>
+    <div class="smss-action">
+        <smss-btn ng-click="changeLayout.updateLayout();"> Execute </smss-btn>
+    </div>
+
+    <div
+        ng-if="changeLayout.frameType !== 'GRAPH' && (changeLayout.vizType === 'standard' || changeLayout.selectedLayout === 'GraphGL')"
+    >
+        There are no available layouts using your current frame type. Try
+        switching to "graph" frame type.
+    </div>
+</smss-scroll>

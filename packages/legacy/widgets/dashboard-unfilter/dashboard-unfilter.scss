@@ -1,0 +1,41 @@
+@import '~theme';
+
+.dashboard-unfilter {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    border: none;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+
+    &__btn {
+        display: inline-block;
+        height: 100%;
+        width: 100%;
+        text-align: center;
+        cursor: pointer;
+        overflow: hidden;
+
+        &:hover {
+            background: get-background-color('light');
+        }
+
+        &__icon {
+            height: 100%;
+        }
+    }
+
+    &__close {
+        display: none;
+        position: absolute;
+        top: 0;
+        right: 2px;
+        font-size: 0.75em;
+        cursor: pointer;
+    }
+}
+
+.widget-view__resizable__content:hover .dashboard-unfilter__close {
+    display: inline-block;
+}

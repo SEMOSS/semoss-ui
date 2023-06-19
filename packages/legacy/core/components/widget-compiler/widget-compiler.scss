@@ -1,0 +1,31 @@
+@import '~theme';
+$btn-height: get-height('button', 'rem') + get-spacing('sm', 'rem');
+
+.widget-compiler {
+    position: relative;
+    height: 100%;
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+
+    &__content {
+        flex: 1;
+        overflow-y: auto;
+        padding: 0 $scroll-size;
+    }
+
+    &__execute {
+        &__ghost {
+            height: $btn-height;
+            width: 100%;
+        }
+
+        &__visible {
+            position: absolute;
+            height: $btn-height;
+            left: 0;
+            right: 0;
+            bottom: 0;
+        }
+    }
+}

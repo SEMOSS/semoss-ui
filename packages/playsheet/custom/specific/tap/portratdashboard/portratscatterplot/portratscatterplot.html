@@ -1,0 +1,15 @@
+<!--title and control bar-->
+<div class='base-viz-title-bar chrome-backface-fix' ng-class="{'side-menu-shown': sidebarActive, 'side-menu-hidden':! sidebarActive}" ng-if="showTitle">
+    <div class='base-viz-title-text-container'>
+        <div class='base-viz-title-text-container-inner'>
+            <div class='base-viz-title-text' tooltip-placement='bottom' tooltip-popup-delay='500' tooltip-append-to-body="true" tooltip='{{data.title}}'>{{data.title}}</div>
+        </div>
+    </div>
+</div>
+
+<!---table-->
+<div id="data-table{{uniqueId}}" class="table-data-container" ng-class="{'table-show': isTableShown, 'table-hide': !isTableShown, 'explore-page': exploreTable}" ng-if="!isEmpty(tableData)">
+    <smss-table chart-data="tableData" show-title="false" table-type="'GridTable'" table-options="tableOptions" container-class="containerClass"></smss-table>
+</div>
+
+<button class="btn-blue sm-btn btn-bottom-right" ng-show="isDataBound && !isDataClean" ng-click="resetFilters()"><i class="fa fa-refresh"></i></button>

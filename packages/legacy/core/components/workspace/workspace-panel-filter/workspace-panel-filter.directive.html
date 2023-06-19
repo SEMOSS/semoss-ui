@@ -1,0 +1,12 @@
+<query-struct-filter
+    type="'frame'"
+    source="workspacePanelFilter.panels.source"
+    columns="workspacePanelFilter.panels.columns"
+    filter="workspacePanelFilter.selectedPanelFilterQS"
+    meta="insightCtrl.meta"
+    register="workspacePanelFilter.registerPanelFilter(getFilter)"
+>
+    <smss-btn ng-click="workspacePanelFilter.applyPanelFilter()">
+        Apply
+    </smss-btn>
+</query-struct-filter>

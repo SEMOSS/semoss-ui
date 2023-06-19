@@ -1,0 +1,9 @@
+@import '~theme';
+.scroll-container {
+    margin: 24px 0;
+    height: 100px;
+    border: 1px solid get-border-color('default');
+    &__line {
+        white-space: nowrap;
+    }
+}

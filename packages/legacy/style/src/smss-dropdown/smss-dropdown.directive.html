@@ -1,0 +1,95 @@
+<div class="smss-dropdown">
+    <div
+        id="smss-dropdown__toggle"
+        ng-disabled="smssDropdown.disabled"
+        tabindex="{{smssDropdown.disabled ? -1 : 0}}"
+        class="smss-dropdown__toggle"
+        ng-class="{'smss-dropdown__toggle--compact': smssDropdown.compact, 'smss-dropdown__toggle--open' : smssDropdown.open}"
+        smss-popover
+    >
+        <div
+            ng-if="!smssDropdown.compact"
+            class="smss-dropdown__toggle__text"
+            ng-class="{'smss-dropdown__toggle__text--placeholder': smssDropdown.showPlaceholder}"
+            ng-transclude="toggle"
+        >
+            <span
+                ng-show="smssDropdown.showPlaceholder"
+                title="{{smssDropdown.placeholder}}"
+            >
+                {{smssDropdown.placeholder}}
+            </span>
+            <span
+                ng-show="!smssDropdown.showPlaceholder"
+                title="{{smssDropdown.toggle}}"
+            >
+                {{smssDropdown.toggle}}
+            </span>
+        </div>
+        <i class="smss-dropdown__toggle__icon"></i>
+
+        <smss-popover-content
+            class="smss-dropdown__list"
+            show="smssDropdown.showDropdown(contentEle)"
+            hide="smssDropdown.hideDropdown()"
+            model="smssDropdown.open"
+            position="['SW', 'SE', 'NW','NE']"
+            closeable="false"
+            ng-style="{width: smssDropdown.width + 'px', height: smssDropdown.height}"
+            spacing="0"
+        >
+            <smss-search
+                ng-if="smssDropdown.searchable"
+                id="smss-dropdown__list__input"
+                class="smss-dropdown__list__input"
+                model="smssDropdown.searchTerm"
+                placeholder="Search"
+                keydown="smssDropdown.searchDropdownKeydown(event)"
+                change="smssDropdown.searchDropdown(searchTerm)"
+                inline
+            ></smss-search>
+
+            <smss-scroll
+                static-x="true"
+                class="smss-dropdown__list__scroll"
+                ng-class="{'smss-dropdown__list__scroll--short': smssDropdown.action || smssDropdown.searchable,
+                         'smss-dropdown__list__scroll--x-short': smssDropdown.searchable && smssDropdown.action}"
+            >
+                <smss-loading model="smssDropdown.loading" />
+                <div
+                    class="smss-dropdown__list__scroll__holder"
+                    ng-if="smssDropdown.open"
+                    ng-style="smssDropdown.listStyle"
+                >
+                    <div
+                        class="smss-dropdown__list__option"
+                        tabindex="{{$index === 0 ? 0 : -1}}"
+                        ng-class="{'smss-dropdown__list__option--selected': smssDropdown.isSelected(opt)}"
+                        ng-click="smssDropdown.changeDropdown(opt)"
+                        ng-keyup="smssDropdown.keyupDropdownList($event, opt)"
+                        ng-keydown="smssDropdown.keydownDropdownList($event)"
+                        ng-mouseover="smssDropdown.mouseover({option: opt})"
+                        ng-mouseleave="smssDropdown.mouseleave({option: opt})"
+                        ng-repeat="opt in smssDropdown.painted track by $index"
+                        ng-style="smssDropdown.styles[$index]"
+                    >
+                        <div
+                            class="smss-dropdown__list__option__label"
+                            ng-transclude="list"
+                            opt="option"
+                            title="{{smssDropdown.setView(opt)}}"
+                        >
+                            {{smssDropdown.setView(opt)}}
+                        </div>
+                    </div>
+                </div>
+            </smss-scroll>
+            <div
+                ng-if="smssDropdown.action"
+                class="smss-dropdown__list__action"
+                id="smss-dropdown-action"
+                ng-transclude="action"
+            ></div>
+        </smss-popover-content>
+    </div>
+</div>

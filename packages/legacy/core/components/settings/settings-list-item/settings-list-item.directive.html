@@ -1,0 +1,99 @@
+<div
+    class="settings-list-item"
+    ng-class="{'settings-list-item--selected': settingsListItem.selected}"
+>
+    <div
+        class="settings-list-item__text settings-list-item__text--100w settings__font--small"
+    >
+        <div class="smss-row">
+            <div class="smss-left settings-list-item__text__title__left">
+                {{settingsListItem.item.name}}
+            </div>
+            <div class="smss-right settings-list-item__text__title__right">
+                <smss-btn-group>
+                    <smss-btn
+                        title="Show {{settingsListItem.typeSingular}}"
+                        class="smss-btn--icon"
+                        ng-if="!settingsListItem.item.visibility && !settingsListItem.admin"
+                        ng-click="settingsListItem.item.visibility = !settingsListItem.item.visibility; settingsListItem.setItemVisibility(settingsListItem.item.id, settingsListItem.item.visibility, settingsListItem.type)"
+                    >
+                        <i class="fa fa-eye-slash"></i>
+                    </smss-btn>
+                    <smss-btn
+                        title="Hide {{settingsListItem.typeSingular}}"
+                        class="smss-btn--icon"
+                        ng-if="settingsListItem.item.visibility && !settingsListItem.admin"
+                        ng-click="settingsListItem.item.visibility = !settingsListItem.item.visibility; settingsListItem.setItemVisibility(settingsListItem.item.id, settingsListItem.item.visibility, settingsListItem.type)"
+                    >
+                        <i class="fa fa-eye"></i>
+                    </smss-btn>
+
+                    <smss-btn
+                        title="Make {{settingsListItem.typeSingular}} Public"
+                        class="smss-btn--icon"
+                        ng-if="!settingsListItem.item.global"
+                        ng-class="{'settings-list-item__text__title__right__button--disabled' : !settingsListItem.item.permissions.author}"
+                        ng-click="settingsListItem.item.global = !settingsListItem.item.global; settingsListItem.setItemGlobal(settingsListItem.admin, settingsListItem.item.id, settingsListItem.item.global, settingsListItem.type)"
+                    >
+                        <i class="fa fa-lock"></i>
+                    </smss-btn>
+                    <smss-btn
+                        title="Make {{settingsListItem.typeSingular}} Private"
+                        class="smss-btn--icon"
+                        ng-if="settingsListItem.item.global"
+                        ng-class="{'settings-list-item__text__title__right__button--disabled' : !settingsListItem.item.permissions.author}"
+                        ng-click="settingsListItem.item.global = !settingsListItem.item.global; settingsListItem.setItemGlobal(settingsListItem.admin, settingsListItem.item.id, settingsListItem.item.global, settingsListItem.type)"
+                    >
+                        <i class="fa fa-unlock"></i>
+                    </smss-btn>
+                    <smss-btn
+                        title="Delete {{settingsListItem.typeSingular}}"
+                        ng-disabled="!settingsListItem.admin && !settingsListItem.item.permissions.author"
+                        class="smss-btn--icon"
+                        ng-click="settingsListItem.openDelete(settingsListItem.item.id, settingsListItem.item.name)"
+                    >
+                        <!--TODO: add delete for db-->
+                        <i class="fa fa-trash-o"></i>
+                    </smss-btn>
+                </smss-btn-group>
+            </div>
+        </div>
+    </div>
+</div>
+
+<smss-overlay open="settingsListItem.openDeleteApp.open" size="sm">
+    <smss-overlay-header>
+        Delete
+        <span ng-if="settingsListItem.type === 'Projects'">Project</span>
+        <span ng-if="settingsListItem.type === 'Databases'">Database</span>
+    </smss-overlay-header>
+    <smss-overlay-body>
+        Are you sure you want to delete the
+        <span ng-if="settingsListItem.type === 'Projects'">project </span>
+        <span ng-if="settingsListItem.type === 'Databases'">database </span>
+        <b>{{settingsListItem.openDeleteApp.name}}</b>?
+        <span class="smss-color--error"> Warning: Action is Permanent </span>
+    </smss-overlay-body>
+    <smss-overlay-footer>
+        <smss-btn
+            class="smss-btn--text"
+            ng-click="settingsListItem.openDeleteApp.open = false"
+        >
+            Cancel
+        </smss-btn>
+        <smss-btn
+            class="smss-btn--error"
+            ng-if="settingsListItem.type === 'Databases'"
+            ng-click="settingsListItem.removeDB(settingsListItem.openDeleteApp.app)"
+        >
+            Delete
+        </smss-btn>
+        <smss-btn
+            class="smss-btn--error"
+            ng-if="settingsListItem.type === 'Projects'"
+            ng-click="settingsListItem.removeProject(settingsListItem.openDeleteApp.app)"
+        >
+            Delete
+        </smss-btn>
+    </smss-overlay-footer>
+</smss-overlay>

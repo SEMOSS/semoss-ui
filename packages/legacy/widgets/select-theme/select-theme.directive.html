@@ -1,0 +1,26 @@
+<div class="select-theme">
+    <smss-btn
+        class="smss-btn--text select-theme__reset"
+        ng-click="selectTheme.reset()"
+        ng-disabled="selectTheme.selected.length === 0"
+        >Reset to default</smss-btn
+    >
+    <div
+        ng-repeat="theme in selectTheme.themes"
+        ng-click="selectTheme.selectTheme(theme)"
+        class="select-theme__theme"
+        ng-class="{'select-theme__theme--selected': selectTheme.selected === theme.name}"
+    >
+        <h6>{{theme.name}}</h6>
+        <div class="select-theme__color">
+            <div
+                class="select-theme__color__square"
+                ng-repeat="color in theme.json.color.scheme.colors"
+                ng-style="{'background-color': (color)}"
+            ></div>
+        </div>
+        <div class="select-theme__image">
+            <img src="{{theme.image}}" alt="Theme Image" />
+        </div>
+    </div>
+</div>

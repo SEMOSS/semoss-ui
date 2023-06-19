@@ -1,0 +1,84 @@
+@import '~theme';
+$header-height: get-height('lg', 'em');
+.smss-collapsible {
+    position: relative;
+    font-size: 1rem;
+    padding: $header-height 0 0 0;
+
+    @include disabled();
+
+    &--white .smss-collapsible__header {
+        background: get-background-color('default');
+    }
+
+    &__header {
+        position: absolute;
+        top: 0;
+        left: 0;
+        display: flex;
+        height: $header-height;
+        line-height: calc(#{$header-height} - 2 *#{$border-size});
+        width: 100%;
+        padding: 0 to-em(12px);
+        font-size: 1rem;
+        cursor: pointer;
+        outline: none;
+        background: get-background-color('light');
+        border-top: 1px solid get-border-color('default');
+        border-bottom: 1px solid get-border-color('default');
+
+        &--opened {
+            & .smss-collapsible__header__icon {
+                &:after {
+                    font-size: get-font-size('body-small', 'em');
+                    font-style: normal;
+                    font-family: FontAwesome;
+                    content: '\f077';
+                }
+            }
+        }
+
+        &:focus-visible {
+            border-bottom: 1px solid get-border-color('primary');
+        }
+
+        &:hover {
+            background: get-background-color('primary--hover');
+        }
+
+        &__text {
+            display: inline-block;
+            flex: 1;
+            height: 100%;
+            line-height: inherit;
+            padding-right: get-spacing('sm', 'em');
+            text-transform: uppercase;
+            color: get-text-color('medium-emphasis');
+            @include text-overflow();
+        }
+
+        &__icon {
+            line-height: calc(#{$header-height} - 2 *#{$border-size});
+            &:after {
+                font-size: get-font-size('body-small', 'em');
+                font-style: normal;
+                font-family: FontAwesome;
+                content: '\f078';
+            }
+        }
+    }
+
+    &__content {
+        display: block;
+        @include transition();
+        padding: get-spacing('sm', 'em') $scroll-size;
+        border-radius: 0 0 $border-radius $border-radius;
+    }
+}
+
+// Add this class name around a group of smss-collapsible components to get rid of any double borders
+.smss-collapsible-group {
+    & .smss-collapsible:not(:last-child) .smss-collapsible__header--closed {
+        border-bottom: none;
+    }
+}

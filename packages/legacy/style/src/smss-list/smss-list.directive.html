@@ -1,0 +1,30 @@
+<div class="smss-list">
+    <div class="smss-list__header" ng-if="headerPresent">
+        <h6 ng-transclude="header">{{header}}</h6>
+    </div>
+    <smss-scroll
+        ng-style="{'height': headerPresent ? 'calc(100% - 32px)' : '100%'}"
+        static-x="true"
+    >
+        <smss-loading model="loading" />
+        <div class="smss-list__holder" ng-style="listStyle">
+            <div
+                class="smss-list__option"
+                tabindex="{{$index === 0 ? 0 : -1}}"
+                ng-click="click && click({event: $event, option: opt})"
+                ng-keydown="keydown && keydown({event: $event, option: opt})"
+                ng-keyup="keyup && keyup({event: $event, option: opt})"
+                ng-mouseover="mouseover && mouseover({event: $event, option: opt})"
+                ng-mouseleave="mouseleave && mouseleave({event: $event, option: opt})"
+                ng-repeat="opt in painted track by $index"
+                ng-style="styles[$index]"
+            >
+                <div class="smss-list__label" ng-transclude="label">
+                    <div title="{{setView(opt)}}" class="smss-list__text">
+                        {{setView(opt)}}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </smss-scroll>
+</div>

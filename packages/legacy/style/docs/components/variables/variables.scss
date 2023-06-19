@@ -1,0 +1,11 @@
+@import '~theme';
+.variables-section {
+    border-bottom: 2px solid get-border-color('default');
+    padding: 4 * get-spacing('sm', 'em') 0px 8 * get-spacing('sm', 'em');
+    &__container {
+        border: 1px solid get-border-color('default');
+        background: get-background-color('light');
+        overflow: auto;
+        padding: get-spacing('sm', 'em');
+    }
+}

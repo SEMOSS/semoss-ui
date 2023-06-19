@@ -1,0 +1,26 @@
+@import '~theme';
+
+.smss-image-cropper {
+    padding-right: get-spacing('md', 'em');
+
+    &__actions {
+        border-bottom: 1px solid get-border-color('default');
+        border-left: 1px solid get-border-color('default');
+        border-right: 1px solid get-border-color('default');
+        display: flex;
+        justify-content: center;
+        padding: get-spacing('md', 'em') 0;
+
+        button {
+            margin: 0 get-spacing('sm', 'em');
+        }
+    }
+
+    &__preview {
+        img {
+            display: block;
+            margin: get-spacing('md', 'em') 0;
+            max-width: 100%;
+        }
+    }
+}

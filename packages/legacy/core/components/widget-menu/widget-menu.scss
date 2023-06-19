@@ -1,0 +1,57 @@
+@import '~theme';
+$widget-menu-dock: get-width('icon--nav', 'rem');
+
+.widget-menu {
+    position: absolute;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    overflow: hidden;
+
+    &__dock {
+        position: absolute;
+        top: 0;
+        bottom: 0;
+        right: 0;
+        width: $widget-menu-dock;
+        background: get-background-color('default');
+    }
+
+    &__content {
+        position: absolute;
+        top: 0;
+        left: 0;
+        bottom: 0;
+        right: $widget-menu-dock;
+        overflow-y: auto;
+        overflow-x: hidden;
+        border-right: 1px solid get-border-color('default');
+    }
+
+    &__icon {
+        height: get-height('icon--nav', 'em');
+        line-height: get-height('icon--nav', 'em');
+        width: $widget-menu-dock;
+
+        > * {
+            font-size: get-font-size('h8', 'rem');
+        }
+
+        & i {
+            font-size: get-width('icon--compact', 'rem');
+        }
+
+        & svg {
+            width: get-width('icon--compact', 'rem');
+        }
+
+        &.smss-btn--selected {
+            color: get-text-color('primary') !important;
+        }
+
+        &:hover {
+            background: get-background-color('primary--hover');
+        }
+    }
+}

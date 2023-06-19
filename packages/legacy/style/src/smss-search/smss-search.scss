@@ -1,0 +1,81 @@
+@import '~theme';
+$icon-width: get-width('icon', 'em') + 2 * get-spacing('xs', 'em');
+.smss-search {
+    position: relative;
+    font-size: 1rem;
+
+    &__icon {
+        position: absolute;
+        top: 0;
+        width: get-width('icon', 'em');
+        height: get-width('icon', 'em');
+        margin: get-spacing('xs', 'em');
+        display: flex;
+        align-items: center;
+        justify-content: center;
+
+        &--search {
+            left: 0;
+            pointer-events: none;
+            color: get-text-color('low-emphasis');
+        }
+
+        &--clear {
+            right: 0;
+            color: get-text-color('medium-emphasis');
+            &:hover {
+                cursor: pointer;
+                color: get-text-color('primary');
+            }
+        }
+
+        &:before {
+            margin-top: -1px;
+        }
+    }
+
+    &__input {
+        padding: 0 rescale($icon-width, 1em, 0.875em);
+    }
+
+    &__underline {
+        display: none;
+        height: 1px;
+        width: 100%;
+        background: transparent;
+        border-bottom: 1px solid get-border-color('primary');
+        box-shadow: get-box-shadow('focus', 'primary');
+        position: absolute;
+        left: 0;
+        bottom: 0;
+    }
+
+    &--inline {
+        & .smss-search__input {
+            border-top-color: transparent;
+            border-left-color: transparent;
+            border-right-color: transparent;
+            border-radius: 0;
+            &:focus {
+                box-shadow: none;
+                border-bottom-color: transparent;
+                & + .smss-search__underline {
+                    display: block;
+                }
+            }
+        }
+    }
+
+    &--disabled,
+    &:disabled,
+    &[disabled='disabled'] {
+        & .smss-search__icon {
+            @include no-events();
+            color: get-text-color('disabled');
+        }
+
+        &.smss-search--inline .smss-search__input {
+            border-radius: $border-radius $border-radius 0 0;
+        }
+    }
+}

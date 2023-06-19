@@ -1,0 +1,139 @@
+<div class="builder">
+    <div class="builder__content">
+        <div ng-if="builder.step === 'app'">
+            <div class="builder__apps__first">
+                <div class="builder__apps__first__inner">
+                    <h3>Select Data</h3>
+                    <div class="builder__apps__main">
+                        <smss-accordion
+                            class="builder__apps__accordion"
+                            rotated
+                            resizable
+                        >
+                            <smss-accordion-item
+                                name="'Databases'"
+                                size="builder.accordion.first"
+                            >
+                                <div class="builder__apps__accordion__item">
+                                    <div class="smss-spacing">
+                                        <smss-search
+                                            placeholder="Search available databases..."
+                                            model="builder.app.searchTerm"
+                                            change="builder.searchApp()"
+                                        >
+                                        </smss-search>
+                                    </div>
+                                    <smss-scroll
+                                        class="builder__apps__accordion__item__search"
+                                        static-x="true"
+                                    >
+                                        <div
+                                            class="smss-block"
+                                            ng-class="{'smss-block--selected': item.value === builder.app.selected.value, 'smss-block--disabled': item.disable}"
+                                            title="{{item.name}}"
+                                            ng-repeat="item in builder.app.searched"
+                                            ng-click="builder.selectApp(item);"
+                                            tabindex="{{item.disable ? -1 : 0}}"
+                                        >
+                                            <div class="smss-block__image">
+                                                <img ng-src="{{item.image}}" />
+                                            </div>
+                                            <div class="smss-block__text">
+                                                <span>{{item.name}}</span>
+                                            </div>
+                                        </div>
+                                    </smss-scroll>
+                                </div>
+                            </smss-accordion-item>
+
+                            <smss-accordion-item
+                                name="'Tables'"
+                                size="builder.accordion.second"
+                            >
+                                <div class="builder__apps__accordion__item">
+                                    <div class="smss-spacing">
+                                        <smss-search
+                                            placeholder="Search available tables..."
+                                            model="builder.table.searchTerm"
+                                            change="builder.searchTable()"
+                                        >
+                                        </smss-search>
+                                    </div>
+                                    <smss-scroll
+                                        class="builder__apps__accordion__item__search"
+                                        static-x="true"
+                                    >
+                                        <div
+                                            class="smss-block"
+                                            ng-class="{'smss-block--selected': item.value === builder.table.selected.value}"
+                                            title="{{item.name}}"
+                                            ng-repeat="item in builder.table.searched"
+                                            ng-click="builder.selectTable(item);"
+                                        >
+                                            <div class="smss-block__text">
+                                                <span>{{item.name}}</span>
+                                            </div>
+                                        </div>
+                                    </smss-scroll>
+                                </div>
+                            </smss-accordion-item>
+
+                            <smss-accordion-item
+                                name="'Preview'"
+                                size="builder.accordion.third"
+                            >
+                                <preview></preview>
+                            </smss-accordion-item>
+                        </smss-accordion>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <form-builder
+            mode="build"
+            json="builder.wysiwygJSON"
+            app="builder.app.selected"
+            table="builder.table.selected.value"
+            ng-if="builder.formType === 'wysiwyg' && builder.step === 'build-wysiwyg'"
+        ></form-builder>
+    </div>
+
+    <div class="builder__footer" ng-if="builder.formType === 'wysiwyg'">
+        <smss-btn
+            class="smss-right"
+            ng-show="builder.step === 'app'"
+            ng-click="builder.next()"
+        >
+            Next
+        </smss-btn>
+        <smss-btn
+            class="smss-left smss-btn--text"
+            ng-show="builder.step !== 'app'"
+            ng-click="builder.back()"
+        >
+            Back
+        </smss-btn>
+        <smss-btn
+            class="smss-right smss-btn--right"
+            ng-show="builder.step !== 'app'"
+            ng-click="builder.setView()"
+        >
+            Set View
+        </smss-btn>
+        <smss-btn
+            class="smss-right smss-btn--right smss-btn--outline"
+            ng-show="builder.step !== 'app'"
+            ng-click="builder.previewFormHTML()"
+        >
+            Show Preview
+        </smss-btn>
+        <smss-btn
+            class="smss-right smss-btn--right smss-btn--text"
+            ng-show="builder.step !== 'app'"
+            ng-click="builder.editFormHTML()"
+        >
+            Edit Source
+        </smss-btn>
+    </div>
+</div>

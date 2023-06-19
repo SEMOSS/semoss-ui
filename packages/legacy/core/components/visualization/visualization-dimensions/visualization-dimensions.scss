@@ -1,0 +1,245 @@
+@import '~theme';
+$btn-group-height: get-height('default', 'rem') + get-spacing('md', 'rem');
+$tile-height: get-height('default', 'rem') + get-height('label', 'rem') +
+    get-spacing('sm', 'rem');
+.visualization-dimensions {
+    position: absolute;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    right: 0;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+
+    &__padding {
+        padding-left: get-spacing('scroll', 'rem');
+        padding-right: get-spacing('scroll', 'rem');
+    }
+
+    &__top {
+        height: calc(100% - #{$btn-group-height});
+        width: 100%;
+        display: flex;
+    }
+
+    &__btn-group {
+        overflow: hidden;
+        height: $btn-group-height;
+        border-top: 1px solid get-border-color('default');
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+
+        & .smss-toggle {
+            width: auto;
+        }
+    }
+
+    &__content {
+        height: 100%;
+        width: 50%;
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+        &:first-child {
+            border-right: 1px solid get-border-color('default');
+        }
+    }
+
+    &__recommendation {
+        cursor: pointer;
+        outline: none;
+    }
+
+    &__available {
+        flex: 1;
+        overflow: hidden;
+        width: 100%;
+        display: inline-block;
+
+        &__icon {
+            width: get-width('icon', 'rem');
+            font-size: get-font-size('body-regular', 'rem');
+            text-align: center;
+            color: get-text-color('primary');
+        }
+        &__text {
+            color: get-text-color('high-emphasis');
+            padding: 0 get-spacing('xs', 'rem');
+            flex: 1;
+        }
+    }
+
+    &__selected {
+        overflow: hidden;
+        flex: 1;
+
+        &__group {
+            display: block;
+            margin-bottom: get-spacing('sm', 'rem');
+
+            &__header {
+                display: flex;
+                align-items: center;
+                height: 1rem + get-spacing('xs', 'rem');
+                margin-bottom: get-spacing('xs', 'rem');
+                &__text {
+                    flex: 1;
+                    color: get-text-color('medium-emphasis');
+                    @include text-overflow();
+                }
+                &__icon {
+                    color: get-text-color('low-emphasis');
+                }
+            }
+
+            &__dropdown {
+                &__close {
+                    width: 24px;
+                    padding: 0;
+                    margin: 1px;
+                    height: 26px;
+                    line-height: 24px;
+                }
+            }
+        }
+        & .smss-scroll__inner {
+            padding-top: 0;
+        }
+    }
+
+    &__list {
+        padding: 0;
+        margin: 0;
+        list-style: none;
+        min-height: get-height('default', 'rem');
+        border-radius: $border-radius;
+
+        &--dashed {
+            border: 2px dashed get-border-color('default');
+            padding: get-spacing('sm', 'rem');
+        }
+
+        &--filled {
+            border: 1px solid get-border-color('default');
+        }
+
+        &--dragging {
+            border-color: get-border-color('primary');
+        }
+
+        &__add {
+            line-height: get-height('sm', 'rem');
+            color: get-text-color('low-emphasis');
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            & i {
+                margin-right: get-spacing('xs', 'rem');
+            }
+        }
+
+        &__swappable {
+            display: inline-block;
+            position: relative;
+            cursor: move;
+            height: get-height('default', 'rem');
+            width: 100%;
+            outline: none;
+            border-radius: $border-radius;
+            display: flex;
+            align-items: center;
+
+            &__group {
+                margin-right: get-spacing('xs', 'rem');
+                font-size: get-font-size('body-regular', 'rem');
+            }
+
+            &__text {
+                padding: 0 get-spacing('sm', 'rem') / 2;
+                flex: 1;
+                color: get-text-color('high-emphasis');
+                @include text-overflow();
+            }
+
+            &__dropdown .smss-dropdown__toggle {
+                border: none;
+                background: transparent;
+            }
+
+            &:hover {
+                background: get-background-color('primary--hover');
+            }
+
+            &--dragging {
+                background: get-background-color('default');
+            }
+        }
+    }
+
+    &__selected-frame {
+        margin-bottom: 0;
+    }
+
+    &__selected-visual {
+        display: inline-block;
+        cursor: pointer;
+
+        &__target {
+            display: flex;
+            align-items: center;
+            & i {
+                margin-left: get-spacing('sm', 'rem');
+                font-size: 1rem;
+            }
+        }
+        & .smss-tile {
+            height: $tile-height;
+            padding: get-spacing('xxs', 'rem') get-spacing('xs', 'rem');
+        }
+        &:hover {
+            & .smss-tile {
+                background: get-background-color('default') !important;
+                border-color: get-border-color('primary');
+            }
+            & i {
+                color: get-text-color('primary');
+            }
+        }
+        &__popover {
+            height: 50%;
+            width: 50%;
+        }
+    }
+    &__heading {
+        margin: get-spacing('md', 'rem') 0;
+    }
+    &__subheading {
+        margin: get-spacing('md', 'rem') 0;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        height: get-height('button--compact', 'rem');
+        & h6 {
+            color: get-text-color('medium-emphasis');
+            @include text-overflow();
+        }
+    }
+}
+
+.visualization-dimensions .dndDraggingSource {
+    display: none;
+}
+
+.visualization-dimensions .dndPlaceholder {
+    height: get-height('sm', 'rem');
+    width: 100%;
+    background: get-background-color('primary--hover');
+    border: 1px dashed get-border-color('default');
+    border-radius: $border-radius;
+}
+
+.visualization-dimensions .dndDragover {
+    background: get-background-color('primary--hover');
+}

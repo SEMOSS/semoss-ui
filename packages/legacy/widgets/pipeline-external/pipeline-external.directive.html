@@ -1,0 +1,192 @@
+<div class="pipeline-external">
+    <smss-scroll static-x="true" class="pipeline-external__content">
+        <smss-field>
+            <label>
+                Select Database:<span class="smss-color--error">*</span>
+            </label>
+            <content>
+                <smss-dropdown
+                    display="display"
+                    value="value"
+                    model="pipelineExternal.driver"
+                    options="pipelineExternal.drivers"
+                    change="pipelineExternal.updateExternal()"
+                >
+                    <smss-dropdown-toggle
+                        class="pipeline-external__dropdown__item"
+                    >
+                        <div class="pipeline-external__dropdown__item__img">
+                            <img
+                                ng-src="{{$parent.smssDropdown.getOption($parent.smssDropdown.model).image}}"
+                            />
+                        </div>
+                        <div class="pipeline-external__dropdown__item__text">
+                            {{$parent.smssDropdown.getOption($parent.smssDropdown.model).display}}
+                        </div>
+                    </smss-dropdown-toggle>
+                    <smss-dropdown-list
+                        class="pipeline-external__dropdown__item"
+                    >
+                        <div class="pipeline-external__dropdown__item__img">
+                            <img ng-src="{{$parent.opt.image}}" />
+                        </div>
+                        <div class="pipeline-external__dropdown__item__text">
+                            {{$parent.opt.display}}
+                        </div>
+                    </smss-dropdown-list>
+                </smss-dropdown>
+            </content>
+        </smss-field>
+
+        <smss-field
+            ng-show="!pipelineExternal.connection.direct && input.visible"
+            ng-repeat="input in pipelineExternal.inputs"
+        >
+            <label>
+                {{input.display}}:<span
+                    ng-show="input.required"
+                    class="smss-color--error"
+                    >*</span
+                >
+            </label>
+            <content>
+                <smss-input
+                    ng-model="input.value"
+                    ng-change="pipelineExternal.buildExternal();"
+                    placeholder="{{input.display}}"
+                    ng-attr-type="{{input.secret ? 'password' : 'text'}}"
+                >
+                </smss-input>
+                <div class="smss-text" ng-if="input.description">
+                    <span class="smss-small">{{input.description}}</span>
+                </div>
+            </content>
+        </smss-field>
+
+        <smss-field>
+            <label>
+                Enter SQL Query:<span class="smss-color--error">*</span>
+            </label>
+            <content>
+                <smss-textarea
+                    ng-model="pipelineExternal.connection.query"
+                    placeholder="SQL Query"
+                >
+                </smss-textarea>
+            </content>
+        </smss-field>
+
+        <smss-field>
+            <content>
+                <smss-checkbox
+                    change="pipelineExternal.buildExternal();"
+                    model="pipelineExternal.connection.direct"
+                >
+                    Edit Connection String Directly
+                </smss-checkbox>
+            </content>
+        </smss-field>
+
+        <smss-field>
+            <label> Enter Connection String: </label>
+            <content>
+                <smss-input
+                    ng-disabled="!pipelineExternal.connection.direct"
+                    ng-model="pipelineExternal.connection.string"
+                    placeholder="Connection String"
+                >
+                </smss-input>
+            </content>
+        </smss-field>
+        <div class="smss-caption smss-color--error">* are required</div>
+    </smss-scroll>
+    <div class="smss-action smss-clear pipeline-external__actions">
+        <smss-popover>
+            <smss-btn
+                id="pipeline-external__advanced"
+                title="Advanced options"
+                class="smss-btn--icon"
+            >
+                <i class="fa fa-cog"></i>
+            </smss-btn>
+
+            <smss-popover-content
+                class="pipeline-external__advanced__popover"
+                target="#pipeline-external__advanced"
+            >
+                <smss-field>
+                    <label>
+                        {{pipelineComponentCtrl.data.state === 'executed' ?
+                        'Frame Type:' : 'Select Frame Type:'}}
+                    </label>
+                    <content class="smss-field__content-overflow">
+                        <smss-dropdown
+                            ng-if="pipelineComponentCtrl.data.state !== 'executed'"
+                            options="[{'display': 'Grid', 'value': 'GRID'}, {'display': 'Graph', 'value': 'GRAPH'}, {'display': 'Live', 'value': 'NATIVE'}, {'display': 'R', 'value': 'R'}, {'display': 'Python', 'value': 'PY'}]"
+                            display="display"
+                            value="value"
+                            model="pipelineExternal.frameType"
+                            change="pipelineExternal.updateFrame(pipelineExternal.frameType)"
+                            body="false"
+                        >
+                        </smss-dropdown>
+                        <span
+                            ng-if="pipelineComponentCtrl.data.state === 'executed'"
+                            >{{pipelineExternal.frameType}}</span
+                        >
+                    </content>
+                </smss-field>
+                <smss-field>
+                    <label>
+                        {{pipelineComponentCtrl.data.state === 'executed' ?
+                        'Frame Name:' : 'Enter Frame Name:'}}
+                    </label>
+                    <content>
+                        <smss-input
+                            ng-if="pipelineComponentCtrl.data.state !== 'executed'"
+                            ng-model="pipelineExternal.customFrameName.name"
+                            ng-change="pipelineExternal.validateFrameName()"
+                        ></smss-input>
+                        <span
+                            ng-if="pipelineComponentCtrl.data.state === 'executed'"
+                            >{{pipelineExternal.customFrameName.name}}</span
+                        >
+                    </content>
+                    <description>
+                        <span
+                            class="smss-color--error"
+                            ng-show="pipelineExternal.customFrameName.message"
+                        >
+                            {{pipelineExternal.customFrameName.message}}</span
+                        >
+                    </description>
+                </smss-field>
+            </smss-popover-content>
+        </smss-popover>
+        <smss-btn
+            class="smss-btn--text"
+            ng-click="pipelineComponentCtrl.closeComponent()"
+        >
+            Cancel
+        </smss-btn>
+        <smss-btn
+            class="smss-btn--outline"
+            ng-click="pipelineExternal.previewExternal()"
+        >
+            Preview
+        </smss-btn>
+        <smss-btn
+            class="smss-btn--outline"
+            ng-click="pipelineExternal.importExternal()"
+            ng-disabled="!pipelineExternal.customFrameName.valid"
+        >
+            Import
+        </smss-btn>
+        <smss-btn
+            ng-click="pipelineExternal.importExternal(true)"
+            ng-disabled="!pipelineExternal.customFrameName.valid"
+        >
+            Visualize
+        </smss-btn>
+    </div>
+</div>

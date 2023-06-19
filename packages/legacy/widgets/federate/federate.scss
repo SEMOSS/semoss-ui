@@ -1,0 +1,261 @@
+@import '~theme';
+
+.federate {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    display: flex;
+    flex-direction: column;
+
+    &__sections {
+        flex: 1;
+        width: 100%;
+        padding: 0 get-spacing('sm', 'em');
+        overflow: hidden;
+    }
+    &__list {
+        padding-top: 0.3em;
+        padding-bottom: 0.3em;
+    }
+    &__add {
+        height: 100%;
+        width: 100%;
+        display: flex;
+        flex-direction: column;
+
+        &__traversed {
+            padding-bottom: get-spacing('sm', 'em') / 4;
+            display: flex;
+            flex-wrap: wrap;
+            height: get-height('sm', 'em') * 2;
+            overflow: auto;
+            border-bottom: 1px solid get-border-color('default');
+            &__label {
+                color: get-text-color('medium-emphasis');
+                font-size: 0.875em;
+                font-weight: 500;
+                margin-right: get-spacing('sm', 'em') / 2;
+                height: rescale(get-height('sm', 'em'), 1em, 0.875em);
+                line-height: rescale(get-height('sm', 'em'), 1em, 0.875em);
+            }
+            &__empty {
+                font-size: 0.875em;
+                height: rescale(get-height('sm', 'em'), 1em, 0.875em);
+                line-height: rescale(get-height('sm', 'em'), 1em, 0.875em);
+            }
+            &__column {
+                height: get-height('sm', 'em');
+                line-height: get-height('sm', 'em');
+                &:after {
+                    content: ',';
+                    margin-right: get-spacing('sm', 'em') / 2;
+                }
+                &:last-child:after {
+                    content: none;
+                    margin-right: 0;
+                }
+            }
+        }
+
+        &__scroll {
+            flex: 1;
+            overflow: hidden;
+        }
+        &__table-header {
+            cursor: pointer;
+            padding: 0 get-spacing('sm', 'em');
+            height: calc(#{get-height('sm', 'em')} + 2px);
+            line-height: get-height('sm', 'em');
+            background: get-background-color('light');
+            color: get-text-color('medium-emphasis');
+            border: 1px solid get-border-color('default');
+            border-radius: $border-radius;
+            display: flex;
+            &__text {
+                width: calc(100% - #{get-width('icon', 'em')});
+                @include text-overflow();
+            }
+            &__content {
+                margin-top: -1px;
+            }
+        }
+    }
+
+    &__dropdown {
+        display: flex;
+        flex-direction: row;
+        align-items: center;
+
+        &__img {
+            position: relative;
+            height: get-height('icon', 'em');
+            width: get-width('icon', 'em');
+            padding: get-spacing('xs', 'em') 0;
+            margin-right: get-spacing('sm', 'em');
+            overflow: hidden;
+
+            & img {
+                position: absolute;
+                top: 50%;
+                left: 50%;
+                transform: translateX(-50%) translateY(-50%);
+                max-width: 100%;
+                max-height: 100%;
+            }
+        }
+
+        &__text {
+            flex: 1;
+            @include text-overflow();
+        }
+    }
+
+    &__joins {
+        height: 100%;
+        width: 100%;
+        display: flex;
+        flex-direction: column;
+
+        &__database {
+            display: flex;
+            border-bottom: 1px solid get-border-color('default');
+            &__traverse-toggle {
+                width: 200px;
+            }
+        }
+        &__join {
+            overflow: auto;
+            flex: 1;
+            border-bottom: 1px solid get-border-color('default');
+            &__label {
+                font-size: 0.875em;
+                color: get-text-color('medium-emphasis');
+                font-weight: 500;
+            }
+            &__button {
+                display: block;
+                margin: auto;
+            }
+        }
+        &__select {
+            height: 50%;
+            width: 100%;
+            display: flex;
+            &__third {
+                height: 100%;
+                width: calc(100% / 3);
+                padding: 0 get-spacing('sm', 'em');
+                border-right: 1px solid get-border-color('default');
+                overflow: hidden;
+                &::last-child {
+                    border-right: none;
+                }
+            }
+            &__header {
+                height: rescale(get-height('sm', 'em'), 1em, 0.875em);
+                line-height: rescale(get-height('sm', 'em'), 1em, 0.875em);
+                font-size: 0.875em;
+                font-weight: 500;
+                color: get-text-color('medium-emphasis');
+            }
+            &__list {
+                overflow-y: scroll;
+                height: calc(100% - #{get-height('sm', 'em')});
+                width: 100%;
+            }
+            &__highlight {
+                border: 1px solid get-border-color('primary');
+            }
+        }
+    }
+    &__overview {
+        display: flex;
+        &__header {
+            color: get-text-color('medium-emphasis');
+            font-size: 0.875em;
+            font-weight: 500;
+            height: rescale(get-height('sm', 'em'), 1em, 0.875em);
+            line-height: rescale(get-height('sm', 'em'), 1em, 0.875em);
+        }
+        &__content {
+            overflow: auto;
+            height: calc(100% - #{get-height('sm', 'em')});
+            width: 100%;
+        }
+        &__left {
+            height: 100%;
+            width: 20%;
+            border-right: 1px solid get-border-color('default');
+        }
+        &__right {
+            height: 100%;
+            width: 80%;
+            overflow: auto;
+            padding-left: get-spacing('sm', 'em');
+            &__table-header {
+                cursor: pointer;
+                height: calc(#{get-height('sm', 'em')} + 2px);
+                line-height: get-height('sm', 'em');
+                background: get-background-color('light');
+                color: get-text-color('medium-emphasis');
+                border: 1px solid get-border-color('default');
+                border-radius: $border-radius;
+                display: flex;
+                padding: 0 get-spacing('sm', 'em');
+                &__text {
+                    width: calc(100% - #{get-width('icon', 'em')});
+                    @include text-overflow();
+                    display: flex;
+                    align-items: center;
+                }
+                &__img {
+                    height: get-height('sm', 'em') - 0.2;
+                    width: get-width('icon', 'em');
+                    padding: get-spacing('sm', 'em') / 4 0;
+                    text-align: center;
+                    margin-right: get-spacing('sm', 'em');
+                    & img {
+                        height: 100%;
+                        margin: 0 auto;
+                        display: block;
+                        border: none;
+                    }
+                }
+                &__content {
+                    margin-top: -1px;
+                    border: 1px solid get-border-color('default');
+                    border-radius: $border-radius;
+                    padding: 0 get-spacing('sm', 'em');
+                }
+                &__joins {
+                    border-bottom: 1px solid get-border-color('default');
+                }
+            }
+            &__joins {
+                display: flex;
+                align-items: center;
+                &__left {
+                    width: calc(50% - #{get-spacing('sm', 'em')});
+                    text-align: right;
+                    @include text-overflow();
+                }
+                &__middle {
+                    margin: 0 get-spacing('sm', 'em');
+                }
+                &__right {
+                    width: calc(50% - #{get-spacing('sm', 'em')});
+                    text-align: left;
+                    @include text-overflow();
+                }
+            }
+        }
+    }
+    &__overflow {
+        overflow: auto;
+    }
+    &__popover {
+        width: 14.5em;
+    }
+}

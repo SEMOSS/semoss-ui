@@ -1,0 +1,94 @@
+.part {
+    width: 40%;
+}
+
+.oneVal {
+    border: 2px solid gray;
+    border-color: #0071bb;
+    float: right;
+    margin-right: 4%;
+}
+
+.vals {
+    border-top: 2px solid gray;
+    border-left: 2px solid gray;
+    border-right: 2px solid gray;
+    border-color: #0071bb;
+    float: right;
+    margin-right: 4%;
+}
+
+.valsLast {
+    border: 2px solid gray;
+    border-color: #0071bb;
+    float: right;
+    margin-right: 4%;
+}
+
+.partThirty {
+    width: 26%;
+}
+
+.newContainer {
+    padding: 10px;
+    text-align: center;
+}
+
+.clear:after {
+    content: ' ';
+    display: block;
+    clear: both;
+}
+
+.item {
+    border-bottom: 1px solid gray;
+    border-color: #0071bb;
+    padding: 10px;
+    white-space: nowrap;
+    overflow: hidden;
+}
+
+.left {
+    border-left: 2px solid gray;
+    border-right: 2px solid gray;
+    border-color: #0071bb;
+    float: left;
+    margin-left: 4%;
+}
+
+.right {
+    border-left: 1px solid gray;
+    border-right: 2px solid gray;
+    border-color: #0071bb;
+    float: right;
+    margin-right: 4%;
+}
+
+.rightCenter {
+    float: right;
+}
+
+.bottomSpace {
+    border-bottom: 2px solid gray;
+    border-color: #0071bb;
+    margin-bottom: 40px;
+}
+
+.top {
+    border-top: 2px solid gray;
+    border-bottom: 2px solid gray;
+    border-color: #0071bb;
+    font-weight: bold;
+    color: #0071bb;
+}
+
+.category {
+    background-color: #0071bb;
+    color: white;
+    float: left;
+}
+
+.number {
+    font-weight: normal;
+    background-color: rgb(245, 245, 245);
+}

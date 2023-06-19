@@ -1,0 +1,73 @@
+@import '~theme';
+
+.change-image {
+    &__label {
+        margin-bottom: 0.75em;
+    }
+
+    &__action {
+        display: flex;
+        justify-content: flex-end;
+        padding: 0.875em;
+
+        .smss-btn {
+            margin-left: get-spacing('md', 'em');
+        }
+    }
+
+    &__images {
+        display: flex;
+        flex-wrap: wrap;
+    }
+
+    &__image {
+        margin-bottom: get-spacing('md', 'em');
+        margin-left: get-spacing('md', 'em') + (get-spacing('md', 'em') / 6);
+        position: relative;
+        width: 64px;
+
+        &:nth-child(6n + 1) {
+            margin-left: 4px;
+        }
+
+        &--selected {
+            img {
+                box-shadow: 0 0 0 2px #fff, 0 0 0 4px #40a0ff;
+            }
+        }
+    }
+
+    &__select {
+        img {
+            // background-color: #120C4C;
+            height: 64px;
+            width: 64px;
+        }
+    }
+
+    &__title {
+        margin-top: get-spacing('sm', 'em');
+        overflow: hidden;
+        text-align: center;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    &__upload {
+        p {
+            margin-bottom: get-spacing('sm', 'em');
+        }
+    }
+
+    &__delete {
+        &__background {
+            color: get-text-color('white');
+        }
+        color: get-text-color('error');
+        cursor: pointer;
+        font-size: 1.5em;
+        position: absolute;
+        right: -0.5em;
+        top: -0.5em;
+    }
+}

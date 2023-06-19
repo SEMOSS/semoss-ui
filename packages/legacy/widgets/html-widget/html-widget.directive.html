@@ -1,0 +1,205 @@
+<div class="html-widget">
+    <div
+        id="html-widget__editor"
+        class="html-widget__editor"
+        ng-if="htmlWidget.edit.open"
+        ng-init="htmlWidget.renderEdit()"
+    >
+        <smss-field>
+            <label> File: </label>
+            <content>
+                <browser-asset
+                    model="htmlWidget.file"
+                    on-open="htmlWidget.openFile(item)"
+                    layout="popover"
+                ></browser-asset>
+            </content>
+        </smss-field>
+        <div class="html-widget__editor__view">
+            <div class="html-widget__editor__view__header">
+                <h6 class="html-widget__editor__view__header__title">
+                    Content:
+                </h6>
+
+                <smss-btn
+                    class="smss-btn--text smss-btn--compact"
+                    ng-show="htmlWidget.edit.view === 'wysiwyg'"
+                    ng-click="htmlWidget.switchEditView('html')"
+                >
+                    View as HTML
+                </smss-btn>
+
+                <smss-btn
+                    class="smss-btn--text smss-btn--compact"
+                    ng-show="htmlWidget.edit.view === 'html'"
+                    ng-click="htmlWidget.switchEditView('wysiwyg')"
+                >
+                    View in Editor
+                </smss-btn>
+            </div>
+
+            <div class="html-widget__editor__view__content">
+                <smss-editor
+                    ng-if="htmlWidget.edit.view === 'wysiwyg'"
+                    model="htmlWidget.content.html"
+                    ng-keydown="htmlWidget.keydownEdit($event)"
+                ></smss-editor>
+
+                <smss-textarea
+                    ng-if="htmlWidget.edit.view === 'html'"
+                    ng-trim="false"
+                    ng-keydown="htmlWidget.keydownEdit($event)"
+                    ng-model="htmlWidget.content.html"
+                >
+                </smss-textarea>
+            </div>
+        </div>
+        <div class="html-widget__editor__view">
+            <div class="html-widget__editor__view__header">
+                <h6 class="html-widget__editor__view__header__title">
+                    Variables:
+                </h6>
+            </div>
+            <div class="html-widget__editor__view__content">
+                <table class="smss--sticky">
+                    <thead>
+                        <tr>
+                            <th width="20%">Name</th>
+                            <th width="25%">Type</th>
+                            <th>Query</th>
+                            <th class="smss--icon"></th>
+                        </tr>
+                    </thead>
+
+                    <tbody>
+                        <tr
+                            ng-repeat="variable in htmlWidget.content.variables track by $index"
+                        >
+                            <td>
+                                <smss-input
+                                    ng-model="variable.name"
+                                ></smss-input>
+                            </td>
+                            <td class="smss-center">
+                                <smss-dropdown
+                                    model="variable.type"
+                                    options="['Query','Value']"
+                                    searchable="false"
+                                >
+                                </smss-dropdown>
+                            </td>
+                            <td>
+                                <smss-textarea
+                                    class="smss-textarea--bordered"
+                                    ng-model="variable.value"
+                                >
+                                </smss-textarea>
+                            </td>
+                            <td>
+                                <smss-btn
+                                    class="smss-btn--icon"
+                                    ng-click="htmlWidget.removeEditVariable($index)"
+                                >
+                                    <i
+                                        class="fa fa-times smss-color--error"
+                                    ></i>
+                                </smss-btn>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            <div class="smss-clear">
+                <smss-btn
+                    class="smss-btn--icon smss-right"
+                    ng-click="htmlWidget.addEditVariable()"
+                    title="Add a new parameter"
+                >
+                    <i class="fa fa-plus smss-color--success"></i>
+                </smss-btn>
+            </div>
+        </div>
+        <smss-field>
+            <content>
+                <smss-toggle
+                    model="htmlWidget.content.freeze"
+                    title="Toggle listeners on or off, so that the panel doesn't react to changes."
+                    change="htmlWidget.updateListeners();"
+                    >Freeze Panel</smss-toggle
+                >
+            </content>
+            <description>
+                Toggle listeners on or off, so that the panel doesn't react to
+                changes.
+            </description>
+        </smss-field>
+        <div class="smss-action smss-clear">
+            <smss-btn
+                class="smss-btn--text"
+                ng-click="htmlWidget.resetCustom()"
+            >
+                Cancel
+            </smss-btn>
+            <smss-btn
+                class="smss-btn--outline"
+                ng-click="htmlWidget.previewCustom()"
+            >
+                Preview
+            </smss-btn>
+            <smss-btn ng-click="htmlWidget.openSave()"> Save </smss-btn>
+        </div>
+
+        <smss-overlay ng-if="htmlWidget.save.open" open="htmlWidget.save.open">
+            <smss-overlay-header>Save HTML Widget</smss-overlay-header>
+            <smss-overlay-body>
+                <smss-field>
+                    <label> Name: </label>
+                    <content>
+                        <smss-input
+                            ng-disabled="!htmlWidget.save.new"
+                            autofocus
+                            ng-model="htmlWidget.save.name"
+                        ></smss-input>
+                    </content>
+                </smss-field>
+                <smss-field>
+                    <label> Comment: </label>
+                    <content>
+                        <smss-input
+                            ng-model="htmlWidget.save.comment"
+                            autofocus
+                        ></smss-input>
+                    </content>
+                </smss-field>
+            </smss-overlay-body>
+            <smss-overlay-footer>
+                <smss-btn
+                    class="smss-btn--text"
+                    ng-click="htmlWidget.closeSave()"
+                >
+                    Cancel
+                </smss-btn>
+                <smss-btn
+                    ng-disabled="!htmlWidget.save.name || !htmlWidget.save.comment"
+                    ng-click="htmlWidget.saveSave()"
+                >
+                    Save
+                </smss-btn>
+            </smss-overlay-footer>
+        </smss-overlay>
+    </div>
+
+    <smss-btn
+        class="smss-btn--icon html-widget__toggle"
+        ng-if="!htmlWidget.presentation && htmlWidget.tools && !htmlWidget.edit.open"
+        ng-click="htmlWidget.openEdit()"
+    >
+        <i class="fa fa-edit" title="Edit"></i>
+    </smss-btn>
+
+    <div
+        id="html-widget__content"
+        class="html-widget__content"
+        ng-class="{'html-widget__content--presentation': !htmlWidget.edit.open}"
+    ></div>
+</div>

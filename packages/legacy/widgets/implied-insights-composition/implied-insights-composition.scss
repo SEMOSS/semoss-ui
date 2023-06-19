@@ -1,0 +1,40 @@
+@import '~theme';
+
+.implied-insights-composition {
+    height: 100%;
+    width: 100%;
+    overflow: auto;
+    padding: get-spacing('sm', 'rem') get-spacing('md', 'rem');
+    &__legend {
+        display: flex;
+        &__block {
+            display: flex;
+            align-items: center;
+            margin-right: get-spacing('md', 'rem');
+            & i {
+                margin-right: get-spacing('xs', 'rem');
+            }
+        }
+    }
+    &__column {
+        display: flex;
+        flex-direction: column;
+        width: 100%;
+        height: 100%;
+        margin: get-spacing('md', 'rem') 0;
+        &__content {
+            flex: 1;
+            display: flex;
+            width: 100%;
+            height: 100%;
+        }
+    }
+    &__chart {
+        width: 70%;
+        height: 100%;
+    }
+    &__summary {
+        width: 30%;
+        height: 100%;
+    }
+}

@@ -1,0 +1,196 @@
+.base-viz-title-text-container {
+    position: absolute;
+    font-size: 14px;
+    text-align: left;
+    width: calc(100% - 260px);
+    top: 0;
+    line-height: 50px;
+}
+
+.base-viz-title-text-container-inner {
+    position: absolute;
+    top: 8px;
+    left: 5px;
+    right: 0;
+    text-align: left;
+}
+
+.base-viz-title-text {
+    float: left;
+    width: 100%;
+    line-height: 18px;
+    text-overflow: ellipsis;
+    overflow: hidden;
+    white-space: nowrap;
+    padding: 3px 0;
+    font-size: 15px;
+    color: #494b5f;
+}
+
+.sidebarContentArea {
+    left: 0;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    background-color: white;
+}
+
+.sidebarContentLeft {
+    position: absolute;
+    width: 50%;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    z-index: 1;
+}
+
+.timeline-sidebar-title .sm-btn {
+    margin-top: -3px;
+}
+
+.timeline-sidebar-title {
+    background-color: #eee;
+    border-bottom: 1px solid #ccc;
+    padding: 5px 10px;
+    white-space: nowrap;
+}
+
+.contentScrollRegion {
+    overflow: auto;
+    position: absolute;
+    top: 31px;
+    left: 0;
+    right: 0;
+    bottom: 0;
+}
+
+.timeline-table th {
+    min-width: 55px;
+}
+
+.timeline-icd {
+    width: 40%;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    overflow: hidden;
+}
+
+.timeline-loe {
+    width: 15%;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    overflow: hidden;
+}
+
+.timeline-gl-tag {
+    width: 15%;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    overflow: hidden;
+}
+
+.timeline-phase {
+    width: 30%;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    overflow: hidden;
+}
+
+.timeline-label {
+    color: #ffffff;
+    background-color: #999999;
+    font-size: 75%;
+    font-weight: bold;
+    text-align: center;
+    white-space: nowrap;
+    border-radius: .25em;
+    margin-right: auto;
+    margin-left: auto;
+    width: 90%;
+}
+
+.timeline-label.Requirements {
+    color: black;
+    background-color: #ECF6BD;
+}
+
+.timeline-label.Design {
+    color: black;
+    background-color: #C5E5A0;
+}
+
+.timeline-label.Develop {
+    color: black;
+    background-color: #9FD483;
+}
+
+.timeline-label.Test {
+    background-color: #79C366;
+}
+
+.timeline-label.Deploy {
+    background-color: #52B149;
+}
+
+.timeline-label.Completed {
+    background-color: #2CA02C;
+}
+
+.timeline-label.Decommissioned {
+    background-color: #FF0000;
+}
+
+.sidebarFooter {
+    position: absolute;
+    height: 0;
+    left: 0;
+    bottom: 0;
+    right: 0;
+    background-color: white;
+}
+
+.ntwk-resizer {
+    background-color: #ccc;
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 50%;
+    width: 3px;
+    cursor: e-resize;
+    z-index: 5;
+}
+
+.ntwk-resizer:hover {
+    background-color: #666;
+}
+
+.timeline-hide-slider {
+    visibility: hidden;
+    display: none;
+}
+
+/**************Right Side*****************/
+
+.sidebarContentRight {
+    position: absolute;
+    left: 50%;
+    top: 0;
+    bottom: 0;
+    right: 0;
+    padding: 0 0 0 0;
+    z-index: 1;
+}
+
+.sidebar-title .sm-btn {
+    margin-top: -3px;
+}
+
+.sidebar-title {
+    background-color: #eee;
+    border-bottom: 1px solid #ccc;
+    padding: 5px 10px;
+}
+
+.header-title {
+    font-size: 18px;
+}

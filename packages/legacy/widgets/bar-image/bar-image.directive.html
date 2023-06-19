@@ -1,0 +1,79 @@
+<smss-scroll static-x="true">
+    <p class="smss-spacing">Customize the shape and style of the bars.</p>
+    <smss-field>
+        <label>Select a symbol:</label>
+        <content>
+            <smss-dropdown
+                model="barImage.selectedSymbol"
+                options="barImage.symbols"
+                placeholder="Default (Bar)"
+            >
+            </smss-dropdown>
+        </content>
+    </smss-field>
+    <smss-field ng-if="barImage.selectedSymbol === 'Default (Bar)';">
+        <label>Set border radius (px):</label>
+        <content>
+            <smss-slider
+                model="barImage.borderRadius"
+                min="0"
+                max="30"
+                numerical
+            >
+            </smss-slider>
+        </content>
+    </smss-field>
+
+    <smss-field ng-if="barImage.selectedSymbol === 'Custom URL';">
+        <label>Insert image URL:</label>
+        <content>
+            <smss-input
+                type="text"
+                ng-model="barImage.url"
+                placeholder=".png, .svg, .jpg"
+            >
+            </smss-input>
+        </content>
+    </smss-field>
+
+    <smss-field ng-if="barImage.selectedSymbol !== 'Default (Bar)';">
+        <content>
+            <smss-checkbox model="barImage.repeat">
+                Repeat Symbol
+            </smss-checkbox>
+        </content>
+    </smss-field>
+
+    <smss-field
+        ng-if="barImage.selectedSymbol !== 'Default (Bar)' && barImage.repeat;"
+    >
+        <content>
+            <smss-checkbox model="barImage.clip"> Clip Symbol </smss-checkbox>
+        </content>
+    </smss-field>
+
+    <smss-field
+        ng-if="barImage.selectedSymbol !== 'Default (Bar)' && barImage.repeat;"
+    >
+        <label>Select symbol size (%):</label>
+        <content>
+            <smss-slider
+                model="barImage.symbolSize"
+                min="5"
+                max="100"
+                numerical
+            >
+            </smss-slider>
+        </content>
+    </smss-field>
+
+    <div class="smss-action">
+        <smss-btn
+            ng-click="barImage.executeGroup(false)"
+            class="smss-btn--text"
+        >
+            Reset
+        </smss-btn>
+        <smss-btn ng-click="barImage.executeGroup(true)"> Execute </smss-btn>
+    </div>
+</smss-scroll>

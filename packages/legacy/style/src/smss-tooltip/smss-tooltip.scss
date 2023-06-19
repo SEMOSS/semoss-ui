@@ -1,0 +1,17 @@
+@import '~theme';
+
+$tooltip-base: get-font-size('body-regular', 'rem');
+
+.smss-tooltip {
+    font-size: $tooltip-base;
+    position: absolute;
+    display: block;
+    padding: rescale(get-spacing('xs', 'em'), 1em, $tooltip-base)
+        rescale(get-spacing('sm', 'em'), 1em, $tooltip-base);
+    color: get-text-color('white');
+    background: get-background-color('overlay');
+    border-radius: $border-radius;
+    visibility: hidden;
+    opacity: 0;
+    z-index: 1;
+}

@@ -1,0 +1,12 @@
+<div class="md-margin md-top-margin">
+    <i class="glyphicon glyphicon-info-sign opacity pull-right" ng-click="outliers.moreInfo = !outliers.moreInfo"></i>
+    <label> Select K
+        Value: </label>
+
+    <p class="information" ng-class="{'visible':outliers.moreInfo, 'hidden':!outliers.moreInfo}">K value determines how
+        many other
+        instances must be similar to each instance in order for it to not be considered an outlier.</p>
+    <input type="number" ng-model="analyticsPanel.selectedRoutine.options.kValue" min="5" step="1" max="50"
+           style="text-align:center;"
+           ng-change="analyticsPanel.setOptions('kValue', analyticsPanel.selectedRoutine.options.kValue)" required>
+</div>

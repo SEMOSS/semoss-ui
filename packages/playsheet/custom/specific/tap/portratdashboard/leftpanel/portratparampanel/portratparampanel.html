@@ -1,0 +1,267 @@
+<div class="special-prd-panel">
+    <div class="prd-panel">
+        <div class="dropdown-header">
+            <b>Select Optimization Parameters</b>
+            <i ng-if="portratController.showReturnToSelectToggle" title="Return to View Selection Panel" class="fa fa-arrow-circle-right fa-2 pull-right"
+                ng-click="portratparampanelctrl.returnToSelectPanel();" style="margin-top: 2px;"></i>
+            <i class="fa fa-cog fa-2 pull-right" style="margin-top: 2px; margin-right: 5px;"></i>
+        </div>
+        <div class="dropdown-header" ng-click="isCollapsed = !isCollapsed">
+            <i class="fa fa-caret-down"
+               ng-class="{'fa-caret-down': isCollapsed === false, 'fa-caret-right': isCollapsed === true}"></i>
+            <span>Select Systems to Include</span>
+        </div>
+        <table ng-class="{'visible': isCollapsed === true, 'hidden':!isCollapsed===false}"
+               class="prd-init-select-panel">
+            <tbody>
+            <tr>
+                <td class="prd-chkbx-row">
+                    <div class="prd-chkbx-data">
+                        <label class="checkbox prd-check" data-toggle="tooltip" title="Low"><input type="checkbox"
+                                                                                                   ng-model="portratparampanelctrl.sysparams.low">Low</label>
+                    </div>
+                </td>
+                <td class="prd-chkbx-row">
+                    <div class="prd-chkbx-data">
+                        <label class="checkbox prd-check" data-toggle="tooltip" title="High"><input type="checkbox"
+                                                                                                    ng-model="portratparampanelctrl.sysparams.high">High</label>
+                    </div>
+                </td>
+            </tr>
+            <tr>
+                <td class="prd-chkbx-row">
+                    <div class="prd-chkbx-data">
+                        <label class="checkbox prd-check" data-toggle="tooltip" title="Interface"><input
+                                type="checkbox"
+                                ng-model="portratparampanelctrl.sysparams.interface">Interface</label>
+                    </div>
+                </td>
+                <td class="prd-chkbx-row">
+                    <div class="prd-chkbx-data">
+                        <label class="checkbox prd-check" data-toggle="tooltip" title="No Interface"><input
+                                type="checkbox" ng-model="portratparampanelctrl.sysparams.nointerface">No Interface</label>
+                    </div>
+                </td>
+            </tr>
+            <tr>
+                <td class="prd-chkbx-row">
+                    <div class="prd-chkbx-data">
+                        <label class="checkbox prd-check" data-toggle="tooltip" title="Garrison"><input
+                                type="checkbox"
+                                ng-model="portratparampanelctrl.sysparams.garrison">Garrison</label>
+                    </div>
+                </td>
+                <td class="prd-chkbx-row">
+                    <div class="prd-chkbx-data">
+                        <label class="checkbox prd-check" data-toggle="tooltip" title="Theater"><input
+                                type="checkbox"
+                                ng-model="portratparampanelctrl.sysparams.theater">Theater</label>
+                    </div>
+                </td>
+            </tr>
+            </tbody>
+        </table>
+        <div class="prd-sys-update-btn" ng-class="{'visible': isCollapsed === true, 'hidden':!isCollapsed===false}"
+             ng-click="isCollapsed = !isCollapsed; isCollapsed ===true; isCollapsed2 =!isCollapsed2; isCollapsed3 = !isCollapsed3;">
+            <button class="full-width-btn btn btn-blue" ng-click="updateSystemList()" title="Update Systems">
+                <i class="fa fa-refresh"> </i> Update Systems
+            </button>
+        </div>
+        <!--part 2 of Port Rat Custom Param-->
+        <div class="dropdown-header" ng-init="!isCollapsed2===true" ng-click="isCollapsed2 = !isCollapsed2">
+            <i class="fa fa-caret-down"
+               ng-class="{'fa-caret-down': isCollapsed2 === true, 'fa-caret-right': !isCollapsed2 === true}"></i>
+            <span>Select Manual Transitions</span>
+        </div>
+        <div class="prd-system-panel" ng-class="{'visible': isCollapsed2 === true, 'hidden':!isCollapsed2===true}">
+            <div ng-show="portratparampanelctrl.systemList.length > 0">
+                <div>
+                    <table class="prd-system-panel-table">
+                        <tbody>
+                        <tr>
+                            <td class="prd-chkbx-row">
+                                <div class="prd-chkbx-data">
+                                    <label class="checkbox prd-check" data-toggle="tooltip" title="Low"><input
+                                            type="checkbox" ng-model="portratparampanelctrl.sysselectparams.low"><span>Low</span></label>
+                                </div>
+                            </td>
+                            <td class="prd-chkbx-row">
+                                <div class="prd-chkbx-data">
+                                    <label class="checkbox prd-check" data-toggle="tooltip" title="High"><input
+                                            type="checkbox" ng-model="portratparampanelctrl.sysselectparams.high"><span>High</span></label>
+                                </div>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td class="prd-chkbx-row">
+                                <div class="prd-chkbx-data">
+                                    <label class="checkbox prd-check" data-toggle="tooltip" title="Interface"><input
+                                            type="checkbox"
+                                            ng-model="portratparampanelctrl.sysselectparams.interface"><span
+                                            style="font-size:12px">Interface</span></label>
+                                </div>
+                            </td>
+                            <td class="prd-chkbx-row">
+                                <div class="prd-chkbx-data">
+                                    <label class="checkbox prd-check" data-toggle="tooltip" title="No Interface"><input
+                                            type="checkbox"
+                                            ng-model="portratparampanelctrl.sysselectparams.nointerface"><span>No Interface</span></label>
+                                </div>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td class="prd-chkbx-row">
+                                <div class="prd-chkbx-data">
+                                    <label class="checkbox prd-check" data-toggle="tooltip" title="MHS Specific"><input
+                                            type="checkbox"
+                                            ng-model="portratparampanelctrl.sysselectparams.mhsspecific"><span>MHS Specific</span></label>
+                                </div>
+                            </td>
+                            <td class="prd-chkbx-row">
+                                <div class="prd-chkbx-data">
+                                    <label class="checkbox prd-check" data-toggle="tooltip" title="EHR Core"><input
+                                            type="checkbox"
+                                            ng-model="portratparampanelctrl.sysselectparams.ehrcore"><span>EHR Core</span></label>
+                                </div>
+                            </td>
+                        </tr>
+                        </tbody>
+                    </table>
+                </div>
+                <div class="prd-force-buttons">
+                <button class="btn-third btn-light pull-left sm-font-btn" ng-click="markDecommission()" title="Consolidate Selections">Consolidate Selections</button>
+                <button class="btn-third btn-light pull-left sm-font-btn" ng-click="markModernize()" title="Sustain Selections">Sustain Selections</button>
+                <button class="btn-third btn-light pull-right sm-font-btn" ng-click="markClearSelections()" title="Clear Selections">Clear</button>
+            </div>
+                <div class="prd-system-select-panel">
+                    <table style="width: 100%">
+                        <tbody>
+                        <tr ng-repeat="sys in portratparampanelctrl.systemList" class="slider-row">
+                            <td style="width:80%">
+                                <div style="padding-left:20px">
+                                    <span title="{{insightGroup.propHash.description}}"> {{sys.name | limitTo: 30 | replaceUnderscores}}{{sys.name.length > 30 ? '...' : ''}}</span>
+                                </div>
+                            </td>
+                            <td style="width:10%">
+                                <div title="{{sys.ind}}" ng-click="portratparampanelctrl.changeInd(sys)">
+                                    <i ng-class="{'prd-syspanel-decom fa fa-circle': sys.ind === 'Consolidate', 'prd-syspanel-modern fa fa-circle': sys.ind === 'Sustain',
+										'prd-syspanel-none fa fa-circle-o': sys.ind === 'Included'}"> </i>
+                                </div>
+                            </td>
+                            <td style="width:10%">
+                                <div title="Remove System" ng-click="portratparampanelctrl.removeSystem(sys)">
+                                    <i class="prd-syspanel-none fa fa-times"> </i>
+                                </div>
+                            </td>
+                        </tr>
+                        <tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!--configure parameters dropdown-->
+    <div class="dropdown-header" ng-init="isCollapsed3===false" ng-click="isCollapsed3 = !isCollapsed3">
+        <i class="fa fa-caret-down"
+           ng-class="{'fa-caret-down': isCollapsed3 === true, 'fa-caret-right': isCollapsed3 !== true}"></i>
+        <span>Configure Parameters</span>
+    </div>
+    <div class="prd-panel-bottom" ng-class="{'visible': isCollapsed3 === true, 'hidden': isCollapsed3 !== true}">
+        <div class="prd-param-input">
+            <div class="input-group full-width" style="margin:5px 0px;">
+                <span class="input-group-addon" style="width:55%;">Max No. of Years</span>
+                <input type="number" class="form-control" ng-model="portratparampanelctrl.maxYearValue" min="0"
+                       max="100"
+                       value="portratparampanelctrl.maxYearValue"
+                       ng-change="updateValue(category, categoryValue[category])">
+            </div>
+            <div class="input-group full-width" style="margin:5px 0px;">
+                <span class="input-group-addon" style="width:55%">Max Annual Budget</span>
+                <input type="text" class="form-control" ng-model="portratparampanelctrl.maxAnnualBudget" min="0"
+                       max="10000000000"
+                       value="portratparampanelctrl.maxAnnualBudget"
+                       format="currency" decimal="0"
+                       ng-change="updateValue(category, categoryValue[category])">
+            </div>
+        </div>
+        <div class="smss-tgl-wrapper">
+			<span style="font-weight:bold;font-size: small;">Rationalize to DHMSM capabilities: 
+				<input class="smss-tgl smss-tgl-input" id="dhmsmCap" type="checkbox"
+                       ng-model="portratparampanelctrl.dhmsmCap">
+				<label class='smss-tgl-btn' for='dhmsmCap' style="left: 10px;"></label>
+			</span>
+        </div>
+
+        <div class="prd-alg-type-selections">
+            <div class="prd-alg-type-selection pull-right" ng-repeat="type in portratparampanelctrl.optTypes.list">
+                <label>
+                    <input type="radio" name="reportType" ng-model="portratparampanelctrl.optTypes.selected"
+                           ng-value="type"/> {{type}}
+                </label>
+            </div>
+        </div>
+        <!--Configure Advanced Parameters Dropdown-->
+        <div class="dropdown-header" ng-init="isCollapsed4 === false" ng-click="isCollapsed4 = !isCollapsed4">
+            <i class="fa fa-caret-down" ng-class="{'fa-caret-down': isCollapsed4 === true, 'fa-caret-right': isCollapsed4 !== true}"></i>
+            <span>Advanced Parameters</span>
+        </div>
+        <div class="prd-param-input" ng-class="{'visible': isCollapsed4 === true, 'hidden':!isCollapsed4===true}">
+            <div class="smss-tgl-wrapper">
+    			<span style="font-weight:bold; font-size:14px;">Optimize Budget: 
+    				<input class="smss-tgl smss-tgl-input" id="optBudgetTogg" type="checkbox"
+                           ng-model="portratparampanelctrl.optBudgetTogg">
+    				<label class='smss-tgl-btn' for='optBudgetTogg' style="left: 10px;"></label>
+    			</span>
+            </div>
+            <div class="input-group sm-font full-width" style="margin:5px 0px;">
+                <span class="input-group-addon sm-font" style="width:70%;">Hourly Build Cost Rate</span>
+                <input type="text" class="form-control sm-font" ng-model="portratparampanelctrl.hourlyBuildCost" min="0"
+                       max="100"
+                       value="portratparampanelctrl.hourlyBuildCost"
+                       format="currency" decimal="0"
+                       ng-change="updateValue(category, categoryValue[category])">
+            </div>
+            <div class="input-group sm-font full-width" style="margin:5px 0px;">
+                <span class="input-group-addon sm-font" style="width:70%;">Training Rate (%)</span>
+                <input type="number" class="form-control sm-font" ng-model="portratparampanelctrl.trainingRate" min="0"
+                       max="100"
+                       value="portratparampanelctrl.discountRate"
+                       ng-change="updateValue(category, categoryValue[category])">
+            </div>
+            <div class="input-group sm-font full-width" style="margin:5px 0px;">
+                <span class="input-group-addon sm-font" style="width:70%;">Discount Rate (%)</span>
+                <input type="number" class="form-control sm-font" ng-model="portratparampanelctrl.discountRate" min="0"
+                       max="100"
+                       value="portratparampanelctrl.discountRate"
+                       ng-change="updateValue(category, categoryValue[category])">
+            </div>
+            <div class="input-group sm-font full-width" style="margin:5px 0px;">
+                <span class="input-group-addon sm-font" style="width:70%;">Inflation Rate (%)</span>
+                <input type="number" class="form-control sm-font" ng-model="portratparampanelctrl.inflationRate" min="0"
+                       max="100"
+                       value="portratparampanelctrl.inflationRate"
+                       ng-change="updateValue(category, categoryValue[category])">
+            </div>
+            <div class="input-group sm-font full-width" style="margin:5px 0px;">
+                <span class="input-group-addon sm-font" style="width:70%;">Number of Starting Points</span>
+                <input type="number" class="form-control sm-font" ng-model="portratparampanelctrl.noStartPoints" min="0"
+                       max="100"
+                       value="portratparampanelctrl.noStartPoints"
+                       ng-change="updateValue(category, categoryValue[category])">
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Run Optimization Button -->
+<div class="footer" id="step2"
+     ng-class="{'sidebar-open': info.sidebarShow, 'sidebar-closed': !info.sidebarShow, 'custom-options-closed': info.customOptions === false,'custom-options-opened': info.customOptions === true }">
+    <div>
+        <jp-ng-bs-animated-button is-submitting="portratparampanelctrl.runOptBtn.isSubmitting"
+                                  result="portratparampanelctrl.runOptBtn.result"
+                                  options="portratparampanelctrl.runOptBtn.options"
+                                  ng-click="runOptimization();" class="prd-run-opt-btn"
+                                  ng-hide="portratparampanelctrl.runOptDisabled">
+        </jp-ng-bs-animated-button>
+    </div>
+</div>

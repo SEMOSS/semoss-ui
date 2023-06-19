@@ -1,0 +1,239 @@
+<div class="text-editor-settings">
+    <smss-scroll static-x="true">
+        <smss-field>
+            <label>Type</label>
+            <content>
+                <div class="text-editor-settings__list">
+                    <div
+                        ng-repeat="type in textEditorSettings.types.list"
+                        ng-click="textEditorSettings.setType(type.value)"
+                        class="smss-tile text-editor-settings__list__card"
+                        ng-class="{'text-editor-settings__list__card--selected': textEditorSettings.types.selected === type.value}"
+                    >
+                        <div class="smss-tile__image">
+                            <img
+                                ng-src="{{type.icon}}"
+                                alt="{{type.display}}"
+                            />
+                        </div>
+                        <div class="smss-tile__text">
+                            <span>{{type.display}}</span>
+                        </div>
+                    </div>
+                </div>
+            </content>
+        </smss-field>
+
+        <smss-field>
+            <label>Font</label>
+            <content>
+                <smss-dropdown
+                    model="textEditorSettings.settings.font.family"
+                    display="display"
+                    value="value"
+                    change="textEditorSettings.updateSettings('font-family', textEditorSettings.settings.font.family)"
+                    placeholder="Select an option"
+                    options="textEditorSettings.settings.font.list"
+                    ng-disabled="!textEditorSettings.active"
+                >
+                </smss-dropdown>
+            </content>
+        </smss-field>
+        <smss-field>
+            <label>Font size</label>
+            <content class="text-editor-settings__slider">
+                <smss-slider
+                    numerical
+                    hide-axis
+                    model="textEditorSettings.settings.font.size"
+                    change="textEditorSettings.updateSettings('font-size', textEditorSettings.settings.font.size + 'px')"
+                    min="1"
+                    max="128"
+                    ng-disabled="!textEditorSettings.active"
+                >
+                </smss-slider>
+                <smss-input
+                    ng-model="textEditorSettings.settings.font.size"
+                    ng-change="textEditorSettings.updateSettings('font-size', textEditorSettings.settings.font.size + 'px')"
+                    ng-disabled="!textEditorSettings.active"
+                >
+                </smss-input>
+            </content>
+        </smss-field>
+        <smss-field>
+            <content class="text-editor-settings__btns">
+                <smss-btn-group>
+                    <smss-btn
+                        title="Bold"
+                        class="smss-btn--icon"
+                        ng-class="{'smss-btn--selected': textEditorSettings.settings.bold}"
+                        ng-click="textEditorSettings.updateSettings('bold')"
+                        ng-disabled="!textEditorSettings.active"
+                    >
+                        <i class="fa fa-bold"></i>
+                    </smss-btn>
+                    <smss-btn
+                        title="Italic"
+                        class="smss-btn--icon"
+                        ng-class="{'smss-btn--selected': textEditorSettings.settings.italic}"
+                        ng-click="textEditorSettings.updateSettings('italic')"
+                        ng-disabled="!textEditorSettings.active"
+                    >
+                        <i class="fa fa-italic"></i>
+                    </smss-btn>
+                    <smss-btn
+                        title="Underline"
+                        class="smss-btn--icon"
+                        ng-class="{'smss-btn--selected': textEditorSettings.settings.underline}"
+                        ng-click="textEditorSettings.updateSettings('text-decoration', 'underline')"
+                        ng-disabled="!textEditorSettings.active"
+                    >
+                        <i class="fa fa-underline"></i>
+                    </smss-btn>
+                </smss-btn-group>
+
+                <smss-btn-group>
+                    <smss-btn
+                        title="Left"
+                        class="smss-btn--icon"
+                        ng-class="{'smss-btn--selected': textEditorSettings.settings.align.left}"
+                        ng-click="textEditorSettings.updateSettings('text-align', 'left')"
+                        ng-disabled="!textEditorSettings.active"
+                    >
+                        <i class="fa fa-align-left"></i>
+                    </smss-btn>
+                    <smss-btn
+                        title="Center"
+                        class="smss-btn--icon"
+                        ng-class="{'smss-btn--selected': textEditorSettings.settings.align.center}"
+                        ng-click="textEditorSettings.updateSettings('text-align', 'center')"
+                        ng-disabled="!textEditorSettings.active"
+                    >
+                        <i class="fa fa-align-center"></i>
+                    </smss-btn>
+                    <smss-btn
+                        title="Right"
+                        class="smss-btn--icon"
+                        ng-class="{'smss-btn--selected': textEditorSettings.settings.align.right}"
+                        ng-click="textEditorSettings.updateSettings('text-align', 'right')"
+                        ng-disabled="!textEditorSettings.active"
+                    >
+                        <i class="fa fa-align-right"></i>
+                    </smss-btn>
+                    <smss-btn
+                        title="Justify"
+                        class="smss-btn--icon"
+                        ng-class="{'smss-btn--selected': textEditorSettings.settings.align.justify}"
+                        ng-click="textEditorSettings.updateSettings('text-align', 'justify')"
+                        ng-disabled="!textEditorSettings.active"
+                    >
+                        <i class="fa fa-align-justify"></i>
+                    </smss-btn>
+                </smss-btn-group>
+
+                <smss-btn-group>
+                    <smss-btn
+                        class="smss-btn--icon"
+                        ng-class="{'smss-btn--selected': textEditorSettings.settings.link.active}"
+                        ng-click="textEditorSettings.updateSettings('link')"
+                        ng-disabled="!textEditorSettings.active"
+                    >
+                        <i class="fa fa-link"></i>
+                    </smss-btn>
+                </smss-btn-group>
+            </content>
+        </smss-field>
+        <smss-field>
+            <label>Line height</label>
+            <content class="text-editor-settings__slider">
+                <smss-slider
+                    numerical
+                    hide-axis
+                    model="textEditorSettings.settings.height"
+                    change="textEditorSettings.updateSettings('line-height', textEditorSettings.settings.height)"
+                    min="1"
+                    max="10"
+                    sensitivity=".1"
+                    ng-disabled="!textEditorSettings.active"
+                >
+                </smss-slider>
+                <smss-input
+                    ng-model="textEditorSettings.settings.height"
+                    change="textEditorSettings.updateSettings('line-height', textEditorSettings.settings.height)"
+                    step=".1"
+                    ng-disabled="!textEditorSettings.active"
+                >
+                </smss-input>
+            </content>
+        </smss-field>
+        <smss-field>
+            <label>Letter spacing</label>
+            <content class="text-editor-settings__slider">
+                <smss-slider
+                    numerical
+                    hide-axis
+                    model="textEditorSettings.settings.spacing"
+                    change="textEditorSettings.updateSettings('letter-spacing', textEditorSettings.settings.spacing + 'px')"
+                    min="0"
+                    max="10"
+                    sensitivity=".1"
+                    ng-disabled="!textEditorSettings.active"
+                >
+                </smss-slider>
+                <smss-input
+                    ng-model="textEditorSettings.settings.spacing"
+                    change="textEditorSettings.updateSettings('letter-spacing', textEditorSettings.settings.spacing + 'px')"
+                    step=".1"
+                    ng-disabled="!textEditorSettings.active"
+                >
+                </smss-input>
+            </content>
+        </smss-field>
+        <smss-field>
+            <label>Text color</label>
+            <content>
+                <smss-color-picker
+                    model="textEditorSettings.settings.color"
+                    change="textEditorSettings.updateSettings('color', textEditorSettings.settings.color)"
+                    ng-disabled="!textEditorSettings.active"
+                ></smss-color-picker>
+            </content>
+        </smss-field>
+    </smss-scroll>
+    <smss-overlay
+        open="textEditorSettings.modal.show"
+        exit="textEditorSettings.updateSettings('link', textEditorSettings.settings.link.href)"
+        size="sm"
+    >
+        <smss-overlay-header> Hyperlink </smss-overlay-header>
+        <smss-overlay-body>
+            <smss-field>
+                <label>URL</label>
+                <content>
+                    <smss-input
+                        ng-model="textEditorSettings.settings.link.href"
+                    ></smss-input>
+                </content>
+            </smss-field>
+        </smss-overlay-body>
+        <smss-overlay-footer>
+            <smss-btn
+                class="smss-btn--text"
+                ng-click="textEditorSettings.settings.link.href = ''; textEditorSettings.modal.show = false;"
+            >
+                Cancel
+            </smss-btn>
+            <smss-btn
+                ng-disabled="!textEditorSettings.settings.link.active"
+                ng-click="textEditorSettings.updateSettings('link'); textEditorSettings.modal.show = false;"
+            >
+                Remove link
+            </smss-btn>
+            <smss-btn
+                ng-click="textEditorSettings.updateSettings('link', textEditorSettings.settings.link.href); textEditorSettings.modal.show = false;"
+            >
+                Add link
+            </smss-btn>
+        </smss-overlay-footer>
+    </smss-overlay>
+</div>

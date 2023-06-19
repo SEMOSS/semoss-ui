@@ -1,0 +1,234 @@
+<div class="database-user">
+    <smss-field
+        ng-if="!(databaseCtrl.adminOnlyDbSetPublic === true && databaseUser.adminUser === false)"
+    >
+        <label>Privacy </label>
+        <content>
+            <smss-toggle
+                model="databaseUser.privacy"
+                title="{{databaseUser.privacy ? 'Turn privacy off' : 'Turn privacy on'}}"
+                change="databaseUser.setDatabasePrivacy()"
+                ng-disabled="databaseCtrl.loggedInUser.permission === 'READ_ONLY' || databaseCtrl.loggedInUser.permission === 'EDIT' || databaseCtrl.loggedInUser.permission === ''"
+            >
+                <div ng-switch="databaseUser.privacy">
+                    <div ng-switch-when="true">
+                        <h6 style="display: inline">Private</h6>
+                        - No one outside of the specified member group can
+                        access
+                    </div>
+                    <div
+                        ng-switch-when="false|null"
+                        ng-switch-when-separator="|"
+                    >
+                        <h6 style="display: inline">Public database</h6>
+                        - Anyone on the platform can access
+                    </div>
+                </div>
+            </smss-toggle>
+        </content>
+    </smss-field>
+
+    <smss-field
+        ng-if="!(databaseCtrl.adminOnlyDbSetDbDiscoverable === true && databaseUser.adminUser === false)"
+    >
+        <label>Discoverable </label>
+        <content>
+            <smss-toggle
+                model="databaseUser.discoverable"
+                title="{{databaseUser.discoverable ? 'Turn discoverable off' : 'Turn discoverable on'}}"
+                change="databaseUser.setDatabaseDiscoverable()"
+                ng-disabled="databaseCtrl.loggedInUser.permission === 'READ_ONLY' || databaseCtrl.loggedInUser.permission === 'EDIT' || databaseCtrl.loggedInUser.permission === ''"
+            >
+                <div ng-switch="databaseUser.discoverable">
+                    <div ng-switch-when="true">
+                        <h6 style="display: inline">Discoverable</h6>
+                        - Users can request access to the database even if
+                        private
+                    </div>
+                    <div
+                        ng-switch-when="false|null"
+                        ng-switch-when-separator="|"
+                    >
+                        <h6 style="display: inline">Non-Discoverable</h6>
+                        - Users cannot request access to this database if
+                        private
+                    </div>
+                </div>
+            </smss-toggle>
+        </content>
+    </smss-field>
+
+    <h6
+        class="database-user__current"
+        ng-if="!(databaseCtrl.adminOnlyDbAddAccess === true && databaseUser.adminUser === false)"
+        ng-class="{noPaddingTop: (databaseCtrl.adminOnlyDbSetPublic === true && databaseCtrl.adminOnlyDbSetDiscoverable === true && databaseUser.adminUser === false)}"
+    >
+        Current members
+    </h6>
+    <div class="database-user__top">
+        <smss-search
+            model="databaseUser.searchTerm"
+            change="databaseUser.searchUsers()"
+            placeholder="Search members..."
+        ></smss-search>
+        <smss-btn
+            ng-click="databaseUser.showAdd()"
+            ng-disabled="databaseCtrl.loggedInUser.permission === 'READ_ONLY' || databaseCtrl.loggedInUser.permission === ''"
+            >Add Member</smss-btn
+        >
+    </div>
+    <div class="database-user__header smss-row">
+        <h6 class="smss-col smss-col--3">Name</h6>
+        <h6 class="smss-col smss-col--3">ID</h6>
+        <h6 class="smss-col smss-col--2 database-user__header__role">Role</h6>
+    </div>
+    <div class="smss-collapsible-group database-user__section">
+        <smss-collapsible
+            ng-repeat="(key, value) in databaseUser.users.filtered"
+            model="true"
+        >
+            <smss-collapsible-header
+                >{{key}}s ({{value.length}})</smss-collapsible-header
+            >
+            <smss-collapsible-content>
+                <div
+                    ng-repeat="user in value"
+                    class="smss-row database-user__row"
+                >
+                    <div class="smss-col smss-col--3 database-user__col">
+                        {{user.name}}
+                    </div>
+                    <div class="smss-col smss-col--3 database-user__col">
+                        {{user.id}}
+                    </div>
+                    <div class="smss-col smss-col--2 database-user__col">
+                        <smss-dropdown
+                            model="user.permission"
+                            class="smss-dropdown--borderless"
+                            options="databaseUser.permissions"
+                            display="display"
+                            value="value"
+                            searchable="false"
+                            change="databaseUser.changePermission(user)"
+                            ng-disabled="databaseCtrl.loggedInUser.permission === 'READ_ONLY' || databaseCtrl.loggedInUser.permission === ''"
+                        >
+                        </smss-dropdown>
+                    </div>
+                    <div class="smss-col smss-col--4 database-user__col--btn">
+                        <smss-btn
+                            ng-click="databaseUser.showRemove(user)"
+                            class="smss-btn--icon"
+                            ng-disabled="databaseCtrl.loggedInUser.permission === 'READ_ONLY' || databaseCtrl.loggedInUser.permission === ''"
+                        >
+                            <i class="fa fa-trash"></i>
+                        </smss-btn>
+                    </div>
+                </div>
+            </smss-collapsible-content>
+        </smss-collapsible>
+        <p
+            class="database-user__row smss-color--low-emphasis"
+            ng-if="databaseUser.isUsersFilteredEmpty()"
+        >
+            No members, please try again.
+        </p>
+    </div>
+    <!-- Remove User Overlay -->
+    <smss-overlay size="sm" open="databaseUser.isRemoveOpen">
+        <smss-overlay-header>Remove Member</smss-overlay-header>
+        <smss-overlay-body
+            >Do you want to remove
+            {{databaseUser.removedUser.name}}?</smss-overlay-body
+        >
+        <smss-overlay-footer>
+            <smss-btn
+                ng-click="databaseUser.hideRemove()"
+                class="smss-btn--text"
+                >Cancel</smss-btn
+            >
+            <smss-btn
+                ng-click="databaseUser.removeUser()"
+                class="smss-btn--error"
+                >Remove</smss-btn
+            >
+        </smss-overlay-footer>
+    </smss-overlay>
+    <!-- Add Users Overlay -->
+    <smss-overlay open="databaseUser.isAddOpen" hide="databaseUser.hideAdd();">
+        <smss-overlay-header>Add Members</smss-overlay-header>
+        <smss-overlay-body>
+            <smss-alert ng-model="databaseUser.showAlert" inline color="'warn'">
+                <smss-alert-label>
+                    Member already added. Cannot add duplicates.
+                    <span
+                        ng-click="databaseUser.showAlert = false;"
+                        class="database-user__new__dismiss"
+                        >Dismiss</span
+                    >
+                </smss-alert-label>
+            </smss-alert>
+            <smss-field>
+                <label>New Members:</label>
+                <content>
+                    <div
+                        ng-if="databaseUser.newUsers.length == 0"
+                        class="smss-caption--center"
+                    >
+                        No members to add. Select new members below.
+                    </div>
+                    <div
+                        ng-repeat="user in databaseUser.newUsers track by $index"
+                        class="database-user__new__member"
+                    >
+                        <p>{{user.user.name}} | {{user.permission.display}}</p>
+                        <smss-btn
+                            class="smss-btn--icon"
+                            ng-click="databaseUser.removeNewUser($index)"
+                        >
+                            <i class="fa fa-times"></i>
+                        </smss-btn>
+                    </div>
+                </content>
+            </smss-field>
+            <smss-field>
+                <label>Add Member:</label>
+                <content class="database-user__new__temp">
+                    <smss-dropdown
+                        model="databaseUser.tempUser.user"
+                        options="databaseUser.allUsers"
+                        search="databaseUser.searchAllUsers(search)"
+                        display="display"
+                        placeholder="Select Member"
+                        change="databaseUser.showAlert = false;"
+                    >
+                    </smss-dropdown>
+                    <smss-dropdown
+                        model="databaseUser.tempUser.permission"
+                        options="databaseUser.permissions"
+                        display="display"
+                        searchable="false"
+                        placeholder="Select Role"
+                    >
+                    </smss-dropdown>
+                    <smss-btn
+                        class="smss-btn--icon"
+                        ng-click="databaseUser.addTempUser()"
+                        ng-disabled="!databaseUser.tempUser.user || databaseUser.tempUser.permission.length === 0"
+                    >
+                        <i class="fa fa-plus"></i>
+                    </smss-btn>
+                </content>
+            </smss-field>
+        </smss-overlay-body>
+        <smss-overlay-footer>
+            <smss-btn ng-click="databaseUser.hideAdd();" class="smss-btn--text"
+                >Cancel</smss-btn
+            >
+            <smss-btn
+                ng-click="databaseUser.addUsers(); databaseUser.hideAdd();"
+                ng-disabled="databaseUser.newUsers.length == 0"
+                >Add All</smss-btn
+            >
+        </smss-overlay-footer>
+    </smss-overlay>
+</div>

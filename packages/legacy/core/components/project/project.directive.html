@@ -1,0 +1,91 @@
+<div class="project">
+    <div class="smss-row project__header">
+        <div class="smss-col smss-col--9 project__info">
+            <div class="project__image">
+                <img
+                    src="{{project.projectInfo.image}}"
+                    alt="Project Logo Image"
+                />
+            </div>
+            <div class="project__info__content">
+                <div class="project__info__top">
+                    <h3 title="{{project.projectInfo.project_name}}">
+                        {{project.projectInfo.project_name}}
+                    </h3>
+                    <div
+                        class="project__info__tags"
+                        ng-show="project.projectInfo.tag.length > 0"
+                    >
+                        <smss-tag
+                            ng-repeat="tag in project.projectInfo.tag"
+                            label="tag"
+                            class="smss-tag--{{project.tags.mapping[tag]}}"
+                        ></smss-tag>
+                    </div>
+                </div>
+                <p
+                    class="project__info__desc"
+                    ng-show="project.projectInfo.description.length > 0"
+                    title="{{project.projectInfo.description}}"
+                >
+                    {{project.projectInfo.description}}
+                </p>
+            </div>
+        </div>
+        <div class="smss-col smss-col--3 project__col--btn">
+            <smss-btn
+                class="smss-btn--text"
+                ng-hide="project.userPermission !== 'OWNER'"
+                ng-click="project.exportProject()"
+                title="Export Project"
+                id="project__semoss-tour-export"
+            >
+                <i class="fa fa-download"></i>
+                Export
+            </smss-btn>
+            <smss-btn
+                class="smss-btn--text"
+                ng-click="project.isEditOpen = true;"
+                title="Edit Settings"
+                id="project__semoss-tour-edit"
+            >
+                <i class="fa fa-edit"></i>
+                Edit Settings
+            </smss-btn>
+        </div>
+    </div>
+    <div class="project__page">
+        <smss-tab-group class="project__page__header">
+            <smss-tab
+                ng-repeat="page in project.page.options"
+                ng-click="project.changePage(page.value)"
+                ng-class="{'smss-tab--selected': project.page.selected === page.value}"
+                id="{{page.tourId}}"
+            >
+                {{page.display}}
+            </smss-tab>
+        </smss-tab-group>
+        <div class="project__page__content">
+            <project-user
+                project="project.projectId"
+                ng-if="project.page.selected === 'MEMBER'"
+            ></project-user>
+            <project-admin
+                project="project.projectId"
+                ng-if="project.page.selected === 'INSIGHT'"
+            ></project-admin>
+            <template-management
+                app-id="project.projectId"
+                ng-if="project.page.selected === 'TEMPLATE'"
+            ></template-management>
+            <project-smss
+                project="project.projectId"
+                ng-if="project.page.selected === 'SMSS'"
+            ></project-smss>
+        </div>
+    </div>
+    <edit-project
+        open="project.isEditOpen"
+        project="project.projectInfo"
+    ></edit-project>
+</div>

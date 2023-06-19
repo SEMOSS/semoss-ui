@@ -1,0 +1,67 @@
+<smss-scroll static-x="true">
+    <smss-field
+        ng-if="bucket.selectedLayout === 'HeatMap' && bucket.vizType === 'standard';"
+    >
+        <label> Select Number of Heat Buckets to Show: </label>
+        <content>
+            <smss-slider model="bucket.numBuckets" min="1" max="10" numerical>
+            </smss-slider>
+        </content>
+    </smss-field>
+
+    <smss-field
+        ng-if="bucket.selectedLayout === 'HeatMap' && bucket.vizType === 'echarts' && bucket.heatmapLegend === 'piecewise'"
+    >
+        <label> Select Number of Heat Buckets to Show: </label>
+        <content>
+            <smss-slider model="bucket.numBuckets" min="1" max="10" numerical>
+            </smss-slider>
+        </content>
+    </smss-field>
+
+    <p
+        class="smss-small"
+        ng-if="bucket.selectedLayout === 'HeatMap' && bucket.vizType === 'echarts' && bucket.heatmapLegend !== 'piecewise';"
+    >
+        Legend Type must be Piecewise, not Continuous
+    </p>
+
+    <smss-field
+        ng-if="bucket.selectedLayout === 'Pie' || bucket.selectedLayout === 'Funnel';"
+    >
+        <label> Select Number of Buckets to Show: </label>
+        <content>
+            <smss-slider
+                model="bucket.numBuckets"
+                min="1"
+                max="bucket.viewData.length"
+                numerical
+            >
+            </smss-slider>
+        </content>
+    </smss-field>
+
+    <smss-field
+        ng-if="bucket.selectedLayout === 'Choropleth' && bucket.vizType !== 'standard' && bucket.heatmapLegend === 'piecewise';"
+    >
+        <label> Select Number of Buckets to Show: </label>
+
+        <content>
+            <smss-slider model="bucket.numBuckets" min="1" max="10" numerical>
+            </smss-slider>
+        </content>
+    </smss-field>
+
+    <div class="smss-action">
+        <smss-btn ng-click="bucket.updateState(bucket.numBuckets)">
+            Execute
+        </smss-btn>
+    </div>
+
+    <p
+        class="smss-small"
+        ng-if="bucket.selectedLayout === 'Choropleth' && bucket.vizType !== 'standard' && bucket.heatmapLegend !== 'piecewise';"
+    >
+        Legend Type must be Piecewise, not Continuous
+    </p>
+</smss-scroll>

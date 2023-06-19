@@ -1,0 +1,246 @@
+<smss-overlay
+    class="edit-database"
+    ng-if="editDatabase.open"
+    open="editDatabase.open"
+    exit="editDatabase.open = false; editDatabase.markdownEdit = true; editDatabase.resetDescription();"
+    size="xl"
+>
+    <smss-overlay-header>
+        <span ng-if="!editDatabase.showDescriptionScreen">
+            Settings for {{editDatabase.db.database_name || replaceUnderscores}}
+        </span>
+        <span ng-if="editDatabase.showDescriptionScreen">
+            Generate Descriptions for {{editDatabase.db.database_name ||
+            replaceUnderscores}}
+        </span>
+    </smss-overlay-header>
+    <smss-overlay-body>
+        <div
+            ng-if="!editDatabase.showDescriptionScreen"
+            class="edit-database__container"
+        >
+            <smss-field>
+                <label> Database name </label>
+                <content>
+                    <smss-input
+                        class="smss-disabled"
+                        ng-model="editDatabase.name.new"
+                        autofocus
+                        disabled
+                    ></smss-input>
+                </content>
+            </smss-field>
+            <smss-field ng-if="editdatabase.fieldOptions.description">
+                <label> Description </label>
+                <content>
+                    <smss-textarea
+                        ng-model="editDatabase.description.new"
+                    ></smss-textarea>
+                    <span
+                        title="{{editDatabase.packagesInstalled ? 'Auto Generate Description' : 'The following R package is missing: gpt2'}}"
+                    >
+                        <smss-btn
+                            class="edit-database__generate-btn smss-btn--text smss-btn--compact"
+                            ng-click="editDatabase.openDescriptionScreen();"
+                            ng-disabled="!editDatabase.packagesInstalled"
+                        >
+                            Auto Generate Description
+                        </smss-btn>
+                    </span>
+                </content>
+            </smss-field>
+            <smss-field
+                ng-repeat="item in editDatabase.fieldOptions track by $index"
+                title="{{item.metakey}}"
+                id="{{item.metakey}}"
+                class="edit-database__field"
+            >
+                <label ng-show="item.display_options !== 'markdown'">
+                    {{item.metakey | camelCaseToTitleCase}}</label
+                >
+                <content ng-show="item.display_options !== 'markdown'">
+                    <div ng-switch="item.display_options">
+                        <div ng-switch-when="input">
+                            <smss-input ng-model="item.new"> </smss-input>
+                        </div>
+                        <div ng-switch-when="single-typeahead">
+                            <smss-typeahead
+                                model="item.new"
+                                options="editDatabase.filterOptions[item.metakey].raw"
+                            ></smss-typeahead>
+                        </div>
+                        <div
+                            ng-switch-when="multi-typeahead|multi-select|single-checklist|multi-checklist|checklist"
+                            ng-switch-when-separator="|"
+                        >
+                            <smss-multiselect
+                                model="item.new"
+                                options="editDatabase.filterOptions[item.metakey].raw"
+                                colored
+                            ></smss-multiselect>
+                            <description class="smss-field__description">
+                                Press the Enter key to add a(n)
+                                {{item.metakey}}.
+                            </description>
+                        </div>
+                        <div ng-switch-when="textarea">
+                            <smss-textarea ng-model="item.new"></smss-textarea>
+                            <span
+                                title="{{editDatabase.packagesInstalled ? 'Auto Generate Description' : 'The following R package is missing: gpt2'}}"
+                                ng-if="item.metakey === 'description'"
+                            >
+                                <smss-btn
+                                    class="edit-database__generate-btn smss-btn--text smss-btn--compact"
+                                    ng-click="editDatabase.openDescriptionScreen();"
+                                    ng-disabled="!editDatabase.packagesInstalled"
+                                >
+                                    Auto Generate Description
+                                </smss-btn>
+                            </span>
+                        </div>
+                    </div>
+                </content>
+            </smss-field>
+            <smss-field class="edit-database__field_markdown">
+                <content class="edit-database__field_markdown">
+                    <div class="edit-database__content">
+                        <div class="edit-database__content__markdown">
+                            <div class="smss-editor__toolbar">
+                                <smss-btn-group
+                                    class="smss-editor__toolbar__btn-group"
+                                >
+                                    <smss-btn
+                                        ng-class="{'smss-btn--selected': editDatabase.markdownEdit}"
+                                        class="smss-btn--outline edit-database__btn edit-database__btn--edit"
+                                        title="Toggle Edit"
+                                        ng-click="editDatabase.toggleMarkdownEdit(true)"
+                                    >
+                                        Edit
+                                    </smss-btn>
+                                    <smss-btn
+                                        ng-class="{'smss-btn--selected': !editDatabase.markdownEdit}"
+                                        class="smss-btn--outline"
+                                        title="Toggle Edit"
+                                        ng-click="editDatabase.toggleMarkdownEdit(false)"
+                                    >
+                                        Preview
+                                    </smss-btn>
+                                </smss-btn-group>
+                            </div>
+
+                            <div
+                                ng-if="!editDatabase.markdownEdit"
+                                class="edit-database__content__markdown__preview"
+                                marked="editDatabase.markdown.new"
+                                compile="true"
+                            ></div>
+                            <smss-textarea
+                                ng-if="editDatabase.markdownEdit"
+                                ng-model="editDatabase.markdown.new"
+                                class="edit-database__content__markdown__edit"
+                            ></smss-textarea>
+                        </div>
+                    </div>
+                </content>
+            </smss-field>
+            <smss-field class="edit-database__field">
+                <label> Image </label>
+                <content>
+                    <div class="edit-database__image">
+                        <upload-image image="editDatabase.image"></upload-image>
+                        <smss-btn
+                            class="smss-btn--error smss-btn--compact"
+                            ng-click="editDatabase.deleteDatabaseImage()"
+                            >Delete</smss-btn
+                        >
+                    </div>
+                </content>
+            </smss-field>
+        </div>
+        <div
+            ng-if="editDatabase.showDescriptionScreen"
+            class="edit-database__auto-desc"
+        >
+            <loading-screen
+                model="editDatabase.loadingDesc"
+                close="editDatabase.resetDescription(false)"
+            ></loading-screen>
+            <div class="smss-small smss-color--low-emphasis">
+                This will auto generate descriptions for your database based on
+                its data. Note: increasing the number of descriptions will
+                increase the time to generate.
+            </div>
+            <smss-field>
+                <label>Number of Descriptions:</label>
+                <content>
+                    <smss-input
+                        ng-model="editDatabase.numDesc"
+                        type="number"
+                        min="1"
+                    ></smss-input>
+                </content>
+            </smss-field>
+            <smss-btn
+                class="smss-btn--outline"
+                ng-click="editDatabase.getDescriptions()"
+                >Generate</smss-btn
+            >
+            <smss-field class="edit-database__auto-desc__results">
+                <label
+                    >Results
+                    <span>({{editDatabase.generatedDescriptions.length}})</span
+                    >:</label
+                >
+                <content>
+                    <div
+                        ng-if="editDatabase.generatedDescriptions.length"
+                        class="edit-database__auto-desc__results__scroll"
+                    >
+                        <div
+                            ng-repeat="description in editDatabase.generatedDescriptions track by $index"
+                            class="edit-database__auto-desc__results__row"
+                        >
+                            <smss-radio
+                                model="editDatabase.selectedDesc"
+                                value="{{description}}"
+                            >
+                            </smss-radio>
+                            <smss-textarea
+                                ng-model="description"
+                                ng-focus="editDatabase.descriptionChanged(description)"
+                                ng-change="editDatabase.descriptionChanged(description)"
+                            ></smss-textarea>
+                        </div>
+                    </div>
+                    <div
+                        ng-if="!editDatabase.generatedDescriptions.length"
+                        class="smss-small smss-color--low-emphasis"
+                    >
+                        No descriptions generated. Click "Generate" above to get
+                        results.
+                    </div>
+                </content>
+            </smss-field>
+        </div>
+    </smss-overlay-body>
+    <smss-overlay-footer>
+        <div ng-if="!editDatabase.showDescriptionScreen">
+            <smss-btn class="smss-btn--text" ng-click="editDatabase.cancel()"
+                >Cancel</smss-btn
+            >
+            <smss-btn ng-click="editDatabase.save()">Save</smss-btn>
+        </div>
+        <div ng-if="editDatabase.showDescriptionScreen">
+            <smss-btn
+                class="smss-btn--text"
+                ng-click="editDatabase.resetDescription()"
+                >Back</smss-btn
+            >
+            <smss-btn
+                ng-click="editDatabase.submitDescription()"
+                ng-disabled="editDatabase.selectedDesc.length === 0"
+                >Select</smss-btn
+            >
+        </div>
+    </smss-overlay-footer>
+</smss-overlay>

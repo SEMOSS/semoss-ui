@@ -1,0 +1,61 @@
+<smss-scroll static-x="true">
+    <smss-field>
+        <label> Set refresh timer length (seconds): </label>
+        <content>
+            <smss-input
+                type="number"
+                ng-model="pixelTimer.timer"
+                step=".25"
+            ></smss-input>
+        </content>
+    </smss-field>
+    <smss-field ng-if="pixelTimer.currentStatement">
+        <label> Current Pixel: </label>
+        <content>
+            <div class="pixel-timer__box">
+                <p class="pixel-timer__box__text">
+                    {{pixelTimer.currentStatement}}
+                </p>
+                <smss-btn
+                    title="Edit Pixel/Timer"
+                    ng-click="pixelTimer.edit()"
+                    class="smss-btn--icon"
+                >
+                    <i class="fa fa-edit"></i>
+                </smss-btn>
+                <smss-btn
+                    title="Cancel Pixel/Timer"
+                    ng-click="pixelTimer.cancel()"
+                    class="smss-btn--icon smss-color--error"
+                >
+                    <i class="fa fa-times"></i>
+                </smss-btn>
+            </div>
+        </content>
+    </smss-field>
+    <smss-field>
+        <label>
+            <span ng-if="pixelTimer.currentStatement">Replace current</span>
+            <span ng-if="!pixelTimer.currentStatement">Add</span> Pixel
+            statements:
+        </label>
+        <content>
+            <smss-textarea ng-model="pixelTimer.statement"></smss-textarea>
+        </content>
+    </smss-field>
+    <smss-field>
+        <content>
+            <smss-checkbox model="pixelTimer.refresh">
+                Refresh insight after execution
+            </smss-checkbox>
+        </content>
+    </smss-field>
+    <div class="smss-action">
+        <smss-btn
+            ng-click="pixelTimer.execute()"
+            ng-disabled="!pixelTimer.statement.length"
+        >
+            Execute
+        </smss-btn>
+    </div>
+</smss-scroll>

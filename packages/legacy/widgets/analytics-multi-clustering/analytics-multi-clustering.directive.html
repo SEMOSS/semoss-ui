@@ -1,0 +1,93 @@
+<smss-scroll static-x="true">
+    <p class="smss-spacing">
+        Discover trends and similar tendencies by dividing your data into an
+        optimal number of clusters.
+    </p>
+    <smss-field>
+        <label>Select column to cluster:</label>
+        <content>
+            <smss-dropdown
+                model="analyticsMultiClustering.instance.selectedInstance"
+                options="analyticsMultiClustering.instance.options"
+                change="analyticsMultiClustering.getAttributes()"
+                placeholder="Select One"
+            >
+            </smss-dropdown>
+        </content>
+    </smss-field>
+
+    <smss-field>
+        <label
+            >Cluster
+            <b
+                >{{analyticsMultiClustering.instance.selectedInstance ?
+                analyticsMultiClustering.instance.selectedInstance : 'the
+                column'}}</b
+            >
+            by the following attribute(s):</label
+        >
+        <content>
+            <smss-checklist
+                class="smss-checklist--short"
+                model="analyticsMultiClustering.attributes.selectedAttributes"
+                options="analyticsMultiClustering.attributes.options"
+                searchable
+                multiple
+                change="analyticsMultiClustering.getAlgorithm(analyticsMultiClustering.attributes.selectedAttributes)"
+            >
+            </smss-checklist>
+        </content>
+    </smss-field>
+
+    <smss-field>
+        <label>Enter range (min and max number) of clusters:</label>
+        <content>
+            <smss-slider
+                model="analyticsMultiClustering.selectedRange"
+                min="2"
+                max="80"
+                sensitivity="1"
+                change="analyticsMultiClustering.updateRange()"
+                multiple
+                numerical
+            ></smss-slider>
+        </content>
+    </smss-field>
+
+    <smss-field ng-if="analyticsMultiClustering.showAlgorithm">
+        <label>Select cluster algorithm:</label>
+        <content>
+            <smss-dropdown
+                model="analyticsMultiClustering.algorithm.selectedAlgorithm"
+                options="analyticsMultiClustering.algorithm.options"
+                placeholder="Select One"
+            >
+            </smss-dropdown>
+        </content>
+    </smss-field>
+
+    <smss-field>
+        <label
+            >Group
+            <b
+                >{{analyticsMultiClustering.instance.selectedInstance ?
+                analyticsMultiClustering.instance.selectedInstance : 'the
+                column'}}</b
+            >
+            by duplicate instances:</label
+        >
+        <content>
+            <smss-dropdown
+                model="analyticsMultiClustering.uniqInstPerRow.selectedUniqInstPerRow"
+                options="['Yes', 'No']"
+            >
+            </smss-dropdown>
+        </content>
+    </smss-field>
+
+    <div class="smss-action">
+        <smss-btn ng-click="analyticsMultiClustering.execute(true)">
+            Execute
+        </smss-btn>
+    </div>
+</smss-scroll>

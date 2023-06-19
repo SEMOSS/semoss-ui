@@ -1,0 +1,23 @@
+{
+    "name": "anthem-map-control",
+    "widgetList": {
+        "showOn": "none"
+    },
+    "view": {
+        "template": {
+            "name": "anthem-map-control",
+            "files": [
+                {
+                    "files": [
+                        "widgets/anthem-map-control/anthem-map-control.css"
+                    ]
+                },
+                {
+                    "files": [
+                        "widgets/anthem-map-control/anthem-map-control.directive.js"
+                    ]
+                }
+            ]
+        }
+    }
+}

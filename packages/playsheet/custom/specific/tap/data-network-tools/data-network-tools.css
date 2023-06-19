@@ -1,0 +1,9 @@
+.data-latency-fields {
+    width: 35px;
+    font-size: smaller;
+}
+
+.data-latency-labels {
+    font-weight: bold;
+    font-size: smaller;
+}

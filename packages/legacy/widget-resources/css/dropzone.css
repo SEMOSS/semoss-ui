@@ -1,0 +1,121 @@
+.features {
+    float: right;
+    width: 300px;
+    padding-left: 20px;
+}
+
+.features .heading {
+    font-size: 14px;
+    font-weight: bold;
+}
+
+.drop-top {
+    margin-bottom: 10px;
+    margin-top: 215px;
+    position: absolute;
+    width: 100%;
+}
+
+.drop-main {
+    position: relative;
+    padding: 6px;
+    border: 1px lightgrey solid;
+    border-radius: 7px 7px 7px 7px;
+    line-height: 18px;
+    /*height: 275px;
+    max-height: 300px;*/
+    margin-top: 19px;
+    margin-top: -7px;
+}
+
+.drop-main-small {
+    overflow: auto;
+    /*height: 200px;*/
+}
+
+.drop-title {
+    text-align: center;
+}
+
+.drop {
+    padding: 15px;
+    border: 2px #f1f1f1 dashed;
+    border-radius: 5px;
+    line-height: 18px;
+    width: 100%;
+    height: 150px;
+}
+
+.drop.drag-over {
+    background: #5CB85C;
+    color: #fff
+}
+
+.transfer-box {
+    margin-bottom: 5px;
+}
+
+.transfer-box .progress {
+    margin-bottom: 0;
+}
+
+.thumbnail {
+    line-height: 20px;
+    margin-bottom: 5px;
+    overflow: hidden;
+    word-break: normal;
+}
+
+.thumbnail img {
+    max-width: 200px;
+    max-height: 150px;
+}
+
+.upload-btn {
+    margin-top: 5px;
+    position: fixed;
+    margin-bottom: -5px;
+    padding-left: 5px;
+    margin-left: 30px;
+}
+
+.gallery-box {
+    width: 103px;
+    padding: 10px;
+    margin: 7px;
+    float: left;
+    min-height: 97px;
+    border: 1px solid #ddd;
+    overflow: hidden;
+    border-radius: 25px;
+    background-color: white;
+}
+
+.gallery-box .progress {
+    margin-bottom: 0;
+}
+
+.gallery-box .thumbnail {
+    height: 50px;
+    width: 50px;
+}
+
+.gallery-box .title {
+    height: 55px;
+    overflow: hidden;
+    display: block;
+    font-size: 11px;
+    text-align: center;
+    width: 78px;
+    word-wrap: break-word;
+}
+
+.upload-margin {
+    margin-top: 10px;
+    margin-right: 5px;
+    margin-bottom: -9px;
+}
+
+.drop-btn {
+    margin-right: 5px;
+}

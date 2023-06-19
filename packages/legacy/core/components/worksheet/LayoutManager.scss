@@ -1,0 +1,106 @@
+@import '~theme';
+/** +2 because of border (and we want to keep the icons a consistent height/width) **/
+$header-height: 20px;
+.lm {
+    &_controls {
+        position: absolute;
+        top: 0 !important;
+        right: 0 !important;
+        bottom: 0 !important;
+        padding: 0 4px !important;
+        background: get-background-color('light');
+        visibility: hidden;
+        & > li {
+            height: $header-height !important;
+            line-height: $header-height !important;
+            width: 1.25em !important;
+            text-align: center;
+            margin: 0;
+            background-size: 70% auto;
+            background-position: center;
+            background-repeat: no-repeat;
+        }
+
+        & .lm_clone {
+            background-image: url('~images/material-copy.svg');
+        }
+
+        & .lm_tabdropdown {
+            background-image: url('~images/material-caret-down.svg');
+            background-size: contain;
+            &:before {
+                content: none !important;
+            }
+        }
+
+        & .lm_maximise {
+            background-image: url('~images/material-maximize.svg');
+        }
+
+        & .lm_close {
+            background-image: url('~images/material-close.svg');
+        }
+
+        & .lm_filter {
+            background-image: url('~images/filter_alt-outline.svg');
+            background-size: 80% auto;
+        }
+    }
+
+    &_header {
+        & .lm_tab {
+            color: get-text-color('high-emphasis');
+            height: $header-height - 2px;
+            line-height: $header-height - 2px;
+            max-width: 100%;
+            margin: 2px 4px 0 0;
+            padding: 0 8px !important;
+            font-family: inherit;
+            background: transparent;
+            box-shadow: none !important;
+            border: none;
+            background: get-background-color('light');
+            // @include text-overflow();
+
+            &.lm_active {
+                background: get-background-color('default');
+            }
+
+            &:hover {
+                background: get-background-color('primary--hover');
+            }
+
+            & .lm_title {
+                width: 100%;
+                @include text-overflow();
+            }
+
+            & .lm_close_tab {
+                background-image: url('~images/material-close.svg');
+            }
+        }
+    }
+
+    &_goldenlayout {
+        background: transparent;
+    }
+
+    &_content {
+        border: none;
+        overflow: visible; //visible for tooltips
+        background: get-background-color('default');
+    }
+
+    &_splitter {
+        opacity: 1;
+        background: transparent;
+
+        &:hover {
+            background: get-background-color('primary--hover');
+        }
+    }
+}
+
+.lm_maximised .lm_controls .lm_maximise {
+    background-image: url('~images/material-minimize.svg');
+}

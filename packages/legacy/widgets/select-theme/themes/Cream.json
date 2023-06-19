@@ -1,0 +1,248 @@
+{
+    "themeName": "Cream",
+    "sheet": {
+        "backgroundColor": "#FFFEF9"
+    },
+    "panel": {
+        "backgroundColor": "#FFFEF9",
+        "borderWidth": "",
+        "borderStyle": "",
+        "borderColor": "",
+        "shadowX": "0px",
+        "shadowY": "4px",
+        "shadowBlur": "8px",
+        "shadowSpread": "0px",
+        "shadowColor": "rgba(146, 146, 146, .25)"
+    },
+    "color": {
+        "scheme": {
+            "colors": [
+                "#0076A9",
+                "#63666A",
+                "#C5B246",
+                "#99AB63",
+                "#2C869C",
+                "#F6B40E",
+                "#0A3782",
+                "#4F948D"
+            ],
+            "colorName": "Cream"
+        },
+        "iconDark": "#63666A",
+        "iconLight": "#FFFEF9"
+    },
+    "chart": {
+        "colorRange": [
+            "#40A0FF",
+            "#5DAEFF",
+            "#79BDFF",
+            "#9FCFFF",
+            "#C6E3FF",
+            "#E2F1FF",
+            "#F6E2EF",
+            "#EDC5DF",
+            "#E19DC9",
+            "#D577B3",
+            "#CC59A3",
+            "#C33C93"
+        ],
+        "colorDuo": ["#3FA875", "#F84C34"],
+        "grid": {
+            "borderColor": "#C6CCD0",
+            "borderWeight": "1px"
+        },
+        "axis": {
+            "borderColor": "#C6CCD0",
+            "borderWeight": "1px",
+            "label": {
+                "fontColor": "#63666A",
+                "fontFamily": "'Roboto', sans-serif",
+                "fontSize": "12px",
+                "fontWeight": "300"
+            },
+            "name": {
+                "fontColor": "#63666A",
+                "fontFamily": "'Roboto', sans-serif",
+                "fontSize": "12px",
+                "fontWeight": "400"
+            },
+            "pointer": {
+                "lineStyle": {
+                    "lineColor": "#C6CCD0",
+                    "lineWidth": "2px",
+                    "lineType": "dashed",
+                    "opacity": "0.5"
+                },
+                "shadowStyle": {
+                    "backgroundColor": "#C6CCD0",
+                    "opacity": "0.2"
+                }
+            }
+        },
+        "title": {
+            "fontColor": "#275B70",
+            "fontFamily": "'Roboto Slab', serif",
+            "fontSize": "20px",
+            "fontWeight": "400"
+        },
+        "value": {
+            "fontColor": "#63666A",
+            "fontColorAlt": "#FFFEF9",
+            "fontFamily": "'Roboto', sans-serif",
+            "fontSize": "12px",
+            "fontWeight": "400"
+        },
+        "legend": {
+            "fontColor": "#63666A",
+            "fontFamily": "'Roboto', sans-serif",
+            "fontSize": "12px",
+            "fontWeight": "300"
+        },
+        "tooltip": {
+            "backgroundColor": "#FFFEF9",
+            "borderWidth": "0px",
+            "borderColor": "",
+            "fontFamily": "Roboto",
+            "fontColor": "#63666A",
+            "fontSize": "14px"
+        },
+        "dataZoom": {
+            "backgroundColor": "#FFFEF9",
+            "fillerColor": "rgba(10, 55, 130, 0.2)",
+            "borderColor": "#C6CCD0",
+            "dataBackground": {
+                "lineStyle": {
+                    "lineColor": "#0076A9",
+                    "lineWidth": "1px",
+                    "lineStyle": "solid"
+                },
+                "areaStyle": {
+                    "backgroundColor": "#0076A9",
+                    "opacity": ".2"
+                }
+            },
+            "selectedDataBackground": {
+                "lineStyle": {
+                    "lineColor": "#63666A",
+                    "lineWidth": "1px",
+                    "lineStyle": "solid"
+                },
+                "areaStyle": {
+                    "backgroundColor": "#63666A",
+                    "opacity": ".2"
+                }
+            },
+            "handle": {
+                "backgroundColor": "#FFFFFF",
+                "borderWidth": "0.5px",
+                "borderStyle": "solid",
+                "borderColor": "#0A3782"
+            },
+            "moveHandle": {
+                "backgroundColor": "#0A3782",
+                "borderWidth": "0.5px",
+                "borderStyle": "solid",
+                "borderColor": "#0A3782"
+            }
+        },
+        "treemap": {
+            "heading": {
+                "backgroundColor": "#D9D9D9",
+                "fontColor": "#5C5C5C",
+                "fontFamily": "'Roboto', sans-serif",
+                "fontSize": "12px",
+                "fontWeight": "500"
+            },
+            "breadcrumb": {
+                "backgroundColor": "#D9D9D9",
+                "fontColor": "#5C5C5C",
+                "fontFamily": "'Roboto', sans-serif",
+                "fontSize": "10px",
+                "fontWeight": "500",
+                "borderWidth": "0px",
+                "borderStyle": "",
+                "borderColor": ""
+            }
+        },
+        "boxwhisker": {
+            "borderWidth": "1px",
+            "borderStyle": "solid",
+            "borderColor": "#1E1E1E"
+        },
+        "graph": {
+            "lineWidth": "1px",
+            "lineStyle": "solid",
+            "lineColor": "#C6CCD0"
+        },
+        "dendrogram": {
+            "lineWidth": "1px",
+            "lineColor": "#C6CCD0"
+        }
+    },
+    "kpi": {
+        "value": {
+            "fontColor": "#0076A9",
+            "fontFamily": "'Roboto Slab', serif",
+            "fontSize": "40px",
+            "fontWeight": "400"
+        },
+        "label": {
+            "fontColor": "#0076A9",
+            "fontFamily": "'Roboto Slab', serif",
+            "fontSize": "12px",
+            "fontWeight": "700"
+        }
+    },
+    "filter": {
+        "backgroundColor": "#FFFEF9",
+        "borderWidth": "",
+        "borderStyle": "",
+        "borderColor": "",
+        "shadowX": "",
+        "shadowY": "",
+        "shadowBlur": "",
+        "shadowSpread": "",
+        "shadowColor": "",
+        "component": {
+            "--color-primary-100": "#0076A9",
+            "--color-primary-70": "#4D9FC3",
+            "--color-primary-50": "#80BBD4",
+            "--color-primary-30": "#B3D6E5",
+            "--color-primary-10": "#E5F1F6",
+            "--color-grey-1": "#1e1e1e",
+            "--color-grey-2": "#5c5c5c",
+            "--color-grey-3": "#8e8e8e",
+            "--color-grey-4": "#bdbdbd",
+            "--color-grey-5": "#d9d9d9",
+            "--color-grey-6": "#e8e8e8",
+            "--color-white": "#FFFEF9",
+            "--font-family": "'Roboto', sans-serif"
+        }
+    },
+    "text": {
+        "backgroundColor": "transparent",
+        "borderWidth": "",
+        "borderStyle": "",
+        "borderColor": "",
+        "shadowX": "",
+        "shadowY": "",
+        "shadowBlur": "",
+        "shadowSpread": "",
+        "shadowColor": "",
+        "title": {
+            "fontColor": "#275B70",
+            "fontFamily": "Roboto Slab",
+            "fontSize": "32px"
+        },
+        "subtitle": {
+            "fontColor": "#275B70",
+            "fontFamily": "Roboto Slab",
+            "fontSize": "20px"
+        },
+        "body": {
+            "fontColor": "#275B70",
+            "fontFamily": "'Roboto', sans-serif",
+            "fontSize": "14px"
+        }
+    }
+}

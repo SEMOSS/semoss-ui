@@ -1,0 +1,98 @@
+@import '~theme';
+$database-icon: get-height('default', 'rem');
+$database-left: 200px;
+
+.database {
+    height: 100%;
+    width: 100%;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    background: get-background-color('default');
+
+    &__header {
+        height: 100px;
+        width: 100%;
+        border-bottom: 1px solid get-border-color('light');
+        padding: get-spacing('gutter', 'rem');
+        display: flex;
+        align-items: center;
+    }
+
+    &__image {
+        height: get-height('image', 'rem');
+        width: get-height('image', 'rem');
+        flex-shrink: 0;
+        overflow: hidden;
+        margin-right: get-spacing('md', 'rem');
+        border-radius: $border-radius;
+        & img {
+            height: 100%;
+            width: auto;
+            max-width: 100%;
+        }
+    }
+
+    &__info {
+        display: flex;
+        align-items: center;
+        &__content {
+            flex: 1;
+            overflow: hidden;
+            &--users {
+                margin-left: get-spacing('md', 'rem');
+            }
+        }
+        &__top {
+            display: flex;
+            flex-direction: row;
+            align-items: center;
+            height: get-height('default', 'rem');
+            & h3 {
+                margin-right: get-spacing('md', 'rem');
+                @include text-overflow();
+                color: get-text-color('medium-emphasis');
+            }
+        }
+        &__desc {
+            @include text-overflow();
+            margin-top: get-spacing('xs', 'rem');
+        }
+        &__tags {
+            flex: 1;
+            overflow: hidden;
+            display: flex;
+            min-width: 20%;
+            & .smss-tag:not(:last-child) {
+                margin-right: get-spacing('sm', 'rem');
+            }
+            &:hover {
+                overflow-x: auto;
+            }
+        }
+        &__users {
+            color: get-text-color('high-emphasis');
+            @include text-overflow();
+            &:not(:last-child) {
+                margin-bottom: get-spacing('sm', 'rem');
+            }
+        }
+    }
+
+    &__page {
+        flex: 1;
+        overflow: hidden;
+        padding: get-spacing('sm', 'rem') get-spacing('gutter', 'rem');
+    }
+
+    &__col {
+        &--btn {
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            flex-wrap: wrap;
+            overflow: hidden;
+            white-space: nowrap;
+        }
+    }
+}

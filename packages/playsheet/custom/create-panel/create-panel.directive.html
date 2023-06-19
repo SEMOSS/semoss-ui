@@ -1,0 +1,292 @@
+<div class="create-sidebar">
+    <loading-screen loading-screen-show="create.showLoading"></loading-screen>
+    <div class="slider-row pointer grid12 create-add-header"
+         ng-click="create.showDatabase=!create.showDatabase; create.getConnectedNodes(create.highlightedNode, true);"
+         ng-show="create.showConcept && !create.showInstances" title="{{create.dbTitle}}" aria-label="{{create.dbTitle}}">
+        <i class="grid1 pull-left fa"
+           ng-class="{'fa-caret-down': create.showDatabase, 'fa-caret-right': !create.showDatabase}"></i>
+        <span class="grid10 overflow-ellipsis">Select DB: {{create.dbTitle | replaceUnderscores}}</span>
+    </div>
+
+    <div class="create-databases grid12 overflow-y-auto" ng-show="create.showDatabase && !create.showInstances">
+        <div ng-click="create.showDatabase=!create.showDatabase">
+            <a class="slider-row grid12 pointer" ng-click="create.dbSelectAll = true; create.dbTitle='All_DBs'">
+                <div class="grid11">Select All</div>
+                <i class="pull-right grid1" ng-class="{'fa fa-check': create.dbTitle === 'All_DBs'}"></i>
+            </a>
+            <a class="slider-row grid12 pointer" ng-repeat="(key, value) in create.nodes | orderByObject"
+               ng-click="create.selectDB(value)" ng-show="value !== 'All_DBs'">
+                <div class="grid11 overflow-ellipsis">{{value | replaceUnderscores}}</div>
+                <i class="pull-right grid1" ng-class="{'fa fa-check': create.dbTitle === value}"></i>
+            </a>
+        </div>
+    </div>
+
+    <!--buttons and layouts for instances-->
+    <div ng-if="create.showInstances" class="create-options-div">
+        <div class="slider-row text-center">
+            <select class='ng-pristine form-control' ng-model="create.joinValue" style="margin-bottom:0px"
+                    ng-init="create.joinValue=create.joinOptions[0]"
+                    ng-change="create.changeJoinType(create.joinValue.value)"
+                    ng-options="item as item.display for item in create.joinOptions">
+            </select>
+        </div>
+
+        <div ng-show="create.visibleContent !== 'engine-metamodel'">
+            <button class="sm-btn xs-top-margin xs-left-margin btn-light pull-left" ng-click="create.cancelAddToView()"
+                    style="width:80px">
+                Cancel
+            </button>
+            <button class="sm-btn btn-blue xs-top-margin xs-right-margin pull-right" style="width:80px; padding: 3px 6px;"
+                    ng-click="create.addToView()"
+                    ng-disabled="create.instanceList.tempSelected.length === 0">
+                Add
+            </button>
+        </div>
+
+        <!--<div ng-show="create.visibleContent === 'engine-metamodel'">
+            <button class="sm-btn xs-top-margin xs-left-margin btn-light pull-left" ng-click="create.cancelAddToView()"
+                    style="width:80px">
+                Cancel
+            </button>
+            <button class="sm-btn btn-blue xs-top-margin xs-right-margin pull-right" style="width:80px; padding: 3px 6px;"
+                    ng-click="create.saveFilter()"
+                    ng-disabled="create.instanceList.tempSelected.length === 0">
+                Update
+            </button>
+        </div>-->
+    </div>
+
+    <div ng-if="create.showInstances">
+        <div class="input-group" style="margin: 1%">
+            <input type="text" class="form-control" placeholder="Filter Instances"
+                   ng-model="create.instanceList.searchTerm" enter-key="create.searchInstances()"/>
+                    <span class="input-group-addon pointer" ng-click="create.searchInstances()">
+                        <i class="fa fa-search"></i>
+                    </span>
+        </div>
+
+        <div class="create-row-border create-row-padding">
+            <label>
+                <input type="checkbox" ng-checked="create.instanceList.selectAll"
+                       ng-click="create.selectAllToggle()">
+                Select All ({{create.instanceList.maxSize}})
+            </label>
+        </div>
+
+        <div class="create-overflow overflow-y-auto create-row-border full-width" ng-style="{'height': create.visibleContent === 'engine-metamodel' ? 'calc(100% - 123px)' : 'calc(100% - 160px)'}">
+            <div infinite-scroll="create.getMoreInstances()"
+                 infinite-scroll-distance="0"
+                 infinite-scroll-container="'.create-overflow'"
+                 infinite-scroll-use-document-bottom="false"
+                 infinite-scroll-immediate-check="false">
+                <div ng-repeat="instance in create.instanceList.list">
+                    <label class="sm-font font-family create-row-padding">
+                        <input type="checkbox"
+                               checklist-model="create.instanceList.tempSelected" checklist-value="instance"
+                               ng-click="create.checkSelectAll(instance)">
+                        {{instance | shortenAndReplaceUnderscores}}
+                    </label>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div ng-show="create.showConcept && create.visibleContent !== 'engine-metamodel'" class="grid12 create-concept"
+         ng-class="{'create-concept-properties': create.showConcept && !create.isEmpty(create.addedNodes),
+         'create-concept-longer': create.isEmpty(create.addedNodes)}">
+        <div class="create-add-header">Select Nodes</div>
+        <div class="xs-top-padding xs-btm-padding input-group create-row-border">
+            <input type="text" class="form-control" placeholder="Search" aria-label="Search Text Space"
+                   ng-model="create.nodeFilter.name"/>
+                <span class="input-group-addon">
+                    <i class="fa fa-search"></i>
+                </span>
+        </div>
+        <div class="create-scroll-div">
+            <div class="slider-row"
+                 ng-repeat="node in create.nodes[create.dbTitle] | filter: create.nodeFilter track by $index"
+                 ng-click="create.selectNode(node)">
+                    <span>
+                        {{node.name | replaceUnderscores}}
+                    </span>
+                <span class="xs-font color-gray show">{{node.db[0].name | replaceUnderscores}}</span>
+            </div>
+        </div>
+    </div>
+
+    <div ng-show="create.showConcept && !create.isEmpty(create.addedNodes) && create.visibleContent !== 'engine-metamodel'"
+         class="border-bottom grid12 create-properties">
+        <div class="create-add-header">Select Properties</div>
+        <div class="create-properties-body">
+            <div ng-repeat="node in create.addedNodes">
+                <div class="slider-row pointer" ng-show="!node.SubjectVar || !create.isEmpty(node.properties)"
+                     ng-click="node.showProperties=!node.showProperties">
+                    <i class="pull-left fa"
+                       ng-class="{'fa-caret-right': node.showProperties, 'fa-caret-down': !node.showProperties}"></i>
+                    {{node.name | replaceUnderscores | reduceStringLength : 19}}
+                </div>
+
+                <div uib-collapse="node.showProperties">
+                    <div ng-repeat="prop in node.properties | orderBy: 'name'"
+                         style="padding: 7px 10px; border-bottom: 1px solid #E3EAEE; height: 46px"
+                         title="{{prop.name}}"
+                         aria-label="{{prop.name}}">
+                        <div class="pull-left">
+                            {{prop.name | reduceStringLength : 13}}
+                            <div class="xs-font color-gray overflow-ellipsis" style="width: 100px">{{prop.db[0].name |
+                                replaceUnderscores}}
+                            </div>
+                        </div>
+                        <button class="pull-right fa fa-plus create-border-btn" aria-label="Create Border Button"
+                                ng-show="!prop.selected"
+                                ng-click="$event.stopPropagation();create.addProperty(prop, $index)"
+                                ng-class="{'disabled': prop.selected}"></button>
+
+                        <button class="pull-right fa fa-times create-border-btn disabled" aria-label="Border Button"
+                                ng-show="prop.selected"></button>
+                        <!--ng-class="{'disabled': prop.selected && (create.stepMapping[create.stepMapping.length-1].property !== prop.name || create.stepMapping[create.stepMapping.length-1].node !== node.name)}"-->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <button ng-show="create.showConcept && !create.showDatabase && !create.isEmpty(create.addedNodes) && !create.showInstances"
+            class="btn-light font-family bottom threequarter-width md-left-margin smmd-side-margin xs-vert-margin absolute sm-btn"
+            ng-click="create.fileAdded()">
+        <i class="fa fa-plus sm-right-padding"></i>Add From File
+    </button>
+</div>
+
+<div class="create-header" ng-show="!create.isEmpty(create.addedNodes) || create.dbTitle!=='All_DBs'">
+    <uib-tabset class="font-family" justified="true" active="active">
+        <uib-tab index="0" heading="View DB Metamodel" active="create.activeTab['engine-metamodel']"
+                 ng-click="create.toggleView('engine-metamodel')"></uib-tab>
+        <uib-tab index="1" heading="View Metamodel" active="create.activeTab.dagre"
+                 ng-click="create.toggleView('dagre')"
+                 style="border-right: 1px solid darkgray; border-left: 1px solid darkgray"></uib-tab>
+        <uib-tab index="2" heading="Preview Table" active="create.activeTab.table"
+                 ng-click="create.toggleView('table')"></uib-tab>
+    </uib-tabset>
+</div>
+
+<div class="create-content white-fill">
+    <div class="white-fill absolute-size" style="z-index:10;"
+         ng-if="create.isEmpty(create.addedNodes) && create.dbTitle==='All_DBs'"
+         flow-name="create.fileData" flow-init=""
+         flow-file-added="create.fileAdded($file)"
+         flow-drop flow-drop-enabled="true"
+         flow-drop ng-class="dropClass2"
+         flow-drag-enter="dropClass2='drop-zone-border'"
+         flow-drag-leave="dropClass2='drop-zone-border-transparent'">
+
+        <label class="xl-font top left md-margin absolute">Choose a Visualization Option:</label>
+
+        <div class="absolute-size grid-center-align">
+            <div class="create-button sm-side-margin" ng-click="create.addNode = !create.addNode">
+                <button class="btn-light full-width full-height" ng-class="{'toggled': create.addNode}">
+                    <div class="lg-icon center sm-vert-margin">
+                        <i class="fa fa-database process-tile-icon"></i>
+                    </div>
+                    <div class="xl-font">Choose from <br/>Existing Databases</div>
+                </button>
+            </div>
+
+            <div class="create-button sm-side-margin" ng-click="create.showRawData = true; create.importType = 'files'">
+                <button class="btn-light full-width full-height">
+                    <div class="lg-icon center sm-vert-margin">
+                        <i class="fa fa-table process-tile-icon"></i>
+                    </div>
+                    <div class="xl-font">Add from <br/>File or Raw Data</div>
+                </button>
+            </div>
+
+            <div class="create-button sm-side-margin" ng-click="create.showFreeText = true; create.importType = 'web'">
+                <button class="btn-light full-width full-height">
+                    <div class="lg-icon center sm-vert-margin">
+                        <i class="fa fa-globe process-tile-icon"></i>
+                    </div>
+                    <div class="xl-font">Extract Data from <br/> Web Data</div>
+                </button>
+            </div>
+        </div>
+
+    </div>
+
+    <div class="white-fill absolute-size"
+         ng-show="create.visibleContent === 'dagre'"
+         id="svg">
+        <svg width="100%" height="100%">
+            <g></g>
+        </svg>
+    </div>
+
+    <div class="white-fill absolute-size"
+         ng-if="create.visibleContent === 'engine-metamodel'">
+        <create-metamodel create="create"></create-metamodel>
+    </div>
+
+    <div class="white-fill absolute-size"
+         ng-if="create.visibleContent === 'table'">
+        <chart smss-grid data="create.widgetData.data.chartData" chart-name="'create-table'">
+        </chart>
+    </div>
+</div>
+
+<!-- Create drop / paste data Modal -->
+<create-raw-data ng-if="create.showRawData" frame-type="create.dataFrameType" widget-data="create.widgetData"
+                 insight-id="create.insightID" import-type="create.importType"
+                 create-hide-free-text="create.hideRawData()" file-data-from-create="create.fileData"
+                 added-nodes="create.addedNodes" create-metamodel="create.getAndBuildMetamodel()"
+                 run-data-frame-query="create.runDataFrameQuery()"
+                 set-data-frame="create.setDataFrame(dataFrame)"></create-raw-data>
+
+<!-- Create Free Text Modal -->
+<create-free-text ng-if="create.showFreeText" frame-type="create.dataFrameType" widget-data="create.widgetData"
+                  insight-id="create.insightID" import-type="create.importType"
+                  create-hide-free-text="create.hideFreeText()" file-data-from-create="create.fileData"
+                  added-nodes="create.addedNodes" create-metamodel="create.getAndBuildMetamodel()"
+                  run-data-frame-query="create.runDataFrameQuery()"
+                  set-data-frame="create.setDataFrame(dataFrame)"></create-free-text>
+
+
+<div class="create-footer border-top">
+    <button class="sm-btn btn-blue pull-right md-right-margin xs-margin" ng-disabled="create.isEmpty(create.addedNodes)"
+            ng-click="create.createDataChange()">
+        Visualize <i class="fa fa-chevron-right"></i>
+    </button>
+
+    <span class="pull-right xs-margin"
+          ng-show="create.visibleContent === 'table' && create.loadMore">
+        <i>*not all rows showing</i>
+        <button class="sm-btn btn-green" ng-click="create.addMoreTableData();">Load 500 More</button>
+    </span>
+
+    <div ng-show="create.isEmpty(create.addedNodes)">
+        <button class="sm-btn btn-light pull-right xs-margin"
+                ng-click="create.showAdvancedOptions = !create.showAdvancedOptions"> Advanced Options
+        </button>
+
+        <div ng-show="create.showAdvancedOptions">
+            <div class="radio-group inline xs-margin">
+                <div class="radio-ctrl inline">
+                    <label><input ng-change="create.setDataFrame('grid')" type="radio" value="grid"
+                                  ng-model="create.dataFrameType"> Grid</label>
+                </div>
+                <div class="radio-ctrl inline">
+                    <label><input ng-change="create.setDataFrame('graph')" type="radio" value="graph"
+                                  ng-model="create.dataFrameType"> Graph</label>
+                </div>
+                <div class="radio-ctrl inline hide">
+                    <label><input ng-change="create.setDataFrame('native')" type="radio" value="native"
+                                  ng-model="create.dataFrameType"> Native</label>
+                </div>
+                <div class="radio-ctrl inline">
+                    <label><input ng-change="create.setDataFrame('rframe')" type="radio" value="rframe"
+                                  ng-model="create.dataFrameType"> RFrame</label>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

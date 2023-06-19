@@ -1,0 +1,169 @@
+<div class="grid12">
+    <div class="radio-group full-width center xs-top-padding lg-left-padding">
+        <div class="radio-ctrl pull-left">
+            <input type="radio" value="group-data" ng-model="dashboardTools.stackToggle"
+                   ng-change="dashboardTools.updateStackGroup('groupData')">
+            <label>Grouped</label>
+        </div>
+        <div class="radio-ctrl pull-left">
+            <input type="radio" value="stack-data" ng-model="dashboardTools.stackToggle"
+                   ng-change="dashboardTools.updateStackGroup('stackData')">
+            <label>Stacked</label>
+        </div>
+    </div>
+</div>
+
+<div class="grid12">
+    <hr style="margin: 5px 0px 10px 0px;"/>
+</div>
+
+<div class="grid12">
+    <div class="grid4">
+        <button class="btn-full pull-left btn-light"
+                ng-click="dashboardTools.updateVisualization('displayValues', !toolPanelCtrl.selectedData.uiOptions.displayValues)">
+            Display Values
+        </button>
+    </div>
+    <div class="grid4">
+        <button class="btn-full pull-left btn-light"
+                ng-click="dashboardTools.updateVisualization('seriesFlipped', !toolPanelCtrl.selectedData.uiOptions.seriesFlipped)">
+            Flip Series
+        </button>
+    </div>
+    <div class="grid4">
+        <button class="btn-full pull-left btn-light"
+                ng-click="dashboardTools.updateVisualization('rotateAxis', !toolPanelCtrl.selectedData.uiOptions.rotateAxis)">
+            Flip Axis
+        </button>
+    </div>
+</div>
+
+<div class="grid12" style="margin: 5px 0px 5px 0px;"></div>
+
+<div class="grid12">
+    <div class="grid8">
+        <ui-select class='ng-pristine' ng-model="dashboardTools.sortLabel">
+            <ui-select-match class="ui-select-match" placeholder="Select Sort Label">
+                <span class="overflow-ellipsis-ui-select" ng-bind="$select.selected.title"></span>
+            </ui-select-match>
+            <ui-select-choices class="ui-select-choices"
+                               repeat="header in toolPanelCtrl.selectedData.headers | filter: {title: $select.search}">
+                <span class="overflow-ellipsis-ui-select" ng-bind="header.title"></span>
+            </ui-select-choices>
+        </ui-select>
+    </div>
+    <div class="grid2">
+        <button class="btn-full btn-light pull-right fa fa-sort-amount-desc"
+                value="descending" title="Descending"
+                ng-click="dashboardTools.updateAscDesc('sortDescending', dashboardTools.sortLabel)"></button>
+    </div>
+    <div class="grid2">
+        <button class="btn-full btn-light pull-right fa fa-sort-amount-asc"
+                value="ascending" title="Ascending"
+                ng-click="dashboardTools.updateAscDesc('sortAscending', dashboardTools.sortLabel)"></button>
+    </div>
+</div>
+
+<div class="grid12">
+    <hr style="margin: 10px 0px 10px 0px;"/>
+</div>
+
+<div class="grid12">
+    <p><b> Choose a color palette </b></p>
+
+    <div ng-repeat="colorPanel in dashboardTools.colorPanels track by $index"
+         ng-show="$index < 3 || dashboardTools.showHideColors()">
+        <div class="xs-padding xs-margin pointer-cursor"
+             ng-click="dashboardTools.colorName=colorPanel.name;dashboardTools.updateColor(dashboardTools.colorName);"
+             ng-class="{'color-chips-chosen':dashboardTools.colorName === colorPanel.name}">
+            <div class="color-chips-name">{{ colorPanel.displayName }}</div>
+            <div class="rectangle" style="background-color:{{ colorPanel.colors[0] }}; left: 97px"></div>
+            <div class="rectangle" style="background-color:{{ colorPanel.colors[1] }}; left: 120px"></div>
+            <div class="rectangle" style="background-color:{{ colorPanel.colors[2] }}; left: 143px"></div>
+            <div class="rectangle" style="background-color:{{ colorPanel.colors[3] }}; left: 166px"></div>
+            <div class="rectangle" style="background-color:{{ colorPanel.colors[4] }}; left: 189px"></div>
+        </div>
+
+    </div>
+
+    <div class="xs-padding xs-margin" ng-show="!dashboardTools.showMore">
+        <a ng-click="dashboardTools.showMore = true" class="pull-right pointer">Show More Preset Options </a>
+    </div>
+
+    <div class="xs-padding xs-margin" ng-show="dashboardTools.showMore">
+        <a ng-click="dashboardTools.showMore = false" class="pull-right pointer">Hide More Preset Options </a>
+    </div>
+
+    <div class="panel-group md-top-margin sm-right-padding sm-left-padding no-bot-margin" id="accordion-color">
+        <div class="panel panel-default" ng-class="{'border-blue': dashboardTools.colorName === 'Custom'}">
+            <div class="color-group-item" data-toggle="collapse" data-parent="#accordion-color"
+                 href="#accordionColorOne" ng-click="dashboardTools.colorToggle = !dashboardTools.colorToggle;">
+                <div class="pointer-cursor xs-top-margin xs-btm-margin">
+                    <span>
+                        <i class="fa md-side-margin"
+                           ng-class="{'fa-caret-down': dashboardTools.colorToggle === true, 'fa-caret-right': dashboardTools.colorToggle === false}"></i>
+                       Choose custom colors
+                    </span>
+                </div>
+            </div>
+            <div id="accordionColorOne" class="panel-collapse collapse">
+                <div class="panel-body xs-hor-padding no-top-padding xs-btm-margin">
+                    <div ng-repeat="slice in customColorLabels track by $index">
+                        <div class="grid12">
+                            <div class="grid6">
+                                <div class="color-chips-name sm-top-margin md-font">{{slice | reduceStringLength :
+                                    16}}
+                                </div>
+                            </div>
+                            <div class="grid4">
+                                <input class="sm-top-margin full-width" colorpicker ng-model="customColors[slice]"
+                                       type="text" style="text-transform:uppercase;">
+                            </div>
+                            <div class="rectangle sm-left-margin sm-top-margin"
+                                 style="background: {{customColors[slice]}}; border-color:#ABABAB; border-width:1px">
+                            </div>
+                        </div>
+                    </div>
+                    <div>
+                        <button class="create-overlap btn-half sm-btn btn-green border-radius pos-relative" style="margin-top:10px; height: 30px; width:70%; margin-left:14%"
+                                ng-click="dashboardTools.colorName='Custom'; dashboardTools.customColorUpdate();">
+                            Apply
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<div class="grid12">
+    <hr style="margin: 10px 0px 10px 0px;"/>
+</div>
+
+<div class="grid12">
+    <p class="no-bot-margin"> <b>Choose a background color</b> </p>
+    <div class="grid6">
+        <div class="color-chips-name xs-top-padding sm-top-margin md-font pointer">
+            Background Color:
+        </div>
+    </div>
+    <div class="grid4">
+        <input class="sm-top-margin full-width pointer" colorpicker ng-model="dashboardTools.backgroundColor"
+               type="text" style="text-transform:uppercase;">
+    </div>
+    <div class="rectangle sm-left-margin sm-top-margin" style="background: {{dashboardTools.backgroundColor}}; border-color:#ABABAB; border-width:1px"></div>
+
+    <br/>
+
+    <div class="grid12">
+        <button class="create-overlap btn-third btn-green sm-btn border-radius pos-relative" style="margin-top:10px; height:30px; margin-left:40px; margin-right:5px;"
+                ng-click="dashboardTools.backgroundColor = '#FFFFFF'; dashboardTools.backgroundColorUpdate();">
+            Default
+        </button>
+        <button class="create-overlap btn-third btn-green sm-btn border-radius pos-relative" style="margin-top:10px; height:30px;"
+                ng-click="dashboardTools.backgroundColorUpdate();">
+            Apply
+        </button>
+    </div>
+</div>

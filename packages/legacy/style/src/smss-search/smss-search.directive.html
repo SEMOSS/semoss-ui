@@ -1,0 +1,27 @@
+<div
+    class="smss-search"
+    ng-class="{'smss-search--inline': smssSearch.isInline}"
+>
+    <i class="fa fa-search smss-search__icon smss-search__icon--search"></i>
+    <smss-input
+        ng-model="smssSearch.model"
+        ng-change="smssSearch.onChange()"
+        ng-keydown="smssSearch.onInputKeydown({event: $event})"
+        ng-keyup="smssSearch.onInputKeyup({event: $event})"
+        placeholder="{{smssSearch.placeholder}}"
+        id="smss-search__input"
+        class="smss-search__input"
+        type="text"
+        autocomplete="off"
+        ng-disabled="smssSearch.disabled"
+    ></smss-input>
+    <div class="smss-search__underline"></div>
+    <i
+        ng-show="smssSearch.model.length > 0"
+        class="fa fa-times smss-search__icon smss-search__icon--clear"
+        ng-click="smssSearch.clearInput()"
+        ng-keydown="smssSearch.onClearKeydown($event)"
+        title="Clear input"
+        tabindex="{{smssSearch.disabled ? -1 : 0}}"
+    ></i>
+</div>

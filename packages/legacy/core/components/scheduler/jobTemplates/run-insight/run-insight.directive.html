@@ -1,0 +1,37 @@
+<smss-field>
+    <label>Project Name:</label>
+    <content>
+        <!-- TODO: Replace this with app-list-dropdown -->
+        <smss-dropdown
+            display="display"
+            value="value"
+            model="job.jobTypeTemplate.app"
+            options="allApps"
+            change="getInsights(true)"
+        >
+        </smss-dropdown>
+    </content>
+</smss-field>
+<smss-field>
+    <label>Insight Name:</label>
+    <content>
+        <smss-dropdown
+            model="job.jobTypeTemplate.insight.app_insight_id"
+            options="insights.results"
+            search="searchInsights(search)"
+            scroll="getMoreInsights()"
+            change="selectInsight(true)"
+            loading="loading"
+            display="name"
+            value="app_insight_id"
+        >
+        </smss-dropdown>
+    </content>
+</smss-field>
+<smss-scroll>
+    <widget-compiler
+        ng-if="job.jobTypeTemplate.paramJson.length > 0"
+        json="job.jobTypeTemplate.paramJson"
+    >
+    </widget-compiler>
+</smss-scroll>

@@ -1,0 +1,64 @@
+<browser
+    id="browser-asset"
+    class="browser-asset"
+    on-render="browserAsset.onRender(path, callback)"
+    on-search="browserAsset.onSearch(search, callback)"
+    on-open="browserAsset.onOpen(item)"
+    on-upload="browserAsset.onUpload(path, files, comment, callback)"
+    on-new="browserAsset.onNew(path, name, type, comment, callback)"
+    only-directory="browserAsset.onlyDirectory"
+    model="browserAsset.model"
+>
+    <header>
+        <smss-field>
+            <label>Select Workspace:</label>
+            <content>
+                <smss-btn-group class="smss-btn-group--even">
+                    <smss-btn
+                        class="smss-btn--compact"
+                        ng-class="{'smss-btn--selected': browserAsset.space.selected === opt}"
+                        ng-repeat="opt in browserAsset.space.options"
+                        ng-click="browserAsset.setWorkspace(opt)"
+                        title="{{opt}}"
+                        ng-disabled="browserAsset.allowedWorkspace ? browserAsset.allowedWorkspace.indexOf(opt) === -1 : false"
+                    >
+                        {{opt}}
+                    </smss-btn>
+                </smss-btn-group>
+            </content>
+        </smss-field>
+
+        <smss-field ng-show="browserAsset.space.selected === 'Project'">
+            <label>Select Project:</label>
+            <content class="smss-field__content-overflow">
+                <smss-dropdown
+                    display="display"
+                    value="value"
+                    model="browserAsset.space.app.selected"
+                    options="browserAsset.space.app.options"
+                    change="browserAsset.changeWorkspace()"
+                    body="false"
+                >
+                    <smss-dropdown-toggle class="browser-asset__dropdown__item">
+                        <div class="browser-asset__dropdown__item__img">
+                            <img
+                                ng-src="{{$parent.smssDropdown.getOption($parent.smssDropdown.model).image}}"
+                            />
+                        </div>
+                        <div class="browser-asset__dropdown__item__text">
+                            {{$parent.smssDropdown.getOption($parent.smssDropdown.model).display}}
+                        </div>
+                    </smss-dropdown-toggle>
+                    <smss-dropdown-list class="browser-asset__dropdown__item">
+                        <div class="browser-asset__dropdown__item__img">
+                            <img ng-src="{{$parent.opt.image}}" />
+                        </div>
+                        <div class="browser-asset__dropdown__item__text">
+                            {{$parent.opt.display}}
+                        </div>
+                    </smss-dropdown-list>
+                </smss-dropdown>
+            </content>
+        </smss-field>
+    </header>
+</browser>

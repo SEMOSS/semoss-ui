@@ -1,0 +1,157 @@
+<div class="smss-color-picker">
+    <div
+        id="smss-color-picker__toggle"
+        class="smss-color-picker__toggle"
+        ng-disabled="disabled"
+        tabindex="{{disabled ? -1: 0}}"
+        ng-class="{'smss-color-picker__toggle--compact': compact}"
+        smss-popover
+    >
+        <i ng-if="compact" class="fa fa-paint-brush"></i>
+        <div class="smss-color-picker__toggle__mark" ng-if="!compact">
+            <div
+                class="smss-color-picker__toggle__mark__color"
+                ng-class="{'smss-color-picker__toggle__mark__color--border': showBorder(model)}"
+                ng-style="{'background-color': model}"
+            ></div>
+        </div>
+        <div
+            class="smss-color-picker__toggle__text"
+            ng-class="{'smss-color-picker__toggle__text--placeholder': showPlaceholder}"
+            ng-if="!compact"
+            ng-transclude
+        >
+            <span ng-show="showPlaceholder" title="{{placeholder}}">
+                {{placeholder}}</span
+            >
+            <span ng-show="!showPlaceholder" title="{{view}}"> {{view}}</span>
+        </div>
+
+        <smss-popover-content
+            model="open"
+            position="['SW', 'SE', 'NW','NE']"
+            show="showNewColor(contentEle);"
+            hide="hideNewColor(contentEle);"
+            class="smss-color-picker__picker"
+            ng-class="{'smss-color-picker__picker--recent':recentColors.length > 0}"
+        >
+            <div
+                class="smss-color-picker__picker__content"
+                ng-click="$event.stopPropagation()"
+            >
+                <div class="smss-color-picker__picker__content__left">
+                    <div class="smss-color-picker__picker__content__left__top">
+                        <smss-field>
+                            <label> Theme Colors: </label>
+                            <content>
+                                <div class="smss-color-picker__picker__theme">
+                                    <div
+                                        class="smss-color-picker__picker__theme__column"
+                                        ng-repeat="colorScheme in themeGrid"
+                                    >
+                                        <div
+                                            ng-repeat="color in colorScheme track by $index"
+                                            tabindex="1"
+                                            title="{{color}}"
+                                            class="smss-color-picker__picker__theme__square"
+                                            ng-click="selectColor(color);"
+                                            ng-keyup="$event.keyCode === 13 && selectColor(color);"
+                                            ng-style="{'background-color': color};"
+                                        ></div>
+                                    </div>
+                                </div>
+                            </content>
+                        </smss-field>
+                        <smss-field>
+                            <label> Standard Colors: </label>
+                            <content>
+                                <div class="smss-color-picker__picker__recent">
+                                    <div
+                                        ng-repeat="color in standardColors"
+                                        tabindex="1"
+                                        title="{{color}}"
+                                        class="smss-color-picker__picker__recent__square"
+                                        ng-class="{'smss-color-picker__picker__recent__square--no-margin-bottom': $index > 7,
+                                         'smss-color-picker__picker__recent__square--no-margin-right': $index > 0 && $index % 7 === 0,
+                                         'smss-color-picker__picker__recent__square--border': showBorder(color)}"
+                                        ng-click="selectColor(color);"
+                                        ng-keyup="$event.keyCode === 13 && selectColor(color);"
+                                        ng-style="{'background-color': color};"
+                                    ></div>
+                                </div>
+                            </content>
+                        </smss-field>
+                        <smss-field ng-if="recentColors.length > 0">
+                            <label> Recent Colors: </label>
+                            <content>
+                                <div class="smss-color-picker__picker__recent">
+                                    <div
+                                        ng-repeat="color in recentColors | orderBy:'$index':true track by $index "
+                                        tabindex="1"
+                                        title="{{color}}"
+                                        class="smss-color-picker__picker__recent__square"
+                                        ng-class="{'smss-color-picker__picker__recent__square--no-margin-bottom': $index > 7,
+                                         'smss-color-picker__picker__recent__square--no-margin-right': $index == 7 || $index == 15,
+                                         'smss-color-picker__picker__recent__square--border': showBorder(color)}"
+                                        ng-click="selectColor(color);"
+                                        ng-keyup="$event.keyCode === 13 && selectColor(color);"
+                                        ng-style="{'background-color': color};"
+                                    ></div>
+                                </div>
+                            </content>
+                        </smss-field>
+                    </div>
+
+                    <!-- <div class="smss-color-picker__picker__content__left__bottom">
+                        <div class="smss-color-picker__picker__action">
+                            <i class="fa fa-paint-brush"></i>
+                            Custom Color
+                        </div>
+                        <div class="smss-color-picker__picker__action">
+                            <i class="fa fa-refresh"></i>
+                            Revert to default
+                        </div>
+                    </div> -->
+                </div>
+                <div class="smss-color-picker__picker__content__right">
+                    <smss-field>
+                        <label> Current Color: </label>
+                        <content>
+                            <div
+                                class="smss-color-picker__picker__selection"
+                                title="newColor.value"
+                                ng-style="{'background-color': newColor.value};"
+                            ></div>
+                        </content>
+                    </smss-field>
+                    <smss-field>
+                        <label> Enter Value: </label>
+                        <content>
+                            <smss-input
+                                type="text"
+                                ng-model="newColor.value"
+                            ></smss-input>
+                        </content>
+                    </smss-field>
+                    <div class="smss-btn-action">
+                        <smss-btn
+                            class="smss-btn--text"
+                            ng-click="cancelNewColor();"
+                            ng-keydown="$event.keyCode === 13 && $event.preventDefault()"
+                            ng-keyup="$event.keyCode === 13 && cancelNewColor()"
+                        >
+                            Cancel
+                        </smss-btn>
+                        <smss-btn
+                            ng-click="acceptNewColor();"
+                            ng-keydown="$event.keyCode === 13 && $event.preventDefault()"
+                            ng-keyup="$event.keyCode === 13 && acceptNewColor()"
+                        >
+                            Accept
+                        </smss-btn>
+                    </div>
+                </div>
+            </div>
+        </smss-popover-content>
+    </div>
+</div>

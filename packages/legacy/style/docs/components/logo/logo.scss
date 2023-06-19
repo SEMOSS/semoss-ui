@@ -1,0 +1,52 @@
+@import '~theme';
+
+.logo-section {
+    background: get-background-color('default');
+    border: 1px solid get-border-color('default');
+    margin-bottom: 2em;
+    padding: 1em;
+
+    &__container {
+        display: flex;
+        flex-wrap: wrap;
+    }
+
+    &__logo {
+        display: flex;
+        margin: get-spacing('sm', 'em') * 4 auto;
+        width: 45%;
+        min-width: 260px;
+        border: 1px solid get-border-color('default');
+
+        &__image {
+            width: 50%;
+            border-right: 1px solid get-border-color('default');
+            padding: get-spacing('sm', 'em') * 4;
+            background: #cacacc;
+        }
+
+        &__content {
+            width: 50%;
+            padding: get-spacing('sm', 'em');
+
+            &__btns {
+                display: inline;
+                white-space: nowrap;
+
+                & a {
+                    text-decoration: none;
+                    color: get-text-color('default');
+                    margin-right: get-spacing('sm', 'em');
+                }
+            }
+        }
+    }
+}
+
+@media only screen and (max-width: 1024px) {
+    .logo-section {
+        &__logo {
+            width: 100%;
+        }
+    }
+}

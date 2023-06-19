@@ -1,0 +1,90 @@
+module.exports = {
+    name: 'Choropleth',
+    icon: require('images/choropleth.svg'),
+    widgetList: {
+        tags: ['Visualization'],
+        showOn: 'none',
+        quickMenu: ['events', 'unfilter'],
+    },
+    content: {
+        template: {
+            name: 'choropleth-standard',
+        },
+    },
+    visualization: {
+        type: ['standard'],
+        group: 'Visualization',
+        view: 'visualization',
+        layout: 'Choropleth',
+        tools: [
+            'custom-legend',
+            'filter',
+            'unfilter',
+            'choropleth-map-type',
+            'map-layer',
+            'layer-style',
+            'color-scheme',
+            'heat-range',
+            'toggle-tooltips',
+            'toggle-legend',
+            'reset-state',
+            'events',
+            'param',
+            'purge',
+            'refresh-cache',
+            'format-data-values',
+            'chart-title',
+        ],
+        showOnVisualPanel: true,
+        visualPanelMenu: {
+            USE: 'Map',
+        },
+        format: 'table',
+        fields: [
+            {
+                model: 'label',
+                name: 'Label',
+                acceptableTypes: ['STRING', 'NUMBER', 'DATE'],
+                group: 'validate',
+                optional: false,
+                multifield: false,
+                description:
+                    'Try adding one dimension that represents state/country full name or two-letter abbreviation.',
+            },
+            {
+                model: 'value',
+                name: 'Heat',
+                acceptableTypes: ['STRING', 'NUMBER'],
+                group: 'math',
+                optional: false,
+                multiField: false,
+                description:
+                    'Try adding one numerical dimension (i.e. Population). This will represent the heat color of its respective label instance.',
+            },
+            {
+                model: 'tooltip',
+                name: 'Tooltip',
+                acceptableTypes: ['STRING', 'NUMBER', 'DATE'],
+                group: 'math',
+                optional: true,
+                multiField: true,
+                description:
+                    'Try adding one or several dimensions (i.e. Political Party Alignment). Each instance of this dimension will appear in the tooltip when hovering.',
+            },
+            {
+                model: 'facet',
+                name: 'Facet',
+                acceptableTypes: ['STRING', 'DATE'],
+                group: 'validate',
+                optional: true,
+                multiField: false,
+                description:
+                    'Try adding one dimension (i.e. Age Group). The data will be grouped by each instance of the selected dimension.',
+            },
+        ],
+        color: {},
+        layers: ['Choropleth'],
+    },
+    tools: {},
+    lazy: true,
+};

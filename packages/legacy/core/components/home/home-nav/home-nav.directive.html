@@ -1,0 +1,118 @@
+<div class="home-nav">
+    <smss-btn
+        class="smss-btn--icon home-nav__btn"
+        id="home-nav__item"
+        tabindex="0"
+        ng-click="homeNav.redirectToLink(menuItem.link);"
+        ng-repeat="menuItem in homeNav.homeLeftNavItems.preLeftMenuBtnOptions"
+    >
+        <i class="fa fa-{{menuItem.icon}}"></i>
+        <div class="home-nav__btn__text">{{ menuItem.name }}</div>
+    </smss-btn>
+    <smss-btn
+        class="smss-btn--icon home-nav__btn"
+        title="New Insight"
+        id="home-nav__item--new-insight"
+        tabindex="0"
+        ng-click="homeNav.newInsight();"
+    >
+        <i class="fa fa-plus"></i>
+        <div class="home-nav__btn__text">Add</div>
+    </smss-btn>
+    <smss-btn
+        class="smss-btn--icon home-nav__btn home-nav__btn--popover"
+        ng-class="{'smss-btn--selected': homeNav.state.name === 'home.landing' || homeNav.state.name === 'home.build'}"
+        id="home-nav__item--insight"
+        title="Opened"
+        tabindex="0"
+        ng-mouseenter="homeNav.showActive();"
+        ng-mouseleave="homeNav.closeActive();"
+        ng-click="homeNav.navigate('home.landing');"
+    >
+        <i class="fa fa-folder-open-o"></i>
+        <div class="home-nav__btn__text">Insights</div>
+        <div ng-click="$event.stopPropagation();" class="home-nav__popover">
+            <h5>Active Insights</h5>
+            <smss-search
+                ng-if="homeNav.active.rawInsights.length > 0"
+                model="homeNav.active.search"
+            >
+            </smss-search>
+            <smss-scroll static-x="true" class="home-nav__popover__scroll">
+                <div
+                    ng-show="homeNav.active.rawInsights.length > 0"
+                    ng-repeat="insight in homeNav.active.rawInsights | filter:{name : homeNav.active.search} track by $index"
+                    ng-click="homeNav.navigate('home.build', {insight: insight.insightID })"
+                    class="home-nav__item"
+                    ng-class="{'home-nav__item--selected': homeNav.state.name === 'home.build' && homeNav.state.params.insight === insight.insightID}"
+                    title="{{insight.name}}"
+                >
+                    <div class="home-nav__item__icon">
+                        <img ng-if="insight.image" ng-src="{{insight.image}}" />
+                    </div>
+                    <div class="home-nav__item__text">
+                        <h6>{{insight.name}}</h6>
+                    </div>
+                    <smss-btn
+                        class="smss-btn--icon home-nav__item__close"
+                        title="Close Insight"
+                        ng-click="homeNav.remove('insight', {'insightID': insight.insightID}); $event.stopPropagation()"
+                    >
+                        <i class="fa fa-times"></i>
+                    </smss-btn>
+                </div>
+
+                <div
+                    class="smss-caption--center"
+                    ng-show="homeNav.active.rawInsights.length === 0"
+                >
+                    No opened insights
+                </div>
+            </smss-scroll>
+        </div>
+    </smss-btn>
+    <smss-btn
+        class="smss-btn--icon home-nav__btn"
+        ng-class="{'smss-btn--selected': homeNav.state.name === 'home.catalog' || homeNav.state.name === 'home.database'}"
+        title="Catalog"
+        id="home-nav__item--catalog"
+        tabindex="0"
+        ng-click="homeNav.navigate('home.catalog');"
+    >
+        <i class="fa fa-database"></i>
+        <div class="home-nav__btn__text">Catalog</div>
+    </smss-btn>
+    <div class="home-nav__spacer"></div>
+    <smss-btn
+        class="smss-btn--icon home-nav__btn"
+        ng-class="{'smss-btn--selected': homeNav.state.name === 'home.scheduler'}"
+        id="home-nav__item--jobs"
+        title="Jobs"
+        tabindex="0"
+        ng-click="homeNav.navigate('home.scheduler');"
+    >
+        <i class="fa fa-clock-o"></i>
+        <div class="home-nav__btn__text">Jobs</div>
+    </smss-btn>
+    <smss-btn
+        class="smss-btn--icon home-nav__btn"
+        ng-class="{'smss-btn--selected': homeNav.state.name === 'home.settings'}"
+        id="home-nav__item--settings"
+        title="Settings"
+        tabindex="0"
+        ng-click="homeNav.navigate('home.settings');"
+    >
+        <i class="fa fa-cogs"></i>
+        <div class="home-nav__btn__text">Settings</div>
+    </smss-btn>
+    <smss-btn
+        class="smss-btn--icon home-nav__btn"
+        id="home-nav__item"
+        tabindex="0"
+        ng-click="homeNav.redirectToLink(menuItem.link);"
+        ng-repeat="menuItem in homeNav.homeLeftNavItems.postLeftMenuBtnOptions"
+    >
+        <i class="fa fa-{{menuItem.icon}}"></i>
+        <div class="home-nav__btn__text">{{ menuItem.name }}</div>
+    </smss-btn>
+</div>

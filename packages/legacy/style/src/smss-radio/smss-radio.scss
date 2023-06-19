@@ -1,0 +1,111 @@
+@import '~theme';
+
+$radio-base: get-font-size('body-large', 'rem');
+$radio-border: 2px;
+
+.smss-radio {
+    font-size: $radio-base;
+    position: relative;
+    display: flex;
+    align-items: center;
+    min-height: get-height('default', 'em');
+    width: 100%;
+    cursor: pointer;
+    outline: none;
+    margin: 0;
+    @include no-select();
+
+    &:hover {
+        & .smss-radio__mark__outer {
+            border-color: get-border-color('primary');
+        }
+    }
+
+    &__input {
+        position: absolute;
+        opacity: 0;
+        margin: 0;
+        cursor: pointer;
+
+        &:focus-visible {
+            & ~ .smss-radio__mark .smss-radio__mark__outer {
+                border-color: get-border-color('primary');
+                box-shadow: get-box-shadow('focus', 'primary');
+            }
+        }
+    }
+
+    &__mark {
+        height: get-height('circle', 'em');
+        width: get-width('circle', 'em');
+        text-align: center;
+        background: transparent;
+        box-shadow: none;
+        outline: none;
+        position: relative;
+        flex-shrink: 0;
+
+        &__outer {
+            position: absolute;
+            top: 0;
+            left: 0;
+            height: 100%;
+            width: 100%;
+            border-radius: 50%;
+            border-width: $radio-border;
+            border-style: solid;
+            border-color: get-border-color('dark');
+            background: get-background-color('default');
+        }
+
+        &__inner {
+            position: absolute;
+            top: 0;
+            left: 0;
+            height: 100%;
+            width: 100%;
+            border-radius: 50%;
+            background: get-background-color('primary');
+            transform: scale(0);
+        }
+
+        &--checked {
+            & .smss-radio__mark__outer {
+                border-color: get-border-color('primary');
+            }
+
+            & .smss-radio__mark__inner {
+                transform: scale(0.5);
+            }
+        }
+    }
+
+    &__text {
+        flex: 1;
+        line-height: $line-height--large;
+        font-size: get-font-size('body-regular', 'em');
+        padding: 0
+            rescale(
+                get-spacing('sm', 'em'),
+                1em,
+                get-font-size('body-regular', 'em')
+            );
+        color: get-text-color('medium-emphasis');
+        @include text-overflow();
+    }
+
+    &--disabled,
+    &:disabled,
+    &[disabled='disabled'] {
+        @include no-events();
+
+        & .smss-radio__mark {
+            &__outer {
+                border-color: get-border-color('disabled');
+            }
+            &__inner {
+                background: get-background-color('disabled');
+            }
+        }
+    }
+}

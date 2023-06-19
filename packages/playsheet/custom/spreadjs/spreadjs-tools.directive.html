@@ -1,0 +1,162 @@
+<div class="xs-padding">
+    <label class="grid3">Rule:</label>
+    <select class="grid9 no-bold" ng-model="spreadjsTools.ruleSelections.selected" ng-change="spreadjsTools.resetRules()">
+        <option ng-repeat="(key, value) in spreadjsTools.ruleSelections.options" >{{key}}</option>
+    </select>
+
+    <div class="grid12"></div>
+
+    <div class="grid12" ng-show="spreadjsTools.ruleSelections.selected === 'CellValueRule'">
+        <label class="grid4">Condition:</label>
+        <select class="grid8 no-bold" ng-model="spreadjsTools.ruleSelections.options.CellValueRule.condition">
+            <option value="0">Equals To</option>
+            <option value="1">Not Equals To</option>
+            <option value="2">Greater Than</option>
+            <option value="3">Greater Than Or Equals To</option>
+            <option value="4">Less Than</option>
+            <option value="5">Less Than Or Equals To</option>
+            <option value="6">Between</option>
+            <option value="7">Not Between</option>
+        </select>
+
+        <div class="grid12"></div>
+
+        <label class="grid3">Value:</label>
+        <input class="grid9 no-bold" type="number" ng-model="spreadjsTools.ruleSelections.options.CellValueRule.lowerBound" ng-trim="true">
+
+        <label class="grid3" ng-show="spreadjsTools.ruleSelections.options.CellValueRule.condition === '6' ||
+                   spreadjsTools.ruleSelections.options.CellValueRule.condition === '7'">Value:</label>
+        <input class="grid9 no-bold" ng-show="spreadjsTools.ruleSelections.options.CellValueRule.condition === '6' ||
+                   spreadjsTools.ruleSelections.options.CellValueRule.condition === '7'"
+                   type="number" ng-model="spreadjsTools.ruleSelections.options.CellValueRule.upperBound" ng-trim="true">
+
+        <div class="grid12"></div>
+    </div>
+
+    <div class="grid12" ng-show="spreadjsTools.ruleSelections.selected === 'SpecificTextRule'">
+        <label class="grid4">Condition:</label>
+        <select class="grid8 no-bold" ng-model="spreadjsTools.ruleSelections.options.SpecificTextRule.condition">
+            <option value="0">Contains</option>
+            <option value="1">DoesNotContain</option>
+            <option value="2">BeginsWith</option>
+            <option value="3">EndsWith</option>
+        </select>
+
+        <div class="grid12"></div>
+
+        <label class="grid3">Value:</label>
+        <input class="grid9 no-bold" type="text" ng-model="spreadjsTools.ruleSelections.options.SpecificTextRule.text" ng-trim="true">
+
+        <div class="grid12"></div>
+    </div>
+
+    <div class="grid12" ng-show="spreadjsTools.ruleSelections.selected === 'DateOccurringRule'">
+        <label class="grid4">Condition:</label>
+        <select class="grid8 no-bold" ng-model="spreadjsTools.ruleSelections.options.DateOccurringRule.condition">
+            <option value="0">Today</option>
+            <option value="1">Yesterday</option>
+            <option value="2">Tomorrow</option>
+            <option value="3">Last 7 Days</option>
+            <option value="4">This Month</option>
+            <option value="5">Last Month</option>
+            <option value="6">Next Month</option>
+            <option value="7">This Week</option>
+            <option value="8">Last Week</option>
+            <option value="9">Next Week</option>
+        </select>
+
+        <div class="grid12"></div>
+    </div>
+
+    <div class="grid12" ng-show="spreadjsTools.ruleSelections.selected === 'FormulaRule'">
+        <label class="grid3">Formula:</label>
+        <input class="no-bold grid9" type="text" ng-model="spreadjsTools.ruleSelections.options.FormulaRule.formula" ng-trim="true">
+    </div>
+
+    <div class="grid12" ng-show="spreadjsTools.ruleSelections.selected === 'Top10Rule'">
+        <label class="grid4">Condition:</label>
+        <select class="grid8 no-bold" ng-model="spreadjsTools.ruleSelections.options.Top10Rule.condition">
+            <option value="0">Top</option>
+            <option value="1">Bottom</option>
+        </select>
+
+        <div class="grid12"></div>
+
+        <label class="grid3">Condition:</label>
+        <input class="grid9 no-bold" type="number" ng-model="spreadjsTools.ruleSelections.options.Top10Rule.number">
+
+        <div class="grid12"></div>
+    </div>
+
+    <div ng-show="spreadjsTools.ruleSelections.selected === 'UniqueRule'">
+    </div>
+
+    <div ng-show="spreadjsTools.ruleSelections.selected === 'DuplicateRule'">
+    </div>
+
+    <div class="grid12" ng-show="spreadjsTools.ruleSelections.selected === 'AverageRule'">
+        <label class="grid4">Condition:</label>
+        <select class="grid8 no-bold" ng-model="spreadjsTools.ruleSelections.options.AverageRule.condition">
+            <option value="0">Above</option>
+            <option value="1">Below</option>
+            <option value="2">EqualOrAbove</option>
+            <option value="3">EqualOrBelow</option>
+            <option value="4">Above1StdDev</option>
+            <option value="5">Below1StdDev</option>
+            <option value="6">Above2StdDev</option>
+            <option value="7">Below2StdDev</option>
+            <option value="8">Above3StdDev</option>
+            <option value="9">Below3StdDev</option>
+        </select>
+
+        <div class="grid12"></div>
+    </div>
+
+    <div ng-show="spreadjsTools.ruleSelections.selected === 'TwoScaleRule'">
+        <tr>
+            <td>Minimum
+            </td>
+            <td>
+                <label id="midpoint">Mid-point</label>
+            </td>
+            <td>Maximum
+            </td>
+        </tr>
+    </div>
+
+    <div ng-show="spreadjsTools.ruleSelections.selected === 'ThreeScaleRule'">
+
+    </div>
+
+    <div ng-show="spreadjsTools.ruleSelections.selected === 'DataBarRule'">
+
+    </div>
+
+    <div ng-show="spreadjsTools.ruleSelections.selected === 'IconSetRule'">
+
+    </div>
+
+    <!--Color Pickers-->
+    <div>
+        <label>
+            Background Color:
+            <input class="sm-top-margin sm-left-margin quarter-width no-bold" colorpicker ng-model="spreadjsTools.ruleSelections.backColor"
+                   type="text" style="text-transform:uppercase;">
+            <div class="rectangle sm-left-margin sm-top-margin"
+                 style="background: {{spreadjsTools.ruleSelections.backColor}}; border-color:#ABABAB; border-width:1px">
+            </div>
+        </label>
+        <br/>
+        <label>
+            Foreground Color:
+            <input class="sm-top-margin sm-left-margin quarter-width no-bold" colorpicker ng-model="spreadjsTools.ruleSelections.foreColor"
+                   type="text" style="text-transform:uppercase;">
+            <div class="rectangle sm-left-margin sm-top-margin"
+                 style="background: {{spreadjsTools.ruleSelections.foreColor}}; border-color:#000000; border-width:1px">
+            </div>
+        </label>
+    </div>
+
+    <button class="btn-light full-width xs-top-margin sm-btm-margin" ng-click="spreadjsTools.addConditionalRule()">Add conditional rule</button>
+    <button class="btn-light full-width" ng-click="spreadjsTools.removeConditionalRules()">Remove conditional rules</button>
+</div>

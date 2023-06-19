@@ -1,0 +1,52 @@
+<div
+    ng-class="{'dashboard-filter-legacy__instance-wrap': dashboardFilter.selected.length > 1, 'dashboard-filter-legacy__wrap': dashboardFilter.selected.length === 1}"
+>
+    <div
+        class="dashboard-filter-legacy smss-clear"
+        ng-repeat="filterCol in dashboardFilter.selected track by $index"
+        ng-class="{'multiple': dashboardFilter.selected.length > 1, 'slider': dashboardFilter.filter[filterCol].useSlider}"
+    >
+        <div class="dashboard-filter-legacy-wrapper">
+            <h3 ng-if="dashboardFilter.selected.length > 1">
+                {{filterCol | replaceUnderscores}}
+            </h3>
+            <!--========== Slider =============-->
+            <div
+                class="dashboard-filter-legacy-slider-container smss-clear"
+                ng-if="filterCol && dashboardFilter.filter[filterCol].viewType === 'slider'"
+            >
+                <dashboard-filter-legacy-slider
+                    ng-if="!dashboardFilter.filter[filterCol].singleSelect"
+                    column="filterCol"
+                    auto="dashboardFilter.isAuto"
+                >
+                </dashboard-filter-legacy-slider>
+                <dashboard-filter-legacy-slider-single
+                    ng-if="dashboardFilter.filter[filterCol].singleSelect"
+                    column="filterCol"
+                    auto="dashboardFilter.isAuto"
+                >
+                </dashboard-filter-legacy-slider-single>
+            </div>
+            <!--========== Checklist =============-->
+            <!--old checklist view type is called List-->
+            <div
+                ng-if="filterCol && (dashboardFilter.filter[filterCol].viewType === 'check' || dashboardFilter.filter[filterCol].viewType === 'dropdown' || dashboardFilter.filter[filterCol].viewType === 'List')"
+                class="dashboard-filter-legacy-checklist-container"
+            >
+                <dashboard-filter-legacy-list
+                    ng-if="!dashboardFilter.filter[filterCol].singleSelect"
+                    column="filterCol"
+                    auto="dashboardFilter.isAuto"
+                >
+                </dashboard-filter-legacy-list>
+                <dashboard-filter-legacy-list-single
+                    ng-if="dashboardFilter.filter[filterCol].singleSelect"
+                    column="filterCol"
+                    auto="dashboardFilter.isAuto"
+                >
+                </dashboard-filter-legacy-list-single>
+            </div>
+        </div>
+    </div>
+</div>

@@ -1,0 +1,95 @@
+<div class="grid12">
+    <hr style="margin: 10px 0px 10px 0px;"/>
+</div>
+
+<div class="grid12">
+    <p> <b> Choose a color palette </b> </p>
+
+    <div ng-repeat="colorPanel in treeMapTools.colorPanels track by $index" ng-show="$index < 3 || treeMapTools.showHideColors()">
+        <div class="xs-padding xs-margin pointer-cursor" ng-click="treeMapTools.colorName=colorPanel.name; treeMapTools.updateColor(treeMapTools.colorName);" ng-class="{'color-chips-chosen': treeMapTools.colorName === colorPanel.name}">
+            <div class="color-chips-name">{{colorPanel.displayName}}</div>
+            <div class="rectangle" style="background-color:{{colorPanel.colors[0]}}; left:97px"> </div>
+            <div class="rectangle" style="background-color:{{colorPanel.colors[1]}}; left:120px"> </div>
+            <div class="rectangle" style="background-color:{{colorPanel.colors[2]}}; left:143px"> </div>
+            <div class="rectangle" style="background-color:{{colorPanel.colors[3]}}; left:166px"> </div>
+            <div class="rectangle" style="background-color:{{colorPanel.colors[4]}}; left:190px"> </div>
+        </div>
+    </div>
+
+    <div class="xs-padding xs-margin" ng-show="!treeMapTools.showMore">
+        <a ng-click="treeMapTools.showMore = true" class="pull-right pointer">Show More Preset Options </a>
+    </div>
+
+    <div class="xs-padding xs-margin" ng-show="treeMapTools.showMore">
+        <a ng-click="treeMapTools.showMore = false" class="pull-right pointer">Hide More Preset Options </a>
+    </div>
+
+    <div class="panel-group md-top-margin sm-right-padding sm-left-padding no-bot-margin" id="accordion-color">
+        <div class="panel panel-default" ng-class="{'border-blue': treeMapTools.colorName === 'Custom'}">
+            <div class="color-group-item" data-toggle="collapse" data-parent="#accordion-color" href="#accordionColorOne" ng-click="treeMapTools.colorToggle = !treeMapTools.colorToggle;">
+                <div class="pointer-cursor xs-top-margin xs-btm-margin">
+                    <span>
+                        <i class="fa md-side-margin"
+                           ng-class="{'fa-caret-down': treeMapTools.colorToggle === true, 'fa-caret-right': treeMapTools.colorToggle === false}"></i>
+                       Choose custom colors
+                    </span>
+                </div>
+            </div>
+            <div id="accordionColorOne" class="panel-collapse collapse">
+                <div class="panel-body xs-hor-padding no-top-padding xs-btm-margin">
+                    <div ng-repeat="slice in customColorLabels track by $index">
+                        <div class="grid12">
+                            <div class="grid6">
+                                <div class="color-chips-name sm-top-margin md-font" title="{{slice}}">
+                                    {{slice | reduceStringLength : 13}}</div>
+                            </div>
+                            <div class="grid4">
+                                <input class="sm-top-margin full-width pointer" colorpicker ng-model="customColors[slice]"
+                                       type="text" style="text-transform:uppercase;">
+                            </div>
+                            <div class="rectangle sm-left-margin sm-top-margin" style="background: {{customColors[slice]}}; border-color:#ABABAB; border-width:1px">
+                            </div>
+                        </div>
+                    </div>
+                    <div>
+                        <button class="create-overlap btn-half sm-btn btn-green border-radius pos-relative" style="margin-top:10px; height: 30px; width:70%; margin-left:14%"
+                                ng-click="treeMapTools.colorName='Custom'; treeMapTools.customColorUpdate();">
+                            Apply
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="grid12">
+    <hr style="margin: 10px 0px 10px 0px;"/>
+</div>
+
+<div class="grid12">
+    <p class="no-bot-margin"> <b>Choose a background color</b> </p>
+    <div class="grid6">
+        <div class="color-chips-name xs-top-padding sm-top-margin md-font pointer">
+            Background Color:
+        </div>
+    </div>
+    <div class="grid4">
+        <input class="sm-top-margin full-width pointer" colorpicker ng-model="treeMapTools.backgroundColor"
+               type="text" style="text-transform:uppercase;">
+    </div>
+    <div class="rectangle sm-left-margin sm-top-margin" style="background: {{treeMapTools.backgroundColor}}; border-color:#ABABAB; border-width:1px"></div>
+
+    <br/>
+
+    <div class="grid12">
+        <button class="create-overlap btn-third btn-green sm-btn border-radius pos-relative" style="margin-top:10px; height:30px; margin-left:40px; margin-right:5px;"
+                ng-click="treeMapTools.backgroundColor = '#FFFFFF'; treeMapTools.backgroundColorUpdate();">
+            Default
+        </button>
+        <button class="create-overlap btn-third btn-green sm-btn border-radius pos-relative" style="margin-top:10px; height:30px;"
+                ng-click="treeMapTools.backgroundColorUpdate();">
+            Apply
+        </button>
+    </div>
+</div>

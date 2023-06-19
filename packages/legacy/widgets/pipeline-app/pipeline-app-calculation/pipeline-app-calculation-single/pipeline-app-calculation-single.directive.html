@@ -1,0 +1,20 @@
+<div class="pipeline-app-calculation-single">
+    <div
+        class="pipeline-app-calculation-single__custom"
+        ng-if="pipelineAppCalculationSingle.calculation.custom"
+    >
+        <smss-input
+            type="{{pipelineAppCalculationSingle.calculation.type}}"
+            ng-model="pipelineAppCalculationSingle.calculation.value"
+        >
+        </smss-input>
+    </div>
+
+    <div
+        class="pipeline-app-calculation-single__column"
+        title="{{pipelineAppCalculationSingle.calculation.selected.alias}}"
+        ng-if="pipelineAppCalculationSingle.calculation.selected"
+    >
+        {{pipelineAppCalculationSingle.calculation.selected.alias}}
+    </div>
+</div>

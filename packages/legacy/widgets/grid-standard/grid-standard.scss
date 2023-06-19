@@ -1,0 +1,168 @@
+@import '~theme';
+// Have to use the actual color code (not the css variable)
+$primary: map-get($color, 'primary-100');
+$border: map-get($color, 'grey-5');
+$default-bg: map-get($color, 'white');
+$light-bg: map-get($color, 'grey-6');
+// AG-GRID VARIABLE OVERRIDES
+// General styles
+$primary-color: $primary;
+$accent-color: $primary;
+$background-color: $default-bg; // Note: this will override the $background-color map (cannot use get-background-color())
+$odd-row-background-color: $light-bg;
+$border-color: $border; // Note: this will override the $border-color map (cannot use get-border-color())
+$hover-color: $border;
+// Font styles
+$font-family: $font-family;
+$font-size: get-font-size('body-regular', 'rem');
+$font-weight: get-font-weight('regular');
+$foreground-color: get-text-color('high-emphasis');
+$secondary-font-family: $font-family;
+// Header styles
+$header-background-color: $light-bg;
+$header-foreground-color: get-text-color('medium-emphasis');
+$spacing: to-px(get-spacing('sm', 'em'));
+$icon-size: to-px(get-height('icon', 'em'));
+$height: to-px(get-height('sm', 'em'));
+$icon-size: 32px;
+
+@import '~ag-grid-community/src/styles/ag-grid.scss';
+@import '~ag-grid-community/src/styles/ag-theme-balham/sass/ag-theme-balham.scss';
+
+.grid-standard {
+    &__chart {
+        padding-bottom: $spacing/2;
+        font-feature-settings: 'tnum' on, 'lnum' on;
+    }
+
+    &__link {
+        color: get-text-color('primary');
+        text-decoration: underline;
+    }
+
+    &__wrap {
+        white-space: normal;
+    }
+
+    &__header {
+        display: flex;
+        height: 100%;
+        width: 100%;
+
+        &--highlight {
+            color: get-text-color('white');
+            background: $primary;
+        }
+    }
+
+    &__cell-span {
+        border-left: 1px solid $border !important;
+        border-right: 1px solid $border !important;
+        border-bottom: 1px solid $border !important;
+
+        &--group {
+            background-color: $background-color !important;
+            // display: flex;
+            // justify-content: center;
+            // align-content: center;
+            // flex-direction: column;
+        }
+    }
+
+    &__context-menu {
+        position: absolute;
+        background-color: $background-color;
+        z-index: 8600;
+        font-size: 0.875em;
+        border: 1px solid $border;
+        box-shadow: 0px 1px 5px $border;
+
+        &__header {
+            padding: 0 2 * $spacing;
+            height: $height;
+            line-height: $height;
+            background: $light-bg;
+            color: get-text-color('primary');
+            @include text-overflow();
+        }
+
+        &__list {
+            height: calc(100% - #{$height});
+            overflow-y: auto;
+            list-style: none;
+            padding: 0;
+            margin: 0;
+
+            &__option {
+                padding: 0 $spacing * 2;
+                margin: 0;
+                height: $height;
+                line-height: $height;
+                @include text-overflow();
+
+                &:hover {
+                    background: $light-bg;
+                    color: get-text-color('primary');
+                    cursor: pointer;
+                }
+            }
+        }
+    }
+
+    &__filter {
+        padding: 0 $spacing;
+        height: 150px;
+        background: $default-bg;
+
+        &__container {
+            display: flex;
+
+            & input {
+                width: calc(100% - #{$spacing + $icon-size});
+            }
+
+            & button {
+                margin-left: $spacing;
+            }
+        }
+
+        &__description {
+            white-space: normal;
+            overflow: visible;
+            line-height: 1.75em;
+        }
+
+        &--number {
+            display: flex;
+            flex-direction: column;
+        }
+    }
+}
+
+.ag-theme-balham .ag-root {
+    border: none;
+}
+
+.ag-theme-balham
+    .ag-header-cell-label
+    .ag-header-icon.grid-standard__header__menu {
+    margin-left: auto;
+    opacity: 0;
+
+    & i {
+        margin-left: 4px;
+    }
+}
+
+.ag-theme-balham
+    .ag-header-cell-label:hover
+    .ag-header-icon.grid-standard__header__menu {
+    opacity: 0.87;
+}
+
+.ag-theme-balham
+    .ag-header-cell-label
+    .ag-header-icon.grid-standard__header__filter {
+    margin: 0;
+    margin-right: 4px;
+}

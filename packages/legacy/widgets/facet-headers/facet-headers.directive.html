@@ -1,0 +1,184 @@
+<smss-scroll static-x="true">
+    <smss-field>
+        <label>Edit Title</label>
+        <content>
+            <smss-input
+                type="text"
+                ng-model="facetHeaders.titleName"
+                ng-change="facetHeaders.updateTitle()"
+            >
+            </smss-input>
+        </content>
+    </smss-field>
+
+    <smss-field>
+        <label>Title Font Size</label>
+        <content>
+            <smss-input
+                id="titleFontSize"
+                type="number"
+                ng-model="facetHeaders.titleFontSize"
+                min="1"
+                max="60"
+                ng-change="facetHeaders.updateTitle(false)"
+            >
+            </smss-input>
+        </content>
+    </smss-field>
+
+    <smss-field>
+        <label>Header Font Size</label>
+        <content>
+            <smss-input
+                id="headerFontSize"
+                type="number"
+                ng-model="facetHeaders.headerFontSize"
+                min="1"
+                max="40"
+                ng-change="facetHeaders.updateTitle(false)"
+            >
+            </smss-input>
+        </content>
+    </smss-field>
+
+    <smss-field
+        ng-if="facetHeaders.selectedLayout === 'Column' || facetHeaders.selectedLayout === 'Area' || facetHeaders.selectedLayout === 'Line'"
+    >
+        <content>
+            <smss-checkbox
+                model="facetHeaders.commonAxis"
+                change="facetHeaders.updateLayout(false)"
+            >
+                Use Common X-Axis
+            </smss-checkbox>
+        </content>
+    </smss-field>
+
+    <smss-field>
+        <label>Number of Columns</label>
+        <content>
+            <smss-input
+                id="numberColumns"
+                type="number"
+                ng-model="facetHeaders.numberColumns"
+                min="1"
+                max="facetHeaders.numInstances"
+                ng-change="facetHeaders.setDimensions()"
+            >
+            </smss-input>
+        </content>
+        <description> Max Value of {{facetHeaders.numInstances}} </description>
+    </smss-field>
+
+    <smss-field ng-if="facetHeaders.selectedLayout !== 'Pie'">
+        <content>
+            <smss-checkbox
+                model="facetHeaders.customLayout"
+                change="facetHeaders.toggleCustomLayout(false)"
+            >
+                Set Grid Dimensions & Spacing
+            </smss-checkbox>
+        </content>
+    </smss-field>
+
+    <smss-field ng-if="facetHeaders.selectedLayout === 'Pie'">
+        <content>
+            <smss-checkbox
+                model="facetHeaders.customLayout"
+                change="facetHeaders.toggleCustomLayout(false)"
+            >
+                Set Pie Diameter & Spacing
+            </smss-checkbox>
+        </content>
+    </smss-field>
+    <div class="facet-headers__dimensions" ng-if="facetHeaders.customLayout">
+        <smss-field ng-if="facetHeaders.selectedLayout !== 'Pie'">
+            <label>Unit</label>
+            <content>
+                <smss-dropdown
+                    display="display"
+                    value="value"
+                    model="facetHeaders.unitType"
+                    options="facetHeaders.availableUnitTypes"
+                    change="facetHeaders.changeUnitType();"
+                    ng-if="facetHeaders.customLayout"
+                >
+                </smss-dropdown>
+            </content>
+        </smss-field>
+
+        <smss-field ng-if="facetHeaders.selectedLayout !== 'Pie'">
+            <label>Grid Width ({{facetHeaders.unitType}})</label>
+            <content>
+                <smss-slider
+                    model="facetHeaders.grid.width"
+                    min="facetHeaders.unitMin"
+                    max="facetHeaders.unitMax"
+                    change="facetHeaders.updateTitle(false)"
+                    numerical
+                >
+                </smss-slider>
+            </content>
+        </smss-field>
+
+        <smss-field ng-if="facetHeaders.selectedLayout !== 'Pie'">
+            <label>Grid Height ({{facetHeaders.unitType}})</label>
+            <content>
+                <smss-slider
+                    model="facetHeaders.grid.height"
+                    min="facetHeaders.unitMin"
+                    max="facetHeaders.unitMax"
+                    change="facetHeaders.updateTitle(false)"
+                    numerical
+                >
+                </smss-slider>
+            </content>
+        </smss-field>
+
+        <smss-field ng-if="facetHeaders.selectedLayout === 'Pie'">
+            <label>Pie Diameter ({{facetHeaders.unitType}})</label>
+            <content>
+                <smss-slider
+                    model="facetHeaders.grid.width"
+                    min="facetHeaders.unitMin"
+                    max="facetHeaders.unitMax"
+                    change="facetHeaders.updateTitle(false)"
+                    numerical
+                >
+                </smss-slider>
+            </content>
+        </smss-field>
+
+        <smss-field>
+            <label>Horizontal Grid Spacing ({{facetHeaders.unitType}})</label>
+            <content>
+                <smss-slider
+                    model="facetHeaders.spacing.x"
+                    min="facetHeaders.unitspacingMin"
+                    max="facetHeaders.unitspacingMax"
+                    change="facetHeaders.updateTitle(false)"
+                    numerical
+                >
+                </smss-slider>
+            </content>
+        </smss-field>
+
+        <smss-field>
+            <label>Vertical Grid Spacing ({{facetHeaders.unitType}})</label>
+            <content>
+                <smss-slider
+                    model="facetHeaders.spacing.y"
+                    min="facetHeaders.unitspacingMin"
+                    max="facetHeaders.unitspacingMax"
+                    change="facetHeaders.updateTitle(false)"
+                    numerical
+                >
+                </smss-slider>
+            </content>
+        </smss-field>
+    </div>
+
+    <div class="smss-action">
+        <smss-btn ng-click="facetHeaders.updateLayout(true)"> Reset </smss-btn>
+    </div>
+</smss-scroll>

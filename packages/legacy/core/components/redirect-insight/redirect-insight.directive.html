@@ -1,0 +1,15 @@
+<smss-overlay open="redirectInsight.options.open">
+    <smss-overlay-header> Redirect Insight </smss-overlay-header>
+    <smss-overlay-body>
+        This insight is already opened. Redirect to the opened insight?
+    </smss-overlay-body>
+    <smss-overlay-footer>
+        <smss-btn
+            class="smss-btn--text"
+            ng-click="redirectInsight.openNewInstance()"
+        >
+            No
+        </smss-btn>
+        <smss-btn ng-click="redirectInsight.redirect()"> Yes </smss-btn>
+    </smss-overlay-footer>
+</smss-overlay>

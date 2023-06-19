@@ -1,0 +1,251 @@
+{
+    "themeName": "Constellation",
+    "sheet": {
+        "backgroundColor": "#061529"
+    },
+    "panel": {
+        "backgroundColor": "#092140",
+        "borderWidth": "",
+        "borderStyle": "",
+        "borderColor": "",
+        "shadowX": "",
+        "shadowY": "",
+        "shadowBlur": "",
+        "shadowSpread": "",
+        "shadowColor": ""
+    },
+    "color": {
+        "scheme": {
+            "colors": [
+                "#C5E9EB",
+                "#51D9E0",
+                "#4C96C7",
+                "#1633A9",
+                "#81309A",
+                "#E69421",
+                "#FFE836",
+                "#BCDD4E"
+            ],
+            "colorName": "Constellation"
+        },
+        "iconDark": "#2EB9DA",
+        "iconLight": "#FFFFFF"
+    },
+    "chart": {
+        "colorRange": [
+            "#40A0FF",
+            "#5DAEFF",
+            "#79BDFF",
+            "#9FCFFF",
+            "#C6E3FF",
+            "#E2F1FF",
+            "#F6E2EF",
+            "#EDC5DF",
+            "#E19DC9",
+            "#D577B3",
+            "#CC59A3",
+            "#C33C93"
+        ],
+        "colorDuo": ["#3FA875", "#F84C34"],
+        "grid": {
+            "borderColor": "#C6CCD0",
+            "borderWeight": "1px"
+        },
+        "axis": {
+            "borderColor": "#F6F6F6",
+            "borderWeight": "1px",
+            "label": {
+                "fontColor": "#F6F6F6",
+                "fontFamily": "'IBM Plex Sans', sans-serif",
+                "fontSize": "12px",
+                "fontWeight": "300"
+            },
+            "name": {
+                "fontColor": "#F6F6F6",
+                "fontFamily": "'IBM Plex Sans', sans-serif",
+                "fontSize": "12px",
+                "fontWeight": "400"
+            },
+            "pointer": {
+                "lineStyle": {
+                    "lineColor": "#51D9E0",
+                    "lineWidth": "2px",
+                    "lineType": "dashed",
+                    "opacity": "0.5"
+                },
+                "shadowStyle": {
+                    "backgroundColor": "#F8F8F8",
+                    "opacity": "0.1"
+                }
+            }
+        },
+        "title": {
+            "fontColor": "#FFD231",
+            "fontFamily": "'IBM Plex Sans', sans-serif",
+            "fontSize": "20px",
+            "fontWeight": "600"
+        },
+        "value": {
+            "fontColor": "#FFFFFF",
+            "fontColorAlt": "#061529",
+            "fontFamily": "'IBM Plex Sans', sans-serif",
+            "fontSize": "14px",
+            "fontWeight": "400"
+        },
+        "legend": {
+            "fontColor": "#C6CCD0",
+            "fontFamily": "'IBM Plex Sans', sans-serif",
+            "fontSize": "12px",
+            "fontWeight": "300"
+        },
+        "tooltip": {
+            "backgroundColor": "#133562",
+            "borderWidth": "0px",
+            "borderColor": "",
+            "fontFamily": "'IBM Plex Sans', sans-serif",
+            "fontColor": "#FFFFFF",
+            "fontSize": "14px"
+        },
+        "dataZoom": {
+            "backgroundColor": "#092140",
+            "fillerColor": "rgba(255, 232, 54, 0.2)",
+            "borderColor": "#061529",
+            "dataBackground": {
+                "lineStyle": {
+                    "lineColor": "#C5E9EB",
+                    "lineWidth": "1px",
+                    "lineStyle": "solid"
+                },
+                "areaStyle": {
+                    "backgroundColor": "#C5E9EB",
+                    "opacity": "0.2"
+                }
+            },
+            "selectedDataBackground": {
+                "lineStyle": {
+                    "lineColor": "#51D9E0",
+                    "lineWidth": "1px",
+                    "lineStyle": "solid"
+                },
+                "areaStyle": {
+                    "backgroundColor": "#51D9E0",
+                    "opacity": "0.2"
+                }
+            },
+            "handle": {
+                "backgroundColor": "#FFFFFF",
+                "borderWidth": "0.5px",
+                "borderStyle": "solid",
+                "borderColor": "#FFE836"
+            },
+            "moveHandle": {
+                "backgroundColor": "#FFE836",
+                "borderWidth": "0.5px",
+                "borderStyle": "solid",
+                "borderColor": "#FFE836"
+            }
+        },
+        "treemap": {
+            "heading": {
+                "backgroundColor": "#5C5C5C",
+                "fontColor": "#D9D9D9",
+                "fontFamily": "'IBM Plex Sans', sans-serif",
+                "fontSize": "12px",
+                "fontWeight": "400"
+            },
+            "breadcrumb": {
+                "backgroundColor": "#5C5C5C",
+                "fontColor": "#D9D9D9",
+                "fontFamily": "'IBM Plex Sans', sans-serif",
+                "fontSize": "10px",
+                "fontWeight": "500",
+                "borderWidth": "0px",
+                "borderStyle": "",
+                "borderColor": ""
+            }
+        },
+        "boxwhisker": {
+            "borderWidth": "1px",
+            "borderStyle": "solid",
+            "borderColor": "#51D9E0"
+        },
+        "graph": {
+            "lineWidth": "1px",
+            "lineStyle": "solid",
+            "lineColor": "#F6F6F6"
+        },
+        "dendrogram": {
+            "lineWidth": "1px",
+            "lineColor": "#F6F6F6"
+        }
+    },
+    "kpi": {
+        "value": {
+            "fontColor": "#2EB9DA",
+            "fontFamily": "'B612', sans-serif",
+            "fontSize": "40px",
+            "fontWeight": "400"
+        },
+        "label": {
+            "fontColor": "#FFFFFF",
+            "fontFamily": "'B612', sans-serif",
+            "fontSize": "12px",
+            "fontWeight": "700"
+        }
+    },
+    "filter": {
+        "backgroundColor": "#092140",
+        "borderWidth": "",
+        "borderStyle": "",
+        "borderColor": "",
+        "shadowX": "",
+        "shadowY": "",
+        "shadowBlur": "",
+        "shadowSpread": "",
+        "shadowColor": "",
+        "component": {
+            "--color-primary-100": "rgba(46, 185, 218, 1)",
+            "--color-primary-70": "rgba(46, 185, 218, 0.7)",
+            "--color-primary-50": "rgba(46, 185, 218, 0.5)",
+            "--color-primary-30": "rgba(46, 185, 218, 0.3)",
+            "--color-primary-10": "rgba(46, 185, 218, 0.1)",
+            "--color-grey-1": "#FFFFFF",
+            "--color-grey-2": "#FFFFFF",
+            "--color-grey-3": "#FFFFFF",
+            "--color-grey-4": "#8E8E8E",
+            "--color-grey-5": "#D9D9D9",
+            "--color-grey-6": "rgba(46, 185, 218, 1)",
+            "--color-white": "#092140",
+            "--font-family": "'IBM Plex Sans', sans-serif"
+        }
+    },
+    "text": {
+        "backgroundColor": "transparent",
+        "borderWidth": "",
+        "borderStyle": "",
+        "borderColor": "",
+        "shadowX": "",
+        "shadowY": "",
+        "shadowBlur": "",
+        "shadowSpread": "",
+        "shadowColor": "",
+        "title": {
+            "fontColor": "#FFD231",
+            "fontFamily": "'IBM Plex Sans', sans-serif",
+            "fontSize": "32px",
+            "fontWeight": "600"
+        },
+        "subtitle": {
+            "fontColor": "#FFD231",
+            "fontFamily": "'IBM Plex Sans', sans-serif",
+            "fontSize": "20px",
+            "fontWeight": "600"
+        },
+        "body": {
+            "fontColor": "#FFD231",
+            "fontFamily": "'IBM Plex Sans', sans-serif",
+            "fontSize": "14px",
+            "fontWeight": "400"
+        }
+    }
+}

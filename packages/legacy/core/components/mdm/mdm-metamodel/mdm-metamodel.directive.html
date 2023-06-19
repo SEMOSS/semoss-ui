@@ -1,0 +1,178 @@
+<div class="mdm-metamodel">
+    <loading-screen model="mdmMetamodel.loading"></loading-screen>
+    <smss-accordion class="mdm-metamodel__accordion" resizable>
+        <smss-accordion-item
+            name="mdmMetamodel.accordionSettings.first.name"
+            ng-disabled="mdmMetamodel.accordionSettings.first.disabled"
+            size="mdmMetamodel.accordionSettings.first.height"
+        >
+            <div class="mdm-metamodel__accordion__content">
+                <div class="mdm-metamodel__search smss-clear">
+                    <smss-search
+                        class="smss-left"
+                        placeholder=""
+                        model="mdmMetamodel.concepts.searched"
+                        change="mdmMetamodel.searchMetamodel()"
+                    >
+                    </smss-search>
+                </div>
+                <div class="mdm-metamodel__graph" id="mdm-metamodel__graph">
+                    <svg>
+                        <g></g>
+                    </svg>
+                </div>
+            </div>
+        </smss-accordion-item>
+        <smss-accordion-item
+            name="mdmMetamodel.accordionSettings.second.name"
+            ng-disabled="mdmMetamodel.accordionSettings.second.disabled"
+            size="mdmMetamodel.accordionSettings.second.height"
+        >
+            <div class="smss-row mdm-metamodel__info">
+                <smss-scroll
+                    class="smss-col smss-col--4 mdm-metamodel__info__picker"
+                    static-x="true"
+                >
+                    <div
+                        class="smss-block"
+                        ng-click="mdmMetamodel.setConceptView('description')"
+                        ng-class="{'smss-block--selected': mdmMetamodel.concepts.selected.view === 'description'}"
+                    >
+                        <div class="smss-block__text">
+                            <span>Description</span>
+                        </div>
+                    </div>
+                    <div
+                        class="smss-block"
+                        ng-click="mdmMetamodel.setConceptView('logical')"
+                        ng-class="{'smss-block--selected': mdmMetamodel.concepts.selected.view === 'logical'}"
+                    >
+                        <div class="smss-block__text">
+                            <span>Logical Names</span>
+                        </div>
+                    </div>
+                    <div
+                        class="smss-block"
+                        ng-click="mdmMetamodel.setConceptView('instances')"
+                        ng-class="{'smss-block--selected': mdmMetamodel.concepts.selected.view === 'instances'}"
+                    >
+                        <div class="smss-block__text">
+                            <span>Sample Instances</span>
+                        </div>
+                    </div>
+                </smss-scroll>
+                <div class="smss-col smss-col--8 mdm-metamodel__info__content">
+                    <smss-scroll
+                        static-x="true"
+                        ng-if="mdmMetamodel.concepts.selected.view === 'description'"
+                    >
+                        <smss-textarea
+                            class="mdm-metamodel__info__content__description"
+                            placeholder="Enter a Description"
+                            ng-model="mdmMetamodel.description.new"
+                        ></smss-textarea>
+                        <div class="smss-spacing smss-clear">
+                            <smss-btn
+                                class="smss-left smss-btn--outline"
+                                ng-click="mdmMetamodel.predictDescription()"
+                            >
+                                Predict
+                            </smss-btn>
+                            <smss-btn
+                                class="smss-right"
+                                ng-click="mdmMetamodel.updateDescription()"
+                            >
+                                Save
+                            </smss-btn>
+                            <smss-btn
+                                class="smss-right smss-btn--right smss-btn--text"
+                                ng-click="mdmMetamodel.resetDescription()"
+                            >
+                                Reset
+                            </smss-btn>
+                        </div>
+                    </smss-scroll>
+
+                    <div
+                        class="mdm-metamodel__info__content__logical"
+                        ng-if="mdmMetamodel.concepts.selected.view === 'logical'"
+                    >
+                        <smss-scroll
+                            class="mdm-metamodel__info__content__logical__scroll"
+                            static-x="true"
+                            ng-if="mdmMetamodel.concepts.selected.view === 'logical'"
+                        >
+                            <table>
+                                <tr>
+                                    <th>Name</th>
+                                    <th class="smss--icon"></th>
+                                </tr>
+                                <tr
+                                    ng-repeat="val in mdmMetamodel.logical.new track by $index"
+                                    title="{{val}}"
+                                >
+                                    <td>
+                                        <smss-input
+                                            type="text"
+                                            ng-model="mdmMetamodel.logical.new[$index]"
+                                        ></smss-input>
+                                    </td>
+                                    <td>
+                                        <smss-btn
+                                            class="smss-btn--icon smss-color--error"
+                                            ng-click="mdmMetamodel.removeLogical($index)"
+                                        >
+                                            <i class="fa fa-trash-o"></i>
+                                        </smss-btn>
+                                    </td>
+                                </tr>
+                            </table>
+                        </smss-scroll>
+                        <div
+                            class="smss-spacing mdm-metamodel__info__content__logical__add"
+                        >
+                            <smss-input
+                                title="Enter a New Name"
+                                ng-model="mdmMetamodel.logical.add"
+                                ng-keydown="$event.keyCode === 13 && mdmMetamodel.addLogical()"
+                            ></smss-input>
+                            <smss-btn
+                                class="smss-btn--icon smss-color--success"
+                                ng-click="mdmMetamodel.addLogical()"
+                            >
+                                <i class="fa fa-plus"></i>
+                            </smss-btn>
+                        </div>
+                        <div class="smss-spacing smss-clear">
+                            <smss-btn
+                                class="smss-left smss-btn--outline"
+                                ng-click="mdmMetamodel.predictLogical()"
+                            >
+                                Predict
+                            </smss-btn>
+                            <smss-btn
+                                class="smss-right"
+                                ng-click="mdmMetamodel.updateLogical()"
+                            >
+                                Save
+                            </smss-btn>
+                            <smss-btn
+                                class="smss-right smss-btn--right smss-btn--text"
+                                ng-click="mdmMetamodel.resetLogical()"
+                            >
+                                Reset
+                            </smss-btn>
+                        </div>
+                    </div>
+
+                    <mdm-instances
+                        ng-if="mdmMetamodel.concepts.selected.view === 'instances'"
+                        app-id="mdmCtrl.appId"
+                        concept="mdmMetamodel.concepts.selected.data.conceptualName"
+                        insight-i-d="mdmCtrl.insightID"
+                    ></mdm-instances>
+                </div>
+            </div>
+        </smss-accordion-item>
+    </smss-accordion>
+</div>

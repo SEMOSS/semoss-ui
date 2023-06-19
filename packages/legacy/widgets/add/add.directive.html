@@ -1,0 +1,117 @@
+<div class="add">
+    <div class="smss-spacing">
+        <smss-btn-group class="smss-btn-group--even">
+            <smss-btn
+                class="smss-btn--compact"
+                ng-class="{'smss-btn--selected': add.type === 'Simple'}"
+                ng-click="add.changeCalculationType('Simple')"
+                title="Simple"
+            >
+                Simple
+            </smss-btn>
+            <smss-btn
+                class="smss-btn--compact"
+                ng-class="{'smss-btn--selected': add.type === 'Advanced'}"
+                ng-click="add.changeCalculationType('Advanced')"
+                title="Advanced"
+            >
+                Advanced
+            </smss-btn>
+            <smss-btn
+                class="smss-btn--compact"
+                ng-class="{'smss-btn--selected': add.type === 'Manual'}"
+                ng-click="add.changeCalculationType('Manual')"
+                title="Manual"
+            >
+                Manual
+            </smss-btn>
+        </smss-btn-group>
+    </div>
+
+    <smss-field>
+        <content>
+            <smss-checkbox model="add.isTemporalFormula">
+                Store as Temporal Column
+            </smss-checkbox>
+        </content>
+    </smss-field>
+
+    <smss-field>
+        <label>
+            Enter name of calculated column:
+            <span class="smss-color--error">*</span>
+        </label>
+        <content>
+            <div class="add__name">
+                <smss-input
+                    ng-model="add.name"
+                    ng-change="add.validateName()"
+                ></smss-input>
+                <div
+                    class="smss-text smss-center add__name__icon"
+                    ng-show="!add.isColumnNameValid"
+                >
+                    <i
+                        title="Invalid Alias"
+                        class="fa fa-exclamation-triangle smss-color--warn"
+                    ></i>
+                </div>
+            </div>
+        </content>
+    </smss-field>
+
+    <!-- Simple Calculation -->
+    <div class="add__content" ng-show="add.type === 'Simple'">
+        <smss-field>
+            <label>Select Column:</label>
+            <content>
+                <smss-dropdown
+                    model="add.simple.column.selected"
+                    options="add.simple.column.options"
+                    display="alias"
+                ></smss-dropdown>
+            </content>
+        </smss-field>
+        <smss-field>
+            <label>Select Calculation:</label>
+            <content>
+                <smss-dropdown
+                    model="add.simple.function.selected"
+                    options="add.simple.function.options"
+                    display="display"
+                ></smss-dropdown>
+            </content>
+        </smss-field>
+    </div>
+    <!-- Advanced Calculation -->
+    <div class="add__content" ng-show="add.type === 'Advanced'">
+        <formula
+            class="add__content__formula"
+            menu="add.formula.menu"
+            tree="add.formula.tree"
+            register="add.registerFormula(updateTree, getTree)"
+        ></formula>
+    </div>
+
+    <!-- Manual Calculation -->
+    <div class="add__content" ng-show="add.type === 'Manual'">
+        <manualformula
+            class="add__content__formula"
+            menu="add.formula.menu"
+            manualregister="add.registerManualFormula(manualQuery)"
+        ></manualformula>
+    </div>
+
+    <div class="smss-action">
+        <smss-btn
+            class="smss-btn--text"
+            ng-if="add.PIPELINE"
+            ng-click="add.cancel()"
+        >
+            Cancel
+        </smss-btn>
+        <smss-btn ng-click="add.execute()" ng-disabled="!add.canSubmit()">
+            Execute
+        </smss-btn>
+    </div>
+</div>

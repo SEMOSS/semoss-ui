@@ -1,0 +1,79 @@
+<div class="block">
+    <h4 ng-if="component.title">{{component.title}}</h4>
+    <p class="smss-color--low-emphasis" ng-if="component.description">
+        {{component.description}}
+    </p>
+    <div class="block__wrapper">
+        <h5>Example</h5>
+        <div class="block__example">
+            <div
+                id="block__example__rendered"
+                dynamic="directiveHTML"
+                class="block__example__rendered"
+            ></div>
+
+            <smss-btn
+                class="smss-btn--text block__example__anchor"
+                ng-click="showcode = !showcode"
+            >
+                {{showcode ? 'Hide Code' : 'Show Code'}}
+            </smss-btn>
+        </div>
+
+        <div ng-init="showcode = false" ng-show="showcode">
+            <smss-tab-group class="block__menu smss-clear">
+                <smss-tab
+                    ng-show="component.html"
+                    ng-class="{'smss-tab--selected': mode == 'HTML'}"
+                    ng-click="mode = 'HTML'"
+                    >HTML</smss-tab
+                >
+                <smss-tab
+                    ng-show="component.scss"
+                    ng-class="{'smss-tab--selected': mode == 'SCSS'}"
+                    ng-click="mode = 'SCSS'"
+                    >SCSS</smss-tab
+                >
+                <smss-tab
+                    ng-show="component.js"
+                    ng-class="{'smss-tab--selected': mode == 'JS'}"
+                    ng-click="mode = 'JS'"
+                    >JS</smss-tab
+                >
+            </smss-tab-group>
+            <div class="block__content" ng-init="mode = 'HTML'">
+                <pre
+                    ng-if="mode == 'HTML'"
+                ><code>{{component.html}}</code></pre>
+                <pre
+                    ng-if="mode == 'SCSS'"
+                ><code>{{component.scss}}</code></pre>
+                <pre ng-if="mode == 'JS'"><code>{{component.js}}</code></pre>
+            </div>
+        </div>
+    </div>
+    <div
+        class="block__wrapper"
+        ng-if="component.properties && component.properties.length > 0"
+    >
+        <h5>Properties</h5>
+        <table class="block__table">
+            <tr>
+                <th>Property</th>
+                <th>Type</th>
+                <th>Values</th>
+                <th>Description</th>
+            </tr>
+            <tr ng-repeat="prop in component.properties">
+                <td>{{prop.property}}</td>
+                <td>{{prop.type}}</td>
+                <td style="white-space: normal">{{prop.values}}</td>
+                <td style="white-space: normal">{{prop.desc}}</td>
+            </tr>
+        </table>
+    </div>
+    <div class="block__wrapper" ng-if="component.rulesDirective.length > 0">
+        <h5>Best Practices</h5>
+        <div dynamic="directiveRules"></div>
+    </div>
+</div>

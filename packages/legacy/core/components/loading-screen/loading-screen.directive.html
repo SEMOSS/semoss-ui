@@ -1,0 +1,70 @@
+<div ng-show="loadingScreen.model" class="loading-screen">
+    <smss-btn
+        class="smss-btn--icon loading-screen__times"
+        ng-click="loadingScreen.closeScreen();"
+    >
+        <i class="fa fa-times"></i>
+    </smss-btn>
+    <div class="loading-screen__box">
+        <div class="loading-screen__chart">
+            <div
+                class="loading-screen__chart__bar loading-screen__chart__bar--1"
+            ></div>
+            <div
+                class="loading-screen__chart__bar loading-screen__chart__bar--2"
+            ></div>
+            <div
+                class="loading-screen__chart__bar loading-screen__chart__bar--3"
+            ></div>
+            <div
+                class="loading-screen__chart__bar loading-screen__chart__bar--4"
+            ></div>
+            <div
+                class="loading-screen__chart__bar loading-screen__chart__bar--5"
+            ></div>
+            <div
+                class="loading-screen__chart__bar loading-screen__chart__bar--6"
+            ></div>
+        </div>
+        <div ng-if="loadingScreen.messages.length === 0">
+            <h5 class="loading-screen__title">Loading....</h5>
+        </div>
+        <div ng-if="loadingScreen.messages.length > 0">
+            <h5
+                class="loading-screen__title"
+                title="{{loadingScreen.messages[loadingScreen.messages.length - 1]}}"
+            >
+                {{loadingScreen.messages[loadingScreen.messages.length - 1]}}
+            </h5>
+            <div class="loading-screen__container">
+                <div
+                    id="loading-screen__container__scroll"
+                    class="loading-screen__container__scroll"
+                    ng-class="{'loading-screen__container__scroll--closed': !loadingScreen.list}"
+                    ng-show="loadingScreen.messages.length > 1"
+                >
+                    <div
+                        class="smss-text"
+                        title="{{message}}"
+                        ng-show="$index > 0"
+                        ng-repeat="message in loadingScreen.messages | reverse:true track by $index"
+                    >
+                        <span class="smss-small smss-color--low-emphasis">
+                            {{message}}
+                        </span>
+                    </div>
+                    <smss-btn
+                        class="smss-btn--icon loading-screen__container__btn"
+                        ng-show="loadingScreen.messages.length > 2"
+                        ng-click="loadingScreen.list = !loadingScreen.list"
+                    >
+                        <i
+                            class="fa"
+                            ng-class="{'fa-chevron-up': loadingScreen.list, 'fa-chevron-down':!loadingScreen.list}"
+                        ></i>
+                    </smss-btn>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

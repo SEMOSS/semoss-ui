@@ -1,0 +1,115 @@
+<div class="color-panel widget-sidebar-pop-out xs-padding">
+
+    <loading-screen loading-screen-show="colorPanel.loadScreen"></loading-screen>
+
+    <div class="overflow-y-auto overflow-hidden">
+
+        <div class="grid12">
+            <p><b> Choose a color palette </b></p>
+
+            <div class="flex outline-none" ng-repeat="panel in colorPanel.colorPanels track by $index"
+                 ng-show="$index < 3 || colorPanel.showHideColors() || colorPanel.showMore">
+                <div class="no-vert-padding inline full-width xs-padding xxs-margin pointer-cursor"
+                     ng-click="colorPanel.colorName = panel.name; colorPanel.updateColor(colorPanel.colorName);"
+                     ng-class="{'color-chips-chosen': colorPanel.colorName === panel.name}"
+                     ng-init="colorPanel.colorName = 'Semoss'">
+                    <div class="color-chips-name sm-right-margin md-left-margin">{{panel.displayName}}</div>
+                    <div class="inline pull-right md-right-margin" style="vertical-align: bottom">
+                        <div class="rectangle pull-left" style="background-color:{{panel.colors[0]}};"></div>
+                        <div class="rectangle pull-left" style="background-color:{{panel.colors[1]}};"></div>
+                        <div class="rectangle pull-left" style="background-color:{{panel.colors[2]}};"></div>
+                        <div class="rectangle pull-left" style="background-color:{{panel.colors[3]}};"></div>
+                        <div class="rectangle pull-left" style="background-color:{{panel.colors[4]}};"></div>
+                        <div class="rectangle pull-left" style="background-color:{{panel.colors[5]}};"></div>
+                        <div class="rectangle pull-left" style="background-color:{{panel.colors[6]}};"></div>
+                        <div class="rectangle pull-left" style="background-color:{{panel.colors[7]}};"></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="xs-padding xs-margin" ng-show="!colorPanel.showMore">
+                <a ng-click="colorPanel.showMore = true" class="pull-right pointer">Show More Options </a>
+            </div>
+
+            <div class="xs-padding xs-margin"
+                 ng-show="colorPanel.showMore && (colorPanel.colorName === 'Semoss'|| colorPanel.colorName === 'One' || colorPanel.colorName === 'Two' || colorPanel.colorName === 'Custom')">
+                <a ng-click="colorPanel.showMore = false" class="pull-right pointer">Hide Extra Options </a>
+            </div>
+
+            <div class="md-top-margin">
+                <div class="custom-color-tag xs-hor-padding" ng-class="{'border-blue': colorPanel.colorName === 'Custom'}">
+                    <div class="outline-none" ng-click="colorPanel.colorToggle = !colorPanel.colorToggle;">
+                        <div class="pointer-cursor xs-top-margin xs-btm-margin">
+                            <span>
+                                <i class="fa sm-side-margin"
+                                   ng-class="{'fa-caret-down': colorPanel.colorToggle === true, 'fa-caret-right': colorPanel.colorToggle === false}"></i>
+                               Custom colors
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div ng-if="colorPanel.colorToggle === true">
+                <div class="sm-top-padding no-margin" style="width: 90%">
+                    <!--Custom Colors-->
+                    <div ng-repeat="slice in colorPanel.customColorLabels track by $index">
+                        <div class="grid12">
+                            <div class="color-chips-name md-font" title="{{slice}}">
+                                {{slice | reduceStringLength : 20}}
+                            </div>
+                        </div>
+                        <div class="grid12">
+                            <div class="pull-left custom-color-input">
+                                <input class="full-width pointer" colorpicker
+                                       colorpicker-position="top"
+                                       ng-model="colorPanel.customColors[slice]"
+                                       type="text" style="text-transform:uppercase;">
+                            </div>
+                            <div class="rectangle sm-left-margin xs-right-margin pull-right"
+                                 style="background: {{colorPanel.customColors[slice]}}; border-color:#ABABAB; border-width:1px; margin-top: 3px">
+                            </div>
+                        </div>
+                        <div class="grid12">
+                            <hr style="margin: 5px 0px 5px 0px;"/>
+                        </div>
+                    </div>
+
+
+                    <!--Background Coloring-->
+
+                    <div class="grid12">
+                        <div class="color-chips-name md-font" title="Background Color">
+                            Background Color
+                        </div>
+                    </div>
+                    <div class="grid12">
+                        <div class="custom-color-input pull-left">
+                            <input class="full-width pointer" colorpicker
+                                   colorpicker-position="top"
+                                   ng-model="colorPanel.backgroundColor"
+                                   type="text" style="text-transform:uppercase;">
+                        </div>
+                        <div class="rectangle sm-left-margin xs-right-margin pull-right"
+                             style="background: {{colorPanel.backgroundColor}}; border-color: #ABABAB; border-width: 1px;">
+                        </div>
+                    </div>
+                    <div class="grid12">
+                        <hr style="margin: 5px 0px 5px 0px;"/>
+                    </div>
+
+
+                    <div class="grid12">
+                        <button class="create-overlap btn-sm btn-green border-radius pos-relative"
+                                style="width:70%; margin: 0 0 0 14%; padding: 6px 2px 6px 2px "
+                                ng-click="colorPanel.colorName = 'Custom'; colorPanel.customColorUpdate();">
+                            Apply
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+
+    </div>
+</div>

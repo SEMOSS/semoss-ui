@@ -1,0 +1,203 @@
+<div class="widget-menu">
+    <div class="widget-menu__content" dynamic="widgetMenu.getTab()"></div>
+    <div class="widget-menu__dock">
+        <!-- <smss-btn class="smss-btn--icon widget-menu__icon"
+                  title="Close Menu"
+                  ng-click="widgetMenu.closeMenu()">
+            <i class="fa fa-bars"></i>
+            Menu
+        </smss-btn> -->
+
+        <smss-btn
+            class="smss-btn--icon widget-menu__icon"
+            title="View Pipeline"
+            ng-click="widgetMenu.changeTab('enrich')"
+            ng-class="{'smss-btn--selected': widgetMenu.selectedTab === 'enrich'}"
+            ng-disabled="widgetMenu.view === 'dashboard-filter' || widgetMenu.view === 'dashboard-unfilter' || widgetMenu.view === 'dashboard-assistant' || widgetMenu.view === 'text-editor' || widgetMenu.view === 'html-widget' || widgetMenu.view === 'iframe-widget' || widgetMenu.view === 'dashboard-button' || !widgetCtrl.widgetId || !widgetCtrl.panelId"
+            id="widget-menu__semoss-tour-enrich"
+        >
+            <i class="fa fa-database"></i>
+            Pipeline
+        </smss-btn>
+        <div
+            title="{{widgetMenu.disableMessage}}"
+            ng-hide="HIDDEN_WIDGETS.indexOf('clean-tab') > -1"
+        >
+            <smss-btn
+                class="smss-btn--icon widget-menu__icon"
+                title="Clean Data"
+                ng-click="widgetMenu.changeTab('clean')"
+                ng-disabled="(widgetMenu.config && !widgetMenu.config.r && !widgetMenu.config.python) || widgetMenu.frameType === 'GRAPH' || widgetMenu.view === 'dashboard-filter'  || widgetMenu.view === 'dashboard-unfilter' || widgetMenu.view === 'dashboard-assistant' || widgetMenu.view === 'text-editor'  || !widgetCtrl.widgetId || !widgetMenu.frameType"
+                ng-class="{'smss-btn--selected': widgetMenu.selectedTab === 'clean'}"
+                id="widget-menu__semoss-tour-clean"
+            >
+                <svg
+                    version="1.1"
+                    id="Capa_1"
+                    xmlns="http://www.w3.org/2000/svg"
+                    xmlns:xlink="http://www.w3.org/1999/xlink"
+                    x="0px"
+                    y="0px"
+                    viewBox="0 0 303.996 303.996"
+                    style="enable-background: new 0 0 303.996 303.996"
+                    xml:space="preserve"
+                >
+                    <path
+                        fill="currentColor"
+                        d="M298.066,5.929c-7.907-7.906-20.772-7.905-28.68,0.002l-80.793,80.794L140.567,38.7c-12.164-12.165-31.888-12.165-44.053,0
+                        L61.927,73.287l4.312,4.312L6.449,115.883c-3.569,2.286-5.91,6.066-6.367,10.279c-0.457,4.214,1.021,8.408,4.018,11.405
+                        l162.33,162.33c2.639,2.639,6.204,4.099,9.895,4.099c0.501,0,1.005-0.027,1.509-0.081c4.213-0.456,7.993-2.797,10.278-6.367
+                        l38.284-59.791l4.312,4.312l34.587-34.587c12.165-12.165,12.165-31.889-0.001-44.055l-48.023-48.024l80.794-80.794
+                        C305.972,26.701,305.972,13.837,298.066,5.929z M173.921,267.802l-27.801-27.801l27.292-40.69l-40.69,27.292l-23.399-23.398
+                        l17.376-25.906l-25.906,17.376l-26.541-26.541l21.084-31.435l-31.434,21.084l-27.707-27.707l50.309-32.213l119.631,119.632
+                        L173.921,267.802z"
+                    />
+                </svg>
+                Clean
+            </smss-btn>
+        </div>
+
+        <div
+            title="{{widgetMenu.disableMessage}}"
+            ng-hide="HIDDEN_WIDGETS.indexOf('analytics-tab') > -1"
+        >
+            <smss-btn
+                class="smss-btn--icon widget-menu__icon"
+                title="Analyze Data"
+                ng-click="widgetMenu.changeTab('analytics')"
+                ng-disabled="(widgetMenu.config && !widgetMenu.config.r) || widgetMenu.frameType === 'GRAPH' || widgetMenu.view === 'dashboard-filter' || widgetMenu.view === 'dashboard-unfilter' || widgetMenu.view === 'dashboard-assistant' || widgetMenu.view === 'text-editor'  || !widgetCtrl.widgetId || !widgetMenu.frameType"
+                ng-class="{'smss-btn--selected': widgetMenu.selectedTab === 'analytics'}"
+                id="widget-menu__semoss-tour-analytics"
+            >
+                <svg
+                    aria-hidden="true"
+                    focusable="false"
+                    data-prefix="fas"
+                    data-icon="brain"
+                    class="svg-inline--fa fa-brain fa-w-18"
+                    role="img"
+                    xmlns="http://www.w3.org/2000/svg"
+                    viewBox="0 0 576 512"
+                >
+                    <path
+                        fill="currentColor"
+                        d="M208 0c-29.9 0-54.7 20.5-61.8 48.2-.8 0-1.4-.2-2.2-.2-35.3 0-64 28.7-64 64 0 4.8.6 9.5 1.7 14C52.5 138 32 166.6 32 200c0 12.6 3.2 24.3 8.3 34.9C16.3 248.7 0 274.3 0 304c0 33.3 20.4 61.9 49.4 73.9-.9 4.6-1.4 9.3-1.4 14.1 0 39.8 32.2 72 72 72 4.1 0 8.1-.5 12-1.2 9.6 28.5 36.2 49.2 68 49.2 39.8 0 72-32.2 72-72V64c0-35.3-28.7-64-64-64zm368 304c0-29.7-16.3-55.3-40.3-69.1 5.2-10.6 8.3-22.3 8.3-34.9 0-33.4-20.5-62-49.7-74 1-4.5 1.7-9.2 1.7-14 0-35.3-28.7-64-64-64-.8 0-1.5.2-2.2.2C422.7 20.5 397.9 0 368 0c-35.3 0-64 28.6-64 64v376c0 39.8 32.2 72 72 72 31.8 0 58.4-20.7 68-49.2 3.9.7 7.9 1.2 12 1.2 39.8 0 72-32.2 72-72 0-4.8-.5-9.5-1.4-14.1 29-12 49.4-40.6 49.4-73.9z"
+                    ></path>
+                </svg>
+                Analyze
+            </smss-btn>
+        </div>
+
+        <smss-btn
+            class="smss-btn--icon widget-menu__icon"
+            ng-click="widgetMenu.changeTab('view')"
+            ng-disabled=" !widgetCtrl.widgetId || (!widgetMenu.frameType && widgetMenu.view !== 'text-editor')"
+            title="Visualize Data"
+            ng-class="{'smss-btn--selected': widgetMenu.selectedTab === 'view'}"
+            id="widget-menu__semoss-tour-view"
+        >
+            <i class="fa fa-pie-chart"></i>
+            Visualize
+        </smss-btn>
+
+        <smss-btn
+            class="smss-btn--icon widget-menu__icon"
+            title="Share or Export"
+            ng-click="widgetMenu.changeTab('share')"
+            ng-disabled="!widgetCtrl.widgetId || !widgetCtrl.panelId"
+            ng-class="{'smss-btn--selected': widgetMenu.selectedTab === 'share'}"
+            id="widget-menu__semoss-tour-share"
+        >
+            <i class="fa fa-share"></i>
+            Export
+        </smss-btn>
+
+        <smss-btn
+            class="smss-btn--icon widget-menu__icon"
+            title="Other Widgets"
+            ng-click="widgetMenu.changeTab('menu')"
+            ng-disabled="!widgetCtrl.widgetId || !widgetCtrl.panelId"
+            ng-class="{'smss-btn--selected': widgetMenu.selectedTab === 'menu'}"
+            id="widget-menu__semoss-tour-menu"
+        >
+            <svg
+                xmlns="http://www.w3.org/2000/svg"
+                data-name="Layer 1"
+                viewBox="0 0 32 32"
+                x="0px"
+                y="0px"
+            >
+                <path
+                    fill="currentColor"
+                    d="M11.28,14.92h-.19a1.1,1.1,0,0,0,0,2.2h.19a1.1,1.1,0,1,0,0-2.2"
+                ></path>
+                <path
+                    fill="currentColor"
+                    d="M15.91,14.92h-.19a1.1,1.1,0,1,0,0,2.2h.19a1.1,1.1,0,0,0,0-2.2"
+                ></path>
+                <path
+                    fill="currentColor"
+                    d="M20.55,14.92h-.19a1.1,1.1,0,0,0,0,2.2h.19a1.1,1.1,0,1,0,0-2.2"
+                ></path>
+                <path
+                    fill="currentColor"
+                    d="M15.82,2.32A13.7,13.7,0,1,0,29.52,16a13.72,13.72,0,0,0-13.7-13.7m0,25.49A11.79,11.79,0,1,1,27.61,16,11.8,11.8,0,0,1,15.82,27.82"
+                ></path>
+            </svg>
+            Other
+        </smss-btn>
+
+        <smss-btn
+            class="smss-btn--icon widget-menu__icon"
+            title="Settings"
+            ng-click="widgetMenu.changeTab('settings')"
+            ng-disabled="!widgetCtrl.widgetId || !widgetCtrl.panelId"
+            ng-class="{'smss-btn--selected': widgetMenu.selectedTab === 'settings'}"
+            ng-hide="widgetMenu.PLAYGROUND"
+            id="widget-menu__semoss-tour-settings"
+        >
+            <i class="fa fa-cogs"></i>
+            Settings
+        </smss-btn>
+    </div>
+    <smss-overlay open="widgetMenu.confirmation.show">
+        <smss-overlay-header>Warning</smss-overlay-header>
+        <smss-overlay-body
+            >This action will push your data into R. It is not recommended for
+            large datasets. Continue?</smss-overlay-body
+        >
+        <smss-overlay-footer>
+            <smss-btn
+                class="smss-btn--text"
+                ng-click="widgetMenu.confirmation.show = false"
+            >
+                Cancel
+            </smss-btn>
+            <smss-btn
+                ng-click="widgetMenu.changeTab(widgetMenu.confirmation.tab, true); widgetMenu.confirmation.show = false"
+            >
+                Confirm
+            </smss-btn>
+        </smss-overlay-footer>
+    </smss-overlay>
+    <smss-overlay open="widgetMenu.cacheConfirmation.show">
+        <smss-overlay-header>Warning</smss-overlay-header>
+        <smss-overlay-body
+            >An existing thread is currently caching the frame. Do you want to
+            continue with a separate thread?</smss-overlay-body
+        >
+        <smss-overlay-footer>
+            <smss-btn
+                class="smss-btn--text"
+                ng-click="widgetMenu.cacheConfirmation.show = false"
+            >
+                Cancel
+            </smss-btn>
+            <smss-btn
+                ng-click="widgetMenu.changeTab(widgetMenu.cacheConfirmation.tab, true); widgetMenu.cacheConfirmation.show = false"
+            >
+                Confirm
+            </smss-btn>
+        </smss-overlay-footer>
+    </smss-overlay>
+</div>

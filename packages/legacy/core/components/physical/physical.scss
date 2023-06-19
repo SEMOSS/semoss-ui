@@ -1,0 +1,108 @@
+@import '~theme';
+
+$node-height: 124px;
+$node-width: 250px;
+$icon-width: 20px;
+
+.physical {
+    position: absolute;
+    top: 0;
+    right: 0;
+    left: 0;
+    bottom: 0;
+    // overflow: hidden;
+    background: get-background-color('default');
+
+    &__search {
+        position: absolute;
+        top: 0;
+        left: 0;
+        z-index: 2;
+        width: 200px;
+    }
+
+    &__graph {
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        z-index: 0;
+        overflow: visible;
+
+        &__table {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: $node-width;
+            z-index: 1;
+            cursor: move;
+            background: get-background-color('default');
+            color: get-text-color('default');
+            border-radius: $border-radius;
+            border: $border-size solid get-border-color('default');
+
+            &__item {
+                outline: none;
+                border: 1px solid transparent;
+                padding: get-spacing('xs', 'em') get-spacing('sm', 'em');
+                display: flex;
+                align-items: center;
+                width: 100%;
+                height: get-height('xl', 'rem');
+
+                &--selected {
+                    border: 1px solid get-border-color('primary');
+                }
+
+                &--header {
+                    background: get-background-color('light');
+                    border-radius: $border-radius $border-radius 0 0;
+                    & .physical__graph__table__item__text {
+                        color: get-text-color('medium-emphasis');
+                    }
+                    & .physical__graph__table__item__icon {
+                        color: get-text-color('medium-emphasis');
+                    }
+                }
+
+                &__icon {
+                    display: inline-block;
+                    width: $icon-width;
+                    text-align: center;
+                    font-size: 0.875em;
+                    color: get-text-color('low-emphasis');
+                    margin-right: get-spacing('sm', 'rem');
+                }
+
+                &__text {
+                    display: inline-block;
+                    flex: 1;
+                    color: get-text-color('high-emphasis');
+                    @include text-overflow();
+                    font-size: get-font-size('body-regular', 'rem');
+                }
+
+                &__btn {
+                    visibility: hidden;
+                }
+
+                &:hover {
+                    background: get-background-color('primary--hover');
+                    & .physical__graph__table__item__btn {
+                        visibility: visible;
+                    }
+                }
+            }
+        }
+
+        &__edge {
+            &__connector {
+                & path {
+                    // stroke: get-border-color("primary");
+                    stroke: get-border-color('dark');
+                }
+            }
+        }
+    }
+}

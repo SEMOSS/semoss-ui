@@ -1,0 +1,19 @@
+.quality-report {
+    &__applied-rules {
+        &__title {
+            width: auto;
+        }
+
+        &__table {
+            height: 200px;
+            overflow: auto;
+        }
+    }
+
+    &__input {
+        width: calc(
+            100% - #{get-width('icon', 'rem')} - #{get-spacing('md', 'rem')}
+        );
+        margin-right: get-spacing('sm', 'rem');
+    }
+}

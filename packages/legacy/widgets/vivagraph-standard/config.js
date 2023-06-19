@@ -1,0 +1,81 @@
+module.exports = {
+    name: 'VivaGraph',
+    icon: require('images/vivagraph.svg'),
+    widgetList: {
+        tags: ['Visualization'],
+        showOn: 'none',
+        hideHandles: ['export-svg'],
+        quickMenu: [
+            'events',
+            'unfilter',
+            'viva-freeze',
+            'viva-unfreeze',
+            'color-by-value',
+            'infinite-viz',
+        ],
+    },
+    content: {
+        template: {
+            name: 'vivagraph-standard',
+        },
+    },
+    visualization: {
+        type: ['echarts', 'standard'],
+        group: 'Visualization',
+        view: 'visualization',
+        layout: 'VivaGraph',
+        visibleModes: ['default-mode', 'brush-mode'],
+        tools: [
+            'custom-legend',
+            'filter',
+            'unfilter',
+            'color-by-value',
+            'change-layout',
+            'cluster-color',
+            'graph-remove-intermediary-node',
+            'graph-node-details',
+            'graph-connected-nodes',
+            'graph-find-paths-connecting-nodes',
+            'graph-find-paths-connecting-groups',
+            'viva-freeze',
+            'viva-unfreeze',
+            'traverse',
+            'events',
+            'param',
+            'purge',
+            'refresh-cache',
+        ],
+        showOnVisualPanel: true,
+        visualPanelMenu: {
+            USE: 'Connections',
+        },
+        format: 'graph',
+        fields: [
+            {
+                model: 'start',
+                name: 'Start',
+                acceptableTypes: ['DATE', 'STRING', 'NUMBER'],
+                optional: false,
+                multiField: true,
+                description:
+                    'Try adding one or several dimensions (i.e. Nominated). Each instance of this dimension will represent a point on the graph. Each dimension is represented by a specific color. Start and End dimension of the same index will connect.',
+            },
+            {
+                model: 'end',
+                name: 'End',
+                acceptableTypes: ['DATE', 'STRING', 'NUMBER'],
+                optional: false,
+                multiField: true,
+                description:
+                    'Try adding one or several dimensions (i.e. Producer). Each instance of this dimension will represent a point on the graph. Each dimension is represented by a specific color. Start and End dimension of the same index will connect.',
+            },
+        ],
+        color: {},
+    },
+    state: {
+        graphLockToggle: false,
+        graphLabelToggle: false,
+        graphLegendToggle: true,
+    },
+    lazy: true,
+};

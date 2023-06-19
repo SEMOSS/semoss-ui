@@ -1,0 +1,856 @@
+<div class="database-physical">
+    <div class="database-physical__body">
+        <div class="database-physical__test">
+            <div class="smss-col smss-col--4 smss-left">
+                <div
+                    class="database-physical__btn database-physical__btn--overlays"
+                >
+                    <smss-btn
+                        class="smss-btn--text"
+                        title="Add or Remove Tables"
+                        ng-if="(databaseCtrl.loggedInUser.permission !== 'READ_ONLY' && databaseCtrl.loggedInUser.permission !== '')"
+                        ng-click="databasePhysical.showModifyTable = true"
+                    >
+                        <i class="fa fa-table"></i>
+                        Modify Table
+                    </smss-btn>
+
+                    <smss-btn
+                        class="smss-btn--text"
+                        title="Add or Remove Relationships"
+                        ng-if="(databaseCtrl.loggedInUser.permission !== 'READ_ONLY' && databaseCtrl.loggedInUser.permission !== '')"
+                        ng-click="databasePhysical.showAddTable = true"
+                    >
+                        <i class="fa fa-plus"></i>
+                        Add Table
+                    </smss-btn>
+
+                    <smss-btn
+                        class="smss-btn--text"
+                        title="Delete Table(s)"
+                        ng-if="(databaseCtrl.loggedInUser.permission !== 'READ_ONLY' && databaseCtrl.loggedInUser.permission !== '')"
+                        ng-click="databasePhysical.showTableDelete = true"
+                    >
+                        <i class="fa fa-trash-o"></i>
+                        Delete Table
+                    </smss-btn>
+                </div>
+            </div>
+
+            <smss-overlay size="lg" open="databasePhysical.showModifyTable">
+                <smss-overlay-header>Modify Table</smss-overlay-header>
+                <smss-overlay-body>
+                    <smss-field>
+                        <label> Select a Table: </label>
+                        <content>
+                            <smss-dropdown
+                                display="alias"
+                                value="table"
+                                model="databasePhysical.modifyTable.table"
+                                options="databasePhysical.dbTableOptions"
+                                change="databasePhysical.modifyTable.tableSelectedHandler();"
+                                placeholder="Select Table"
+                            >
+                            </smss-dropdown>
+                        </content>
+                    </smss-field>
+                    <smss-field>
+                        <content>
+                            <smss-btn
+                                class="smss-btn--text"
+                                title="Add or Remove Tables"
+                                ng-if="(databaseCtrl.loggedInUser.permission !== 'READ_ONLY' && databaseCtrl.loggedInUser.permission !== '')"
+                                ng-disabled="!databasePhysical.modifyTable.table"
+                                ng-click="databasePhysical.showColAdd = true"
+                            >
+                                <i class="fa fa-plus"></i>
+                                Add Column(s)
+                            </smss-btn>
+
+                            <smss-btn
+                                class="smss-btn--text"
+                                title="Add or Remove Tables"
+                                ng-if="(databaseCtrl.loggedInUser.permission !== 'READ_ONLY' && databaseCtrl.loggedInUser.permission !== '')"
+                                ng-disabled="!databasePhysical.modifyTable.table || !databasePhysical.dbColumnOptions[databasePhysical.modifyTable.table].length > 0"
+                                ng-click="databasePhysical.modifyTable.showColDelete = true"
+                            >
+                                <i class="fa fa-trash-o"></i>
+                                Delete Column(s)
+                            </smss-btn>
+
+                            <smss-btn
+                                class="smss-btn--text"
+                                title="Add or Remove Tables"
+                                ng-if="(databaseCtrl.loggedInUser.permission !== 'READ_ONLY' && databaseCtrl.loggedInUser.permission !== '')"
+                                ng-disabled="!databasePhysical.modifyTable.table || !databasePhysical.dbColumnOptions[databasePhysical.modifyTable.table].length > 0"
+                                ng-click="databasePhysical.modifyTable.showEditTableName = true"
+                            >
+                                <i class="fa fa-edit"></i>
+                                Change Table Name
+                            </smss-btn>
+                        </content>
+                    </smss-field>
+                </smss-overlay-body>
+                <smss-overlay-footer>
+                    <smss-btn
+                        class="smss-btn--text"
+                        ng-click="databasePhysical.closeModifyTable();"
+                    >
+                        Cancel
+                    </smss-btn>
+                    <!-- <smss-btn
+                        ng-disabled="databasePhysical.newColumnArray.length === 0"
+                        ng-click="databasePhysical.saveColumns()"
+                    >
+                        Save
+                    </smss-btn> -->
+                </smss-overlay-footer>
+            </smss-overlay>
+            <smss-overlay size="lg" open="databasePhysical.showAddTable">
+                <smss-overlay-header>Add Table</smss-overlay-header>
+                <smss-overlay-body>
+                    <smss-field>
+                        <label> Table Name: </label>
+                        <content>
+                            <smss-input
+                                class="database-physical__join__dropdown database-physical__join__dropdown--margin"
+                                display="alias"
+                                value="table"
+                                ng-model="databasePhysical.addTable.newColumn.table"
+                                ng-change="databasePhysical.validateNewTableColumn()"
+                                placeholder="Set Table Name"
+                            ></smss-input>
+                        </content>
+                    </smss-field>
+                    <smss-field>
+                        <label> Table Description: </label>
+                        <content>
+                            <smss-textarea
+                                style="height: 40px"
+                                class="database-physical__join__dropdown database-physical__join__dropdown--margin"
+                                display="alias"
+                                value="table"
+                                ng-model="databasePhysical.addTable.newTable.description"
+                                placeholder="Add Table Description"
+                            ></smss-textarea>
+                        </content>
+                    </smss-field>
+                    <smss-field>
+                        <label> Add a New Column: </label>
+                        <content>
+                            <div class="database-physical__join">
+                                <smss-input
+                                    class="database-physical__join__dropdown database-physical__join__dropdown--margin"
+                                    display="alias"
+                                    ng-model="databasePhysical.addTable.newColumn.column"
+                                    ng-change="databasePhysical.validateNewTableColumn()"
+                                    placeholder="Enter Column Name"
+                                >
+                                </smss-input>
+
+                                <smss-dropdown
+                                    class="database-physical__join__dropdown database-physical__join__dropdown--margin"
+                                    display="display"
+                                    options="databasePhysical.dataTypeOptions"
+                                    model="databasePhysical.addTable.newColumn.type"
+                                    change="databasePhysical.validateNewTableColumn()"
+                                    placeholder="Select Data Type"
+                                ></smss-dropdown>
+                                <!-- <smss-dropdown
+                                    class="database-physical__join__dropdown database-physical__join__dropdown--margin"
+                                    display="display"
+                                    ng-disabled="!databasePhysical.newColumn.type"
+                                    options="databasePhysical.newColumn.type"
+                                    model="databasePhysical.newColumn.selectedFormat"
+                                    change="databasePhysical.checkNewColumn()"
+                                    placeholder="Select Format"
+                                ></smss-dropdown> -->
+                                <smss-input
+                                    class="database-physical__join__dropdown database-physical__join__dropdown--margin"
+                                    display="alias"
+                                    ng-model="databasePhysical.addTable.newColumn.defaultValue"
+                                    ng-change="databasePhysical.validateNewTableColumn()"
+                                    placeholder="Default Value"
+                                >
+                                </smss-input>
+                                <div class="smss-spacing">
+                                    <smss-checkbox
+                                        model="databasePhysical.addTable.newColumn.isPrimKey"
+                                    >
+                                        Primary Key
+                                    </smss-checkbox>
+                                </div>
+                                <div class="smss-spacing">
+                                    <smss-checkbox
+                                        model="databasePhysical.addTable.newColumn.canBeNull"
+                                    >
+                                        Allow Null
+                                    </smss-checkbox>
+                                </div>
+                                <div
+                                    class="database-physical__join__spacer"
+                                ></div>
+                            </div>
+                        </content>
+                    </smss-field>
+                    <div class="database-physical__add-col-btn">
+                        <smss-btn
+                            ng-disabled="!databasePhysical.addTable.newColumn.valid"
+                            ng-click="databasePhysical.addTable.addNewTableColumn();"
+                            class="smss-btn--outline"
+                        >
+                            <i class="fa fa-plus"></i>
+                        </smss-btn>
+                    </div>
+                    <smss-field>
+                        <label> Existing Column(s) table: </label>
+                        <content>
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th
+                                            ng-repeat="header in databasePhysical.columnsInformation.headers track by $index"
+                                            title="{{header}}"
+                                        >
+                                            {{header}}
+                                        </th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr
+                                        ng-repeat="col in databasePhysical.addTable.newTable.colsToAdd track by $index"
+                                    >
+                                        <td>{{ col.column}}</td>
+                                        <td>{{ col.type.value}}</td>
+                                        <td>{{ col.selectedFormat}}</td>
+                                        <td>{{ col.defaultValue}}</td>
+                                        <td>
+                                            {{ col.isPrimKey}}
+                                            <!-- <smss-checkbox
+                                                model="col.isPrimKey"
+                                            ></smss-checkbox> -->
+                                        </td>
+                                        <td>
+                                            {{ col.canBeNull}}
+                                            <!-- <smss-checkbox
+                                                model="col.canBeNull"
+                                            ></smss-checkbox> -->
+                                        </td>
+                                        <td style="border: none">
+                                            <smss-btn
+                                                class="smss-btn--icon database-physical__join__btn"
+                                                ng-click="databasePhysical.addTable.cancelNewTableColumn($index);"
+                                            >
+                                                <i
+                                                    class="fa fa-times smss-color--error"
+                                                />
+                                            </smss-btn>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </content>
+                    </smss-field>
+                </smss-overlay-body>
+                <smss-overlay-footer>
+                    <smss-btn
+                        class="smss-btn--text"
+                        ng-click="databasePhysical.cancelNewTable();"
+                    >
+                        Cancel
+                    </smss-btn>
+                    <smss-btn
+                        ng-disabled="databasePhysical.addTable.newTable.colsToAdd.length === 0"
+                        ng-click="databasePhysical.addTable.saveNewTable()"
+                    >
+                        Save
+                    </smss-btn>
+                </smss-overlay-footer>
+            </smss-overlay>
+
+            <smss-overlay size="lg" open="databasePhysical.showTableDelete;">
+                <smss-overlay-header>Delete Table(s)</smss-overlay-header>
+                <smss-overlay-body>
+                    <smss-field>
+                        <label> Delete Table(s): </label>
+                        <content>
+                            <smss-checklist
+                                model="databasePhysical.tablesInformation.selectedToDelete"
+                                options="databasePhysical.dbTableOptions"
+                                display="alias"
+                                searchable
+                                multiple
+                            ></smss-checklist>
+                        </content>
+                    </smss-field>
+
+                    <smss-field>
+                        <label> Table(s) selected to delete: </label>
+                        <content>
+                            <div
+                                class="database-physical__join"
+                                ng-repeat="table in databasePhysical.tablesInformation.selectedToDelete track by $index"
+                            >
+                                <p class="database-physical__join__text">
+                                    Table {{ $index + 1 }}
+                                </p>
+                                <smss-input
+                                    description="Name"
+                                    class="database-physical__join__dropdown database-physical__join__dropdown--margin"
+                                    display="table"
+                                    ng-model="table.table"
+                                    ng-disabled="true"
+                                >
+                                </smss-input>
+
+                                <smss-btn
+                                    class="smss-btn--icon database-physical__join__btn"
+                                    ng-click="databasePhysical.removeTable($index);"
+                                >
+                                    <i class="fa fa-times smss-color--error" />
+                                </smss-btn>
+                            </div>
+                            <div
+                                class="smss-caption--center smss-spacing"
+                                ng-if="databasePhysical.tablesInformation.selectedToDelete.length == 0"
+                            >
+                                No tables selected to be deleted. To delete a
+                                table, select a table from above.
+                            </div>
+                        </content>
+                    </smss-field>
+                </smss-overlay-body>
+                <smss-overlay-footer>
+                    <smss-btn
+                        class="smss-btn--text"
+                        ng-click="databasePhysical.cancelTableDelete()"
+                    >
+                        Cancel This
+                    </smss-btn>
+                    <smss-btn
+                        ng-disabled="databasePhysical.tablesInformation.selectedToDelete.length === 0"
+                        ng-click="databasePhysical.deleteTables()"
+                    >
+                        Confirm Delete Table(s)
+                    </smss-btn>
+                </smss-overlay-footer>
+            </smss-overlay>
+
+            <smss-overlay size="lg" open="databasePhysical.showColAdd;">
+                <smss-overlay-header>
+                    Table: {{databasePhysical.modifyTable.table}}
+                </smss-overlay-header>
+                <smss-overlay-body>
+                    <div class="smss-row">
+                        <smss-field class="smss-col smss-col--3">
+                            <label> Column Name: </label>
+                            <content>
+                                <smss-input
+                                    display="alias"
+                                    ng-model="databasePhysical.modifyTable.newColumn.column"
+                                    ng-change="databasePhysical.modifyTable.validateNewColumn()"
+                                    placeholder="Enter Column Name"
+                                >
+                                </smss-input>
+                            </content>
+                        </smss-field>
+
+                        <smss-field class="smss-col smss-col--3">
+                            <label> Data Type: </label>
+                            <content>
+                                <smss-dropdown
+                                    display="display"
+                                    options="databasePhysical.dataTypeOptions"
+                                    model="databasePhysical.modifyTable.newColumn.type"
+                                    change="databasePhysical.modifyTable.validateNewColumn()"
+                                    placeholder="Select Data Type"
+                                ></smss-dropdown>
+                            </content>
+                        </smss-field>
+
+                        <smss-field class="smss-col smss-col--3">
+                            <label> &nbsp; </label>
+                            <content>
+                                <smss-checkbox
+                                    model="databasePhysical.modifyTable.newColumn.isPrimKey"
+                                >
+                                    Primary Key
+                                </smss-checkbox></content
+                            >
+                        </smss-field>
+
+                        <smss-field class="smss-col smss-col--3">
+                            <label> &nbsp; </label>
+                            <content
+                                ><smss-checkbox
+                                    model="databasePhysical.modifyTable.newColumn.canBeNull"
+                                >
+                                    Allow Null
+                                </smss-checkbox>
+                            </content>
+                        </smss-field>
+                    </div>
+                    <smss-field>
+                        <label> Column Description: </label>
+                        <content>
+                            <smss-textarea
+                                title="Column Description"
+                                placeholder="Column Description"
+                                ng-model="databasePhysical.modifyTable.newColumn.description"
+                            >
+                            </smss-textarea>
+                        </content>
+                    </smss-field>
+                    <div class="smss-action smss-action--right">
+                        <smss-btn
+                            ng-disabled="!databasePhysical.modifyTable.newColumn.valid"
+                            ng-click="databasePhysical.modifyTable.addNewColumn()"
+                            class="smss-btn--icon smss-btn--outline"
+                        >
+                            <i class="fa fa-plus"></i>
+                        </smss-btn>
+                    </div>
+                    <smss-field>
+                        <label> Column(s) to add: </label>
+                        <content> &nbsp; </content>
+                    </smss-field>
+                    <div
+                        class="smss-row"
+                        ng-repeat="col in databasePhysical.modifyTable.colsToAdd track by $index"
+                    >
+                        <smss-field class="smss-col smss-col--3">
+                            <content>
+                                <smss-input
+                                    description="Name"
+                                    display="column"
+                                    ng-model="col.column"
+                                    ng-change="databasePhysical.modifyTable.validateNewColumn()"
+                                    ng-disabled="true"
+                                >
+                                </smss-input>
+                            </content>
+                        </smss-field>
+
+                        <smss-field class="smss-col smss-col--3">
+                            <content>
+                                <smss-dropdown
+                                    display="display"
+                                    options="databasePhysical.dataTypeOptions"
+                                    model="col.type"
+                                    change="databasePhysical.modifyTable.validateNewColumn()"
+                                    placeholder="Select Data Type"
+                                    disabled="true"
+                                >
+                                </smss-dropdown>
+                            </content>
+                        </smss-field>
+
+                        <smss-field class="smss-col smss-col--3">
+                            <content>
+                                <smss-checkbox model="col.isPrimKey">
+                                    Primary Key
+                                </smss-checkbox></content
+                            >
+                        </smss-field>
+
+                        <smss-field class="smss-col smss-col--3">
+                            <content class="database-physical__form__group">
+                                <smss-checkbox
+                                    class="database-physical__form__group__flex"
+                                    model="col.canBeNull"
+                                >
+                                    Can be Null
+                                </smss-checkbox>
+
+                                <smss-btn
+                                    class="smss-btn--icon smss-btn--left"
+                                    ng-click="databasePhysical.removeColumn($index, 'add');"
+                                >
+                                    <i class="fa fa-times smss-color--error" />
+                                </smss-btn>
+                            </content>
+                        </smss-field>
+                    </div>
+
+                    <div
+                        class="smss-caption--center smss-spacing"
+                        ng-if="databasePhysical.modifyTable.colsToAdd.length == 0"
+                    >
+                        No columns to be added. Add a new one above.
+                    </div>
+                </smss-overlay-body>
+                <smss-overlay-footer>
+                    <smss-btn
+                        class="smss-btn--text"
+                        ng-click="databasePhysical.cancelColumnAdd()"
+                    >
+                        Cancel
+                    </smss-btn>
+                    <smss-btn
+                        ng-disabled="databasePhysical.modifyTable.colsToAdd.length === 0"
+                        ng-click="databasePhysical.modifyTable.saveNewColumns()"
+                    >
+                        Confirm Add Column(s)
+                    </smss-btn>
+                </smss-overlay-footer>
+            </smss-overlay>
+            <smss-overlay
+                size="lg"
+                open="databasePhysical.modifyTable.showColDelete"
+                hide="databasePhysical.closeShowColDelete()"
+            >
+                <smss-overlay-header>
+                    Table: {{databasePhysical.modifyTable.table}}
+                </smss-overlay-header>
+                <smss-overlay-body>
+                    <smss-field>
+                        <label> Select Columns to Delete: </label>
+                        <content>
+                            <smss-checklist
+                                model="databasePhysical.modifyTable.colsToDelete"
+                                options="databasePhysical.colOptions"
+                                display="alias"
+                                change="databasePhysical.handleColDeleteChange()"
+                                searchable
+                                multiple
+                            ></smss-checklist>
+                        </content>
+                    </smss-field>
+                </smss-overlay-body>
+                <smss-overlay-footer>
+                    <smss-btn
+                        class="smss-btn--text"
+                        ng-click="databasePhysical.cancelColumnsDelete();"
+                    >
+                        Cancel
+                    </smss-btn>
+                    <smss-btn
+                        ng-disabled="databasePhysical.modifyTable.colsToDelete.length === 0"
+                        ng-click="databasePhysical.showConfirmDeleteColumns = true"
+                    >
+                        Confirm Delete Column(s)
+                    </smss-btn>
+                </smss-overlay-footer>
+            </smss-overlay>
+            <smss-overlay size="lg" open="databasePhysical.showColEdit;">
+                <smss-overlay-header>
+                    Table: {{databasePhysical.colToEdit.table}}
+                </smss-overlay-header>
+                <smss-overlay-body>
+                    <smss-field>
+                        <content>
+                            <p>
+                                Edit Column: {{databasePhysical.colToEdit.name}}
+                            </p>
+                        </content>
+                    </smss-field>
+
+                    <smss-field>
+                        <label> Name: </label>
+                        <content>
+                            <smss-input
+                                display="alias"
+                                ng-model="databasePhysical.colToEdit.name"
+                                placeholder="Enter Column Name"
+                            >
+                            </smss-input>
+                        </content>
+                    </smss-field>
+
+                    <smss-field>
+                        <label> Type: </label>
+                        <content>
+                            <smss-dropdown
+                                display="display"
+                                options="databasePhysical.dataTypeOptions"
+                                model="databasePhysical.colToEdit.type"
+                                placeholder="Select Data Type"
+                            ></smss-dropdown>
+                        </content>
+                    </smss-field>
+
+                    <smss-field>
+                        <content>
+                            <smss-checkbox
+                                model="databasePhysical.colToEdit.primaryKey"
+                            >
+                                Primary Key
+                            </smss-checkbox>
+                        </content>
+                    </smss-field>
+
+                    <smss-field>
+                        <label> Description: </label>
+                        <content>
+                            <smss-textarea
+                                title="Column Description"
+                                placeholder="Column Description"
+                                ng-model="databasePhysical.colToEdit.description"
+                            >
+                            </smss-textarea>
+                        </content>
+                    </smss-field>
+                </smss-overlay-body>
+                <smss-overlay-footer>
+                    <smss-btn
+                        class="smss-btn--text"
+                        ng-click="databasePhysical.cancelChange()"
+                    >
+                        Cancel
+                    </smss-btn>
+                    <smss-btn
+                        ng-disabled="databasePhysical.colsToAdd.length === 0"
+                        ng-click="databasePhysical.saveColumnModifications()"
+                    >
+                        Confirm Column Changes
+                    </smss-btn>
+                </smss-overlay-footer>
+            </smss-overlay>
+
+            <smss-overlay
+                size="md"
+                open="databasePhysical.showConfirmDeleteTable"
+            >
+                <smss-overlay-header>
+                    Delete Table:
+                    {{databasePhysical.modifyTable.table.toUpperCase()}}
+                </smss-overlay-header>
+                <smss-overlay-body>
+                    <div>
+                        <p>
+                            You are about to delete the following table:
+                            <b style="color: red">
+                                {{databasePhysical.modifyTable.table.toUpperCase()}}
+                            </b>
+                        </p>
+                        <br />
+                        <p>
+                            This can <b>NOT</b> be undone. Click '<b
+                                >Confirm Delete</b
+                            >' if you wish to proceed.
+                        </p>
+                        <br />
+                    </div>
+                </smss-overlay-body>
+                <smss-overlay-footer>
+                    <smss-btn
+                        class="smss-btn--text"
+                        ng-click="databasePhysical.cancelTableDelete()"
+                    >
+                        Cancel
+                    </smss-btn>
+                    <smss-btn ng-click="databasePhysical.confirmTableDelete()">
+                        Confirm Delete
+                    </smss-btn>
+                </smss-overlay-footer>
+            </smss-overlay>
+
+            <smss-overlay
+                size="md"
+                open="databasePhysical.showConfirmDeleteColumn"
+            >
+                <smss-overlay-header
+                    >Delete Column: {{
+                    databasePhysical.modifyTable.colsToDelete[0].column
+                    }}</smss-overlay-header
+                >
+                <smss-overlay-body>
+                    <div>
+                        <p>
+                            You are about to delete the following column:
+                            <b style="color: red"
+                                >{{
+                                databasePhysical.modifyTable.colsToDelete[0].column
+                                }}</b
+                            >.
+                        </p>
+                        <br />
+                        <p>
+                            This can <b>NOT</b> be undone. Click '<b
+                                >Confirm Delete</b
+                            >' if you wish to proceed.
+                        </p>
+                        <br />
+                    </div>
+                </smss-overlay-body>
+                <smss-overlay-footer>
+                    <smss-btn
+                        class="smss-btn--text"
+                        ng-click="databasePhysical.cancelColumnDelete()"
+                    >
+                        Cancel
+                    </smss-btn>
+                    <smss-btn
+                        ng-disabled="databasePhysical.modifyTable.colsToDelete.length === 0"
+                        ng-click="databasePhysical.confirmColumnDelete()"
+                    >
+                        Confirm Delete
+                    </smss-btn>
+                </smss-overlay-footer>
+            </smss-overlay>
+
+            <smss-overlay
+                size="lg"
+                open="databasePhysical.showConfirmDeleteColumns"
+                hide="databasePhysical.closeDeleteColumns()"
+            >
+                <smss-overlay-header
+                    ng-show="databasePhysical.modifyTable.colsToDelete.length > 1"
+                    >You are about to delete the following
+                    columns:</smss-overlay-header
+                >
+                <smss-overlay-header
+                    ng-show="databasePhysical.modifyTable.colsToDelete.length < 2"
+                    >You are about to delete the following
+                    column:</smss-overlay-header
+                >
+                <smss-overlay-body>
+                    <div class="database-physical__confirm-column-delete-body">
+                        <!-- <p>You are about to delete the following columns:</p> -->
+                        <div
+                            class="database-physical__delete-columns-container"
+                        >
+                            <!-- <label ng-show="databasePhysical.modifyTable.colsToAdd.length > 1" class="database-physical__delete-columns-label"> You are about to delete the following columns: </label>
+                            <label ng-show="databasePhysical.modifyTable.colsToAdd.length < 2" class="database-physical__delete-columns-label"> You are about to delete the following column: </label> -->
+                            <smss-field>
+                                <content>
+                                    <table>
+                                        <thead>
+                                            <tr>
+                                                <th
+                                                    ng-repeat="header in databasePhysical.columnsInformation.subheaders track by $index"
+                                                    title="{{header}}"
+                                                >
+                                                    {{header}}
+                                                </th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <tr
+                                                ng-repeat="col in databasePhysical.colsToDeleteDetailed track by $index"
+                                            >
+                                                <td>{{ col.column}}</td>
+                                                <td>{{ col.type}}</td>
+                                                <td>
+                                                    {{ col.isPrimKey}}
+                                                    <!-- <smss-checkbox
+                                                        model="col.isPrimKey"
+                                                    ></smss-checkbox> -->
+                                                </td>
+                                                <td style="border: none">
+                                                    <smss-btn
+                                                        class="smss-btn--icon database-physical__join__btn"
+                                                        ng-click="databasePhysical.removeColumn($index, 'delete');"
+                                                    >
+                                                        <i
+                                                            class="fa fa-times smss-color--error"
+                                                        />
+                                                    </smss-btn>
+                                                </td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </content>
+                            </smss-field>
+                        </div>
+                        <br />
+                        <p style="margin-left: 1em">
+                            This action can <b>NOT</b> be undone. Click '<b
+                                >Confirm Delete</b
+                            >' if you wish to proceed.
+                        </p>
+                        <!-- <p style="margin-left: 1em;"> Click '<b>Confirm Delete</b>' if you wish to proceed.</p> -->
+                        <br />
+                    </div>
+                </smss-overlay-body>
+                <smss-overlay-footer>
+                    <smss-btn
+                        class="smss-btn--text"
+                        ng-click="databasePhysical.cancelColumnsDelete();"
+                    >
+                        Cancel
+                    </smss-btn>
+                    <smss-btn
+                        ng-disabled="databasePhysical.modifyTable.colsToDelete.length === 0"
+                        ng-click="databasePhysical.deleteColumns()"
+                    >
+                        Confirm Delete
+                    </smss-btn>
+                </smss-overlay-footer>
+            </smss-overlay>
+
+            <smss-overlay
+                size="sm"
+                open="databasePhysical.modifyTable.showEditTableName"
+                hide="databasePhysical.modifyTable.cancelChangeTableName()"
+            >
+                <smss-overlay-header>
+                    Table: {{ databasePhysical.modifyTable.table}}
+                </smss-overlay-header>
+
+                <smss-overlay-body>
+                    <smss-field>
+                        <label> Edit Table Name: </label>
+                        <content>
+                            <smss-input
+                                ng-model="databasePhysical.modifyTable.newTableName"
+                            ></smss-input>
+                        </content>
+                    </smss-field>
+                    <!-- <smss-field>
+                        <label> Edit Table Description: </label>
+                        <content>
+                            <smss-textarea
+                                ng-model="metamodelTable.updatedTable.description"
+                            ></smss-textarea>
+                            <span
+                                title="{{metamodelTable.packagesInstalled ? 'Auto Generate Description' : 'The following R package is missing: gpt2'}}"
+                            >
+                                <smss-btn
+                                    ng-if="metamodelTable.app"
+                                    ng-click="metamodelTable.openDescriptionScreen()"
+                                    ng-disabled="!metamodelTable.packagesInstalled"
+                                    class="metamodel-table__auto-btn smss-btn--text"
+                                >
+                                    Auto Generate Description
+                                </smss-btn>
+                            </span>
+                        </content>
+                    </smss-field> -->
+                </smss-overlay-body>
+                <smss-overlay-footer>
+                    <smss-btn
+                        class="smss-btn--text"
+                        ng-click="databasePhysical.modifyTable.cancelChangeTableName()"
+                    >
+                        Cancel
+                    </smss-btn>
+                    <smss-btn
+                        ng-disabled="databasePhysical.modifyTable.newTableName.length < 3 || databasePhysical.modifyTable.newTableName.toLowerCase() == databasePhysical.modifyTable.table.toLowerCase() || databasePhysical.modifyTable.newTableName.length > 127"
+                        ng-click="databasePhysical.modifyTable.changeTableName()"
+                    >
+                        Confirm Name Change
+                    </smss-btn>
+                </smss-overlay-footer>
+            </smss-overlay>
+        </div>
+
+        <div class="database-physical__table-graph-container">
+            <metamodel
+                metamodel="databasePhysical.information.metamodel"
+                type="databasePhysical.information.type"
+                edit="databasePhysical.editItem(type, options, isDelete, colObject)"
+                hideControls="false"
+            >
+            </metamodel>
+        </div>
+    </div>
+    <smss-btn
+        class="smss-btn--text"
+        title="Add or Remove Relationships"
+        ng-if="(databaseCtrl.loggedInUser.permission !== 'READ_ONLY' && databaseCtrl.loggedInUser.permission !== '')"
+        ng-click="databasePhysical.showAddTable = true"
+    >
+        <i class="fa fa-plus"></i>
+    </smss-btn>
+</div>

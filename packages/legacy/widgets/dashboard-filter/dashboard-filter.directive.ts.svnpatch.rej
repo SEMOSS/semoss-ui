@@ -1,0 +1,34 @@
+--- widgets/dashboard-filter/dashboard-filter.directive.ts
++++ widgets/dashboard-filter/dashboard-filter.directive.ts
+@@ -430,9 +431,7 @@
+ 
+             // up
+ 
+-            console.log('filteringsssss');
+-
+-            debugger;
++            // debugger;
+             // all the frames by default
+             const allFrames = scope.insightCtrl.getShared('frames') || {};
+             for (const f in allFrames) {
+@@ -648,8 +647,7 @@
+                 }
+             }
+ 
+-            debugger;
+-
++            // debugger;
+             if (components.length > 0) {
+                 // we will disble everything while it is running so you can't click more
+                 scope.dashboardFilter.running = true;
+@@ -2488,9 +2560,7 @@
+         function initialize(): void {
+             // append listeners
+ 
+-            debugger;
+-
+-            console.log('filter widget');
++            // debugger;
+             const updateViewListener = scope.insightCtrl.on(
+                     'update-view',
+                     resetFilter

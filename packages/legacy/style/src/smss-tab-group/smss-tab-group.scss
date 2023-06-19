@@ -1,0 +1,15 @@
+@import '~theme';
+
+.smss-tab-group {
+    font-size: 1rem;
+    height: get-height('button', 'em');
+    display: flex;
+
+    & .smss-tab {
+        z-index: 0;
+
+        &:last-child {
+            border-right-color: transparent;
+        }
+    }
+}

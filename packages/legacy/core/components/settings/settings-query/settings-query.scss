@@ -1,0 +1,42 @@
+/* Settings Query Page */
+
+@import '~theme';
+
+.settings-query {
+    position: absolute;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    overflow: hidden;
+
+    &__accordion {
+        height: 100%;
+    }
+
+    &__content {
+        padding: $scroll-size $scroll-size * 3;
+        height: 100%;
+        width: 100%;
+        margin: 0 auto;
+
+        &__textbox {
+            width: 100%;
+            border: 1px solid get-border-color('default');
+            height: 200px;
+        }
+
+        &__results {
+            max-height: 75vh;
+            width: 100%;
+            margin-left: $scroll-size * 2;
+            overflow: auto;
+            th {
+                width: $field-width;
+            }
+            td {
+                width: $field-width;
+            }
+        }
+    }
+}

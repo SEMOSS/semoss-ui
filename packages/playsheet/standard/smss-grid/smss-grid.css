@@ -1,0 +1,10 @@
+/*** Hands On Table Modification **/
+.handsontable .wtHider {
+    width: 100% !important;
+}
+
+.smss-grid-container {
+    /*position: absolute;
+    top: 0px;
+    bottom: 35px;*/
+}

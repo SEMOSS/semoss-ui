@@ -1,0 +1,110 @@
+@import '~theme';
+$instances-height: 200px;
+
+.mdm-dictionary {
+    position: absolute;
+    top: 0;
+    right: 0;
+    left: 0;
+    bottom: 0;
+
+    &__container {
+        position: relative;
+        height: calc(100%);
+        width: 100%;
+
+        &--opened {
+            height: calc(100% - #{$instances-height});
+        }
+    }
+
+    &__definition {
+        padding: get-spacing('sm', 'rem');
+        background: get-background-color('light');
+        border: 1px solid get-border-color('default');
+        border-radius: $border-radius;
+        margin-bottom: get-spacing('md', 'rem');
+
+        &__title {
+            cursor: pointer;
+            outline: none;
+            display: flex;
+            align-items: center;
+
+            &__column {
+                flex: 1;
+                @include text-overflow();
+            }
+        }
+
+        &__description {
+            padding: get-spacing('sm', 'rem');
+            margin: get-spacing('sm', 'rem') 0;
+            border: 1px solid get-border-color('default');
+            border-radius: $border-radius;
+            background: get-background-color('default');
+            display: flex;
+            flex-direction: column;
+
+            &__inner {
+                flex: 1;
+            }
+
+            &__textarea {
+                height: 100%;
+            }
+        }
+
+        &__logical {
+            height: 15rem + 2 * get-spacing('sm', 'rem') +
+                get-height('sm', 'rem');
+            padding: get-spacing('sm', 'rem');
+            margin: get-spacing('sm', 'rem') 0;
+            border: 1px solid get-border-color('default');
+            border-radius: $border-radius;
+            background: get-background-color('default');
+            display: flex;
+            flex-direction: column;
+
+            &__inner {
+                flex: 1;
+                overflow: hidden;
+            }
+
+            &__table {
+                overflow: auto;
+            }
+
+            &__add {
+                display: flex;
+                align-items: center;
+
+                & input {
+                    flex: 1;
+                    margin-right: get-spacing('sm', 'rem');
+                }
+            }
+        }
+    }
+
+    &__instances {
+        padding: get-spacing('sm', 'rem') 2 * get-spacing('sm', 'rem');
+        width: 100%;
+        height: $instances-height;
+        border-top: 1px solid get-border-color('default');
+
+        &__times {
+            cursor: pointer;
+            outline: none;
+            color: get-text-color('medium-emphasis');
+
+            &:hover {
+                color: get-text-color('primary');
+            }
+        }
+
+        &__container {
+            height: calc(100% - #{get-height('icon', 'rem')});
+        }
+    }
+}

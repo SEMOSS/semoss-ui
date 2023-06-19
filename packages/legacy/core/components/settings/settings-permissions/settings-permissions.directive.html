@@ -1,0 +1,593 @@
+<div class="settings-permissions__container">
+    <div
+        class="smss-center"
+        ng-if="settingsPermissions.type === 'Projects' && settingsPermissions.noAppAccess"
+    >
+        This member has no project access yet.
+    </div>
+    <div
+        class="smss-center"
+        ng-if="settingsPermissions.type === 'Databases' && settingsPermissions.noAppAccess"
+    >
+        This member has no database access yet.
+    </div>
+    <smss-field inline ng-if="settingsPermissions.type === 'Insights'">
+        <label> Select Project: </label>
+        <content>
+            <smss-dropdown
+                model="settingsPermissions.projId"
+                options="settingsCtrl.projectAdminOwnInfo"
+                change="settingsPermissions.getInsights(settingsPermissions.projId);"
+                value="project_id"
+                display="project_name"
+            >
+            </smss-dropdown>
+        </content>
+    </smss-field>
+    <div
+        class="settings__content__item__search"
+        ng-if="settingsPermissions.type === 'Insights' && settingsPermissions.projId.length > 0"
+    >
+        <smss-search
+            model="settingsPermissions.searchAdminUserInsights.insight_name"
+        ></smss-search>
+    </div>
+    <smss-scroll>
+        <!-- Project Permissions Tab -->
+        <table
+            class="smss--sticky smss--active"
+            ng-if="settingsPermissions.type === 'Projects' && !settingsPermissions.noAppAccess"
+        >
+            <thead>
+                <tr>
+                    <th class="smss-col--6">Project Name</th>
+                    <th
+                        class="settings__content__item__right__content__dropdown"
+                    >
+                        Author
+                        <smss-btn class="smss-btn--icon" smss-popover
+                            ><i
+                                class="fa fa-chevron-down settings__font--gray"
+                            ></i>
+                            <smss-popover-content
+                                class="settings__content__item__right__content__dropdown__content"
+                                ng-click="settingsPermissions.confirmAddPermissionsAll('OWNER', false, settingsPermissions.user, 'Projects')"
+                                position="['SW']"
+                            >
+                                <div class="settings-permissions__font--small">
+                                    Give author permissions for all projects
+                                </div>
+                            </smss-popover-content>
+                        </smss-btn>
+                    </th>
+                    <th
+                        class="settings__content__item__right__content__dropdown"
+                    >
+                        Editor
+                        <smss-btn class="smss-btn--icon" smss-popover
+                            ><i
+                                class="fa fa-chevron-down settings__font--gray"
+                            ></i>
+                            <smss-popover-content
+                                class="settings__content__item__right__content__dropdown__content"
+                                ng-click="settingsPermissions.confirmAddPermissionsAll('EDIT', false, settingsPermissions.user, 'Projects')"
+                                position="['SW']"
+                            >
+                                <div class="settings-permissions__font--small">
+                                    Give editor permissions for all projects
+                                </div>
+                            </smss-popover-content>
+                        </smss-btn>
+                    </th>
+                    <th
+                        class="settings__content__item__right__content__dropdown"
+                    >
+                        Read-Only
+                        <smss-btn class="smss-btn--icon" smss-popover
+                            ><i
+                                class="fa fa-chevron-down settings__font--gray"
+                            ></i>
+                            <smss-popover-content
+                                class="settings__content__item__right__content__dropdown__content"
+                                ng-click="settingsPermissions.confirmAddPermissionsAll('READ-ONLY', false, settingsPermissions.user, 'Projects')"
+                                position="['SW']"
+                            >
+                                <div class="settings-permissions__font--small">
+                                    Give read-only permissions for all projects
+                                </div>
+                            </smss-popover-content>
+                        </smss-btn>
+                    </th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr
+                    ng-repeat="project in settingsPermissions.projectList | filter: settingsCtrl.searchAdminUserApps as adminProjectResults track by $index"
+                    ng-if="project.access"
+                >
+                    <!--App Row Data-->
+                    <td title="{{project.project_name}}">
+                        {{project.project_name}}
+                    </td>
+                    <td>
+                        <smss-checkbox
+                            model="project.author"
+                            change="settingsPermissions.setUserAppPermissions(project, 'author')"
+                        >
+                        </smss-checkbox>
+                    </td>
+                    <td>
+                        <smss-checkbox
+                            model="project.editor"
+                            change="settingsPermissions.setUserAppPermissions(project, 'editor')"
+                        >
+                        </smss-checkbox>
+                    </td>
+                    <td>
+                        <smss-checkbox
+                            model="project.read_only"
+                            change="settingsPermissions.setUserAppPermissions(project, 'read_only')"
+                        >
+                        </smss-checkbox>
+                    </td>
+                </tr>
+                <tr ng-if="adminProjectResults.length === 0">
+                    <td colspan="4">
+                        <p class="smss-color--low-emphasis">
+                            No projects, please try again.
+                        </p>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+        <!-- Insight Permissions Tab -->
+        <table
+            class="smss--sticky smss--active"
+            ng-if="settingsPermissions.type === 'Insights' && settingsPermissions.projId"
+        >
+            <thead>
+                <tr>
+                    <th class="smss-col--6">Insight Name</th>
+                    <th
+                        class="settings__content__item__right__content__dropdown"
+                    >
+                        Author
+                        <smss-btn class="smss-btn--icon" smss-popover
+                            ><i
+                                class="fa fa-chevron-down settings__font--gray"
+                            ></i>
+                            <smss-popover-content
+                                class="settings__content__item__right__content__dropdown__content"
+                                ng-click="settingsPermissions.confirmAddPermissionsAll('OWNER', false, settingsPermissions.user, 'Insights')"
+                                position="['SW']"
+                            >
+                                <!--TODO: confirm that 'Users' makes sense-->
+                                <div class="settings-permissions__font--small">
+                                    Give author permissions for all insights
+                                </div>
+                            </smss-popover-content>
+                        </smss-btn>
+                    </th>
+                    <th
+                        class="settings__content__item__right__content__dropdown"
+                    >
+                        Editor
+                        <smss-btn class="smss-btn--icon" smss-popover
+                            ><i
+                                class="fa fa-chevron-down settings__font--gray"
+                            ></i>
+                            <smss-popover-content
+                                class="settings__content__item__right__content__dropdown__content"
+                                ng-click="settingsPermissions.confirmAddPermissionsAll('EDIT', false, settingsPermissions.user, 'Insights')"
+                                position="['SW']"
+                            >
+                                <div class="settings-permissions__font--small">
+                                    Give editor permissions for all insights
+                                </div>
+                            </smss-popover-content>
+                        </smss-btn>
+                    </th>
+                    <th
+                        class="settings__content__item__right__content__dropdown"
+                    >
+                        Read-Only
+                        <smss-btn class="smss-btn--icon" smss-popover
+                            ><i
+                                class="fa fa-chevron-down settings__font--gray"
+                            ></i>
+                            <smss-popover-content
+                                class="settings__content__item__right__content__dropdown__content"
+                                ng-click="settingsPermissions.confirmAddPermissionsAll('READ-ONLY', false, settingsPermissions.user, 'Insights')"
+                                position="['SW']"
+                            >
+                                <div class="settings-permissions__font--small">
+                                    Give read-only permissions for all insights
+                                </div>
+                            </smss-popover-content>
+                        </smss-btn>
+                    </th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr
+                    ng-repeat="project in settingsPermissions.insights.list | filter: settingsPermissions.searchAdminUserInsights as adminInsightResults track by $index"
+                >
+                    <!--Insight Row Data-->
+                    <td
+                        title="{{project.insight_name}}"
+                        ng-if="project.insight_name"
+                        class="settings-permissions__table__row--insight__td"
+                    >
+                        <div class="smss-row">{{project.insight_name}}</div>
+                    </td>
+                    <td ng-if="project.insight_name">
+                        <smss-checkbox
+                            model="project.author"
+                            change="settingsPermissions.setUserInsightPermissions(project, $index, 'author')"
+                        >
+                        </smss-checkbox>
+                    </td>
+                    <td ng-if="project.insight_name">
+                        <smss-checkbox
+                            model="project.editor"
+                            change="settingsPermissions.setUserInsightPermissions(project, $index, 'editor')"
+                        >
+                        </smss-checkbox>
+                    </td>
+                    <td ng-if="project.insight_name">
+                        <smss-checkbox
+                            model="project.read_only"
+                            change="settingsPermissions.setUserInsightPermissions(project, $index, 'read_only')"
+                        >
+                        </smss-checkbox>
+                    </td>
+                </tr>
+                <tr ng-if="adminInsightResults.length === 0">
+                    <td colspan="4">
+                        <p class="smss-color--low-emphasis">
+                            No insights, please try again.
+                        </p>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+        <table
+            class="smss--sticky smss--active"
+            ng-if="settingsPermissions.type === 'Databases' && !settingsPermissions.noAppAccess"
+        >
+            <thead>
+                <tr>
+                    <th class="smss-col--6">Database Name</th>
+                    <th
+                        class="settings__content__item__right__content__dropdown"
+                    >
+                        Author
+                        <smss-btn class="smss-btn--icon" smss-popover
+                            ><i
+                                class="fa fa-chevron-down settings__font--gray"
+                            ></i>
+                            <smss-popover-content
+                                class="settings__content__item__right__content__dropdown__content"
+                                ng-click="settingsPermissions.confirmAddPermissionsAll('OWNER', false, settingsPermissions.user, 'Databases')"
+                                position="['SW']"
+                            >
+                                <div class="settings-permissions__font--small">
+                                    Give author permissions for all databases
+                                </div>
+                            </smss-popover-content>
+                        </smss-btn>
+                    </th>
+                    <th
+                        class="settings__content__item__right__content__dropdown"
+                    >
+                        Editor
+                        <smss-btn class="smss-btn--icon" smss-popover
+                            ><i
+                                class="fa fa-chevron-down settings__font--gray"
+                            ></i>
+                            <smss-popover-content
+                                class="settings__content__item__right__content__dropdown__content"
+                                ng-click="settingsPermissions.confirmAddPermissionsAll('EDIT', false, settingsPermissions.user, 'Databases')"
+                                position="['SW']"
+                            >
+                                <div class="settings-permissions__font--small">
+                                    Give editor permissions for all databases
+                                </div>
+                            </smss-popover-content>
+                        </smss-btn>
+                    </th>
+                    <th
+                        class="settings__content__item__right__content__dropdown"
+                    >
+                        Read-Only
+                        <smss-btn class="smss-btn--icon" smss-popover
+                            ><i
+                                class="fa fa-chevron-down settings__font--gray"
+                            ></i>
+                            <smss-popover-content
+                                class="settings__content__item__right__content__dropdown__content"
+                                ng-click="settingsPermissions.confirmAddPermissionsAll('READ-ONLY', false, settingsPermissions.user, 'Databases')"
+                                position="['SW']"
+                            >
+                                <div class="settings-permissions__font--small">
+                                    Give read-only permissions for all databases
+                                </div>
+                            </smss-popover-content>
+                        </smss-btn>
+                    </th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr
+                    ng-repeat="database in settingsPermissions.DBList | filter: settingsCtrl.searchAdminUserApps as adminDatabaseResults track by $index"
+                    ng-if="database.access"
+                >
+                    <!--App Row Data-->
+                    <td title="{{database.app_name}}">{{database.app_name}}</td>
+                    <td>
+                        <smss-checkbox
+                            model="database.author"
+                            change="settingsPermissions.setUserAppPermissions(database, 'author')"
+                        >
+                        </smss-checkbox>
+                    </td>
+                    <td>
+                        <smss-checkbox
+                            model="database.editor"
+                            change="settingsPermissions.setUserAppPermissions(database, 'editor')"
+                        >
+                        </smss-checkbox>
+                    </td>
+                    <td>
+                        <smss-checkbox
+                            model="database.read_only"
+                            change="settingsPermissions.setUserAppPermissions(database, 'read_only')"
+                        >
+                        </smss-checkbox>
+                    </td>
+                </tr>
+                <tr ng-if="adminDatabaseResults.length === 0">
+                    <td colspan="4">
+                        <p class="smss-color--low-emphasis">
+                            No databases, please try again.
+                        </p>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </smss-scroll>
+</div>
+
+<smss-overlay open="settingsPermissions.accessAllOverlay.show" size="sm">
+    <smss-overlay-header>Edit Permissions</smss-overlay-header>
+    <smss-overlay-body>
+        <p class="smss-center">
+            Give {{settingsPermissions.accessAllOverlay.givePermissionTo.name}}
+            {{settingsPermissions.accessAllOverlay.permission}} access to all
+            {{settingsPermissions.accessAllOverlay.type}}
+        </p>
+    </smss-overlay-body>
+    <smss-overlay-footer>
+        <smss-btn
+            class="smss-btn--text"
+            ng-click="settingsPermissions.accessAllOverlay.show = false"
+        >
+            Cancel
+        </smss-btn>
+        <smss-btn
+            ng-click="settingsPermissions.savePermissionsAll(settingsPermissions.accessAllOverlay.isAddNew, settingsPermissions.accessAllOverlay.permission, settingsPermissions.accessAllOverlay.givePermissionTo, settingsPermissions.accessAllOverlay.type);"
+        >
+            Add Permissions
+        </smss-btn>
+    </smss-overlay-footer>
+</smss-overlay>
+
+<smss-overlay
+    open="settingsCtrl.overlay.openAddAppPermissions"
+    exit="settingsPermissions.closeAddProjectPermissionsOverlay()"
+    size="lg"
+>
+    <smss-overlay-header>
+        <span ng-if="!settingsPermissions.accessAll">
+            Add {{settingsPermissions.typeSingular}} Permissions for
+            {{settingsPermissions.user.name}}
+        </span>
+        <span ng-if="settingsAdmin.accessAll">
+            {{settingsPermissions.user.name}} already has access to all
+            {{settingsPermissions.type.toLowerCase()}}.
+        </span>
+    </smss-overlay-header>
+    <smss-overlay-body>
+        <smss-field>
+            <content>
+                <smss-search
+                    ng-if="!settingsAdmin.accessAll"
+                    placeholder="Search {{settingsPermissions.type.toLowerCase()}}..."
+                    model="settingsPermissions.searchAdminAddUserApps.name"
+                >
+                </smss-search>
+            </content>
+        </smss-field>
+        <div
+            class="settings__overlay__table"
+            ng-if="settingsPermissions.type === 'Databases' && !settingsAdmin.accessAll"
+        >
+            <table class="smss--sticky smss--active">
+                <thead>
+                    <tr>
+                        <th class="smss-col--6">Database Name</th>
+                        <th
+                            class="settings__content__item__right__content__dropdown"
+                        >
+                            Author
+                            <smss-btn
+                                class="smss-btn--icon"
+                                ng-click="settingsPermissions.confirmAddPermissionsAll('OWNER', true, settingsPermissions.user, settingsPermissions.type)"
+                            >
+                                <i
+                                    class="fa fa-chevron-down settings__font--gray"
+                                ></i>
+                            </smss-btn>
+                        </th>
+                        <th
+                            class="settings__content__item__right__content__dropdown"
+                        >
+                            Editor
+                            <smss-btn
+                                class="smss-btn--icon"
+                                ng-click="settingsPermissions.confirmAddPermissionsAll('EDIT', true, settingsPermissions.user, settingsPermissions.type)"
+                            >
+                                <i
+                                    class="fa fa-chevron-down settings__font--gray"
+                                ></i>
+                            </smss-btn>
+                        </th>
+                        <th
+                            class="settings__content__item__right__content__dropdown"
+                        >
+                            Read-Only
+                            <smss-btn
+                                class="smss-btn--icon"
+                                ng-click="settingsPermissions.confirmAddPermissionsAll('READ_ONLY', true, settingsPermissions.user, settingsPermissions.type)"
+                            >
+                                <i
+                                    class="fa fa-chevron-down settings__font--gray"
+                                ></i>
+                            </smss-btn>
+                        </th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr
+                        ng-repeat="database in settingsPermissions.DBList | filter: settingsPermissions.searchAdminAddUserApps as projectPermissionResults track by $index"
+                        ng-if="!database.access"
+                    >
+                        <td>{{database.app_name}}</td>
+                        <td>
+                            <smss-checkbox
+                                model="database.author"
+                                change="settingsPermissions.setUserAppPermissions(database, 'author')"
+                            >
+                            </smss-checkbox>
+                        </td>
+                        <td>
+                            <smss-checkbox
+                                model="database.editor"
+                                change="settingsPermissions.setUserAppPermissions(database, 'editor')"
+                            >
+                            </smss-checkbox>
+                        </td>
+                        <td>
+                            <smss-checkbox
+                                model="database.read_only"
+                                change="settingsPermissions.setUserAppPermissions(database, 'read_only')"
+                            >
+                            </smss-checkbox>
+                        </td>
+                    </tr>
+                    <tr ng-if="projectPermissionResults.length === 0">
+                        <td colspan="4">
+                            <p class="smss-color--low-emphasis">
+                                No projects, please try again.
+                            </p>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+        <div
+            class="settings__overlay__table"
+            ng-if="settingsPermissions.type === 'Projects' && !settingsAdmin.accessAll"
+        >
+            <table class="smss--sticky smss--active">
+                <thead>
+                    <tr>
+                        <th class="smss-col--6">Project Name</th>
+                        <th
+                            class="settings__content__item__right__content__dropdown"
+                        >
+                            Author
+                            <smss-btn
+                                class="smss-btn--icon"
+                                ng-click="settingsPermissions.confirmAddPermissionsAll('OWNER', true, settingsPermissions.user, settingsPermissions.type)"
+                            >
+                                <i
+                                    class="fa fa-chevron-down settings__font--gray"
+                                ></i>
+                            </smss-btn>
+                        </th>
+                        <th
+                            class="settings__content__item__right__content__dropdown"
+                        >
+                            Editor
+                            <smss-btn
+                                class="smss-btn--icon"
+                                ng-click="settingsPermissions.confirmAddPermissionsAll('EDIT', true, settingsPermissions.user, settingsPermissions.type)"
+                            >
+                                <i
+                                    class="fa fa-chevron-down settings__font--gray"
+                                ></i>
+                            </smss-btn>
+                        </th>
+                        <th
+                            class="settings__content__item__right__content__dropdown"
+                        >
+                            Read-Only
+                            <smss-btn
+                                class="smss-btn--icon"
+                                ng-click="settingsPermissions.confirmAddPermissionsAll('READ_ONLY', true, settingsPermissions.user, settingsPermissions.type)"
+                            >
+                                <i
+                                    class="fa fa-chevron-down settings__font--gray"
+                                ></i>
+                            </smss-btn>
+                        </th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr
+                        ng-repeat="project in settingsPermissions.projectList | filter: settingsPermissions.searchAdminAddUserApps as projectPermissionResults track by $index"
+                        ng-if="!project.access"
+                    >
+                        <td>{{project.project_name}}</td>
+                        <td>
+                            <smss-checkbox
+                                model="project.author"
+                                change="settingsPermissions.setUserAppPermissions(project, 'author')"
+                            >
+                            </smss-checkbox>
+                        </td>
+                        <td>
+                            <smss-checkbox
+                                model="project.editor"
+                                change="settingsPermissions.setUserAppPermissions(project, 'editor')"
+                            >
+                            </smss-checkbox>
+                        </td>
+                        <td>
+                            <smss-checkbox
+                                model="project.read_only"
+                                change="settingsPermissions.setUserAppPermissions(project, 'read_only')"
+                            >
+                            </smss-checkbox>
+                        </td>
+                    </tr>
+                    <tr ng-if="projectPermissionResults.length === 0">
+                        <td colspan="4">
+                            <p class="smss-color--low-emphasis">
+                                No projects, please try again.
+                            </p>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </smss-overlay-body>
+    <smss-overlay-footer>
+        <smss-btn
+            ng-click="settingsPermissions.closeAddProjectPermissionsOverlay()"
+        >
+            Close
+        </smss-btn>
+    </smss-overlay-footer>
+</smss-overlay>

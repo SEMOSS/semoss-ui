@@ -1,0 +1,52 @@
+<div>
+    <h6>Default</h6>
+    <smss-tab-group class="tab-container">
+        <smss-tab
+            ng-click="tabgroup1.click(1)"
+            ng-class="{'smss-tab--selected': tabgroup1.selected === 1}"
+        >
+            Tab 1
+        </smss-tab>
+        <smss-tab
+            ng-click="tabgroup1.click(2)"
+            ng-class="{'smss-tab--selected': tabgroup1.selected === 2}"
+        >
+            Tab 2
+        </smss-tab>
+        <smss-tab
+            ng-click="tabgroup1.click(3)"
+            ng-disabled="disabledTab"
+            ng-class="{'smss-tab--selected': tabgroup1.selected === 3}"
+        >
+            Tab 3
+        </smss-tab>
+    </smss-tab-group>
+    <h6>Sheet</h6>
+    <smss-tab-group class="tab-container">
+        <smss-tab
+            ng-click="tabgroup2.click(1)"
+            class="smss-tab--sheet"
+            ng-class="{'smss-tab--selected': tabgroup2.selected === 1}"
+        >
+            Sheet 1
+            <i class="sheet-icon fa fa-times"></i>
+        </smss-tab>
+        <smss-tab
+            ng-click="tabgroup2.click(2)"
+            class="smss-tab--sheet"
+            ng-class="{'smss-tab--selected': tabgroup2.selected === 2}"
+        >
+            Sheet 2
+            <i class="sheet-icon fa fa-times"></i>
+        </smss-tab>
+        <smss-tab
+            ng-click="tabgroup2.click(3)"
+            ng-disabled="disabledTab"
+            class="smss-tab--sheet"
+            ng-class="{'smss-tab--selected': tabgroup2.selected === 3}"
+        >
+            Sheet 3
+            <i class="sheet-icon fa fa-times"></i>
+        </smss-tab>
+    </smss-tab-group>
+</div>

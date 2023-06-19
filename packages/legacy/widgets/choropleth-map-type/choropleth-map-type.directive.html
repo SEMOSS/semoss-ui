@@ -1,0 +1,35 @@
+<smss-scroll static-x="true">
+    <smss-field>
+        <label>Select Choropleth Map Type:</label>
+        <content>
+            <smss-dropdown
+                display="display"
+                model="choroplethMapType.types.selected"
+                options="choroplethMapType.types.options"
+                change="choroplethMapType.changeMapType();"
+            >
+            </smss-dropdown>
+        </content>
+    </smss-field>
+
+    <smss-field ng-if="choroplethMapType.subtypes.options.length > 0">
+        <label>Specify State:</label>
+        <content>
+            <smss-dropdown
+                display="display"
+                model="choroplethMapType.subtypes.selected"
+                options="choroplethMapType.subtypes.options"
+            >
+            </smss-dropdown>
+        </content>
+    </smss-field>
+
+    <div class="smss-action">
+        <smss-btn
+            ng-click="choroplethMapType.execute()"
+            ng-disable="!choroplethMapType.types.selected || choroplethMapType.subtypes.options.length > 0 && !choroplethMapType.subtypes.selected"
+        >
+            Execute
+        </smss-btn>
+    </div>
+</smss-scroll>

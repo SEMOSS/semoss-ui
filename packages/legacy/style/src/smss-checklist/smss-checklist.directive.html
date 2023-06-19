@@ -1,0 +1,84 @@
+<div class="smss-checklist">
+    <smss-loading model="loading"></smss-loading>
+    <smss-search
+        ng-show="searchable"
+        id="smss-checklist__input"
+        model="searchTerm"
+        keydown="searchKeydown(event)"
+        change="searchOptions(searchTerm)"
+        ng-disabled="disabled"
+    ></smss-search>
+    <div
+        class="smss-checklist__list"
+        ng-class="{'smss-checklist__list--searchable': searchable}"
+    >
+        <div
+            class="smss-checklist__selectall"
+            ng-disabled="disabled || painted.length === 0"
+            ng-if="quickselect"
+        >
+            <div
+                id="smss-checklist__selectall__option"
+                class="smss-checklist__option"
+                ng-click="toggleSelect()"
+                ng-keydown="selectKeydown($event)"
+                ng-keyup="selectKeyup($event)"
+                tabindex="{{disabled ? -1: 0}}"
+            >
+                <smss-checkbox
+                    class="smss-checklist__option__check"
+                    tabindex="-1"
+                    ng-disabled="true"
+                    model="viewAll"
+                >
+                </smss-checkbox>
+                <div class="smss-checklist__option__label">
+                    {{searchable && searchTerm ? '(Select searched items)' :
+                    '(Select all)' }}
+                </div>
+            </div>
+        </div>
+
+        <div
+            class="smss-checklist__list__options"
+            ng-disabled="disabled"
+            ng-class="{'smss-checklist__list__options--quickselect': quickselect}"
+        >
+            <smss-scroll static-x="true">
+                <div
+                    class="smss-checklist__list__options__holder"
+                    ng-style="listStyle"
+                >
+                    <div
+                        id="smss-checklist__option"
+                        class="smss-checklist__option"
+                        tabindex="{{$index === 0 && !disabled ? 0 : -1}}"
+                        ng-click="select(opt)"
+                        ng-keyup="listKeyup($event, opt)"
+                        ng-keydown="listKeydown($event)"
+                        ng-mouseover="mouseover({option: opt})"
+                        ng-mouseleave="mouseleave({option: opt})"
+                        ng-repeat="opt in painted track by $index"
+                        ng-style="styles[$index]"
+                    >
+                        <smss-checkbox
+                            class="smss-checklist__option__check"
+                            tabindex="-1"
+                            ng-disabled="true"
+                            model="isSelected(opt)"
+                        >
+                        </smss-checkbox>
+                        <div
+                            class="smss-checklist__option__label"
+                            ng-transclude="label"
+                            opt="option"
+                            title="{{setView(opt)}}"
+                        >
+                            {{setView(opt)}}
+                        </div>
+                    </div>
+                </div>
+            </smss-scroll>
+        </div>
+    </div>
+</div>

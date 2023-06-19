@@ -1,0 +1,21 @@
+@import '~theme';
+.landing-card {
+    &__popover {
+        &__options {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+            &__option {
+                cursor: pointer;
+                @include text-overflow();
+                height: get-height('default', 'rem');
+                line-height: get-height('default', 'rem');
+                padding: 0 to-em(12px);
+                margin: 0;
+                &:hover {
+                    background: get-background-color('primary--hover');
+                }
+            }
+        }
+    }
+}

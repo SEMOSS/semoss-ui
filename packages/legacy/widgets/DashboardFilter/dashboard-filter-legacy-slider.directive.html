@@ -1,0 +1,34 @@
+<smss-slider
+    ng-if="!dashFilterSlider.filter.categorical"
+    model="dashFilterSlider.filter.selectedRange"
+    min="dashFilterSlider.filter.minMax.absMin"
+    max="dashFilterSlider.filter.minMax.absMax"
+    sensitivity="1"
+    change="dashFilterSlider.applyFilterIfAuto()"
+    multiple
+    numerical
+>
+</smss-slider>
+<smss-slider
+    ng-if="dashFilterSlider.filter.categorical"
+    model="dashFilterSlider.filter.selectedRange"
+    options="dashFilterSlider.filter.categoricalHeaders"
+    change="dashFilterSlider.applyFilterIfAuto()"
+    multiple
+    categorical
+>
+</smss-slider>
+<div class="dashboard-filter-legacy-slider-menu">
+    <smss-btn
+        class="dashboard-filter-legacy-input-btn"
+        ng-click="dashFilterSlider.applyFilter()"
+        ng-if="!dashFilterSlider.auto"
+    >
+        Apply Filter
+    </smss-btn>
+    <smss-btn
+        class="smss-btn--text dashboard-filter-legacy-input-btn"
+        ng-click="dashFilter.unfilter(dashFilterSlider.column)"
+        >Clear</smss-btn
+    >
+</div>

@@ -1,0 +1,27 @@
+{
+  "name": "taffy",
+  "homepage": "https://github.com/bahaa/taffydb",
+  "authors": [
+    "Bahaa Zaid <bahaa.zaid@radius60.com>"
+  ],
+  "description": "TaffyDB",
+  "main": "taffy-min.js",
+  "license": "BSD",
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "bower_components",
+    "test",
+    "tests"
+  ],
+  "_release": "706bc183ed",
+  "_resolution": {
+    "type": "branch",
+    "branch": "master",
+    "commit": "706bc183ed3fc9146750ad5c47271ae77be69350"
+  },
+  "_source": "git://github.com/bahaa/taffydb.git",
+  "_target": "*",
+  "_originalSource": "taffy",
+  "_direct": true
+}

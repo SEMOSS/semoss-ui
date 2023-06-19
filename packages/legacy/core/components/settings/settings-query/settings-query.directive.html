@@ -1,0 +1,120 @@
+<div class="settings-query">
+    <div class="settings-query__content smss-clear">
+        <div class="smss-col smss-col--4 smss-left">
+            <smss-field inline>
+                <label> Database: </label>
+                <content>
+                    <smss-dropdown
+                        class="smss-dropdown--bordered"
+                        placeholder="Select a database"
+                        options="settingsQuery.input.database.options"
+                        model="settingsQuery.input.database.selected"
+                    >
+                    </smss-dropdown>
+                </content>
+                <description>
+                    <span
+                        class="smss-color--error"
+                        ng-if="settingsQuery.input.database.error"
+                    >
+                        {{settingsQuery.input.database.error}}
+                    </span>
+                </description>
+            </smss-field>
+
+            <smss-field>
+                <label> Query: </label>
+                <content>
+                    <smss-textarea
+                        class="smss-left settings-query__content__textbox"
+                        title="Query Input"
+                        placeholder="Query Input"
+                        ng-model="settingsQuery.input.query.value"
+                        ng-change="settingsQuery.verifyQuery()"
+                        autofocus
+                    >
+                    </smss-textarea>
+                </content>
+                <description>
+                    <span
+                        class="smss-color--error"
+                        ng-if="settingsQuery.input.query.error"
+                    >
+                        {{settingsQuery.input.query.error}}
+                    </span>
+                </description>
+            </smss-field>
+
+            <smss-field inline ng-if="settingsQuery.input.collect.show">
+                <label> Max # Rows to Collect: </label>
+                <content>
+                    <smss-input
+                        type="number"
+                        min="1"
+                        step="1"
+                        title="Search Databases"
+                        ng-model="settingsQuery.input.collect.value"
+                    >
+                    </smss-input>
+                </content>
+                <description>
+                    <span
+                        class="smss-color--error"
+                        ng-if="settingsQuery.input.collect.error"
+                    >
+                        {{settingsQuery.input.collect.error}}
+                    </span>
+                </description>
+            </smss-field>
+            <smss-btn ng-click="settingsQuery.verifyRequest()">
+                Execute Query
+            </smss-btn>
+        </div>
+        <div class="smss-col smss-col--8">
+            <div class="settings-query__content__results">
+                <div
+                    class="smss-spacing smss-center"
+                    ng-if="!settingsQuery.display"
+                >
+                    Execute a query to display the results here.
+                </div>
+                <div
+                    class="smss-spacing smss-color--error"
+                    ng-if="settingsQuery.display === 'error'"
+                >
+                    {{settingsQuery.error}}
+                </div>
+                <div
+                    class="smss-spacing smss-center smss-color--success"
+                    ng-if="settingsQuery.display === 'success'"
+                >
+                    Successful query!
+                </div>
+                <table ng-if="settingsQuery.display === 'table'">
+                    <thead>
+                        <tr>
+                            <th
+                                ng-repeat="header in settingsQuery.headers track by $index"
+                                title="{{header}}"
+                            >
+                                {{header}}
+                            </th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr
+                            ng-repeat="row in settingsQuery.values track by $index"
+                        >
+                            <td
+                                ng-repeat="value in row track by $index"
+                                title="{{value}}"
+                            >
+                                {{value}}
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>

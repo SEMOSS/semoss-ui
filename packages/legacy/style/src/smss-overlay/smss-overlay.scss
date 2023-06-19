@@ -1,0 +1,111 @@
+@import '~theme';
+$modal-width: (
+    'sm': 360px,
+    'md': 520px,
+    'lg': 720px,
+    'xl': 95%,
+);
+.smss-overlay {
+    position: absolute;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    font-size: 1rem;
+    z-index: 8600;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    &__background {
+        position: absolute;
+        top: 0;
+        right: 0;
+        bottom: 0;
+        left: 0;
+        overflow: hidden;
+        background: rgba(0, 0, 0, 0.2);
+        cursor: pointer;
+
+        &--disableclick {
+            cursor: auto;
+        }
+    }
+
+    &__wrapper {
+        position: absolute;
+        overflow: hidden;
+        padding: get-spacing('lg', 'em');
+        margin: 0 auto;
+        background: get-background-color('default');
+        border-radius: $border-radius;
+        box-shadow: get-box-shadow('overlay', 'default');
+        font-size: get-font-size('body-regular', 'em');
+        display: flex;
+        flex-direction: column;
+        &__header {
+            width: 100%;
+            display: flex;
+            align-content: center;
+            margin-bottom: get-spacing('md', 'em');
+            flex-shrink: 0;
+            &__text {
+                flex: 1;
+                @include text-overflow();
+            }
+            &__times {
+                font-size: 1em;
+                line-height: $line-height--large;
+                flex-shrink: 0;
+                cursor: pointer;
+                border: $border-size solid transparent;
+                border-radius: $border-radius;
+                &:hover {
+                    color: get-text-color('primary');
+                }
+
+                &:focus-visible {
+                    outline: none;
+                    border-color: get-border-color('primary');
+                }
+            }
+        }
+        &__body {
+            flex: 1;
+            overflow-x: hidden;
+            overflow-y: auto;
+            &__content {
+                height: 100%;
+                width: 100%;
+            }
+            &--overflow {
+                border-bottom: 1px solid get-border-color('medium');
+            }
+        }
+        &__footer {
+            margin-top: get-spacing('md', 'em');
+            flex-shrink: 0;
+            text-align: right;
+        }
+
+        &--sm {
+            max-height: 40%;
+            width: map-get($modal-width, 'sm');
+        }
+
+        &--md {
+            max-height: 70%;
+            width: map-get($modal-width, 'md');
+        }
+
+        &--lg {
+            max-height: 80%;
+            width: map-get($modal-width, 'lg');
+        }
+        &--xl {
+            height: 95%;
+            width: map-get($modal-width, 'xl');
+        }
+    }
+}

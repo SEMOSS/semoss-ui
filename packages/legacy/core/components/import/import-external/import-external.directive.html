@@ -1,0 +1,236 @@
+<div class="import-external">
+    <smss-scroll
+        static-x="true"
+        ng-if="importExternal.step === 1"
+        class="import-external__content"
+    >
+        <smss-field>
+            <label
+                >Enter Database Name:<span class="smss-color--error"
+                    >*</span
+                ></label
+            >
+            <content>
+                <smss-input
+                    ng-model="importCtrl.name.value"
+                    ng-change="importCtrl.validateName()"
+                    placeholder="Database Name"
+                    autofocus
+                ></smss-input>
+            </content>
+            <description class="smss-color--error">
+                <span ng-show="importCtrl.name.message">
+                    {{importCtrl.name.message}}</span
+                >
+            </description>
+        </smss-field>
+        <smss-field>
+            <label>Enter Database Description:</label>
+            <content>
+                <smss-textarea
+                    ng-model="importCtrl.meta.description"
+                    placeholder="Database Description"
+                ></smss-textarea>
+            </content>
+        </smss-field>
+        <smss-field>
+            <label> Enter Database Tags: </label>
+            <content>
+                <smss-multiselect
+                    model="importCtrl.meta.tags"
+                    options="importCtrl.meta.all"
+                ></smss-multiselect>
+            </content>
+        </smss-field>
+        <smss-field
+            ng-show="input.visible"
+            ng-repeat="input in importExternal.inputs"
+        >
+            <label>
+                {{input.display}}:<span
+                    ng-show="input.required"
+                    class="smss-color--error"
+                    >*</span
+                >
+            </label>
+            <content>
+                <smss-input
+                    ng-model="input.value"
+                    placeholder="{{input.display}}"
+                    ng-change="importExternal.updateConnectionDetails();"
+                    ng-attr-type="{{input.secret ? 'password' : input.type}}"
+                >
+                </smss-input>
+                <div class="smss-text" ng-if="input.description">
+                    <span class="smss-small">{{input.description}}</span>
+                </div>
+            </content>
+        </smss-field>
+        <smss-field>
+            <label>Enter Additional Parameters:</label>
+            <content>
+                <smss-input
+                    ng-model="importExternal.connection.additional"
+                    placeholder="Additional Parameters"
+                ></smss-input>
+            </content>
+        </smss-field>
+        <smss-field>
+            <label>Enter Custom JDBC Url:</label>
+            <content>
+                <smss-input
+                    ng-model="importExternal.connection.connectionString"
+                    placeholder="Custom JDBC Url"
+                ></smss-input>
+            </content>
+        </smss-field>
+        <div class="smss-caption smss-color--error">* are required</div>
+        <div class="smss-spacing smss-clear">
+            <smss-btn
+                class="smss-left smss-btn--text"
+                ng-if="importExternal.advancedSettings.showButton"
+                ng-click="importExternal.advancedSettings.open = !importExternal.advancedSettings.open"
+            >
+                {{importExternal.advancedSettings.open ? 'Hide' : 'Show'}}
+                Advanced Settings
+                <i
+                    class="fa"
+                    ng-class="importExternal.advancedSettings.open ? 'fa-chevron-down' : 'fa-chevron-right'"
+                ></i>
+            </smss-btn>
+        </div>
+        <smss-field
+            ng-show="importExternal.advancedSettings.open"
+            ng-repeat="advancedInput in importExternal.advancedInputs"
+            ng-style="advancedInput.type === 'boolean' && {'padding': 0}"
+        >
+            <label ng-show="advancedInput.type !== 'boolean'">
+                {{advancedInput.display}}
+            </label>
+            <content>
+                <smss-input
+                    ng-model="advancedInput.value"
+                    ng-if="advancedInput.type !== 'boolean'"
+                    placeholder="{{advancedInput.display}}"
+                    ng-change="importExternal.updateConnectionDetails();"
+                    ng-attr-type="{{advancedInput.type}}"
+                >
+                </smss-input>
+                <smss-checkbox
+                    model="advancedInput.value"
+                    ng-if="advancedInput.type === 'boolean'"
+                    change="importExternal.updateConnectionDetails();"
+                    >{{advancedInput.display}}
+                </smss-checkbox>
+                <div class="smss-text" ng-if="advancedInput.description">
+                    <span class="smss-small"
+                        >{{advancedInput.description}}</span
+                    >
+                </div>
+            </content>
+        </smss-field>
+    </smss-scroll>
+    <div ng-if="importExternal.step === 2" class="import-external__content">
+        <smss-btn
+            class="smss-btn--icon import-external__content__relationship__btn import-external__content__relationship__btn__table"
+            title="Add or Remove Tables"
+            ng-click="importExternal.loadConnection(false);"
+        >
+            <i class="fa fa-table"></i>
+        </smss-btn>
+
+        <smss-btn
+            class="smss-btn--icon import-external__content__relationship__btn import-external__content__relationship__btn__relationship"
+            title="Edit Relationships"
+            ng-click="importExternal.showRelationship = !importExternal.showRelationship"
+        >
+            <i class="fa fa-link"></i>
+        </smss-btn>
+
+        <metamodel-relationships
+            ng-if="importExternal.showRelationship"
+            metamodel="importExternal.metamodel"
+            open="importExternal.showRelationship"
+            type="importExternal.appInfo.type"
+        ></metamodel-relationships>
+
+        <metamodel
+            metamodel="importExternal.metamodel"
+            type="importExternal.appInfo.type"
+        ></metamodel>
+    </div>
+    <div class="smss-spacing smss-clear">
+        <smss-btn
+            class="smss-left smss-btn--text"
+            ng-if="importExternal.step === 2"
+            ng-click="importExternal.setConnection();"
+        >
+            Back
+        </smss-btn>
+        <smss-btn
+            class="smss-right"
+            ng-if="importExternal.step === 1"
+            ng-click="importExternal.loadConnection(true);"
+            ng-disabled="!importExternal.checkConnection();"
+        >
+            Next
+        </smss-btn>
+        <smss-btn
+            class="smss-right"
+            ng-if="importExternal.step === 2"
+            ng-click="importExternal.importMetamodel();"
+        >
+            Import
+        </smss-btn>
+    </div>
+
+    <smss-overlay
+        ng-if="importExternal.step === 2 && importExternal.filter.open"
+        open="importExternal.filter.open"
+        disable-click="true"
+        size="lg"
+    >
+        <smss-overlay-body>
+            <div class="smss-row import-external__overlay__content">
+                <smss-field
+                    class="smss-col smss-col--6 import-external__overlay__content__half"
+                >
+                    <label> Select Tables: </label>
+                    <content>
+                        <smss-checklist
+                            class="import-external__overlay__content__half__checklist"
+                            model="importExternal.filter.tableModel"
+                            options="importExternal.filter.tableOptions"
+                            searchable
+                            quickselect
+                            multiple
+                        ></smss-checklist>
+                    </content>
+                </smss-field>
+                <smss-field
+                    class="smss-col smss-col--6 import-external__overlay__content__half"
+                >
+                    <label> Select Views: </label>
+                    <content>
+                        <smss-checklist
+                            class="import-external__overlay__content__half__checklist"
+                            model="importExternal.filter.viewModel"
+                            options="importExternal.filter.viewOptions"
+                            searchable
+                            quickselect
+                            multiple
+                        ></smss-checklist>
+                    </content>
+                </smss-field>
+            </div>
+        </smss-overlay-body>
+        <smss-overlay-footer>
+            <smss-btn
+                ng-click="importExternal.loadMetamodel()"
+                ng-disabled="importExternal.filter.tableModel.length === 0 && importExternal.filter.viewModel.length === 0"
+            >
+                Apply
+            </smss-btn>
+        </smss-overlay-footer>
+    </smss-overlay>
+</div>

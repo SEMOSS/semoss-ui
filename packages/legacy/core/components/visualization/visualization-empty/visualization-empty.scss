@@ -1,0 +1,30 @@
+@import '~theme';
+
+.visualization-empty {
+    position: relative;
+    height: 100%;
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+
+    &__message {
+        margin-bottom: get-spacing('sm', 'em') * 4;
+    }
+
+    &__selection {
+        display: flex;
+        align-items: center;
+        width: 100%;
+        max-width: 300px;
+
+        &__dropdown {
+            flex: 1;
+        }
+
+        & .smss-btn {
+            flex-shrink: 0;
+        }
+    }
+}

@@ -1,0 +1,32 @@
+<smss-overlay
+    class="metamodel-tables"
+    open="metamodelTables.open"
+    hide="metamodelTables.cancelTable()"
+>
+    <smss-overlay-header>Edit Tables</smss-overlay-header>
+    <smss-overlay-body>
+        <smss-field>
+            <label> Add or Remove Tables: </label>
+            <content>
+                <smss-checklist
+                    model="metamodelTables.tablesInformation.model"
+                    options="metamodelTables.tablesInformation.options"
+                    display="alias"
+                    value="table"
+                    searchable
+                    quickselect
+                    multiple
+                ></smss-checklist>
+            </content>
+        </smss-field>
+    </smss-overlay-body>
+    <smss-overlay-footer>
+        <smss-btn
+            ng-click="metamodelTables.cancelTable();"
+            class="smss-btn--text"
+        >
+            Cancel
+        </smss-btn>
+        <smss-btn ng-click="metamodelTables.saveTable()"> Save </smss-btn>
+    </smss-overlay-footer>
+</smss-overlay>

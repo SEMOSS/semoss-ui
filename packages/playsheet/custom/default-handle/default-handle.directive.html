@@ -1,0 +1,125 @@
+<div class="widget-sidebar-pop-out xs-padding" ng-show="defaultHandle.showMenu">
+    <!-- Header -->
+    <!-- Is hidden when Save as widget is clicked to make room for savePKQL parameters-->
+    <div class="visual-panel-sidebar-header xxs-padding sm-btm-margin xxs-margin border-bottom reg-font"
+         ng-hide="defaultHandle.savePKQL">
+        <b>PKQL Creator</b>
+    </div>
+
+    <!-- Prompts user to select a PKQL routine and propagates the appropriate parameters
+         Is hideen when savePKQL is set to true so that savePKQL parameters are shown   -->
+    <div class="xxs-margin xxs-padding" ng-hide="defaultHandle.savePKQL">
+        <!-- Only outputs if there are PKQLs in the PKQL stack
+             and the user has not yet selected a PKQL routine to begin -->
+        <div ng-if="defaultHandle.contents.length != 0 && defaultHandle.chosenPKQLRoutine === '' && !defaultHandle.jsonPresent">
+            <div class="handle-body-height overflow-y-auto">
+                <div class="sm-top-padding"><b>Current PKQL Stack:</b></div>
+                <div class="word-wrap" ng-repeat="pkql in defaultHandle.contents">{{pkql.handle}}</div>
+            </div>
+            <div class="absolute bottom border-top xs-top-padding border-top left center xs-vert-margin full-width">
+                <button class="btn btn-green left md-btn"
+                        ng-click="defaultHandle.executePKQLCommand();">
+                    Execute PKQL Stack
+                </button>
+                <button class="btn btn-green right md-btn"
+                        ng-click="defaultHandle.toggleSavePKQL();">
+                    Save As Widget
+                </button>
+            </div>
+        </div>
+
+        <!-- JSON FREETEXT INPUT -->
+        <div class="handle-body-height overflow-y-auto sm-top-padding" ng-show="!defaultHandle.jsonPresent">
+            <div class="dh-params-list xs-hor-padding overflow-y-auto">
+                <div ng-if="defaultHandle.chosenPKQLRoutine === 'Free text PKQL'">
+                    <div class="grid12" style="padding-top:5px">
+                        Enter JSON
+                    </div>
+                    <div class="grid12">
+                        <div class="inline handle-option xs-top-padding pull-left">
+                            <textarea ng-model="defaultHandle.freeTextInput" name="pkql_input" cols="38" rows="10" style="resize:none"></textarea>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Save button -->
+                <div class="absolute bottom border-top xs-top-padding border-top left center xs-vert-margin full-width">
+                    <button class="btn btn-green center md-btn"
+                            ng-click="defaultHandle.saveJSONInput();"
+                            ng-disabled="!defaultHandle.inputsEmpty();">
+                        Submit
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- PARAMETERS INPUT -->
+        <div class="handle-body-height overflow-y-auto sm-top-padding" ng-show="defaultHandle.jsonPresent">
+            <div class="dh-params-list xs-hor-padding overflow-y-auto">
+                <div ng-repeat="pkqlInfo in defaultHandle.json">
+                    <div class="grid12">
+                        <b>{{pkqlInfo.Title}}</b>
+                    </div>
+                    <li ng-repeat="handle in pkqlInfo.input track by $index"
+                        class="white-fill">
+                        <div ng-if="handle.label">
+                            <div class="grid12" style="padding-top:5px">
+                                {{handle.label}}
+                            </div>
+                            <div class="grid12">
+                                <div class="inline handle-option xs-top-padding pull-left" dynamic="handle.completeHTML">{{handle.completeHTML}}</div>
+                            </div>
+                        </div>
+                    </li>
+                </div>
+                <!-- Save button -->
+                <div class="absolute bottom border-top xs-top-padding border-top left center xs-vert-margin full-width">
+                    <button class="btn btn-green center md-btn"
+                            ng-click="defaultHandle.toggleSavePKQL();"
+                            ng-disabled="!defaultHandle.inputsEmpty();">
+                        Save as Widget
+                    </button>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-----------------------------------------END-DEFAULT-HTML-------------------------------------------------------->
+    <!---------------------------------------BEGIN-SAVE-WIDGET-HTML---------------------------------------------------->
+
+    <!-- Save as Widget Header -->
+    <!-- Is shown when Save as widget is clicked -->
+    <div class="visual-panel-sidebar-header xxs-padding sm-btm-margin xxs-margin border-bottom reg-font"
+         ng-show="defaultHandle.savePKQL">
+        <b>PKQL to be Saved:</b>
+        <div class="smmd-side-margin pointer two-line-overflow word-wrap-all">
+            <span class="pointer" title="{{defaultHandle.contents}}">{{defaultHandle.contents}}</span>
+        </div>
+    </div>
+
+    <div class="xxs-margin xxs-padding" ng-show="defaultHandle.savePKQL">
+        <div><b>Enter Widget Name:</b></div>
+        <input ng-model='defaultHandle.widgetName' class='full-width' type='text'/></input>
+        <div><b>Enter Widget Group:</b></div>
+        <input ng-model='defaultHandle.widgetGroup' class='full-width' type='text'/></input>
+        <div class="sm-top-padding"><b>Choose Widget Icon:</b></div>
+        <div class="border xs-padding overflow-y-auto" style="height: 200px">
+            <div ng-repeat="(key, value) in defaultHandle.icons" ng-click="defaultHandle.iconChosen = key"
+                 class="inline border pointer-cursor xs-padding icon-rectangles" ng-class="{'selected': defaultHandle.iconChosen === key}">
+                <span class="pointer-cursor" title="{{key}}"><i class="fa {{value}} fa-lg"></i></span>
+            </div>
+        </div>
+
+        <!-- Only outputs if there are PKQLs in the PKQL stack
+             and the user has not yet selected a PKQL routine to begin -->
+
+        <div class="absolute bottom border-top xs-top-padding border-top left center xs-vert-margin full-width">
+            <button class="btn btn-green center md-btn"
+                    ng-click="defaultHandle.saveAsWidget();"
+                    ng-disabled="defaultHandle.widgetName === '' || defaultHandle.iconChosen === ''">
+                Save
+            </button>
+        </div>
+    </div>
+</div>

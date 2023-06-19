@@ -1,0 +1,124 @@
+<smss-scroll static-x="true">
+    <!-- <p class="smss-small"
+       title="An automatic sort column is applied if a user defined sort is not applied">
+        An automatic sort column is applied if a user defined sort is not applied.
+    </p> -->
+
+    <div
+        class="smss-spacing smss-clear"
+        ng-repeat="column in sortValues.columns track by $index"
+    >
+        <smss-btn
+            class="smss-left smss-btn--icon"
+            ng-click="sortValues.removeSort($index)"
+            title="Remove column sort"
+        >
+            <i class="fa fa-times smss-color--error"></i>
+        </smss-btn>
+        <div class="smss-left sort-values__column__content">
+            <smss-dropdown
+                placeholder="Select column"
+                display="alias"
+                model="column.header"
+                options="sortValues.availableHeaders"
+                change="sortValues.updateSortHeader(column)"
+            >
+            </smss-dropdown>
+            <smss-btn-group>
+                <smss-btn
+                    ng-class="{'smss-btn--selected': column.dir === 'ASC'}"
+                    ng-click="sortValues.updateSortDirection(column, 'ASC')"
+                    title="Sort column in ascending order"
+                >
+                    Ascending
+                </smss-btn>
+                <smss-btn
+                    ng-class="{'smss-btn--selected': column.dir === 'DESC'}"
+                    ng-click="sortValues.updateSortDirection(column, 'DESC')"
+                    title="Sort column in descending order"
+                >
+                    Descending
+                </smss-btn>
+                <smss-btn
+                    ng-class="{'smss-btn--selected': column.dir === 'CUSTOM' }"
+                    ng-click="sortValues.updateSortDirection(column, 'CUSTOM')"
+                    ng-disabled="column.header.derived"
+                    title="Sort column in a custom order"
+                >
+                    Custom
+                </smss-btn>
+            </smss-btn-group>
+            <div ng-if="column.dir === 'CUSTOM'" class="sort-values__custom">
+                <div ng-show="column.performance">
+                    <p>
+                        Note: This column has many values. Applying a custom
+                        sort to this column could lead to degraded performance.
+                    </p>
+                    <div class="smss-action">
+                        <smss-btn ng-click="sortValues.continueCustom(column)"
+                            >Continue</smss-btn
+                        >
+                    </div>
+                </div>
+
+                <!-- smss-reorder-list
+                on-reorder="sortValues.reorderCustom(column, currentIndex, newIndex)" -->
+
+                <ul
+                    ng-if="!column.performance && column.values.length > 0"
+                    class="sort-values__custom__list"
+                >
+                    <li
+                        class="sort-values__custom__list__item smss-clear"
+                        title="{{d.display}}"
+                        ng-repeat="d in column.values track by $index"
+                    >
+                        <smss-btn
+                            class="smss-left smss-btn--icon"
+                            ng-click="sortValues.moveCustom(column, $index, 'up')"
+                            ng-mousedown="$event.stopPropagation();"
+                        >
+                            <i class="fa fa-arrow-up"></i>
+                        </smss-btn>
+                        <smss-btn
+                            class="smss-left smss-btn--icon"
+                            ng-click="sortValues.moveCustom(column, $index, 'down')"
+                            ng-mousedown="$event.stopPropagation();"
+                        >
+                            <i class="fa fa-arrow-down"></i>
+                        </smss-btn>
+                        <div
+                            class="smss-left smss-text sort-values__custom__list__item__text"
+                        >
+                            <div class="smss-text">{{d.display}}</div>
+                        </div>
+                    </li>
+                </ul>
+                <div
+                    class="smss-caption--center"
+                    ng-show="!column.performance && (!column.values || column.values.length === 0)"
+                >
+                    No Values to Sort
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="smss-spacing smss-clear">
+        <smss-btn
+            class="smss-right smss-btn--text"
+            ng-click="sortValues.addSort()"
+        >
+            <i class="fa fa-plus"></i>
+            Add Column
+        </smss-btn>
+    </div>
+    <div class="smss-action">
+        <!-- <smss-toggle model="sortValues.autoRefresh">
+                Auto Sort
+        </smss-toggle> -->
+        <smss-btn ng-click="sortValues.executeSort()">
+            <!-- ng-disabled="sortValues.autoRefresh"> -->
+            Sort
+        </smss-btn>
+    </div>
+</smss-scroll>

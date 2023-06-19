@@ -1,0 +1,43 @@
+/** timeilne **/
+/** Viz **/
+.timeline-grid .tick {
+    stroke: lightgrey;
+    shape-rendering: crispEdges;
+}
+
+.timeline-grid path {
+    stroke-width: 0;
+}
+
+/** Boxs **/
+.ousd-timeline {
+    position: absolute;
+    border: 1px solid #ccc;
+    height: calc(60% - 22.5px);
+    left: 15px;
+    right: 15px;
+    top: 15px;
+    overflow: auto;
+}
+
+.ousd-timeline-grid {
+    position: absolute;
+    height: 100%;
+    width: 100%;
+}
+
+.ousd-combo {
+    position: absolute;
+    border: 1px solid #ccc;
+    height: calc(40% - 22.5px);
+    left: 15px;
+    right: 15px;
+    bottom:15px;
+    overflow: auto;
+}
+
+.ousd-combo-grid {
+    position: absolute;
+    height: 100%;
+    width: 100%;
+}

@@ -1,0 +1,18 @@
+@import '~theme';
+
+.import-copy {
+    position: relative;
+    height: 100%;
+    width: 100%;
+    overflow: hidden;
+    max-width: 70vw;
+    margin: auto;
+    display: flex;
+    flex-direction: column;
+
+    &__content {
+        position: relative;
+        flex: 1;
+        width: 100%;
+    }
+}

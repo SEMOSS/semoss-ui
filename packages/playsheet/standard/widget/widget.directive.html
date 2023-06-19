@@ -1,0 +1,145 @@
+<div class="widget-main">
+    <!-- Widget Handles - Menu Items -->
+    <div class="widget-sidebar-container">
+        <div class="pull-right full-width widget-group-bar-container">
+            <!-- Menu Button -->
+            <div class="pull-right">
+                <button ng-if="widget.activeHandleContent === ''"
+                        class="btn-light widget-menu-button pull-left pointer-cursor"
+                        title="Toggle Menu"
+                        aria-label="Toggle Menu"
+                        ng-class="{'toggled': widget.widgetMenuOpen}"
+                        ng-click="widget.toggleWidgetMenuButton()">
+                    <div class="center xs-hor-padding">
+                        <i class="fa widget-button-icon-size fa-bars" style="margin-top:4px;"></i>
+                    </div>
+                </button>
+
+                <button ng-if="widget.activeHandleContent !== ''"
+                        class="btn-light widget-menu-button pull-left pointer-cursor"
+                        title="Go Back"
+                        aria-label="Go Back"
+                        ng-click="widget.toggleUndoButton()"
+                        ng-class="{'toggled': widget.widgetMenuOpen}">
+                    <div class="center xs-hor-padding">
+                        <i class="fa widget-button-icon-size fa-undo" style="margin-top:4px;"></i>
+                    </div>
+                </button>
+            </div>
+        </div>
+
+        <div class="pull-right full-width widget-collapsing-container">
+            <!-- Menu Button -->
+            <div class="pull-right">
+                <button ng-if="!widget.collapsed" ng-click="widget.collapseWidgets();"
+                        class="btn-light widget-menu-button pull-left pointer-cursor description-tooltip-left"
+                        aria-label="Collapse Widgets">
+                    <div class="center xs-hor-padding">
+                        <i class="fa widget-button-icon-size fa-angle-double-up" style="margin-top:4px;"></i>
+                    </div>
+                    <tooltip title-text="Collapse Menu of Widgets" description=""></tooltip>
+                </button>
+
+                <button ng-if="widget.collapsed" ng-click="widget.collapseWidgets();"
+                        class="btn-light widget-menu-button pull-left pointer-cursor description-tooltip-left"
+                        aria-label="Open Widgets">
+                    <div dynamic="widget.hidetoggle"></div>
+                    <div class="center xs-hor-padding">
+                        <i class="fa widget-button-icon-size fa-angle-double-down" style="margin-top:4px;"></i>
+                    </div>
+                    <tooltip title-text="Open Menu of Widgets" description=""></tooltip>
+                </button>
+            </div>
+        </div>
+
+        <div class="widget-sidebar-pop-out" ng-show="widget.widgetMenuOpen">
+            <!-- Widget Handle Groups -->
+            <div class="widget-group-bar xs-padding" ng-hide="true">
+                <button ng-repeat="(title, group) in widget.widgetHandleGroups track by $index"
+                        class="btn-light widget-group-bar-button pull-left pointer-cursor"
+                        title="{{::group.buttonTitle}}"
+                        aria-label="{{::group.buttonTitle}}"
+                        ng-click="widget.widgetGroupClicked(title);"
+                        ng-class="{'toggled': group.selected}">
+                    <div class="full-width center">
+                        {{::group.buttonText}}
+                    </div>
+                </button>
+            </div>
+
+            <div class="widget-group-bar xs-hor-padding xs-btm-padding widget-handle-search-list">
+                <input ng-model="widget.handleSearchTerm"
+                       placeholder="Filter"
+                       class="form-control font-family full-width"
+                       aria-label="Filter"
+                       type="text">
+            </div>
+
+            <!-- Widget Handle List -->
+            <div class="widget-handle-list xs-hor-padding">
+                <div ng-repeat="handle in widget.displayHandles | filter:{title: widget.handleSearchTerm}"
+                    class="widget-handle-list-item">
+                    <button class="btn-light widget-button pointer-cursor" title="{{handle.title}}"
+                            aria-label="{{handle.title}}"
+                            ng-click="handle.click(); widget.widgetMenuOpen = false;"
+                            ng-class="{{handle.cssClass}}">
+                        <div dynamic="handle.content"></div>
+                        <!--ng-mouseover="handle.buttonActions.mouseover()"-->
+                        <!--ng-mouseleave="handle.buttonActions.mouseleave()"-->
+                    </button>
+                    <span class="pointer-cursor"
+                          aria-label="{{handle.title}}"
+                          ng-click="handle.click(); widget.widgetMenuOpen = false;">
+                        {{handle.title}}
+                    </span>
+                    <!-- ng-mouseover="handle.buttonActions.mouseover()"
+                          ng-mouseleave="handle.buttonActions.mouseleave()"-->
+                    <button class="btn-light widget-button pointer-cursor pull-right"
+                            title="Pin for Quick Access" aria-label="Pin for Quick Access"
+                            ng-click="widget.pinHandle(handle.name)"
+                            ng-class="{'toggled': handle.pinned}">
+                        <i class="widget-handle-pin fa fa-thumb-tack"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Quick Access Widget Handles -->
+        <div class="widget-quick-access-handles" ng-class="{'collapsed': widget.collapsed, 'not-collapsed': !widget.collapsed}">
+            <div ng-repeat="handle in widget.widgetHandles track by $index" class="white-fill"
+                 ng-if="handle.pinned">
+                <button class="btn-light widget-button pointer-cursor"
+                        title="{{::handle.title}}"
+                        aria-label="{{::handle.title}}"
+                        ng-click="handle.click()"
+                        ng-class="{{::handle.cssClass}}">
+                    <!--ng-mouseover="handle.buttonActions.mouseover()"
+                        ng-mouseleave="handle.buttonActions.mouseleave()"-->
+                    <div dynamic="handle.content"></div>
+                </button>
+            </div>
+        </div>
+
+        <!-- load content after a widget handle has been clicked -->
+        <div ng-if="widget.activeHandleContent"
+             dynamic="widget.activeHandleContent">
+        </div>
+    </div>
+
+    <loading-screen loading-screen-show="widget.contentLoading" message="widget.contentLoadingMessage"></loading-screen>
+
+    <!-- Widget Content -->
+    <div class="absolute-size">
+        <div class="absolute-size white-fill hidden-overflow">
+            <!-- Chart -->
+            <div dynamic="widget.widgetContent"></div>
+            <div ng-show="widget.widgetData.data.chartData.layout === 'create'"
+                 class="center disabled absolute-center full-width xxl-height"><i
+                    class="fa fa-5x fa-bar-chart color-blue"></i><br>
+                <div class="xxl-font sm-top-padding normal-letter-spacing color-blue">
+                    Select visual type and attributes from the menu
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

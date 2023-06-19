@@ -1,0 +1,125 @@
+<smss-scroll static-x="true" class="rank">
+    <p class="smss-spacing">
+        This feature creates a new column displaying ranks of selected columns.
+    </p>
+
+    <smss-field>
+        <label> Enter the column name to display rank: </label>
+        <content>
+            <smss-input ng-model="rank.newCol"> </smss-input>
+        </content>
+    </smss-field>
+    <smss-field class="smss-left">
+        <label> Select Column(s) to Rank: </label>
+        <content>
+            <div
+                class="smss-spacing smss-clear"
+                ng-repeat="column in rank.columns track by $index"
+            >
+                <smss-btn
+                    class="smss-left smss-btn--icon"
+                    ng-style="{visibility: $index != 0 ? 'visible' : 'hidden'}"
+                    ng-click="rank.removeRank($index)"
+                    title="Remove column rank"
+                >
+                    <i class="fa fa-times smss-color--error"></i>
+                </smss-btn>
+
+                <div class="smss-left rank__column__content">
+                    <smss-dropdown
+                        placeholder="Select column"
+                        class="smss-dropdown--bordered"
+                        display="alias"
+                        model="column.header"
+                        options="rank.availableHeaders"
+                        change="rank.updateRankHeader(column)"
+                    >
+                    </smss-dropdown>
+                    <smss-btn-group>
+                        <smss-btn
+                            ng-class="{'smss-btn--selected': column.dir === 'ASC'}"
+                            ng-click="rank.updateRankDirection(column, 'ASC')"
+                            title="Rank column in ascending order"
+                        >
+                            Ascending
+                        </smss-btn>
+                        <smss-btn
+                            ng-class="{'smss-btn--selected': column.dir === 'DESC'}"
+                            ng-click="rank.updateRankDirection(column, 'DESC')"
+                            title="Rank column in ascending order"
+                        >
+                            Descending
+                        </smss-btn>
+                    </smss-btn-group>
+                </div>
+            </div>
+        </content>
+    </smss-field>
+
+    <div class="smss-spacing smss-clear">
+        <smss-btn
+            class="smss-right smss-btn--text"
+            title="Add Column"
+            ng-click="rank.addRankColumn()"
+        >
+            <i class="fa fa-plus"></i>
+            Add Column
+        </smss-btn>
+    </div>
+    <smss-field
+        class="smss-left"
+        ng-if="rank.partitionByColumns && rank.partitionByColumns.length>0"
+    >
+        <label> Select Column(s) for Partition: </label>
+
+        <content>
+            <div
+                class="smss-spacing smss-clear"
+                ng-repeat="partitionByColumn in rank.partitionByColumns track by $index"
+            >
+                <smss-btn
+                    class="smss-left smss-btn--icon"
+                    ng-click="rank.removePartitionByColumn($index)"
+                    title="Remove Partition By Column"
+                >
+                    <i class="fa fa-times smss-color--error"></i>
+                </smss-btn>
+
+                <div class="smss-left rank__column__content">
+                    <smss-dropdown
+                        placeholder="Select column"
+                        display="alias"
+                        class="smss-dropdown--bordered"
+                        model="partitionByColumn.header"
+                        options="rank.availableHeaders"
+                        change="rank.updateRankHeader(partitionByColumn)"
+                    >
+                    </smss-dropdown>
+                </div>
+            </div>
+        </content>
+    </smss-field>
+    <div class="smss-spacing smss-clear">
+        <smss-btn
+            class="smss-right smss-btn--text"
+            title="Add Partition"
+            ng-click="rank.addPartitionByColumn()"
+        >
+            <i class="fa fa-plus"></i>
+            Add Partition
+        </smss-btn>
+    </div>
+    <div class="smss-action rank__buttons">
+        <smss-btn
+            class="smss-btn--text"
+            ng-if="rank.PIPELINE"
+            ng-click="rank.cancel()"
+        >
+            Cancel
+        </smss-btn>
+
+        <smss-btn class="smss-btn--primary" ng-click="rank.executeRank()">
+            Execute
+        </smss-btn>
+    </div>
+</smss-scroll>

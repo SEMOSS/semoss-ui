@@ -1,0 +1,114 @@
+<table class="smss--sticky smss--active">
+    <thead>
+        <tr>
+            <th ng-if="settingsTable.admin">User ID</th>
+            <th>Name</th>
+            <th ng-if="settingsTable.admin">Email</th>
+            <th class="admin__content__item__right__content__dropdown">
+                Author
+                <smss-btn
+                    ng-if="settingsTable.admin"
+                    class="smss-btn--icon"
+                    ng-click="settingsCtrl.confirmAddPermissionsAll('OWNER', false, settingsTable.item, settingsTable.type)"
+                >
+                    <i class="fa fa-chevron-down admin__font--gray"></i>
+                </smss-btn>
+            </th>
+            <th class="admin__content__item__right__content__dropdown">
+                Editor
+                <smss-btn
+                    ng-if="settingsTable.admin"
+                    class="smss-btn--icon"
+                    ng-click="settingsCtrl.confirmAddPermissionsAll('EDIT', false, settingsTable.item, settingsTable.type)"
+                >
+                    <i class="fa fa-chevron-down admin__font--gray"></i>
+                </smss-btn>
+            </th>
+            <th class="admin__content__item__right__content__dropdown">
+                Read-Only
+                <smss-btn
+                    ng-if="settingsTable.admin"
+                    class="smss-btn--icon"
+                    ng-click="settingsCtrl.confirmAddPermissionsAll('READ-ONLY', false, settingsTable.item, settingsTable.type)"
+                >
+                    <i class="fa fa-chevron-down admin__font--gray"></i>
+                </smss-btn>
+            </th>
+            <th class="smss--icon">&nbsp;</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr
+            ng-repeat="user in settingsTable.users | filter: settingsTable.searchterm as tableResults"
+        >
+            <td ng-if="settingsTable.admin" title="{{user.id}}">{{user.id}}</td>
+            <td title="{{user.name}}">{{user.name}}</td>
+            <td ng-if="settingsTable.admin" title="{{user.email}}">
+                {{user.email}}
+            </td>
+            <td class="smss-center">
+                <smss-checkbox
+                    model="user.permissions.owner"
+                    change="settingsTable.updatePermissions(user, 'OWNER');"
+                >
+                </smss-checkbox>
+            </td>
+            <td class="smss-center">
+                <smss-checkbox
+                    model="user.permissions.editor"
+                    change="settingsTable.updatePermissions(user, 'EDIT');"
+                >
+                </smss-checkbox>
+            </td>
+            <td class="smss-center">
+                <smss-checkbox
+                    model="user.permissions.viewer"
+                    change="settingsTable.updatePermissions(user, 'READ_ONLY');"
+                >
+                </smss-checkbox>
+            </td>
+            <td class="smss-center">
+                <smss-btn
+                    class="smss-btn--icon"
+                    title="Delete User"
+                    ng-click="settingsTable.showConfirmDeleteOverlay(user);"
+                >
+                    <i class="fa fa-trash-o"></i>
+                </smss-btn>
+            </td>
+        </tr>
+        <tr ng-if="tableResults.length === 0">
+            <td colspan="{{settingsTable.admin ? 7 : 5}}">
+                <p class="smss-color--low-emphasis">
+                    No members, please try again.
+                </p>
+            </td>
+        </tr>
+    </tbody>
+</table>
+
+<smss-overlay
+    open="settingsCtrl.confirmDeleteOverlay.show"
+    size="sm"
+    exit="settingsTable.cancelDelete();"
+>
+    <smss-overlay-header>Remove User</smss-overlay-header>
+    <smss-overlay-body
+        >Are you sure you want to delete this member from
+        {{settingsTable.item.name}}?</smss-overlay-body
+    >
+    <smss-overlay-footer>
+        <smss-btn
+            class="smss-btn--text"
+            ng-click="settingsTable.cancelDelete();"
+        >
+            Cancel
+        </smss-btn>
+        <smss-btn
+            class="smss-btn--error"
+            ng-click="settingsTable.deleteUser();"
+        >
+            Delete
+        </smss-btn>
+    </smss-overlay-footer>
+</smss-overlay>

@@ -1,0 +1,23 @@
+<!-- <layers ng-if="widgetTab.rendered[0].name === 'Change Visualization Type' && widgetTab.showLayers"></layers> -->
+<smss-accordion
+    class="widget-tab__accordion"
+    ng-class="{'widget-tab__accordion__layers': widgetTab.rendered[0].name === 'Change Visualization Type' && widgetTab.showLayers}"
+    resizable
+>
+    <smss-accordion-item
+        ng-repeat="item in widgetTab.rendered track by $index"
+        name="item.name"
+        size="item.height"
+    >
+        <div
+            class="widget-tab__accordion__content"
+            dynamic="item.content"
+        ></div>
+    </smss-accordion-item>
+</smss-accordion>
+
+<div
+    class="widget-tab__hidden"
+    dynamic="widgetTab.hidden"
+    ng-if="widgetTab.hidden"
+></div>

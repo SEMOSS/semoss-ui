@@ -1,0 +1,270 @@
+@import '~theme';
+
+.dashboard-filter {
+    position: relative;
+    height: 100%;
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    font-family: var(--font-family);
+
+    &__container {
+        display: flex;
+        align-items: center;
+        padding: 0 get-spacing('sm', 'em');
+
+        &__content {
+            flex: 1;
+            overflow: hidden;
+        }
+    }
+
+    &__float {
+        &__toggle {
+            font-size: get-font-size('body-large', 'rem');
+            position: relative;
+            @include disabled();
+            display: block;
+            height: get-height('default', 'em');
+            line-height: calc(
+                #{get-height('default', 'em')} - #{2 * $border-size}
+            );
+            width: 100%;
+            cursor: pointer;
+            outline: none;
+            background: get-background-color('default');
+            box-shadow: none;
+            border: $border-size solid get-border-color('default');
+            border-radius: $border-radius;
+            padding: 0 0 0 $scroll-size;
+
+            &:focus {
+                border-color: get-border-color('primary');
+                position: relative;
+            }
+
+            &::after {
+                content: '';
+                display: block;
+                clear: both;
+            }
+
+            &__text {
+                float: left;
+                display: inline-block;
+                height: 100%;
+                width: calc(100% - #{get-width('icon', 'em')});
+                padding-right: get-spacing('sm', 'em');
+                @include text-overflow();
+                color: get-text-color('medium-emphasis');
+            }
+
+            &__icon {
+                float: left;
+                width: get-width('icon', 'em');
+                text-align: center;
+                color: get-text-color('medium-emphasis');
+
+                &:after {
+                    font-size: 0.875em;
+                    font-style: normal;
+                    font-family: FontAwesome;
+                    content: '\f078';
+                }
+            }
+        }
+
+        &__popover {
+            display: flex;
+            flex-direction: column;
+            max-height: 400px;
+            max-width: 800px;
+            min-width: 400px;
+            width: 60vh;
+            border: none;
+            overflow: auto;
+
+            &__scroll {
+                flex: 1;
+            }
+        }
+    }
+
+    &__checklist {
+        &__holder {
+            position: absolute;
+            top: get-spacing('xs', 'rem');
+            right: get-spacing('xs', 'rem');
+            z-index: 1;
+        }
+
+        &__list {
+            flex: 1;
+            overflow: hidden;
+            & .smss-search__input {
+                padding-right: calc(
+                    #{2 * get-width('icon', 'rem')} + #{get-spacing(
+                            'sm',
+                            'rem'
+                        )}
+                );
+            }
+            & .smss-search__icon--clear {
+                right: get-width('icon', 'rem') + get-spacing('xs', 'rem');
+            }
+        }
+    }
+
+    &__dropdown {
+        &__toggle {
+            font-size: get-font-size('body-large', 'rem');
+            position: relative;
+            @include disabled();
+            display: block;
+            height: get-height('default', 'em');
+            line-height: calc(
+                #{get-height('default', 'em')} - #{2 * $border-size}
+            );
+            width: 100%;
+            cursor: pointer;
+            outline: none;
+            background: get-background-color('default');
+            box-shadow: none;
+            border: $border-size solid get-border-color('default');
+            border-radius: $border-radius;
+            padding: 0 0 0 $scroll-size;
+
+            &:focus {
+                border-color: get-border-color('primary');
+                position: relative;
+            }
+
+            &::after {
+                content: '';
+                display: block;
+                clear: both;
+            }
+
+            &__text {
+                float: left;
+                display: inline-block;
+                height: 100%;
+                width: calc(100% - #{get-width('icon', 'em')});
+                padding-right: get-spacing('sm', 'em');
+                @include text-overflow();
+                color: get-text-color('medium-emphasis');
+            }
+
+            &__icon {
+                float: left;
+                width: get-width('icon', 'em');
+                text-align: center;
+                color: get-text-color('medium-emphasis');
+
+                &:after {
+                    font-size: 0.875em;
+                    font-style: normal;
+                    font-family: FontAwesome;
+                    content: '\f078';
+                }
+            }
+        }
+
+        &__list {
+            height: 200px;
+            width: 100%;
+            padding: 0 !important;
+            border: none;
+        }
+    }
+
+    &__datepicker {
+        display: flex;
+        align-items: center;
+
+        &__text {
+            width: get-spacing('sm', 'em') * 8;
+            color: get-text-color('low-emphasis');
+            padding: 0 get-spacing('sm', 'em');
+        }
+
+        &__picker {
+            flex: 1;
+        }
+    }
+
+    &__button {
+        display: flex;
+        flex-direction: row;
+        align-items: center;
+        width: 100%;
+        padding: get-spacing('sm', 'em') / 2 get-spacing('sm', 'em');
+
+        &--vertical {
+            flex: 1;
+            overflow: hidden;
+            align-items: flex-start;
+
+            & .dashboard-filter__button__scroller {
+                white-space: normal;
+                overflow-x: hidden;
+                overflow-y: hidden;
+
+                &:hover {
+                    overflow-x: hidden;
+                    overflow-y: auto;
+                }
+
+                &__button {
+                    display: block;
+                    margin: 0 0 get-spacing('sm', 'em') / 2 0;
+                    width: 100%;
+                }
+            }
+        }
+
+        &__scroller {
+            flex: 1;
+            height: 100%;
+            overflow-x: hidden;
+            white-space: nowrap;
+
+            &:hover {
+                overflow-x: auto;
+            }
+
+            &__button {
+                background: get-background-color('disabled');
+                &--selected {
+                    background: get-background-color('primary');
+                }
+            }
+        }
+    }
+
+    &__unfilter {
+        display: flex;
+        align-items: flex-end;
+        color: var(--dashboard-unfilter-icon);
+        & .fa-times {
+            font-size: 0.6em;
+            margin-left: -1 * get-spacing('xxs', 'rem');
+        }
+    }
+
+    &__apply {
+        &--active {
+            animation: dashboard-filter__apply--highlight 3s 1;
+        }
+    }
+}
+
+@keyframes dashboard-filter__apply--highlight {
+    0% {
+        box-shadow: get-box-shadow('highlight', 'error');
+    }
+
+    100% {
+        box-shadow: none;
+    }
+}

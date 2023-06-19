@@ -1,0 +1,68 @@
+@import '~theme';
+
+.pipeline-social {
+    position: relative;
+    height: 100%;
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+
+    &__content {
+        flex: 1;
+    }
+
+    &__dropdown {
+        display: flex;
+        align-items: center;
+        font-size: 1rem;
+        height: get-height('default', 'em');
+        line-height: calc(#{get-height('default', 'em')} - 2px);
+
+        &--toggle {
+            height: calc(#{get-height('default', 'em')} - 2px);
+            line-height: calc(#{get-height('default', 'em')} - 4px);
+        }
+
+        &__img {
+            display: flex;
+            height: calc(#{get-height('default', 'em')} - 2px);
+            width: get-width('icon', 'em');
+            padding: get-spacing('xxs', 'em') 0;
+            margin-right: get-spacing('sm', 'em');
+
+            & img {
+                height: auto;
+                width: auto;
+                max-height: 100%;
+                max-width: 100%;
+                margin: auto;
+            }
+        }
+
+        &__text {
+            flex: 1;
+            font-size: get-font-size('body-regular', 'em');
+            @include text-overflow();
+        }
+    }
+
+    &__advanced {
+        &__popover {
+            width: 200px;
+        }
+    }
+
+    &__actions {
+        & > :first-child {
+            margin-left: $scroll-size !important;
+        }
+        & > :nth-child(2) {
+            margin-left: auto !important;
+        }
+
+        & > :last-child {
+            margin-right: $scroll-size !important;
+        }
+    }
+}

@@ -1,0 +1,65 @@
+<smss-scroll static-x="true">
+    <smss-field>
+        <label>Set Header Color: </label>
+        <content>
+            <smss-color-picker
+                color-theme="gridPivotStyle.colorTheme"
+                model="gridPivotStyle.options.headerColor"
+            >
+            </smss-color-picker>
+        </content>
+    </smss-field>
+
+    <smss-field>
+        <label>Set Header Font Color: </label>
+        <content>
+            <smss-color-picker
+                color-theme="gridPivotStyle.colorTheme"
+                model="gridPivotStyle.options.fontColor"
+            >
+            </smss-color-picker>
+        </content>
+    </smss-field>
+
+    <smss-field>
+        <label>Show Totals: </label>
+        <content>
+            <smss-checkbox
+                model="gridPivotStyle.options.grandTotals"
+                change="gridPivotStyle.toggleGrandTotals(true);"
+            >
+                All Grand Totals
+            </smss-checkbox>
+            <smss-checkbox
+                model="gridPivotStyle.options.grandTotalsRows"
+                change="gridPivotStyle.toggleGrandTotals(false);"
+                direction="left"
+            >
+                Grand Totals Rows
+            </smss-checkbox>
+            <smss-checkbox
+                model="gridPivotStyle.options.grandTotalsColumns"
+                change="gridPivotStyle.toggleGrandTotals(false);"
+                direction="left"
+            >
+                Grand Totals Columns
+            </smss-checkbox>
+            <smss-checkbox model="gridPivotStyle.options.subTotals">
+                Sub Totals
+            </smss-checkbox>
+        </content>
+    </smss-field>
+
+    <smss-field>
+        <label>Column Width: </label>
+        <content>
+            <smss-checkbox model="gridPivotStyle.options.gridFullWidth">
+                Autosize Columns to fit Panel Width
+            </smss-checkbox>
+        </content>
+    </smss-field>
+
+    <div class="smss-action">
+        <smss-btn ng-click="gridPivotStyle.execute()"> Execute </smss-btn>
+    </div>
+</smss-scroll>

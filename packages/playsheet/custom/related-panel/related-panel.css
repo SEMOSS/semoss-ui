@@ -1,0 +1,65 @@
+.related-panel-backdrop {
+    position: absolute;
+    height: 102%;
+    width: 100%;
+    z-index: 1000;
+    background-color: #000;
+    opacity: 0.5;
+}
+
+.related-panel-wrapper {
+    position: absolute;
+    top: 5%;
+    left: 10%;
+    bottom: 5%;    
+    right: 10%;
+    z-index: 1010;
+    background-color: white;
+}
+
+.related-panel-icons-list {
+    margin: 3px 1%;
+    position: relative;
+    display: inline-block;
+    width: 6.5%;
+    height: 35px;
+    font-size: 13px;
+    color: #223c57;
+    padding: 0px;
+    text-decoration: none;
+}
+
+.related-panel-icons-list.selected {
+    box-shadow: 0 0 0 3px #0e69a9;
+    border-radius: 3px;
+}
+
+.show-related-panel {
+    display: initial !important;
+}
+
+.related-insight-wrapper {
+    overflow: auto;
+    overflow-x: hidden;
+    position: absolute;
+    bottom: 0px;
+    top: 86px;
+    right: 0;
+    left: 0;
+}
+
+.related-insight-wrapper.facets-shown {
+    top: 239px;
+}
+
+.related-facets-pane {
+    height: 152px;
+}
+
+.related-panel-icon {
+    height: 35px;
+    /* padding: 4px; */
+    margin-left: auto;
+    margin-right: auto;
+    width: 100%;
+}

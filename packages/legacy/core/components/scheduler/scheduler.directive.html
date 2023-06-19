@@ -1,0 +1,1137 @@
+<div class="scheduler__content">
+    <div class="smss-row scheduler__content__search">
+        <div class="smss-col smss-col--4">
+            <smss-field>
+                <label> Search: </label>
+                <content>
+                    <smss-search
+                        title="Search Jobs"
+                        placeholder="Search job name..."
+                        model="searchJobs.jobName"
+                        autofocus
+                    ></smss-search>
+                </content>
+            </smss-field>
+        </div>
+        <div class="smss-col smss-col--8">
+            <smss-field>
+                <label> Tags: </label>
+                <content>
+                    <smss-multiselect
+                        placeholder="Select Job Tag"
+                        model="schedule.allJobTags.selected"
+                        options="schedule.allJobTags.options"
+                        change="schedule.changeTags()"
+                    >
+                    </smss-multiselect>
+                </content>
+            </smss-field>
+        </div>
+    </div>
+
+    <div class="scheduler__content__header">
+        <div>
+            <smss-tab
+                id="{{tab}}"
+                ng-class="{'smss-tab--selected': schedule.selectedTab ===  tab}"
+                ng-repeat="tab in schedule.tabs"
+                ng-click="schedule.toggleTabs(tab)"
+            >
+                {{tab}}
+            </smss-tab>
+        </div>
+        <div ng-if="schedule.selectedTab !== 'History'">
+            <smss-btn
+                class="smss-btn--outline"
+                ng-click="schedule.markActive()"
+                ng-if="schedule.showMarkActive"
+            >
+                <i class="fa fa-play smss-color--primary"></i> &nbsp; Resume
+                Jobs
+            </smss-btn>
+            <smss-btn
+                class="smss-btn--outline"
+                ng-click="schedule.markInactive()"
+                ng-if="schedule.showMarkInactive"
+            >
+                <i class="fa fa-pause"></i> &nbsp; Pause Jobs
+            </smss-btn>
+        </div>
+    </div>
+
+    <div
+        class="scheduler__content__scroll"
+        ng-if="schedule.selectedTab !== 'History'"
+    >
+        <smss-scroll static-x="true">
+            <div class="scheduler__content__table">
+                <table class="smss--sticky">
+                    <thead>
+                        <tr>
+                            <th class="scheduler__content__table__select-all">
+                                <smss-checkbox
+                                    title="Toggle All"
+                                    model="schedule.check_toggle"
+                                    change="schedule.toggleAllChecked()"
+                                >
+                                </smss-checkbox>
+                            </th>
+                            <th class="scheduler__content__table__width15">
+                                Name
+                            </th>
+                            <th class="scheduler__content__table__width10">
+                                Type
+                            </th>
+                            <th class="scheduler__content__table__width20">
+                                Frequency
+                            </th>
+                            <th class="scheduler__content__table__width10">
+                                Job Tags
+                            </th>
+                            <th class="scheduler__content__table__width20">
+                                Last Run
+                            </th>
+                            <th class="scheduler__content__table__width20">
+                                Next Run
+                            </th>
+                            <th class="scheduler__content__table__width10">
+                                Owner
+                                <smss-dropdown
+                                    class="scheduler__content__table__dropdown"
+                                    compact
+                                    options="schedule.ownerTypes"
+                                    model="schedule.selectedOwnerType"
+                                    change="schedule.filterJobs(schedule.selectedTab)"
+                                >
+                                </smss-dropdown>
+                            </th>
+                            <th class="scheduler__content__table__actions">
+                                &nbsp;
+                            </th>
+                        </tr>
+                    </thead>
+                    <tbody class="smss-grid-content">
+                        <tr ng-if="filteredRowData.length === 0">
+                            <td class="smss-center" colspan="9">
+                                <span
+                                    ng-if="schedule.rowData.length === 0 && schedule.selectedTab === 'All'"
+                                    >You don't have any jobs scheduled
+                                    yet.</span
+                                >
+                                <span
+                                    ng-if="schedule.rowData.length === 0 && schedule.selectedTab === 'Active'"
+                                    >You don't have any active jobs scheduled
+                                    yet.</span
+                                >
+                                <span
+                                    ng-if="schedule.rowData.length === 0 && schedule.selectedTab === 'Inactive'"
+                                    >You don't have any paused jobs.</span
+                                >
+                                <span ng-if="schedule.rowData.length > 0"
+                                    >No jobs, please try again.</span
+                                >
+                            </td>
+                        </tr>
+                        <tr
+                            ng-if="schedule.rowData.length > 0"
+                            ng-repeat="job in schedule.rowData | filter: searchJobs as filteredRowData track by $index "
+                        >
+                            <td>
+                                <smss-checkbox
+                                    title="Select Job"
+                                    model="job.checked"
+                                    change="schedule.toggleActionButtons()"
+                                >
+                                </smss-checkbox>
+                            </td>
+                            <td title="{{job.jobName}}">{{job.jobName}}</td>
+                            <td title="{{job.jobType}}">{{job.jobType}}</td>
+
+                            <td title="{{job.frequency['human']}}">
+                                {{schedule.convertTimeToFrequencyString(job)}}
+                            </td>
+                            <td title="{{job.jobTags}}">{{job.jobTags}}</td>
+                            <td>
+                                <!-- <i class="fa fa-check-circle"
+                                ng-if="job.PREV_FIRE_TIME !== 'N/A'"></i> 
+                             &nbsp; -->{{schedule.convertTimeToLastRunString(job)}}
+                            </td>
+                            <td>
+                                <div
+                                    ng-class="{'scheduler__content__table__inactive': job.NEXT_FIRE_TIME === 'INACTIVE'}"
+                                >
+                                    {{schedule.convertTimeToNextRunString(job)}}
+                                </div>
+                            </td>
+                            <td>{{job.USER_ID}}</td>
+                            <td class="smss-clear">
+                                <smss-btn
+                                    class="smss-btn--icon smss-left"
+                                    title="Run now"
+                                    ng-click="schedule.executeJob($index);"
+                                >
+                                    <i
+                                        class="fa fa-play smss-color--primary"
+                                    ></i>
+                                </smss-btn>
+                                <smss-btn
+                                    class="smss-btn--icon smss-left"
+                                    title="Edit"
+                                    ng-click="schedule.showEditJob($index);"
+                                >
+                                    <i class="fa fa-edit"></i>
+                                </smss-btn>
+                                <smss-btn
+                                    class="smss-btn--icon smss-left"
+                                    title="Delete"
+                                    ng-click="schedule.showDeleteJob($index);"
+                                >
+                                    <i class="fa fa-trash-o"></i>
+                                </smss-btn>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </smss-scroll>
+    </div>
+    <div class="smss-action" ng-if="schedule.selectedTab !== 'History'">
+        <smss-btn
+            ng-click="schedule.showJobModal = true; schedule.resetNewJob()"
+            >New Job
+        </smss-btn>
+    </div>
+    <!-- <div ng-if="schedule.selectedTab === 'History' && schedule.historyData.length === 0">
+        <span>Your schedule log is empty because you haven't run any jobs yet. Schedule a job and execute it to
+            see run-time data about it.</span>
+    </div> -->
+    <div
+        class="scheduler__content__scroll"
+        ng-if="schedule.selectedTab === 'History'"
+    >
+        <smss-scroll static-x="true">
+            <div class="scheduler__content__table">
+                <table class="smss--sticky">
+                    <thead>
+                        <tr>
+                            <th>Name</th>
+                            <th class="scheduler__content__table__width10">
+                                &nbsp;
+                            </th>
+                            <!-- <th class="scheduler__content__table__width10">
+                            Type
+                        </th> -->
+                            <!-- <th>
+                            App
+                        </th> -->
+                            <!-- <th>
+                            Job Tags
+                        </th> -->
+                            <th>Run Date</th>
+                            <th>Run Time</th>
+                            <th class="scheduler__content__table__width10">
+                                Status
+                            </th>
+                        </tr>
+                    </thead>
+                    <tbody class="smss-grid-content">
+                        <tr ng-if="filteredHistoryData.length === 0">
+                            <td class="smss-center" colspan="5">
+                                <span ng-if="schedule.historyData.length === 0"
+                                    >Your schedule log is empty because you
+                                    haven't run any jobs yet. Schedule a job and
+                                    execute it to see run-time data about
+                                    it.</span
+                                >
+                                <span ng-if="schedule.historyData.length > 0"
+                                    >No job history, please try again.</span
+                                >
+                            </td>
+                        </tr>
+                        <tr
+                            ng-repeat="job in schedule.historyData | filter: searchJobs as filteredHistoryData"
+                        >
+                            <td title="{{job.jobName}}">{{job.jobName}}</td>
+                            <td>
+                                <div
+                                    class="scheduler__content__table__latest"
+                                    ng-if="job.isLatest"
+                                >
+                                    Latest
+                                </div>
+                            </td>
+                            <!-- <td title="{{job.jobType}}">
+                            {{job.jobType}}
+                        </td> -->
+                            <!-- <td title="{{job.jobGroup}}">
+                            {{job.jobGroup}} 
+                        </td> -->
+                            <!-- <td title="{{job.jobTags}}">
+                            {{job.jobTags}}
+                        </td> -->
+                            <td>
+                                <i class="fa fa-calendar"></i> &nbsp;
+                                {{job.execStart}}
+                            </td>
+                            <td>
+                                <i class="fa fa-clock-o"></i> &nbsp;
+                                {{job.execDelta}}
+                            </td>
+                            <td>
+                                <span
+                                    ng-show="job.success"
+                                    class="smss-color--success"
+                                >
+                                    <i class="fa fa-check-circle"></i> &nbsp;
+                                    Passed
+                                </span>
+
+                                <span
+                                    ng-show="!job.success"
+                                    class="smss-color--error"
+                                >
+                                    <i class="fa fa-times-circle"></i> &nbsp;
+                                    Failed
+                                </span>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </smss-scroll>
+    </div>
+
+    <!-- auto-size-columns="schedule.showInventory"
+    class="scheduler__grid"
+    transaction="schedule.transaction" -->
+</div>
+
+<smss-overlay
+    open="schedule.showJobModal"
+    ng-if="schedule.showJobModal"
+    size="lg"
+    class="scheduler__overlay"
+    hide="schedule.view.selected = 'DETAIL'"
+>
+    <smss-overlay-header>
+        <div ng-show="schedule.jobBeingEditedIdx > -1">Edit Job</div>
+        <div ng-show="schedule.jobBeingEditedIdx === -1">Add Job</div>
+    </smss-overlay-header>
+    <smss-overlay-body>
+        <div
+            class="scheduler__overlay__body"
+            ng-if="schedule.jobBeingEditedIdx === -1"
+        >
+            <smss-tab-group class="scheduler__overlay__tabs">
+                <smss-tab
+                    ng-repeat="opt in schedule.view.options"
+                    ng-click="schedule.view.selected = opt.value"
+                    ng-class="{'smss-tab--selected': schedule.view.selected === opt.value}"
+                    >{{opt.display}}</smss-tab
+                >
+            </smss-tab-group>
+
+            <div
+                class="scheduler__content__scroll"
+                ng-show="schedule.view.selected === 'DETAIL'"
+            >
+                <smss-scroll>
+                    <smss-field>
+                        <label>Job Name:</label>
+                        <content>
+                            <smss-input
+                                ng-model="schedule.currentJob.jobName"
+                            ></smss-input>
+                        </content>
+                    </smss-field>
+                    <smss-field>
+                        <label>Job Type:</label>
+                        <content>
+                            <smss-dropdown
+                                model="schedule.currentJob.jobType"
+                                options="schedule.jobTypes"
+                                placeholder="Choose a template..."
+                            >
+                            </smss-dropdown>
+                        </content>
+                    </smss-field>
+
+                    <smss-field
+                        ng-if="schedule.currentJob.jobType === 'Custom Job'"
+                    >
+                        <label>Enter Pixel:</label>
+                        <content>
+                            <smss-textarea
+                                ng-model="schedule.currentJob.recipe"
+                            ></smss-textarea>
+                        </content>
+                    </smss-field>
+                    <smss-field>
+                        <label>Job Tags:</label>
+                        <content>
+                            <smss-input
+                                ng-model="schedule.currentJob.jobTags"
+                            ></smss-input>
+                        </content>
+                    </smss-field>
+
+                    <sync-app-to-github
+                        ng-if="schedule.currentJob.jobType === 'Sync Database'"
+                        job="schedule.currentJob"
+                    >
+                    </sync-app-to-github>
+
+                    <backup-app
+                        ng-if="schedule.currentJob.jobType === 'Backup Database'"
+                        job="schedule.currentJob"
+                    >
+                    </backup-app>
+
+                    <extract-transform-load
+                        ng-if="schedule.currentJob.jobType === 'Extract Transform Load'"
+                        job="schedule.currentJob"
+                    ></extract-transform-load>
+
+                    <send-email
+                        ng-if="schedule.currentJob.jobType === 'Send Email'"
+                        job="schedule.currentJob"
+                    >
+                    </send-email>
+
+                    <run-insight
+                        ng-if="schedule.currentJob.jobType === 'Run Insight'"
+                        job="schedule.currentJob"
+                    >
+                    </run-insight>
+                </smss-scroll>
+            </div>
+            <div
+                class="scheduler__content__scroll"
+                ng-show="schedule.view.selected === 'FREQUENCY'"
+            >
+                <smss-scroll>
+                    <div class="smss-field">
+                        <smss-checkbox model="schedule.currentJob.onLoad">
+                            Execute Job Each Time Semoss Starts
+                        </smss-checkbox>
+                    </div>
+                    <div class="smss-field">
+                        <smss-checkbox model="schedule.currentJob.customCron">
+                            Custom Cron Expression:
+                        </smss-checkbox>
+                    </div>
+                    <smss-field ng-if="schedule.currentJob.customCron">
+                        <label>Cron Expression:</label>
+                        <content>
+                            <smss-textarea
+                                ng-model="schedule.currentJob.cronExpression"
+                            ></smss-textarea>
+                        </content>
+                    </smss-field>
+                    <div ng-if="!schedule.currentJob.customCron">
+                        <smss-field>
+                            <label>Job Frequency:</label>
+                            <content>
+                                <smss-dropdown
+                                    model="schedule.currentJob.frequency"
+                                    options="schedule.frequencyOpts"
+                                    display="human"
+                                >
+                                </smss-dropdown>
+                            </content>
+                        </smss-field>
+
+                        <smss-field
+                            ng-if="schedule.currentJob.frequency.computer === 2"
+                        >
+                            <label>Day of Week:</label>
+                            <content>
+                                <smss-dropdown
+                                    model="schedule.currentJob.dayOfWeek"
+                                    options="schedule.daysOfWeek"
+                                >
+                                </smss-dropdown>
+                            </content>
+                        </smss-field>
+                        <smss-field
+                            ng-if="schedule.currentJob.frequency.computer === 4 || schedule.currentJob.frequency.computer === 5"
+                        >
+                            <label>Month:</label>
+                            <content>
+                                <smss-dropdown
+                                    model="schedule.currentJob.monthOfYear"
+                                    options="schedule.monthsOfYear"
+                                >
+                                </smss-dropdown>
+                            </content>
+                        </smss-field>
+                        <smss-field
+                            ng-if="schedule.currentJob.frequency.computer === 3 || schedule.currentJob.frequency.computer === 4 || schedule.currentJob.frequency.computer === 5"
+                        >
+                            <label>Day of Month:</label>
+                            <content>
+                                <smss-dropdown
+                                    ng-if="schedule.currentJob.frequency.computer === 4 || schedule.currentJob.frequency.computer === 5"
+                                    model="schedule.currentJob.dayOfMonth"
+                                    options="schedule.daysOfMonth[schedule.currentJob.monthOfYear]"
+                                >
+                                </smss-dropdown>
+                                <smss-dropdown
+                                    ng-if="schedule.currentJob.frequency.computer === 3"
+                                    model="schedule.currentJob.dayOfMonth"
+                                    options="[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31]"
+                                >
+                                </smss-dropdown>
+                            </content>
+                        </smss-field>
+                        <smss-field>
+                            <label>Time:</label>
+                            <content class="smss-clear">
+                                <smss-dropdown
+                                    class="smss-left scheduler__time__dropdown"
+                                    model="schedule.currentJob.hour"
+                                    options="schedule.hours"
+                                >
+                                </smss-dropdown>
+                                <div
+                                    class="smss-text smss-left scheduler__time__spacer"
+                                >
+                                    <span class="smss-small"> : </span>
+                                </div>
+                                <smss-dropdown
+                                    class="smss-left scheduler__time__dropdown"
+                                    model="schedule.currentJob.minute"
+                                    options="schedule.minutes"
+                                >
+                                </smss-dropdown>
+                                <smss-dropdown
+                                    class="smss-left scheduler__time__dropdown"
+                                    model="schedule.currentJob.ampm"
+                                    options="['AM', 'PM']"
+                                >
+                                </smss-dropdown>
+                            </content>
+                        </smss-field>
+                    </div>
+                </smss-scroll>
+            </div>
+            <div
+                class="scheduler__content__scroll"
+                ng-show="schedule.view.selected === 'SETTINGS'"
+            >
+                <smss-scroll>
+                    <div class="smss-field">
+                        <smss-checkbox
+                            model="schedule.currentJob.openExport"
+                            change="schedule.addDefaultParameters()"
+                        >
+                            Export
+                        </smss-checkbox>
+                    </div>
+                    <div ng-if="schedule.currentJob.openExport">
+                        <smss-field>
+                            <label>Current Settings:</label>
+                            <content>
+                                <div class="scheduler__added">
+                                    <div
+                                        class="scheduler__added__parameter"
+                                        ng-repeat="(paramKey, paramValue) in schedule.exportParameters.added"
+                                    >
+                                        <smss-field
+                                            ng-if="paramValue.component === 'input' || paramValue.component === 'number' || paramValue.component === 'dropdown'"
+                                        >
+                                            <label
+                                                >{{paramValue.display}}:</label
+                                            >
+                                            <content
+                                                class="scheduler__parameter"
+                                            >
+                                                <smss-input
+                                                    ng-if="paramValue.component === 'input'"
+                                                    class="scheduler__parameter__component"
+                                                    ng-model="paramValue.value"
+                                                >
+                                                </smss-input>
+                                                <smss-input
+                                                    ng-if="paramValue.component === 'number'"
+                                                    class="scheduler__parameter__component"
+                                                    ng-model="paramValue.value"
+                                                    type="number"
+                                                ></smss-input>
+                                                <smss-dropdown
+                                                    ng-if="paramValue.component === 'dropdown'"
+                                                    model="paramValue.value"
+                                                    options="paramValue.options"
+                                                    class="scheduler__parameter__component"
+                                                    change="schedule.paramDropdownChanged(paramKey, paramValue.value);"
+                                                >
+                                                </smss-dropdown>
+                                                <smss-btn
+                                                    class="smss-btn--icon smss-color--error smss-btn--left"
+                                                    ng-click="schedule.deleteParameter(paramKey)"
+                                                    title="Delete Parameter"
+                                                >
+                                                    <i
+                                                        class="fa fa-trash-o"
+                                                    ></i>
+                                                </smss-btn>
+                                            </content>
+                                        </smss-field>
+                                        <smss-field
+                                            ng-if="paramValue.component === 'checkbox'"
+                                        >
+                                            <content
+                                                class="scheduler__parameter"
+                                            >
+                                                <smss-checkbox
+                                                    model="paramValue.value"
+                                                    class="scheduler__parameter__component"
+                                                    ng-disabled="paramValue.isDisabled"
+                                                >
+                                                    {{paramValue.display}}
+                                                </smss-checkbox>
+                                                <smss-btn
+                                                    class="smss-btn--icon smss-color--error smss-btn--left"
+                                                    ng-click="schedule.deleteParameter(paramKey)"
+                                                    title="Delete Parameter"
+                                                >
+                                                    <i
+                                                        class="fa fa-trash-o"
+                                                    ></i>
+                                                </smss-btn>
+                                            </content>
+                                        </smss-field>
+                                        <div
+                                            ng-if="paramValue.component === 'template'"
+                                            class="scheduler__template"
+                                        >
+                                            <div
+                                                class="scheduler__template__component"
+                                            >
+                                                <smss-field>
+                                                    <label
+                                                        >Select a
+                                                        Project:</label
+                                                    >
+                                                    <content>
+                                                        <app-list-dropdown
+                                                            model="schedule.selectedApp"
+                                                            change="schedule.exportParameters.added.export_template.value = ''; schedule.getAllTemplates()"
+                                                        >
+                                                        </app-list-dropdown>
+                                                    </content>
+                                                </smss-field>
+                                                <smss-field>
+                                                    <label>Template:</label>
+                                                    <content>
+                                                        <smss-dropdown
+                                                            model="paramValue.value"
+                                                            options="paramValue.options"
+                                                            class="scheduler__parameter__component"
+                                                            change="schedule.paramDropdownChanged(paramKey, paramValue.value);"
+                                                        />
+                                                    </content>
+                                                </smss-field>
+                                                <smss-field
+                                                    ng-if="!schedule.isPlaceholdersEmpty()"
+                                                >
+                                                    <label>
+                                                        Placeholder(s)
+                                                    </label>
+                                                    <content>
+                                                        <div
+                                                            class="scheduler__placeholder"
+                                                            ng-repeat="(paramKey,paramValue) in schedule.placeholderData"
+                                                        >
+                                                            <label
+                                                                >{{paramKey}}</label
+                                                            >
+                                                            <smss-input
+                                                                ng-model="paramValue[0]"
+                                                            ></smss-input>
+                                                        </div>
+                                                    </content>
+                                                </smss-field>
+                                            </div>
+                                            <smss-btn
+                                                class="smss-btn--icon smss-color--error smss-btn--left"
+                                                ng-click="schedule.deleteParameter(paramKey)"
+                                                title="Delete Parameter"
+                                            >
+                                                <i class="fa fa-trash-o"></i>
+                                            </smss-btn>
+                                        </div>
+                                    </div>
+                                    <p
+                                        ng-if="schedule.isParametersEmpty()"
+                                        class="smss-center smss-small"
+                                    >
+                                        No Settings Added. Add Settings from
+                                        below.
+                                    </p>
+                                </div>
+                            </content>
+                        </smss-field>
+                        <smss-field>
+                            <label>Add Settings:</label>
+                            <content class="scheduler__parameter">
+                                <smss-dropdown
+                                    model="schedule.exportParameters.selected"
+                                    options="schedule.exportParameters.list"
+                                    display="display"
+                                    class="scheduler__parameter__component"
+                                >
+                                </smss-dropdown>
+                                <smss-btn
+                                    class="smss-btn--icon smss-color--success scheduler__parameter__btn"
+                                    title="Add Parameter"
+                                    ng-click="schedule.addParameter();"
+                                    ng-disabled="schedule.exportParameters.selected.length === 0"
+                                >
+                                    <i class="fa fa-plus"></i>
+                                </smss-btn>
+                            </content>
+                        </smss-field>
+                        <smss-field ng-if="schedule.isParametersEmpty()">
+                            <content>
+                                <smss-btn
+                                    ng-click="schedule.addAllParameters();"
+                                >
+                                    Add all Settings
+                                </smss-btn>
+                            </content>
+                        </smss-field>
+                    </div>
+                </smss-scroll>
+            </div>
+        </div>
+        <div
+            class="scheduler__overlay__body"
+            ng-if="schedule.jobBeingEditedIdx > -1"
+        >
+            <smss-tab-group class="scheduler__overlay__tabs">
+                <smss-tab
+                    ng-repeat="opt in schedule.view.options"
+                    ng-click="schedule.view.selected = opt.value"
+                    ng-class="{'smss-tab--selected': schedule.view.selected === opt.value}"
+                    >{{opt.display}}</smss-tab
+                >
+            </smss-tab-group>
+            <div
+                class="scheduler__content__scroll"
+                ng-show="schedule.view.selected === 'DETAIL'"
+            >
+                <smss-scroll>
+                    <smss-field>
+                        <label>Job Name:</label>
+                        <content>
+                            <smss-input
+                                ng-model="schedule.jobBeingEdited.jobName"
+                            ></smss-input>
+                        </content>
+                    </smss-field>
+                    <smss-field>
+                        <label>Job Type:</label>
+                        <content>
+                            <smss-dropdown
+                                model="schedule.jobBeingEdited.jobType"
+                                options="schedule.jobTypes"
+                            >
+                            </smss-dropdown>
+                        </content>
+                    </smss-field>
+                    <smss-field>
+                        <label>Job Tags:</label>
+                        <content>
+                            <smss-input
+                                ng-model="schedule.jobBeingEdited.jobTags"
+                            ></smss-input>
+                        </content>
+                    </smss-field>
+
+                    <smss-field
+                        ng-if="schedule.jobBeingEdited.jobType === 'Custom Job'"
+                    >
+                        <label>Enter Pixel:</label>
+                        <content>
+                            <smss-textarea
+                                ng-model="schedule.jobBeingEdited.recipe"
+                            ></smss-textarea>
+                        </content>
+                    </smss-field>
+
+                    <sync-app-to-github
+                        ng-if="schedule.jobBeingEdited.jobType === 'Sync Database'"
+                        job="schedule.jobBeingEdited"
+                    >
+                    </sync-app-to-github>
+
+                    <backup-app
+                        ng-if="schedule.jobBeingEdited.jobType === 'Backup Database'"
+                        job="schedule.jobBeingEdited"
+                    >
+                    </backup-app>
+
+                    <extract-transform-load
+                        ng-if="schedule.jobBeingEdited.jobType === 'Extract Transform Load'"
+                        job="schedule.jobBeingEdited"
+                    ></extract-transform-load>
+
+                    <send-email
+                        ng-if="schedule.jobBeingEdited.jobType === 'Send Email'"
+                        job="schedule.jobBeingEdited"
+                    >
+                    </send-email>
+
+                    <run-insight
+                        ng-if="schedule.jobBeingEdited.jobType === 'Run Insight'"
+                        job="schedule.jobBeingEdited"
+                    >
+                    </run-insight>
+                </smss-scroll>
+            </div>
+            <div
+                class="scheduler__content__scroll"
+                ng-show="schedule.view.selected === 'FREQUENCY'"
+            >
+                <smss-scroll>
+                    <div class="smss-field">
+                        <smss-checkbox model="schedule.jobBeingEdited.onLoad">
+                            Execute Job Each Time Semoss Starts
+                        </smss-checkbox>
+                    </div>
+
+                    <div class="smss-field">
+                        <smss-checkbox
+                            model="schedule.jobBeingEdited.customCron"
+                        >
+                            Custom Cron Expression:
+                        </smss-checkbox>
+                    </div>
+
+                    <smss-field ng-if="schedule.jobBeingEdited.customCron">
+                        <label>Cron Expression:</label>
+                        <content>
+                            <smss-textarea
+                                ng-model="schedule.jobBeingEdited.cronExpression"
+                            ></smss-textarea>
+                        </content>
+                    </smss-field>
+                    <div ng-if="!schedule.jobBeingEdited.customCron">
+                        <smss-field>
+                            <label>Job Frequency:</label>
+                            <content>
+                                <smss-dropdown
+                                    model="schedule.jobBeingEdited.frequency"
+                                    options="schedule.frequencyOpts"
+                                    display="human"
+                                >
+                                </smss-dropdown>
+                            </content>
+                        </smss-field>
+                        <smss-field
+                            ng-if="schedule.jobBeingEdited.frequency.computer === 2"
+                        >
+                            <label>Day of Week:</label>
+                            <content>
+                                <smss-dropdown
+                                    model="schedule.jobBeingEdited.dayOfWeek"
+                                    options="schedule.daysOfWeek"
+                                >
+                                </smss-dropdown>
+                            </content>
+                        </smss-field>
+                        <smss-field
+                            ng-if="schedule.jobBeingEdited.frequency.computer === 4 || schedule.jobBeingEdited.frequency.computer === 5"
+                        >
+                            <label>Month:</label>
+                            <content>
+                                <smss-dropdown
+                                    model="schedule.jobBeingEdited.monthOfYear"
+                                    options="schedule.monthsOfYear"
+                                >
+                                </smss-dropdown>
+                            </content>
+                        </smss-field>
+                        <smss-field
+                            ng-if="schedule.jobBeingEdited.frequency.computer === 3 || schedule.jobBeingEdited.frequency.computer === 4 || schedule.jobBeingEdited.frequency.computer === 5"
+                        >
+                            <label>Day of Month:</label>
+                            <content>
+                                <smss-dropdown
+                                    ng-if="schedule.jobBeingEdited.frequency.computer === 4 || schedule.jobBeingEdited.frequency.computer === 5"
+                                    model="schedule.jobBeingEdited.dayOfMonth"
+                                    options="schedule.daysOfMonth[schedule.jobBeingEdited.monthOfYear]"
+                                >
+                                </smss-dropdown>
+                                <smss-dropdown
+                                    ng-if="schedule.jobBeingEdited.frequency.computer === 3"
+                                    model="schedule.jobBeingEdited.dayOfMonth"
+                                    options="[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31]"
+                                >
+                                </smss-dropdown>
+                            </content>
+                        </smss-field>
+                        <smss-field>
+                            <label>Time:</label>
+                            <content class="smss-clear">
+                                <smss-dropdown
+                                    class="smss-left scheduler__time__dropdown"
+                                    model="schedule.jobBeingEdited.hour"
+                                    options="schedule.hours"
+                                >
+                                </smss-dropdown>
+                                <div
+                                    class="smss-text smss-left scheduler__time__spacer"
+                                >
+                                    <span class="smss-small"> : </span>
+                                </div>
+                                <smss-dropdown
+                                    class="smss-left scheduler__time__dropdown"
+                                    model="schedule.jobBeingEdited.minute"
+                                    options="schedule.minutes"
+                                >
+                                </smss-dropdown>
+                                <smss-dropdown
+                                    class="smss-left scheduler__time__dropdown"
+                                    model="schedule.jobBeingEdited.ampm"
+                                    options="['AM', 'PM']"
+                                >
+                                </smss-dropdown>
+                            </content>
+                        </smss-field>
+                    </div>
+                </smss-scroll>
+            </div>
+            <div
+                class="scheduler__content__scroll"
+                ng-show="schedule.view.selected === 'SETTINGS'"
+            >
+                <smss-scroll>
+                    <div class="smss-field">
+                        <smss-checkbox
+                            model="schedule.jobBeingEdited.openExport"
+                            change="schedule.addDefaultParameters()"
+                        >
+                            Export
+                        </smss-checkbox>
+                    </div>
+                    <div ng-if="schedule.jobBeingEdited.openExport">
+                        <smss-field>
+                            <label>Current Settings:</label>
+                            <content>
+                                <div class="scheduler__added">
+                                    <div
+                                        class="scheduler__added__parameter"
+                                        ng-repeat="(paramKey, paramValue) in schedule.exportParameters.added"
+                                    >
+                                        <smss-field
+                                            ng-if="paramValue.component === 'input' || paramValue.component === 'number' || paramValue.component === 'dropdown'"
+                                        >
+                                            <label
+                                                >{{paramValue.display}}:</label
+                                            >
+                                            <content
+                                                class="scheduler__parameter"
+                                            >
+                                                <smss-input
+                                                    ng-if="paramValue.component === 'input'"
+                                                    class="scheduler__parameter__component"
+                                                    ng-model="paramValue.value"
+                                                >
+                                                </smss-input>
+                                                <smss-input
+                                                    ng-if="paramValue.component === 'number'"
+                                                    class="scheduler__parameter__component"
+                                                    ng-model="paramValue.value"
+                                                    type="number"
+                                                ></smss-input>
+                                                <smss-dropdown
+                                                    ng-if="paramValue.component === 'dropdown'"
+                                                    model="paramValue.value"
+                                                    options="paramValue.options"
+                                                    class="scheduler__parameter__component"
+                                                    change="schedule.paramDropdownChanged(paramKey, paramValue.value);"
+                                                >
+                                                </smss-dropdown>
+                                                <smss-btn
+                                                    class="smss-btn--icon smss-color--error smss-btn--left"
+                                                    ng-click="schedule.deleteParameter(paramKey)"
+                                                    title="Delete Parameter"
+                                                >
+                                                    <i
+                                                        class="fa fa-trash-o"
+                                                    ></i>
+                                                </smss-btn>
+                                            </content>
+                                        </smss-field>
+                                        <smss-field
+                                            ng-if="paramValue.component === 'checkbox'"
+                                        >
+                                            <content
+                                                class="scheduler__parameter"
+                                            >
+                                                <smss-checkbox
+                                                    model="paramValue.value"
+                                                    class="scheduler__parameter__component"
+                                                    ng-disabled="paramValue.isDisabled"
+                                                >
+                                                    {{paramValue.display}}
+                                                </smss-checkbox>
+                                                <smss-btn
+                                                    class="smss-btn--icon smss-color--error smss-btn--left"
+                                                    ng-click="schedule.deleteParameter(paramKey)"
+                                                    title="Delete Parameter"
+                                                >
+                                                    <i
+                                                        class="fa fa-trash-o"
+                                                    ></i>
+                                                </smss-btn>
+                                            </content>
+                                        </smss-field>
+                                        <div
+                                            ng-if="paramValue.component === 'template'"
+                                            class="scheduler__template"
+                                        >
+                                            <div
+                                                class="scheduler__template__component"
+                                            >
+                                                <smss-field>
+                                                    <label
+                                                        >Select a
+                                                        Project:</label
+                                                    >
+                                                    <content>
+                                                        <app-list-dropdown
+                                                            model="schedule.selectedApp"
+                                                            change="schedule.exportParameters.added.export_template.value = ''; schedule.getAllTemplates()"
+                                                        >
+                                                        </app-list-dropdown>
+                                                    </content>
+                                                </smss-field>
+                                                <smss-field>
+                                                    <label>Template:</label>
+                                                    <content>
+                                                        <smss-dropdown
+                                                            model="paramValue.value"
+                                                            options="paramValue.options"
+                                                            class="scheduler__parameter__component"
+                                                            change="schedule.paramDropdownChanged(paramKey, paramValue.value);"
+                                                        />
+                                                    </content>
+                                                </smss-field>
+                                                <smss-field
+                                                    ng-if="!schedule.isPlaceholdersEmpty()"
+                                                >
+                                                    <label
+                                                        >Placeholder(s)</label
+                                                    >
+                                                    <content>
+                                                        <div
+                                                            class="scheduler__placeholder"
+                                                            ng-repeat="(paramKey,paramValue) in schedule.placeholderData"
+                                                        >
+                                                            <label
+                                                                >{{paramKey}}</label
+                                                            >
+                                                            <smss-input
+                                                                ng-model="paramValue[0]"
+                                                            ></smss-input>
+                                                        </div>
+                                                    </content>
+                                                </smss-field>
+                                            </div>
+                                            <smss-btn
+                                                class="smss-btn--icon smss-color--error smss-btn--left"
+                                                ng-click="schedule.deleteParameter(paramKey)"
+                                                title="Delete Parameter"
+                                            >
+                                                <i class="fa fa-trash-o"></i>
+                                            </smss-btn>
+                                        </div>
+                                    </div>
+                                    <p
+                                        ng-if="schedule.isParametersEmpty()"
+                                        class="smss-center smss-small"
+                                    >
+                                        No Settings available. Add Settings from
+                                        below.
+                                    </p>
+                                </div>
+                            </content>
+                        </smss-field>
+                        <smss-field>
+                            <label>Add Settings:</label>
+                            <content class="scheduler__parameter">
+                                <smss-dropdown
+                                    model="schedule.exportParameters.selected"
+                                    options="schedule.exportParameters.list"
+                                    display="display"
+                                    class="scheduler__parameter__component"
+                                >
+                                </smss-dropdown>
+                                <smss-btn
+                                    class="smss-btn--icon smss-color--success scheduler__parameter__btn"
+                                    title="Add Parameter"
+                                    ng-click="schedule.addParameter();"
+                                    ng-disabled="schedule.exportParameters.selected.length === 0"
+                                >
+                                    <i class="fa fa-plus"></i>
+                                </smss-btn>
+                            </content>
+                        </smss-field>
+                        <smss-field ng-if="schedule.isParametersEmpty()">
+                            <content>
+                                <smss-btn
+                                    ng-click="schedule.addAllParameters();"
+                                >
+                                    Add all Settings
+                                </smss-btn>
+                            </content>
+                        </smss-field>
+                    </div>
+                </smss-scroll>
+            </div>
+        </div>
+    </smss-overlay-body>
+
+    <smss-overlay-footer>
+        <smss-btn
+            ng-if="schedule.jobBeingEditedIdx > -1"
+            ng-click="schedule.jobBeingEditedIdx = -1; schedule.showJobModal = false; schedule.view.selected = 'DETAIL';"
+            class="smss-btn--text"
+            >Cancel</smss-btn
+        >
+        <smss-btn
+            ng-click="schedule.editJob();"
+            ng-if="schedule.jobBeingEditedIdx > -1"
+            ng-disabled="schedule.isJobInvalid()"
+            >Reschedule Job</smss-btn
+        >
+        <smss-btn
+            ng-click="schedule.scheduleJob();"
+            ng-if="schedule.jobBeingEditedIdx === -1"
+            ng-disabled="schedule.isJobInvalid()"
+            >Schedule Job</smss-btn
+        >
+    </smss-overlay-footer>
+</smss-overlay>
+
+<smss-overlay open="schedule.showDeleteModal" size="sm">
+    <smss-overlay-header>Delete Job</smss-overlay-header>
+    <smss-overlay-body>
+        Confirm Delete.
+        <span class="smss-color--error"> Warning: Action is Permanent </span>
+    </smss-overlay-body>
+    <smss-overlay-footer>
+        <smss-btn
+            ng-click="schedule.showDeleteModal = false;"
+            class="smss-btn--text"
+        >
+            Cancel
+        </smss-btn>
+        <smss-btn class="smss-btn--error" ng-click="schedule.deleteJob();">
+            Delete
+        </smss-btn>
+    </smss-overlay-footer>
+</smss-overlay>

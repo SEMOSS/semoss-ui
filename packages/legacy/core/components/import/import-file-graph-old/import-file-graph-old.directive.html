@@ -1,0 +1,159 @@
+<div class="import-file-graph-old">
+    <smss-scroll
+        static-x="true"
+        ng-if="importFileGraphOld.step === 1"
+        class="import-file-graph-old__content"
+    >
+        <smss-field>
+            <label
+                >Enter Database Name:<span class="smss-color--error"
+                    >*</span
+                ></label
+            >
+            <content>
+                <smss-input
+                    ng-model="importCtrl.name.value"
+                    ng-change="importCtrl.validateName()"
+                    placeholder="Database Name"
+                    autofocus
+                ></smss-input>
+            </content>
+            <description>
+                <span
+                    class="smss-color--error"
+                    ng-show="importCtrl.name.message"
+                >
+                    {{importCtrl.name.message}}</span
+                >
+            </description>
+        </smss-field>
+
+        <smss-field>
+            <label>Enter Database Description:</label>
+            <content>
+                <smss-textarea
+                    ng-model="importCtrl.meta.description"
+                    placeholder="Database Description"
+                ></smss-textarea>
+            </content>
+        </smss-field>
+        <smss-field>
+            <label> Enter Database Tags: </label>
+            <content>
+                <smss-multiselect
+                    model="importCtrl.meta.tags"
+                    options="importCtrl.meta.all"
+                ></smss-multiselect>
+            </content>
+        </smss-field>
+
+        <smss-field>
+            <label>Enter Path:<span class="smss-color--error">*</span></label>
+            <content>
+                <smss-input
+                    ng-model="importFileGraphOld.file.path"
+                    placeholder="Path"
+                ></smss-input>
+            </content>
+        </smss-field>
+        <div class="smss-caption smss-color--error">* are required</div>
+    </smss-scroll>
+    <smss-scroll
+        static-x="true"
+        ng-if="importFileGraphOld.step === 2"
+        class="import-file-graph-old__content"
+    >
+        <smss-field>
+            <label
+                >Select Node Type Identifier:<span class="smss-color--error"
+                    >*</span
+                ></label
+            >
+            <content>
+                <smss-dropdown
+                    model="importFileGraphOld.graph.type"
+                    options="importFileGraphOld.graph.options"
+                >
+                </smss-dropdown>
+            </content>
+        </smss-field>
+        <smss-field>
+            <label
+                >Select Node Name Identifier:<span class="smss-color--error"
+                    >*</span
+                ></label
+            >
+            <content>
+                <smss-dropdown
+                    model="importFileGraphOld.graph.name"
+                    options="importFileGraphOld.graph.options"
+                >
+                </smss-dropdown>
+            </content>
+        </smss-field>
+        <div class="smss-caption smss-color--error">* are required</div>
+    </smss-scroll>
+    <div
+        ng-if="importFileGraphOld.step === 3"
+        class="import-file-graph-old__content"
+    >
+        <smss-btn
+            class="smss-btn--icon import-file-graph-old__content__relationship__btn"
+            title="Edit Relationships"
+            ng-click="importFileGraphOld.showRelationship = !importFileGraphOld.showRelationship"
+        >
+            <i class="fa fa-link"></i>
+        </smss-btn>
+
+        <metamodel-relationships
+            ng-if="importFileGraphOld.showRelationship"
+            metamodel="importFileGraphOld.metamodel"
+            open="importFileGraphOld.showRelationship"
+            type="importFileGraphOld.file.type"
+        ></metamodel-relationships>
+
+        <metamodel
+            metamodel="importFileGraphOld.metamodel"
+            type="importFileGraphOld.file.type"
+        ></metamodel>
+    </div>
+    <div class="smss-spacing smss-clear">
+        <smss-btn
+            class="smss-left smss-btn--text"
+            ng-if="importFileGraphOld.step === 2"
+            ng-click="importFileGraphOld.setFile();"
+        >
+            Back
+        </smss-btn>
+        <smss-btn
+            class="smss-left smss-btn--text"
+            ng-if="importFileGraphOld.step === 3"
+            ng-click="importFileGraphOld.resetGraph();"
+        >
+            Back
+        </smss-btn>
+        <smss-btn
+            class="smss-right"
+            ng-if="importFileGraphOld.step === 3"
+            ng-click="importFileGraphOld.importMetamodel();"
+        >
+            Import
+        </smss-btn>
+        <smss-btn
+            class="smss-right"
+            ng-if="importFileGraphOld.step === 2"
+            ng-click="importFileGraphOld.loadGraph();"
+            ng-disabled="!importFileGraphOld.checkGraph();"
+        >
+            Next
+        </smss-btn>
+        <smss-btn
+            class="smss-right"
+            ng-if="importFileGraphOld.step === 1"
+            ng-click="importFileGraphOld.loadFile(true);"
+            ng-disabled="!importFileGraphOld.checkFile();"
+        >
+            Next
+        </smss-btn>
+    </div>
+</div>

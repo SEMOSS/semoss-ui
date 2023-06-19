@@ -1,0 +1,143 @@
+@import '~theme';
+
+.widget-view {
+    position: absolute;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    overflow: hidden;
+    user-select: none;
+    z-index: 0;
+
+    &:hover {
+        .widget-view__scroll {
+            overflow: auto;
+        }
+
+        & .widget-view__resizable__content__mode {
+            opacity: 0.8;
+        }
+    }
+
+    &__loading .loading-screen {
+        z-index: 9200;
+    }
+
+    &__resizable {
+        position: absolute;
+        top: 0;
+        right: 0;
+        bottom: 0;
+        left: 0;
+        overflow: hidden;
+
+        &__content {
+            position: absolute;
+            top: 0;
+            right: 0;
+            bottom: 0;
+            left: 0;
+
+            &__mode {
+                position: absolute;
+                right: 0;
+                top: 0;
+                z-index: 9100;
+                opacity: 0;
+            }
+
+            &__facet {
+                position: absolute;
+                bottom: 20px;
+                width: 100%;
+                line-height: get-height('sm', 'em');
+                height: get-height('sm', 'em');
+                z-index: 9100;
+                left: 0;
+                right: 0;
+
+                &__arrow {
+                    height: 100%;
+                    width: calc((100% - 350px) / 2);
+                    cursor: pointer;
+                    outline: none;
+
+                    &__icon {
+                        width: get-width('icon', 'em');
+                        text-align: center;
+                        color: get-text-color('medium-emphasis');
+
+                        &:hover {
+                            color: get-text-color('primary');
+                        }
+                    }
+
+                    &__name {
+                        width: calc(100% - #{get-width('icon', 'em')});
+
+                        &--left {
+                            text-align: left;
+                        }
+
+                        &--right {
+                            text-align: right;
+                        }
+                    }
+                }
+
+                &__info {
+                    max-width: 350px;
+                    width: 100%;
+
+                    &__label {
+                        text-align: right;
+                    }
+                }
+            }
+
+            &__collected {
+                position: absolute;
+                right: 0;
+                bottom: 0;
+                z-index: 9100;
+                padding-right: get-spacing('sm', 'em') / 2;
+                outline: none;
+                background-color: #ffffff2d;
+
+                &__edit-counter {
+                    width: 60px;
+                }
+
+                &__show {
+                    opacity: 0;
+                    outline: none;
+                }
+
+                &:hover {
+                    .widget-view__resizable__content__collected__show {
+                        opacity: 1;
+                    }
+                }
+            }
+        }
+    }
+
+    &__scroll {
+        overflow: hidden;
+    }
+
+    &__inline {
+        display: inline-block;
+    }
+}
+
+#widget-view {
+    &__resizable {
+        &__content {
+            &__replace {
+                height: 100%;
+            }
+        }
+    }
+}

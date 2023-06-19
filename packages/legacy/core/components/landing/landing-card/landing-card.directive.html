@@ -1,0 +1,246 @@
+<div class="landing-card">
+    <div
+        ng-if="landingCard.mode === 'CARD'"
+        class="smss-card-grid"
+        title="Open {{insight.name}}"
+        ng-click="landingCard.openInsight($event)"
+    >
+        <div class="smss-card-grid__top">
+            <div class="smss-card-grid__top__image">
+                <img
+                    ng-src="{{landingCard.insight.image}}"
+                    alt="Insight Image"
+                />
+            </div>
+            <div class="smss-card-grid__top__text">
+                <div class="smss-card-grid__top__text__folder">
+                    <i class="fa fa-folder-o"></i>
+                    {{landingCard.insight.app_name}}
+                </div>
+                <h5
+                    class="smss-card-grid__top__text__title"
+                    title="{{landingCard.insight.name}}"
+                >
+                    {{landingCard.insight.name}}
+                </h5>
+            </div>
+            <div class="smss-card-grid__top__favorite">
+                <smss-btn
+                    class="smss-btn--icon"
+                    ng-click="landingCard.setInsightFavorite(); $event.stopPropagation();"
+                >
+                    <span
+                        ng-if="landingCard.insight.insight_favorite"
+                        title="Unfavorite Insight"
+                    >
+                        <i class="fa fa-star smss-color--primary"></i>
+                    </span>
+                    <span
+                        ng-if="!landingCard.insight.insight_favorite"
+                        title="Favorite Insight"
+                    >
+                        <i class="fa fa-star-o"></i>
+                    </span>
+                </smss-btn>
+            </div>
+        </div>
+        <div class="smss-card-grid__content">
+            <div
+                class="smss-card-grid__content__description"
+                title="{{landingCard.insight.description}}"
+            >
+                {{landingCard.insight.description}}
+            </div>
+            <div class="smss-card-grid__content__tags">
+                <smss-tag
+                    ng-repeat="tag in landingCard.insight.tags track by $index"
+                    label="tag"
+                    class="smss-tag--compact smss-tag--{{landingCtrl.tags.colors.mapping[tag]}}"
+                    title="Filter by {{tag}}"
+                    click="$event.stopPropagation(); landingCtrl.filterByTag(tag)"
+                >
+                </smss-tag>
+            </div>
+        </div>
+        <div class="smss-card-grid__footer">
+            <!-- TO DO: Users -->
+            <!-- <div class="smss-card-grid__footer__users">
+                <span class="smss-card-grid__footer__users__user">U1</span>
+                <span class="smss-card-grid__footer__users__user">U2</span>
+                <span class="smss-card-grid__footer__users__user">U3</span>
+            </div> -->
+            <div
+                class="smss-card-grid__footer__caption"
+                title="{{landingCard.insight.last_modified_on}}"
+            >
+                <i class="fa fa-clock-o"></i>
+                Updated: {{landingCard.insight.last_modified_on}}
+            </div>
+            <!-- TO DO: Database name -->
+            <!-- <div class="smss-card-grid__footer__caption">
+                <i class="fa fa-database"></i>
+                Database
+            </div> -->
+            <div class="smss-card-grid__footer__action">
+                <smss-btn
+                    ng-click="$event.stopPropagation()"
+                    class="smss-btn--icon"
+                    smss-popover
+                    title="Show Menu"
+                >
+                    <i class="fa fa-ellipsis-v"></i>
+                    <smss-popover-content
+                        class="landing-card__popover smss-popover-content--compact"
+                        position="['SW', 'SE', 'NW', 'NE']"
+                        model="landingCard.isMenuOpen"
+                        closeable="false"
+                    >
+                        <ul class="landing-card__popover__options">
+                            <li
+                                class="landing-card__popover__options__option"
+                                ng-click="landingCard.openInsightEdit()"
+                                ng-if="landingCard.insight.permission && landingCard.insight.permission !== 3"
+                            >
+                                <i class="fa fa-edit smss-color--primary"></i>
+                                <span>Edit</span>
+                            </li>
+                            <li
+                                class="landing-card__popover__options__option"
+                                ng-click="landingCard.openInsightShare()"
+                            >
+                                <i class="fa fa-share smss-color--primary"></i>
+                                <span>Share</span>
+                            </li>
+                            <li
+                                class="landing-card__popover__options__option"
+                                ng-click="landingCard.openInsightDelete()"
+                                ng-if="landingCard.insight.permission && landingCard.insight.permission !== 3"
+                            >
+                                <i
+                                    class="fa fa-trash-o smss-color--primary"
+                                ></i>
+                                <span>Delete</span>
+                            </li>
+                        </ul>
+                    </smss-popover-content>
+                </smss-btn>
+            </div>
+        </div>
+    </div>
+
+    <div
+        ng-if="landingCard.mode === 'LIST'"
+        title="Open {{landingCard.insight.name}}"
+        class="smss-card-inline"
+        ng-click="landingCard.openInsight($event)"
+    >
+        <div class="smss-card-inline__image">
+            <img ng-src="{{landingCard.insight.image}}" alt="Insight-Image" />
+        </div>
+        <div class="smss-card-inline__content">
+            <div class="smss-card-inline__content__header">
+                <h5>{{landingCard.insight.name}}</h5>
+            </div>
+            <div class="smss-card-inline__content__description">
+                {{landingCard.insight.description}}
+            </div>
+            <div
+                class="smss-card-inline__content__footer"
+                title="{{landingCard.insight.app_name}}"
+            >
+                <div class="smss-card-inline__content__footer__left">
+                    <i class="fa fa-folder-o"></i>
+                    {{landingCard.insight.app_name}}
+                </div>
+                <div
+                    class="smss-card-inline__content__footer__right"
+                    title="{{landingCard.insight.last_modified_on}}"
+                >
+                    <i class="fa fa-clock-o"></i>
+                    Updated: {{landingCard.insight.last_modified_on}}
+                </div>
+                <!-- TO DO: Database name -->
+                <!-- <div class="smss-card-inline__content__header__caption">
+                    <i class="fa fa-database"></i>
+                    {{insight.app_name}}
+                </div> -->
+            </div>
+        </div>
+        <div class="smss-card-inline__tags">
+            <smss-tag
+                ng-repeat="tag in landingCard.insight.tags track by $index"
+                label="tag"
+                class="smss-tag--compact smss-tag--{{landingCtrl.tags.colors.mapping[tag]}}"
+                title="Filter by {{tag}}"
+                click="$event.stopPropagation(); landingCtrl.filterByTag(tag)"
+            >
+            </smss-tag>
+        </div>
+        <!-- TO DO: Users -->
+        <div class="smss-card-inline__users">
+            <!-- <span class="smss-card-inline__users__user">U1</span>
+            <span class="smss-card-inline__users__user">U2</span>
+            <span class="smss-card-inline__users__user">U3</span> -->
+        </div>
+        <div class="smss-card-inline__favorite">
+            <smss-btn
+                class="smss-btn--icon"
+                ng-click="landingCard.setInsightFavorite(); $event.stopPropagation();"
+            >
+                <span
+                    ng-if="landingCard.insight.insight_favorite"
+                    title="Unfavorite Insight"
+                >
+                    <i class="fa fa-star smss-color--primary"></i>
+                </span>
+                <span
+                    ng-if="!landingCard.insight.insight_favorite"
+                    title="Favorite Insight"
+                >
+                    <i class="fa fa-star-o"></i>
+                </span>
+            </smss-btn>
+        </div>
+        <div class="smss-card-inline__action">
+            <smss-btn
+                ng-click="$event.stopPropagation()"
+                class="smss-btn--icon"
+                title="Show Menu"
+                smss-popover
+            >
+                <i class="fa fa-ellipsis-v"></i>
+                <smss-popover-content
+                    class="landing-card__popover smss-popover-content--compact"
+                    position="['SW', 'SE', 'NW', 'NE']"
+                    model="landingCard.isMenuOpen"
+                >
+                    <ul class="landing-card__popover__options">
+                        <li
+                            class="landing-card__popover__options__option"
+                            ng-click="landingCard.openInsightEdit()"
+                            ng-if="landingCard.insight.permission && landingCard.insight.permission !== 3"
+                        >
+                            <i class="fa fa-edit smss-color--primary"></i>
+                            <span>Edit</span>
+                        </li>
+                        <li
+                            class="landing-card__popover__options__option"
+                            ng-click="landingCard.openInsightShare()"
+                        >
+                            <i class="fa fa-share smss-color--primary"></i>
+                            <span>Share</span>
+                        </li>
+                        <li
+                            class="landing-card__popover__options__option"
+                            ng-click="landingCard.openInsightDelete()"
+                            ng-if="landingCard.insight.permission && landingCard.insight.permission !== 3"
+                        >
+                            <i class="fa fa-trash-o smss-color--primary"></i>
+                            <span>Delete</span>
+                        </li>
+                    </ul>
+                </smss-popover-content>
+            </smss-btn>
+        </div>
+    </div>
+</div>

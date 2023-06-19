@@ -1,0 +1,43 @@
+@import '~theme';
+
+.metamodel-table {
+    &__tabs {
+        margin-bottom: get-spacing('md', 'rem');
+    }
+
+    &__auto-btn {
+        margin: get-spacing('sm', 'rem') 0;
+    }
+
+    &__input {
+        display: flex;
+        align-items: center;
+        & .smss-input {
+            flex: 1;
+            margin-right: get-spacing('sm', 'rem');
+        }
+    }
+
+    &__generated-desc {
+        display: flex;
+        align-items: flex-start;
+        margin: get-spacing('md', 'rem') get-spacing('sm', 'rem');
+
+        & label {
+            flex-shrink: 0;
+            width: auto;
+        }
+
+        & textarea {
+            height: auto;
+        }
+    }
+
+    &__message {
+        margin-bottom: get-spacing('md', 'rem');
+    }
+
+    & .smss-overlay__wrapper {
+        height: 80%;
+    }
+}

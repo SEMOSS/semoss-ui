@@ -1,0 +1,163 @@
+<div class="pipeline-existing-insights">
+    <loading-screen
+        model="pipelineExistingInsight.search.loading"
+    ></loading-screen>
+
+    <div class="smss-spacing pipeline-existing-insights__top">
+        <smss-field class="pipeline-existing-insights__top__filter">
+            <label></label>
+            <content>
+                <smss-dropdown
+                    model="pipelineExistingInsight.tag.selected"
+                    options="pipelineExistingInsight.tag.options"
+                    display="tag"
+                    value="tag"
+                    change="pipelineExistingInsight.filterInsights(pipelineExistingInsight.tag.selected)"
+                    compact
+                >
+                </smss-dropdown>
+            </content>
+        </smss-field>
+
+        <smss-field
+            class="pipeline-existing-insights__top__input pipeline-existing-insights__top__input--app"
+        >
+            <label>Selected Project:</label>
+            <content>
+                <app-list-dropdown
+                    class="smss-dropdown--bordered"
+                    model="pipelineExistingInsight.app"
+                    change="pipelineExistingInsight.getInsights(true)"
+                >
+                </app-list-dropdown>
+            </content>
+        </smss-field>
+
+        <smss-field
+            class="smss-left pipeline-existing-insights__top__input pipeline-existing-insights__top__input--search"
+        >
+            <label></label>
+            <content>
+                <smss-search
+                    class="smss-left pipeline-existing-insights__top__input pipeline-existing-insights__top__input--search"
+                    placeholder="Search insights..."
+                    model="pipelineExistingInsight.search.input"
+                    change="pipelineExistingInsight.searchInsights()"
+                    autofocus
+                >
+                </smss-search>
+            </content>
+        </smss-field>
+        <smss-field class="pipeline-existing-insights__top__btn">
+            <label></label>
+            <content>
+                <smss-btn
+                    class="smss-btn--icon"
+                    ng-disabled="!pipelineExistingInsight.search.input"
+                    title="Show a suggested insight"
+                    ng-click="pipelineExistingInsight.getNLPSuggestedInsights()"
+                >
+                    <i class="fa fa-bar-chart"></i>
+                </smss-btn>
+            </content>
+        </smss-field>
+    </div>
+
+    <smss-scroll
+        static-x="true"
+        id="pipeline-existing-insights__content"
+        class="pipeline-existing-insights__content"
+    >
+        <div
+            class="smss-caption--center"
+            ng-if="pipelineExistingInsight.search.results.length === 0"
+        >
+            No insights, please try again.
+        </div>
+        <div class="pipeline-existing-insights__content__cards">
+            <div
+                class="smss-card-grid pipeline-existing-insights__content__cards__card"
+                ng-class="{'smss-card-grid--selected': insight.app_insight_id === pipelineExistingInsight.selectedInsight.app_insight_id}"
+                ng-repeat="insight in pipelineExistingInsight.search.results track by insight.app_insight_id"
+                title="Open {{::insight.name}}"
+                ng-click="pipelineExistingInsight.createViz(insight, true)"
+            >
+                <div class="smss-card-grid__top">
+                    <div class="smss-card-grid__top__image">
+                        <img ng-src="{{insight.image}}" alt="Insight Image" />
+                    </div>
+                    <div class="smss-card-grid__top__tags">
+                        <smss-tag
+                            ng-repeat="tag in insight.tags track by $index"
+                            title="Filter by {{tag}}"
+                            class="smss-tag--compact"
+                            label="tag"
+                            ng-click="$event.stopPropagation(); pipelineExistingInsight.filterInsights(tag);"
+                        >
+                        </smss-tag>
+                    </div>
+                </div>
+                <div class="smss-card-grid__content">
+                    <div class="smss-card-grid__content__top">
+                        <h5
+                            class="smss-card-grid__content__top__title"
+                            title="{{::insight.name}}"
+                        >
+                            {{::insight.name}}
+                        </h5>
+                        <!-- TO DO: Favorite-->
+                        <div class="smss-card-grid__content__top__favorite">
+                            <!-- <smss-btn class="smss-btn--icon">
+                                <i class="fa fa-star"></i>
+                            </smss-btn>
+                            <smss-btn class="smss-btn--icon">
+                                <i class="fa fa-star-o"></i>
+                            </smss-btn> -->
+                        </div>
+                    </div>
+                    <div
+                        class="smss-card-grid__content__description"
+                        title="{{::insight.description}}"
+                    >
+                        {{::insight.description}}
+                    </div>
+                </div>
+                <div class="smss-card-grid__footer">
+                    <!-- TO DO: Users -->
+                    <!-- <div class="smss-card-grid__footer__users">
+                        <span class="smss-card-grid__footer__users__user">U1</span>
+                        <span class="smss-card-grid__footer__users__user">U2</span>
+                        <span class="smss-card-grid__footer__users__user">U3</span>
+                    </div> -->
+                    <div class="smss-card-grid__footer__caption">
+                        <i class="fa fa-folder-o"></i>
+                        {{::insight.app_name}}
+                    </div>
+                    <!-- TO DO: Database name -->
+                    <!-- <div class="smss-card-grid__footer__caption">
+                        <i class="fa fa-database"></i>
+                        Database
+                    </div> -->
+                </div>
+            </div>
+        </div>
+    </smss-scroll>
+    <div class="smss-action smss-clear pipeline-existing-insights__actions">
+        <smss-btn
+            class="smss-btn--text"
+            ng-click="pipelineComponentCtrl.closeComponent()"
+        >
+            Cancel
+        </smss-btn>
+        <!-- <smss-btn ng-click="pipelineExistingInsight.preview(pipelineExistingInsight.selectedInsight)">
+            Preview
+        </smss-btn> -->
+        <!-- one day we will build pipeline -->
+        <!-- <smss-btn ng-click="pipelineExistingInsight.createViz(pipelineExistingInsight.selectedInsight, false)">
+            Import
+        </smss-btn> -->
+        <!-- <smss-btn ng-click="pipelineExistingInsight.createViz(pipelineExistingInsight.selectedInsight, true)">
+            Visualize
+        </smss-btn> -->
+    </div>
+</div>

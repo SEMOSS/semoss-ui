@@ -1,0 +1,153 @@
+<smss-overlay
+    class="metamodel-relationships"
+    size="lg"
+    open="metamodelRelationships.open"
+    hide="metamodelRelationships.cancelRelationship()"
+>
+    <smss-overlay-header>Edit Relationships</smss-overlay-header>
+    <smss-overlay-body>
+        <smss-field>
+            <label> Add a New Relationship: </label>
+            <content>
+                <div class="metamodel-relationships__join">
+                    <p class="metamodel-relationships__join__text">Join</p>
+                    <smss-dropdown
+                        class="metamodel-relationships__join__dropdown metamodel-relationships__join__dropdown--margin"
+                        ng-class="{'metamodel-relationships__join__dropdown--no-margin': metamodelRelationships.type === 'GRAPH'}"
+                        display="alias"
+                        value="table"
+                        model="metamodelRelationships.relationshipInformation.new.fromTable"
+                        options="metamodelRelationships.relationshipInformation.tableMapping"
+                        change="metamodelRelationships.checkNewRelationship()"
+                        placeholder="Select Table"
+                    >
+                    </smss-dropdown>
+                    <smss-dropdown
+                        class="metamodel-relationships__join__dropdown"
+                        ng-if="metamodelRelationships.type !== 'GRAPH'"
+                        display="alias"
+                        value="column"
+                        model="metamodelRelationships.relationshipInformation.new.fromColumn"
+                        options="metamodelRelationships.relationshipInformation.columnMapping[metamodelRelationships.relationshipInformation.new.fromTable]"
+                        change="metamodelRelationships.checkNewRelationship()"
+                        placeholder="Select Column"
+                    >
+                    </smss-dropdown>
+                    <p class="metamodel-relationships__join__text">On</p>
+                    <smss-dropdown
+                        class="metamodel-relationships__join__dropdown metamodel-relationships__join__dropdown--margin"
+                        ng-class="{'metamodel-relationships__join__dropdown--no-margin': metamodelRelationships.type === 'GRAPH'}"
+                        model="metamodelRelationships.relationshipInformation.new.toTable"
+                        display="alias"
+                        value="table"
+                        options="metamodelRelationships.relationshipInformation.tableMapping"
+                        change="metamodelRelationships.checkNewRelationship()"
+                        placeholder="Select Table"
+                    >
+                    </smss-dropdown>
+                    <smss-dropdown
+                        class="metamodel-relationships__join__dropdown"
+                        ng-if="metamodelRelationships.type !== 'GRAPH'"
+                        display="alias"
+                        value="column"
+                        model="metamodelRelationships.relationshipInformation.new.toColumn"
+                        options="metamodelRelationships.relationshipInformation.columnMapping[metamodelRelationships.relationshipInformation.new.toTable]"
+                        change="metamodelRelationships.checkNewRelationship()"
+                        placeholder="Select Column"
+                    >
+                    </smss-dropdown>
+                    <div class="metamodel-relationships__join__spacer"></div>
+                </div>
+            </content>
+        </smss-field>
+        <div class="smss-action">
+            <smss-btn
+                ng-disabled="!metamodelRelationships.relationshipInformation.new.valid"
+                ng-click="metamodelRelationships.addRelationship();"
+                class="smss-btn--outline"
+            >
+                Add Join
+            </smss-btn>
+        </div>
+        <smss-field>
+            <label> Existing Relationship(s): </label>
+            <content>
+                <div
+                    class="metamodel-relationships__join"
+                    ng-repeat="rel in metamodelRelationships.relationshipInformation.relationships track by $index"
+                >
+                    <p class="metamodel-relationships__join__text">Join</p>
+                    <smss-dropdown
+                        class="metamodel-relationships__join__dropdown metamodel-relationships__join__dropdown--margin"
+                        ng-class="{'metamodel-relationships__join__dropdown--no-margin': metamodelRelationships.type === 'GRAPH'}"
+                        model="rel.fromTable"
+                        display="alias"
+                        value="table"
+                        options="metamodelRelationships.relationshipInformation.tableMapping"
+                        change="metamodelRelationships.checkTableRelationship($index, 'from');"
+                        placeholder="Select Table"
+                    >
+                    </smss-dropdown>
+                    <smss-dropdown
+                        ng-if="metamodelRelationships.type !== 'GRAPH'"
+                        class="metamodel-relationships__join__dropdown"
+                        display="alias"
+                        value="column"
+                        model="rel.fromColumn"
+                        options="metamodelRelationships.relationshipInformation.columnMapping[rel.fromTable]"
+                        placeholder="Select Column"
+                    >
+                    </smss-dropdown>
+                    <p class="metamodel-relationships__join__text">On</p>
+                    <smss-dropdown
+                        class="metamodel-relationships__join__dropdown metamodel-relationships__join__dropdown--margin"
+                        ng-class="{'metamodel-relationships__join__dropdown--no-margin': metamodelRelationships.type === 'GRAPH'}"
+                        model="rel.toTable"
+                        display="alias"
+                        value="table"
+                        options="metamodelRelationships.relationshipInformation.tableMapping"
+                        change="metamodelRelationships.checkTableRelationship($index, 'to')"
+                        placeholder="Select Table"
+                    >
+                    </smss-dropdown>
+                    <smss-dropdown
+                        ng-if="metamodelRelationships.type !== 'GRAPH'"
+                        class="metamodel-relationships__join__dropdown"
+                        display="alias"
+                        value="column"
+                        model="rel.toColumn"
+                        options="metamodelRelationships.relationshipInformation.columnMapping[rel.toTable]"
+                        placeholder="Select Column"
+                    >
+                    </smss-dropdown>
+                    <smss-btn
+                        class="smss-btn--icon metamodel-relationships__join__btn"
+                        ng-click="metamodelRelationships.deleteRelationship($index);"
+                    >
+                        <i class="fa fa-times smss-color--error" />
+                    </smss-btn>
+                </div>
+                <div
+                    class="smss-caption--center smss-spacing"
+                    ng-if="metamodelRelationships.relationshipInformation.relationships.length == 0"
+                >
+                    No relationships currently exist. Add a new one above.
+                </div>
+            </content>
+        </smss-field>
+    </smss-overlay-body>
+    <smss-overlay-footer>
+        <smss-btn
+            class="smss-btn--text"
+            ng-click="metamodelRelationships.cancelRelationship();"
+        >
+            Cancel
+        </smss-btn>
+        <smss-btn
+            ng-disabled="!metamodelRelationships.relationshipInformation.valid"
+            ng-click="metamodelRelationships.saveRelationship()"
+        >
+            Save
+        </smss-btn>
+    </smss-overlay-footer>
+</smss-overlay>

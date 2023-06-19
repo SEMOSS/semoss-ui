@@ -1,0 +1,275 @@
+<smss-overlay
+    class="metamodel-column"
+    size="lg"
+    open="metamodelColumn.open"
+    hide="metamodelColumn.closeColumn()"
+>
+    <smss-overlay-header
+        >Edit {{metamodelColumn.column.column}}</smss-overlay-header
+    >
+    <smss-overlay-body>
+        <smss-tab-group class="metamodel-column__tabs">
+            <smss-tab
+                ng-click="metamodelColumn.setColumnGroup('Settings')"
+                ng-class="{'smss-tab--selected': metamodelColumn.group === 'Settings'}"
+            >
+                Settings
+            </smss-tab>
+            <smss-tab
+                ng-click="metamodelColumn.setColumnGroup('Description')"
+                ng-class="{'smss-tab--selected': metamodelColumn.group === 'Description'}"
+            >
+                Description
+            </smss-tab>
+            <smss-tab
+                ng-click="metamodelColumn.setColumnGroup('Logical Names')"
+                ng-class="{'smss-tab--selected': metamodelColumn.group === 'Logical Names'}"
+            >
+                Logical Names
+            </smss-tab>
+            <smss-tab
+                ng-click="metamodelColumn.setColumnGroup('Sample Instances')"
+                ng-class="{'smss-tab--selected': metamodelColumn.group === 'Sample Instances'}"
+            >
+                Sample Instances
+            </smss-tab>
+        </smss-tab-group>
+        <div ng-if="metamodelColumn.group === 'Settings'">
+            <smss-field>
+                <label> Edit Alias: </label>
+                <content>
+                    <smss-input
+                        ng-model="metamodelColumn.updatedColumn.alias"
+                    ></smss-input>
+                </content>
+            </smss-field>
+            <smss-field>
+                <label> Select a Data Type: </label>
+                <content>
+                    <smss-dropdown
+                        change="metamodelColumn.setSelectedFormat()"
+                        display="display"
+                        options="metamodelColumn.format.options"
+                        model="metamodelColumn.format.selectedOption"
+                    ></smss-dropdown>
+                </content>
+            </smss-field>
+            <smss-field
+                ng-if="metamodelColumn.format.selectedOption.formats.length > 0"
+            >
+                <label> Select a Format: </label>
+                <content>
+                    <smss-dropdown
+                        change="metamodelColumn.setFormatOptions()"
+                        display="display"
+                        options="metamodelColumn.format.selectedOption.formats"
+                        model="metamodelColumn.format.selectedOption.selectedFormat"
+                    ></smss-dropdown>
+                </content>
+                <description
+                    class="smss-small smss-color--low-emphasis"
+                    ng-if="metamodelColumn.format.selectedOption.value === 'DATE' && !metamodelColumn.appId"
+                >
+                    <i
+                        >Please select the format that
+                        <b>matches your data</b></i
+                    >
+                </description>
+            </smss-field>
+            <div
+                class="metamodel-column__custom"
+                ng-if="metamodelColumn.format.selectedOption.selectedFormat.value === 'Custom'"
+            >
+                <div ng-switch="metamodelColumn.format.selectedOption.value">
+                    <div
+                        ng-switch-when="INT|DOUBLE"
+                        ng-switch-when-separator="|"
+                    >
+                        <smss-field>
+                            <label>Prepend Value to Label</label>
+                            <content>
+                                <smss-input
+                                    type="text"
+                                    ng-model="metamodelColumn.formatOptions.prepend"
+                                ></smss-input>
+                            </content>
+                        </smss-field>
+
+                        <smss-field>
+                            <label>Append Value to Label</label>
+                            <content>
+                                <smss-input
+                                    type="text"
+                                    ng-model="metamodelColumn.formatOptions.append"
+                                ></smss-input>
+                            </content>
+                        </smss-field>
+
+                        <smss-field
+                            ng-if="metamodelColumn.format.selectedOption.value === 'DOUBLE'"
+                        >
+                            <label>Round to # of Decimal Places: </label>
+                            <content>
+                                <smss-input
+                                    ng-model="metamodelColumn.formatOptions.round"
+                                    type="number"
+                                    min="1"
+                                ></smss-input>
+                            </content>
+                        </smss-field>
+
+                        <smss-field>
+                            <label>Large Number Format</label>
+                            <content>
+                                <smss-dropdown
+                                    display="display"
+                                    value="value"
+                                    model="metamodelColumn.formatOptions.type"
+                                    options="metamodelColumn.customOptions.type"
+                                >
+                                </smss-dropdown>
+                            </content>
+                        </smss-field>
+
+                        <smss-field>
+                            <label>Number Delimiter</label>
+                            <content>
+                                <smss-dropdown
+                                    model="metamodelColumn.formatOptions.delimiter"
+                                    display="display"
+                                    value="value"
+                                    options="metamodelColumn.customOptions.delimiter"
+                                ></smss-dropdown>
+                            </content>
+                        </smss-field>
+                    </div>
+                    <div
+                        ng-switch-when="DATE|TIMESTAMP"
+                        ng-switch-when-separator="|"
+                    >
+                        <smss-field
+                            ng-if="metamodelColumn.format.selectedOption.selectedFormat.value === 'Custom'"
+                        >
+                            <label>
+                                Enter Format as Java Date Format Notation:
+                            </label>
+                            <content>
+                                <smss-input
+                                    ng-model="metamodelColumn.formatOptions.date"
+                                ></smss-input>
+                                <!--"metamodelColumn.formatOptions.date"-->
+                            </content>
+                        </smss-field>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div ng-if="metamodelColumn.group === 'Description'">
+            <smss-field>
+                <label> Edit Description: </label>
+                <content>
+                    <smss-textarea
+                        ng-model="metamodelColumn.updatedColumn.description"
+                    ></smss-textarea>
+                </content>
+            </smss-field>
+            <div class="smss-spacing smss-clear">
+                <smss-btn
+                    class="smss-left smss-btn--outline"
+                    ng-disabled="!metamodelColumn.appId"
+                    ng-click="metamodelColumn.predictDescription()"
+                >
+                    Predict
+                </smss-btn>
+            </div>
+        </div>
+        <div ng-if="metamodelColumn.group === 'Logical Names'">
+            <smss-field>
+                <label> Current Logical Name(s): </label>
+                <content>
+                    <table>
+                        <tr>
+                            <th>Name</th>
+                            <th class="smss--icon"></th>
+                        </tr>
+                        <tr
+                            ng-repeat="logical in metamodelColumn.updatedColumn.logical track by $index"
+                            title="{{logical}}"
+                        >
+                            <td>{{logical}}</td>
+                            <td>
+                                <smss-btn
+                                    class="smss-btn--icon"
+                                    ng-click="metamodelColumn.removeLogical($index)"
+                                >
+                                    <i class="fa fa-trash-o"></i>
+                                </smss-btn>
+                            </td>
+                        </tr>
+                    </table>
+                </content>
+            </smss-field>
+            <smss-field>
+                <label> Enter New Logical Name: </label>
+                <content class="metamodel-column__logical-new">
+                    <smss-input
+                        ng-model="metamodelColumn.newLogical"
+                        ng-keydown="$event.keyCode === 13 && metamodelColumn.addLogical()"
+                    ></smss-input>
+                    <smss-btn
+                        class="smss-btn--icon smss-color--success"
+                        ng-disabled="!metamodelColumn.newLogical"
+                        ng-click="metamodelColumn.addLogical()"
+                    >
+                        <i class="fa fa-plus"></i>
+                    </smss-btn>
+                </content>
+            </smss-field>
+            <div class="smss-spacing smss-clear">
+                <smss-btn
+                    class="smss-left smss-btn--outline"
+                    ng-disabled="!metamodelColumn.appId"
+                    ng-click="metamodelColumn.predictLogical()"
+                >
+                    Predict
+                </smss-btn>
+            </div>
+        </div>
+        <div ng-if="metamodelColumn.group === 'Sample Instances'">
+            <smss-search
+                model="metamodelColumn.instances.search"
+                change="metamodelColumn.filterInstances()"
+            >
+            </smss-search>
+            <smss-list
+                class="metamodel-column__instances"
+                ng-show="metamodelColumn.instances.options.length > 0"
+                options="metamodelColumn.instances.options"
+                loading="metamodelColumn.instances.loading"
+                scroll="metamodelColumn.getMoreInstances()"
+                multiple
+            >
+            </smss-list>
+            <div
+                class="smss-caption--center"
+                ng-show="metamodelColumn.instances.options.length === 0"
+            >
+                No Instances
+            </div>
+        </div>
+    </smss-overlay-body>
+    <smss-overlay-footer>
+        <smss-btn
+            ng-click="metamodelColumn.closeColumn()"
+            class="smss-btn--text"
+        >
+            Cancel
+        </smss-btn>
+        <smss-btn
+            ng-disabled="!metamodelColumn.updatedColumn.alias"
+            ng-click="metamodelColumn.saveColumn()"
+        >
+            Save
+        </smss-btn>
+    </smss-overlay-footer>
+</smss-overlay>

@@ -1,0 +1,79 @@
+<div class="grid12">
+    <hr style="margin: 10px 0px 10px 0px;"/>
+</div>
+
+<!--slider for filtering data-->
+<div class="grid12">
+    <div class="tool-slider">
+        <div class="slider-title">Filter by Value</div>
+        <div class="pull-left sm-font">{{heatmapTools.valueMin}}</div>
+        <div class="pull-right sm-font">{{heatmapTools.valueMax}}</div>
+        <div class="clearfix"></div>
+        <slider ng-if="heatmapTools.createValueSlider" id="slider" ng-model="heatmapTools.sliderValue" value="10"
+                range="true" min="heatmapTools.valueMin" max="heatmapTools.valueMax" step="1"
+                ng-change="heatmapTools.updateValue(heatmapTools.sliderValue)">
+        </slider>
+    </div>
+</div>
+
+<div class="grid12">
+    <hr style="margin: 10px 0px 10px 0px;"/>
+</div>
+
+<!--slider for number of buckets-->
+<div class="grid12">
+    <div class="tool-slider">
+        <div class="slider-title">Number of Buckets</div>
+        <div class="pull-left sm-font">1</div>
+        <div class="pull-right sm-font">10</div>
+        <div class="clearfix"></div>
+        <slider id="sensitivitySlider{{heatmapTools.containerClass}}" ng-model="heatmapTools.sensitivityValue"
+                value="10" min="1"
+                step='1' max="10" ng-change="heatmapTools.updateSensitivity(heatmapTools.sensitivityValue)">
+        </slider>
+    </div>
+</div>
+
+<div class="grid12">
+    <hr style="margin: 10px 0px 10px 0px;"/>
+</div>
+
+<div class="grid12">
+    <p><b> Choose a color palette </b></p>
+    <div class="sm-right-margin" ng-repeat="colorPanel in heatmapTools.colorPanels track by $index">
+        <div class="xs-padding inline full-width xs-margin pointer-cursor"
+             ng-click="heatmapTools.color = colorPanel.name; heatmapTools.changeColor(heatmapTools.color);"
+             ng-class="{'color-chips-chosen': heatmapTools.color === colorPanel.name}">
+            <div class="color-chips-name sm-right-margin md-left-margin">{{colorPanel.displayName}}</div>
+            <div class="inline pull-right md-right-margin" style="vertical-align: bottom">
+                <div class="rectangle pull-left" style="background-color:{{colorPanel.colors[0]}};"></div>
+                <div class="rectangle pull-left" style="background-color:{{colorPanel.colors[3]}};"></div>
+                <div class="rectangle pull-left" style="background-color:{{colorPanel.colors[6]}};"></div>
+                <div class="rectangle pull-left" style="background-color:{{colorPanel.colors[9]}};"></div>
+                <div class="rectangle pull-left" style="background-color:{{colorPanel.colors[12]}};"></div>
+                <div class="rectangle pull-left" style="background-color:{{colorPanel.colors[15]}};"></div>
+                <div class="rectangle pull-left" style="background-color:{{colorPanel.colors[18]}};"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!--filtering quantile/quantize-->
+<div class="md-tabs cust-tabs full-width pointer-cursor md-top-margin" ng-click="heatmapTools.toggleQuantile();">
+    <a class="" ng-class="{'tab-selected': !heatmapTools.isQuantileTrue()}">Filter Quantize</a>
+    <a class="" ng-class="{'tab-selected': heatmapTools.isQuantileTrue()}">Filter Quantile</a>
+    <div class="cust-tabs-toggle" ng-class="{'tab-selected': !heatmapTools.isQuantileTrue()}"></div>
+</div>
+<!--<div class="md-tabs cust-tabs full-width pointer-cursor md-top-margin" ng-click="heatmapTools.toggleQuantile(); standard = !standard;" >-->
+<!--<a class="" ng-class="{'tab-selected': standard}"  ng-init="standard = true">Filter Quantize</a>-->
+<!--<a class=""  ng-class="{'tab-selected': !standard}" >Filter Quantile</a>-->
+<!--<div class="cust-tabs-toggle" ng-class="{'tab-selected': standard}"></div>-->
+<!--</div>-->
+<!-- <button id="quantile{{heatmaptools.containerClass}}" type="button" class="btn-half btn-light pull-left"
+        data-toggle="tooltip" data-placement="bottom"
+        title="Quantized: Linear Scale Bucketing&#10;Quantile: Percentile Bucketing"
+        ng-click="heatmaptools.broadcastControl('togglequantile')">Filter Quantiles</button>
+ -->
+<div class="sys-dup-tools" ng-if="toolPanelCtrl.selectedData.layout === 'SystemSimilarity'">
+    <sysduptools></sysduptools>
+</div>

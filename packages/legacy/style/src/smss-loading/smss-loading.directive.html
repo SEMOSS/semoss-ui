@@ -1,0 +1,70 @@
+<div ng-show="smssLoading.model" class="smss-loading">
+    <smss-btn
+        class="smss-btn--icon smss-loading__times"
+        ng-click="smssLoading.closeScreen();"
+    >
+        <i class="fa fa-times"></i>
+    </smss-btn>
+    <div class="smss-loading__box">
+        <div class="smss-loading__chart">
+            <div
+                class="smss-loading__chart__bar smss-loading__chart__bar--1"
+            ></div>
+            <div
+                class="smss-loading__chart__bar smss-loading__chart__bar--2"
+            ></div>
+            <div
+                class="smss-loading__chart__bar smss-loading__chart__bar--3"
+            ></div>
+            <div
+                class="smss-loading__chart__bar smss-loading__chart__bar--4"
+            ></div>
+            <div
+                class="smss-loading__chart__bar smss-loading__chart__bar--5"
+            ></div>
+            <div
+                class="smss-loading__chart__bar smss-loading__chart__bar--6"
+            ></div>
+        </div>
+        <div ng-if="smssLoading.messages.length === 0">
+            <h5 class="smss-loading__title">Loading....</h5>
+        </div>
+        <div ng-if="smssLoading.messages.length > 0">
+            <h5
+                class="smss-loading__title"
+                title="{{smssLoading.messages[smssLoading.messages.length - 1]}}"
+            >
+                {{smssLoading.messages[smssLoading.messages.length - 1]}}
+            </h5>
+            <div class="smss-loading__container">
+                <div
+                    id="smss-loading__container__scroll"
+                    class="smss-loading__container__scroll"
+                    ng-class="{'smss-loading__container__scroll--closed': !smssLoading.list}"
+                    ng-show="smssLoading.messages.length > 1"
+                >
+                    <div
+                        class="smss-text"
+                        title="{{message}}"
+                        ng-show="$index > 0"
+                        ng-repeat="message in smssLoading.messages | reverse:true track by $index"
+                    >
+                        <span class="smss-small smss-color--low-emphasis">
+                            {{message}}
+                        </span>
+                    </div>
+                    <smss-btn
+                        class="smss-btn--icon smss-loading__container__btn"
+                        ng-show="smssLoading.messages.length > 2"
+                        ng-click="smssLoading.list = !smssLoading.list"
+                    >
+                        <i
+                            class="fa"
+                            ng-class="{'fa-chevron-up': smssLoading.list, 'fa-chevron-down':!smssLoading.list}"
+                        ></i>
+                    </smss-btn>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

@@ -1,0 +1,24 @@
+<div
+    class="smss-alert"
+    ng-class="{
+         'smss-alert--success': smssAlert.color === 'success',
+         'smss-alert--warn': smssAlert.color === 'warn',
+         'smss-alert--error': smssAlert.color === 'error',
+         'smss-alert--inline': smssAlert.inline
+        }"
+    ng-if="smssAlert.model"
+>
+    <div class="smss-alert__icon"></div>
+    <div
+        class="smss-alert__content"
+        ng-class="{'smss-alert__content--closable': smssAlert.closeable}"
+    >
+        <span ng-transclude="label"></span>
+    </div>
+    <div
+        class="smss-alert__times"
+        ng-show="smssAlert.closeable"
+        ng-click="smssAlert.close()"
+    ></div>
+    <div class="smss-clear"></div>
+</div>

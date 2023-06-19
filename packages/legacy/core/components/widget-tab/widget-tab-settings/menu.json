@@ -1,0 +1,7 @@
+[
+    {
+        "name": "Panel Settings",
+        "widgets": ["panel-settings"],
+        "height": 100
+    }
+]

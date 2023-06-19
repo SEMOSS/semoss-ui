@@ -1,0 +1,38 @@
+<smss-scroll static-x="true">
+    <smss-field>
+        <label> Choose a Color Palette: </label>
+        <content> </content>
+    </smss-field>
+    <div class="smss-clear">
+        <smss-field
+            class="smss-left color-scheme__group"
+            ng-repeat="panel in colorScheme.colorPanels track by $index"
+        >
+            <label> {{panel.displayName}} </label>
+            <content>
+                <smss-btn
+                    class="color-scheme__chips"
+                    ng-click="colorScheme.colorName = panel.colors;"
+                    ng-class="{'color-scheme__chips--selected': colorScheme.colorName === panel.colors}"
+                >
+                    <div class="color-scheme__chips__group">
+                        <div
+                            class="color-scheme__chips__group__options"
+                            title="{{color}}"
+                            ng-repeat="color in panel.colors"
+                            ng-style="{'background-color':color};"
+                        ></div>
+                    </div>
+                </smss-btn>
+            </content>
+        </smss-field>
+    </div>
+    <div class="smss-action">
+        <smss-btn ng-click="colorScheme.resetColor()" class="smss-btn--text">
+            Reset
+        </smss-btn>
+        <smss-btn ng-click="colorScheme.updateColor(colorScheme.colorName);">
+            Execute
+        </smss-btn>
+    </div>
+</smss-scroll>

@@ -1,0 +1,133 @@
+@import '~theme';
+// Have to use the actual color code (not the css variable)
+$primary: map-get($color, 'primary-100');
+$border: map-get($color, 'grey-5');
+$default-bg: map-get($color, 'white');
+$light-bg: map-get($color, 'grey-6');
+
+// AG-GRID VARIABLE OVERRIDES
+// General styles
+$primary-color: $primary;
+$accent-color: $primary;
+$background-color: $default-bg; // Note: this will override the $background-color map (cannot use get-background-color())
+$odd-row-background-color: $light-bg;
+$border-color: $border; // Note: this will override the $border-color map (cannot use get-border-color())
+$hover-color: $border;
+// Font styles
+$font-family: $font-family;
+$font-size: get-font-size('body-regular', 'rem');
+$font-weight: get-font-weight('regular');
+$foreground-color: get-text-color('high-emphasis');
+$secondary-font-family: $font-family;
+// Header styles
+$header-background-color: $light-bg;
+$header-foreground-color: get-text-color('medium-emphasis');
+$spacing: to-px(get-spacing('sm', 'em'));
+$height: to-px(get-height('sm', 'em'));
+
+@import '~ag-grid-community/src/styles/ag-grid.scss';
+@import '~ag-grid-community/src/styles/ag-theme-balham/sass/ag-theme-balham.scss';
+
+#chart-container.grid-delta {
+    height: calc(100% - 113px);
+    left: 0;
+    padding: 0 $spacing;
+    font-feature-settings: 'tnum' on, 'lnum' on;
+}
+
+.grid-delta-top {
+    left: 0;
+    right: 0;
+    top: 0;
+    padding: 0 $spacing;
+}
+
+.grid-delta__actions {
+    display: flex;
+    padding: $spacing/2 0;
+
+    &__search {
+        flex-grow: 1;
+    }
+
+    & button i {
+        margin-right: $spacing/2;
+    }
+}
+
+.grid-delta-top .smss-dropdown {
+    float: left;
+    width: 50%;
+}
+
+.grid-delta-bottom {
+    padding: 0 $spacing;
+    position: absolute;
+    display: flex;
+    justify-content: space-between;
+    left: 0;
+    right: 0;
+    bottom: $spacing/2;
+
+    &__side {
+        width: 200px;
+
+        & button i {
+            margin-right: $spacing/2;
+        }
+
+        &--right {
+            & button {
+                float: right;
+            }
+        }
+    }
+}
+
+.grid-delta-insert {
+    display: inline-block;
+    width: 100%;
+    margin-bottom: $spacing;
+}
+
+.grid-delta-insert div {
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    overflow: hidden;
+}
+
+.grid-delta-insert:nth-child(3n + 2) {
+    /* middle ones. 3 per row*/
+    padding-left: 0.5%;
+    padding-right: 0.5%;
+}
+
+.grid-delta-row-num {
+    display: inline-block;
+    width: 350px;
+}
+
+.grid-delta-save-enter {
+    position: relative;
+    top: $spacing;
+    display: inline-block;
+    width: 150px;
+}
+
+.grid-delta-search {
+    position: relative;
+}
+
+.grid-delta-search-navigator {
+    position: absolute;
+    right: calc(#{to-px(get-width('icon', 'rem')) + $spacing});
+    bottom: $spacing/2;
+}
+
+.grid-delta-search .fa {
+    outline: none;
+}
+
+.grid-delta-invalid {
+    color: #ba2828;
+}

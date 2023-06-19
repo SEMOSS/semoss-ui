@@ -1,0 +1,7 @@
+@import '~theme';
+.alignment-container {
+    &__box {
+        margin: get-spacing('sm', 'em') 0;
+        border: 1px solid get-border-color('default');
+    }
+}

@@ -1,0 +1,18 @@
+@import '~theme';
+
+.export-external {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+
+    &__scroll {
+        flex: 1;
+    }
+
+    &__compiler {
+        & .widget-compiler {
+            padding: 0;
+            height: auto;
+        }
+    }
+}

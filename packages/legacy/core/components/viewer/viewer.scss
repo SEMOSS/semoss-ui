@@ -1,0 +1,35 @@
+@import '~theme';
+
+.viewer {
+    position: absolute;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    background: get-background-color('light');
+    overflow: hidden;
+
+    &__content {
+        height: 100%;
+        width: 100%;
+    }
+
+    &__watermark {
+        position: absolute;
+        height: get-height('default', 'rem');
+        bottom: 0;
+        right: 0;
+        background: get-background-color('default');
+        padding: get-spacing('sm', 'em') / 4 get-spacing('sm', 'em') / 2;
+
+        & a {
+            height: 100%;
+            display: inline-block;
+
+            & img {
+                height: 100%;
+                display: inline-block;
+            }
+        }
+    }
+}

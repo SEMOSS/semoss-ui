@@ -1,0 +1,32 @@
+<div>
+    <smss-field>
+        <label>Default</label>
+        <content>
+            <smss-search model="searchValue1"> </smss-search>
+        </content>
+    </smss-field>
+    <smss-field>
+        <label>Disabled</label>
+        <content>
+            <smss-search model="searchValue2" ng-disabled="searchDisabled">
+            </smss-search>
+        </content>
+    </smss-field>
+    <smss-field>
+        <label>Inline</label>
+        <content>
+            <smss-search model="searchValue3" inline> </smss-search>
+        </content>
+    </smss-field>
+    <smss-field>
+        <label>Disabled Inline</label>
+        <content>
+            <smss-search
+                model="searchValue2"
+                ng-disabled="searchDisabled"
+                inline
+            >
+            </smss-search>
+        </content>
+    </smss-field>
+</div>

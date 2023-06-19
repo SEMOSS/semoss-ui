@@ -1,0 +1,22 @@
+<label class="smss-checkbox" ng-class="{'smss-checkbox--disabled':disabled}">
+    <input
+        id="smss-checkbox__input"
+        class="smss-checkbox__input"
+        name="{{name}}"
+        tabindex="{{disabled ? -1: 0}}"
+        ng-disabled="disabled"
+        ng-required="required"
+        ng-keyup="keyup($event)"
+        ng-change="update()"
+        ng-model="model"
+        type="checkbox"
+    />
+    <span
+        class="smss-checkbox__mark"
+        ng-class="{'smss-checkbox__mark--checked': model}"
+    >
+    </span>
+    <div class="smss-checkbox__text">
+        <ng-transclude></ng-transclude>
+    </div>
+</label>

@@ -1,0 +1,14 @@
+@import '~theme';
+
+.import-app {
+    height: 100%;
+    width: 100%;
+    max-width: 70vw;
+    margin: auto;
+    display: flex;
+    flex-direction: column;
+
+    &__content {
+        flex: 1;
+    }
+}

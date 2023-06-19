@@ -1,0 +1,91 @@
+@import '~theme';
+$workbook-navigation: calc(#{get-height('default', 'rem')} + 1px);
+.workbook {
+    position: absolute;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    overflow: hidden;
+
+    &__sheet {
+        position: absolute;
+        top: 0;
+        right: 0;
+        bottom: $workbook-navigation;
+        left: 0;
+        padding: get-spacing('md', 'rem');
+        overflow: auto;
+    }
+
+    &__navigation {
+        position: absolute;
+        right: 0;
+        bottom: 0;
+        height: $workbook-navigation;
+        left: 0;
+        background: get-background-color('default');
+        border-top: 1px solid get-border-color('default');
+
+        &__scroller {
+            float: left;
+            display: flex;
+            height: 100%;
+            width: 80%;
+            overflow-x: hidden;
+            overflow-y: hidden;
+            white-space: nowrap;
+            padding: 0;
+            margin: 0;
+            list-style-type: none;
+
+            &:hover {
+                overflow-x: auto;
+            }
+
+            &--dragging {
+                background: get-background-color('default') !important;
+            }
+        }
+
+        &__tab {
+            align-items: center;
+            display: flex;
+        }
+
+        &__icon {
+            width: get-font-size('body-regular', 'rem');
+            margin-left: get-spacing('sm', 'rem');
+            flex-shrink: 0;
+        }
+
+        &__add {
+            background: get-background-color('divider');
+            color: get-text-color('low-emphasis') !important;
+            height: get-height('default', 'rem');
+            width: get-height('default', 'rem');
+            text-align: center;
+        }
+
+        &__settings {
+            margin-top: get-spacing('xs', 'rem');
+        }
+    }
+
+    &__popover {
+        &__content {
+            width: 500px;
+        }
+    }
+}
+
+.workbook .dndDraggingSource {
+    display: none;
+}
+
+.workbook .dndPlaceholder {
+    float: left;
+    height: 2rem;
+    width: 100px;
+    background: get-background-color('primary--hover');
+}

@@ -1,0 +1,159 @@
+<div class="terminal-file">
+    <div class="terminal-file__header">
+        <div class="terminal-file__header__scroller">
+            <smss-tab-group>
+                <smss-tab
+                    class="smss-tab--sheet"
+                    title="{{file.path}}"
+                    ng-repeat="file in terminalFile.files.options | orderBy:'id' track by $index"
+                    ng-class="{'smss-tab--selected': $index === terminalFile.files.selected}"
+                    ng-click="terminalFile.selectFile($index);"
+                >
+                    <span class="terminal-file__header__tab">
+                        <span class="terminal-file__header__tab__text">
+                            {{file.name}}
+                            <span ng-show="file.content !== file.updated">
+                                *
+                            </span>
+                        </span>
+                        <i
+                            class="fa fa-times"
+                            title="Delete"
+                            ng-click="$event.stopPropagation();terminalFile.closeFile($index);"
+                        >
+                        </i>
+                    </span>
+                </smss-tab>
+                <smss-tab
+                    class="smss-tab--small smss-tab--sheet"
+                    ng-click="terminalFile.newFile()"
+                    title="Add New File"
+                >
+                    <i class="fa fa-plus"></i>
+                </smss-tab>
+            </smss-tab-group>
+        </div>
+    </div>
+
+    <div class="terminal-file__content">
+        <div class="terminal-file__content__background">
+            <img
+                ng-if="terminalFile.files.options[terminalFile.files.selected].ext === 'r'"
+                src="~images/R_logo.png"
+            />
+            <img
+                ng-if="terminalFile.files.options[terminalFile.files.selected].ext === 'py'"
+                src="~images/python-logo.png"
+            />
+            <img
+                ng-if="terminalFile.files.options[terminalFile.files.selected].ext === 'shell'"
+                src="~images/command-prompt.png"
+            />
+        </div>
+        <div
+            class="terminal-file__content__editor"
+            id="terminal-file__content__editor"
+        ></div>
+    </div>
+
+    <div class="terminal-file__footer" id="terminal-file__footer">
+        <div class="terminal-file__footer__flex-group">
+            <smss-btn
+                title="Download"
+                ng-disabled="!terminalFile.files.options[terminalFile.files.selected] || terminalFile.files.options[terminalFile.files.selected].new"
+                ng-click="terminalFile.downloadFile()"
+                class="smss-btn--icon"
+            >
+                <i class="fa fa-download"></i>
+            </smss-btn>
+            <smss-btn
+                title="Delete"
+                ng-disabled="!terminalFile.files.options[terminalFile.files.selected] || terminalFile.files.options[terminalFile.files.selected].new"
+                ng-click="terminalFile.deleteFile()"
+                class="smss-btn--left smss-btn--icon smss-color--error"
+            >
+                <i class="fa fa-trash"></i>
+            </smss-btn>
+        </div>
+
+        <div ng-if="terminalCtrl.location === 'pipeline'">
+            <smss-btn
+                class="smss-btn--text smss-btn--compact"
+                ng-click="pipelineComponentCtrl.closeComponent()"
+            >
+                Cancel
+            </smss-btn>
+            <smss-btn
+                class="smss-btn--outline smss-btn--compact"
+                ng-click="terminalFile.preview(false)"
+            >
+                Preview
+            </smss-btn>
+            <smss-btn
+                class="smss-btn--compact"
+                ng-click="terminalFile.execute(false)"
+            >
+                Execute
+            </smss-btn>
+            <smss-btn
+                class="smss-btn--compact"
+                ng-click="terminalFile.execute(true)"
+            >
+                Visualize
+            </smss-btn>
+        </div>
+
+        <smss-btn-group class="terminal-file__footer__group">
+            <smss-btn
+                class="smss-btn--icon smss-btn--compact"
+                ng-class="{'smss-btn--selected':terminalFile.files.options[terminalFile.files.selected].ext === 'pixel'}"
+                ng-click="terminalFile.files.options[terminalFile.files.selected].ext = 'pixel'"
+                title="Change file context to Pixel"
+            >
+                <i class="fa fa-code"></i>
+            </smss-btn>
+            <smss-btn
+                class="smss-btn--icon smss-btn--compact"
+                ng-class="{'smss-btn--selected':terminalFile.files.options[terminalFile.files.selected].ext === 'r'}"
+                ng-click="terminalFile.files.options[terminalFile.files.selected].ext = 'r'"
+                title="Change file context to R"
+            >
+                <img src="~images/R_logo.png" />
+            </smss-btn>
+            <smss-btn
+                class="smss-btn--icon smss-btn--compact"
+                ng-class="{'smss-btn--selected':terminalFile.files.options[terminalFile.files.selected].ext === 'py'}"
+                ng-click="terminalFile.files.options[terminalFile.files.selected].ext = 'py'"
+                title="Change file context to Python"
+            >
+                <img src="~images/python-logo.png" />
+            </smss-btn>
+            <smss-btn
+                class="smss-btn--icon smss-btn--compact"
+                ng-class="{'smss-btn--selected':terminalFile.files.options[terminalFile.files.selected].ext === 'shell'}"
+                ng-click="terminalFile.files.options[terminalFile.files.selected].ext = 'shell'"
+                title="Change file context to Shell"
+            >
+                <img src="~images/command-prompt.png" />
+            </smss-btn>
+        </smss-btn-group>
+
+        <div class="terminal-file__footer__flex-group">
+            <smss-btn
+                class="smss-btn--right smss-btn--outline smss-btn--compact"
+                ng-if="terminalCtrl.location !== 'pipeline'"
+                ng-click="terminalFile.runFile(false)"
+                ng-disabled="!terminalFile.files.options[terminalFile.files.selected].updated"
+            >
+                Run
+            </smss-btn>
+            <smss-btn
+                class="smss-btn--compact"
+                ng-click="terminalFile.openSave()"
+                ng-disabled="!terminalFile.files.options[terminalFile.files.selected].updated || terminalFile.files.options[terminalFile.files.selected].content === terminalFile.files.options[terminalFile.files.selected].updated"
+            >
+                Save
+            </smss-btn>
+        </div>
+    </div>
+</div>

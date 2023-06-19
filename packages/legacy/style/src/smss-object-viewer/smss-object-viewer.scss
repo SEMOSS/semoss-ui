@@ -1,0 +1,68 @@
+@import '~theme';
+
+$gutter-width: get-spacing('sm', 'em') * 2;
+
+.smss-object-viewer {
+    position: relative;
+    height: 100%;
+    width: 100%;
+    font-size: 1rem;
+    padding: get-spacing('sm', 'em');
+    border: 1px solid get-border-color('default');
+
+    &__content {
+        user-select: text;
+    }
+
+    &__seperator {
+        display: inline-block;
+        color: get-text-color('low-emphasis');
+        width: $gutter-width;
+        text-align: center;
+    }
+
+    &__expand {
+        display: inline-block;
+        width: $gutter-width;
+        text-align: center;
+        cursor: pointer;
+        outline: none;
+
+        &:hover {
+            background: get-background-color('primary--hover');
+        }
+    }
+
+    &__level {
+        position: relative;
+        padding-left: $gutter-width;
+
+        &__collapse {
+            position: absolute;
+            top: 0;
+            left: 0;
+            margin: 2px;
+            width: calc(#{$gutter-width} - 2 * 2px);
+            bottom: 0;
+            text-align: center;
+            cursor: pointer;
+            outline: none;
+
+            &:hover {
+                background: get-background-color('primary--hover');
+            }
+        }
+
+        &__key {
+            display: inline-block;
+            color: get-text-color('primary');
+            min-width: $gutter-width;
+            text-align: center;
+        }
+
+        &__inner {
+            padding-left: $gutter-width/2;
+            font-size: get-font-size('body-regular', 'rem');
+        }
+    }
+}

@@ -1,0 +1,149 @@
+@import '~theme';
+
+.smss-checklist {
+    --checklist-primary: #{get-background-color('primary')};
+
+    position: relative;
+    height: 100%;
+    font-size: 1rem;
+
+    &--short {
+        height: 200px;
+    }
+
+    &--disabled,
+    &:disabled,
+    &[disabled='disabled'] {
+        cursor: default;
+        pointer-events: none;
+        color: get-text-color('disabled') !important;
+        & .smss-search,
+        .smss-checklist__list {
+            background: get-background-color('disabled--light');
+        }
+
+        & .smss-checklist__list__options,
+        .smss-checklist__selectall,
+        .smss-checklist__input {
+            background: transparent;
+            color: get-text-color('disabled') !important;
+        }
+        & .smss-checkbox__mark {
+            background: get-background-color('disabled--light') !important;
+            &--checked {
+                border-color: get-border-color('disabled') !important;
+                background: get-background-color('disabled') !important;
+            }
+        }
+    }
+
+    &__selectall {
+        position: relative;
+        width: 100%;
+        height: get-height('default', 'em');
+        padding: 0 $scroll-size;
+        background: get-background-color('default');
+        border-radius: $border-radius;
+
+        & .smss-checklist__option {
+            position: relative;
+        }
+    }
+
+    &__list {
+        border: 1px solid get-border-color('default');
+        border-radius: $border-radius;
+        height: 100%;
+        background: get-background-color('default');
+
+        &--searchable {
+            margin-top: get-spacing('sm', 'rem');
+            height: calc(
+                100% - #{get-height('default', 'em')} - #{get-spacing(
+                        'sm',
+                        'rem'
+                    )}
+            );
+        }
+
+        &__options {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background: get-background-color('default');
+            border-radius: $border-radius;
+
+            &--quickselect {
+                height: calc(100% - #{get-height('default', 'em')});
+            }
+
+            &__holder {
+                position: relative;
+                height: 100%;
+                width: 100%;
+            }
+        }
+    }
+
+    &__option {
+        position: absolute;
+        z-index: 0;
+        display: flex;
+        align-items: center;
+        width: 100%;
+        height: get-height('default', 'em');
+        cursor: pointer;
+        outline: none;
+        box-shadow: none;
+        border: $border-size solid transparent;
+        border-radius: $border-radius;
+        overflow: hidden;
+
+        &:focus-visible {
+            border-color: get-border-color('primary');
+        }
+
+        &:hover {
+            background: get-background-color('primary--hover');
+        }
+
+        &::after {
+            content: '';
+            display: block;
+            clear: both;
+        }
+
+        & .smss-checkbox.smss-checkbox--disabled {
+            opacity: 1 !important;
+        }
+
+        &__check {
+            font-size: 1;
+            width: 2 * get-spacing('sm', 'em') + get-width('square', 'em');
+
+            &--disabled,
+            &:disabled,
+            &[disabled='disabled'] {
+                opacity: 1 !important;
+                background: transparent;
+            }
+
+            & .smss-checkbox__mark {
+                background: get-background-color('default') !important;
+                margin: 0 get-spacing('sm', 'em');
+                &--checked {
+                    background: var(--checklist-primary) !important;
+                    border-color: var(--checklist-primary) !important;
+                }
+            }
+        }
+
+        &__label {
+            flex: 1;
+            font-size: get-font-size('body-regular', 'em');
+            @include text-overflow();
+            color: get-text-color('medium-emphasis');
+        }
+    }
+}

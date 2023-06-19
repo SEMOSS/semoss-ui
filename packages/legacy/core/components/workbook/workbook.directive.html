@@ -1,0 +1,65 @@
+<div class="workbook">
+    <div
+        class="workbook__sheet"
+        ng-click="workbook.deselectPanel()"
+        dynamic="workbook.getSheetContent()"
+    ></div>
+
+    <div id="workbook__navigation" class="workbook__navigation smss-clear">
+        <ul class="workbook__navigation__scroller" dnd-list="workbook.sheets">
+            <smss-tab-group>
+                <li
+                    class="smss-tab smss-tab--sheet workbook__navigation__tab"
+                    title="{{sheet.sheetLabel}}"
+                    ng-repeat="sheet in workbook.sheets track by $index"
+                    ng-class="{'smss-tab--selected': sheet.sheetId === workbook.sheetId, 'workbook__navigation__scroller--dragging': workbook.drag.active}"
+                    ng-click="workbook.selectSheet(sheet.sheetId);"
+                    ng-show="sheet"
+                    dnd-draggable="sheet"
+                    dnd-effect-allowed="move"
+                    dnd-disable-if="workbook.sheets.length === 1"
+                    dnd-dragstart="workbook.dragSheetId = sheet.sheetId; workbook.drag.active = true;"
+                    dnd-dragend="workbook.drag.active = false;"
+                    dnd-moved="workbook.updateOrder($index)"
+                >
+                    <span> {{sheet.sheetLabel | reduceStringLength: 11}} </span>
+                    <i
+                        class="fa fa-times workbook__navigation__icon"
+                        ng-hide="workbook.presentation"
+                        ng-click="$event.stopPropagation();workbook.deleteSheet(sheet.sheetId);"
+                    ></i>
+                </li>
+                <smss-tab
+                    class="smss-tab--sheet workbook__navigation__add"
+                    ng-hide="workbook.presentation"
+                    id="workbook__navigation--new-sheet"
+                    ng-click="workbook.newSheet()"
+                    title="Add New Sheet"
+                >
+                    <i class="fa fa-plus"></i>
+                </smss-tab>
+            </smss-tab-group>
+        </ul>
+        <smss-btn
+            class="smss-right smss-btn--icon workbook__navigation__settings"
+            ng-hide="workbook.presentation"
+            ng-class="{'smss-btn--selected':workbook.settings.open}"
+            title="Configure Sheet"
+            smss-popover
+            id="workbook__semoss-tour-settings"
+        >
+            <i class="fa fa-cog"></i>
+            <smss-popover-content
+                class="workbook__popover__content"
+                model="workbook.settings.open"
+                position="['NE']"
+            >
+                <worksheet-settings
+                    insight-ctrl="insightCtrl"
+                    close="workbook.closeSettings()"
+                    ng-if="workbook.settings.open"
+                ></worksheet-settings>
+            </smss-popover-content>
+        </smss-btn>
+    </div>
+</div>

@@ -1,0 +1,24 @@
+<div class="widget-sidebar-pop-out">
+    <div class="overflow-auto">
+
+        <div class="grid12">
+            <div class="xs-margin sm-top-margin">
+                <input type="text" ng-model="embedPanel.embedCode" class="full-width" auto-select="">
+            </div>
+            <!-- Checkbox Toggle options go here -->
+            <div class="xs-side-margin md-left-margin">
+                <label class="sm-font">
+                    <input type="checkbox" class="pull-left embed-checkbox-align" ng-model="embedPanel.embedConfig.resizable" ng-change="embedPanel.updateEmbedString()">
+                    Resizable
+                </label>
+                <!-- <label class="sm-font">
+                    <input type="checkbox" class="pull-left embed-checkbox-align" ng-model="toolPanel.embedConfig.vizSettings" ng-change="toolPanel.updateEmbedString()">
+                    Settings?
+                </label> -->
+            </div>
+
+        </div>
+
+
+    </div>
+</div>
