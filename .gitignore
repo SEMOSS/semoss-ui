@@ -5,5 +5,9 @@ dist
 .project
 .history
 .eslintcache
+
+# Only ignore the top level
 index.html
 index.html.gz
+!packages/**/index.html
+!packages/**/index.html.gz

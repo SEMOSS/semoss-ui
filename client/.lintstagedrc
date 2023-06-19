@@ -1,6 +1,0 @@
-{
-    "**/*": [
-        "prettier . --write --ignore-unknown",
-        "eslint . --fix"
-    ]
-}
