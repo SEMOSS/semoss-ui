@@ -3,7 +3,6 @@
     "description": "SEMOSS Analytics Platform",
     "scripts": {
         "preinstall": "npx only-allow pnpm",
-        "start": "pnpm run dev",
         "dev": "cross-env NODE_OPTIONS=--max-old-space-size=8192 webpack --watch --progress --config webpack.dev.js",
         "build": "cross-env NODE_OPTIONS=--max-old-space-size=8192 webpack --config webpack.prod.js",
         "build:docs": "node ./makedocs.js",

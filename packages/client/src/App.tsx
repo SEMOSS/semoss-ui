@@ -1,7 +1,7 @@
 import axios from 'axios';
 import { HashRouter } from 'react-router-dom';
 import { Theme, Notification } from '@semoss/components';
-import { ThemeProvider } from 'semoss-components';
+import { ThemeProvider } from '@semoss/ui';
 
 import { theme } from './theme';
 import { RootStore } from '@/stores';

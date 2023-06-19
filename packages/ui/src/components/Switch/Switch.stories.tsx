@@ -1,0 +1,30 @@
+import type { Meta, StoryObj } from "@storybook/react";
+import { Switch } from "../Switch/index";
+
+const meta: Meta<typeof Switch> = {
+    title: "Components/Switch",
+    component: Switch,
+    args: {
+        defaultChecked: true,
+        color: "secondary",
+        centerRipple: false,
+        disableTouchRipple: false,
+        focusRipple: false,
+    },
+    argTypes: {
+        color: {
+            options: ["secondary", "warning", "primary"],
+            control: { type: "select" },
+        },
+    },
+};
+
+export default meta;
+
+type Story = StoryObj<typeof Switch>;
+
+const label = { inputProps: { "aria-label": "Color switch demo" } };
+
+export const Default: Story = {
+    render: (args) => <Switch {...label} {...args} />,
+};

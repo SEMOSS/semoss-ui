@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { styled, Input, Grid, Card, Typography } from 'semoss-components';
+import { styled, Input, Grid, Card, Typography } from '@semoss/ui';
 import {
     mdiAccountGroup,
     mdiClipboardTextOutline,

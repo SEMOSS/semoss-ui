@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Outlet, Link, useLocation, matchPath } from 'react-router-dom';
-import { styled, Typography } from 'semoss-components';
+import { styled, Typography } from '@semoss/ui';
 
 import { useRootStore } from '@/hooks';
 import { SettingsContext } from '@/contexts';

@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { styled, Container } from 'semoss-components';
+import { styled, Container } from '@semoss/ui';
 
 const StyledPage = styled('div')(() => ({
     height: '100%',
