@@ -1,10 +1,7 @@
 import { createContext } from 'react';
 
-/**
- * Value
- */
 export type SettingsContextType = {
-    // toggle for admin
+    /** True if the Settings is in admin mode */
     adminMode: boolean;
 };
 

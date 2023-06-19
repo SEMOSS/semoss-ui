@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef } from 'react';
+import { useEffect, useState } from 'react';
 import { useRootStore, useAPI } from '@/hooks';
 import { useSettings } from '@/hooks/useSettings';
 import { styled, theme, Select, Icon } from '@semoss/components';
@@ -66,20 +66,6 @@ const StyledLoadWorkflowContainer = styled('div', {
 
 const StyledIcon = styled(Icon, {
     fontSize: '4rem',
-});
-
-const StyledDiv = styled('div', {
-    display: 'flex',
-    // border: 'solid',
-});
-
-const StyledChangeDatabase = styled('div', {
-    color: theme.colors['grey-1'],
-    fontSize: theme.fontSizes.md,
-    width: '100%',
-    maxWidth: '50%',
-    marginBottom: theme.space['6'],
-    // border: 'solid',
 });
 
 export interface AppInterface {
