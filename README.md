@@ -35,6 +35,8 @@ pnpm install
 pnpm dev
 ```
 
+Access application at (http://localhost:9090/semoss-ui/#!/)
+
 ## Useful references
 
 [SEMOSS Design System](https://www.figma.com/file/kZwcxDBSMJbOcFaCin2xbd/MUI-Core-v5.4.0-(Revised)?type=design&node-id=6543-42910&t=GA9k6ctjRIYqdDqw-0)
