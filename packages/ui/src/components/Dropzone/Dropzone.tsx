@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useRef } from "react";
 import {
     useDropzone,
     DropzoneOptions as MuiDropzoneOptions,
@@ -21,7 +21,7 @@ export function DropzoneArea(props: DropzoneAreaProps) {
         noClick: true,
     });
 
-    const fileInput = React.useRef();
+    const fileInput = useRef<HTMLInputElement>();
 
     return (
         <Container
