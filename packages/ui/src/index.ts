@@ -22,6 +22,7 @@ export * from "./components/IconButton";
 export * from "./components/Input";
 export * from "./components/LinearProgress";
 export * from "./components/Link";
+export * from "./components/Modal";
 export * from "./components/Pagination";
 export * from "./components/PhoneNumberPicker";
 export * from "./components/Popover";
