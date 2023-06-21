@@ -1,29 +1,24 @@
 import React from "react";
-import type { Meta, StoryObj } from "@storybook/react";
 import { Breadcrumbs } from "../Breadcrumbs/index";
 import { Link } from "../Link/index";
 import { Stack } from "../Stack/index";
 import StarIcon from "@mui/icons-material/Star";
 
-const meta: Meta<typeof Breadcrumbs> = {
+export default {
     title: "Components/Breadcrumbs",
     component: Breadcrumbs,
     args: {
-        children: () => <Link>Link 1</Link>,
         maxItems: 6,
     },
     argTypes: {
         maxItems: {
             options: [1, 2, 3, 4, 5, 6],
-            control: { type: "select" },
         },
         itemsAfterCollapse: {
             options: [1, 2, 3],
-            control: { type: "select" },
         },
         itemsBeforeCollapse: {
             options: [1, 2, 3],
-            control: { type: "select" },
         },
         separator: {
             options: ["/", ">", "-"],
@@ -32,12 +27,8 @@ const meta: Meta<typeof Breadcrumbs> = {
     },
 };
 
-export default meta;
-
-type Story = StoryObj<typeof Breadcrumbs>;
-
-export const Default: Story = {
-    render: (args) => (
+const Template = (args) => {
+    return (
         <Stack spacing={2}>
             <Breadcrumbs {...args}>
                 <Link href="#" underline="hover" color="inherit">
@@ -85,5 +76,7 @@ export const Default: Story = {
                 </Link>
             </Breadcrumbs>
         </Stack>
-    ),
+    );
 };
+
+export const Default = Template.bind({});
