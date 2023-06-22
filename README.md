@@ -7,7 +7,7 @@ git clone https://repo.semoss.org/prototype/components.git
 ```
 
 ### 3. Tailor Project specific endpoint
-In the base directory of this project there should be a .env file, change the MODULE to your specific endpoint.
+In the base directory of this project create a .env.local file, take the contents from the .env file and move to your env local file ensure you change the MODULE to your specific endpoint.
 ```
 MODULE=/Monolith
 ```
