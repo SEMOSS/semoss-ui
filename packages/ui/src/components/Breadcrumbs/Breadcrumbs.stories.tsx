@@ -1,8 +1,8 @@
 import React from "react";
-import { Breadcrumbs } from "../Breadcrumbs/index";
-import { Link } from "../Link/index";
-import { Stack } from "../Stack/index";
-import StarIcon from "@mui/icons-material/Star";
+import { Breadcrumbs } from "./";
+import { Link } from "../Link";
+import { Stack } from "../Stack";
+import Icons from "../Icons";
 
 export default {
     title: "Components/Breadcrumbs",
@@ -26,6 +26,8 @@ export default {
         },
     },
 };
+
+const Icon = Icons["StarOutlined"];
 
 const Template = (args) => {
     return (
@@ -63,15 +65,15 @@ const Template = (args) => {
             </Breadcrumbs>
             <Breadcrumbs maxItems={2}>
                 <Link href="#" underline="hover" color="inherit">
-                    <StarIcon sx={{ mr: 0.5 }} fontSize="inherit" />
+                    <Icon sx={{ fontSize: "1rem", mr: 0.5 }}></Icon>
                     Link 1
                 </Link>
                 <Link href="#" underline="hover" color="inherit">
-                    <StarIcon sx={{ mr: 0.5 }} fontSize="inherit" />
+                    <Icon sx={{ fontSize: "1rem", mr: 0.5 }}></Icon>
                     Link 2
                 </Link>
                 <Link href="#" underline="hover" color="inherit">
-                    <StarIcon sx={{ mr: 0.5 }} fontSize="inherit" />
+                    <Icon sx={{ fontSize: "1rem", mr: 0.5 }}></Icon>
                     Link 3
                 </Link>
             </Breadcrumbs>
