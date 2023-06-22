@@ -513,6 +513,16 @@
                             </content>
                         </smss-field>
                     </div>
+                    <smss-field>
+                        <label>Cron Time Zone:</label>
+                        <content>
+                            <smss-dropdown
+                                model="schedule.currentJob.cronTimeZone"
+                                options="schedule.cronTimeZones"
+                            >
+                            </smss-dropdown>
+                        </content>
+                    </smss-field>
                 </smss-scroll>
             </div>
             <div
@@ -901,6 +911,16 @@
                             </content>
                         </smss-field>
                     </div>
+                    <smss-field>
+                        <label>Cron Time Zone:</label>
+                        <content>
+                            <smss-dropdown
+                                model="schedule.jobBeingEdited.cronTimeZone"
+                                options="schedule.cronTimeZones"
+                            >
+                            </smss-dropdown>
+                        </content>
+                    </smss-field>
                 </smss-scroll>
             </div>
             <div
