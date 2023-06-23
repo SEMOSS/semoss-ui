@@ -52,6 +52,7 @@
         "prettier": "^2.8.8",
         "react": "^17.0.2",
         "react-dom": "^17.0.2",
+        "react-dropzone": "^14.2.3",
         "rollup": "^2.79.1",
         "rollup-plugin-bundle-size": "^1.0.3",
         "rollup-plugin-delete": "^2.0.0",
@@ -83,7 +84,6 @@
         "mui-color": "2.0.0-beta.2",
         "mui-phone-number": "^3.0.3",
         "prop-types": "^15.8.1",
-        "react-dropzone": "^14.2.3",
         "typescript": "^5.1.3"
     }
 }
