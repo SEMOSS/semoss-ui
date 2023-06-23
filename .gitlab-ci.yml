@@ -1,46 +1,46 @@
-# image: node:18.16.0
+image: node:18.16.0
 
-# stages:
-#     - pnpm_build
-#     - push_bundle
+stages:
+    - pnpm_build
+    # - push_bundle
 
-# variables:
-#     MAVEN_OPTS: '-Dmaven.repo.local=.m2/repository -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=WARN -Dorg.slf4j.simpleLogger.showDateTime=true -Djava.awt.headless=true'
-#     MAVEN_CLI_OPTS: '-s ./settings.xml --batch-mode'
-#     FF_USE_FASTZIP: 'true' # enable fastzip - a faster zip implementation that also supports level configuration.
+variables:
+    MAVEN_OPTS: '-Dmaven.repo.local=.m2/repository -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=WARN -Dorg.slf4j.simpleLogger.showDateTime=true -Djava.awt.headless=true'
+    MAVEN_CLI_OPTS: '-s ./settings.xml --batch-mode'
+    FF_USE_FASTZIP: 'true' # enable fastzip - a faster zip implementation that also supports level configuration.
 
-# cache:
-#     paths:
-#         - node_modules/
-#         - .m2/repository/
-#         - dist/
-#         - index.html
-#     key: ${CI_BUILD_REF_NAME}
+cache:
+    paths:
+        - node_modules/
+        - .m2/repository/
+        - dist/
+        - index.html
+    key: ${CI_BUILD_REF_NAME}
 
-# # Does not push to maven central
-# pnpm_build_dev:
-#     stage: pnpm_build
-#     # See https://docs.gitlab.com/ee/ci/yaml/#only-and-except-simplified
-#     only:
-#         refs:
-#             - pushes
-#     except:
-#         variables:
-#             - $RELEASE == "TRUE"
-#     script:
-#         - apt-get update
-#         - apt-get install -y maven
-#         # - npm install webpack --save-dev
-#         - npm install -g pnpm
-#         - pnpm install
-#         - pnpm -v
-#         - pnpm run build
-#         - /usr/share/maven/bin/mvn $MAVEN_CLI_OPTS clean install -Dci.version=${VERSION}-SNAPSHOT
-#         # So that the cache takes up less space
-#         - rm -rf .m2/repository/org/semoss
-#     artifacts:
-#         paths:
-#             - target/semossweb-${VERSION}-SNAPSHOT.war
+# Does not push to maven central
+pnpm_build_dev:
+    stage: pnpm_build
+    # See https://docs.gitlab.com/ee/ci/yaml/#only-and-except-simplified
+    only:
+        refs:
+            - pushes
+    except:
+        variables:
+            - $RELEASE == "TRUE"
+    script:
+        - apt-get update
+        - apt-get install -y maven
+        # - npm install webpack --save-dev
+        - npm install -g pnpm
+        - pnpm install
+        - pnpm -v
+        - pnpm run build
+        - /usr/share/maven/bin/mvn $MAVEN_CLI_OPTS clean install -Dci.version=${VERSION}-SNAPSHOT
+        # So that the cache takes up less space
+        - rm -rf .m2/repository/org/semoss
+    artifacts:
+        paths:
+            - target/semossweb-${VERSION}-SNAPSHOT.war
 
 # # Pushes to maven central
 # pnpm_build_deploy:
