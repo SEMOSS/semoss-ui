@@ -1,3 +1,4 @@
+import React from "react";
 import type { Meta, StoryObj } from "@storybook/react";
 import { Tooltip } from "../Tooltip/index";
 import Button from "@mui/material/Button";
@@ -7,6 +8,7 @@ const meta: Meta<typeof Tooltip> = {
     component: Tooltip,
     args: {
         placement: "top-start",
+        arrow: false,
     },
     argTypes: {
         placement: {
