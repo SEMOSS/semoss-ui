@@ -1,9 +1,8 @@
 import { ReactNode } from "react";
 import MuiAvatar from "@mui/material/Avatar";
 import { SxProps } from "@mui/system";
-import { AvatarProps as MuiAvatarProps } from "@mui/material";
 
-export interface AvatarProps extends MuiAvatarProps {
+export interface AvatarProps {
     /** children to be rendered */
     children?: ReactNode;
 
@@ -12,6 +11,22 @@ export interface AvatarProps extends MuiAvatarProps {
 
     //** shape of avatar */
     variant?: "circular" | "rounded";
+
+    /**
+     * The `sizes` attribute for the `img` element.
+     */
+    sizes?: string;
+
+    /**
+     * The `src` attribute for the `img` element.
+     */
+    src?: string;
+
+    /**
+     * The `srcSet` attribute for the `img` element.
+     * Use this attribute for responsive image display.
+     */
+    srcSet?: string;
 }
 
 export const Avatar = (props: AvatarProps) => {

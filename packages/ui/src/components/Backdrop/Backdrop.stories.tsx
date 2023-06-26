@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import type { Meta, StoryObj } from "@storybook/react";
 import { Backdrop } from "../Backdrop/index";
 import { Box } from "../Box/index";
@@ -7,6 +7,15 @@ import { LinearProgress } from "../LinearProgress/index";
 const meta: Meta<typeof Backdrop> = {
     title: "Components/Backdrop",
     component: Backdrop,
+    args: {
+        open: true,
+    },
+    argTypes: {
+        open: {
+            options: [true, false],
+            control: { type: "select" },
+        },
+    },
 };
 
 export default meta;
@@ -56,9 +65,9 @@ const LinearBuffer = () => {
 };
 
 export const Default: Story = {
-    render: () => (
+    render: (args) => (
         <>
-            <Backdrop open={true} sx={{ zIndex: 10 }}>
+            <Backdrop sx={{ zIndex: 10 }} {...args}>
                 <Box>Backdrop Children</Box>
             </Backdrop>
             <Box sx={{ p: 2, border: "1px dashed grey" }}>Page Content</Box>
