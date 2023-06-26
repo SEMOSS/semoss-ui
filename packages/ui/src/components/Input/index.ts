@@ -7,6 +7,4 @@ const InputNameSpace = Object.assign(Input, {
 
 export type { InputProps };
 
-export { Input };
-
-export { InputLabel };
+export { Input, InputLabel };

@@ -13,5 +13,5 @@ export type InputProps = MuiInputProps &
     };
 
 export const Input = (props: InputProps) => {
-    return <MuiInput {...props}></MuiInput>;
+    return <MuiInput variant={"outlined"} {...props}></MuiInput>;
 };

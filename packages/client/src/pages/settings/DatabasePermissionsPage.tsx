@@ -7,7 +7,7 @@ import { mdiDatabase } from '@mdi/js';
 import { LoadingScreen } from '@/components/ui';
 import { Permissions } from '@/components/database';
 
-import { Card } from '@semoss/ui';
+import { Card, Input } from '@semoss/ui';
 import img from '@semoss/ui/src/components/Card/placeholder.png';
 
 const StyledContainer = styled('div', {
@@ -150,6 +150,11 @@ export const DatabasePermissionsPage = () => {
                     member access, and setting database visibility options.
                 </StyledDescription>
                 <div>
+                    {/* <Input 
+                        variant="outlined" 
+                        placeholder=""
+                        startAdornment={}
+                    /> */}
                     <Card>
                         <Card.Media image={img} />
                         <Card.Header title="DB title" />
