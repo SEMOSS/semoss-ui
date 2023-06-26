@@ -11,5 +11,5 @@ export default meta;
 type Story = StoryObj<typeof Box>;
 
 export const Default: Story = {
-    render: () => <Box sx={{ border: 1 }}>Box</Box>,
+    render: () => <Box sx={{ border: 1 }}>Box with border</Box>,
 };

@@ -1,9 +1,8 @@
 import { ReactNode } from "react";
 import MuiAlertTitle from "@mui/material/AlertTitle";
 import { SxProps } from "@mui/system";
-import { AlertTitleProps as MuiAlertTitleProps } from "@mui/material";
 
-export interface AlertTitleProps extends MuiAlertTitleProps {
+export interface AlertTitleProps {
     /** children to be rendered */
     children?: ReactNode;
 
