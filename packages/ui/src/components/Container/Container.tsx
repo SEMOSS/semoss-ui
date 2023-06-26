@@ -1,9 +1,8 @@
 import { ReactNode } from "react";
 import MuiContainer from "@mui/material/Container";
 import { SxProps, Breakpoint } from "@mui/system";
-import { ContainerProps } from "@mui/material";
 
-export interface _ContainerProps extends ContainerProps {
+export interface _ContainerProps {
     //** children to be rendered */
     children?: ReactNode;
 
