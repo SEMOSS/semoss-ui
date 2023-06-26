@@ -1,13 +1,15 @@
 import { SxProps } from "@mui/system";
-import MuiAccordionDetails, {
-    AccordionDetailsProps as MuiAccordionDetailsProps,
-} from "@mui/material/AccordionDetails";
+import MuiAccordionDetails from "@mui/material/AccordionDetails";
 
 export type AccordionDetailsProps = {
+    /**
+     * The content of the component.
+     */
+    children?: React.ReactNode;
+
     /** custom style object */
     sx?: SxProps;
-} & MuiAccordionDetailsProps;
-
+};
 export const AccordionDetails = (props: AccordionDetailsProps) => {
     return <MuiAccordionDetails>{props.children}</MuiAccordionDetails>;
 };
