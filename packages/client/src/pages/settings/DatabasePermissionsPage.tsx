@@ -7,6 +7,9 @@ import { mdiDatabase } from '@mdi/js';
 import { LoadingScreen } from '@/components/ui';
 import { Permissions } from '@/components/database';
 
+import { Card } from '@semoss/ui';
+import img from '@semoss/ui/src/components/Card/placeholder.png';
+
 const StyledContainer = styled('div', {
     margin: '0 auto',
     paddingLeft: theme.space[8],
@@ -142,10 +145,16 @@ export const DatabasePermissionsPage = () => {
         <StyledContainer>
             <>
                 <StyledDescription>
-                    View and edit settings for databases
+                    Select a database to update permissions including requests
+                    to access the database, adding ad-hoc members, updating
+                    member access, and setting database visibility options.
                 </StyledDescription>
                 <div>
-                    <Select
+                    <Card>
+                        <Card.Media image={img} />
+                        <Card.Header title="DB title" />
+                    </Card>
+                    {/* <Select
                         defaultValue={selectedApp}
                         value={selectedApp}
                         options={apps}
@@ -155,8 +164,8 @@ export const DatabasePermissionsPage = () => {
                             setSelectedApp(opt);
                         }}
                         placeholder="Select an option to view database specific settings"
-                    ></Select>
-                    {selectedApp ? (
+                    ></Select> */}
+                    {/* {selectedApp ? (
                         <Permissions
                             config={{
                                 id: selectedApp.database_id,
@@ -173,7 +182,7 @@ export const DatabasePermissionsPage = () => {
                             ></StyledIcon>
                             <p>SEMOSS is waiting on your selection</p>
                         </StyledLoadWorkflowContainer>
-                    )}
+                    )} */}
                 </div>
             </>
         </StyledContainer>
