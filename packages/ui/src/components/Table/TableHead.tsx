@@ -1,8 +1,9 @@
 import { ReactNode } from "react";
 import MuiTableHead from "@mui/material/TableHead";
 import { SxProps } from "@mui/system";
+import { TableHeadProps as MuiTableHeadProps } from "@mui/material";
 
-export interface TableHeadProps {
+export interface TableHeadProps extends MuiTableHeadProps {
     /** children to be rendered */
     children?: ReactNode;
 

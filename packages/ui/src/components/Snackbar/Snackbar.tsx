@@ -1,4 +1,8 @@
+<<<<<<< HEAD
 import React, { ReactNode } from "react";
+=======
+import React from "react";
+>>>>>>> b1cbffe (added typed props)
 import MuiSnackbar from "@mui/material/Snackbar";
 import { SxProps } from "@mui/system";
 
@@ -6,6 +10,7 @@ interface anchorOriginProps {
     horizontal: "center" | "left" | "right";
     vertical: "bottom" | "top";
 }
+<<<<<<< HEAD
 export interface SnackbarProps {
     /**
      * The action to display. It renders after the message, at the end of the snackbar.
@@ -49,6 +54,15 @@ export interface SnackbarProps {
      * The message to display.
      */
     message?: ReactNode;
+=======
+export interface SnackbarProps extends MuiSnackbarProps {
+    /** custom style object */
+    open: boolean;
+    children: React.ReactElement<any, any>;
+    anchorOrigin?: anchorOriginProps;
+    autoHideDuration?: number;
+    onClose?: () => void;
+>>>>>>> b1cbffe (added typed props)
     sx?: SxProps;
 }
 

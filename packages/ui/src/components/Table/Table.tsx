@@ -2,7 +2,7 @@ import { ReactNode } from "react";
 import MuiTable from "@mui/material/Table";
 import { SxProps } from "@mui/system";
 
-export interface TableProps {
+export interface TableProps extends MuiTableProps {
     /** children to be rendered */
     children: ReactNode;
 
