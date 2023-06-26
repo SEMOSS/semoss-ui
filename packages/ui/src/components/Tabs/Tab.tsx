@@ -1,14 +1,10 @@
-import React, { ReactNode } from "react";
+import { ReactNode } from "react";
 import MuiTab from "@mui/material/Tab";
 import { SxProps } from "@mui/system";
+import { TabProps as MuiTabProps } from "@mui/material";
 
-export interface TabProps {
+export interface TabProps extends MuiTabProps {
     // custom style object
-    icon?: string | React.ReactElement<any, any>;
-    iconPosition?: "top" | "bottom" | "start" | "end";
-    index?: string;
-    label?: ReactNode;
-
     sx?: SxProps;
 }
 

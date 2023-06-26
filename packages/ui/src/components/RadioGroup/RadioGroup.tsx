@@ -14,7 +14,12 @@ export interface RadioProps extends MuiRadioProps {
 
 export interface RadioGroupProps extends MuiRadioGroupProps {
     /** custom style object */
+    children?: ReactNode;
+    onChange?: (event: any) => void;
+    name?: string;
+    defaultValue?: any;
     sx?: SxProps;
+    row?: boolean;
 }
 
 export const Radio = (props: RadioProps) => {

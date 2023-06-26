@@ -1,11 +1,12 @@
-import React, { ReactNode } from "react";
+import { ReactNode } from "react";
 import MuiTableBody from "@mui/material/TableBody";
 import { SxProps } from "@mui/system";
+import { TableBodyProps as MuiTableBodyProps } from "@mui/material";
 
-export interface TableBodyProps {
+export interface TableBodyProps extends MuiTableBodyProps {
     /** children to be rendered */
-    children?: ReactNode;
-    component?: React.ReactElement<any, any>;
+    children: ReactNode;
+
     /** custom style object */
     sx?: SxProps;
 }

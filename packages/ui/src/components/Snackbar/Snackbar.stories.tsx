@@ -1,4 +1,4 @@
-import { useState } from "react";
+import React, { useState } from "react";
 import type { Meta, StoryObj } from "@storybook/react";
 import { Snackbar } from "../Snackbar/index";
 import { Button } from "../Button/index";

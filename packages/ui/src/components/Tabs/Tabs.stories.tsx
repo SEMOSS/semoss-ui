@@ -1,4 +1,4 @@
-import React, { useState, SyntheticEvent } from "react";
+import { useState, SyntheticEvent } from "react";
 import type { Meta, StoryObj } from "@storybook/react";
 import { Tabs } from "../Tabs/index";
 import { Box } from "../Box/index";
@@ -7,31 +7,6 @@ import { Tab } from "../Tabs/index";
 const meta: Meta<typeof Tabs> = {
     title: "Components/Tabs",
     component: Tabs,
-    args: {
-        centered: false,
-        indicatorColor: "primary",
-        orientation: "horizontal",
-        textColor: "primary",
-        variant: "standard",
-    },
-    argTypes: {
-        indicatorColor: {
-            options: ["secondary", "primary"],
-            control: { type: "select" },
-        },
-        textColor: {
-            options: ["secondary", "primary", "inherit"],
-            control: { type: "select" },
-        },
-        orientation: {
-            options: ["horizontal", "vertical"],
-            control: { type: "radio" },
-        },
-        variant: {
-            options: ["standard", "scrollable", "fullWidth"],
-            control: { type: "radio" },
-        },
-    },
 };
 
 export default meta;

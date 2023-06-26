@@ -5,7 +5,11 @@ import { SkeletonProps as MuiSkeletonProps } from "@mui/material";
 
 export interface SkeletonProps extends MuiSkeletonProps {
     /** custom style object */
+    width: number;
+    height: number;
     sx?: SxProps;
+    animation?: "pulse" | "wave" | false;
+    variant?: "circular" | "rectangular" | "rounded" | "text";
 }
 
 export const Skeleton = (props: SkeletonProps) => {

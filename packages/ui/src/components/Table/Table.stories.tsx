@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import type { Meta, StoryObj } from "@storybook/react";
 import { Table } from "../Table/index";
 import { Box } from "../Box/index";
@@ -224,7 +224,7 @@ function Row(props) {
             </Table.Row>
             <Table.Row>
                 <Table.Cell
-                    sx={{ paddingBottom: 0, paddingTop: 0 }}
+                    style={{ paddingBottom: 0, paddingTop: 0 }}
                     colSpan={6}
                 >
                     <Collapse in={open} timeout="auto" unmountOnExit>

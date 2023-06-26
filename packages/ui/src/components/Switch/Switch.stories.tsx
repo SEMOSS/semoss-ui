@@ -1,3 +1,4 @@
+import React from "react";
 import type { Meta, StoryObj } from "@storybook/react";
 import { Switch } from "../Switch/index";
 
@@ -10,10 +11,16 @@ const meta: Meta<typeof Switch> = {
         centerRipple: false,
         disableTouchRipple: false,
         focusRipple: false,
+        disabled: false,
+        edge: "end",
     },
     argTypes: {
         color: {
             options: ["secondary", "warning", "primary"],
+            control: { type: "select" },
+        },
+        edge: {
+            options: ["end", "start"],
             control: { type: "select" },
         },
     },
