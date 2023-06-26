@@ -1,6 +1,7 @@
 import React, { ReactNode } from "react";
 import MuiTableCell, { TableCellBaseProps } from "@mui/material/TableCell";
 import { SxProps } from "@mui/system";
+import { TableCellProps as MuiTableCellProps } from "@mui/material";
 
 export interface TableCellProps {
     /**

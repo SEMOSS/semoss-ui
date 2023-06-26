@@ -1,6 +1,7 @@
 import { ReactNode } from "react";
 import MuiTab from "@mui/material/Tab";
 import { SxProps } from "@mui/system";
+import { TabProps as MuiTabProps } from "@mui/material";
 
 export interface TabProps {
     /**
