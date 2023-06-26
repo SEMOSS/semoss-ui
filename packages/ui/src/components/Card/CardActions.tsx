@@ -1,7 +1,6 @@
 import { ReactNode } from "react";
 import CardActions from "@mui/material/CardActions";
 import { SxProps } from "@mui/system";
-import { CardActionsProps } from "@mui/material";
 
 export interface _CardActionsProps {
     /** custom style object */
