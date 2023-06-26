@@ -36,7 +36,7 @@ const SETTINGS_COMPONETS = {
 };
 
 export const SettingsRouter = observer(() => {
-    return (
+return (
         <Routes>
             <Route path="/" element={<SettingsLayout />}>
                 {SETTINGS_ROUTES.map((r) => {
