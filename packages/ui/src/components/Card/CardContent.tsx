@@ -1,9 +1,8 @@
 import { ReactNode } from "react";
 import CardContent from "@mui/material/CardContent";
 import { SxProps } from "@mui/system";
-import { CardContentProps } from "@mui/material";
 
-export interface _CardContentProps extends CardContentProps {
+export interface _CardContentProps {
     /** children to be rendered */
     children: ReactNode;
 

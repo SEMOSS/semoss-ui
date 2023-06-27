@@ -13,6 +13,8 @@ import { useNavigate } from 'react-router-dom';
 import { useSettings } from '@/hooks';
 import { LoadingScreen } from '@/components/ui';
 
+import { SETTINGS_ROUTES } from './settings.constants';
+
 const StyledSearch = styled('div')({
     width: '50%',
 });
@@ -24,142 +26,31 @@ const StyledSetHeader = styled('div')(({ theme }) => ({
     marginBottom: theme.spacing(4),
 }));
 
-const cardsArr = [
-    {
-        title: 'Database Settings',
-        route: '/settings/database-permissions',
-        description: 'View and edit settings for databases',
-        pendingRequests: 15,
-        icon: mdiDatabase,
-        adminPortal: false,
-    },
-    {
-        title: 'Project Settings',
-        route: '/settings/project-permissions',
-        description: 'View and edit settings for projects',
-        pendingRequests: 15,
-        icon: mdiClipboardTextOutline,
-        adminPortal: false,
-    },
-    {
-        title: 'Insight Settings',
-        route: '/settings/insight-permissions',
-        description: 'View and edit settings for project insights',
-        pendingRequests: 15,
-        icon: mdiTextBoxMultipleOutline,
-        adminPortal: false,
-    },
-    {
-        title: 'Member Settings',
-        route: '/settings/members',
-        description:
-            'Add new members, reset passwords, and edit member-based permissions.',
-        pendingRequests: 15,
-        icon: mdiAccountGroup,
-        adminPortal: true,
-    },
-    {
-        title: 'Admin Query',
-        route: '/settings/admin-query',
-        description: 'Query on SEMOSS based databases',
-        pendingRequests: 3,
-        icon: mdiDatabaseSearch,
-        adminPortal: true,
-    },
-    {
-        title: 'Social Properties',
-        route: '/settings/social-properties',
-        description: 'Edit social properties',
-        pendingRequests: 3,
-        icon: mdiTabletCellphone,
-        adminPortal: true,
-    },
-    {
-        title: 'Jobs',
-        route: '/settings/jobs',
-        description: 'View, add, and edit scheduled jobs',
-        pendingRequests: 3,
-        icon: mdiClock,
-        adminPortal: false,
-    },
-    // {
-    //     title: 'External Connections',
-    //     route: '/settings/external-connections',
-    //     description:
-    //         'Integrate with external services like Dropbox, Google, Github, and more.',
-    //     pendingRequests: 15,
-    //     icon: mdiDatabase,
-    // },
-    // {
-    //     title: 'Teams',
-    //     route: '/settings/teams',
-    //     description: 'Create and manage teams and set team level permissions.',
-    //     pendingRequests: 15,
-    //     icon: mdiDatabase,
-    // },
-    // {
-    //     title: 'Teams Management',
-    //     route: '/settings/teams-management',
-    //     description: 'Create teams and manage members.',
-    //     pendingRequests: 15,
-    //     icon: mdiDatabase,
-    // },
-    // {
-    //     title: 'Teams Permissions',
-    //     route: '/settings/teams-permissions',
-    //     description: 'Edit permission roles of teams.',
-    //     pendingRequests: 15,
-    //     icon: mdiDatabase,
-    // },
-    // {
-    //     title: 'My Profile',
-    //     route: '/settings/my-profile',
-    //     description: 'Update profile settings.',
-    //     pendingRequests: 15,
-    //     icon: mdiDatabase,
-    // },
-    // {
-    //     title: 'Theming',
-    //     route: '/settings/theme',
-    //     description: 'Update theme, this is an admin process.',
-    //     pendingRequests: 15,
-    //     icon: mdiDatabase,
-    // },
-];
+//
+const DEFAULT_CARDS = SETTINGS_ROUTES.filter((r) => !!r.path);
 
 export const SettingsIndexPage = () => {
     const navigate = useNavigate();
-    const [cards, setCards] = useState(cardsArr);
+    const [cards, setCards] = useState(DEFAULT_CARDS);
     const [search, setSearch] = useState<string>('');
-
-    // load while it filters admin
-    const [loading, setLoading] = useState(true);
 
     const { adminMode } = useSettings();
 
     useEffect(() => {
+        // reset the options if there is no search value
         if (!search) {
-            // reset the options if there is no search value
-            setCards(cardsArr);
-        } else {
-            const filtered = cardsArr.filter((c) => {
-                return c.title.toLowerCase().includes(search.toLowerCase());
-            });
-            setCards(filtered);
+            setCards(DEFAULT_CARDS);
+            return;
         }
 
-        if (loading) {
-            setTimeout(() => {
-                setLoading(false);
-            }, 500);
-        }
+        const cleanedSearch = search.toLowerCase();
+
+        const filtered = DEFAULT_CARDS.filter((c) => {
+            return c.title.toLowerCase().includes(cleanedSearch);
+        });
+
+        setCards(filtered);
     }, [search]);
-
-    if (loading) {
-        return (
-            <LoadingScreen.Trigger description="Retrieving Settings"></LoadingScreen.Trigger>
-        );
-    }
 
     return (
         <>
@@ -183,11 +74,9 @@ export const SettingsIndexPage = () => {
             </StyledSetHeader>
             <Grid container spacing={2}>
                 {cards.map((c, i) => {
-                    return c.adminPortal && !adminMode ? (
-                        <div key={i}></div>
-                    ) : (
+                    return (
                         <Grid item key={i} sm={12} md={6} lg={4} xl={3}>
-                            <Card onClick={() => navigate(c.route)}>
+                            <Card onClick={() => navigate(c.path)}>
                                 <Card.Header title={c.title} />
                                 <Card.Content sx={{ marginTop: -2 }}>
                                     <Typography variant="caption">

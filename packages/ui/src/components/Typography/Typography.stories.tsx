@@ -1,3 +1,4 @@
+import React from "react";
 import type { Meta, StoryObj } from "@storybook/react";
 import { Typography } from "../Typography/index";
 
@@ -6,6 +7,10 @@ const meta: Meta<typeof Typography> = {
     component: Typography,
     args: {
         variant: "h1",
+        align: "inherit",
+        gutterBottom: false,
+        noWrap: false,
+        paragraph: false,
     },
 };
 

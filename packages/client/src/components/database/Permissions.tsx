@@ -500,7 +500,7 @@ export const Permissions = (props: PermissionsProps) => {
 
     // Props we use for api fns to hit | "project, database, insight"
     const type: 'database' | 'project' | 'insight' | '' =
-        resolvedPathname.includes('database-permissions')
+        resolvedPathname.includes('database-settings')
             ? 'database'
             : resolvedPathname.includes('project-permissions')
             ? 'project'

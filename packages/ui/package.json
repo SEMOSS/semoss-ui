@@ -76,6 +76,7 @@
         "@mui/styles": "^5.13.2",
         "@mui/system": "^5.13.5",
         "@mui/x-date-pickers": "^6.8.0",
+        "@storybook/addon-storysource": "^7.0.23",
         "babel-loader": "^8.3.0",
         "cross-env": "^7.0.3",
         "dayjs": "^1.11.8",
