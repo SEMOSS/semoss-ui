@@ -4,7 +4,7 @@ import {
     DropzoneOptions as MuiDropzoneOptions,
 } from "react-dropzone";
 import { Container } from "../Container/index";
-import { Input } from "../Input/index";
+import { TextField } from "../TextField/index";
 import { Link } from "../Link/index";
 import { Typography } from "../Typography/index";
 import { Avatar } from "../Avatar/index";
@@ -39,11 +39,11 @@ export function DropzoneArea(props: DropzoneAreaProps) {
                 <input {...getInputProps()} />
 
                 <label>
-                    <Input
+                    <TextField
                         ref={fileInput}
                         type="file"
-                        disableUnderline
                         sx={{ display: "none" }}
+                        variant="outlined"
                     />
                     <Typography
                         variant="body1"
@@ -59,7 +59,6 @@ export function DropzoneArea(props: DropzoneAreaProps) {
                         <span>
                             {
                                 <Link
-                                    color="inherit"
                                     onClick={() => fileInput.current.click()}
                                     sx={{ cursor: "pointer" }}
                                 >

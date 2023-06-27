@@ -2,7 +2,6 @@ import React, { useState } from "react";
 import type { Meta, StoryObj } from "@storybook/react";
 import { Select } from "../Select/index";
 import { Checkbox } from "../Checkbox/index";
-import { Input } from "../Input/index";
 import MenuItem from "@mui/material/MenuItem";
 import Stack from "@mui/material/Stack";
 
@@ -33,9 +32,6 @@ const SelectComponent = (args) => {
 
     return (
         <Stack spacing={2}>
-            <Input.Label color="primary" variant="standard">
-                Select
-            </Input.Label>
             <Select
                 {...args}
                 sx={{ width: "100%" }}
@@ -66,9 +62,6 @@ const SelectMultiple = () => {
 
     return (
         <>
-            <Input.Label color="primary" variant="standard">
-                Select multiple items
-            </Input.Label>
             <Select
                 sx={{ width: "100%" }}
                 onChange={handleChange}

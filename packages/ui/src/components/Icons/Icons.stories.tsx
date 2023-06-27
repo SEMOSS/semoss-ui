@@ -1,5 +1,4 @@
 import type { Meta, StoryObj } from "@storybook/react";
-import { Input } from "../Input";
 import { Icon } from "../Icon/index";
 import { Grid } from "../Grid/index";
 import { Card } from "../Card/index";
@@ -41,9 +40,6 @@ export const Primary: Story = {
                                 <Tooltip title={val} key={idx}>
                                     <_Icon sx={{ fontSize: "3rem" }} />
                                 </Tooltip>
-                                <Input.Label justifyContent="center">
-                                    {val}
-                                </Input.Label>
                             </Grid>
                         );
                     })}
