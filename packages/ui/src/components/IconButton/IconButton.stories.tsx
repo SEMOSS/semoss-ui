@@ -8,7 +8,6 @@ const meta: Meta<typeof IconButton> = {
     args: {
         color: "secondary",
         disabled: false,
-        disableFocusRipple: false,
     },
     argTypes: {
         color: {
