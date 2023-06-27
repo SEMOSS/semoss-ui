@@ -110,9 +110,6 @@ export const SettingsLayout = () => {
                     </Stack>
                 }
             >
-                <Typography variant="subtitle1">
-                    {matchedRoute.description}
-                </Typography>
                 <Outlet />
             </Page>
         </SettingsContext.Provider>
