@@ -54,13 +54,6 @@ export const SettingsIndexPage = () => {
 
     return (
         <>
-            <Typography variant="subtitle1">
-                View and make changes to settings at the database, project, and
-                insight level.
-                {adminMode
-                    ? ' As an admin conduct queries on SEMOSS specific databases as well as view and edit existing social properties'
-                    : ''}
-            </Typography>
             <StyledSetHeader>
                 <StyledSearch>
                     <Input

@@ -17,6 +17,7 @@ const StyledPageHeader = styled('div', {
     position: 'sticky',
     top: '-1px',
     paddingTop: '1px',
+    paddingBottom: '1px',
     // Checkout user permissions, and the stacked avatars
     zIndex: '10',
     borderBottom: stuck ? 1 : 'none',

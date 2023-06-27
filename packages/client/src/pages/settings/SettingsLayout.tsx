@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Outlet, Link, useLocation, matchPath } from 'react-router-dom';
-import { styled, Typography } from '@semoss/ui';
+import { styled, Typography, Breadcrumbs } from '@semoss/ui';
 
 import { useRootStore } from '@/hooks';
 import { SettingsContext } from '@/contexts';
@@ -12,6 +12,10 @@ const Stack = styled('div')(({ theme }) => ({
     flexDirection: 'column',
     gap: theme.spacing(1),
 }));
+
+const StyledBreadcrumbs = styled(Breadcrumbs)({
+    marginTop: '1rem',
+});
 
 export const SettingsLayout = () => {
     const { monolithStore } = useRootStore();
@@ -75,25 +79,26 @@ export const SettingsLayout = () => {
             <Page
                 header={
                     <Stack>
-                        <div>
-                            {matchedRoute.path ? (
-                                <>
-                                    <Link to={'.'}>Settings</Link>
-                                    <Link to={matchedRoute.path}>
-                                        {matchedRoute.title}
-                                    </Link>
-                                </>
-                            ) : null}
-                        </div>
+                        {matchedRoute.path ? (
+                            <Breadcrumbs maxItems={3}>
+                                <Link to={'.'}>Settings</Link>
+                                <Link to={matchedRoute.path}>
+                                    {matchedRoute.title}
+                                </Link>
+                            </Breadcrumbs>
+                        ) : null}
                         <Typography variant="h4">
                             {matchedRoute.title}
+                        </Typography>
+                        <Typography variant="subtitle1">
+                            {!adminMode || matchedRoute.path !== ''
+                                ? matchedRoute.description
+                                : matchedRoute.adminDescription}
+                            {matchedRoute.description}
                         </Typography>
                     </Stack>
                 }
             >
-                <Typography variant="subtitle1">
-                    {matchedRoute.description}
-                </Typography>
                 <Outlet />
             </Page>
         </SettingsContext.Provider>
