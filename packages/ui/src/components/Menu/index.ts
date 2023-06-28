@@ -7,4 +7,4 @@ const MenuNameSpace = Object.assign(Menu, {
 
 export type { MenuProps, MenuItemProps };
 
-export { MenuNameSpace as Menu };
+export { MenuNameSpace as Menu, MenuItem };
