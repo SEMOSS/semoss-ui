@@ -7,10 +7,25 @@ export interface LinkProps {
      */
     children?: React.ReactNode;
 
+    //** color of link */
+    color?:
+        | "inherit"
+        | "action"
+        | "disabled"
+        | "secondary"
+        | "primary"
+        | "error"
+        | "info"
+        | "success"
+        | "warning";
+
+    //** link to be passed in */
+    href?: string;
+
     /**
      * Callback fired when the link is clicked.
      */
-    onClick?: (event: React.MouseEvent<HTMLButtonElement, MouseEvent>) => void;
+    onClick?: (event: any) => void;
 
     /**
      * The system prop that allows defining system overrides as well as additional CSS styles.

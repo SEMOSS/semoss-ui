@@ -1,7 +1,5 @@
-import { ReactNode } from "react";
 import MuiPagination from "@mui/material/Pagination";
 import { SxProps } from "@mui/system";
-import { PaginationProps as MuiPaginationProps } from "@mui/material";
 import { UsePaginationItem } from "@mui/material/usePagination/usePagination";
 
 export interface PaginationRenderItemParams extends UsePaginationItem {
@@ -19,6 +17,12 @@ export interface PaginationProps {
      * @default 'standard'
      */
     color?: "primary" | "secondary" | "standard";
+
+    //** number of buttons to be displayed */
+    count?: number;
+
+    //** disabled if true */
+    disabled?: boolean;
 
     /**
      * Accepts a function which returns a string value that provides a user-friendly name for the current page.
@@ -49,6 +53,12 @@ export interface PaginationProps {
      * @default 'circular'
      */
     shape?: "circular" | "rounded";
+
+    //** show first button if true */
+    showFirstButton?: boolean;
+
+    //** show last button if true */
+    showLastButton?: boolean;
 
     /**
      * The size of the component.

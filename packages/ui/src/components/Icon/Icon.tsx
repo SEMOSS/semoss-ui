@@ -1,4 +1,3 @@
-import { ComponentPropsWithoutRef, ReactNode, ImgHTMLAttributes } from "react";
 import MuiIcon from "@mui/material/Icon";
 import { SxProps } from "@mui/system";
 

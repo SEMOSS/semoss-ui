@@ -1,8 +1,7 @@
 import MuiLinearProgress from "@mui/material/LinearProgress";
 import { SxProps } from "@mui/system";
-import { LinearProgressProps as MuiLinearProgressProps } from "@mui/material";
 
-export interface LinearProgressProps extends MuiLinearProgressProps {
+export interface LinearProgressProps {
     /**
      * The color of the component.
      * It supports both default and custom theme colors, which can be added as shown in the
