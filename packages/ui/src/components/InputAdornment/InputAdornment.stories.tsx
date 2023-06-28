@@ -26,7 +26,7 @@ const Template = (args) => {
             variant={"outlined"}
             label={"Outlined"}
             startAdornment={
-                <InputAdornment>
+                <InputAdornment position="start">
                     <Icon>
                         <MoreVertIcon />
                     </Icon>

@@ -28,6 +28,7 @@ export * from "./components/Modal";
 export * from "./components/Pagination";
 export * from "./components/PhoneNumberPicker";
 export * from "./components/Popover";
+export * from "./components/Search";
 export * from "./components/Select";
 export * from "./components/Skeleton";
 export * from "./components/Slider";
