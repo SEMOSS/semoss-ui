@@ -8,6 +8,7 @@ import { TextField } from "../TextField/index";
 import { Link } from "../Link/index";
 import { Typography } from "../Typography/index";
 import { Avatar } from "../Avatar/index";
+import { IconButton } from "../IconButton/index";
 import Icons from "../Icons/index";
 
 export interface DropzoneAreaProps extends MuiDropzoneOptions {
@@ -40,10 +41,23 @@ export function DropzoneArea(props: DropzoneAreaProps) {
 
                 <label>
                     <TextField
-                        ref={fileInput}
-                        type="file"
-                        sx={{ display: "none" }}
                         variant="outlined"
+                        type="text"
+                        sx={{ display: "none" }}
+                        InputProps={{
+                            endAdornment: (
+                                <IconButton>
+                                    <Icons.FileUploadOutlined />
+                                    <input
+                                        ref={fileInput}
+                                        style={{ display: "none" }}
+                                        type="file"
+                                        hidden
+                                        name="[licenseFile]"
+                                    />
+                                </IconButton>
+                            ),
+                        }}
                     />
                     <Typography
                         variant="body1"

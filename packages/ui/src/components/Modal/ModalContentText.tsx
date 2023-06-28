@@ -1,11 +1,9 @@
-import { ReactNode } from "react";
 import { DialogContentText as MuiModalContentText } from "@mui/material";
 import { SxProps } from "@mui/system";
-import { DialogContentTextProps as MuiModalContentTextProps } from "@mui/material";
 
-export interface ModalContentTextProps extends MuiModalContentTextProps {
+export interface ModalContentTextProps {
     /** children to be rendered */
-    children: ReactNode;
+    children: React.ReactNode;
 
     /** custom style object */
     sx?: SxProps;

@@ -51,12 +51,16 @@ export interface ButtonProps {
      */
     href?: string;
 
+    //** callback to fire when clicking component */
+    onClick?: () => void;
+
     /**
      * The size of the component.
      * `small` is equivalent to the dense button styling.
      * @default 'medium'
      */
     size?: "small" | "medium" | "large";
+
     /**
      * Element placed before the children.
      */
