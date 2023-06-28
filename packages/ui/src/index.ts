@@ -1,4 +1,5 @@
 export * from "./theme";
+// export * from "./components/Icons";
 
 export * from "./components/Accordion";
 export * from "./components/Alert";
@@ -36,6 +37,8 @@ export * from "./components/Stack";
 export * from "./components/Switch";
 export * from "./components/Table";
 export * from "./components/Tabs";
+export * from "./components/ToggleButton";
+export * from "./components/ToggleButtonGroup";
 export * from "./components/Tooltip";
 export * from "./components/Typography";
 export * from "./components/ThemeProvider";
