@@ -44,7 +44,10 @@ export * from "./components/Tabs";
 export * from "./components/ToggleGroup";
 export * from "./components/ToggleButton";
 export * from "./components/ToggleButtonGroup";
+<<<<<<< HEAD
 export * from "./components/ToggleTabsGroup";
+=======
+>>>>>>> 8e5b4cd (ToggleButton and ToggleButtonGroup added, Figure out issue with Icon library not getting exported correctly)
 export * from "./components/Tooltip";
 export * from "./components/Typography";
 export * from "./components/ThemeProvider";

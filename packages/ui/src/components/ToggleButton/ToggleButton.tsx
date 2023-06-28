@@ -37,14 +37,14 @@ export interface ToggleButtonProps<V> {
      * @param {React.MouseEvent<HTMLElement>} event The event source of the callback.
      * @param {any} value of the selected button.
      */
-    onChange?: (event: React.MouseEvent<HTMLElement>, value: V) => void;
+    onChange?: (event: React.MouseEvent<HTMLElement>, value: any) => void;
     /**
      * Callback fired when the button is clicked.
      *
      * @param {React.MouseEvent<HTMLElement>} event The event source of the callback.
      * @param {any} value of the selected button.
      */
-    onClick?: (event: React.MouseEvent<HTMLElement>, value: V) => void;
+    onClick?: (event: React.MouseEvent<HTMLElement>, value: any) => void;
     /**
      * If `true`, the button is rendered in an active state.
      */
@@ -61,8 +61,6 @@ export interface ToggleButtonProps<V> {
     sx?: SxProps;
 }
 
-export const ToggleButton = (
-    props: ToggleButtonProps<string | number | boolean>,
-) => {
+export const ToggleButton = (props: ToggleButtonProps<any>) => {
     return <MuiToggleButton {...props}>{props.children}</MuiToggleButton>;
 };
