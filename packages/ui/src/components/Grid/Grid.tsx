@@ -71,6 +71,8 @@ export interface GridProps {
      * @default false
      */
     zeroMinWidth?: boolean;
+
+    xs?: number;
 }
 
 export const Grid = (props: GridProps) => {

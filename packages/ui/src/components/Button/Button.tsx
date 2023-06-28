@@ -52,7 +52,7 @@ export interface ButtonProps {
     href?: string;
 
     //** callback to fire when clicking component */
-    onClick?: () => void;
+    onClick?: (e: any) => void;
 
     /**
      * The size of the component.

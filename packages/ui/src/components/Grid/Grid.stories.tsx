@@ -1,3 +1,4 @@
+import React from "react";
 import type { Meta, StoryObj } from "@storybook/react";
 import { Grid } from "../Grid/index";
 import { Box } from "../Box/index";
@@ -18,8 +19,8 @@ type Story = StoryObj<typeof Grid>;
 export const Default: Story = {
     render: (args) => (
         <Box sx={{ flexGrow: 1 }}>
-            <Grid container spacing={2}>
-                <Grid item {...args}>
+            <Grid container spacing={2} {...args}>
+                <Grid item>
                     <Card>
                         <Card.Content>
                             <Card.Header
