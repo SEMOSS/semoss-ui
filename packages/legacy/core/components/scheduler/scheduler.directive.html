@@ -85,6 +85,9 @@
                             <th class="scheduler__content__table__width20">
                                 Frequency
                             </th>
+                            <th class="scheduler__content__table__width15">
+                                Time Zone
+                            </th>
                             <th class="scheduler__content__table__width10">
                                 Job Tags
                             </th>
@@ -150,6 +153,7 @@
                             <td title="{{job.frequency['human']}}">
                                 {{schedule.convertTimeToFrequencyString(job)}}
                             </td>
+                            <td title="{{job.cronTimeZone}}">{{job.cronTimeZone}}</td>
                             <td title="{{job.jobTags}}">{{job.jobTags}}</td>
                             <td>
                                 <!-- <i class="fa fa-check-circle"
@@ -513,6 +517,16 @@
                             </content>
                         </smss-field>
                     </div>
+                    <smss-field>
+                        <label>Cron Time Zone:</label>
+                        <content>
+                            <smss-dropdown
+                                model="schedule.currentJob.cronTimeZone"
+                                options="schedule.cronTimeZones"
+                            >
+                            </smss-dropdown>
+                        </content>
+                    </smss-field>
                 </smss-scroll>
             </div>
             <div
@@ -901,6 +915,16 @@
                             </content>
                         </smss-field>
                     </div>
+                    <smss-field>
+                        <label>Cron Time Zone:</label>
+                        <content>
+                            <smss-dropdown
+                                model="schedule.jobBeingEdited.cronTimeZone"
+                                options="schedule.cronTimeZones"
+                            >
+                            </smss-dropdown>
+                        </content>
+                    </smss-field>
                 </smss-scroll>
             </div>
             <div

@@ -1,9 +1,9 @@
 import React, { useState } from "react";
 import type { Meta, StoryObj } from "@storybook/react";
-import { Select } from "../Select/index";
-import { Checkbox } from "../Checkbox/index";
-import MenuItem from "@mui/material/MenuItem";
-import Stack from "@mui/material/Stack";
+import { Select } from "../Select";
+import { Checkbox } from "../Checkbox";
+import { MenuItem } from "../Menu";
+import { Stack } from "../Stack";
 
 const meta: Meta<typeof Select> = {
     title: "Components/Select",

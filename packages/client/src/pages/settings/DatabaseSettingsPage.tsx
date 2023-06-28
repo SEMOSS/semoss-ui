@@ -12,11 +12,14 @@ import {
     Select,
     IconButton,
     Button,
+    ButtonGroup,
+    ToggleButton,
     // Icons,
     styled,
 } from '@semoss/ui';
 
 import { Permissions } from '@/components/database';
+import { ToggleButtonGroup } from '@semoss/ui';
 
 export interface DBMember {
     ID: string;
@@ -60,6 +63,7 @@ const StyledLandscapeCard = styled(Card)({
 export const DatabaseSettingsPage = () => {
     const { adminMode } = useSettings();
 
+    const [view, setView] = useState('tile');
     const [selectedApp, setSelectedApp] =
         useState<Awaited<ReturnType<MonolithStore['getDatabases']>>[number]>(
             null,
@@ -100,80 +104,102 @@ export const DatabaseSettingsPage = () => {
         return frags.join(' ');
     };
 
+    // console.log("i", Icons)
     return (
         <>
-            <div>Select a database to start</div>
-            <StyledSearchbar>
-                <StyledAutocomplete
-                    label="Database"
-                    id="combo-box-demo"
-                    options={getApps.status === 'SUCCESS' ? getApps.data : []}
-                    // value={selectedApp.app_id}
-                    onChange={(
-                        val: Awaited<
-                            ReturnType<MonolithStore['getDatabases']>
-                        >[number],
-                    ) => {
-                        setSelectedApp(val.app_id);
-                    }}
-                    // inputValue={inputValue}
-                    isOptionEqualToValue={(option, value) => {
-                        return option.app_id === value;
-                    }}
-                    onInputChange={(event, newInputValue) => {
-                        console.log();
-                        // setInputValue(newInputValue);
-                    }}
-                />
-
-                <Select></Select>
-
-                <Button variant="contained">Icon</Button>
-            </StyledSearchbar>
             {!selectedApp ? (
-                <Grid container spacing={2}>
-                    {getApps.status === 'SUCCESS'
-                        ? getApps.data.map((db, i) => {
-                              return (
-                                  <Grid
-                                      item
-                                      key={i}
-                                      sm={12}
-                                      md={6}
-                                      lg={4}
-                                      xl={3}
-                                  >
-                                      <StyledTileCard
-                                          onClick={() => setSelectedApp(db)}
+                <>
+                    <div>Select a database to start</div>
+                    <StyledSearchbar>
+                        <StyledAutocomplete
+                            label="Database"
+                            id="combo-box-demo"
+                            options={
+                                getApps.status === 'SUCCESS' ? getApps.data : []
+                            }
+                            // value={selectedApp.app_id}
+                            onChange={(
+                                val: Awaited<
+                                    ReturnType<MonolithStore['getDatabases']>
+                                >[number],
+                            ) => {
+                                setSelectedApp(val.app_id);
+                            }}
+                            // inputValue={inputValue}
+                            isOptionEqualToValue={(option, value) => {
+                                return option.app_id === value;
+                            }}
+                            onInputChange={(event, newInputValue) => {
+                                console.log();
+                                // setInputValue(newInputValue);
+                            }}
+                        />
+
+                        <Select></Select>
+
+                        <ToggleButtonGroup value={view}>
+                            <ToggleButton
+                                onClick={(e, v) => setView(v)}
+                                value={'tile'}
+                            >
+                                Tile
+                            </ToggleButton>
+                            <ToggleButton
+                                onClick={(e, v) => setView(v)}
+                                value={'list'}
+                            >
+                                List
+                            </ToggleButton>
+                        </ToggleButtonGroup>
+                    </StyledSearchbar>
+                    <Grid container spacing={2}>
+                        {getApps.status === 'SUCCESS'
+                            ? getApps.data.map((db, i) => {
+                                  return (
+                                      <Grid
+                                          item
+                                          key={i}
+                                          sm={12}
+                                          md={6}
+                                          lg={4}
+                                          xl={3}
                                       >
-                                          <Card.Media
-                                              src={
-                                                  'http://www.example.com/image.gif'
-                                              }
-                                              sx={{ height: '100px' }}
-                                          />
-                                          <Card.Header
-                                              title={formatDBName(db.app_name)}
-                                              //   subheader={<div>hello</div>}
-                                              //   action={
-                                              //     <IconButton>Hello</IconButton>
-                                              //   }
-                                          />
-                                          <Card.Content>
-                                              COntent of Card
-                                              {db.app_permission}
-                                          </Card.Content>
-                                          <StyledTileCardActions>
-                                              <div>1</div>
-                                              <div>2</div>
-                                              <div>4</div>
-                                          </StyledTileCardActions>
-                                      </StyledTileCard>
-                                  </Grid>
-                              );
-                          })
-                        : 'Retrieving datasets'}
-                </Grid>
+                                          <StyledTileCard
+                                              onClick={() => setSelectedApp(db)}
+                                          >
+                                              <Card.Media
+                                                  src={
+                                                      'http://www.example.com/image.gif'
+                                                  }
+                                                  sx={{ height: '100px' }}
+                                              />
+                                              <Card.Header
+                                                  title={formatDBName(
+                                                      db.app_name,
+                                                  )}
+                                                  //   subheader={<div>hello</div>}
+                                                  action={
+                                                      <IconButton>
+                                                          Hello
+                                                      </IconButton>
+                                                  }
+                                              />
+                                              <Card.Content>
+                                                  COntent of Card
+                                                  {db.app_permission}
+                                              </Card.Content>
+                                              <StyledTileCardActions>
+                                                  <div>1</div>
+                                                  <div>2</div>
+                                                  <div>4</div>
+                                              </StyledTileCardActions>
+                                          </StyledTileCard>
+                                      </Grid>
+                                  );
+                              })
+                            : 'Retrieving datasets'}
+                    </Grid>
+                </>
             ) : (
                 <Permissions
                     config={{

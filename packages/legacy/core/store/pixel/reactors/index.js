@@ -5897,6 +5897,7 @@ const REACTORS = {
         jobName,
         jobGroup,
         cronExpression,
+        cronTimeZone,
         recipe,
         recipeParameters,
         jobTags,
@@ -5910,6 +5911,7 @@ const REACTORS = {
         query += 'jobName=["' + jobName + '"], ';
         query += 'jobGroup=["' + jobGroup + '"], ';
         query += 'cronExpression=["' + cronExpression + '"], ';
+        query += 'cronTz=["' + cronTimeZone + '"], ';
         query += 'recipe=["<encode>' + recipe + '</encode>"], ';
         if (recipeParameters) {
             query +=
@@ -5956,6 +5958,7 @@ const REACTORS = {
         jobName,
         jobGroup,
         cronExpression,
+        cronTimeZone,
         recipe,
         recipeParameters,
         jobTags,
@@ -5972,6 +5975,7 @@ const REACTORS = {
         query += 'jobName=["' + jobName + '"], ';
         query += 'jobGroup=["' + jobGroup + '"], ';
         query += 'cronExpression=["' + cronExpression + '"], ';
+        query += 'cronTz=["' + cronTimeZone + '"], ';
         query += 'recipe=["<encode>' + recipe + '</encode>"], ';
         if (recipeParameters) {
             query +=
