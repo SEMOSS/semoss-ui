@@ -1,7 +1,6 @@
 import { ReactNode } from "react";
 import MuiTab from "@mui/material/Tab";
 import { SxProps } from "@mui/system";
-import { TabProps as MuiTabProps } from "@mui/material";
 
 export interface TabProps {
     /**
@@ -9,25 +8,17 @@ export interface TabProps {
      * @default false
      */
     disabled?: boolean;
-
     /**
-     * The position of the icon relative to the label.
      * @default 'top'
-     */
-    iconPosition?: "top" | "bottom" | "start" | "end";
-
     /**
      * The label element.
      */
     label?: ReactNode;
-
-    /** style object */
     sx?: SxProps;
-
     /**
      * You can provide your own value. Otherwise, we fallback to the child position index.
      */
-    value?: string | number;
+    value?: any;
 }
 
 export const Tab = (props: TabProps) => {

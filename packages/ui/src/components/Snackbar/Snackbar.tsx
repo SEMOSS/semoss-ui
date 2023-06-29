@@ -1,8 +1,12 @@
 <<<<<<< HEAD
+<<<<<<< HEAD
 import React, { ReactNode } from "react";
 =======
 import React from "react";
 >>>>>>> b1cbffe (added typed props)
+=======
+import React, { ReactNode } from "react";
+>>>>>>> ddfe6a8 (corrected types)
 import MuiSnackbar from "@mui/material/Snackbar";
 import { SxProps } from "@mui/system";
 
@@ -11,6 +15,9 @@ interface anchorOriginProps {
     vertical: "bottom" | "top";
 }
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> ddfe6a8 (corrected types)
 export interface SnackbarProps {
     /**
      * The action to display. It renders after the message, at the end of the snackbar.
@@ -19,6 +26,7 @@ export interface SnackbarProps {
     /**
      * If `true`, the component is shown.
      */
+<<<<<<< HEAD
     open: boolean;
     /**
      * Replace the `SnackbarContent` component.
@@ -57,12 +65,47 @@ export interface SnackbarProps {
 =======
 export interface SnackbarProps extends MuiSnackbarProps {
     /** custom style object */
+=======
+>>>>>>> ddfe6a8 (corrected types)
     open: boolean;
+    /**
+     * Replace the `SnackbarContent` component.
+     */
     children: React.ReactElement<any, any>;
+    /**
+     * The anchor of the `Snackbar`.
+     * On smaller screens, the component grows to occupy all the available width,
+     * the horizontal alignment is ignored.
+     * @default { vertical: 'bottom', horizontal: 'left' }
+     */
     anchorOrigin?: anchorOriginProps;
-    autoHideDuration?: number;
+    /**
+     * The number of milliseconds to wait before automatically calling the
+     * `onClose` function. `onClose` should then set the state of the `open`
+     * prop to hide the Snackbar. This behavior is disabled by default with
+     * the `null` value.
+     * @default null
+     */
+    autoHideDuration?: number | null;
+    /**
+     * Callback fired when the component requests to be closed.
+     * Typically `onClose` is used to set state in the parent component,
+     * which is used to control the `Snackbar` `open` prop.
+     * The `reason` parameter can optionally be used to control the response to `onClose`,
+     * for example ignoring `clickaway`.
+     *
+     * @param {React.SyntheticEvent<any> | Event} event The event source of the callback.
+     * @param {string} reason Can be: `"timeout"` (`autoHideDuration` expired), `"clickaway"`, or `"escapeKeyDown"`.
+     */
     onClose?: () => void;
+<<<<<<< HEAD
 >>>>>>> b1cbffe (added typed props)
+=======
+    /**
+     * The message to display.
+     */
+    message?: ReactNode;
+>>>>>>> ddfe6a8 (corrected types)
     sx?: SxProps;
 }
 

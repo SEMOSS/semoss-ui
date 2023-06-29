@@ -12,7 +12,7 @@ export interface TooltipProps {
     /**
      * Tooltip reference element.
      */
-    children: React.ReactElement;
+    children: React.ReactElement<any, any>;
     /**
      * If `true`, the component is shown.
      */
