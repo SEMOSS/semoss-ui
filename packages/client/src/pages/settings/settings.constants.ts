@@ -58,9 +58,9 @@ export const SETTINGS_ROUTES: {
     },
 
     {
-        title: 'Social Properties',
+        title: 'Configuration',
         path: 'social-properties',
-        description: 'Edit social properties',
+        description: 'Use this portal to change configuration settings.',
         icon: mdiTabletCellphone,
     },
     {
