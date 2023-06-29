@@ -32,6 +32,7 @@ export * from "./components/PhoneNumberPicker";
 export * from "./components/Popover";
 export * from "./components/RadioGroup";
 export * from "./components/Search";
+export * from "./components/Searchbar";
 export * from "./components/Select";
 export * from "./components/Skeleton";
 export * from "./components/Slider";
@@ -43,10 +44,7 @@ export * from "./components/Tabs";
 export * from "./components/ToggleGroup";
 export * from "./components/ToggleButton";
 export * from "./components/ToggleButtonGroup";
-<<<<<<< HEAD
 export * from "./components/ToggleTabsGroup";
-=======
->>>>>>> 8e5b4cd (ToggleButton and ToggleButtonGroup added, Figure out issue with Icon library not getting exported correctly)
 export * from "./components/Tooltip";
 export * from "./components/Typography";
 export * from "./components/ThemeProvider";
