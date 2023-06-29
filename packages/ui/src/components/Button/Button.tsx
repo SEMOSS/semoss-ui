@@ -46,6 +46,12 @@ export interface ButtonProps {
     fullWidth?: boolean;
 
     /**
+     * OnChange functionality
+     * If defined, this is the function that will be called when the button is pressed
+     */
+    onClick?: (e: any) => void;
+
+    /**
      * The URL to link to when the button is clicked.
      * If defined, an `a` element will be used as the root node.
      */
