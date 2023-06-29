@@ -4,10 +4,11 @@ import {
     DropzoneOptions as MuiDropzoneOptions,
 } from "react-dropzone";
 import { Container } from "../Container/index";
-import { Input } from "../Input/index";
+import { TextField } from "../TextField/index";
 import { Link } from "../Link/index";
 import { Typography } from "../Typography/index";
 import { Avatar } from "../Avatar/index";
+import { IconButton } from "../IconButton/index";
 import Icons from "../Icons/index";
 
 export interface DropzoneAreaProps extends MuiDropzoneOptions {
@@ -39,11 +40,24 @@ export function DropzoneArea(props: DropzoneAreaProps) {
                 <input {...getInputProps()} />
 
                 <label>
-                    <Input
-                        ref={fileInput}
-                        type="file"
-                        disableUnderline
+                    <TextField
+                        variant="outlined"
+                        type="text"
                         sx={{ display: "none" }}
+                        InputProps={{
+                            endAdornment: (
+                                <IconButton>
+                                    <Icons.FileUploadOutlined />
+                                    <input
+                                        ref={fileInput}
+                                        style={{ display: "none" }}
+                                        type="file"
+                                        hidden
+                                        name="[licenseFile]"
+                                    />
+                                </IconButton>
+                            ),
+                        }}
                     />
                     <Typography
                         variant="body1"
@@ -59,7 +73,6 @@ export function DropzoneArea(props: DropzoneAreaProps) {
                         <span>
                             {
                                 <Link
-                                    color="inherit"
                                     onClick={() => fileInput.current.click()}
                                     sx={{ cursor: "pointer" }}
                                 >

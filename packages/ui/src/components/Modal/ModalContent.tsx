@@ -1,13 +1,21 @@
-import { ReactNode } from "react";
 import { DialogContent as MuiModalContent } from "@mui/material";
 import { SxProps } from "@mui/system";
-import { DialogContentProps as MuiModalContentProps } from "@mui/material";
 
-export interface ModalContentProps extends MuiModalContentProps {
-    /** children to be rendered */
-    children: ReactNode;
+export interface ModalContentProps {
+    /**
+     * The content of the component.
+     */
+    children?: React.ReactNode;
 
-    /** custom style object */
+    /**
+     * Display the top and bottom dividers.
+     * @default false
+     */
+    dividers?: boolean;
+
+    /**
+     * The system prop that allows defining system overrides as well as additional CSS styles.
+     */
     sx?: SxProps;
 }
 

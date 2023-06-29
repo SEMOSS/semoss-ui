@@ -1,6 +1,7 @@
 import { useState } from "react";
 import type { Meta, StoryObj } from "@storybook/react";
 import { PhoneNumberPicker } from "../PhoneNumberPicker/index";
+import React from "react";
 
 const meta: Meta<typeof PhoneNumberPicker> = {
     title: "Components/PhoneNumberPicker",
@@ -17,7 +18,6 @@ const Example = () => {
     return (
         <>
             <PhoneNumberPicker
-                variant="outlined"
                 defaultCountry={"us"}
                 onChange={(val) => setNumber(val)}
             />

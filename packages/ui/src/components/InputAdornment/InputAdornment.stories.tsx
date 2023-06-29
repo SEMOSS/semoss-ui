@@ -1,37 +1,24 @@
 import React from "react";
 import { InputAdornment } from "./InputAdornment";
-import { Input } from "../Input";
 import { Icon } from "../Icon";
-import { Icons } from "../Icons";
 import MoreVertIcon from "@mui/icons-material/MoreVert";
+import { TextField } from "../TextField";
 
 export default {
-    title: "Components/Input/InputAdornment",
+    title: "Components/InputAdornment",
     component: InputAdornment,
-    // argTypes: {
-    //     spacing: {
-    //         options: ["small", "medium"],
-    //         control: { type: "radio" },
-    //     },
-    //     variant: {
-    //         options: ["circular", "rounded"],
-    //         control: { type: "select" },
-    //     },
-    // },
 };
 
 const Template = (args) => {
     return (
-        <Input
-            variant={"outlined"}
-            label={"Outlined"}
-            startAdornment={
-                <InputAdornment position="start">
-                    <Icon>
+        <TextField
+            InputProps={{
+                startAdornment: (
+                    <InputAdornment position="start">
                         <MoreVertIcon />
-                    </Icon>
-                </InputAdornment>
-            }
+                    </InputAdornment>
+                ),
+            }}
         />
     );
 };

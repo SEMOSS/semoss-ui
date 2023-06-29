@@ -45,7 +45,7 @@ const Example = (args: typeof meta) => {
             <Button variant="outlined" onClick={() => setOpen(true)}>
                 Open Modal
             </Button>
-            <Modal {...args} open={open}>
+            <Modal open={open} {...args}>
                 <Modal.Title>Modal Title</Modal.Title>
                 <Modal.Content>
                     <Modal.ContentText>{content}</Modal.ContentText>
