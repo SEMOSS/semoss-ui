@@ -1,0 +1,64 @@
+import type { Meta, StoryObj } from "@storybook/react";
+import { List } from "../List/index";
+import Icons from "../Icons/index";
+import { Box } from "../Box/index";
+import React from "react";
+
+const meta: Meta<typeof List> = {
+    title: "Components/List",
+    component: List,
+    args: {
+        sx: {},
+    },
+    argTypes: {
+        // variant: {
+        //     options: ["menu", "selectedMenu"],
+        // },
+    },
+};
+
+export default meta;
+
+type Story = StoryObj<typeof List>;
+
+export const Default: Story = {
+    render: (args) => (
+        <Box sx={{ width: "100%", maxWidth: 360, bgcolor: "background.paper" }}>
+            <List {...args}>
+                <List.Item divider>
+                    <List.ItemText
+                        primary="Primary text"
+                        secondary="Secondary text"
+                    />
+                    <List.ItemButton
+                        onClick={() => window.alert("Clicked search button")}
+                    >
+                        <Icons.SearchRounded sx={{ color: "#40a0ff", mr: 2 }} />
+                    </List.ItemButton>
+                </List.Item>
+                <List.Item divider>
+                    <List.ItemText
+                        primary="Primary text"
+                        secondary="Secondary text"
+                    />
+                    <List.ItemButton
+                        onClick={() => window.alert("Clicked start button")}
+                    >
+                        <Icons.StartRounded sx={{ color: "#40a0ff", mr: 2 }} />
+                    </List.ItemButton>
+                </List.Item>
+                <List.Item divider>
+                    <List.ItemText
+                        primary="Primary text"
+                        secondary="Secondary text"
+                    />
+                    <List.ItemButton
+                        onClick={() => window.alert("Clicked filter button")}
+                    >
+                        <Icons.FilterRounded sx={{ color: "#40a0ff", mr: 2 }} />
+                    </List.ItemButton>
+                </List.Item>
+            </List>
+        </Box>
+    ),
+};
