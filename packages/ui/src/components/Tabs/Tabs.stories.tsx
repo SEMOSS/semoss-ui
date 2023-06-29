@@ -1,4 +1,4 @@
-import { useState, SyntheticEvent } from "react";
+import React, { useState, SyntheticEvent } from "react";
 import type { Meta, StoryObj } from "@storybook/react";
 import { Tabs } from "../Tabs/index";
 import { Box } from "../Box/index";

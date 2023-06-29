@@ -1,11 +1,10 @@
 import { ReactNode } from "react";
 import MuiTableRow from "@mui/material/TableRow";
 import { SxProps } from "@mui/system";
-import { TableRowProps as MuiTableRowProps } from "@mui/material";
 
-export interface TableRowProps extends MuiTableRowProps {
+export interface TableRowProps {
     /** children to be rendered */
-    children: ReactNode;
+    children?: ReactNode;
 
     /** custom style object */
     sx?: SxProps;

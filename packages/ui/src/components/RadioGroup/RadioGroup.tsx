@@ -2,12 +2,9 @@ import { ReactNode } from "react";
 import MuiRadioGroup from "@mui/material/RadioGroup";
 import MuiRadio from "@mui/material/Radio";
 import { SxProps } from "@mui/system";
-import {
-    RadioGroupProps as MuiRadioGroupProps,
-    RadioProps as MuiRadioProps,
-} from "@mui/material";
+import { RadioGroupProps as MuiRadioGroupProps } from "@mui/material";
 
-export interface RadioProps extends MuiRadioProps {
+export interface RadioProps {
     /** custom style object */
     sx?: SxProps;
 }
@@ -15,10 +12,23 @@ export interface RadioProps extends MuiRadioProps {
 export interface RadioGroupProps extends MuiRadioGroupProps {
     /** custom style object */
     children?: ReactNode;
+
+    // * You can pull out the new value by accessing `event.target.value` (string).
+    // */
     onChange?: (event: any) => void;
+    /**
+     * The name used to reference the value of the control.
+     * If you don't provide this prop, it falls back to a randomly generated name.
+     */
     name?: string;
+    /**
+     * The default value. Use when the component is not controlled.
+     */
     defaultValue?: any;
     sx?: SxProps;
+    /**
+     * Changes the orientation of the radio group.
+     */
     row?: boolean;
 }
 

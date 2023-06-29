@@ -1,13 +1,25 @@
 import { ReactNode } from "react";
 import MuiTable from "@mui/material/Table";
 import { SxProps } from "@mui/system";
-import { TableProps as MuiTableProps } from "@mui/material";
 
-export interface TableProps extends MuiTableProps {
+export interface TableProps {
     /** children to be rendered */
     children: ReactNode;
 
+    /**
+     * Set the header sticky.
+     *
+     * ⚠️ It doesn't work with IE11.
+     * @default false
+     */
+    stickyHeader?: boolean;
+
     /** custom style object */
+    /**
+     * Allows TableCells to inherit size of the Table.
+     * @default 'medium'
+     */
+    size?: "small" | "medium";
     sx?: SxProps;
 }
 
