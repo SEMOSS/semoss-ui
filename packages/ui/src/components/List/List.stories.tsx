@@ -9,11 +9,12 @@ const meta: Meta<typeof List> = {
     component: List,
     args: {
         sx: {},
+        disablePadding: false,
     },
     argTypes: {
-        // variant: {
-        //     options: ["menu", "selectedMenu"],
-        // },
+        disablePadding: {
+            options: [true, false],
+        },
     },
 };
 
@@ -25,38 +26,60 @@ export const Default: Story = {
     render: (args) => (
         <Box sx={{ width: "100%", maxWidth: 360, bgcolor: "background.paper" }}>
             <List {...args}>
-                <List.Item divider>
+                <List.Item
+                    divider
+                    secondaryAction={
+                        <List.ItemButton
+                            onClick={() =>
+                                window.alert("Clicked search button")
+                            }
+                        >
+                            <Icons.SearchRounded
+                                sx={{ color: "#40a0ff", mr: 2 }}
+                            />
+                        </List.ItemButton>
+                    }
+                >
                     <List.ItemText
                         primary="Primary text"
                         secondary="Secondary text"
                     />
-                    <List.ItemButton
-                        onClick={() => window.alert("Clicked search button")}
-                    >
-                        <Icons.SearchRounded sx={{ color: "#40a0ff", mr: 2 }} />
-                    </List.ItemButton>
                 </List.Item>
-                <List.Item divider>
+                <List.Item
+                    divider
+                    secondaryAction={
+                        <List.ItemButton
+                            onClick={() => window.alert("Clicked start button")}
+                        >
+                            <Icons.StartRounded
+                                sx={{ color: "#40a0ff", mr: 2 }}
+                            />
+                        </List.ItemButton>
+                    }
+                >
                     <List.ItemText
                         primary="Primary text"
                         secondary="Secondary text"
                     />
-                    <List.ItemButton
-                        onClick={() => window.alert("Clicked start button")}
-                    >
-                        <Icons.StartRounded sx={{ color: "#40a0ff", mr: 2 }} />
-                    </List.ItemButton>
                 </List.Item>
-                <List.Item divider>
+                <List.Item
+                    divider
+                    secondaryAction={
+                        <List.ItemButton
+                            onClick={() =>
+                                window.alert("Clicked filter button")
+                            }
+                        >
+                            <Icons.FilterRounded
+                                sx={{ color: "#40a0ff", mr: 2 }}
+                            />
+                        </List.ItemButton>
+                    }
+                >
                     <List.ItemText
                         primary="Primary text"
                         secondary="Secondary text"
                     />
-                    <List.ItemButton
-                        onClick={() => window.alert("Clicked filter button")}
-                    >
-                        <Icons.FilterRounded sx={{ color: "#40a0ff", mr: 2 }} />
-                    </List.ItemButton>
                 </List.Item>
             </List>
         </Box>
