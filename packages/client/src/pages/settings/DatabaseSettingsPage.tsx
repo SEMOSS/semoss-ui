@@ -6,32 +6,29 @@ import { LoadingScreen } from '@/components/ui';
 import { MonolithStore } from '@/stores/monolith';
 
 import {
+    Avatar,
     Autocomplete,
-    Card,
-    Grid,
-    Select,
-    IconButton,
-    Button,
     ButtonGroup,
+    Button,
+    Card,
+    Chip,
+    Grid,
+    Searchbar,
+    Select,
+    MenuItem,
+    Icon,
+    IconButton,
     ToggleButton,
     ToggleButtonGroup,
+    Typography,
     // Icons,
     styled,
 } from '@semoss/ui';
 
-debugger;
-// import Icons from "../../../../ui/src/components/Icons";
-// import Icons from '@semoss/ui';
-import { MuiAlert } from '@semoss/ui';
-import * as Semoss from '@semoss/ui';
-
-debugger;
-console.log('Icon', MuiAlert);
-
-console.log('Semoss', Semoss.Alert);
+import * as Icons from '@semoss/ui';
 
 import { Permissions } from '@/components/database';
-
+debugger;
 export interface DBMember {
     ID: string;
     NAME: string;
@@ -40,16 +37,32 @@ export interface DBMember {
     SELECTED: boolean;
 }
 
-const StyledSearchbar = styled('div')({
+const StyledContainer = styled('div')({
     display: 'flex',
-    gap: '16px',
-    marginTop: '16px',
-    marginBottom: '16px',
-    gap: '16px',
+    width: 'auto',
+    flexDirection: 'column',
+    alignItems: 'flex-start',
+    gap: '24px',
 });
 
-const StyledAutocomplete = styled(Autocomplete)({
-    width: '70%',
+const StyledSearchbarContainer = styled('div')({
+    display: 'flex',
+    width: '100%',
+    alignItems: 'flex-start',
+    gap: '24px',
+});
+
+const StyledSearchbar = styled(Searchbar)({
+    width: '80%',
+});
+
+const StyledSort = styled(Select)({
+    display: 'flex',
+    width: '220px',
+    flexDirection: 'column',
+    alignItems: 'flex-start',
+    gap: '3px',
+    flexShrink: '0',
 });
 
 const StyledTileCard = styled(Card)({
@@ -60,11 +73,149 @@ const StyledTileCard = styled(Card)({
     gap: '16px',
 });
 
+const StyledTileCardContent = styled(Card.Content)({
+    display: 'flex',
+    padding: '0px 16px',
+    flexDirection: 'column',
+    alignItems: 'flex-start',
+    alignSelf: 'stretch',
+});
+
+const StyledCardRows = styled('div')({
+    display: 'flex',
+    alignItems: 'center',
+    alignSelf: 'stretch',
+});
+
+const StyledCardRowsDiv = styled('div')({
+    display: 'flex',
+    alignItems: 'center',
+    gap: '8px',
+    flex: '1 0 0',
+});
+
+const StyledCardContainer = styled('div')({
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'flex-start',
+    gap: '8px',
+    flex: '1 0 0',
+    // display: 'flex',
+    // padding: '0px 0px 8px 0px',
+    // flexDirection: 'column',
+    // alignItems: 'flex-start',
+    // gap: '16px',
+    // flex: '1 0 0',
+});
+
+const StyledCardHeader = styled('div')({
+    display: 'flex',
+    alignItems: 'flex-start',
+    gap: '4px',
+    alignSelf: 'stretch',
+});
+
+const StyledDbName = styled(Typography)({
+    display: 'flex',
+    flexDirection: 'column',
+    justifyContent: 'center',
+    flex: '1 0 0',
+    alignSelf: 'stretch',
+});
+
+const StyledCardCategory = styled('div')({
+    display: 'flex',
+    justifyContent: 'center',
+    alignItems: 'center',
+    gap: '4px',
+    alignSelf: 'stretch',
+});
+
+const StyledCategoryIcon = styled(Icons.FolderOpen)({
+    display: 'flex',
+    alignItems: 'flex-start',
+});
+
+const StyledCategoryLabel = styled(Typography)({
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'flex-start',
+    flex: '1 0 0',
+});
+
+const StyledPublishedByContainer = styled('div')({
+    display: 'flex',
+    justifyContent: 'center',
+    alignItems: 'center',
+    gap: '4px',
+    alignSelf: 'stretch',
+});
+
+const StyledAvatar = styled(Avatar)({
+    display: 'flex',
+    width: '20px',
+    height: '20px',
+    padding: '8px',
+    justifyContent: 'center',
+    alignItems: 'center',
+    gap: '10px',
+});
+
+const StyledPersonIcon = styled(Icons.Person)({
+    display: 'flex',
+    alignItems: 'flex-start',
+});
+
+const StyledPublishedByLabel = styled(Typography)({
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'flex-start',
+    flex: '1 0 0',
+});
+
+const StyedCardDescription = styled(Typography)({
+    display: 'flex',
+    flexDirection: 'column',
+    alignSelf: 'stretch',
+});
+
 const StyledTileCardActions = styled(Card.Actions)({
     display: 'flex',
-    flexDirection: 'row',
+    padding: '0px 8px 0px 16px',
+    alignItems: 'center',
+    gap: '4px',
+    alignSelf: 'stretch',
+});
+
+const StyledLeftActions = styled('div')({
+    display: 'flex',
+    alignItems: 'center',
+    gap: '6px',
+    flex: '1 0 0',
+});
+
+const StyledViewsTrendingDiv = styled('div')({
+    display: 'flex',
+    justifyContent: 'center',
     alignItems: 'flex-start',
-    gap: '1rem',
+    gap: '4px',
+});
+
+const StyledEyeIcon = styled(Icons.Visibility)({
+    display: 'flex',
+    alignItems: 'flex-start',
+});
+
+const StyledTrendingIcon = styled(Icons.ShowChart)({
+    display: 'flex',
+    alignItems: 'flex-start',
+});
+
+const StyledLockButton = styled(IconButton)({
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
+    gap: '10px',
 });
 
 const StyledLandscapeCard = styled(Card)({
@@ -75,6 +226,9 @@ export const DatabaseSettingsPage = () => {
     const { adminMode } = useSettings();
 
     const [view, setView] = useState('tile');
+    const [search, setSearch] = useState('');
+    const [sort, setSort] = useState('Name');
+
     const [selectedApp, setSelectedApp] =
         useState<Awaited<ReturnType<MonolithStore['getDatabases']>>[number]>(
             null,
@@ -117,12 +271,25 @@ export const DatabaseSettingsPage = () => {
 
     // console.log('i', Icons);
     return (
-        <>
+        <StyledContainer>
             {!selectedApp ? (
                 <>
-                    <div>Select a database to start</div>
-                    <StyledSearchbar>
-                        <StyledAutocomplete
+                    <Typography variant={'body1'}>
+                        Select a database to start
+                    </Typography>
+
+                    <StyledSearchbarContainer>
+                        <StyledSearchbar
+                            value={search}
+                            onChange={(e) => {
+                                setSearch(e.target.value);
+                            }}
+                            label="Database"
+                            size="small"
+                        />
+                        {/* <Search 
+                        /> */}
+                        {/* <StyledAutocomplete
                             label="Database"
                             id="combo-box-demo"
                             options={
@@ -144,27 +311,38 @@ export const DatabaseSettingsPage = () => {
                                 console.log();
                                 // setInputValue(newInputValue);
                             }}
-                        />
+                        /> */}
 
-                        <Select></Select>
+                        <StyledSort
+                            size={'small'}
+                            value={sort}
+                            onChange={(e) => setSort(e.target.value)}
+                        >
+                            <MenuItem value={'Name'}>Name</MenuItem>
+                            <MenuItem value={'Date Created'}>
+                                Date Created
+                            </MenuItem>
+                            <MenuItem value={'Views'}>Views</MenuItem>
+                            <MenuItem value={'Trending'}>Trending</MenuItem>
+                            <MenuItem value={'Upvotes'}>Upvotes</MenuItem>
+                        </StyledSort>
 
-                        <Semoss.Alert />
-                        <ToggleButtonGroup value={view}>
+                        <ToggleButtonGroup size={'small'} value={view}>
                             <ToggleButton
                                 onClick={(e, v) => setView(v)}
                                 value={'tile'}
                             >
-                                Tile
+                                <Icons.SpaceDashboardOutlined />
                             </ToggleButton>
                             <ToggleButton
                                 onClick={(e, v) => setView(v)}
                                 value={'list'}
                             >
-                                List
+                                <Icons.FormatListBulletedOutlined />
                             </ToggleButton>
                         </ToggleButtonGroup>
-                    </StyledSearchbar>
-                    <Grid container spacing={2}>
+                    </StyledSearchbarContainer>
+                    <Grid container spacing={3}>
                         {getApps.status === 'SUCCESS'
                             ? getApps.data.map((db, i) => {
                                   return (
@@ -185,33 +363,132 @@ export const DatabaseSettingsPage = () => {
                                                   }
                                                   sx={{ height: '100px' }}
                                               />
-                                              <Card.Header
-                                                  title={formatDBName(
-                                                      db.app_name,
-                                                  )}
-                                                  //   subheader={<div>hello</div>}
-                                                  action={
-                                                      <IconButton>
-                                                          Star
-                                                      </IconButton>
-                                                  }
-                                              />
-                                              <Card.Content>
-                                                  {/* {db.app_permission} */}
-                                                  Lorem Ipsum is simply dummy
-                                                  text of the printing and
-                                                  typesetting industry. Lorem
-                                                  Ipsum has been the industry's
-                                                  standard dummy text ever since
-                                                  the 1500s, when an unknown
-                                                  printer took a galley of type
-                                                  and scrambled it to make a
-                                                  type specimen book.
-                                              </Card.Content>
+                                              <StyledTileCardContent>
+                                                  <StyledCardRows>
+                                                      <StyledCardRowsDiv>
+                                                          <StyledCardContainer>
+                                                              <StyledCardHeader>
+                                                                  <StyledDbName
+                                                                      variant={
+                                                                          'body1'
+                                                                      }
+                                                                  >
+                                                                      {formatDBName(
+                                                                          db.app_name,
+                                                                      )}
+                                                                  </StyledDbName>
+                                                                  <IconButton>
+                                                                      <Icons.StarOutlineOutlined />
+                                                                  </IconButton>
+                                                              </StyledCardHeader>
+
+                                                              <StyledCardCategory>
+                                                                  <Icon color="disabled">
+                                                                      <StyledCategoryIcon />
+                                                                  </Icon>
+                                                                  <StyledCategoryLabel
+                                                                      color={
+                                                                          'secondary'
+                                                                      }
+                                                                      variant={
+                                                                          'caption'
+                                                                      }
+                                                                  >
+                                                                      Category
+                                                                  </StyledCategoryLabel>
+                                                              </StyledCardCategory>
+
+                                                              <StyledPublishedByContainer>
+                                                                  <StyledAvatar>
+                                                                      <StyledPersonIcon />
+                                                                  </StyledAvatar>
+                                                                  <StyledPublishedByLabel
+                                                                      color={
+                                                                          'secondary'
+                                                                      }
+                                                                      variant={
+                                                                          'caption'
+                                                                      }
+                                                                  >
+                                                                      Published
+                                                                      by: jsmith
+                                                                  </StyledPublishedByLabel>
+                                                              </StyledPublishedByContainer>
+
+                                                              <StyedCardDescription
+                                                                  variant={
+                                                                      'body2'
+                                                                  }
+                                                              >
+                                                                  {/* {db.app_permission} */}
+                                                                  Lorem Ipsum is
+                                                                  simply dummy
+                                                                  text of the
+                                                                  printing and
+                                                                  typesetting
+                                                                  industry.
+                                                                  Lorem Ipsum
+                                                                  has been the
+                                                                  industry's
+                                                                  standard dummy
+                                                                  text ever
+                                                                  since the
+                                                                  1500s, when an
+                                                                  unknown
+                                                                  printer took a
+                                                                  galley of type
+                                                                  and scrambled
+                                                                  it to make a
+                                                                  type specimen
+                                                                  book.
+                                                              </StyedCardDescription>
+                                                              <Chip
+                                                                  variant={
+                                                                      'outlined'
+                                                                  }
+                                                                  label={'Tag'}
+                                                              />
+                                                          </StyledCardContainer>
+                                                      </StyledCardRowsDiv>
+                                                  </StyledCardRows>
+                                              </StyledTileCardContent>
                                               <StyledTileCardActions>
-                                                  <div>1</div>
-                                                  <div>2</div>
-                                                  <div>4</div>
+                                                  <StyledLeftActions>
+                                                      <ButtonGroup
+                                                          size="sm"
+                                                          color="secondary"
+                                                      >
+                                                          <Button>
+                                                              <Icons.ArrowDropUp />
+                                                          </Button>
+                                                          <Button
+                                                              disabled={true}
+                                                          >
+                                                              12
+                                                          </Button>
+                                                      </ButtonGroup>
+                                                      <StyledViewsTrendingDiv>
+                                                          <StyledEyeIcon color="secondary" />
+                                                          <Typography
+                                                              color="secondary"
+                                                              variant="caption"
+                                                          >
+                                                              1.2k
+                                                          </Typography>
+                                                      </StyledViewsTrendingDiv>
+                                                      <StyledViewsTrendingDiv>
+                                                          <StyledTrendingIcon color="secondary" />
+                                                          <Typography
+                                                              color="secondary"
+                                                              variant="caption"
+                                                          >
+                                                              1.2k
+                                                          </Typography>
+                                                      </StyledViewsTrendingDiv>
+                                                  </StyledLeftActions>
+                                                  <StyledLockButton>
+                                                      <Icons.LockRounded />
+                                                  </StyledLockButton>
                                               </StyledTileCardActions>
                                           </StyledTileCard>
                                       </Grid>
@@ -230,6 +507,6 @@ export const DatabaseSettingsPage = () => {
                     }}
                 ></Permissions>
             )}
-        </>
+        </StyledContainer>
     );
 };
