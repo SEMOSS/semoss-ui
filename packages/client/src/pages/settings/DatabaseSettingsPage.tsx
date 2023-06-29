@@ -14,12 +14,14 @@ import {
     Button,
     ButtonGroup,
     ToggleButton,
+    ToggleButtonGroup,
     // Icons,
     styled,
 } from '@semoss/ui';
 
+import { Icons } from '@semoss/ui';
+
 import { Permissions } from '@/components/database';
-import { ToggleButtonGroup } from '@semoss/ui';
 
 export interface DBMember {
     ID: string;
@@ -104,7 +106,7 @@ export const DatabaseSettingsPage = () => {
         return frags.join(' ');
     };
 
-    // console.log("i", Icons)
+    console.log('i', Icons);
     return (
         <>
             {!selectedApp ? (
@@ -185,8 +187,16 @@ export const DatabaseSettingsPage = () => {
                                                   }
                                               />
                                               <Card.Content>
-                                                  COntent of Card
-                                                  {db.app_permission}
+                                                  {/* {db.app_permission} */}
+                                                  Lorem Ipsum is simply dummy
+                                                  text of the printing and
+                                                  typesetting industry. Lorem
+                                                  Ipsum has been the industry's
+                                                  standard dummy text ever since
+                                                  the 1500s, when an unknown
+                                                  printer took a galley of type
+                                                  and scrambled it to make a
+                                                  type specimen book.
                                               </Card.Content>
                                               <StyledTileCardActions>
                                                   <div>1</div>

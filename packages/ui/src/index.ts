@@ -1,5 +1,5 @@
 export * from "./theme";
-// export * from "./components/Icons";
+export * from "./components/Icons";
 
 export * from "./components/Accordion";
 export * from "./components/Alert";
