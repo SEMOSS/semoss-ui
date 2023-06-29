@@ -2,6 +2,14 @@
 const config = {
     stories: ["../src/*.mdx", "../src/**/*.stories.@(js|jsx|ts|tsx)"],
     addons: [
+        {
+            name: "@storybook/addon-storysource",
+            options: {
+                loaderOptions: {
+                    prettierConfig: { printWidth: 80, singleQuote: false },
+                },
+            },
+        },
         "@storybook/addon-links",
         "@storybook/addon-essentials",
         "@storybook/addon-interactions",

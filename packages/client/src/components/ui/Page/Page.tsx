@@ -17,11 +17,15 @@ const StyledPageHeader = styled('div', {
     position: 'sticky',
     top: '-1px',
     paddingTop: '1px',
+    paddingBottom: '1px',
     // Checkout user permissions, and the stacked avatars
     zIndex: '10',
     borderBottom: stuck ? 1 : 'none',
     borderBottomColor: theme.palette.grey['500'],
     marginBottom: theme.spacing(2),
+
+    // Set grey palette in theme
+    backgroundColor: theme.palette.grey['200'],
 }));
 
 export interface PageProps {
@@ -64,10 +68,10 @@ export const Page = (props: PageProps): JSX.Element => {
                     ref={(node) => setHeaderElement(node)}
                     stuck={stuck}
                 >
-                    <Container maxWidth="md">{header}</Container>
+                    <Container maxWidth="xl">{header}</Container>
                 </StyledPageHeader>
             )}
-            <Container maxWidth="md">{children}</Container>
+            <Container maxWidth="xl">{children}</Container>
         </StyledPage>
     );
 };

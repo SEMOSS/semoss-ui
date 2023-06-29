@@ -11,4 +11,4 @@ index.html
 index.html.gz
 !packages/**/index.html
 !packages/**/index.html.gz
-!packages/legacy/app.constants.js
+packages/legacy/app.constants.js

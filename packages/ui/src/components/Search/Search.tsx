@@ -27,8 +27,7 @@ export const Search = (props: SearchFieldProps) => {
                         {enableEndAdornment && (
                             <Button
                                 onClick={(e) => {
-                                    setValue("");
-                                    e.preventDefault();
+                                    setValue(null);
                                 }}
                             >
                                 <Icons.CloseOutlined />

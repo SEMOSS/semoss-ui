@@ -3,6 +3,7 @@ import type { Meta, StoryObj } from "@storybook/react";
 import { LinearProgress } from "../LinearProgress/index";
 import { Box } from "../Box/index";
 import Stack from "@mui/material/Stack";
+import React from "react";
 
 const meta: Meta<typeof LinearProgress> = {
     title: "Components/LinearProgress",

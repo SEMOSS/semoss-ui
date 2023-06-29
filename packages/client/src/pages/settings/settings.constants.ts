@@ -15,6 +15,10 @@ export const SETTINGS_ROUTES: {
     path: string;
     /** Description of the page */
     description: string;
+
+    /** Description of the  page if admin */
+    adminDescription?: string;
+
     /** Icon representing the page */
     icon: string;
 }[] = [
@@ -22,12 +26,15 @@ export const SETTINGS_ROUTES: {
         title: 'Settings',
         path: '',
         description: 'View and edit settings for the application',
+        adminDescription:
+            'View and make changes to settings at the database, project, and insight level.  As an admin conduct queries on SEMOSS specific databases as well as view and edit existing social properties.',
         icon: mdiCog,
     },
     {
         title: 'Database Settings',
         path: 'database-settings',
-        description: 'View and edit settings for databases',
+        description:
+            'Select a database to update permissions including requests to access the database, adding ad-hoc members, updating member access, and setting database visibility options.',
         icon: mdiDatabase,
     },
     {
