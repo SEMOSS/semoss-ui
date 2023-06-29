@@ -30,13 +30,9 @@ export const Default: Story = {
                     divider
                     secondaryAction={
                         <List.ItemButton
-                            onClick={() =>
-                                window.alert("Clicked search button")
-                            }
+                            onClick={() => window.alert("Clicked star button")}
                         >
-                            <Icons.SearchRounded
-                                sx={{ color: "#40a0ff", mr: 2 }}
-                            />
+                            <Icons.StarOutlined />
                         </List.ItemButton>
                     }
                 >
@@ -51,9 +47,7 @@ export const Default: Story = {
                         <List.ItemButton
                             onClick={() => window.alert("Clicked start button")}
                         >
-                            <Icons.StartRounded
-                                sx={{ color: "#40a0ff", mr: 2 }}
-                            />
+                            <Icons.StartRounded />
                         </List.ItemButton>
                     }
                 >
@@ -70,9 +64,7 @@ export const Default: Story = {
                                 window.alert("Clicked filter button")
                             }
                         >
-                            <Icons.FilterRounded
-                                sx={{ color: "#40a0ff", mr: 2 }}
-                            />
+                            <Icons.FilterRounded />
                         </List.ItemButton>
                     }
                 >
