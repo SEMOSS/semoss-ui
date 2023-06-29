@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { styled, Input, Grid, Card, Typography } from '@semoss/ui';
+import { styled, Grid, Card, Typography, TextField } from '@semoss/ui';
 import {
     mdiAccountGroup,
     mdiClipboardTextOutline,
@@ -56,13 +56,16 @@ export const SettingsIndexPage = () => {
         <>
             <StyledSetHeader>
                 <StyledSearch>
-                    <Input
+                    <TextField
+                        label={'Search Databases'}
                         onChange={(e) => {
                             setSearch(e.target.value);
                         }}
                         placeholder={'Search....'}
+                    />
+                    {/* <Input
                         // Move to Header
-                    ></Input>
+                    ></Input> */}
                 </StyledSearch>
             </StyledSetHeader>
             <Grid container spacing={2}>

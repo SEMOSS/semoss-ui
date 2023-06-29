@@ -4,7 +4,6 @@ import { SxProps } from "@mui/system";
 import { TextFieldProps as MuiTextFieldProps } from "@mui/material";
 
 export type TextFieldProps = MuiTextFieldProps & {
-    variant;
     /** custom style object */
     sx?: SxProps;
 };
