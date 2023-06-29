@@ -1,7 +1,6 @@
 import React, { ReactNode } from "react";
 import MuiTableCell, { TableCellBaseProps } from "@mui/material/TableCell";
 import { SxProps } from "@mui/system";
-import { TableCellProps as MuiTableCellProps } from "@mui/material";
 
 export interface TableCellProps {
     /**
@@ -14,6 +13,7 @@ export interface TableCellProps {
     align?: "inherit" | "left" | "center" | "right" | "justify";
     /** children to be rendered */
     children?: ReactNode;
+
     /**
      * Sets or retrieves the number columns in the table that the object should span.
      *
@@ -43,6 +43,9 @@ export interface TableCellProps {
      * The prop defaults to the value (`'medium'`) inherited from the parent Table component.
      */
     size?: "small" | "medium";
+
+    /** custom style object */
+    sx?: SxProps;
 
     /** custom style object */
     sx?: SxProps;

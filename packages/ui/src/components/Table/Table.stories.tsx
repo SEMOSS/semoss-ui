@@ -1,4 +1,4 @@
-import { useState } from "react";
+import React, { useState } from "react";
 import type { Meta, StoryObj } from "@storybook/react";
 import { KeyboardArrowDown, KeyboardArrowUp } from "@mui/icons-material";
 import { Box, IconButton, Typography, styled } from "../../";
@@ -234,7 +234,7 @@ function Row(props) {
             </Table.Row>
             <Table.Row>
                 <Table.Cell
-                    style={{ paddingBottom: 0, paddingTop: 0 }}
+                    sx={{ paddingBottom: 0, paddingTop: 0 }}
                     colSpan={6}
                 >
                     <Collapse in={open} timeout="auto" unmountOnExit>

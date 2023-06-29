@@ -1,7 +1,6 @@
 import { ReactNode } from "react";
 import MuiTab from "@mui/material/Tab";
 import { SxProps } from "@mui/system";
-import { TabProps as MuiTabProps } from "@mui/material";
 
 export interface TabProps {
     /**
@@ -9,13 +8,11 @@ export interface TabProps {
      * @default false
      */
     disabled?: boolean;
-
     /**
      * The position of the icon relative to the label.
      * @default 'top'
      */
     iconPosition?: "top" | "bottom" | "start" | "end";
-
     /**
      * The label element.
      */
