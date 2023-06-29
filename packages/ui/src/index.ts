@@ -33,6 +33,7 @@ export * from "./components/PhoneNumberPicker";
 export * from "./components/Popover";
 export * from "./components/RadioGroup";
 export * from "./components/Search";
+export * from "./components/Searchbar";
 export * from "./components/Select";
 export * from "./components/Skeleton";
 export * from "./components/Slider";

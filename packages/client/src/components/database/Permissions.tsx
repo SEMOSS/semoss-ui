@@ -968,6 +968,72 @@ export const Permissions = (props: PermissionsProps) => {
     membersCount > 9 && paginationOptions.membersPageCounts.push(10);
     membersCount > 19 && paginationOptions.membersPageCounts.push(20);
 
+    function createData(
+        name: string,
+        age: number,
+        location: string,
+        email: string,
+        number: string,
+    ) {
+        return {
+            name,
+            age,
+            location,
+            email,
+            number,
+            history: [
+                {
+                    date: '2020-01-05',
+                    customerId: '11091700',
+                    amount: 3,
+                },
+                {
+                    date: '2020-01-02',
+                    customerId: 'Anonymous',
+                    amount: 1,
+                },
+            ],
+        };
+    }
+
+    const rows = [
+        createData(
+            'John Smith',
+            19,
+            'Rosslyn, VA',
+            'j.smith@deloitte.com',
+            '555-555-5555',
+        ),
+        createData(
+            'Jane Smith',
+            20,
+            'Salem, WA',
+            'ja.smith@deloitte.com',
+            '555-555-5555',
+        ),
+        createData(
+            'Robert Smith',
+            21,
+            'Portland, OR',
+            'r.smith@deloitte.com',
+            '555-555-5555',
+        ),
+        createData(
+            'Claire Smith',
+            22,
+            'Tucson, AZ',
+            'c.smith@deloitte.com',
+            '555-555-5555',
+        ),
+        createData(
+            'Jane Smith',
+            23,
+            'Denver, CO',
+            'ne.smith@deloitte.com',
+            '555-555-5555',
+        ),
+    ];
+
     return (
         <StyledContent>
             <ToggleTabsGroup
