@@ -11,7 +11,7 @@ import {
 import { useAPI, useRootStore } from '@/hooks';
 import { LoadingScreen } from '@/components/ui';
 import { Field } from '@/components/form';
-import { Divider, Accordion, Button, Input } from '@semoss/ui';
+import { Divider, Accordion, Button } from '@semoss/ui';
 import google from '../../assets/img/google.png';
 import ms from '../../assets/img/ms.png';
 import dropbox from '../../assets/img/dropbox.png';
@@ -92,7 +92,7 @@ const StyledActionButtonsDiv = styled('div', {
 });
 
 const initialState = {
-    socialProps: {},
+    socialProps: SOCIAL,
 };
 
 const reducer = (state, action) => {
