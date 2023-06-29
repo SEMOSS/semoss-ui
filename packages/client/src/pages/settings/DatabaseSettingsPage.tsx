@@ -19,7 +19,16 @@ import {
     styled,
 } from '@semoss/ui';
 
-import { Icons } from '@semoss/ui';
+debugger;
+// import Icons from "../../../../ui/src/components/Icons";
+// import Icons from '@semoss/ui';
+import { MuiAlert } from '@semoss/ui';
+import * as Semoss from '@semoss/ui';
+
+debugger;
+console.log('Icon', MuiAlert);
+
+console.log('Semoss', Semoss.Alert);
 
 import { Permissions } from '@/components/database';
 
@@ -106,7 +115,7 @@ export const DatabaseSettingsPage = () => {
         return frags.join(' ');
     };
 
-    console.log('i', Icons);
+    // console.log('i', Icons);
     return (
         <>
             {!selectedApp ? (
@@ -139,6 +148,7 @@ export const DatabaseSettingsPage = () => {
 
                         <Select></Select>
 
+                        <Semoss.Alert />
                         <ToggleButtonGroup value={view}>
                             <ToggleButton
                                 onClick={(e, v) => setView(v)}

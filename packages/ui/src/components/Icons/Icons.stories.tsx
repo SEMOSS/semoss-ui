@@ -3,7 +3,7 @@ import { Icon } from "../Icon/index";
 import { Grid } from "../Grid/index";
 import { Card } from "../Card/index";
 import { Tooltip } from "../Tooltip/index";
-import Icons from "../Icons/index";
+import Icons from "./";
 
 const meta: Meta<typeof Icon> = {
     title: "Components/Icons",

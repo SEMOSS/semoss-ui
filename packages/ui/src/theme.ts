@@ -2,6 +2,7 @@ import { ThemeOptions, styled } from "@mui/material";
 // import { ShapeOptions } from "@material-ui/core/styles";
 // export specifics from the library
 export { styled };
+export * from "@mui/icons-material";
 export type { ThemeOptions };
 
 export interface CustomThemeOptions extends ThemeOptions {
