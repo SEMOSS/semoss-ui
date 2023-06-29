@@ -13,6 +13,7 @@ import {
 import { useAPI, useRootStore } from '@/hooks';
 import { LoadingScreen } from '@/components/ui';
 import { Field } from '@/components/form';
+import Icons from '@semoss/ui';
 
 const StyledContainer = styled('div', {
     margin: '0 auto',
