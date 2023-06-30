@@ -19,13 +19,11 @@ import {
     styled,
 } from '@semoss/ui';
 
-debugger;
 // import Icons from "../../../../ui/src/components/Icons";
 // import Icons from '@semoss/ui';
 import { MuiAlert } from '@semoss/ui';
 import * as Semoss from '@semoss/ui';
 
-debugger;
 console.log('Icon', MuiAlert);
 
 console.log('Semoss', Semoss.Alert);
