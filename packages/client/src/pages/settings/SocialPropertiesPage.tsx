@@ -212,12 +212,6 @@ export const SocialPropertiesPage = () => {
                         >
                             <strong>Authentication</strong>
                         </Accordion.Trigger>
-                        <Input
-                            onChange={(e) => {
-                                setSearch(e.target.value);
-                            }}
-                            placeholder={'Search....'}
-                        ></Input>
                         {authentication.map((value) => {
                             return (
                                 <Accordion.Content sx={{ fontSize: '14px' }}>
@@ -243,12 +237,6 @@ export const SocialPropertiesPage = () => {
                             <strong>Email</strong>
                         </Accordion.Trigger>
 
-                        <Input
-                            onChange={(e) => {
-                                setSearch(e.target.value);
-                            }}
-                            placeholder={'Search....'}
-                        ></Input>
                         {authentication.map((value) => {
                             return (
                                 <Accordion.Content sx={{ fontSize: '14px' }}>

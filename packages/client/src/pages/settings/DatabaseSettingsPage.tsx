@@ -14,12 +14,23 @@ import {
     Button,
     ButtonGroup,
     ToggleButton,
+    ToggleButtonGroup,
     // Icons,
     styled,
 } from '@semoss/ui';
 
+debugger;
+// import Icons from "../../../../ui/src/components/Icons";
+// import Icons from '@semoss/ui';
+import { MuiAlert } from '@semoss/ui';
+import * as Semoss from '@semoss/ui';
+
+debugger;
+console.log('Icon', MuiAlert);
+
+console.log('Semoss', Semoss.Alert);
+
 import { Permissions } from '@/components/database';
-import { ToggleButtonGroup } from '@semoss/ui';
 
 export interface DBMember {
     ID: string;
@@ -104,7 +115,7 @@ export const DatabaseSettingsPage = () => {
         return frags.join(' ');
     };
 
-    // console.log("i", Icons)
+    // console.log('i', Icons);
     return (
         <>
             {!selectedApp ? (
@@ -137,6 +148,7 @@ export const DatabaseSettingsPage = () => {
 
                         <Select></Select>
 
+                        <Semoss.Alert />
                         <ToggleButtonGroup value={view}>
                             <ToggleButton
                                 onClick={(e, v) => setView(v)}
@@ -180,13 +192,21 @@ export const DatabaseSettingsPage = () => {
                                                   //   subheader={<div>hello</div>}
                                                   action={
                                                       <IconButton>
-                                                          Hello
+                                                          Star
                                                       </IconButton>
                                                   }
                                               />
                                               <Card.Content>
-                                                  COntent of Card
-                                                  {db.app_permission}
+                                                  {/* {db.app_permission} */}
+                                                  Lorem Ipsum is simply dummy
+                                                  text of the printing and
+                                                  typesetting industry. Lorem
+                                                  Ipsum has been the industry's
+                                                  standard dummy text ever since
+                                                  the 1500s, when an unknown
+                                                  printer took a galley of type
+                                                  and scrambled it to make a
+                                                  type specimen book.
                                               </Card.Content>
                                               <StyledTileCardActions>
                                                   <div>1</div>

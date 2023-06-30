@@ -24,9 +24,7 @@ const StyledPageHeader = styled('div', {
     borderBottom: stuck ? 1 : 'none',
     borderBottomColor: theme.palette.grey['500'],
     marginBottom: theme.spacing(2),
-
-    // Set grey palette in theme
-    backgroundColor: theme.palette.grey['200'],
+    backgroundColor: theme.palette.grey['100'],
 }));
 
 export interface PageProps {
