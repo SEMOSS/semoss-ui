@@ -1,5 +1,5 @@
-import MuiTablePagination from "@mui/material/TablePagination";
 import { SxProps } from "@mui/system";
+import { TablePagination as MuiTablePagination } from "@mui/material";
 
 export interface TablePaginationProps {
     /**
