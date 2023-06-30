@@ -21,8 +21,9 @@ export interface DropzoneAreaProps extends MuiDropzoneOptions {
 interface GetInputPropsOptionsRef {
     ref?: React.RefObject<HTMLInputElement>;
 }
-export function DropzoneArea() {
-    const { getRootProps, getInputProps } = useDropzone({
+export function DropzoneArea(props: DropzoneAreaProps) {
+    const { sx } = props;
+    const { getRootProps, getInputProps, acceptedFiles } = useDropzone({
         noClick: true,
     });
 
