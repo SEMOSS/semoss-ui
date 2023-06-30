@@ -14,7 +14,9 @@ export interface DropzoneAreaProps extends MuiDropzoneOptions {
     /** custom style object */
     sx?: any;
 }
-
+interface GetInputPropsOptionsRef {
+    ref?: React.RefObject<HTMLInputElement>;
+}
 export function DropzoneArea(props: DropzoneAreaProps) {
     const { sx } = props;
     const { getRootProps, getInputProps, acceptedFiles } = useDropzone({
@@ -36,7 +38,7 @@ export function DropzoneArea(props: DropzoneAreaProps) {
                 style={{ paddingTop: "36px", paddingBottom: "36px" }}
                 {...getRootProps({ className: "dropzone" })}
             >
-                <input {...getInputProps()} />
+                <input {...(getInputProps() as GetInputPropsOptionsRef)} />
 
                 <label>
                     <Input
