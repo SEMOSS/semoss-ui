@@ -10,6 +10,9 @@ import KeyboardArrowDownIcon from "@mui/icons-material/KeyboardArrowDown";
 import KeyboardArrowUpIcon from "@mui/icons-material/KeyboardArrowUp";
 import Typography from "@mui/material/Typography";
 
+import { TablePagination } from "@mui/material";
+import TableFooter from "@mui/material/TableFooter";
+
 const meta: Meta<typeof Table> = {
     title: "Components/Table",
     component: Table,
@@ -77,7 +80,7 @@ const rows = [
         "555-555-5555",
     ),
     createData(
-        "Jane Smith",
+        "Janes Smith",
         23,
         "Denver, CO",
         "ne.smith@deloitte.com",
@@ -86,6 +89,8 @@ const rows = [
 ];
 
 function BasicTable(args) {
+    const [page, setPage] = useState<number>(0);
+
     return (
         <Table.Container>
             <Table sx={{ minWidth: 650 }} aria-label="simple table" {...args}>
@@ -120,6 +125,19 @@ function BasicTable(args) {
                         </Table.Row>
                     ))}
                 </Table.Body>
+                <Table.Footer>
+                    <Table.Row>
+                        <Table.Pagination
+                            rowsPerPageOptions={[5, 10, 25]}
+                            onPageChange={(e, v) => {
+                                setPage(v);
+                            }}
+                            page={page}
+                            rowsPerPage={5}
+                            count={10}
+                        />
+                    </Table.Row>
+                </Table.Footer>
             </Table>
         </Table.Container>
     );
