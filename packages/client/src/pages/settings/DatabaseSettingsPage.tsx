@@ -28,7 +28,7 @@ import {
 import * as Icons from '@semoss/ui';
 
 import { Permissions } from '@/components/database';
-debugger;
+
 export interface DBMember {
     ID: string;
     NAME: string;
