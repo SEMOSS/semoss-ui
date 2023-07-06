@@ -10,14 +10,12 @@ import {
 
 import { useAPI, useRootStore } from '@/hooks';
 import { LoadingScreen } from '@/components/ui';
-import { Field } from '@/components/form';
-import { Divider, Accordion, Button } from '@semoss/ui';
+import { Divider, Accordion, Button, TextField, Typography } from '@semoss/ui';
 import google from '../../assets/img/google.png';
 import ms from '../../assets/img/ms.png';
 import dropbox from '../../assets/img/dropbox.png';
 import github from '../../assets/img/github.png';
 import other from '../../assets/img/other.png';
-import { format } from 'path';
 
 const SOCIAL = {
     google: {
@@ -195,62 +193,24 @@ export const SocialPropertiesPage = () => {
         // setSocialProps(socialPropsCopy);
     };
 
-    return (
-        <StyledContainer>
-            <StyledDescription>
-                Use this portal to change social property settings
-            </StyledDescription>
-            <Divider />
-            {Object.keys(socialProps) ? (
-                <div style={{ display: 'flex' }}>
-                    <div>
-                        <Accordion
-                            expanded={authExpanded}
-                            onChange={() => setAuthExpanded(!authExpanded)}
+    const settingsPage = () => {
+        return Object.keys(socialProps) ? (
+            <div style={{ display: 'flex' }}>
+                <div>
+                    <Accordion
+                        expanded={authExpanded}
+                        onChange={() => setAuthExpanded(!authExpanded)}
+                    >
+                        <Accordion.Trigger
+                            sx={{ padding: '8px', fontSize: '16px' }}
                         >
-                            <Accordion.Trigger
-                                sx={{ padding: '8px', fontSize: '16px' }}
-                            >
-                                <strong>Authentication</strong>
-                            </Accordion.Trigger>
-                            {authentication.map((value) => {
-                                return (
-                                    <Accordion.Content
-                                        sx={{ fontSize: '14px' }}
-                                    >
-                                        <Button
-                                            onClick={() =>
-                                                setAccordionValue(value)
-                                            }
-                                        >
-                                            <StyledImage
-                                                src={
-                                                    SOCIAL[value]?.image ||
-                                                    SOCIAL['native'].image
-                                                }
-                                            />
-                                            {SOCIAL[value]?.name ||
-                                                value[0].toUpperCase() +
-                                                    value.slice(1)}
-                                        </Button>
-                                    </Accordion.Content>
-                                );
-                            })}
-                        </Accordion>
-                        <Accordion
-                            expanded={emailExpanded}
-                            onChange={() => setEmailExpanded(!emailExpanded)}
-                        >
-                            <Accordion.Trigger
-                                sx={{ padding: '8px', fontSize: '16px' }}
-                            >
-                                <strong>Email</strong>
-                            </Accordion.Trigger>
-
-                            {authentication.map((value) => {
-                                return (
-                                    <Accordion.Content
-                                        sx={{ fontSize: '14px' }}
+                            <strong>Authentication</strong>
+                        </Accordion.Trigger>
+                        {authentication.map((value) => {
+                            return (
+                                <Accordion.Content sx={{ fontSize: '14px' }}>
+                                    <Button
+                                        onClick={() => setAccordionValue(value)}
                                     >
                                         <StyledImage
                                             src={
@@ -261,25 +221,58 @@ export const SocialPropertiesPage = () => {
                                         {SOCIAL[value]?.name ||
                                             value[0].toUpperCase() +
                                                 value.slice(1)}
-                                    </Accordion.Content>
-                                );
-                            })}
-                        </Accordion>
-                    </div>
-                    <StyledAccordionContent>
-                        {accordionValue && console.log(socialProps)}
-                        {/* {accordionValue &&                        
-                            <SocialProperty
-                                key={authentication.indexOf(accordionValue)}
-                                fieldName={socialProps[accordionValue][0]}
-                                fields={socialProps[accordionValue][1]}
-                                onChange={changeSocialProps}
-                            ></SocialProperty> */}
-                    </StyledAccordionContent>
+                                    </Button>
+                                </Accordion.Content>
+                            );
+                        })}
+                    </Accordion>
+                    <Accordion
+                        expanded={emailExpanded}
+                        onChange={() => setEmailExpanded(!emailExpanded)}
+                    >
+                        <Accordion.Trigger
+                            sx={{ padding: '8px', fontSize: '16px' }}
+                        >
+                            <strong>Email</strong>
+                        </Accordion.Trigger>
+
+                        {authentication.map((value) => {
+                            return (
+                                <Accordion.Content sx={{ fontSize: '14px' }}>
+                                    <StyledImage
+                                        src={
+                                            SOCIAL[value]?.image ||
+                                            SOCIAL['native'].image
+                                        }
+                                    />
+                                    {SOCIAL[value]?.name ||
+                                        value[0].toUpperCase() + value.slice(1)}
+                                </Accordion.Content>
+                            );
+                        })}
+                    </Accordion>
                 </div>
-            ) : (
-                <div> No social props</div>
-            )}
+                {accordionValue && (
+                    <SocialProperty
+                        key={authentication.indexOf(accordionValue)}
+                        fieldName={accordionValue}
+                        fields={socialProps[accordionValue]}
+                        onChange={changeSocialProps}
+                    ></SocialProperty>
+                )}
+            </div>
+        ) : (
+            <div> No social props</div>
+        );
+    };
+
+    return (
+        <StyledContainer>
+            <StyledDescription>
+                Use this portal to change social property settings
+            </StyledDescription>
+            <Divider />
+            {settingsPage()}
         </StyledContainer>
     );
 };
@@ -353,74 +346,79 @@ const SocialProperty = (props) => {
 
     return (
         <Form>
-            <Table>
-                <Table.Head>
-                    <Table.Row>
-                        <Table.Cell colSpan={1}>Property</Table.Cell>
-                        <Table.Cell colSpan={1}>
-                            {fieldName.charAt(0).toUpperCase() +
-                                fieldName.slice(1)}{' '}
-                            Value
-                        </Table.Cell>
-                    </Table.Row>
-                </Table.Head>
-                <Table.Body>
-                    {fields.map((f, i) => {
-                        return (
-                            <Table.Row key={i}>
-                                <Table.Cell colSpan={1}>{f.label}</Table.Cell>
-                                <Table.Cell colSpan={1}>
-                                    <Field
-                                        name={f.label}
-                                        control={control}
-                                        rules={{ required: true }}
-                                        options={{
-                                            component: 'input',
-                                        }}
-                                        error="All properties must be provided with a value"
-                                        description=""
-                                    ></Field>
-                                </Table.Cell>
-                            </Table.Row>
-                        );
-                    })}
-                </Table.Body>
-            </Table>
-            <StyledActionButtonsDiv>
-                <Button
-                    size="sm"
-                    color="grey"
-                    onClick={() => {
-                        if (!defaultValues) {
-                            reset();
-                        } else {
-                            reset(mapDefaultValues(defaultValues));
-                        }
-                    }}
-                >
-                    Reset
-                </Button>
-                <Button size="sm" onClick={() => onSubmit()}>
-                    Save
-                </Button>
-            </StyledActionButtonsDiv>
+            <div style={{ display: 'flex' }}>
+                <Typography variant="h5">
+                    {fieldName.charAt(0).toUpperCase() + fieldName.slice(1)}
+                </Typography>
+
+                <StyledActionButtonsDiv>
+                    <Button
+                        // size="sm"
+                        // color="grey"
+                        onClick={() => {
+                            if (!defaultValues) {
+                                reset();
+                            } else {
+                                reset(mapDefaultValues(defaultValues));
+                            }
+                        }}
+                    >
+                        Reset
+                    </Button>
+                    <Button onClick={() => onSubmit()}>Save</Button>
+                </StyledActionButtonsDiv>
+            </div>
+
+            {fields.map((f, i) => {
+                return (
+                    <div>
+                        {console.log(f)}
+                        <TextField
+                            label="key"
+                            defaultValue={f.label}
+                            variant="outlined"
+                        />
+                        <TextField label="value" defaultValue={f.value} />
+                        <TextField placeholder="Description"></TextField>
+                    </div>
+                );
+            })}
         </Form>
     );
 };
 
-// {Object.entries(socialProps).map((pr, i) => {
-//     return (
-//         <Accordion.Item key={i} value={pr[0]}>
-//             <Accordion.Trigger>
-//                 {pr[0].charAt(0).toUpperCase() +
-//                     pr[0].slice(1)}
-//             </Accordion.Trigger>
-//             <StyledAccordionContent>
-//                 <SocialProperty
-//                     key={i}
-//                     fieldName={pr[0]}
-//                     fields={pr[1]}
-//                     onChange={changeSocialProps}
-//                 ></SocialProperty>
-//             </StyledAccordionContent>
-//         </Accordion.Item>
+{
+    /* <Table>
+<Table.Head>
+    <Table.Row>
+        <Table.Cell colSpan={1}>Property</Table.Cell>
+        <Table.Cell colSpan={1}>
+            {fieldName.charAt(0).toUpperCase() +
+                fieldName.slice(1)}{' '}
+            Value
+        </Table.Cell>
+    </Table.Row>
+</Table.Head>
+<Table.Body>
+    {fields.map((f, i) => {
+        return (
+            <Table.Row key={i}>
+                <Table.Cell colSpan={1}>{f.label}</Table.Cell>
+                <Table.Cell colSpan={1}>
+                    <Field
+                        name={f.label}
+                        control={control}
+                        rules={{ required: true }}
+                        options={{
+                            component: 'input',
+                        }}
+                        error="All properties must be provided with a value"
+                        description=""
+                    ></Field>
+                </Table.Cell>
+            </Table.Row>
+        );
+    })}
+</Table.Body>
+</Table> */
+}

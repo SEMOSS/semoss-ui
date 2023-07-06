@@ -1,4 +1,4 @@
-image: node:18.16.0
+image: node:18.16.0-buster
 
 stages:
     - pnpm_build

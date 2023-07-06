@@ -5,6 +5,7 @@ import { SxProps } from "@mui/system";
 export interface TableHeadProps {
     /** children to be rendered */
     children?: ReactNode;
+
     /** custom style object */
     sx?: SxProps;
 }

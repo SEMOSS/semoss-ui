@@ -47,9 +47,6 @@ export interface TableCellProps {
     /** custom style object */
     sx?: SxProps;
 
-    /** custom style object */
-    sx?: SxProps;
-
     /**
      * Specify the cell type.
      * The prop defaults to the value inherited from the parent TableHead, TableBody, or TableFooter components.

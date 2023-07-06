@@ -461,7 +461,6 @@ export const DatabaseLandscapeCard = (props: DatabaseCardProps) => {
                     onClick={(e) => {
                         e.stopPropagation();
 
-                        console.log('click global');
                         global(isGlobal);
                     }}
                 >
@@ -491,8 +490,6 @@ export const DatabaseTileCard = (props: DatabaseCardProps) => {
         upvote,
         global,
     } = props;
-
-    console.log(isGlobal);
 
     return (
         <StyledTileCard onClick={() => onClick(id)}>

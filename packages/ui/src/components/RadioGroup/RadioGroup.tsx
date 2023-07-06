@@ -29,12 +29,6 @@ export interface RadioGroupProps {
     /** radio group label */
     label?: string | number;
 
-=======
-    /**
-     * The default value. Use when the component is not controlled.
-     */
-    defaultValue?: any;
->>>>>>> ddfe6a8 (corrected types)
     sx?: SxProps;
     /**
      * Changes the orientation of the radio group.
