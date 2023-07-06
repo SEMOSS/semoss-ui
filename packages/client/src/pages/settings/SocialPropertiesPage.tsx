@@ -17,6 +17,7 @@ import ms from '../../assets/img/ms.png';
 import dropbox from '../../assets/img/dropbox.png';
 import github from '../../assets/img/github.png';
 import other from '../../assets/img/other.png';
+import { format } from 'path';
 
 const SOCIAL = {
     google: {
@@ -92,7 +93,7 @@ const StyledActionButtonsDiv = styled('div', {
 });
 
 const initialState = {
-    socialProps: SOCIAL,
+    socialProps: {},
 };
 
 const reducer = (state, action) => {
