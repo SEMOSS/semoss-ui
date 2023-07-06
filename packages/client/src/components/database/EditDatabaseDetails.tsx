@@ -1,13 +1,6 @@
 import { useState, useEffect } from 'react';
-import {
-    Modal,
-    Button,
-    Form,
-    Grid,
-    Typeahead,
-    Textarea,
-    useNotification,
-} from '@semoss/components';
+import { useNotification } from '@semoss/components';
+import { Modal, Button, Stack, TextArea, Autocomplete } from '@semoss/ui';
 import { useForm, Controller } from 'react-hook-form';
 import { observer } from 'mobx-react-lite';
 
@@ -168,193 +161,150 @@ export const EditDatabaseDetails = observer(
                     onClose(false);
                 }}
             >
-                <Modal.Content size={'lg'}>
-                    <Modal.Header>Edit Database Details</Modal.Header>
-                    <Modal.Body>
-                        <Form>
-                            <Grid>
-                                {databaseMetaKeys.map((key) => {
-                                    const { metakey, display_options } = key;
+                <Modal.Title>Edit Database Details</Modal.Title>
+                <Modal.Content>
+                    <Stack spacing={4}>
+                        {databaseMetaKeys.map((key) => {
+                            const { metakey, display_options } = key;
 
-                                    const label =
-                                        metakey.slice(0, 1).toUpperCase() +
-                                        metakey.slice(1);
+                            const label =
+                                metakey.slice(0, 1).toUpperCase() +
+                                metakey.slice(1);
 
-                                    if (display_options === 'markdown') {
-                                        return (
-                                            <Controller
-                                                key={metakey}
-                                                name={metakey}
-                                                control={control}
-                                                render={({ field }) => {
-                                                    return (
-                                                        <Grid.Item>
-                                                            <Form.Field
-                                                                label={label}
-                                                            >
-                                                                <MarkdownEditor
-                                                                    value={
-                                                                        (field.value as string) ||
-                                                                        ''
-                                                                    }
-                                                                    onChange={(
-                                                                        value,
-                                                                    ) =>
-                                                                        field.onChange(
-                                                                            value,
-                                                                        )
-                                                                    }
-                                                                />
-                                                            </Form.Field>
-                                                        </Grid.Item>
-                                                    );
-                                                }}
-                                            />
-                                        );
-                                    } else if (display_options === 'textarea') {
-                                        return (
-                                            <Controller
-                                                key={metakey}
-                                                name={metakey}
-                                                control={control}
-                                                render={({ field }) => {
-                                                    return (
-                                                        <Grid.Item>
-                                                            <Form.Field
-                                                                label={label}
-                                                            >
-                                                                <Textarea
-                                                                    value={
-                                                                        (field.value as string) ||
-                                                                        ''
-                                                                    }
-                                                                    onChange={(
-                                                                        value,
-                                                                    ) =>
-                                                                        field.onChange(
-                                                                            value,
-                                                                        )
-                                                                    }
-                                                                />
-                                                            </Form.Field>
-                                                        </Grid.Item>
-                                                    );
-                                                }}
-                                            />
-                                        );
-                                    } else if (
-                                        display_options === 'single-typeahead'
-                                    ) {
-                                        return (
-                                            <Controller
-                                                key={metakey}
-                                                name={metakey}
-                                                control={control}
-                                                render={({ field }) => {
-                                                    return (
-                                                        <Grid.Item>
-                                                            <Form.Field
-                                                                label={label}
-                                                            >
-                                                                <Typeahead<
-                                                                    string,
-                                                                    false
-                                                                >
-                                                                    options={
-                                                                        filterOptions[
-                                                                            metakey
-                                                                        ]
-                                                                            ? filterOptions[
-                                                                                  metakey
-                                                                              ]
-                                                                            : []
-                                                                    }
-                                                                    value={
-                                                                        (field.value as string) ||
-                                                                        ''
-                                                                    }
-                                                                    onChange={(
-                                                                        value,
-                                                                    ) =>
-                                                                        field.onChange(
-                                                                            value,
-                                                                        )
-                                                                    }
-                                                                />
-                                                            </Form.Field>
-                                                        </Grid.Item>
-                                                    );
-                                                }}
-                                            />
-                                        );
-                                    } else if (
-                                        display_options === 'multi-typeahead'
-                                    ) {
-                                        return (
-                                            <Controller
-                                                key={metakey}
-                                                name={metakey}
-                                                control={control}
-                                                render={({ field }) => {
-                                                    return (
-                                                        <Grid.Item>
-                                                            <Form.Field
-                                                                label={label}
-                                                            >
-                                                                <Typeahead<
-                                                                    string,
-                                                                    true
-                                                                >
-                                                                    multiple={
-                                                                        true
-                                                                    }
-                                                                    options={
-                                                                        filterOptions[
-                                                                            metakey
-                                                                        ]
-                                                                            ? filterOptions[
-                                                                                  metakey
-                                                                              ]
-                                                                            : []
-                                                                    }
-                                                                    value={
-                                                                        (field.value as string[]) ||
-                                                                        []
-                                                                    }
-                                                                    onChange={(
-                                                                        value,
-                                                                    ) =>
-                                                                        field.onChange(
-                                                                            value,
-                                                                        )
-                                                                    }
-                                                                />
-                                                            </Form.Field>
-                                                        </Grid.Item>
-                                                    );
-                                                }}
-                                            />
-                                        );
-                                    }
+                            if (display_options === 'markdown') {
+                                return (
+                                    <Controller
+                                        key={metakey}
+                                        name={metakey}
+                                        control={control}
+                                        render={({ field }) => {
+                                            return (
+                                                <MarkdownEditor
+                                                    value={
+                                                        (field.value as string) ||
+                                                        ''
+                                                    }
+                                                    onChange={(value) =>
+                                                        field.onChange(value)
+                                                    }
+                                                />
+                                            );
+                                        }}
+                                    />
+                                );
+                            } else if (display_options === 'textarea') {
+                                return (
+                                    <Controller
+                                        key={metakey}
+                                        name={metakey}
+                                        control={control}
+                                        render={({ field }) => {
+                                            return (
+                                                <TextArea
+                                                    value={
+                                                        (field.value as string) ||
+                                                        ''
+                                                    }
+                                                    onChange={(e) =>
+                                                        field.onChange(
+                                                            e.target.value,
+                                                        )
+                                                    }
+                                                />
+                                            );
+                                        }}
+                                    />
+                                );
+                            } else if (display_options === 'single-typeahead') {
+                                return (
+                                    <Controller
+                                        key={metakey}
+                                        name={metakey}
+                                        control={control}
+                                        render={({ field }) => {
+                                            return (
+                                                <Autocomplete<string, false>
+                                                    label={label}
+                                                    options={
+                                                        filterOptions[metakey]
+                                                            ? filterOptions[
+                                                                  metakey
+                                                              ]
+                                                            : []
+                                                    }
+                                                    value={
+                                                        (field.value as string) ||
+                                                        ''
+                                                    }
+                                                    onChange={(
+                                                        event,
+                                                        newValue,
+                                                    ) => {
+                                                        field.onChange(
+                                                            newValue,
+                                                        );
+                                                    }}
+                                                />
+                                            );
+                                        }}
+                                    />
+                                );
+                            } else if (display_options === 'multi-typeahead') {
+                                return (
+                                    <Controller
+                                        key={metakey}
+                                        name={metakey}
+                                        control={control}
+                                        render={({ field }) => {
+                                            console.log(filterOptions[metakey]);
+                                            return (
+                                                <Autocomplete<string, true>
+                                                    multiple={true}
+                                                    label={label}
+                                                    options={
+                                                        filterOptions[metakey]
+                                                            ? filterOptions[
+                                                                  metakey
+                                                              ]
+                                                            : []
+                                                    }
+                                                    value={
+                                                        (field.value as string[]) ||
+                                                        []
+                                                    }
+                                                    onChange={(
+                                                        event,
+                                                        newValue,
+                                                    ) => {
+                                                        field.onChange(
+                                                            newValue,
+                                                        );
+                                                    }}
+                                                />
+                                            );
+                                        }}
+                                    />
+                                );
+                            }
 
-                                    return null;
-                                })}
-                            </Grid>
-                        </Form>
-                    </Modal.Body>
-                    <Modal.Footer>
-                        <Button
-                            variant="text"
-                            onClick={() => {
-                                // trigger the close
-                                onClose(false);
-                            }}
-                        >
-                            Close
-                        </Button>
-                        <Button onClick={() => onSubmit()}>Submit</Button>
-                    </Modal.Footer>
+                            return null;
+                        })}
+                    </Stack>
                 </Modal.Content>
+                <Modal.Actions>
+                    <Button
+                        variant="text"
+                        onClick={() => {
+                            // trigger the close
+                            onClose(false);
+                        }}
+                    >
+                        Close
+                    </Button>
+                    <Button variant="contained" onClick={() => onSubmit()}>
+                        Submit
+                    </Button>
+                </Modal.Actions>
             </Modal>
         );
     },
