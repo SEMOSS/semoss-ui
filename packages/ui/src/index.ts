@@ -43,6 +43,7 @@ export * from "./components/Stack";
 export * from "./components/Switch";
 export * from "./components/Table";
 export * from "./components/Tabs";
+export * from "./components/ToggleGroup";
 export * from "./components/ToggleButton";
 export * from "./components/ToggleButtonGroup";
 export * from "./components/ToggleTabsGroup";
