@@ -977,6 +977,11 @@ const SOCIAL = {
         provider: 'ms',
         image: require('images/ms.png'),
     },
+    github: {
+        name: 'Github',
+        provider: 'github',
+        image: require('images/github.png')
+    }
 };
 
 const PREVIEW_LIMIT = 20;

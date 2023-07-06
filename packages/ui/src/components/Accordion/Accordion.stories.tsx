@@ -7,7 +7,6 @@ const meta: Meta<typeof Accordion> = {
     component: Accordion,
     args: {
         square: false,
-        elevation: 1,
         disabled: false,
         disableGutters: false,
         expanded: false,

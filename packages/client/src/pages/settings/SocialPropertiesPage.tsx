@@ -1,9 +1,7 @@
 import React, { useEffect, useState, useReducer } from 'react';
 import { useForm } from 'react-hook-form';
 import {
-    Accordion,
     Table,
-    Button,
     Form,
     useNotification,
     styled,
@@ -13,6 +11,44 @@ import {
 import { useAPI, useRootStore } from '@/hooks';
 import { LoadingScreen } from '@/components/ui';
 import { Field } from '@/components/form';
+import { Divider, Accordion, Button, Input } from '@semoss/ui';
+import google from '../../assets/img/google.png';
+import ms from '../../assets/img/ms.png';
+import dropbox from '../../assets/img/dropbox.png';
+import github from '../../assets/img/github.png';
+import other from '../../assets/img/other.png';
+import { format } from 'path';
+
+const SOCIAL = {
+    google: {
+        name: 'Google',
+        image: google,
+    },
+    ms: {
+        name: 'Microsoft',
+        image: ms,
+    },
+    dropbox: {
+        name: 'Dropbox',
+        image: dropbox,
+    },
+    github: {
+        name: 'Github',
+        image: github,
+    },
+    native: {
+        name: 'Native',
+        image: other,
+    },
+};
+
+const StyledImage = styled('img', {
+    objectFit: 'cover',
+    maxHeight: '28px',
+    maxWidth: '28px',
+    verticalAlign: 'middle',
+    padding: '4px',
+});
 
 const StyledContainer = styled('div', {
     margin: '0 auto',
@@ -79,7 +115,14 @@ export const SocialPropertiesPage = () => {
     const [state, dispatch] = useReducer(reducer, initialState);
     const { socialProps } = state;
 
-    const [accordionValue, setAccordionValue] = useState();
+    const [accordionValue, setAccordionValue] = useState<string>();
+    const [search, setSearch] = useState<string>('');
+
+    const [authentication, setAuthentication] = useState(
+        Object.keys(socialProps),
+    );
+    const [authExpanded, setAuthExpanded] = useState(false);
+    const [emailExpanded, setEmailExpanded] = useState(false);
 
     const loginProperties = useAPI(['getLoginProperties']);
 
@@ -113,8 +156,25 @@ export const SocialPropertiesPage = () => {
             field: 'socialProps',
             value: formattedProperties,
         });
+        setAuthentication(Object.keys(formattedProperties));
         // setSocialProps(formattedProperties);
     }, [loginProperties.status, loginProperties.data]);
+
+    useEffect(() => {
+        // reset the options if there is no search value
+        if (!search) {
+            setAuthentication(Object.keys(socialProps));
+            return;
+        }
+
+        const cleanedSearch = search.toLowerCase();
+
+        const filtered = authentication.filter((c) => {
+            return c.toLowerCase().includes(cleanedSearch);
+        });
+
+        setAuthentication(filtered);
+    }, [search]);
 
     // show a loading screen when loginProperties is pending
     if (loginProperties.status !== 'SUCCESS' || !Object.keys(socialProps)) {
@@ -140,27 +200,83 @@ export const SocialPropertiesPage = () => {
             <StyledDescription>
                 Use this portal to change social property settings
             </StyledDescription>
+            <Divider />
             {Object.keys(socialProps) ? (
-                <Accordion multiple={false} value={accordionValue}>
-                    {Object.entries(socialProps).map((pr, i) => {
-                        return (
-                            <Accordion.Item key={i} value={pr[0]}>
-                                <Accordion.Trigger>
-                                    {pr[0].charAt(0).toUpperCase() +
-                                        pr[0].slice(1)}
-                                </Accordion.Trigger>
-                                <StyledAccordionContent>
-                                    <SocialProperty
-                                        key={i}
-                                        fieldName={pr[0]}
-                                        fields={pr[1]}
-                                        onChange={changeSocialProps}
-                                    ></SocialProperty>
-                                </StyledAccordionContent>
-                            </Accordion.Item>
-                        );
-                    })}
-                </Accordion>
+                <div style={{ display: 'flex' }}>
+                    <div>
+                        <Accordion
+                            expanded={authExpanded}
+                            onChange={() => setAuthExpanded(!authExpanded)}
+                        >
+                            <Accordion.Trigger
+                                sx={{ padding: '8px', fontSize: '16px' }}
+                            >
+                                <strong>Authentication</strong>
+                            </Accordion.Trigger>
+                            {authentication.map((value) => {
+                                return (
+                                    <Accordion.Content
+                                        sx={{ fontSize: '14px' }}
+                                    >
+                                        <Button
+                                            onClick={() =>
+                                                setAccordionValue(value)
+                                            }
+                                        >
+                                            <StyledImage
+                                                src={
+                                                    SOCIAL[value]?.image ||
+                                                    SOCIAL['native'].image
+                                                }
+                                            />
+                                            {SOCIAL[value]?.name ||
+                                                value[0].toUpperCase() +
+                                                    value.slice(1)}
+                                        </Button>
+                                    </Accordion.Content>
+                                );
+                            })}
+                        </Accordion>
+                        <Accordion
+                            expanded={emailExpanded}
+                            onChange={() => setEmailExpanded(!emailExpanded)}
+                        >
+                            <Accordion.Trigger
+                                sx={{ padding: '8px', fontSize: '16px' }}
+                            >
+                                <strong>Email</strong>
+                            </Accordion.Trigger>
+
+                            {authentication.map((value) => {
+                                return (
+                                    <Accordion.Content
+                                        sx={{ fontSize: '14px' }}
+                                    >
+                                        <StyledImage
+                                            src={
+                                                SOCIAL[value]?.image ||
+                                                SOCIAL['native'].image
+                                            }
+                                        />
+                                        {SOCIAL[value]?.name ||
+                                            value[0].toUpperCase() +
+                                                value.slice(1)}
+                                    </Accordion.Content>
+                                );
+                            })}
+                        </Accordion>
+                    </div>
+                    <StyledAccordionContent>
+                        {accordionValue && console.log(socialProps)}
+                        {/* {accordionValue &&                        
+                            <SocialProperty
+                                key={authentication.indexOf(accordionValue)}
+                                fieldName={socialProps[accordionValue][0]}
+                                fields={socialProps[accordionValue][1]}
+                                onChange={changeSocialProps}
+                            ></SocialProperty> */}
+                    </StyledAccordionContent>
+                </div>
             ) : (
                 <div> No social props</div>
             )}
@@ -291,3 +407,20 @@ const SocialProperty = (props) => {
         </Form>
     );
 };
+
+// {Object.entries(socialProps).map((pr, i) => {
+//     return (
+//         <Accordion.Item key={i} value={pr[0]}>
+//             <Accordion.Trigger>
+//                 {pr[0].charAt(0).toUpperCase() +
+//                     pr[0].slice(1)}
+//             </Accordion.Trigger>
+//             <StyledAccordionContent>
+//                 <SocialProperty
+//                     key={i}
+//                     fieldName={pr[0]}
+//                     fields={pr[1]}
+//                     onChange={changeSocialProps}
+//                 ></SocialProperty>
+//             </StyledAccordionContent>
+//         </Accordion.Item>

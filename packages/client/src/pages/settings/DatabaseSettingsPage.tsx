@@ -26,6 +26,8 @@ import {
 } from '@semoss/ui';
 
 import * as Icons from '@semoss/ui';
+import github from '../../assets/img/github.png';
+import defaultDBImage from '../../assets/img/placeholder.png';
 
 import { Permissions } from '@/components/database';
 
@@ -100,12 +102,14 @@ const StyledCardContainer = styled('div')({
     alignItems: 'flex-start',
     gap: '8px',
     flex: '1 0 0',
-    // display: 'flex',
-    // padding: '0px 0px 8px 0px',
-    // flexDirection: 'column',
-    // alignItems: 'flex-start',
-    // gap: '16px',
-    // flex: '1 0 0',
+});
+
+const StyledCardImage = styled('img')({
+    display: 'flex',
+    height: '118px',
+    alignItems: 'flex-start',
+    gap: '10px',
+    alignSelf: 'stretch',
 });
 
 const StyledCardHeader = styled('div')({
@@ -219,13 +223,92 @@ const StyledLockButton = styled(IconButton)({
 });
 
 const StyledLandscapeCard = styled(Card)({
-    width: '69.25rem',
+    display: 'flex',
+    paddingBottom: '8px',
+    flexDirection: 'column',
+    alignItems: 'flex-start',
+    gap: '8px',
+});
+
+const StyledLandscapeCardHeader = styled('div')({
+    display: 'flex',
+    padding: '16px',
+    alignItems: 'center',
+    gap: '10px',
+    alignSelf: 'stretch',
+});
+
+const StyledLandscapeCardImg = styled('img')(({ theme }) => ({
+    display: 'flex',
+    width: '60px',
+    height: '60px',
+    borderRadius: theme.shape.borderRadius,
+    justifyContent: 'center',
+    alignItems: 'center',
+}));
+
+const StyledLandscapeCardHeaderDiv = styled('div')({
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'flex-start',
+    gap: '4px',
+    flex: '1 0 0',
+});
+
+const StyledLandscapeCardTitleDiv = styled('div')({
+    display: 'flex',
+    alignItems: 'flex-start',
+    gap: '4px',
+    alignSelf: 'stretch',
+    justifyContent: 'space-between',
+});
+
+const StyledLandscapeCardPublishedDiv = styled('div')({
+    display: 'flex',
+    alignItems: 'center',
+    gap: '4px',
+    alignSelf: 'stretch',
+});
+
+const StyledLandscapeCardDescriptionContainer = styled('div')({
+    display: 'flex',
+    padding: '0px 16px',
+    flexDirection: 'column',
+    alignItems: 'flex-start',
+    alignSelf: 'stretch',
+});
+
+const StyledLandscapeCardRow = styled('div')({
+    display: 'flex',
+    alignItems: 'center',
+    alignSelf: 'stretch',
+});
+
+const StyledLandscapeCardRowContainer = styled('div')({
+    display: 'flex',
+    alignItems: 'center',
+    gap: '8px',
+    flex: '1 0 0',
+});
+
+const StyledLandscapeCardRowDiv = styled('div')({
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'flex-start',
+    gap: '8px',
+    flex: '1 0 0',
+});
+
+const StyledLandscapeCardDescription = styled(Typography)({
+    display: 'flex',
+    flexDirection: 'column',
+    alignSelf: 'stretch',
 });
 
 export const DatabaseSettingsPage = () => {
     const { adminMode } = useSettings();
 
-    const [view, setView] = useState('tile');
+    const [view, setView] = useState('list');
     const [search, setSearch] = useState('');
     const [sort, setSort] = useState('Name');
 
@@ -287,32 +370,6 @@ export const DatabaseSettingsPage = () => {
                             label="Database"
                             size="small"
                         />
-                        {/* <Search 
-                        /> */}
-                        {/* <StyledAutocomplete
-                            label="Database"
-                            id="combo-box-demo"
-                            options={
-                                getApps.status === 'SUCCESS' ? getApps.data : []
-                            }
-                            // value={selectedApp.app_id}
-                            onChange={(
-                                val: Awaited<
-                                    ReturnType<MonolithStore['getDatabases']>
-                                >[number],
-                            ) => {
-                                setSelectedApp(val.app_id);
-                            }}
-                            // inputValue={inputValue}
-                            isOptionEqualToValue={(option, value) => {
-                                return option.app_id === value;
-                            }}
-                            onInputChange={(event, newInputValue) => {
-                                console.log();
-                                // setInputValue(newInputValue);
-                            }}
-                        /> */}
-
                         <StyledSort
                             size={'small'}
                             value={sort}
@@ -349,148 +406,301 @@ export const DatabaseSettingsPage = () => {
                                       <Grid
                                           item
                                           key={i}
-                                          sm={12}
-                                          md={6}
-                                          lg={4}
-                                          xl={3}
+                                          sm={view === 'list' ? 12 : 12}
+                                          md={view === 'list' ? 12 : 6}
+                                          lg={view === 'list' ? 12 : 4}
+                                          xl={view === 'list' ? 12 : 3}
                                       >
-                                          <StyledTileCard
-                                              onClick={() => setSelectedApp(db)}
-                                          >
-                                              <Card.Media
-                                                  src={
-                                                      'http://www.example.com/image.gif'
+                                          {view === 'list' ? (
+                                              <StyledLandscapeCard
+                                                  onClick={() =>
+                                                      setSelectedApp(db)
                                                   }
-                                                  sx={{ height: '100px' }}
-                                              />
-                                              <StyledTileCardContent>
-                                                  <StyledCardRows>
-                                                      <StyledCardRowsDiv>
-                                                          <StyledCardContainer>
-                                                              <StyledCardHeader>
-                                                                  <StyledDbName
-                                                                      variant={
-                                                                          'body1'
-                                                                      }
-                                                                  >
-                                                                      {formatDBName(
-                                                                          db.app_name,
-                                                                      )}
-                                                                  </StyledDbName>
-                                                                  <IconButton>
-                                                                      <Icons.StarOutlineOutlined />
-                                                                  </IconButton>
-                                                              </StyledCardHeader>
-
-                                                              <StyledCardCategory>
-                                                                  <Icon color="disabled">
-                                                                      <StyledCategoryIcon />
-                                                                  </Icon>
-                                                                  <StyledCategoryLabel
-                                                                      color={
-                                                                          'secondary'
-                                                                      }
-                                                                      variant={
-                                                                          'caption'
-                                                                      }
-                                                                  >
-                                                                      Category
-                                                                  </StyledCategoryLabel>
-                                                              </StyledCardCategory>
-
-                                                              <StyledPublishedByContainer>
-                                                                  <StyledAvatar>
-                                                                      <StyledPersonIcon />
-                                                                  </StyledAvatar>
-                                                                  <StyledPublishedByLabel
-                                                                      color={
-                                                                          'secondary'
-                                                                      }
-                                                                      variant={
-                                                                          'caption'
-                                                                      }
-                                                                  >
-                                                                      Published
-                                                                      by: jsmith
-                                                                  </StyledPublishedByLabel>
-                                                              </StyledPublishedByContainer>
-
-                                                              <StyedCardDescription
+                                              >
+                                                  <StyledLandscapeCardHeader>
+                                                      <StyledLandscapeCardImg
+                                                          src={defaultDBImage}
+                                                      />
+                                                      <StyledLandscapeCardHeaderDiv>
+                                                          <StyledLandscapeCardTitleDiv>
+                                                              <Typography
                                                                   variant={
-                                                                      'body2'
+                                                                      'body1'
                                                                   }
                                                               >
-                                                                  {/* {db.app_permission} */}
-                                                                  Lorem Ipsum is
-                                                                  simply dummy
-                                                                  text of the
-                                                                  printing and
-                                                                  typesetting
-                                                                  industry.
-                                                                  Lorem Ipsum
-                                                                  has been the
-                                                                  industry's
-                                                                  standard dummy
-                                                                  text ever
-                                                                  since the
-                                                                  1500s, when an
-                                                                  unknown
-                                                                  printer took a
-                                                                  galley of type
-                                                                  and scrambled
-                                                                  it to make a
-                                                                  type specimen
-                                                                  book.
-                                                              </StyedCardDescription>
-                                                              <Chip
-                                                                  variant={
-                                                                      'outlined'
+                                                                  {formatDBName(
+                                                                      db.app_name,
+                                                                  )}
+                                                              </Typography>
+                                                              <IconButton
+                                                                  size={'small'}
+                                                              >
+                                                                  <Icons.StarOutlineOutlined />
+                                                              </IconButton>
+                                                          </StyledLandscapeCardTitleDiv>
+
+                                                          <StyledLandscapeCardPublishedDiv>
+                                                              <StyledAvatar>
+                                                                  <StyledPersonIcon />
+                                                              </StyledAvatar>
+                                                              <StyledPublishedByLabel
+                                                                  color={
+                                                                      'secondary'
                                                                   }
-                                                                  label={'Tag'}
-                                                              />
-                                                          </StyledCardContainer>
-                                                      </StyledCardRowsDiv>
-                                                  </StyledCardRows>
-                                              </StyledTileCardContent>
-                                              <StyledTileCardActions>
-                                                  <StyledLeftActions>
-                                                      <ButtonGroup
-                                                          size="sm"
-                                                          color="secondary"
-                                                      >
-                                                          <Button>
-                                                              <Icons.ArrowDropUp />
-                                                          </Button>
-                                                          <Button
-                                                              disabled={true}
-                                                          >
-                                                              12
-                                                          </Button>
-                                                      </ButtonGroup>
-                                                      <StyledViewsTrendingDiv>
-                                                          <StyledEyeIcon color="secondary" />
-                                                          <Typography
+                                                                  variant={
+                                                                      'caption'
+                                                                  }
+                                                              >
+                                                                  Published by:
+                                                                  jsmith
+                                                              </StyledPublishedByLabel>
+                                                          </StyledLandscapeCardPublishedDiv>
+                                                      </StyledLandscapeCardHeaderDiv>
+                                                  </StyledLandscapeCardHeader>
+                                                  <StyledLandscapeCardDescriptionContainer>
+                                                      <StyledLandscapeCardRow>
+                                                          <StyledLandscapeCardRowContainer>
+                                                              <StyledLandscapeCardRowDiv>
+                                                                  <StyledLandscapeCardDescription
+                                                                      variant={
+                                                                          'body2'
+                                                                      }
+                                                                  >
+                                                                      Lorem
+                                                                      Ipsum is
+                                                                      simply
+                                                                      dummy text
+                                                                      of the
+                                                                      printing
+                                                                      and
+                                                                      typesetting
+                                                                      industry.
+                                                                      Lorem
+                                                                      Ipsum has
+                                                                      been the
+                                                                      industry's
+                                                                      standard
+                                                                      dummy text
+                                                                      ever since
+                                                                      the 1500s,
+                                                                      when an
+                                                                      unknown
+                                                                      printer
+                                                                      took a
+                                                                      galley of
+                                                                      type and
+                                                                      scrambled
+                                                                      it to make
+                                                                      a type
+                                                                      specimen
+                                                                      book.
+                                                                  </StyledLandscapeCardDescription>
+                                                                  <Chip
+                                                                      variant={
+                                                                          'outlined'
+                                                                      }
+                                                                      label={
+                                                                          'Tag'
+                                                                      }
+                                                                  />
+                                                              </StyledLandscapeCardRowDiv>
+                                                          </StyledLandscapeCardRowContainer>
+                                                      </StyledLandscapeCardRow>
+                                                  </StyledLandscapeCardDescriptionContainer>
+                                                  <StyledTileCardActions>
+                                                      <StyledLeftActions>
+                                                          <ButtonGroup
+                                                              size="sm"
                                                               color="secondary"
-                                                              variant="caption"
                                                           >
-                                                              1.2k
-                                                          </Typography>
-                                                      </StyledViewsTrendingDiv>
-                                                      <StyledViewsTrendingDiv>
-                                                          <StyledTrendingIcon color="secondary" />
-                                                          <Typography
+                                                              <Button>
+                                                                  <Icons.ArrowDropUp />
+                                                              </Button>
+                                                              <Button
+                                                                  disabled={
+                                                                      true
+                                                                  }
+                                                              >
+                                                                  12
+                                                              </Button>
+                                                          </ButtonGroup>
+                                                          <StyledViewsTrendingDiv>
+                                                              <StyledEyeIcon color="secondary" />
+                                                              <Typography
+                                                                  color="secondary"
+                                                                  variant="caption"
+                                                              >
+                                                                  1.2k
+                                                              </Typography>
+                                                          </StyledViewsTrendingDiv>
+                                                          <StyledViewsTrendingDiv>
+                                                              <StyledTrendingIcon color="secondary" />
+                                                              <Typography
+                                                                  color="secondary"
+                                                                  variant="caption"
+                                                              >
+                                                                  1.2k
+                                                              </Typography>
+                                                          </StyledViewsTrendingDiv>
+                                                      </StyledLeftActions>
+                                                      <StyledLockButton>
+                                                          <Icons.LockRounded />
+                                                      </StyledLockButton>
+                                                  </StyledTileCardActions>
+                                              </StyledLandscapeCard>
+                                          ) : (
+                                              <StyledTileCard
+                                                  onClick={() =>
+                                                      setSelectedApp(db)
+                                                  }
+                                              >
+                                                  {/* Use Card.Media instead, uses img tag */}
+                                                  <StyledCardImage
+                                                      src={defaultDBImage}
+                                                      sx={{ height: '118px' }}
+                                                  />
+                                                  <StyledTileCardContent>
+                                                      <StyledCardRows>
+                                                          <StyledCardRowsDiv>
+                                                              <StyledCardContainer>
+                                                                  <StyledCardHeader>
+                                                                      <StyledDbName
+                                                                          variant={
+                                                                              'body1'
+                                                                          }
+                                                                      >
+                                                                          {formatDBName(
+                                                                              db.app_name,
+                                                                          )}
+                                                                      </StyledDbName>
+                                                                      <IconButton>
+                                                                          <Icons.StarOutlineOutlined />
+                                                                      </IconButton>
+                                                                  </StyledCardHeader>
+
+                                                                  <StyledCardCategory>
+                                                                      <Icon color="disabled">
+                                                                          <StyledCategoryIcon />
+                                                                      </Icon>
+                                                                      <StyledCategoryLabel
+                                                                          color={
+                                                                              'secondary'
+                                                                          }
+                                                                          variant={
+                                                                              'caption'
+                                                                          }
+                                                                      >
+                                                                          Category
+                                                                      </StyledCategoryLabel>
+                                                                  </StyledCardCategory>
+
+                                                                  <StyledPublishedByContainer>
+                                                                      <StyledAvatar>
+                                                                          <StyledPersonIcon />
+                                                                      </StyledAvatar>
+                                                                      <StyledPublishedByLabel
+                                                                          color={
+                                                                              'secondary'
+                                                                          }
+                                                                          variant={
+                                                                              'caption'
+                                                                          }
+                                                                      >
+                                                                          Published
+                                                                          by:
+                                                                          jsmith
+                                                                      </StyledPublishedByLabel>
+                                                                  </StyledPublishedByContainer>
+
+                                                                  <StyedCardDescription
+                                                                      variant={
+                                                                          'body2'
+                                                                      }
+                                                                  >
+                                                                      {/* {db.app_permission} */}
+                                                                      Lorem
+                                                                      Ipsum is
+                                                                      simply
+                                                                      dummy text
+                                                                      of the
+                                                                      printing
+                                                                      and
+                                                                      typesetting
+                                                                      industry.
+                                                                      Lorem
+                                                                      Ipsum has
+                                                                      been the
+                                                                      industry's
+                                                                      standard
+                                                                      dummy text
+                                                                      ever since
+                                                                      the 1500s,
+                                                                      when an
+                                                                      unknown
+                                                                      printer
+                                                                      took a
+                                                                      galley of
+                                                                      type and
+                                                                      scrambled
+                                                                      it to make
+                                                                      a type
+                                                                      specimen
+                                                                      book.
+                                                                  </StyedCardDescription>
+                                                                  <Chip
+                                                                      variant={
+                                                                          'outlined'
+                                                                      }
+                                                                      label={
+                                                                          'Tag'
+                                                                      }
+                                                                  />
+                                                              </StyledCardContainer>
+                                                          </StyledCardRowsDiv>
+                                                      </StyledCardRows>
+                                                  </StyledTileCardContent>
+                                                  <StyledTileCardActions>
+                                                      <StyledLeftActions>
+                                                          <ButtonGroup
+                                                              size="sm"
                                                               color="secondary"
-                                                              variant="caption"
                                                           >
-                                                              1.2k
-                                                          </Typography>
-                                                      </StyledViewsTrendingDiv>
-                                                  </StyledLeftActions>
-                                                  <StyledLockButton>
-                                                      <Icons.LockRounded />
-                                                  </StyledLockButton>
-                                              </StyledTileCardActions>
-                                          </StyledTileCard>
+                                                              <Button>
+                                                                  <Icons.ArrowDropUp />
+                                                              </Button>
+                                                              <Button
+                                                                  disabled={
+                                                                      true
+                                                                  }
+                                                              >
+                                                                  12
+                                                              </Button>
+                                                          </ButtonGroup>
+                                                          <StyledViewsTrendingDiv>
+                                                              <StyledEyeIcon color="secondary" />
+                                                              <Typography
+                                                                  color="secondary"
+                                                                  variant="caption"
+                                                              >
+                                                                  1.2k
+                                                              </Typography>
+                                                          </StyledViewsTrendingDiv>
+                                                          <StyledViewsTrendingDiv>
+                                                              <StyledTrendingIcon color="secondary" />
+                                                              <Typography
+                                                                  color="secondary"
+                                                                  variant="caption"
+                                                              >
+                                                                  1.2k
+                                                              </Typography>
+                                                          </StyledViewsTrendingDiv>
+                                                      </StyledLeftActions>
+                                                      <StyledLockButton>
+                                                          <Icons.LockRounded />
+                                                      </StyledLockButton>
+                                                  </StyledTileCardActions>
+                                              </StyledTileCard>
+                                          )}
                                       </Grid>
                                   );
                               })

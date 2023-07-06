@@ -17,6 +17,10 @@ const StyledBreadcrumbs = styled(Breadcrumbs)({
     marginTop: '1rem',
 });
 
+const StyledLink = {
+    textDecoration: 'none',
+    color: 'inherit',
+};
 export const SettingsLayout = () => {
     const { monolithStore } = useRootStore();
     const { pathname } = useLocation();
@@ -79,18 +83,25 @@ export const SettingsLayout = () => {
             <Page
                 header={
                     <Stack>
-                        {matchedRoute.path ? (
-                            <Breadcrumbs maxItems={3}>
-                                <Link to={'.'}>Settings</Link>
-                                <Link to={matchedRoute.path}>
-                                    {matchedRoute.title}
-                                </Link>
-                            </Breadcrumbs>
-                        ) : null}
+                        <div>
+                            {matchedRoute.path ? (
+                                <Breadcrumbs separator="/">
+                                    <Link style={StyledLink} to={'.'}>
+                                        Settings
+                                    </Link>
+                                    <Link
+                                        style={StyledLink}
+                                        to={matchedRoute.path}
+                                    >
+                                        {matchedRoute.title}
+                                    </Link>
+                                </Breadcrumbs>
+                            ) : null}
+                        </div>
                         <Typography variant="h4">
                             {matchedRoute.title}
                         </Typography>
-                        <Typography variant="subtitle1">
+                        <Typography variant="body1">
                             {!adminMode || matchedRoute.path !== ''
                                 ? matchedRoute.description
                                 : matchedRoute.adminDescription}

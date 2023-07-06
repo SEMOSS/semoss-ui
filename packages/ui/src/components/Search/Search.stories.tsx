@@ -7,6 +7,7 @@ export default {
     args: {
         placeholder: "Search Placeholder here",
         disabled: false,
+        enableEndAdornment: false,
     },
 };
 

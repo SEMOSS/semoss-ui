@@ -32,6 +32,12 @@ export type AccordionProps = {
     expanded?: boolean;
 
     /**
+     * If `true`, the component loses its rounded edges.
+     * @default false
+     */
+    square?: boolean;
+
+    /**
      * Callback fired when the expand/collapse state is changed.
      *
      * @param {React.SyntheticEvent} event The event source of the callback. **Warning**: This is a generic event not a change event.

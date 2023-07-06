@@ -9,8 +9,6 @@ import { RootStoreContext } from '@/contexts';
 import { Router } from '@/pages';
 import { LoadingScreen } from '@/components/ui';
 
-debugger;
-
 // add interceptors
 axios.interceptors.response.use(
     function (response) {
