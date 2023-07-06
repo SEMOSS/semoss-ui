@@ -8,8 +8,7 @@ import {
     Link,
     matchPath,
 } from 'react-router-dom';
-import { styled } from '@semoss/components';
-import { theme } from '@/theme';
+import { styled, Stack } from '@semoss/ui';
 import { useAPI } from '@/hooks';
 import {
     DatabaseContext,
@@ -18,40 +17,35 @@ import {
 import { LoadingScreen } from '@/components/ui';
 import { DatabaseShell } from '@/components/database';
 
-const StyledTabContainer = styled('div', {
-    display: 'flex',
-    alignItems: 'center',
-});
-
 const StyledTab = styled(Link, {
+    shouldForwardProp: (prop) => prop !== 'selected',
+})<{
+    /** Track if the tab is selected */
+    selected: boolean;
+}>(({ theme, selected }) => ({
+    ...theme.typography.button,
     display: 'inline-flex',
     alignItems: 'center',
-    height: theme.space['8'],
-    padding: theme.space['2'],
-    fontSize: theme.fontSizes.sm,
-    fontWeight: theme.fontWeights.medium,
-    borderBottomWidth: theme.borderWidths.thick,
-    borderBottomColor: 'transparent',
+    height: theme.spacing(4),
+    padding: theme.spacing(1),
+    borderBottomWidth: '1px',
+    borderBottomColor: selected ? theme.palette.primary.main : 'transparent',
+    cursor: 'pointer',
+    textDecoration: 'none',
+    color: theme.palette.text.primary,
     '&:hover': {
-        backgroundColor: theme.colors['primary-5'],
+        backgroundColor: theme.palette.action.hover,
     },
-    variants: {
-        selected: {
-            true: {
-                borderBottomColor: theme.colors['primary-1'],
-            },
-        },
-    },
-});
+}));
 
-const StyledPage = styled('div', {
+const StyledDocument = styled('div')(({ theme }) => ({
     width: '100%',
-    padding: theme.space['8'],
-    borderWidth: theme.borderWidths.default,
-    borderColor: theme.colors['grey-4'],
-    borderRadius: theme.radii.default,
-    backgroundColor: theme.colors.base,
-});
+    padding: theme.spacing(4),
+    borderWidth: '1px',
+    borderColor: theme.palette.divider,
+    borderRadius: theme.shape.borderRadius,
+    backgroundColor: theme.palette.background.default,
+}));
 
 /**
  * Wrap the database routes and add additional funcitonality
@@ -97,7 +91,7 @@ export const DatabaseLayout = () => {
     return (
         <DatabaseContext.Provider value={databaseContextType}>
             <DatabaseShell>
-                <StyledTabContainer>
+                <Stack direction={'row'} alignItems={'center'}>
                     <StyledTab to="" selected={isActive('')}>
                         Home
                     </StyledTab>
@@ -113,10 +107,10 @@ export const DatabaseLayout = () => {
                             Settings
                         </StyledTab>
                     )}
-                </StyledTabContainer>
-                <StyledPage>
+                </Stack>
+                <StyledDocument>
                     <Outlet />
-                </StyledPage>
+                </StyledDocument>
             </DatabaseShell>
         </DatabaseContext.Provider>
     );
