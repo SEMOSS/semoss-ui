@@ -1,11 +1,7 @@
-import { ToggleGroup, ToggleGroupProps } from "./ToggleGroup";
-import { ToggleList, ToggleListProps } from "./ToggleList";
-import { Toggle, ToggleProps } from "./Toggle";
+import { ToggleGroup, ToggleProps } from "./ToggleGroup";
+import { Toggle } from "./Toggle";
 
-export type { ToggleGroupProps };
-export { ToggleListProps };
-export { ToggleProps };
+export type { ToggleProps };
 
 export { ToggleGroup };
-export { ToggleList };
 export { Toggle };
