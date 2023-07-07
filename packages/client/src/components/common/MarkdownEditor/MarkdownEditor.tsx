@@ -1,17 +1,17 @@
-import { styled, Grid, Textarea } from '@semoss/components';
+import { styled, Grid, TextArea } from '@semoss/ui';
 
 import { Markdown } from '../Markdown';
 
-import { theme } from '@/theme';
-
-const StyledGridItem = styled(Grid.Item, {
-    height: theme.space['96'],
+const StyledGridItem = styled(Grid)(({ theme }) => ({
+    height: theme.spacing(36),
     overflow: 'auto',
-});
+}));
 
-const StyledTextarea = styled(Textarea, {
-    height: '100% !important',
-});
+const StyledTextarea = styled(TextArea)(() => ({
+    height: '100%',
+    width: '100%',
+    overflow: 'auto',
+}));
 
 interface MarkdownEditorProps {
     /** Value of the input */
@@ -25,16 +25,16 @@ export const MarkdownEditor = (props: MarkdownEditorProps) => {
     const { value, onChange = () => null } = props;
 
     return (
-        <Grid>
-            <StyledGridItem span={6}>
+        <Grid container>
+            <StyledGridItem item xs={6}>
                 <StyledTextarea
                     value={value}
-                    onChange={(v) => {
-                        onChange(v);
+                    onChange={(e) => {
+                        onChange(e.target.value);
                     }}
                 ></StyledTextarea>
             </StyledGridItem>
-            <StyledGridItem span={6}>
+            <StyledGridItem item xs={6}>
                 <Markdown content={value}></Markdown>
             </StyledGridItem>
         </Grid>

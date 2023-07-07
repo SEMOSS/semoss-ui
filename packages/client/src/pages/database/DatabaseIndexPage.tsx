@@ -1,42 +1,37 @@
 import { useState, useMemo } from 'react';
-import { styled, Grid, Button, Icon, Pill } from '@semoss/components';
+import {
+    styled,
+    Stack,
+    Button,
+    Chip,
+    EditOutlined,
+    Typography,
+    Divider,
+} from '@semoss/ui';
 import { Link } from 'react-router-dom';
 import { observer } from 'mobx-react-lite';
-import { mdiPencil } from '@mdi/js';
 
 import Cat from '@/assets/img/cat.jpg';
 
-import { theme } from '@/theme';
 import { Section, LoadingScreen } from '@/components/ui';
 import { Markdown } from '@/components/common';
 import { DatabaseCard, EditDatabaseDetails } from '@/components/database';
 import { usePixel, useDatabase, useRootStore } from '@/hooks';
 
-const StyledPage = styled('div', {
+const StyledPage = styled('div')(() => ({
     position: 'relative',
     zIndex: '0',
-});
+}));
 
-const StyledEditorHolder = styled('div', {
+const StyledEditorHolder = styled('div')(() => ({
     position: 'absolute',
     top: '0',
     right: '0',
-});
+}));
 
-const StyledPillContainer = styled('div', {
-    display: 'flex',
-    flexWrap: 'wrap',
-    gap: theme.space['2'],
-});
-
-const StyledLink = styled(Link, {
+const StyledLink = styled(Link)(() => ({
     display: 'inline-block',
-});
-
-const StyledGrid = styled(Grid, {
-    overflowX: 'auto',
-    overflowY: 'hidden',
-});
+}));
 
 export const DatabaseIndexPage = observer(() => {
     const { id, role } = useDatabase();
@@ -80,20 +75,6 @@ export const DatabaseIndexPage = observer(() => {
         ])}); `,
     );
 
-    const {
-        status: usabilityStatus,
-        data: usabilityData,
-        refresh: usabilityRefresh,
-    } = usePixel(`UsabilityScore(database = '${id}');`);
-
-    const {
-        status: activityStatus,
-        data: activityData,
-        refresh: activityRefresh,
-    } = usePixel(`
-    EngineActivity ( database = "${id}" ) ;
-    `);
-
     // convert the data into an object
     const values = useMemo(() => {
         if (dbMetaStatus !== 'SUCCESS') {
@@ -109,8 +90,6 @@ export const DatabaseIndexPage = observer(() => {
     if (dbMetaStatus !== 'SUCCESS') {
         return <LoadingScreen.Trigger description="Getting Database Details" />;
     }
-
-    console.log(usabilityData);
 
     return (
         <StyledPage>
@@ -132,9 +111,9 @@ export const DatabaseIndexPage = observer(() => {
                     )}
                     <Button
                         onClick={() => setEdit(!edit)}
-                        prepend={<Icon path={mdiPencil}></Icon>}
-                        size={'sm'}
-                        variant={'outline'}
+                        startIcon={<EditOutlined />}
+                        size={'small'}
+                        variant={'outlined'}
                     >
                         Edit
                     </Button>
@@ -142,28 +121,29 @@ export const DatabaseIndexPage = observer(() => {
             )}
             {dbMetaData.markdown && (
                 <>
-                    <Section>
-                        <Section.Header>About</Section.Header>
+                    <>
+                        <Typography variant="h5">About</Typography>
                         <Markdown content={dbMetaData.markdown} />
-                    </Section>
+                        <Divider />
+                    </>
                 </>
             )}
             {dbMetaData.tags && (
                 <Section>
                     <Section.Header>Tags</Section.Header>
-                    <StyledPillContainer>
+                    <Stack direction={'row'} spacing={1} flexWrap={'wrap'}>
                         {dbMetaData.tags.map((tag) => {
                             return (
-                                <Pill
+                                <Chip
                                     key={tag}
-                                    closeable={false}
+                                    label={tag}
                                     color={'primary'}
-                                >
-                                    {tag}
-                                </Pill>
+                                    variant={'outlined'}
+                                    size={'small'}
+                                ></Chip>
                             );
                         })}
-                    </StyledPillContainer>
+                    </Stack>
                 </Section>
             )}
             {databaseMetaKeys.map((k) => {
@@ -180,19 +160,23 @@ export const DatabaseIndexPage = observer(() => {
                         {k.display_options === 'multi-checklist' ||
                         k.display_options === 'multi-select' ||
                         k.display_options === 'multi-typeahead' ? (
-                            <StyledPillContainer>
+                            <Stack
+                                direction={'row'}
+                                spacing={1}
+                                flexWrap={'wrap'}
+                            >
                                 {dbMetaData[k.metakey].map((tag) => {
                                     return (
-                                        <Pill
+                                        <Chip
                                             key={tag}
-                                            closeable={false}
+                                            label={tag}
                                             color={'primary'}
-                                        >
-                                            {tag}
-                                        </Pill>
+                                            variant={'outlined'}
+                                            size={'small'}
+                                        ></Chip>
                                     );
                                 })}
-                            </StyledPillContainer>
+                            </Stack>
                         ) : (
                             <>{dbMetaData[k.metakey]}</>
                         )}
@@ -208,33 +192,23 @@ export const DatabaseIndexPage = observer(() => {
             </Section>
             <Section>
                 <Section.Header>Similar</Section.Header>
-                <StyledGrid gutterX={theme.space['8']} wrap={'nowrap'}>
+                <Stack direction={'row'} flexWrap={'nowrap'} overflow={'auto'}>
                     {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15].map(
                         (v, idx) => {
                             return (
-                                <Grid.Item
-                                    key={idx}
-                                    responsive={{
-                                        sm: 12,
-                                        md: 6,
-                                        lg: 4,
-                                        xl: 3,
-                                    }}
-                                >
-                                    <StyledLink to={`/database/${idx}`}>
-                                        <DatabaseCard
-                                            name={`Database ${idx}`}
-                                            description={
-                                                'Lorem ipsum dolor sit amet consectetur adipiscing elit'
-                                            }
-                                            image={Cat}
-                                        ></DatabaseCard>
-                                    </StyledLink>
-                                </Grid.Item>
+                                <StyledLink key={idx} to={`/database/${idx}`}>
+                                    <DatabaseCard
+                                        name={`Database ${idx}`}
+                                        description={
+                                            'Lorem ipsum dolor sit amet consectetur adipiscing elit'
+                                        }
+                                        image={Cat}
+                                    ></DatabaseCard>
+                                </StyledLink>
                             );
                         },
                     )}
-                </StyledGrid>
+                </Stack>
             </Section>
         </StyledPage>
     );

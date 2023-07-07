@@ -15,17 +15,9 @@ import {
     DatabaseMetadataPage,
     DatabaseSettingsPage,
 } from './database';
-import { ImportPage } from './ImportPage';
 
 import { SettingsRouter } from './settings';
-import {
-    ImportedDatabaseLayout,
-    ImportedDatabaseAccessPage,
-    ImportedDatabaseIndexPage,
-    ImportedDatabaseMetaModelPage,
-    ImportedDatabaseQueryDataPage,
-    ImportedDatabaseReplaceDataPage,
-} from './importedDatabase';
+
 // import { JobsPage } from './jobs';
 
 export const Router = observer(() => {
@@ -42,28 +34,7 @@ export const Router = observer(() => {
                 <Route index element={<TempPage title={'Home'} />} />
                 <Route path="settings/*" element={<SettingsRouter />} />
                 <Route path="catalog" element={<CatalogPage />} />
-                <Route path="import" element={<ImportPage />} />
-                <Route path="importedDatabase" element={<Outlet />}>
-                    <Route path=":id" element={<ImportedDatabaseLayout />}>
-                        <Route index element={<ImportedDatabaseIndexPage />} />
-                        <Route
-                            path="metamodel"
-                            element={<ImportedDatabaseMetaModelPage />}
-                        />
-                        <Route
-                            path="access"
-                            element={<ImportedDatabaseAccessPage />}
-                        />
-                        <Route
-                            path="queryData"
-                            element={<ImportedDatabaseQueryDataPage />}
-                        />
-                        <Route
-                            path="replaceData"
-                            element={<ImportedDatabaseReplaceDataPage />}
-                        />
-                    </Route>
-                </Route>
+                <Route path="import" element={<TempPage title={'Import'} />} />
                 <Route path="database" element={<Outlet />}>
                     <Route path=":id" element={<DatabaseLayout />}>
                         <Route index element={<DatabaseIndexPage />} />

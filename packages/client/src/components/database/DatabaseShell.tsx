@@ -1,84 +1,52 @@
 import React, { useState, useEffect } from 'react';
+import { useNotification } from '@semoss/components';
 import {
     styled,
+    Stack,
+    Typography,
     Button,
-    IconButton,
-    Icon,
-    Tooltip,
-    useNotification,
-} from '@semoss/components';
-import { mdiPlus, mdiThumbUp, mdiThumbUpOutline } from '@mdi/js';
+    AddCircle,
+    LinearProgress,
+} from '@semoss/ui';
 
-import { theme } from '@/theme';
-import { Image, Page, LoadingScreen } from '@/components/ui';
+import { Page, LoadingScreen } from '@/components/ui';
 import { useRootStore, useDatabase, usePixel } from '@/hooks';
 
-import { mdiInformation } from '@mdi/js';
-
-const StyledTitleGroup = styled('div', {
-    display: 'flex',
-    alignItems: 'center',
-    gap: theme.space['4'],
-});
-
-const StyledTitle = styled('h1', {
-    flex: '1',
-    color: theme.colors['grey-1'],
-    fontSize: theme.fontSizes.xxl,
-    fontWeight: theme.fontWeights.semibold,
-});
-
-const StyledInfo = styled('div', {
+const StyledInfo = styled('div')(({ theme }) => ({
     display: 'flex',
     justifyContent: 'space-between',
-    marginBottom: theme.space['8'],
+    marginBottom: theme.spacing(4),
     overflow: 'hidden',
-    // border: 'solid red',
-});
+}));
 
-const StyledInfoLeft = styled('div', {
+const StyledInfoLeft = styled('div')(({ theme }) => ({
     flex: 1,
     display: 'flex',
     flexDirection: 'column',
     justifyContent: 'space-between',
-    gap: theme.space['2'],
-    // border: 'solid green',
-});
+    gap: theme.spacing(1),
+}));
 
-const StyledInfoDescription = styled('div', {
-    color: theme.colors['grey-1'],
-    fontSize: theme.fontSizes.lg,
-    maxWidth: '50%',
-    overflow: 'hidden',
-});
-
-const StyledInfoRight = styled('div', {
+const StyledInfoRight = styled('div')(({ theme }) => ({
     display: 'flex',
     flexDirection: 'column',
-    // border: 'solid blue',
-});
+    gap: theme.spacing(1),
+}));
 
-const StyledImage = styled(Image, {
-    paddingBottom: theme.space['2'],
-    borderBottomWidth: theme.borderWidths.default,
-    borderBottomColor: theme.colors['grey-4'],
-});
+const StyledInfoDescription = styled(Typography)(() => ({
+    maxWidth: '50%',
+    textOverflow: 'ellipsis',
+}));
 
-const StyledInfoFooter = styled('div', {
-    color: theme.colors['grey-2'],
-    fontSize: theme.fontSizes.xs,
-    fontWeight: theme.fontWeights.semibold,
+const StyledInfoFooter = styled(Typography)(() => ({
     textTransform: 'uppercase',
-    overflow: 'hidden',
-});
+    textOverflow: 'ellipsis',
+}));
 
-const StyledVotesDiv = styled(StyledInfoFooter, {
-    display: 'flex',
-    justifyContent: 'flex-end',
-    alignItems: 'center',
-    gap: '.5rem',
-    marginTop: theme.space['2'],
-});
+const StyledUsabilityProgress = styled(LinearProgress)(({ theme }) => ({
+    flex: 1,
+    width: theme.spacing(1),
+}));
 
 interface DatabaseShellProps {
     /** Children to wrap in the RootStore */
@@ -195,76 +163,82 @@ export const DatabaseShell = (props: DatabaseShellProps) => {
     return (
         <Page
             header={
-                <StyledTitleGroup>
-                    <StyledTitle>{data.database_name}</StyledTitle>
-                    <Button prepend={<Icon path={mdiPlus}></Icon>}>
+                <Stack
+                    direction="row"
+                    justifyContent={'space-between'}
+                    width={'100%'}
+                >
+                    <Typography variant="h4">{data.database_name}</Typography>
+                    <Button startIcon={<AddCircle />} variant={'contained'}>
                         New Insight
                     </Button>
-                </StyledTitleGroup>
+                </Stack>
             }
         >
             <StyledInfo>
                 <StyledInfoLeft>
-                    <StyledInfoDescription>
+                    <StyledInfoDescription variant={'subtitle1'}>
                         {data.description}
                     </StyledInfoDescription>
-                    <StyledInfoFooter>
+
+                    <StyledInfoFooter variant={'caption'}>
                         Updated {data.last_updated}
                     </StyledInfoFooter>
                 </StyledInfoLeft>
                 <StyledInfoRight>
-                    <StyledImage
+                    <img
                         src={`${process.env.MODULE}/api/app-${id}/appImage/download`}
                     />
                     {votes && (
-                        <StyledVotesDiv>
-                            <p>
-                                {votes.total}{' '}
-                                {votes.total === 1
-                                    ? 'member likes'
-                                    : 'members like'}{' '}
-                                this dataset
-                            </p>
+                        <></>
+                        // <Stack direction="row" spacing={1} marginBottom={2}>
+                        //     <p>
+                        //         {votes.total}{' '}
+                        //         {votes.total === 1
+                        //             ? 'member likes'
+                        //             : 'members like'}{' '}
+                        //         this dataset
+                        //     </p>
 
-                            <IconButton
-                                size="sm"
-                                color={'grey'}
-                                onClick={() => {
-                                    // if true ? downvote : upvote
-                                    voteDatabase(votes.userVote ? false : true);
-                                }}
-                            >
-                                <Icon
-                                    path={
-                                        votes.userVote
-                                            ? mdiThumbUp
-                                            : mdiThumbUpOutline
-                                    }
-                                    size="md"
-                                ></Icon>
-                            </IconButton>
-                        </StyledVotesDiv>
+                        //     <IconButton
+                        //         size="sm"
+                        //         color={'grey'}
+                        //         onClick={() => {
+                        //             // if true ? downvote : upvote
+                        //             voteDatabase(votes.userVote ? false : true);
+                        //         }}
+                        //     >
+                        //         <Icon
+                        //             path={
+                        //                 votes.userVote
+                        //                     ? mdiThumbUp
+                        //                     : mdiThumbUpOutline
+                        //             }
+                        //             size="md"
+                        //         ></Icon>
+                        //     </IconButton>
+                        // </Stack>
                     )}
-                    <StyledVotesDiv>
-                        <meter min={0} max={10} value={usabilityData}></meter>{' '}
-                        <p>{usabilityData} / 10</p>
-                        <Tooltip
-                            align="center"
-                            side="bottom"
-                            content={
-                                <div>
-                                    <p>
-                                        The SEMOSS Usability Score is calculated
-                                        by the datasets level of documentation
-                                    </p>
-                                </div>
-                            }
-                        >
-                            <IconButton size="sm">
-                                <Icon path={mdiInformation}></Icon>
+                    <Stack
+                        direction="row"
+                        alignItems={'center'}
+                        spacing={1}
+                        marginBottom={2}
+                    >
+                        <StyledUsabilityProgress
+                            value={usabilityData * 10}
+                            variant={'determinate'}
+                        />
+                        <Typography variant="body2">
+                            {usabilityData * 10}%
+                        </Typography>
+
+                        {/* <Tooltip title="The SEMOSS Usability Score is calculated by the datasets level of documentation">
+                            <IconButton size="small">
+                                <InfoOutlined />
                             </IconButton>
-                        </Tooltip>
-                    </StyledVotesDiv>
+                        </Tooltip> */}
+                    </Stack>
                 </StyledInfoRight>
             </StyledInfo>
             {children}
