@@ -1,5 +1,5 @@
-import { useEffect, useState } from 'react';
-import { useRootStore, useAPI } from '@/hooks';
+import { useEffect, useState, useRef } from 'react';
+import { useRootStore, useAPI, usePixel } from '@/hooks';
 import { useSettings } from '@/hooks/useSettings';
 
 import { LoadingScreen } from '@/components/ui';
@@ -70,41 +70,92 @@ const StyledSort = styled(Select)({
 
 export const DatabaseSettingsPage = () => {
     const { adminMode } = useSettings();
+    const { configStore, monolithStore } = useRootStore();
 
-    const [view, setView] = useState('list');
+    const [view, setView] = useState('tile');
     const [search, setSearch] = useState('');
     const [sort, setSort] = useState('Name');
 
+    const [favoritedDatabases, setFavoritedDatabases] = useState([]);
     const [selectedApp, setSelectedApp] =
         useState<Awaited<ReturnType<MonolithStore['getDatabases']>>[number]>(
             null,
         );
 
-    const getApps = useAPI(['getDatabases', adminMode]);
+    // To focus when getting new results
+    const searchbarRef = useRef(null);
 
-    // reset the selected app when apps change
+    // get a list of the keys
+    const databaseMetaKeys = configStore.store.config.databaseMetaKeys.filter(
+        (k) => {
+            return (
+                k.display_options === 'single-checklist' ||
+                k.display_options === 'multi-checklist' ||
+                k.display_options === 'single-select' ||
+                k.display_options === 'multi-select' ||
+                k.display_options === 'single-typeahead' ||
+                k.display_options === 'multi-typeahead' ||
+                k.display_options === 'textarea'
+            );
+        },
+    );
+
+    // get metakeys to the ones we want
+    const metaKeys = databaseMetaKeys.map((k) => {
+        return k.metakey;
+    });
+
+    const getFavoritedDatabases = usePixel(`
+    MyDatabases(metaKeys = ${JSON.stringify(
+        metaKeys,
+    )}, filterWord=["${search}"], onlyFavorites=[true]);
+    `);
+
     useEffect(() => {
-        if (getApps.status !== 'SUCCESS') {
+        if (getFavoritedDatabases.status !== 'SUCCESS') {
             return;
         }
 
-        // reset it
-        setSelectedApp(null);
-    }, [getApps.status, getApps.data]);
+        console.log(getFavoritedDatabases.data);
 
-    // show a loading screen when getApps is pending
-    if (getApps.status !== 'SUCCESS') {
-        return <LoadingScreen.Trigger description="Retrieving databases" />;
-    }
+        setFavoritedDatabases(getFavoritedDatabases.data);
+        searchbarRef.current?.focus();
+    }, [getFavoritedDatabases.status, getFavoritedDatabases.data]);
+
+    const getDatabases = usePixel<
+        {
+            app_cost: string;
+            app_id: string;
+            app_name: string;
+            app_type: string;
+            database_cost: string;
+            database_global: boolean;
+            database_id: string;
+            database_name: string;
+            database_type: string;
+            description: string;
+            low_database_name: string;
+            permission: number;
+            tag: string;
+            user_permission: number;
+        }[]
+    >(`
+        MyDatabases(metaKeys = ${JSON.stringify(
+            metaKeys,
+        )}, filterWord=["${search}"]);
+    `);
 
     /**
-     * @name getDisplay
-     * @desc gets display options for the DB dropdown
-     * @param option - the object that is specified for the option
+     * @desc handles response for getDatabases
      */
-    const getDisplay = (option) => {
-        return `${formatDBName(option.database_name)} - ${option.database_id}`;
-    };
+    useEffect(() => {
+        if (getDatabases.status !== 'SUCCESS') {
+            return;
+        }
+
+        setSelectedApp(null);
+        searchbarRef.current?.focus();
+    }, [getDatabases.status, getDatabases.data]);
 
     const formatDBName = (str) => {
         let i;
@@ -115,7 +166,44 @@ export const DatabaseSettingsPage = () => {
         return frags.join(' ');
     };
 
-    // console.log('i', Icons);
+    /**
+     * @name favoriteDb
+     */
+    const favoriteDb = (db) => {
+        const favorite = !isFavorited(db.database_id);
+        monolithStore
+            .setDatabaseFavorite(db.database_id, favorite)
+            .then((response) => {
+                console.log(response);
+
+                if (!favorite) {
+                    let newFavorites = favoritedDatabases;
+                    for (let i = newFavorites.length - 1; i >= 0; i--) {
+                        if (newFavorites[i].database_id === db.database_id) {
+                            newFavorites.splice(i, 1);
+                        }
+                    }
+
+                    console.log(newFavorites);
+                    setFavoritedDatabases(newFavorites);
+                } else {
+                    console.log('add to list');
+                    setFavoritedDatabases([...favoritedDatabases, db]);
+                }
+            })
+            .catch((err) => {
+                // throw error if promise doesn't fulfill
+                throw Error(err);
+            });
+    };
+
+    const isFavorited = (id) => {
+        const favorites = favoritedDatabases;
+
+        if (!favorites) return false;
+        return favorites.some((el) => el.database_id === id);
+    };
+
     return (
         <StyledContainer>
             {!selectedApp ? (
@@ -132,19 +220,20 @@ export const DatabaseSettingsPage = () => {
                             }}
                             label="Database"
                             size="small"
+                            ref={searchbarRef}
                         />
                         <StyledSort
                             size={'small'}
                             value={sort}
                             onChange={(e) => setSort(e.target.value)}
                         >
-                            <MenuItem value={'Name'}>Name</MenuItem>
-                            <MenuItem value={'Date Created'}>
+                            <MenuItem value="Name">Name</MenuItem>
+                            <MenuItem value="Date Created">
                                 Date Created
                             </MenuItem>
-                            <MenuItem value={'Views'}>Views</MenuItem>
-                            <MenuItem value={'Trending'}>Trending</MenuItem>
-                            <MenuItem value={'Upvotes'}>Upvotes</MenuItem>
+                            <MenuItem value="Views">Views</MenuItem>
+                            <MenuItem value="Trending">Trending</MenuItem>
+                            <MenuItem value="Upvotes">Upvotes</MenuItem>
                         </StyledSort>
 
                         <ToggleButtonGroup size={'small'} value={view}>
@@ -163,8 +252,8 @@ export const DatabaseSettingsPage = () => {
                         </ToggleButtonGroup>
                     </StyledSearchbarContainer>
                     <Grid container spacing={3}>
-                        {getApps.status === 'SUCCESS'
-                            ? getApps.data.map((db, i) => {
+                        {getDatabases.status === 'SUCCESS'
+                            ? getDatabases.data.map((db, i) => {
                                   return (
                                       <Grid
                                           item
@@ -181,25 +270,26 @@ export const DatabaseSettingsPage = () => {
                                                   )}
                                                   id={db.app_id}
                                                   image={defaultDBImage}
-                                                  tag={'Tag1'}
+                                                  tag={db.tag}
                                                   owner={'jsmith123'}
-                                                  description={
-                                                      'Lorem Ipsum is simply dummy text of the printing and typesetting industry.Lorem'
-                                                  }
+                                                  description={db.description}
                                                   votes={'12'}
                                                   views={'1.2k'}
                                                   trending={'1.2k'}
-                                                  isGlobal={true}
+                                                  isGlobal={db.database_global}
                                                   isUpvoted={false}
+                                                  isFavorite={isFavorited(
+                                                      db.database_id,
+                                                  )}
+                                                  favorite={(val) => {
+                                                      //   console.log(isFavorited(
+                                                      //       db.database_id,
+                                                      //   ));
+                                                      favoriteDb(db);
+                                                  }}
                                                   onClick={(id) =>
                                                       setSelectedApp(id)
                                                   }
-                                                  favorite={(val) => {
-                                                      console.log(
-                                                          'make favorite',
-                                                          val,
-                                                      );
-                                                  }}
                                                   upvote={(val) => {
                                                       console.log(
                                                           'upvote',
@@ -220,24 +310,22 @@ export const DatabaseSettingsPage = () => {
                                                   )}
                                                   id={db.app_id}
                                                   image={defaultDBImage}
-                                                  tag={'Tag1'}
+                                                  tag={db.tag}
                                                   owner={'jsmith123'}
-                                                  description={
-                                                      'no description for tile card,'
-                                                  }
+                                                  description={db.description}
                                                   votes={'12'}
                                                   views={'1.2k'}
                                                   trending={'1.2k'}
-                                                  isGlobal={true}
+                                                  isGlobal={db.database_global}
+                                                  isFavorite={isFavorited(
+                                                      db.database_id,
+                                                  )}
+                                                  favorite={(val) => {
+                                                      favoriteDb(db);
+                                                  }}
                                                   onClick={(id) =>
                                                       setSelectedApp(id)
                                                   }
-                                                  favorite={(val) => {
-                                                      console.log(
-                                                          'favorite',
-                                                          val,
-                                                      );
-                                                  }}
                                                   upvote={(val) => {
                                                       console.log(
                                                           'upvote',
