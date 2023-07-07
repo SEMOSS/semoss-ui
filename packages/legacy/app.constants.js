@@ -19,7 +19,7 @@ angular
                 pathSplit = [],
                 returnObj;
 
-            mod = 'Monolith_Dev';
+            mod = "MonolithDev";
             protocol = window.location.protocol;
             host = window.location.hostname;
             port = window.location.port;
