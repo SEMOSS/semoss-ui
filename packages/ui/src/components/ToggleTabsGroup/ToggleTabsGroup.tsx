@@ -5,7 +5,7 @@ import { styled } from "@mui/material";
 import { Theme } from "@mui/material/styles";
 import { SxProps } from "@mui/system";
 
-export interface ToggleProps extends TabsProps {
+export interface ToggleTabsProps extends TabsProps {
     // * Props applied to the tab indicator element.
     TabIndicatorProps?: React.HTMLAttributes<HTMLDivElement> & {
         sx?: SxProps<Theme>;
@@ -43,7 +43,7 @@ const StyledToggleGroup = styled(Tabs)(({ theme }) => ({
     },
 }));
 
-export const ToggleGroup = (props: ToggleProps) => {
+export const ToggleTabsGroup = (props: ToggleTabsProps) => {
     const { sx } = props;
     return (
         <StyledBox>

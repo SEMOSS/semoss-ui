@@ -1,10 +1,10 @@
 import React, { useState, SyntheticEvent } from "react";
-import { ToggleGroup, Toggle } from "../ToggleGroup/index";
+import { ToggleTabsGroup } from "./index";
 import { Box } from "../Box/index";
 
 export default {
-    title: "Components/ToggleGroup",
-    component: ToggleGroup,
+    title: "Components/ToggleTabsGroup",
+    component: ToggleTabsGroup,
     args: {
         orientation: "horizontal",
     },
@@ -45,15 +45,15 @@ const Template = (args) => {
 
     return (
         <Box>
-            <ToggleGroup
+            <ToggleTabsGroup
                 {...args}
                 value={value}
                 onChange={handleChange}
                 aria-label="basic tabs example"
             >
-                <Toggle label="Item One" />
-                <Toggle label="Item Two" />
-            </ToggleGroup>
+                <ToggleTabsGroup.Tab label="Item One" />
+                <ToggleTabsGroup.Tab label="Item Two" />
+            </ToggleTabsGroup>
             <CustomTogglePanel value={value} index={0}>
                 Item One
             </CustomTogglePanel>
