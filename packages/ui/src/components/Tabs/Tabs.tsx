@@ -1,19 +1,33 @@
-import React, { ReactNode } from "react";
 import MuiTabs from "@mui/material/Tabs";
 import { SxProps } from "@mui/system";
-import { TabsProps as MuiTabsProps } from "@mui/material";
 
 export interface TabsProps {
+    /**
+     * The label for the Tabs as a string.
+     */
+    "aria-label"?: string;
     // custom style object
-    sx?: SxProps;
-    centered?: boolean;
-    children?: ReactNode;
+    /**
+     * Determines the color of the indicator.
+     * @default 'primary'
+     */
     indicatorColor?: "secondary" | "primary";
-    onChange: () => void;
-    orientation?: "horizontal" | "vertical";
+
+    sx?: SxProps;
+    /**
+     * Determines the color of the `Tab`.
+     * @default 'primary'
+     */
     textColor?: "secondary" | "primary" | "inherit";
+    /**
+     * Callback fired when the value changes.
+     */
+    onChange?: (event: React.SyntheticEvent, value: any) => void;
+    /**
+     * The value of the currently selected `Tab`.
+     * If you don't want any selected `Tab`, you can set this prop to `false`.
+     */
     value?: any;
-    variant?: "standard" | "scrollable" | "fullWidth";
 }
 
 export const Tabs = (props: TabsProps) => {

@@ -1,30 +1,38 @@
-import { ReactNode } from "react";
 import MuiTypography from "@mui/material/Typography";
 import { SxProps } from "@mui/system";
+
 export interface TypographyProps {
-    // customizable types
-    align?: "center" | "inherit" | "justify" | "left" | "right";
-    gutterBottom?: boolean;
-    noWrap?: boolean;
+    /** custom style object */
+
+    /**
+     * Set the text-align on the component.
+     * @default 'inherit'
+     */
+    align?: "inherit" | "left" | "center" | "right" | "justify";
+    /**
+     * The content of the component.
+     */
+    children?: React.ReactNode;
+    /**
+     * If `true`, the element will be a paragraph element.
+     * @default false
+     */
     paragraph?: boolean;
-    variant?:
-        | "body1"
-        | "body2"
-        | "button"
-        | "caption"
+    variant:
         | "h1"
         | "h2"
         | "h3"
         | "h4"
         | "h5"
         | "h6"
-        | "inherit"
-        | "overline"
         | "subtitle1"
-        | "subtitle2";
-    /** custom style object */
+        | "subtitle2"
+        | "body1"
+        | "body2"
+        | "caption"
+        | "button"
+        | "overline";
     sx?: SxProps;
-    children?: ReactNode;
 }
 
 export const Typography = (props: TypographyProps) => {
