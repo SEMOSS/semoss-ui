@@ -1,5 +1,5 @@
 import React from "react";
-import { Search } from "../Search/index";
+import { Search } from "./";
 
 export default {
     title: "Components/Search",

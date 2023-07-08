@@ -5,8 +5,9 @@ export default {
     title: "Components/Searchbar",
     component: Searchbar,
     args: {
-        placeholder: "Search Placeholder here",
+        placeholder: "Placeholder here",
         disabled: false,
+        enableEndAdornment: false,
     },
 };
 

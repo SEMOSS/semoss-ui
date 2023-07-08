@@ -1,6 +1,6 @@
-import React, { useState } from "react";
-import { TextField, TextFieldProps } from "../TextField/index";
-import Icons from "../Icons/index";
+import React, { useRef } from "react";
+import { TextField, TextFieldProps } from "../TextField";
+import Icons from "../Icons";
 import { Button } from "../Button";
 
 export type SearchFieldProps = TextFieldProps & {
@@ -13,24 +13,24 @@ export type SearchFieldProps = TextFieldProps & {
 
 export const Search = (props: SearchFieldProps) => {
     const { enableEndAdornment } = props;
-    const [value, setValue] = useState<null | string>("");
+    const textInput = useRef(null);
+
     return (
         <TextField
             focused={false}
             variant={"outlined"}
-            defaultValue={value}
-            onChange={(e) => setValue(e.target.value)}
+            inputRef={textInput}
             InputProps={{
                 startAdornment: <Icons.SearchOutlined />,
                 endAdornment: (
                     <>
                         {enableEndAdornment && (
                             <Button
-                                onClick={(e) => {
-                                    setValue(null);
-                                }}
+                                onClick={() => (textInput.current.value = "")}
                             >
-                                <Icons.CloseOutlined />
+                                <Icons.CloseOutlined
+                                    sx={{ color: "#5c5c5c" }}
+                                />
                             </Button>
                         )}
                     </>

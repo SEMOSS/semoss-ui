@@ -70,7 +70,7 @@ const SelectMultiple = () => {
                 multiple
             >
                 {selectValues.map((val) => (
-                    <MenuItem key={val} value={val}>
+                    <MenuItem key={val}>
                         <Checkbox checked={selected.indexOf(val) > -1} />
                         {val}
                     </MenuItem>
