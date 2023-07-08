@@ -1,7 +1,7 @@
 import type { Meta, StoryObj } from "@storybook/react";
 import { ListItem } from "./ListItem";
-import Icons from "../Icons/index";
-import { Box } from "../Box/index";
+import Icons from "../Icons";
+import { Box } from "../Box";
 import React from "react";
 
 const meta: Meta<typeof ListItem> = {

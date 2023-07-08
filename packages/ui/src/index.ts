@@ -24,6 +24,7 @@ export * from "./components/Icons";
 export * from "./components/IconButton";
 export * from "./components/LinearProgress";
 export * from "./components/Link";
+export * from "./components/List";
 export * from "./components/Menu";
 export * from "./components/Modal";
 export * from "./components/Pagination";

@@ -1,7 +1,7 @@
 import type { Meta, StoryObj } from "@storybook/react";
-import { List } from "../List/index";
-import Icons from "../Icons/index";
-import { Box } from "../Box/index";
+import { List } from "../List";
+import Icons from "../Icons";
+import { Box } from "../Box";
 import React from "react";
 
 const meta: Meta<typeof List> = {
