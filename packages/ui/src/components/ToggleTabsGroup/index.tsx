@@ -5,7 +5,7 @@ import {
 import { ToggleTab } from "./ToggleTab";
 
 const ToggleTabsGroupNameSpace = Object.assign(_ToggleTabsGroup, {
-    Tab: ToggleTab,
+    Item: ToggleTab,
 });
 
 export type { ToggleTabsProps };

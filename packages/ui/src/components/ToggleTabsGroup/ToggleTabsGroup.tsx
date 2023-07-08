@@ -1,6 +1,6 @@
 import React from "react";
-import { Tabs, TabsProps } from "../Tabs/index";
-import { Box } from "../Box/index";
+import { Tabs, TabsProps } from "../Tabs";
+import { Box } from "../Box";
 import { styled } from "@mui/material";
 import { Theme } from "@mui/material/styles";
 import { SxProps } from "@mui/system";

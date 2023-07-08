@@ -1,6 +1,6 @@
 import React, { useState, SyntheticEvent } from "react";
-import { ToggleTabsGroup } from "./index";
-import { Box } from "../Box/index";
+import { ToggleTabsGroup } from ".";
+import { Box } from "../Box";
 
 export default {
     title: "Components/ToggleTabsGroup",
@@ -51,8 +51,8 @@ const Template = (args) => {
                 onChange={handleChange}
                 aria-label="basic tabs example"
             >
-                <ToggleTabsGroup.Tab label="Item One" />
-                <ToggleTabsGroup.Tab label="Item Two" />
+                <ToggleTabsGroup.Item label="Item One" />
+                <ToggleTabsGroup.Item label="Item Two" />
             </ToggleTabsGroup>
             <CustomTogglePanel value={value} index={0}>
                 Item One
