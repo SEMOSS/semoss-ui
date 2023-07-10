@@ -1034,6 +1034,11 @@ export const Permissions = (props: PermissionsProps) => {
         ),
     ];
 
+    const handleChange = (event: SyntheticEvent, newValue: number) => {
+        debugger;
+        setView(newValue);
+    };
+
     return (
         <StyledContent>
             <ToggleTabsGroup
@@ -1048,6 +1053,7 @@ export const Permissions = (props: PermissionsProps) => {
                 />
             </ToggleTabsGroup>
 
+<<<<<<< HEAD
             {view === 0 && (
                 <MembersTable
                     reactorPrefix={getMembersString}
@@ -1068,6 +1074,79 @@ export const Permissions = (props: PermissionsProps) => {
                     projectId={projectid}
                 />
             )}
+=======
+            <ToggleTabsGroup
+                value={view}
+                onChange={handleChange}
+                aria-label="basic tabs example"
+            >
+                <ToggleTabsGroup.Item label="Members" />
+                <ToggleTabsGroup.Item label="Pending Requests" />
+            </ToggleTabsGroup>
+
+            {view === 0 && <div>Members</div>}
+
+            {view === 1 && <div>Pending Members</div>}
+            <StyledMemberContent>
+                <StyledMemberInnerContent>
+                    {/* <StyledMemberTable>
+                    </StyledMemberTable> */}
+                    <MuiTable.Container>
+                        <MuiTable>
+                            <MuiTable.Head>
+                                <MuiTable.Row>
+                                    <MuiTable.Cell>Name</MuiTable.Cell>
+                                    <MuiTable.Cell align="right">
+                                        Age
+                                    </MuiTable.Cell>
+                                    <MuiTable.Cell align="right">
+                                        Location
+                                    </MuiTable.Cell>
+                                    <MuiTable.Cell align="right">
+                                        Email
+                                    </MuiTable.Cell>
+                                    <MuiTable.Cell align="right">
+                                        Number
+                                    </MuiTable.Cell>
+                                </MuiTable.Row>
+                            </MuiTable.Head>
+                            <MuiTable.Body>
+                                {rows.map((row) => (
+                                    <MuiTable.Row
+                                        key={row.name}
+                                        sx={{
+                                            '&:last-child td, &:last-child th':
+                                                {
+                                                    border: 0,
+                                                },
+                                        }}
+                                    >
+                                        <MuiTable.Cell
+                                            component="th"
+                                            scope="row"
+                                        >
+                                            {row.name}
+                                        </MuiTable.Cell>
+                                        <MuiTable.Cell align="right">
+                                            {row.age}
+                                        </MuiTable.Cell>
+                                        <MuiTable.Cell align="right">
+                                            {row.location}
+                                        </MuiTable.Cell>
+                                        <MuiTable.Cell align="right">
+                                            {row.email}
+                                        </MuiTable.Cell>
+                                        <MuiTable.Cell align="right">
+                                            {row.number}
+                                        </MuiTable.Cell>
+                                    </MuiTable.Row>
+                                ))}
+                            </MuiTable.Body>
+                        </MuiTable>
+                    </MuiTable.Container>
+                </StyledMemberInnerContent>
+            </StyledMemberContent>
+>>>>>>> e6d24d9 (Database View All - functionality complete;  Sorts need to be added in on BE and votes, creator, views need to be added as well;)
         </StyledContent>
     );
 };
