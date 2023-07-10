@@ -1,19 +1,45 @@
 import React, { useState } from "react";
 import type { Meta, StoryObj } from "@storybook/react";
-import { Select } from "../Select";
-import { Checkbox } from "../Checkbox";
-import { MenuItem } from "../Menu";
+import { Select } from "./index";
 import { Stack } from "../Stack";
+import { Box } from "../Box";
 
 const meta: Meta<typeof Select> = {
     title: "Components/Select",
     component: Select,
     args: {
-        variant: "standard",
+        variant: "outlined",
+        size: "medium",
+        color: "primary",
+        disabled: false,
+        error: false,
     },
     argTypes: {
         variant: {
             options: ["filled", "standard", "outlined"],
+            control: { type: "select" },
+        },
+        size: {
+            options: ["small", "medium"],
+            control: { type: "radio" },
+        },
+        disabled: {
+            options: [true, false],
+            control: { type: "radio" },
+        },
+        error: {
+            options: [true, false],
+            control: { type: "radio" },
+        },
+        color: {
+            options: [
+                "primary",
+                "secondary",
+                "error",
+                "info",
+                "success",
+                "warning",
+            ],
             control: { type: "select" },
         },
     },
@@ -37,53 +63,21 @@ const SelectComponent = (args) => {
                 sx={{ width: "100%" }}
                 onChange={onChange}
                 value={selected}
+                helperText="Select helper text"
+                placeholder="Select placeholder"
+                label="Select Label"
             >
-                <MenuItem value={1}>1</MenuItem>
-                <MenuItem value={2}>2</MenuItem>
+                <Select.Option value={1}>1</Select.Option>
+                <Select.Option value={2}>2</Select.Option>
+                <Select.Option value={3}>3</Select.Option>
+                <Select.Option value={4}>4</Select.Option>
+                <Select.Option value={5}>5</Select.Option>
             </Select>
+            <Box>Value: {selected}</Box>
         </Stack>
-    );
-};
-
-const SelectMultiple = () => {
-    const [selected, setSelected] = useState([]);
-
-    const selectValues = [1, 2, 3, 4, 5];
-
-    const handleChange = (event) => {
-        const {
-            target: { value },
-        } = event;
-        setSelected(
-            // On autofill we get a stringified value.
-            typeof value === "string" ? value.split(",") : value,
-        );
-    };
-
-    return (
-        <>
-            <Select
-                sx={{ width: "100%" }}
-                onChange={handleChange}
-                value={selected}
-                renderValue={(selected: any) => selected.join(", ")}
-                multiple
-            >
-                {selectValues.map((val) => (
-                    <MenuItem key={val}>
-                        <Checkbox checked={selected.indexOf(val) > -1} />
-                        {val}
-                    </MenuItem>
-                ))}
-            </Select>
-        </>
     );
 };
 
 export const Default: Story = {
     render: (args) => <SelectComponent {...args} />,
-};
-
-export const MultipleSelect: Story = {
-    render: () => <SelectMultiple />,
 };
