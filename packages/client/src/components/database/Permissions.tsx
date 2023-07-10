@@ -1603,7 +1603,6 @@ export const Permissions = (props: PermissionsProps) => {
     ];
 
     const handleChange = (event: SyntheticEvent, newValue: number) => {
-        debugger;
         setView(newValue);
     };
 
