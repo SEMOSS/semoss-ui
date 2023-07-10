@@ -5,6 +5,5 @@ const SelectNameSpace = Object.assign(Select, {
     Item: MenuItem,
 });
 
-export type { SelectProps };
-
+export type {SelectProps}
 export { SelectNameSpace as Select };
