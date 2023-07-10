@@ -1,9 +1,9 @@
-import { ReactNode } from "react";
+import * as React from "react";
 import MuiRadioGroup from "@mui/material/RadioGroup";
 import MuiRadio from "@mui/material/Radio";
 import { SxProps } from "@mui/system";
 import { RadioGroupProps as MuiRadioGroupProps } from "@mui/material";
-import { FormControl, FormLabel } from "../FormControl/index";
+import { FormLabel } from "../FormControl/index";
 
 export interface RadioProps {
     /**
@@ -52,7 +52,7 @@ export interface RadioProps {
 
 export interface RadioGroupProps extends MuiRadioGroupProps {
     /** custom style object */
-    children?: ReactNode;
+    children?: React.ReactNode;
 
     // * You can pull out the new value by accessing `event.target.value` (string).
     // */
@@ -86,9 +86,9 @@ export const Radio = (props: RadioProps) => {
 export const RadioGroup = (props: RadioGroupProps) => {
     const { sx, label } = props;
     return (
-        <FormControl>
+        <>
             <FormLabel>{label}</FormLabel>
             <MuiRadioGroup sx={sx} {...props} />
-        </FormControl>
+        </>
     );
 };
