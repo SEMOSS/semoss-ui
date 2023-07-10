@@ -1,7 +1,6 @@
 import React from "react";
 import type { Meta, StoryObj } from "@storybook/react";
-import { RadioGroup, Radio } from "../RadioGroup/index";
-import { FormControl, FormLabel, FormControlLabel } from "../FormControl/index";
+import { RadioGroup } from "../RadioGroup/index";
 
 const meta: Meta<typeof RadioGroup> = {
     title: "Components/RadioGroup",
@@ -18,66 +17,38 @@ type Story = StoryObj<typeof RadioGroup>;
 export const Default: Story = {
     render: (args) => (
         <>
-            <FormControl>
-                <FormLabel>Example</FormLabel>
-                <RadioGroup {...args}>
-                    <FormControlLabel
-                        value="First Example"
-                        control={<Radio />}
-                        label="First"
-                    />
-                    <FormControlLabel
-                        value="Second Example"
-                        control={<Radio />}
-                        label="Second"
-                    />
-                </RadioGroup>
-            </FormControl>
+            <RadioGroup {...args} label="Example">
+                <RadioGroup.Radio value="First Example" label="First" />
+                <RadioGroup.Radio value="Second Example" label="Second" />
+            </RadioGroup>
 
-            <FormControl>
-                <FormLabel>Row Example</FormLabel>
-                <RadioGroup row>
-                    <FormControlLabel
-                        value="First Example"
-                        control={<Radio />}
-                        label="First"
-                    />
-                    <FormControlLabel
-                        value="Second Example"
-                        control={<Radio />}
-                        label="Second"
-                    />
-                </RadioGroup>
-            </FormControl>
+            <RadioGroup label="Radio Row" row>
+                <RadioGroup.Radio value="First Example" label="First" />
+                <RadioGroup.Radio value="Second Example" label="Second" />
+            </RadioGroup>
 
-            <FormControl>
-                <FormLabel>Label Placement</FormLabel>
-                <RadioGroup row defaultValue="Top">
-                    <FormControlLabel
-                        value="Top"
-                        control={<Radio />}
-                        label="Top"
-                        labelPlacement="top"
-                    />
-                    <FormControlLabel
-                        value="Start"
-                        control={<Radio />}
-                        label="Start"
-                        labelPlacement="start"
-                    />
-                    <FormControlLabel
-                        value="Bottom"
-                        control={<Radio />}
-                        label="Bottom"
-                        labelPlacement="bottom"
-                    />
-                    <FormControlLabel
-                        value="End"
-                        control={<Radio />}
-                        label="End"
-                    />
-                </RadioGroup>
-            </FormControl>
+            <RadioGroup
+                label="Radio Row / Default Value = Top"
+                row
+                defaultValue="Top"
+            >
+                <RadioGroup.Radio
+                    value="Top"
+                    label="Top"
+                    labelPlacement="top"
+                />
+                <RadioGroup.Radio
+                    value="Start"
+                    label="Start"
+                    labelPlacement="start"
+                />
+                <RadioGroup.Radio
+                    value="Bottom"
+                    label="Bottom"
+                    labelPlacement="bottom"
+                />
+                <RadioGroup.Radio value="End" label="End" />
+            </RadioGroup>
         </>
     ),
 };
