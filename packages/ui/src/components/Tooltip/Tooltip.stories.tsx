@@ -8,7 +8,6 @@ const meta: Meta<typeof Tooltip> = {
     component: Tooltip,
     args: {
         placement: "top-start",
-        arrow: false,
     },
     argTypes: {
         placement: {

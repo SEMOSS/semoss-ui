@@ -7,10 +7,6 @@ const meta: Meta<typeof Typography> = {
     component: Typography,
     args: {
         variant: "h1",
-        align: "inherit",
-        gutterBottom: false,
-        noWrap: false,
-        paragraph: false,
     },
 };
 

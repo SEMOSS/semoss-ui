@@ -1,16 +1,39 @@
-import React, { ReactNode } from "react";
 import MuiTooltip from "@mui/material/Tooltip";
 import { SxProps } from "@mui/system";
+
 export interface TooltipProps {
     /** custom style object */
-    children: React.ReactElement<any, any>;
-    title: ReactNode | string;
-    sx?: SxProps;
+
+    /**
+     * If `true`, adds an arrow to the tooltip.
+     * @default false
+     */
     arrow?: boolean;
-    enterDelay?: number;
-    onClose?: () => void;
-    onOpen?: () => void;
+    /**
+     * Tooltip reference element.
+     */
+    children: React.ReactElement<any, any>;
+    /**
+     * If `true`, the component is shown.
+     */
     open?: boolean;
+
+    /**
+     * Callback fired when the component requests to be closed.
+     *
+     * @param {React.SyntheticEvent} event The event source of the callback.
+     */
+    onClose?: (event: React.SyntheticEvent | Event) => void;
+    /**
+     * Callback fired when the component requests to be open.
+     *
+     * @param {React.SyntheticEvent} event The event source of the callback.
+     */
+    onOpen?: (event: React.SyntheticEvent) => void;
+    /**
+     * Tooltip placement.
+     * @default 'bottom'
+     */
     placement?:
         | "bottom-end"
         | "bottom-start"
@@ -24,6 +47,11 @@ export interface TooltipProps {
         | "top-end"
         | "top-start"
         | "top";
+    sx?: SxProps;
+    /**
+     * Tooltip title. Zero-length titles string, undefined, null and false are never displayed.
+     */
+    title: React.ReactNode;
 }
 
 export const Tooltip = (props: TooltipProps) => {
