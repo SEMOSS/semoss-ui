@@ -345,6 +345,11 @@ export const DatabaseLandscapeCard = (props: DatabaseCardProps) => {
                         <Typography variant={'body1'}>{name}</Typography>
                         <IconButton
                             size={'small'}
+                            title={
+                                isFavorite
+                                    ? `Unfavorite ${name}`
+                                    : `Favorite ${name}`
+                            }
                             onClick={(e) => {
                                 e.stopPropagation();
 
@@ -409,14 +414,21 @@ export const DatabaseLandscapeCard = (props: DatabaseCardProps) => {
                 <StyledLeftActions>
                     <ButtonGroup size="sm" color="secondary">
                         <Button
+                            title={
+                                isUpvoted
+                                    ? `Downvote ${name}`
+                                    : `Upvote ${name}`
+                            }
                             onClick={(e) => {
                                 e.stopPropagation();
-
-                                console.log('click upvote');
                                 upvote(isUpvoted);
                             }}
                         >
-                            <Icons.ArrowDropUp />
+                            {isUpvoted ? (
+                                <Icons.ArrowDropDown />
+                            ) : (
+                                <Icons.ArrowDropUp />
+                            )}
                         </Button>
                         <Button disabled={true}>{votes}</Button>
                     </ButtonGroup>
@@ -434,6 +446,11 @@ export const DatabaseLandscapeCard = (props: DatabaseCardProps) => {
                     </StyledViewsTrendingDiv>
                 </StyledLeftActions>
                 <StyledLockButton
+                    title={
+                        isGlobal
+                            ? `Make ${name} private`
+                            : `Make ${name} public`
+                    }
                     onClick={(e) => {
                         e.stopPropagation();
 
@@ -487,6 +504,11 @@ export const DatabaseTileCard = (props: DatabaseCardProps) => {
                                     {name}
                                 </StyledDbName>
                                 <IconButton
+                                    title={
+                                        isFavorite
+                                            ? `Unfavorite ${name}`
+                                            : `Favorite ${name}`
+                                    }
                                     onClick={(e) => {
                                         e.stopPropagation();
                                         favorite(isFavorite);
@@ -556,13 +578,22 @@ export const DatabaseTileCard = (props: DatabaseCardProps) => {
             <StyledTileCardActions>
                 <StyledLeftActions>
                     <ButtonGroup size="sm" color="secondary">
-                        <Button>
-                            <Icons.ArrowDropUp
-                                onClick={(e) => {
-                                    e.stopPropagation();
-                                    upvote(isUpvoted);
-                                }}
-                            />
+                        <Button
+                            title={
+                                isUpvoted
+                                    ? `Downvote ${name}`
+                                    : `Upvote ${name}`
+                            }
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                upvote(isUpvoted);
+                            }}
+                        >
+                            {isUpvoted ? (
+                                <Icons.ArrowDropDown />
+                            ) : (
+                                <Icons.ArrowDropUp />
+                            )}
                         </Button>
                         <Button disabled={true}>{votes}</Button>
                     </ButtonGroup>
@@ -580,10 +611,13 @@ export const DatabaseTileCard = (props: DatabaseCardProps) => {
                     </StyledViewsTrendingDiv>
                 </StyledLeftActions>
                 <StyledLockButton
+                    title={
+                        isGlobal
+                            ? `Make ${name} private`
+                            : `Make ${name} public`
+                    }
                     onClick={(e) => {
                         e.stopPropagation();
-
-                        console.log('click global');
                         global(isGlobal);
                     }}
                 >

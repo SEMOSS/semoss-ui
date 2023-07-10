@@ -1,7 +1,6 @@
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState, useRef, useReducer } from 'react';
 import { useRootStore, useAPI, usePixel } from '@/hooks';
 import { useSettings } from '@/hooks/useSettings';
-
 import { LoadingScreen } from '@/components/ui';
 import { MonolithStore } from '@/stores/monolith';
 
@@ -68,15 +67,36 @@ const StyledSort = styled(Select)({
     flexShrink: '0',
 });
 
+const initialState = {
+    favoritedDbs: [],
+    databases: [],
+};
+
+const reducer = (state, action) => {
+    switch (action.type) {
+        case 'field': {
+            return {
+                ...state,
+                [action.field]: action.value,
+            };
+        }
+    }
+    return state;
+};
+
 export const DatabaseSettingsPage = () => {
     const { adminMode } = useSettings();
     const { configStore, monolithStore } = useRootStore();
+
+    const [state, dispatch] = useReducer(reducer, initialState);
+    const { favoritedDbs, databases } = state;
 
     const [view, setView] = useState('tile');
     const [search, setSearch] = useState('');
     const [sort, setSort] = useState('Name');
 
-    const [favoritedDatabases, setFavoritedDatabases] = useState([]);
+    const navigate = useNavigate();
+
     const [selectedApp, setSelectedApp] =
         useState<Awaited<ReturnType<MonolithStore['getDatabases']>>[number]>(
             null,
@@ -118,7 +138,12 @@ export const DatabaseSettingsPage = () => {
 
         console.log(getFavoritedDatabases.data);
 
-        setFavoritedDatabases(getFavoritedDatabases.data);
+        dispatch({
+            type: 'field',
+            field: 'favoritedDbs',
+            value: getFavoritedDatabases.data,
+        });
+
         searchbarRef.current?.focus();
     }, [getFavoritedDatabases.status, getFavoritedDatabases.data]);
 
@@ -153,11 +178,35 @@ export const DatabaseSettingsPage = () => {
             return;
         }
 
+        const mutateListWithVotes = [];
+
+        getDatabases.data.forEach((db, i) => {
+            mutateListWithVotes.push({
+                ...db,
+                userVotes: i + 1,
+                userVote: false,
+                views: i + 200,
+                trending: i + 100,
+                owner: 'jbaxter6',
+            });
+        });
+
+        dispatch({
+            type: 'field',
+            field: 'databases',
+            value: mutateListWithVotes,
+        });
+
         setSelectedApp(null);
         searchbarRef.current?.focus();
     }, [getDatabases.status, getDatabases.data]);
 
-    const formatDBName = (str) => {
+    /**
+     * @name formatDBName
+     * @param str
+     * @returns formatted db name
+     */
+    const formatDBName = (str: string) => {
         let i;
         const frags = str.split('_');
         for (i = 0; i < frags.length; i++) {
@@ -168,6 +217,7 @@ export const DatabaseSettingsPage = () => {
 
     /**
      * @name favoriteDb
+     * @param db
      */
     const favoriteDb = (db) => {
         const favorite = !isFavorited(db.database_id);
@@ -177,7 +227,7 @@ export const DatabaseSettingsPage = () => {
                 console.log(response);
 
                 if (!favorite) {
-                    let newFavorites = favoritedDatabases;
+                    const newFavorites = favoritedDbs;
                     for (let i = newFavorites.length - 1; i >= 0; i--) {
                         if (newFavorites[i].database_id === db.database_id) {
                             newFavorites.splice(i, 1);
@@ -185,10 +235,20 @@ export const DatabaseSettingsPage = () => {
                     }
 
                     console.log(newFavorites);
-                    setFavoritedDatabases(newFavorites);
+
+                    dispatch({
+                        type: 'field',
+                        field: 'favoritedDbs',
+                        value: newFavorites,
+                    });
                 } else {
                     console.log('add to list');
-                    setFavoritedDatabases([...favoritedDatabases, db]);
+
+                    dispatch({
+                        type: 'field',
+                        field: 'favoritedDbs',
+                        value: [...favoritedDbs, db],
+                    });
                 }
             })
             .catch((err) => {
@@ -197,11 +257,94 @@ export const DatabaseSettingsPage = () => {
             });
     };
 
+    /**
+     * @name isFavorited
+     * @param id
+     */
     const isFavorited = (id) => {
-        const favorites = favoritedDatabases;
+        const favorites = favoritedDbs;
 
         if (!favorites) return false;
         return favorites.some((el) => el.database_id === id);
+    };
+
+    /**
+     * @name upvoteDb
+     * @param db
+     */
+    const upvoteDb = (db) => {
+        let pixelString = '';
+
+        if (!db.userVote) {
+            pixelString += `VoteDatabase(database="${db.database_id}", vote=1)`;
+        } else {
+            pixelString += `UnvoteDatabase(database="${db.database_id}")`;
+        }
+
+        monolithStore.runQuery(pixelString).then((response) => {
+            const type = response.pixelReturn[0].operationType;
+            const pixelResponse = response.pixelReturn[0].output;
+
+            if (type.indexOf('ERROR') === -1) {
+                const newDatabases = [];
+
+                databases.forEach((database) => {
+                    // debugger
+                    if (database.database_id === db.database_id) {
+                        const newCopy = database;
+                        newCopy.userVotes = !db.userVote
+                            ? newCopy.userVotes + 1
+                            : newCopy.userVotes - 1;
+                        newCopy.userVote = !db.userVote ? true : false;
+
+                        newDatabases.push(newCopy);
+                    } else {
+                        newDatabases.push(database);
+                    }
+                });
+
+                dispatch({
+                    type: 'field',
+                    field: 'database',
+                    value: newDatabases,
+                });
+            } else {
+                console.error('Error voting for DB');
+            }
+        });
+    };
+
+    /**
+     * @name setDbGlobal
+     * @param db
+     */
+    const setDbGlobal = (db) => {
+        monolithStore
+            .setDatabaseGlobal(adminMode, db.database_id, !db.database_global)
+            .then((response) => {
+                if (response.data.success) {
+                    const newDatabases = [];
+                    databases.forEach((database) => {
+                        if (database.database_id === db.database_id) {
+                            const newCopy = database;
+                            newCopy.database_global = !db.database_global;
+
+                            newDatabases.push(newCopy);
+                        } else {
+                            newDatabases.push(database);
+                        }
+                    });
+
+                    dispatch({
+                        type: 'field',
+                        field: 'database',
+                        value: newDatabases,
+                    });
+                }
+            })
+            .catch((error) => {
+                console.error(error);
+            });
     };
 
     return (
@@ -252,8 +395,8 @@ export const DatabaseSettingsPage = () => {
                         </ToggleButtonGroup>
                     </StyledSearchbarContainer>
                     <Grid container spacing={3}>
-                        {getDatabases.status === 'SUCCESS'
-                            ? getDatabases.data.map((db, i) => {
+                        {databases.length
+                            ? databases.map((db, i) => {
                                   return (
                                       <Grid
                                           item
@@ -271,36 +414,27 @@ export const DatabaseSettingsPage = () => {
                                                   id={db.app_id}
                                                   image={defaultDBImage}
                                                   tag={db.tag}
-                                                  owner={'jsmith123'}
+                                                  owner={db.owner}
                                                   description={db.description}
-                                                  votes={'12'}
+                                                  votes={db.userVotes}
                                                   views={'1.2k'}
                                                   trending={'1.2k'}
                                                   isGlobal={db.database_global}
-                                                  isUpvoted={false}
+                                                  isUpvoted={db.userVote}
                                                   isFavorite={isFavorited(
                                                       db.database_id,
                                                   )}
                                                   favorite={(val) => {
-                                                      //   console.log(isFavorited(
-                                                      //       db.database_id,
-                                                      //   ));
                                                       favoriteDb(db);
                                                   }}
                                                   onClick={(id) =>
                                                       setSelectedApp(id)
                                                   }
                                                   upvote={(val) => {
-                                                      console.log(
-                                                          'upvote',
-                                                          val,
-                                                      );
+                                                      upvoteDb(db);
                                                   }}
                                                   global={(val) => {
-                                                      console.log(
-                                                          'make global',
-                                                          val,
-                                                      );
+                                                      setDbGlobal(db);
                                                   }}
                                               />
                                           ) : (
@@ -311,15 +445,16 @@ export const DatabaseSettingsPage = () => {
                                                   id={db.app_id}
                                                   image={defaultDBImage}
                                                   tag={db.tag}
-                                                  owner={'jsmith123'}
+                                                  owner={db.owner}
                                                   description={db.description}
-                                                  votes={'12'}
+                                                  votes={db.userVotes}
                                                   views={'1.2k'}
                                                   trending={'1.2k'}
                                                   isGlobal={db.database_global}
                                                   isFavorite={isFavorited(
                                                       db.database_id,
                                                   )}
+                                                  isUpvoted={db.userVote}
                                                   favorite={(val) => {
                                                       favoriteDb(db);
                                                   }}
@@ -327,23 +462,17 @@ export const DatabaseSettingsPage = () => {
                                                       setSelectedApp(id)
                                                   }
                                                   upvote={(val) => {
-                                                      console.log(
-                                                          'upvote',
-                                                          val,
-                                                      );
+                                                      upvoteDb(db);
                                                   }}
                                                   global={(val) => {
-                                                      console.log(
-                                                          'make global',
-                                                          val,
-                                                      );
+                                                      setDbGlobal(db);
                                                   }}
                                               />
                                           )}
                                       </Grid>
                                   );
                               })
-                            : 'Retrieving datasets'}
+                            : 'No databases to choose from'}
                     </Grid>
                 </>
             ) : (
