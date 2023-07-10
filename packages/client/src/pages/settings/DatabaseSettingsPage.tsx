@@ -95,8 +95,6 @@ export const DatabaseSettingsPage = () => {
     const [search, setSearch] = useState('');
     const [sort, setSort] = useState('Name');
 
-    const navigate = useNavigate();
-
     const [selectedApp, setSelectedApp] =
         useState<Awaited<ReturnType<MonolithStore['getDatabases']>>[number]>(
             null,
