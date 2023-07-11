@@ -31,6 +31,7 @@ import {
     Button,
     Table as MuiTable,
     styled as MuiStyled,
+    ToggleTabsGroup,
 } from '@semoss/ui';
 
 import { LoadingScreen } from '@/components/ui';
@@ -537,7 +538,8 @@ export const Permissions = (props: PermissionsProps) => {
     const resolvedPathname = useResolvedPath('').pathname;
 
     // New Design State Items
-    const [view, setView] = useState('members');
+    const [view, setView] = useState(0);
+    // const [value, setValue] = useState(0);
 
     // End of new Design State Items
 
@@ -1600,6 +1602,10 @@ export const Permissions = (props: PermissionsProps) => {
         ),
     ];
 
+    const handleChange = (event: SyntheticEvent, newValue: number) => {
+        setView(newValue);
+    };
+
     return (
         <StyledContent>
             <StyledButtonGroup variant={'contained'}>
@@ -1619,12 +1625,22 @@ export const Permissions = (props: PermissionsProps) => {
                 </Button>
             </StyledButtonGroup>
 
+            <ToggleTabsGroup
+                value={view}
+                onChange={handleChange}
+                aria-label="basic tabs example"
+            >
+                <ToggleTabsGroup.Item label="Members" />
+                <ToggleTabsGroup.Item label="Pending Requests" />
+            </ToggleTabsGroup>
+
+            {view === 0 && <div>Members</div>}
+
+            {view === 1 && <div>Pending Members</div>}
             <StyledMemberContent>
                 <StyledMemberInnerContent>
                     {/* <StyledMemberTable>
-
                     </StyledMemberTable> */}
-
                     <MuiTable.Container>
                         <MuiTable>
                             <MuiTable.Head>

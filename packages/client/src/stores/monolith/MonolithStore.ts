@@ -364,28 +364,6 @@ export class MonolithStore {
 
     /**
      * @name getDatabaseUsers
-     * @param a
-                    database_global: boolean;
-                    database_id: string;
-                    database_name: string;
-                    database_visibility: boolean;
-                    low_database_name: string;
-                }[]
-            >(url)
-            .catch((error) => {
-                throw Error(error);
-            });
-
-        // there was no response, that is an error
-        if (!response) {
-            throw Error('No Response to get Apps');
-        }
-
-        return response.data;
-    }
-
-    /**
-     * @name getDatabaseUsers
      * @param admin
      * @param appId
      * @returns MemberInterface[]
@@ -559,6 +537,23 @@ export class MonolithStore {
 
         postData += 'appId=' + encodeURIComponent(appId);
         postData += '&visibility=' + encodeURIComponent(visible);
+
+        const response = await axios.post<{ success: boolean }>(url, postData, {
+            headers: {
+                'content-type': 'application/x-www-form-urlencoded',
+            },
+        });
+
+        return response;
+    }
+
+    async setDatabaseFavorite(dbId: string, favorite: boolean) {
+        let url = `${BACKEND}/api/auth/`,
+            postData = '';
+
+        url += 'database/setDatabaseFavorite';
+        postData += 'databaseId=' + encodeURIComponent(dbId);
+        postData += '&isFavorite=' + encodeURIComponent(favorite);
 
         const response = await axios.post<{ success: boolean }>(url, postData, {
             headers: {
@@ -1534,7 +1529,6 @@ export class MonolithStore {
             throw Error(error);
         });
 
-        // debugger;
         // there was no response, that is an error
         if (!response) {
             throw Error('No Response to get Members');

@@ -18,6 +18,10 @@ const StyledLandscapeCard = styled(Card)({
     flexDirection: 'column',
     alignItems: 'flex-start',
     gap: '8px',
+
+    '&:hover': {
+        cursor: 'pointer',
+    },
 });
 
 const StyledLandscapeCardHeader = styled('div')({
@@ -93,6 +97,12 @@ const StyledLandscapeCardDescription = styled(Typography)({
     display: 'flex',
     flexDirection: 'column',
     alignSelf: 'stretch',
+    minHeight: '60px',
+    maxHeight: '60px',
+    overflow: 'hidden',
+    whiteSpace: 'pre-wrap',
+    overflow: 'hidden',
+    textOverflow: 'ellipsis',
 });
 
 const StyledAvatar = styled(Avatar)({
@@ -162,6 +172,10 @@ const StyledTileCard = styled(Card)({
     flexDirection: 'column',
     alignItems: 'flex-start',
     gap: '16px',
+
+    '&:hover': {
+        cursor: 'pointer',
+    },
 });
 
 const StyledTileCardContent = styled(Card.Content)({
@@ -248,6 +262,17 @@ const StyedCardDescription = styled(Typography)({
     display: 'flex',
     flexDirection: 'column',
     alignSelf: 'stretch',
+    minHeight: '60px',
+    maxHeight: '60px',
+    whiteSpace: 'pre-wrap',
+    overflow: 'hidden',
+    textOverflow: 'ellipsis',
+});
+
+const StyledChipDiv = styled('div')({
+    display: 'flex',
+    gap: '4px',
+    minHeight: '32px',
 });
 
 interface DatabaseCardProps {
@@ -267,7 +292,7 @@ interface DatabaseCardProps {
     image: string;
 
     /** Tag of the Database */
-    tag?: string;
+    tag?: string[] | string;
 
     /** Whether or not the database is viewable by everyone */
     isGlobal?: boolean;
@@ -318,8 +343,24 @@ export const DatabaseLandscapeCard = (props: DatabaseCardProps) => {
                 <StyledLandscapeCardHeaderDiv>
                     <StyledLandscapeCardTitleDiv>
                         <Typography variant={'body1'}>{name}</Typography>
-                        <IconButton size={'small'}>
-                            <Icons.StarOutlineOutlined />
+                        <IconButton
+                            size={'small'}
+                            title={
+                                isFavorite
+                                    ? `Unfavorite ${name}`
+                                    : `Favorite ${name}`
+                            }
+                            onClick={(e) => {
+                                e.stopPropagation();
+
+                                favorite(isFavorite);
+                            }}
+                        >
+                            {isFavorite ? (
+                                <Icons.Star />
+                            ) : (
+                                <Icons.StarOutlineOutlined />
+                            )}{' '}
                         </IconButton>
                     </StyledLandscapeCardTitleDiv>
 
@@ -341,9 +382,30 @@ export const DatabaseLandscapeCard = (props: DatabaseCardProps) => {
                     <StyledLandscapeCardRowContainer>
                         <StyledLandscapeCardRowDiv>
                             <StyledLandscapeCardDescription variant={'body2'}>
-                                {description}
+                                {description
+                                    ? description
+                                    : 'No description available'}
                             </StyledLandscapeCardDescription>
-                            <Chip variant={'outlined'} label={tag} />
+                            <StyledChipDiv>
+                                {tag !== undefined &&
+                                    (typeof tag === 'object' ? (
+                                        tag.map((t, i) => {
+                                            return (
+                                                <Chip
+                                                    key={id + i}
+                                                    variant={'outlined'}
+                                                    label={t}
+                                                />
+                                            );
+                                        })
+                                    ) : (
+                                        <Chip
+                                            key={id + tag}
+                                            variant={'outlined'}
+                                            label={tag}
+                                        />
+                                    ))}
+                            </StyledChipDiv>
                         </StyledLandscapeCardRowDiv>
                     </StyledLandscapeCardRowContainer>
                 </StyledLandscapeCardRow>
@@ -351,8 +413,22 @@ export const DatabaseLandscapeCard = (props: DatabaseCardProps) => {
             <StyledTileCardActions>
                 <StyledLeftActions>
                     <ButtonGroup size="sm" color="secondary">
-                        <Button>
-                            <Icons.ArrowDropUp />
+                        <Button
+                            title={
+                                isUpvoted
+                                    ? `Downvote ${name}`
+                                    : `Upvote ${name}`
+                            }
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                upvote(isUpvoted);
+                            }}
+                        >
+                            {isUpvoted ? (
+                                <Icons.ArrowDropDown />
+                            ) : (
+                                <Icons.ArrowDropUp />
+                            )}
                         </Button>
                         <Button disabled={true}>{votes}</Button>
                     </ButtonGroup>
@@ -369,8 +445,24 @@ export const DatabaseLandscapeCard = (props: DatabaseCardProps) => {
                         </Typography>
                     </StyledViewsTrendingDiv>
                 </StyledLeftActions>
-                <StyledLockButton>
-                    <Icons.LockRounded />
+                <StyledLockButton
+                    title={
+                        isGlobal
+                            ? `Make ${name} private`
+                            : `Make ${name} public`
+                    }
+                    onClick={(e) => {
+                        e.stopPropagation();
+
+                        console.log('click global');
+                        global(isGlobal);
+                    }}
+                >
+                    {isGlobal ? (
+                        <Icons.LockOpenRounded />
+                    ) : (
+                        <Icons.LockRounded />
+                    )}
                 </StyledLockButton>
             </StyledTileCardActions>
         </StyledLandscapeCard>
@@ -397,6 +489,8 @@ export const DatabaseTileCard = (props: DatabaseCardProps) => {
         global,
     } = props;
 
+    console.log(isGlobal);
+
     return (
         <StyledTileCard onClick={() => onClick(id)}>
             {/* Use Card.Media instead, uses img tag */}
@@ -410,13 +504,25 @@ export const DatabaseTileCard = (props: DatabaseCardProps) => {
                                     {name}
                                 </StyledDbName>
                                 <IconButton
-                                    onClick={() => favorite(isFavorite)}
+                                    title={
+                                        isFavorite
+                                            ? `Unfavorite ${name}`
+                                            : `Favorite ${name}`
+                                    }
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        favorite(isFavorite);
+                                    }}
                                 >
-                                    <Icons.StarOutlineOutlined />
+                                    {isFavorite ? (
+                                        <Icons.Star />
+                                    ) : (
+                                        <Icons.StarOutlineOutlined />
+                                    )}
                                 </IconButton>
                             </StyledCardHeader>
 
-                            <StyledCardCategory>
+                            {/* <StyledCardCategory>
                                 <Icon color="disabled">
                                     <StyledCategoryIcon />
                                 </Icon>
@@ -426,7 +532,7 @@ export const DatabaseTileCard = (props: DatabaseCardProps) => {
                                 >
                                     Category
                                 </StyledCategoryLabel>
-                            </StyledCardCategory>
+                            </StyledCardCategory> */}
 
                             <StyledPublishedByContainer>
                                 <StyledAvatar>
@@ -441,9 +547,30 @@ export const DatabaseTileCard = (props: DatabaseCardProps) => {
                             </StyledPublishedByContainer>
 
                             <StyedCardDescription variant={'body2'}>
-                                {description}
+                                {description
+                                    ? description
+                                    : 'No description available'}
                             </StyedCardDescription>
-                            <Chip variant={'outlined'} label={tag} />
+                            <StyledChipDiv>
+                                {tag !== undefined &&
+                                    (typeof tag === 'object' ? (
+                                        tag.map((t, i) => {
+                                            return (
+                                                <Chip
+                                                    key={id + i}
+                                                    variant={'outlined'}
+                                                    label={t}
+                                                />
+                                            );
+                                        })
+                                    ) : (
+                                        <Chip
+                                            key={id + tag}
+                                            variant={'outlined'}
+                                            label={tag}
+                                        />
+                                    ))}
+                            </StyledChipDiv>
                         </StyledCardContainer>
                     </StyledCardRowsDiv>
                 </StyledCardRows>
@@ -451,10 +578,22 @@ export const DatabaseTileCard = (props: DatabaseCardProps) => {
             <StyledTileCardActions>
                 <StyledLeftActions>
                     <ButtonGroup size="sm" color="secondary">
-                        <Button>
-                            <Icons.ArrowDropUp
-                                onClick={() => upvote(isUpvoted)}
-                            />
+                        <Button
+                            title={
+                                isUpvoted
+                                    ? `Downvote ${name}`
+                                    : `Upvote ${name}`
+                            }
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                upvote(isUpvoted);
+                            }}
+                        >
+                            {isUpvoted ? (
+                                <Icons.ArrowDropDown />
+                            ) : (
+                                <Icons.ArrowDropUp />
+                            )}
                         </Button>
                         <Button disabled={true}>{votes}</Button>
                     </ButtonGroup>
@@ -471,8 +610,22 @@ export const DatabaseTileCard = (props: DatabaseCardProps) => {
                         </Typography>
                     </StyledViewsTrendingDiv>
                 </StyledLeftActions>
-                <StyledLockButton onClick={() => global(isGlobal)}>
-                    <Icons.LockRounded />
+                <StyledLockButton
+                    title={
+                        isGlobal
+                            ? `Make ${name} private`
+                            : `Make ${name} public`
+                    }
+                    onClick={(e) => {
+                        e.stopPropagation();
+                        global(isGlobal);
+                    }}
+                >
+                    {isGlobal ? (
+                        <Icons.LockOpenRounded />
+                    ) : (
+                        <Icons.LockRounded />
+                    )}
                 </StyledLockButton>
             </StyledTileCardActions>
         </StyledTileCard>
