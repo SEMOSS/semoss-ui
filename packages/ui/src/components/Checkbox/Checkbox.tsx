@@ -1,6 +1,6 @@
-import MuiCheckbox from "@mui/material/Checkbox";
-import { FormControlLabel } from "@mui/material/";
+import { Checkbox as MuiCheckbox } from "@mui/material";
 import { SxProps } from "@mui/system";
+import { FormControlLabel } from "../../";
 
 export interface CheckboxProps {
     /**

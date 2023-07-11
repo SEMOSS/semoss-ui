@@ -1,4 +1,4 @@
-import { FormControlLabel } from "../FormControl/index";
+import { FormControlLabel } from "../../";
 import { Radio as MuiRadio } from "@mui/material";
 import { SxProps } from "@mui/system";
 

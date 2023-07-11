@@ -1,10 +1,9 @@
 import * as React from "react";
-import MuiRadioGroup from "@mui/material/RadioGroup";
+import { RadioGroup as MuiRadioGroup } from "@mui/material";
 import { SxProps } from "@mui/system";
-import { RadioGroupProps as MuiRadioGroupProps } from "@mui/material";
-import { FormLabel } from "../FormControl/index";
+import { FormLabel } from "../../";
 
-export interface RadioGroupProps extends MuiRadioGroupProps {
+export interface RadioGroupProps {
     /** custom style object */
     children?: React.ReactNode;
 
@@ -21,7 +20,7 @@ export interface RadioGroupProps extends MuiRadioGroupProps {
      */
     defaultValue?: any;
 
-    //** radio group label */
+    /** radio group label */
     label?: string | number;
 
     sx?: SxProps;

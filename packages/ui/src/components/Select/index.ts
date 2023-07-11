@@ -1,10 +1,10 @@
 import { Select, SelectProps } from "./Select";
-import { Item, ItemProps } from "./Item";
+import { MenuItem } from "../../";
 
 const SelectNameSpace = Object.assign(Select, {
-    Item: Item,
+    Item: MenuItem,
 });
 
-export type { SelectProps, ItemProps };
+export type { SelectProps };
 
 export { SelectNameSpace as Select };

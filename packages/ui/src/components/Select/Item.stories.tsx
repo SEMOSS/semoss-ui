@@ -1,8 +1,8 @@
-import type { Meta, StoryObj } from "@storybook/react";
-import { Item } from "./Item";
-import Icons from "../Icons/index";
-import { Box } from "../Box/index";
 import React from "react";
+import type { Meta, StoryObj } from "@storybook/react";
+// import { Item } from "./Item";
+import { Box, MenuItem as Item } from "../../";
+import Icons from "../Icons/index";
 
 const meta: Meta<typeof Item> = {
     title: "Components/Select/Item",
