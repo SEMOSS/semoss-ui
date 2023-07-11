@@ -1,4 +1,10 @@
-import React, { useEffect, useMemo, useState, useRef } from 'react';
+import React, {
+    useEffect,
+    useMemo,
+    useState,
+    useRef,
+    SyntheticEvent,
+} from 'react';
 import { Navigate, useResolvedPath, useNavigate } from 'react-router-dom';
 import { useForm, Controller, useFieldArray } from 'react-hook-form';
 
@@ -19,7 +25,7 @@ import {
     Select,
     Switch,
     Popover,
-    Modal,
+    // Modal,
     styled,
     theme,
     useNotification,
@@ -31,8 +37,14 @@ import {
     Button,
     Table as MuiTable,
     styled as MuiStyled,
+    IconButton,
     ToggleTabsGroup,
+    AvatarGroup,
+    Avatar,
+    Modal,
 } from '@semoss/ui';
+
+import * as Icons from '@semoss/ui';
 
 import { LoadingScreen } from '@/components/ui';
 import { Card } from '@/components/ui';
@@ -51,6 +63,7 @@ import {
     mdiEye,
     mdiEyeOff,
 } from '@mdi/js';
+import { Typography } from '@semoss/ui';
 
 const StyledContent = MuiStyled('div')({
     display: 'flex',
@@ -60,7 +73,7 @@ const StyledContent = MuiStyled('div')({
     alignItems: 'flex-start',
     gap: '16px',
     flexShrink: '0',
-    border: 'solid red',
+    // border: 'solid red',
 });
 
 const StyledButtonGroup = MuiStyled(ButtonGroup)(({ theme }) => ({
@@ -78,7 +91,7 @@ const StyledMemberContent = MuiStyled('div')({
     alignItems: 'flex-start',
     gap: '25px',
     flexShrink: '0',
-    border: 'solid blue',
+    // border: 'solid blue',
 });
 
 const StyledMemberInnerContent = MuiStyled('div')({
@@ -89,11 +102,97 @@ const StyledMemberInnerContent = MuiStyled('div')({
     alignSelf: 'stretch',
 });
 
+const StyledTableContainer = MuiStyled(MuiTable.Container)({
+    borderRadius: '12px',
+    // background: #FFF;
+    /* Devias Drop Shadow */
+    boxShadow: '0px 5px 22px 0px rgba(0, 0, 0, 0.06)',
+});
+
 const StyledMemberTable = MuiStyled(MuiTable)({
+    // display: 'flex',
+    // flexDirection: 'column',
+    // alignItems: 'flex-start',
+    // width: '100%',
+});
+
+const StyledTableTitleContainer = MuiStyled('div')({
+    display: 'flex',
+    alignItems: 'center',
+    alignSelf: 'stretch',
+    boxShadow: '0px -1px 0px 0px rgba(0, 0, 0, 0.12) inset',
+});
+
+const StyledTableTitleDiv = MuiStyled('div')({
+    display: 'flex',
+    padding: '12px 24px 12px 16px',
+    alignItems: 'center',
+    gap: '10px',
+});
+
+const StyledTableTitleMemberContainer = MuiStyled('div')({
+    display: 'flex',
+    alignItems: 'flex-start',
+    flex: '1 0 0',
+});
+
+const StyledAvatarGroupContainer = MuiStyled('div')({
+    display: 'flex',
+    width: '130px',
+    height: '56px',
+    padding: '10px 16px',
+    flexDirection: 'column',
+    justifyContent: 'center',
+    alignItems: 'center',
+    gap: '10px',
+});
+
+const StyledTableTitleMemberCountContainer = MuiStyled('div')({
+    display: 'flex',
+    height: '56px',
+    padding: '6px 16px 6px 8px',
+    flexDirection: 'column',
+    justifyContent: 'center',
+    alignItems: 'center',
+    gap: '10px',
+});
+
+const StyledTableTitleMemberCount = MuiStyled('div')({
     display: 'flex',
     flexDirection: 'column',
     alignItems: 'flex-start',
-    width: '100%',
+});
+
+const StyledSearchButtonContainer = MuiStyled('div')({
+    display: 'flex',
+    padding: '5px 8px',
+    alignItems: 'center',
+    gap: '10px',
+});
+
+const StyledFilterButtonContainer = MuiStyled('div')({
+    display: 'flex',
+    padding: '5px 8px',
+    alignItems: 'center',
+    gap: '10px',
+});
+
+const StyledDeleteSelectedContainer = MuiStyled('div')({
+    display: 'flex',
+    padding: '10px 8px 10px 16px',
+    flexDirection: 'column',
+    justifyContent: 'center',
+    alignItems: 'center',
+    gap: '10px',
+});
+
+const StyledAddMemberContainer = MuiStyled('div')({
+    display: 'flex',
+    padding: '10px 24px 10px 8px',
+    flexDirection: 'column',
+    justifyContent: 'center',
+    alignItems: 'center',
+    gap: '10px',
 });
 
 // Old styles
@@ -128,7 +227,7 @@ const StyledCardContent = styled(Card.Content, {
     minHeight: '5rem',
 });
 
-const StyledTableContainer = styled('div', {
+const StyledTableCont = styled('div', {
     borderRadius: theme.radii.default,
     borderWidth: theme.borderWidths.default,
     borderColor: theme.colors['grey-4'],
@@ -161,10 +260,10 @@ const StyledTableFooterCenterDiv = styled('div', {
     fontSize: theme.fontSizes.xs,
 });
 
-const StyledModalFooter = styled(Modal.Footer, {
-    display: 'flex',
-    justifyContent: 'center',
-});
+// const StyledModalFooter = styled(Modal.Footer, {
+//     display: 'flex',
+//     justifyContent: 'center',
+// });
 
 const StyledHeader = styled('div', {
     display: 'flex',
@@ -715,8 +814,6 @@ export const Permissions = (props: PermissionsProps) => {
     if (!getMembersString) {
         return <Navigate to="/settings" replace />;
     }
-
-    console.log('page:', membersPage);
 
     // getMembers for insights req's extra arg
     const getMembers = useAPI([
@@ -1564,52 +1661,22 @@ export const Permissions = (props: PermissionsProps) => {
         };
     }
 
-    const rows = [
-        createData(
-            'John Smith',
-            19,
-            'Rosslyn, VA',
-            'j.smith@deloitte.com',
-            '555-555-5555',
-        ),
-        createData(
-            'Jane Smith',
-            20,
-            'Salem, WA',
-            'ja.smith@deloitte.com',
-            '555-555-5555',
-        ),
-        createData(
-            'Robert Smith',
-            21,
-            'Portland, OR',
-            'r.smith@deloitte.com',
-            '555-555-5555',
-        ),
-        createData(
-            'Claire Smith',
-            22,
-            'Tucson, AZ',
-            'c.smith@deloitte.com',
-            '555-555-5555',
-        ),
-        createData(
-            'Jane Smith',
-            23,
-            'Denver, CO',
-            'ne.smith@deloitte.com',
-            '555-555-5555',
-        ),
-    ];
-
     const handleChange = (event: SyntheticEvent, newValue: number) => {
-        debugger;
         setView(newValue);
     };
 
+    // Counts for pagination
+    const paginationOptions = {
+        membersPageCounts: [5],
+    };
+
+    membersCount > 9 && paginationOptions.membersPageCounts.push(10);
+    membersCount > 19 && paginationOptions.membersPageCounts.push(20);
+
+    console.log('page count', paginationOptions.membersPageCounts);
     return (
         <StyledContent>
-            <StyledButtonGroup variant={'contained'}>
+            {/* <StyledButtonGroup variant={'contained'}>
                 <Button
                     onClick={() => {
                         setView('members');
@@ -1624,7 +1691,7 @@ export const Permissions = (props: PermissionsProps) => {
                 >
                     Pending Requests
                 </Button>
-            </StyledButtonGroup>
+            </StyledButtonGroup> */}
 
             <ToggleTabsGroup
                 value={view}
@@ -1635,68 +1702,17 @@ export const Permissions = (props: PermissionsProps) => {
                 <ToggleTabsGroup.Item label="Pending Requests" />
             </ToggleTabsGroup>
 
-            {view === 0 && <div>Members</div>}
-
+            {membersPage}
+            {view === 0 && (
+                <MembersTable
+                    reactorPrefix={getMembersString}
+                    type={type}
+                    name={name}
+                    adminMode={adminMode}
+                    id={id}
+                />
+            )}
             {view === 1 && <div>Pending Members</div>}
-            <StyledMemberContent>
-                <StyledMemberInnerContent>
-                    {/* <StyledMemberTable>
-                    </StyledMemberTable> */}
-                    <MuiTable.Container>
-                        <MuiTable>
-                            <MuiTable.Head>
-                                <MuiTable.Row>
-                                    <MuiTable.Cell>Name</MuiTable.Cell>
-                                    <MuiTable.Cell align="right">
-                                        Age
-                                    </MuiTable.Cell>
-                                    <MuiTable.Cell align="right">
-                                        Location
-                                    </MuiTable.Cell>
-                                    <MuiTable.Cell align="right">
-                                        Email
-                                    </MuiTable.Cell>
-                                    <MuiTable.Cell align="right">
-                                        Number
-                                    </MuiTable.Cell>
-                                </MuiTable.Row>
-                            </MuiTable.Head>
-                            <MuiTable.Body>
-                                {rows.map((row) => (
-                                    <MuiTable.Row
-                                        key={row.name}
-                                        sx={{
-                                            '&:last-child td, &:last-child th':
-                                                {
-                                                    border: 0,
-                                                },
-                                        }}
-                                    >
-                                        <MuiTable.Cell
-                                            component="th"
-                                            scope="row"
-                                        >
-                                            {row.name}
-                                        </MuiTable.Cell>
-                                        <MuiTable.Cell align="right">
-                                            {row.age}
-                                        </MuiTable.Cell>
-                                        <MuiTable.Cell align="right">
-                                            {row.location}
-                                        </MuiTable.Cell>
-                                        <MuiTable.Cell align="right">
-                                            {row.email}
-                                        </MuiTable.Cell>
-                                        <MuiTable.Cell align="right">
-                                            {row.number}
-                                        </MuiTable.Cell>
-                                    </MuiTable.Row>
-                                ))}
-                            </MuiTable.Body>
-                        </MuiTable>
-                    </MuiTable.Container>
-                </StyledMemberInnerContent>
-            </StyledMemberContent>
         </StyledContent>
 
         // <StyledSelectedApp>
@@ -1945,7 +1961,7 @@ export const Permissions = (props: PermissionsProps) => {
         //                 </Button>
         //             </StyledMembersDiv>
         //         </StyledFlexEnd> */}
-        //         <StyledTableContainer>
+        //         <StyledTableCont>
         //             <StyledHeader>
         //                 <StyledHeaderLeft>
         //                     <StyledTableLabel>Members</StyledTableLabel>
@@ -2295,10 +2311,10 @@ export const Permissions = (props: PermissionsProps) => {
         //                     of {filteredMembersCount} members
         //                 </StyledTableFooterDiv>
         //             </StyledTableFooter>
-        //         </StyledTableContainer>
+        //         </StyledTableCont>
 
         //         {pendingMembers.length ? (
-        //             <StyledTableContainer>
+        //             <StyledTableCont>
         //                 <StyledHeader>
         //                     <StyledHeaderLeft>
         //                         <StyledTableLabel>
@@ -2510,7 +2526,7 @@ export const Permissions = (props: PermissionsProps) => {
         //                         })}
         //                     </StyledTableBody>
         //                 </Table>
-        //             </StyledTableContainer>
+        //             </StyledTableCont>
         //         ) : null}
 
         //         <Modal
@@ -2930,3 +2946,259 @@ export const Permissions = (props: PermissionsProps) => {
 };
 
 export default Permissions;
+
+const MembersTable = (props) => {
+    const { name, type, adminMode, id, reactorPrefix, projectId } = props;
+    const { monolithStore } = useRootStore();
+
+    const [membersCount, setMembersCount] = useState(0);
+    const [filteredMembersCount, setFilteredMembersCount] = useState(0);
+    const [membersPage, setMembersPage] = useState(1);
+    const [limit, setLimit] = useState(5);
+
+    const [addMembersModal, setAddMembersModal] = useState(false);
+    const [nonCredentialedUsers, setNonCredentialedUsers] = useState([]);
+
+    const didMount = useRef(false);
+
+    const { control, watch, setValue } = useForm<{
+        MEMBERS: Member[];
+
+        SEARCH_FILTER: string;
+        ACCESS_FILTER: string;
+
+        ADD_MEMBER_PERMISSION: string;
+    }>({
+        defaultValues: {
+            // Members Table
+            MEMBERS: [],
+            // Filters for Members table
+            SEARCH_FILTER: '',
+            ACCESS_FILTER: '',
+            // Permission for Add Member modal
+            ADD_MEMBER_PERMISSION: '',
+        },
+    });
+
+    const { remove: memberRemove } = useFieldArray({
+        control,
+        name: 'MEMBERS',
+    });
+
+    const searchFilter = watch('SEARCH_FILTER');
+    const permissionFilter = watch('ACCESS_FILTER');
+    const verifiedMembers = watch('MEMBERS');
+
+    const getMembers = useAPI([
+        reactorPrefix,
+        adminMode,
+        id,
+        searchFilter ? searchFilter : undefined,
+        permissionMapper[permissionFilter],
+        membersPage * limit - limit, // offset
+        limit,
+        projectId, // make optional --> handles insight
+    ]);
+
+    /**
+     * @name useEffect
+     * @desc - sets members in react hook form
+     */
+    useEffect(() => {
+        // REST call to get all credentialed members
+        if (getMembers.status !== 'SUCCESS' || !getMembers.data) {
+            return;
+        }
+
+        const members = [];
+
+        getMembers.data['members'].forEach((mem) => {
+            members.push(mem);
+        });
+
+        // set members in react hook form
+        setValue('MEMBERS', members);
+
+        if (!didMount.current) {
+            // set total members
+            setMembersCount(getMembers.data['totalMembers']);
+            didMount.current = true;
+        }
+
+        // Needed for total pages on pagination
+        setFilteredMembersCount(getMembers.data['totalMembers']);
+
+        return () => {
+            console.log('Cleaning members');
+            setValue('MEMBERS', []);
+            // setSelectedMembers([]);
+            // setSelectAllMembers(false);
+            // setIndeterminate(false);
+        };
+    }, [getMembers.status, getMembers.data, searchFilter, permissionFilter]);
+
+    /**
+     * @name getUsersNoCreds
+     * @desc Gets all users without credentials
+     */
+    const getUsersNoCreds = () => {
+        monolithStore[mapMonolithFunction(type, 'GetNonCredUsers')](
+            adminMode,
+            id,
+            projectId, // req'd for insight level calls
+        )
+            .then((response) => {
+                setNonCredentialedUsers(response);
+
+                setAddMembersModal(true);
+            })
+            .catch((err) => {
+                // throw error if promise doesn't fulfill
+                throw Error(err);
+            });
+    };
+
+    // Counts for pagination
+    const paginationOptions = {
+        membersPageCounts: [5],
+    };
+
+    membersCount > 9 && paginationOptions.membersPageCounts.push(10);
+    membersCount > 19 && paginationOptions.membersPageCounts.push(20);
+
+    return (
+        <StyledMemberContent>
+            <StyledMemberInnerContent>
+                <StyledTableContainer>
+                    <StyledTableTitleContainer>
+                        <StyledTableTitleDiv>
+                            <Typography variant={'h6'}>{name}</Typography>
+                        </StyledTableTitleDiv>
+
+                        <StyledTableTitleMemberContainer>
+                            <StyledAvatarGroupContainer>
+                                <AvatarGroup
+                                    spacing={'small'}
+                                    variant={'circular'}
+                                    max={4}
+                                    total={filteredMembersCount}
+                                >
+                                    <Avatar>a</Avatar>
+                                    <Avatar>b</Avatar>
+                                    <Avatar>c</Avatar>
+                                    <Avatar>d</Avatar>
+                                </AvatarGroup>
+                            </StyledAvatarGroupContainer>
+                            <StyledTableTitleMemberCountContainer>
+                                <StyledTableTitleMemberCount>
+                                    <Typography variant={'body1'}>
+                                        {filteredMembersCount} Members
+                                    </Typography>
+                                </StyledTableTitleMemberCount>
+                            </StyledTableTitleMemberCountContainer>
+                        </StyledTableTitleMemberContainer>
+
+                        <StyledSearchButtonContainer>
+                            <IconButton>
+                                <Icons.SearchOutlined></Icons.SearchOutlined>
+                            </IconButton>
+                        </StyledSearchButtonContainer>
+
+                        <StyledFilterButtonContainer>
+                            <IconButton>
+                                <Icons.FilterAltRounded></Icons.FilterAltRounded>
+                            </IconButton>
+                        </StyledFilterButtonContainer>
+
+                        <StyledDeleteSelectedContainer>
+                            <Button variant={'contained'} color="error">
+                                Delete Selected
+                            </Button>
+                        </StyledDeleteSelectedContainer>
+                        <StyledAddMemberContainer>
+                            <Button
+                                variant={'contained'}
+                                onClick={() => {
+                                    getUsersNoCreds();
+                                }}
+                            >
+                                Add Member{' '}
+                            </Button>
+                        </StyledAddMemberContainer>
+                    </StyledTableTitleContainer>
+                    <StyledMemberTable>
+                        <MuiTable.Head>
+                            <MuiTable.Row>
+                                <MuiTable.Cell>Name</MuiTable.Cell>
+                                <MuiTable.Cell align="right">Age</MuiTable.Cell>
+                                <MuiTable.Cell align="right">
+                                    Location
+                                </MuiTable.Cell>
+                                <MuiTable.Cell align="right">
+                                    Email
+                                </MuiTable.Cell>
+                            </MuiTable.Row>
+                        </MuiTable.Head>
+                        <MuiTable.Body>
+                            {verifiedMembers.map((user, i) => (
+                                <MuiTable.Row
+                                    key={user.name + i}
+                                    sx={{
+                                        '&:last-child td, &:last-child th': {
+                                            border: 0,
+                                        },
+                                    }}
+                                >
+                                    <MuiTable.Cell component="td" scope="row">
+                                        {user.id}
+                                    </MuiTable.Cell>
+                                    <MuiTable.Cell align="right">
+                                        {user.name}
+                                    </MuiTable.Cell>
+                                    <MuiTable.Cell align="right">
+                                        {user.name}
+                                    </MuiTable.Cell>
+                                    <MuiTable.Cell align="right">
+                                        <IconButton>
+                                            <Icons.Delete></Icons.Delete>
+                                        </IconButton>
+                                    </MuiTable.Cell>
+                                </MuiTable.Row>
+                            ))}
+                        </MuiTable.Body>
+                        <MuiTable.Footer>
+                            <MuiTable.Row>
+                                <MuiTable.Pagination
+                                    rowsPerPageOptions={
+                                        paginationOptions.membersPageCounts
+                                    }
+                                    onPageChange={(e, v) => {
+                                        setMembersPage(v + 1);
+                                        // setPage(v);
+                                    }}
+                                    page={membersPage - 1}
+                                    rowsPerPage={5}
+                                    count={filteredMembersCount}
+                                />
+                            </MuiTable.Row>
+                        </MuiTable.Footer>
+                    </StyledMemberTable>
+                </StyledTableContainer>
+            </StyledMemberInnerContent>
+            <Modal open={addMembersModal}>
+                <Modal.Title>Add members to {type}</Modal.Title>
+                <Modal.Content>
+                    <Modal.ContentText>Huh</Modal.ContentText>
+                </Modal.Content>
+                <Modal.Actions>
+                    <Button
+                        variant="text"
+                        onClick={() => setAddMembersModal(false)}
+                    >
+                        Close
+                    </Button>
+                </Modal.Actions>
+            </Modal>
+        </StyledMemberContent>
+    );
+};

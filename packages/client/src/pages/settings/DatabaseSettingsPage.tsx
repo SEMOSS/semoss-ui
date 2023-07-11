@@ -134,8 +134,6 @@ export const DatabaseSettingsPage = () => {
             return;
         }
 
-        console.log(getFavoritedDatabases.data);
-
         dispatch({
             type: 'field',
             field: 'favoritedDbs',
@@ -182,7 +180,7 @@ export const DatabaseSettingsPage = () => {
             mutateListWithVotes.push({
                 ...db,
                 userVotes: i + 1,
-                userVote: false,
+                hasVoted: false,
                 views: i + 200,
                 trending: i + 100,
                 owner: 'jbaxter6',
@@ -222,8 +220,6 @@ export const DatabaseSettingsPage = () => {
         monolithStore
             .setDatabaseFavorite(db.database_id, favorite)
             .then((response) => {
-                console.log(response);
-
                 if (!favorite) {
                     const newFavorites = favoritedDbs;
                     for (let i = newFavorites.length - 1; i >= 0; i--) {
@@ -232,16 +228,12 @@ export const DatabaseSettingsPage = () => {
                         }
                     }
 
-                    console.log(newFavorites);
-
                     dispatch({
                         type: 'field',
                         field: 'favoritedDbs',
                         value: newFavorites,
                     });
                 } else {
-                    console.log('add to list');
-
                     dispatch({
                         type: 'field',
                         field: 'favoritedDbs',
@@ -426,7 +418,7 @@ export const DatabaseSettingsPage = () => {
                                                       favoriteDb(db);
                                                   }}
                                                   onClick={(id) =>
-                                                      setSelectedApp(id)
+                                                      setSelectedApp(db)
                                                   }
                                                   upvote={(val) => {
                                                       upvoteDb(db);
@@ -457,7 +449,7 @@ export const DatabaseSettingsPage = () => {
                                                       favoriteDb(db);
                                                   }}
                                                   onClick={(id) =>
-                                                      setSelectedApp(id)
+                                                      setSelectedApp(db)
                                                   }
                                                   upvote={(val) => {
                                                       upvoteDb(db);
