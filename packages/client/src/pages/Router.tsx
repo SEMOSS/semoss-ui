@@ -15,7 +15,7 @@ import {
     DatabaseMetadataPage,
     DatabaseSettingsPage,
 } from './database';
-
+import { WorkspaceRouter } from './workspace';
 import { SettingsRouter } from './settings';
 
 // import { JobsPage } from './jobs';
@@ -32,6 +32,7 @@ export const Router = observer(() => {
         <Routes>
             <Route path="/" element={<AuthenticatedLayout />}>
                 <Route index element={<TempPage title={'Home'} />} />
+                <Route path="workspace/*" element={<WorkspaceRouter />} />
                 <Route path="settings/*" element={<SettingsRouter />} />
                 <Route path="catalog" element={<CatalogPage />} />
                 <Route path="import" element={<TempPage title={'Import'} />} />

@@ -1,6 +1,6 @@
 import { Link, useLocation, matchPath } from 'react-router-dom';
 
-import { Modal, Button, styled } from '@semoss/components';
+import { styled } from '@semoss/components';
 
 import { Moose } from '@/components/moose';
 import { theme } from '@/theme';
@@ -70,6 +70,20 @@ export const TempPage = ({ title }: TempPageProps): JSX.Element => {
                 <StyledLink to="/" active={isActive('/')}>
                     Home
                 </StyledLink>
+
+                <StyledLink to="/workspace" active={isActive('/workspace')}>
+                    Workspace
+                </StyledLink>
+                <StyledContainer>
+                    <StyledContainer>
+                        <StyledLink
+                            to="/workspace/pipeline"
+                            active={isActive('/workspace/pipeline')}
+                        >
+                            Pipeline
+                        </StyledLink>
+                    </StyledContainer>
+                </StyledContainer>
 
                 <StyledLink to="/catalog" active={isActive('/catalog')}>
                     Catalog
