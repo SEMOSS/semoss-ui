@@ -1,6 +1,51 @@
 import { FormControlLabel } from "../FormControl/index";
-import { Radio as MuiRadio } from "../RadioGroup/index";
+import { Radio as MuiRadio } from "@mui/material";
 import { SxProps } from "@mui/system";
+
+export interface MuiRadioProps {
+    /**
+     * The icon to display when the component is checked.
+     * @default <RadioButtonIcon checked />
+     */
+    checkedIcon?: React.ReactNode;
+
+    /**
+     * The color of the component.
+     * It supports both default and custom theme colors, which can be added as shown in the
+     * [palette customization guide](https://mui.com/material-ui/customization/palette/#adding-new-colors).
+     * @default 'primary'
+     */
+    color?:
+        | "primary"
+        | "secondary"
+        | "error"
+        | "info"
+        | "success"
+        | "warning"
+        | "default";
+
+    /**
+     * If `true`, the component is disabled.
+     */
+    disabled?: boolean;
+
+    /**
+     * The icon to display when the component is unchecked.
+     * @default <RadioButtonIcon />
+     */
+    icon?: React.ReactNode;
+
+    /**
+     * The size of the component.
+     * `small` is equivalent to the dense radio styling.
+     * @default 'medium'
+     */
+    size?: "small" | "medium";
+    /**
+     * The system prop that allows defining system overrides as well as additional CSS styles.
+     */
+    sx?: SxProps;
+}
 
 export interface RadioProps {
     /**
@@ -67,8 +112,14 @@ export interface RadioProps {
     value?: unknown;
 }
 
-export const Radio = (props: RadioProps) => {
-    const { sx, control = <MuiRadio /> } = props;
+export const Radio = (props: MuiRadioProps) => {
+    const { sx } = props;
+
+    return <MuiRadio sx={sx} {...props} />;
+};
+
+export const RadioField = (props: RadioProps) => {
+    const { sx, control = <Radio /> } = props;
 
     return <FormControlLabel sx={sx} {...props} control={control} />;
 };
