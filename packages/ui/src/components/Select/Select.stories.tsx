@@ -67,11 +67,11 @@ const SelectComponent = (args) => {
                 placeholder="Select placeholder"
                 label="Select Label"
             >
-                <Select.Option value={1}>1</Select.Option>
-                <Select.Option value={2}>2</Select.Option>
-                <Select.Option value={3}>3</Select.Option>
-                <Select.Option value={4}>4</Select.Option>
-                <Select.Option value={5}>5</Select.Option>
+                <Select.Item value={1}>1</Select.Item>
+                <Select.Item value={2}>2</Select.Item>
+                <Select.Item value={3}>3</Select.Item>
+                <Select.Item value={4}>4</Select.Item>
+                <Select.Item value={5}>5</Select.Item>
             </Select>
             <Box>Value: {selected}</Box>
         </Stack>

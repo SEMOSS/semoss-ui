@@ -18,13 +18,13 @@ export const Default: Story = {
     render: (args) => (
         <>
             <RadioGroup {...args} label="Example">
-                <RadioGroup.Radio value="First Example" label="First" />
-                <RadioGroup.Radio value="Second Example" label="Second" />
+                <RadioGroup.Item value="First Example" label="First" />
+                <RadioGroup.Item value="Second Example" label="Second" />
             </RadioGroup>
 
             <RadioGroup label="Radio Row" row>
-                <RadioGroup.Radio value="First Example" label="First" />
-                <RadioGroup.Radio value="Second Example" label="Second" />
+                <RadioGroup.Item value="First Example" label="First" />
+                <RadioGroup.Item value="Second Example" label="Second" />
             </RadioGroup>
 
             <RadioGroup
@@ -32,22 +32,18 @@ export const Default: Story = {
                 row
                 defaultValue="Top"
             >
-                <RadioGroup.Radio
-                    value="Top"
-                    label="Top"
-                    labelPlacement="top"
-                />
-                <RadioGroup.Radio
+                <RadioGroup.Item value="Top" label="Top" labelPlacement="top" />
+                <RadioGroup.Item
                     value="Start"
                     label="Start"
                     labelPlacement="start"
                 />
-                <RadioGroup.Radio
+                <RadioGroup.Item
                     value="Bottom"
                     label="Bottom"
                     labelPlacement="bottom"
                 />
-                <RadioGroup.Radio value="End" label="End" />
+                <RadioGroup.Item value="End" label="End" />
             </RadioGroup>
         </>
     ),

@@ -1,12 +1,12 @@
 import type { Meta, StoryObj } from "@storybook/react";
-import { Option } from "./Option";
+import { Item } from "./Item";
 import Icons from "../Icons/index";
 import { Box } from "../Box/index";
 import React from "react";
 
-const meta: Meta<typeof Option> = {
-    title: "Components/Select/Option",
-    component: Option,
+const meta: Meta<typeof Item> = {
+    title: "Components/Select/Item",
+    component: Item,
     args: {
         dense: false,
         autoFocus: false,
@@ -40,22 +40,22 @@ type Story = StoryObj<typeof Option>;
 export const Default: Story = {
     render: (args) => (
         <>
-            <Option {...args}>
+            <Item value={1} {...args}>
                 <Icons.SearchRounded sx={{ color: "#40a0ff", mr: 2 }} />
-                <Box sx={{ mr: 2 }}>Option Item #1</Box>
-            </Option>
-            <Option {...args}>
+                <Box sx={{ mr: 2 }}>Item Item #1</Box>
+            </Item>
+            <Item value={2} {...args}>
                 <Icons.SearchRounded sx={{ color: "#40a0ff", mr: 2 }} />
-                <Box sx={{ mr: 2 }}>Option Item #2</Box>
-            </Option>
-            <Option {...args}>
+                <Box sx={{ mr: 2 }}>Item Item #2</Box>
+            </Item>
+            <Item value={3} {...args}>
                 <Icons.SearchRounded sx={{ color: "#40a0ff", mr: 2 }} />
-                <Box sx={{ mr: 2 }}>Option Item #3</Box>
-            </Option>
-            <Option {...args}>
+                <Box sx={{ mr: 2 }}>Item Item #3</Box>
+            </Item>
+            <Item value={4} {...args}>
                 <Icons.SearchRounded sx={{ color: "#40a0ff", mr: 2 }} />
-                <Box sx={{ mr: 2 }}>Option Item #4</Box>
-            </Option>
+                <Box sx={{ mr: 2 }}>Item Item #4</Box>
+            </Item>
         </>
     ),
 };

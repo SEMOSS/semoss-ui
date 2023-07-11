@@ -1,6 +1,6 @@
 import { MenuItem as MuiMenuItem, SxProps } from "@mui/material";
 
-export interface OptionProps {
+export interface ItemProps {
     /**
      * If `true`, the list item is focused during the first mount.
      * Focus will also be triggered if the value changes from false to true.
@@ -57,7 +57,7 @@ export interface OptionProps {
     value: string | number;
 }
 
-export const Option = (props: OptionProps) => {
+export const Item = (props: ItemProps) => {
     const { sx } = props;
     return <MuiMenuItem sx={sx} {...props} />;
 };
