@@ -1,41 +1,53 @@
-import { Checkbox as MuiCheckbox } from "@mui/material";
-import { SxProps } from "@mui/system";
 import { FormControlLabel } from "../../";
+import { Radio as MuiRadio } from "@mui/material";
+import { SxProps } from "@mui/system";
 
-export interface CheckboxProps {
+export interface MuiRadioProps {
+    /**
+     * The icon to display when the component is checked.
+     * @default <RadioButtonIcon checked />
+     */
+    checkedIcon?: React.ReactNode;
+
+    /**
+     * The color of the component.
+     * It supports both default and custom theme colors, which can be added as shown in the
+     * [palette customization guide](https://mui.com/material-ui/customization/palette/#adding-new-colors).
+     * @default 'primary'
+     */
+    color?:
+        | "primary"
+        | "secondary"
+        | "error"
+        | "info"
+        | "success"
+        | "warning"
+        | "default";
+
+    /**
+     * If `true`, the component is disabled.
+     */
+    disabled?: boolean;
+
+    /**
+     * The icon to display when the component is unchecked.
+     * @default <RadioButtonIcon />
+     */
+    icon?: React.ReactNode;
+
+    /**
+     * The size of the component.
+     * `small` is equivalent to the dense radio styling.
+     * @default 'medium'
+     */
+    size?: "small" | "medium";
     /**
      * The system prop that allows defining system overrides as well as additional CSS styles.
      */
     sx?: SxProps;
-
-    //** determines default checked state */
-    defaultChecked?: boolean;
-
-    /**
-     * The id of the `input` element.
-     */
-    id?: string;
-
-    /**
-     * [Attributes](https://developer.mozilla.org/en-US/docs/Web/HTML/Element/input#Attributes) applied to the `input` element.
-     */
-    inputProps?: object;
-
-    /**
-     * The size of the component.
-     * `small` is equivalent to the dense checkbox styling.
-     * @default 'medium'
-     */
-    size?: "medium" | "small";
-
-    /**
-     * The value of the component. The DOM API casts this to a string.
-     * The browser uses "on" as the default value.
-     */
-    value?: any;
 }
 
-export interface FormCheckboxProps {
+export interface RadioProps {
     /**
      * If `true`, the component appears selected.
      */
@@ -98,44 +110,16 @@ export interface FormCheckboxProps {
      */
 
     value?: unknown;
-
-    //** below are checkbox specific props within the FormControlLabel control prop */
-
-    //** determines default checked state */
-    defaultChecked?: boolean;
-
-    /**
-     * The id of the `input` element.
-     */
-    id?: string;
-
-    /**
-     * The size of the component.
-     * `small` is equivalent to the dense checkbox styling.
-     * @default 'medium'
-     */
-    size?: "medium" | "small";
 }
 
-export const _Checkbox = (props: CheckboxProps) => {
+export const Radio = (props: MuiRadioProps) => {
     const { sx } = props;
-    return <MuiCheckbox sx={sx} {...props}></MuiCheckbox>;
+
+    return <MuiRadio sx={sx} {...props} />;
 };
 
-export const Checkbox = (props: FormCheckboxProps) => {
-    const { sx, defaultChecked, size, id } = props;
+export const RadioField = (props: RadioProps) => {
+    const { sx, control = <Radio /> } = props;
 
-    return (
-        <FormControlLabel
-            sx={sx}
-            {...props}
-            control={
-                <_Checkbox
-                    defaultChecked={defaultChecked}
-                    size={size}
-                    id={id}
-                />
-            }
-        />
-    );
+    return <FormControlLabel sx={sx} {...props} control={control} />;
 };

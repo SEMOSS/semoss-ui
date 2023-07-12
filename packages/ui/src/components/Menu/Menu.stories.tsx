@@ -34,15 +34,15 @@ export const Default: Story = {
     render: (args) => (
         <>
             <Menu {...args}>
-                <Menu.Item dense>
+                <Menu.Item value={1} dense>
                     <Icons.SearchRounded sx={{ color: "#40a0ff", mr: 2 }} />
                     <Box sx={{ mr: 2 }}>Menu Item #1</Box>
                 </Menu.Item>
-                <Menu.Item>
+                <Menu.Item value={2}>
                     <Icons.FileUploadRounded sx={{ color: "#40a0ff", mr: 2 }} />
                     <Box sx={{ mr: 2 }}>Menu Item #2</Box>
                 </Menu.Item>
-                <Menu.Item>
+                <Menu.Item value={3}>
                     <Icons.AbcRounded sx={{ color: "#40a0ff", mr: 2 }} />
                     <Box sx={{ mr: 2 }}>Menu Item #3</Box>
                 </Menu.Item>

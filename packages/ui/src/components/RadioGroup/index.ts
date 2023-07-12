@@ -1,7 +1,12 @@
-import { RadioGroup, RadioGroupProps, Radio, RadioProps } from "./RadioGroup";
+import { RadioGroup, RadioGroupProps } from "./RadioGroup";
+import { RadioField, Radio, RadioProps } from "./Radio";
 
 export type { RadioGroupProps, RadioProps };
 
-export { RadioGroup };
+const RadioGroupNameSpace = Object.assign(RadioGroup, {
+    Item: RadioField,
+});
+
+export { RadioGroupNameSpace as RadioGroup };
 
 export { Radio };
