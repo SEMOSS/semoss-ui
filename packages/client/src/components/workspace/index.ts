@@ -1,0 +1,1 @@
+export { WorkspaceOverlay } from './WorkspaceOverlay';

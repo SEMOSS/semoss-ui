@@ -25,6 +25,7 @@ const StyledMetamodelContainer = styled('section')(({ theme }) => ({
     width: '100%',
     borderWidth: '1px',
     // borderColor: theme.palette.outline, // TODO: create a theme variable
+    borderColor: 'rgba(0, 0, 0, 0.23)',
     borderRadius: theme.shape.borderRadius,
 }));
 

@@ -1,6 +1,7 @@
 import { NodeProps, Handle, Position } from 'react-flow-renderer';
 import {
     styled,
+    Box,
     Card,
     Icon,
     IconButton,
@@ -11,6 +12,7 @@ import {
 } from '@semoss/ui';
 
 import { PipelineNodeData } from './pipeline.types';
+import { useWorkspace } from '@/hooks';
 
 const StyledNode = styled(Card)(() => ({
     width: '344px',
@@ -35,8 +37,24 @@ const StyledHeaderTitle = styled(Typography)(() => ({
     flexGrow: 1,
 }));
 
-const StyledParameter = styled(Stack)(() => ({
+const StyledParameter = styled(Stack)(({ theme }) => ({
     position: 'relative',
+    marginBottom: theme.spacing(1),
+    '&:last-child': {
+        marginBottom: 0,
+    },
+}));
+
+const StyledParameterText = styled(Box)(({ theme }) => ({
+    height: theme.spacing(5),
+    width: '100%',
+    padding: '8.5px 14px',
+    // borderColor: theme.palette.outline, // TODO: create a theme variable
+    borderColor: 'rgba(0, 0, 0, 0.23)',
+    borderWidth: '1px',
+    borderStyle: 'solid',
+    borderRadius: theme.shape.borderRadius,
+    textOverflow: 'ellipsis',
 }));
 
 const StyledParameterHandle = styled(Handle)(({ type, theme }) => ({
@@ -59,8 +77,20 @@ type PipelineNodeNodeProps = NodeProps<PipelineNodeData>;
 export const PipelineNode = (props: PipelineNodeNodeProps) => {
     const { id, data } = props;
 
+    const { workspace } = useWorkspace();
+
+    /**
+     * Open the query overlay and set the json
+     * @param id - id to open in the overlay. If null, it will open a new one.
+     */
+    const openOverlay = () => {
+        workspace.openOverlay(() => {
+            return <div>{id}</div>;
+        });
+    };
+
     return (
-        <StyledNode>
+        <StyledNode onClick={() => openOverlay()}>
             <Card.Header
                 title={
                     <Stack direction={'row'} spacing={1} alignItems={'center'}>
@@ -90,7 +120,9 @@ export const PipelineNode = (props: PipelineNodeNodeProps) => {
                                 id={i}
                                 position={Position.Left}
                             />
-                            <Typography variant={'body2'}>{i}</Typography>
+                            <StyledParameterText>
+                                <Typography variant={'body2'}>{i}</Typography>
+                            </StyledParameterText>
                         </StyledParameter>
                     );
                 })}
@@ -107,7 +139,9 @@ export const PipelineNode = (props: PipelineNodeNodeProps) => {
                                 id={o}
                                 position={Position.Right}
                             />
-                            <Typography variant={'body2'}>{o}</Typography>
+                            <StyledParameterText>
+                                <Typography variant={'body2'}>{o}</Typography>
+                            </StyledParameterText>
                         </StyledParameter>
                     );
                 })}

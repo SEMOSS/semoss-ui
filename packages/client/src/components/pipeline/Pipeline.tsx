@@ -137,15 +137,17 @@ const StyledGrid = styled('div')(({ theme }) => ({
 
 export const Pipeline = (): JSX.Element => {
     return (
-        <StyledGrid>
-            <ReactFlow
-                defaultNodes={nodes}
-                defaultEdges={edges}
-                nodeTypes={nodeTypes}
-            >
-                <MiniMap />
-                <Controls showInteractive={false} />
-            </ReactFlow>
-        </StyledGrid>
+        <>
+            <StyledGrid>
+                <ReactFlow
+                    defaultNodes={nodes}
+                    defaultEdges={edges}
+                    nodeTypes={nodeTypes}
+                >
+                    <MiniMap />
+                    <Controls showInteractive={false} />
+                </ReactFlow>
+            </StyledGrid>
+        </>
     );
 };

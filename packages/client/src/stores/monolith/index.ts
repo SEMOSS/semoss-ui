@@ -1,3 +1,1 @@
-import { MonolithStore } from './MonolithStore';
-
-export { MonolithStore };
+export * from './monolith.store';
