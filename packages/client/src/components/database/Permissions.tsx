@@ -968,77 +968,6 @@ export const Permissions = (props: PermissionsProps) => {
     membersCount > 9 && paginationOptions.membersPageCounts.push(10);
     membersCount > 19 && paginationOptions.membersPageCounts.push(20);
 
-    function createData(
-        name: string,
-        age: number,
-        location: string,
-        email: string,
-        number: string,
-    ) {
-        return {
-            name,
-            age,
-            location,
-            email,
-            number,
-            history: [
-                {
-                    date: '2020-01-05',
-                    customerId: '11091700',
-                    amount: 3,
-                },
-                {
-                    date: '2020-01-02',
-                    customerId: 'Anonymous',
-                    amount: 1,
-                },
-            ],
-        };
-    }
-
-    const rows = [
-        createData(
-            'John Smith',
-            19,
-            'Rosslyn, VA',
-            'j.smith@deloitte.com',
-            '555-555-5555',
-        ),
-        createData(
-            'Jane Smith',
-            20,
-            'Salem, WA',
-            'ja.smith@deloitte.com',
-            '555-555-5555',
-        ),
-        createData(
-            'Robert Smith',
-            21,
-            'Portland, OR',
-            'r.smith@deloitte.com',
-            '555-555-5555',
-        ),
-        createData(
-            'Claire Smith',
-            22,
-            'Tucson, AZ',
-            'c.smith@deloitte.com',
-            '555-555-5555',
-        ),
-        createData(
-            'Jane Smith',
-            23,
-            'Denver, CO',
-            'ne.smith@deloitte.com',
-            '555-555-5555',
-        ),
-    ];
-
-    const handleChange = (event: SyntheticEvent, newValue: number) => {
-        debugger;
-        setView(newValue);
-    };
-
     return (
         <StyledContent>
             <ToggleTabsGroup
@@ -1053,7 +982,6 @@ export const Permissions = (props: PermissionsProps) => {
                 />
             </ToggleTabsGroup>
 
-<<<<<<< HEAD
             {view === 0 && (
                 <MembersTable
                     reactorPrefix={getMembersString}
@@ -1074,79 +1002,6 @@ export const Permissions = (props: PermissionsProps) => {
                     projectId={projectid}
                 />
             )}
-=======
-            <ToggleTabsGroup
-                value={view}
-                onChange={handleChange}
-                aria-label="basic tabs example"
-            >
-                <ToggleTabsGroup.Item label="Members" />
-                <ToggleTabsGroup.Item label="Pending Requests" />
-            </ToggleTabsGroup>
-
-            {view === 0 && <div>Members</div>}
-
-            {view === 1 && <div>Pending Members</div>}
-            <StyledMemberContent>
-                <StyledMemberInnerContent>
-                    {/* <StyledMemberTable>
-                    </StyledMemberTable> */}
-                    <MuiTable.Container>
-                        <MuiTable>
-                            <MuiTable.Head>
-                                <MuiTable.Row>
-                                    <MuiTable.Cell>Name</MuiTable.Cell>
-                                    <MuiTable.Cell align="right">
-                                        Age
-                                    </MuiTable.Cell>
-                                    <MuiTable.Cell align="right">
-                                        Location
-                                    </MuiTable.Cell>
-                                    <MuiTable.Cell align="right">
-                                        Email
-                                    </MuiTable.Cell>
-                                    <MuiTable.Cell align="right">
-                                        Number
-                                    </MuiTable.Cell>
-                                </MuiTable.Row>
-                            </MuiTable.Head>
-                            <MuiTable.Body>
-                                {rows.map((row) => (
-                                    <MuiTable.Row
-                                        key={row.name}
-                                        sx={{
-                                            '&:last-child td, &:last-child th':
-                                                {
-                                                    border: 0,
-                                                },
-                                        }}
-                                    >
-                                        <MuiTable.Cell
-                                            component="th"
-                                            scope="row"
-                                        >
-                                            {row.name}
-                                        </MuiTable.Cell>
-                                        <MuiTable.Cell align="right">
-                                            {row.age}
-                                        </MuiTable.Cell>
-                                        <MuiTable.Cell align="right">
-                                            {row.location}
-                                        </MuiTable.Cell>
-                                        <MuiTable.Cell align="right">
-                                            {row.email}
-                                        </MuiTable.Cell>
-                                        <MuiTable.Cell align="right">
-                                            {row.number}
-                                        </MuiTable.Cell>
-                                    </MuiTable.Row>
-                                ))}
-                            </MuiTable.Body>
-                        </MuiTable>
-                    </MuiTable.Container>
-                </StyledMemberInnerContent>
-            </StyledMemberContent>
->>>>>>> e6d24d9 (Database View All - functionality complete;  Sorts need to be added in on BE and votes, creator, views need to be added as well;)
         </StyledContent>
     );
 };
