@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { styled, Chip, Stack, Select, TextField } from '@semoss/ui';
+import { styled, Chip, Stack, Select, TextField, Button } from '@semoss/ui';
 import { Menu } from '@semoss/ui/src/components/Menu';
 
 const prompts = [
@@ -325,6 +325,9 @@ export const PromptDesigner = () => {
                     );
                 })}
             </StyledTokenContainer>
+            <Stack direction={'row'} justifyContent={'flex-end'}>
+                <Button variant="contained">Create</Button>
+            </Stack>
         </StyledContainer>
     );
 };
