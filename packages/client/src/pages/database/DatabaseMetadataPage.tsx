@@ -24,6 +24,7 @@ const StyledMetamodelContainer = styled('section')(({ theme }) => ({
     height: '55vh',
     width: '100%',
     borderWidth: '1px',
+    borderStyle: 'solid',
     // borderColor: theme.palette.outline, // TODO: create a theme variable
     borderColor: 'rgba(0, 0, 0, 0.23)',
     borderRadius: theme.shape.borderRadius,
@@ -42,6 +43,7 @@ const StyledTableScroll = styledOld(ScrollOld, {
     width: '100%',
     borderColor: theme.colors['grey-4'],
     borderWidth: theme.borderWidths.default,
+    borderStyle: 'solid',
     borderRadius: theme.radii.default,
 });
 
@@ -240,7 +242,7 @@ export const DatabaseMetadataPage = observer(() => {
             <Section>
                 <Section.Header>Metamodel</Section.Header>
                 <Stack spacing={2}>
-                    <StyledSelect
+                    {/* <StyledSelect
                         value={selectedNode || ''}
                         onChange={(e) => {
                             setSelectedNode(e.target.value as MetamodelNode);
@@ -256,7 +258,7 @@ export const DatabaseMetadataPage = observer(() => {
                                 </MenuItem>
                             );
                         })}
-                    </StyledSelect>
+                    </StyledSelect> */}
                     <StyledMetamodelContainer>
                         <Metamodel
                             nodes={nodes}

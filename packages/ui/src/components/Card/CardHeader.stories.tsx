@@ -1,11 +1,7 @@
 import type { Meta, StoryObj } from "@storybook/react";
-import IconButton from "@mui/material/IconButton";
-import PersonIcon from "@mui/icons-material/Person";
-import StarBorderIcon from "@mui/icons-material/StarBorder";
-import Icon from "@mui/material/Icon";
-
-import { Avatar } from "../Avatar/index";
-import { Card } from "./index";
+import { Person, StarBorder } from "@mui/icons-material";
+import { Avatar, Icon, IconButton } from "../../";
+import { Card } from "./";
 
 const meta: Meta<typeof Card> = {
     title: "Components/Card/Card.Header",
@@ -30,7 +26,7 @@ export const Primary: Story = {
                             sx={{ width: "24px", height: "24px" }}
                         >
                             <Icon>
-                                <PersonIcon />
+                                <Person />
                             </Icon>
                         </Avatar>
                         <span
@@ -47,7 +43,7 @@ export const Primary: Story = {
             }
             action={
                 <IconButton aria-label="settings">
-                    <StarBorderIcon />
+                    <StarBorder />
                 </IconButton>
             }
         />

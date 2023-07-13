@@ -34,8 +34,8 @@ const _store = new RootStore();
 export const App = () => {
     return (
         <RootStoreContext.Provider value={_store}>
-            <ThemeProvider>
-                <Theme reset={true} theme={theme}>
+            <ThemeProvider reset={true}>
+                <Theme reset={false} theme={theme}>
                     <Notification>
                         <LoadingScreen delay={300}>
                             <HashRouter>

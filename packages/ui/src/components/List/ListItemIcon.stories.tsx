@@ -1,7 +1,9 @@
-import type { Meta, StoryObj } from "@storybook/react";
-import { ListItemIcon } from "./ListItemIcon";
-import Icons from "../Icons";
 import React from "react";
+import type { Meta, StoryObj } from "@storybook/react";
+import { StartRounded } from "@mui/icons-material";
+
+// Do we want to export directly from index
+import { ListItemIcon } from "./ListItemIcon";
 
 const meta: Meta<typeof ListItemIcon> = {
     title: "Components/List/ListItemIcon",
@@ -18,7 +20,7 @@ type Story = StoryObj<typeof ListItemIcon>;
 export const Default: Story = {
     render: (args) => (
         <ListItemIcon {...args}>
-            <Icons.StartRounded />
+            <StartRounded />
         </ListItemIcon>
     ),
 };

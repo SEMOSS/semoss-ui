@@ -6,6 +6,7 @@ const StyledSection = styled('section')(({ theme }) => ({
     paddingBottom: theme.spacing(2),
     marginBottom: theme.spacing(1),
     borderBottomWidth: '1px',
+    borderBottomStyle: 'solid',
     borderBottomColor: theme.palette.divider,
     '&:last-child': {
         borderBottom: 'none',

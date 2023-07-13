@@ -1,13 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useNotification } from '@semoss/components';
-import {
-    styled,
-    Stack,
-    Typography,
-    Button,
-    AddCircle,
-    LinearProgress,
-} from '@semoss/ui';
+import { styled, Stack, Typography, Button, LinearProgress } from '@semoss/ui';
+
+import { AddCircle } from '@mui/icons-material';
 
 import { Page, LoadingScreen } from '@/components/ui';
 import { useRootStore, useDatabase, usePixel } from '@/hooks';

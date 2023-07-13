@@ -1,19 +1,27 @@
 import MuiTabs from "@mui/material/Tabs";
 import { SxProps } from "@mui/system";
 
+import { TabsProps as MuiProps } from "@mui/material";
+
 export interface TabsProps {
     /**
      * The label for the Tabs as a string.
      */
     "aria-label"?: string;
-    // custom style object
+
+    /**
+     * The content of the component.
+     */
+    children?: React.ReactNode;
     /**
      * Determines the color of the indicator.
      * @default 'primary'
      */
     indicatorColor?: "secondary" | "primary";
 
+    /** custom style object */
     sx?: SxProps;
+
     /**
      * Determines the color of the `Tab`.
      * @default 'primary'

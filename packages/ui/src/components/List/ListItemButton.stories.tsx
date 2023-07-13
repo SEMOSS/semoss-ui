@@ -1,7 +1,9 @@
-import type { Meta, StoryObj } from "@storybook/react";
-import { ListItemButton } from "./ListItemButton";
-import Icons from "../Icons";
 import React from "react";
+import type { Meta, StoryObj } from "@storybook/react";
+import { SearchRounded } from "@mui/icons-material";
+
+// Do we want to export in index
+import { ListItemButton } from "./ListItemButton";
 
 const meta: Meta<typeof ListItemButton> = {
     title: "Components/List/ListItemButton",
@@ -39,7 +41,7 @@ type Story = StoryObj<typeof ListItemButton>;
 export const Default: Story = {
     render: (args) => (
         <ListItemButton {...args}>
-            <Icons.SearchRounded sx={{ color: "#40a0ff", mr: 2 }} />
+            <SearchRounded sx={{ color: "#40a0ff", mr: 2 }} />
         </ListItemButton>
     ),
 };

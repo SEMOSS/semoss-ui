@@ -32,6 +32,8 @@ import {
     Table as MuiTable,
     styled as MuiStyled,
     ToggleTabsGroup,
+    Tabs,
+    Tab,
 } from '@semoss/ui';
 
 import { LoadingScreen } from '@/components/ui';
@@ -1634,6 +1636,16 @@ export const Permissions = (props: PermissionsProps) => {
                 <ToggleTabsGroup.Item label="Pending Requests" />
             </ToggleTabsGroup>
 
+            <Tabs
+                value={0}
+                onChange={() => console.log('hey')}
+                aria-label="basic tabs example"
+                textColor="secondary"
+                indicatorColor="secondary"
+            >
+                <Tabs.Item value={0} label="Hey"></Tabs.Item>
+                <Tabs.Item value={1} label="Hi"></Tabs.Item>
+            </Tabs>
             {view === 0 && <div>Members</div>}
 
             {view === 1 && <div>Pending Members</div>}

@@ -1,8 +1,8 @@
-import type { Meta, StoryObj } from "@storybook/react";
-import { MenuItem } from "./MenuItem";
-import Icons from "../Icons/index";
-import { Box } from "../Box/index";
 import React from "react";
+import type { Meta, StoryObj } from "@storybook/react";
+import { SearchRounded } from "@mui/icons-material";
+import { Box } from "../../";
+import { MenuItem } from "./MenuItem";
 
 const meta: Meta<typeof MenuItem> = {
     title: "Components/Menu/MenuItem",
@@ -40,7 +40,7 @@ type Story = StoryObj<typeof MenuItem>;
 export const Default: Story = {
     render: (args) => (
         <MenuItem {...args}>
-            <Icons.SearchRounded sx={{ color: "#40a0ff", mr: 2 }} />
+            <SearchRounded sx={{ color: "#40a0ff", mr: 2 }} />
             <Box sx={{ mr: 2 }}>Menu Item #1</Box>
         </MenuItem>
     ),

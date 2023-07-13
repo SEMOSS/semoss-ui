@@ -12,6 +12,7 @@ import {
     Card,
     Chip,
     Grid,
+    Search,
     Searchbar,
     Select,
     MenuItem,
@@ -20,11 +21,13 @@ import {
     ToggleButton,
     ToggleButtonGroup,
     Typography,
-    // Icons,
     styled,
 } from '@semoss/ui';
 
-import * as Icons from '@semoss/ui';
+import {
+    SpaceDashboardOutlined,
+    FormatListBulletedOutlined,
+} from '@mui/icons-material';
 import defaultDBImage from '../../assets/img/placeholder.png';
 
 import { DatabaseLandscapeCard, DatabaseTileCard } from '@/components/database';
@@ -54,7 +57,7 @@ const StyledSearchbarContainer = styled('div')({
     gap: '24px',
 });
 
-const StyledSearchbar = styled(Searchbar)({
+const StyledSearchbar = styled(Search)({
     width: '80%',
 });
 
@@ -360,6 +363,7 @@ export const DatabaseSettingsPage = () => {
                             }}
                             label="Database"
                             size="small"
+                            enableEndAdornment={true}
                             ref={searchbarRef}
                         />
                         <StyledSort
@@ -381,13 +385,13 @@ export const DatabaseSettingsPage = () => {
                                 onClick={(e, v) => setView(v)}
                                 value={'tile'}
                             >
-                                <Icons.SpaceDashboardOutlined />
+                                <SpaceDashboardOutlined />
                             </ToggleButton>
                             <ToggleButton
                                 onClick={(e, v) => setView(v)}
                                 value={'list'}
                             >
-                                <Icons.FormatListBulletedOutlined />
+                                <FormatListBulletedOutlined />
                             </ToggleButton>
                         </ToggleButtonGroup>
                     </StyledSearchbarContainer>

@@ -1,9 +1,8 @@
 import type { Meta, StoryObj } from "@storybook/react";
-import IconButton from "@mui/material/IconButton";
-import MoreVertIcon from "@mui/icons-material/MoreVert";
-import AccessTimeIcon from "@mui/icons-material/AccessTime";
+import { MoreVert, AccessTime } from "@mui/icons-material";
+import { IconButton } from "../../";
 
-import { Card } from "./index";
+import { Card } from "./";
 
 const meta: Meta<typeof Card> = {
     title: "Components/Card/Card.Actions",
@@ -27,7 +26,7 @@ export const Primary: Story = {
             >
                 <div>
                     <IconButton aria-label="action">
-                        <AccessTimeIcon />
+                        <AccessTime />
                     </IconButton>
                     <span
                         style={{
@@ -41,7 +40,7 @@ export const Primary: Story = {
                 </div>
                 <div>
                     <IconButton>
-                        <MoreVertIcon />
+                        <MoreVert />
                     </IconButton>
                 </div>
             </div>

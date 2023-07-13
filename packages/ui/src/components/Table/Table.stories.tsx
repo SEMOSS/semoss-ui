@@ -1,17 +1,13 @@
 import React, { useState } from "react";
 import type { Meta, StoryObj } from "@storybook/react";
-import { Table } from "../Table/index";
-import { Box } from "../Box/index";
-import { IconButton } from "../IconButton/index";
-import { tableCellClasses } from "@mui/material/TableCell";
-import { styled } from "@mui/material/styles";
-import Collapse from "@mui/material/Collapse";
-import KeyboardArrowDownIcon from "@mui/icons-material/KeyboardArrowDown";
-import KeyboardArrowUpIcon from "@mui/icons-material/KeyboardArrowUp";
-import Typography from "@mui/material/Typography";
+import { KeyboardArrowDown, KeyboardArrowUp } from "@mui/icons-material";
+import { Box, IconButton, Typography, styled } from "../../";
+import { Table } from "./";
 
-import { TablePagination } from "@mui/material";
-import TableFooter from "@mui/material/TableFooter";
+// Export these in library rather directly from material
+import Collapse from "@mui/material/Collapse";
+import { tableCellClasses } from "@mui/material/TableCell";
+// ^^^
 
 const meta: Meta<typeof Table> = {
     title: "Components/Table",
@@ -227,11 +223,7 @@ function Row(props) {
                         size="small"
                         onClick={() => setOpen(!open)}
                     >
-                        {open ? (
-                            <KeyboardArrowUpIcon />
-                        ) : (
-                            <KeyboardArrowDownIcon />
-                        )}
+                        {open ? <KeyboardArrowUp /> : <KeyboardArrowDown />}
                     </IconButton>
                 </Table.Cell>
                 <Table.Cell>{row.name}</Table.Cell>
