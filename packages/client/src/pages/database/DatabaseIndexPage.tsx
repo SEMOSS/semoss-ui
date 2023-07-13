@@ -1,13 +1,5 @@
 import { useState, useMemo } from 'react';
-import {
-    styled,
-    Stack,
-    Button,
-    Chip,
-    EditOutlined,
-    Typography,
-    Divider,
-} from '@semoss/ui';
+import { styled, Stack, Button, Chip, EditOutlined } from '@semoss/ui';
 import { Link } from 'react-router-dom';
 import { observer } from 'mobx-react-lite';
 
@@ -120,13 +112,10 @@ export const DatabaseIndexPage = observer(() => {
                 </StyledEditorHolder>
             )}
             {dbMetaData.markdown && (
-                <>
-                    <>
-                        <Typography variant="h5">About</Typography>
-                        <Markdown content={dbMetaData.markdown} />
-                        <Divider />
-                    </>
-                </>
+                <Section>
+                    <Section.Header>About</Section.Header>
+                    <Markdown content={dbMetaData.markdown} />
+                </Section>
             )}
             {dbMetaData.tags && (
                 <Section>

@@ -48,6 +48,10 @@ export interface MenuItemProps {
      * @default false
      */
     selected?: boolean;
+
+    /** value of item */
+    value: string | number;
+
     /**
      * The system prop that allows defining system overrides as well as additional CSS styles.
      */

@@ -1,17 +1,11 @@
-import { ReactNode } from "react";
-import MuiRadioGroup from "@mui/material/RadioGroup";
-import MuiRadio from "@mui/material/Radio";
+import * as React from "react";
+import { RadioGroup as MuiRadioGroup } from "@mui/material";
 import { SxProps } from "@mui/system";
-import { RadioGroupProps as MuiRadioGroupProps } from "@mui/material";
+import { FormLabel } from "../../";
 
-export interface RadioProps {
+export interface RadioGroupProps {
     /** custom style object */
-    sx?: SxProps;
-}
-
-export interface RadioGroupProps extends MuiRadioGroupProps {
-    /** custom style object */
-    children?: ReactNode;
+    children?: React.ReactNode;
 
     // * You can pull out the new value by accessing `event.target.value` (string).
     // */
@@ -25,6 +19,10 @@ export interface RadioGroupProps extends MuiRadioGroupProps {
      * The default value. Use when the component is not controlled.
      */
     defaultValue?: any;
+
+    /** radio group label */
+    label?: string | number;
+
     sx?: SxProps;
     /**
      * Changes the orientation of the radio group.
@@ -32,13 +30,12 @@ export interface RadioGroupProps extends MuiRadioGroupProps {
     row?: boolean;
 }
 
-export const Radio = (props: RadioProps) => {
-    const { sx } = props;
-
-    return <MuiRadio sx={sx} {...props} />;
-};
-
 export const RadioGroup = (props: RadioGroupProps) => {
-    const { sx } = props;
-    return <MuiRadioGroup sx={sx} {...props} />;
+    const { sx, label } = props;
+    return (
+        <>
+            <FormLabel>{label}</FormLabel>
+            <MuiRadioGroup sx={sx} {...props} />
+        </>
+    );
 };

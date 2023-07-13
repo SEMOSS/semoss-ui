@@ -279,7 +279,6 @@ export const DatabaseSettingsPage = () => {
                 const newDatabases = [];
 
                 databases.forEach((database) => {
-                    // debugger
                     if (database.database_id === db.database_id) {
                         const newCopy = database;
                         newCopy.userVotes = !db.userVote

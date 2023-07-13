@@ -1529,7 +1529,6 @@ export class MonolithStore {
             throw Error(error);
         });
 
-        // debugger;
         // there was no response, that is an error
         if (!response) {
             throw Error('No Response to get Members');
