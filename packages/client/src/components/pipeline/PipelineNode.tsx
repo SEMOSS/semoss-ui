@@ -14,6 +14,8 @@ import {
 import { PipelineNodeData } from './pipeline.types';
 import { useWorkspace } from '@/hooks';
 
+import { PromptDesigner } from '@/components/common';
+
 const StyledNode = styled(Card)(() => ({
     width: '344px',
     overflow: 'visible',
@@ -85,7 +87,7 @@ export const PipelineNode = (props: PipelineNodeNodeProps) => {
      */
     const openOverlay = () => {
         workspace.openOverlay(() => {
-            return <div>{id}</div>;
+            return <PromptDesigner />;
         });
     };
 

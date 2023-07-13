@@ -76,23 +76,47 @@ const nodes: Node<PipelineNodeData>[] = [
             y: 125,
         },
     },
+
     {
         id: 'node--4',
         type: 'pipeline',
         data: {
             widget: 'agent',
             parameters: {
+                PROMPT: {
+                    type: 'string',
+                    value: '',
+                },
                 FRAME: {
                     type: 'frame',
                     value: '',
                 },
             },
-            input: ['FRAME'],
+            input: ['FRAME', 'PROMPT'],
             output: [],
         },
         position: {
-            x: 900,
-            y: 125,
+            x: 950,
+            y: 225,
+        },
+    },
+    {
+        id: 'node--5',
+        type: 'pipeline',
+        data: {
+            widget: 'prompt',
+            parameters: {
+                PROMPT: {
+                    type: 'string',
+                    value: '',
+                },
+            },
+            input: [],
+            output: ['PROMPT'],
+        },
+        position: {
+            x: 500,
+            y: 425,
         },
     },
 ];
@@ -121,6 +145,14 @@ const edges: Edge[] = [
         sourceHandle: 'FRAME',
         target: 'node--4',
         targetHandle: 'FRAME',
+    },
+    {
+        id: 'edge--5',
+        type: 'pipeline',
+        source: 'node--5',
+        sourceHandle: 'PROMPT',
+        target: 'node--4',
+        targetHandle: 'PROMPT',
     },
 ];
 

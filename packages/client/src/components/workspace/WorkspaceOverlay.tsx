@@ -16,12 +16,15 @@ export const WorkspaceOverlay = observer(() => {
 
     return (
         <Modal
+            maxWidth={'90vw'}
             open={overlay.open}
             onClose={() => {
                 workspace.closeOverlay();
             }}
         >
-            {overlay.content ? overlay.content({}) : null}
+            <Modal.Content>
+                {overlay.content ? overlay.content({}) : null}
+            </Modal.Content>
         </Modal>
     );
 });
