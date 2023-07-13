@@ -3,13 +3,15 @@ import {
     useDropzone,
     DropzoneOptions as MuiDropzoneOptions,
 } from "react-dropzone";
-import { Container } from "../Container/index";
-import { TextField } from "../TextField/index";
-import { Link } from "../Link/index";
-import { Typography } from "../Typography/index";
-import { Avatar } from "../Avatar/index";
-import { IconButton } from "../IconButton/index";
-import Icons from "../Icons/index";
+import { FileUploadOutlined } from "@mui/icons-material";
+import {
+    Avatar,
+    Container,
+    IconButton,
+    Link,
+    TextField,
+    Typography,
+} from "../../";
 
 export interface DropzoneAreaProps extends MuiDropzoneOptions {
     /** custom style object */
@@ -49,7 +51,7 @@ export function DropzoneArea(props: DropzoneAreaProps) {
                         InputProps={{
                             endAdornment: (
                                 <IconButton>
-                                    <Icons.FileUploadOutlined />
+                                    <FileUploadOutlined />
                                     <input
                                         ref={fileInput}
                                         style={{ display: "none" }}
@@ -68,9 +70,7 @@ export function DropzoneArea(props: DropzoneAreaProps) {
                         <Avatar
                             sx={{ bgcolor: "#E1F5FE", marginRight: "16px" }}
                         >
-                            <Icons.FileUploadOutlined
-                                sx={{ color: "#40a0ff" }}
-                            />
+                            <FileUploadOutlined sx={{ color: "#40a0ff" }} />
                         </Avatar>
                         <span>
                             {

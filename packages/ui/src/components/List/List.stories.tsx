@@ -1,8 +1,8 @@
-import type { Meta, StoryObj } from "@storybook/react";
-import { List } from "../List";
-import Icons from "../Icons";
-import { Box } from "../Box";
 import React from "react";
+import type { Meta, StoryObj } from "@storybook/react";
+import { StarOutlined, StartRounded, FilterRounded } from "@mui/icons-material";
+import { Box } from "../../";
+import { List } from "./";
 
 const meta: Meta<typeof List> = {
     title: "Components/List",
@@ -32,7 +32,7 @@ export const Default: Story = {
                         <List.ItemButton
                             onClick={() => window.alert("Clicked star button")}
                         >
-                            <Icons.StarOutlined />
+                            <StarOutlined />
                         </List.ItemButton>
                     }
                 >
@@ -47,7 +47,7 @@ export const Default: Story = {
                         <List.ItemButton
                             onClick={() => window.alert("Clicked start button")}
                         >
-                            <Icons.StartRounded />
+                            <StartRounded />
                         </List.ItemButton>
                     }
                 >
@@ -64,7 +64,7 @@ export const Default: Story = {
                                 window.alert("Clicked filter button")
                             }
                         >
-                            <Icons.FilterRounded />
+                            <FilterRounded />
                         </List.ItemButton>
                     }
                 >

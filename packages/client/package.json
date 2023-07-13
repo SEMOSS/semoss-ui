@@ -11,8 +11,12 @@
         "type-check": "tsc --pretty --noEmit"
     },
     "dependencies": {
+        "@emotion/react": "^11.11.1",
+        "@emotion/styled": "^11.11.0",
         "@mdi/js": "^6.9.96",
         "@mdi/react": "^1.6.1",
+        "@mui/icons-material": "^5.11.16",
+        "@mui/material": "^5.13.5",
         "@semoss/components": "^1.0.0-alpha.34",
         "@semoss/ui": "workspace:*",
         "axios": "^0.24.0",

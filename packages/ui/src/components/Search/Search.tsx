@@ -1,7 +1,6 @@
 import React, { useRef } from "react";
-import { TextField, TextFieldProps } from "../TextField";
-import Icons from "../Icons";
-import { Button } from "../Button";
+import { CloseOutlined, SearchOutlined } from "@mui/icons-material";
+import { Button, TextField, TextFieldProps } from "../../";
 
 export type SearchFieldProps = TextFieldProps & {
     /**
@@ -21,16 +20,14 @@ export const Search = (props: SearchFieldProps) => {
             variant={"outlined"}
             inputRef={textInput}
             InputProps={{
-                startAdornment: <Icons.SearchOutlined />,
+                startAdornment: <SearchOutlined />,
                 endAdornment: (
                     <>
                         {enableEndAdornment && (
                             <Button
                                 onClick={() => (textInput.current.value = "")}
                             >
-                                <Icons.CloseOutlined
-                                    sx={{ color: "#5c5c5c" }}
-                                />
+                                <CloseOutlined sx={{ color: "#5c5c5c" }} />
                             </Button>
                         )}
                     </>
