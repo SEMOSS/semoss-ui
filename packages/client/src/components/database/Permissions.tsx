@@ -42,6 +42,7 @@ import {
     AvatarGroup,
     Avatar,
     Modal,
+    RadioGroup,
 } from '@semoss/ui';
 
 import * as Icons from '@semoss/ui';
@@ -64,6 +65,7 @@ import {
     mdiEyeOff,
 } from '@mdi/js';
 import { Typography } from '@semoss/ui';
+import { Autocomplete } from '@semoss/ui';
 
 const StyledContent = MuiStyled('div')({
     display: 'flex',
@@ -1673,7 +1675,6 @@ export const Permissions = (props: PermissionsProps) => {
     membersCount > 9 && paginationOptions.membersPageCounts.push(10);
     membersCount > 19 && paginationOptions.membersPageCounts.push(20);
 
-    console.log('page count', paginationOptions.membersPageCounts);
     return (
         <StyledContent>
             {/* <StyledButtonGroup variant={'contained'}>
@@ -2947,17 +2948,34 @@ export const Permissions = (props: PermissionsProps) => {
 
 export default Permissions;
 
+const StyledModalContentText = MuiStyled(Modal.ContentText)({
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '.5rem',
+});
+interface NonCredentialedUsers {}
+
 const MembersTable = (props) => {
     const { name, type, adminMode, id, reactorPrefix, projectId } = props;
     const { monolithStore } = useRootStore();
+    const notification = useNotification();
 
+    /** Member Table State */
     const [membersCount, setMembersCount] = useState(0);
     const [filteredMembersCount, setFilteredMembersCount] = useState(0);
     const [membersPage, setMembersPage] = useState(1);
     const [limit, setLimit] = useState(5);
 
+    /** Delete Member */
+    const [deleteMemberModal, setDeleteMemberModal] = useState(false);
+    const [userToDelete, setUserToDelete] = useState();
+
+    /** Add Member State */
     const [addMembersModal, setAddMembersModal] = useState(false);
     const [nonCredentialedUsers, setNonCredentialedUsers] = useState([]);
+    const [selectedNonCredentialedUsers, setSelectedNonCredentialedUsers] =
+        useState([]);
+    const [addMemberRole, setAddMemberRole] = useState('');
 
     const didMount = useRef(false);
 
@@ -3037,6 +3055,40 @@ const MembersTable = (props) => {
         };
     }, [getMembers.status, getMembers.data, searchFilter, permissionFilter]);
 
+    /** MEMBER TABLE FUNCTIONS */
+    const updateSelectedUsers = (members, quickUpdate) => {
+        // Construct to send to API
+        const userArr = [];
+
+        members.forEach((mem, i) => {
+            userArr.push({
+                userid: mem.id,
+                permission: quickUpdate ? quickUpdate : 'OWNER',
+            });
+        });
+
+        monolithStore[mapMonolithFunction(type, 'UpdatePermissions')](
+            adminMode,
+            id,
+            userArr,
+            projectId,
+        )
+            .then((resp) => {
+                notification.add({
+                    color: 'success',
+                    content: 'Updated member permssions',
+                });
+            })
+            .catch((err) => {
+                notification.add({
+                    color: 'error',
+                    content: err,
+                });
+                getMembers.refresh();
+            });
+    };
+
+    /** ADD MEMBER FUNCTIONS */
     /**
      * @name getUsersNoCreds
      * @desc Gets all users without credentials
@@ -3058,7 +3110,77 @@ const MembersTable = (props) => {
             });
     };
 
-    // Counts for pagination
+    /**
+     * @name submitNonCredUsers
+     */
+    const submitNonCredUsers = () => {
+        const userRequests = [];
+        // construct for API
+        selectedNonCredentialedUsers.forEach((mem, i) => {
+            const requestTemplate = {
+                userid: mem.id,
+                permission: permissionMapper[addMemberRole],
+            };
+            userRequests.push(requestTemplate);
+        });
+
+        monolithStore[mapMonolithFunction(type, 'AddMember')](
+            adminMode,
+            id,
+            userRequests,
+            projectId,
+        ) // fix this with projectId
+            .then((resp) => {
+                getMembers.refresh();
+
+                setMembersCount(
+                    membersCount + selectedNonCredentialedUsers.length,
+                );
+                setAddMembersModal(false);
+                setSelectedNonCredentialedUsers([]);
+                setAddMemberRole('');
+
+                // setSelectedMembers([]);
+                // setSelectAllCheckboxState('members-table', []);
+
+                notification.add({
+                    color: 'success',
+                    content: 'Successfully added member permissions',
+                });
+            })
+            .catch((error) => {
+                setAddMembersModal(false);
+                setSelectedNonCredentialedUsers([]);
+                setAddMemberRole('');
+
+                notification.add({
+                    color: 'error',
+                    content: error,
+                });
+            });
+    };
+
+    /** HELPERS */
+    const Avatars = useMemo(() => {
+        if (!verifiedMembers.length) return [];
+        console.log(verifiedMembers);
+
+        let i = 0;
+        let avatarList = [];
+        while (i < 5 && i < verifiedMembers.length) {
+            avatarList.push(
+                <Avatar>
+                    {verifiedMembers[i].name.charAt(0).toUpperCase()}
+                </Avatar>,
+            );
+
+            i++;
+        }
+
+        return avatarList;
+    }, [filteredMembersCount, verifiedMembers.length]);
+
+    /** PAGINATION CONSTANT */
     const paginationOptions = {
         membersPageCounts: [5],
     };
@@ -3083,10 +3205,9 @@ const MembersTable = (props) => {
                                     max={4}
                                     total={filteredMembersCount}
                                 >
-                                    <Avatar>a</Avatar>
-                                    <Avatar>b</Avatar>
-                                    <Avatar>c</Avatar>
-                                    <Avatar>d</Avatar>
+                                    {Avatars.map((el) => {
+                                        return el;
+                                    })}
                                 </AvatarGroup>
                             </StyledAvatarGroupContainer>
                             <StyledTableTitleMemberCountContainer>
@@ -3130,36 +3251,61 @@ const MembersTable = (props) => {
                         <MuiTable.Head>
                             <MuiTable.Row>
                                 <MuiTable.Cell>Name</MuiTable.Cell>
-                                <MuiTable.Cell align="right">Age</MuiTable.Cell>
-                                <MuiTable.Cell align="right">
-                                    Location
-                                </MuiTable.Cell>
-                                <MuiTable.Cell align="right">
-                                    Email
-                                </MuiTable.Cell>
+                                <MuiTable.Cell>Permission</MuiTable.Cell>
+                                <MuiTable.Cell>Permission Date</MuiTable.Cell>
+                                <MuiTable.Cell>Action</MuiTable.Cell>
                             </MuiTable.Row>
                         </MuiTable.Head>
                         <MuiTable.Body>
                             {verifiedMembers.map((user, i) => (
-                                <MuiTable.Row
-                                    key={user.name + i}
-                                    sx={{
-                                        '&:last-child td, &:last-child th': {
-                                            border: 0,
-                                        },
-                                    }}
-                                >
+                                <MuiTable.Row key={user.name + i}>
                                     <MuiTable.Cell component="td" scope="row">
-                                        {user.id}
+                                        {user.id}: {user.name}
                                     </MuiTable.Cell>
-                                    <MuiTable.Cell align="right">
-                                        {user.name}
+                                    <MuiTable.Cell>
+                                        <RadioGroup
+                                            row
+                                            defaultValue={
+                                                permissionMapper[
+                                                    user.permission
+                                                ]
+                                            }
+                                            onChange={(e) => {
+                                                console.log(
+                                                    'Hit Update Permission fn and fix in state',
+                                                );
+                                                updateSelectedUsers(
+                                                    [user],
+                                                    permissionMapper[
+                                                        e.target.value
+                                                    ],
+                                                );
+                                            }}
+                                        >
+                                            <RadioGroup.Item
+                                                value="Author"
+                                                label="Author"
+                                            />
+                                            <RadioGroup.Item
+                                                value="Editor"
+                                                label="Editor"
+                                            />
+                                            <RadioGroup.Item
+                                                value="Read-Only"
+                                                label="Read-Only"
+                                            />
+                                        </RadioGroup>
                                     </MuiTable.Cell>
-                                    <MuiTable.Cell align="right">
-                                        {user.name}
-                                    </MuiTable.Cell>
-                                    <MuiTable.Cell align="right">
-                                        <IconButton>
+                                    <MuiTable.Cell>{user.name}</MuiTable.Cell>
+                                    <MuiTable.Cell>
+                                        <IconButton
+                                            onClick={() => {
+                                                // set user
+                                                setUserToDelete(user);
+                                                // open modal
+                                                setDeleteMemberModal(true);
+                                            }}
+                                        >
                                             <Icons.Delete></Icons.Delete>
                                         </IconButton>
                                     </MuiTable.Cell>
@@ -3174,7 +3320,6 @@ const MembersTable = (props) => {
                                     }
                                     onPageChange={(e, v) => {
                                         setMembersPage(v + 1);
-                                        // setPage(v);
                                     }}
                                     page={membersPage - 1}
                                     rowsPerPage={5}
@@ -3185,10 +3330,85 @@ const MembersTable = (props) => {
                     </StyledMemberTable>
                 </StyledTableContainer>
             </StyledMemberInnerContent>
-            <Modal open={addMembersModal}>
-                <Modal.Title>Add members to {type}</Modal.Title>
+
+            <Modal open={deleteMemberModal} maxWidth="md">
+                <Modal.Title>
+                    <Typography variant="h6">Are you sure?</Typography>
+                </Modal.Title>
                 <Modal.Content>
-                    <Modal.ContentText>Huh</Modal.ContentText>
+                    <Modal.ContentText>
+                        {userToDelete && (
+                            <Typography variant="body1">
+                                This will remove <b>{userToDelete.name}</b> from
+                                the {type}
+                            </Typography>
+                        )}
+                    </Modal.ContentText>
+                </Modal.Content>
+                <Modal.Actions>
+                    <Button
+                        variant="text"
+                        onClick={() => setDeleteMemberModal(false)}
+                    >
+                        Close
+                    </Button>
+                    <Button
+                        variant="text"
+                        onClick={() => {
+                            if (!userToDelete) {
+                                console.error('No user to delete');
+                            }
+                            // deleteSelectedMembers([userToDelete]);
+                        }}
+                    >
+                        Confirm
+                    </Button>
+                </Modal.Actions>
+            </Modal>
+
+            <Modal open={addMembersModal} maxWidth="md">
+                <Modal.Title>Add members to {type}</Modal.Title>
+                <Modal.Content sx={{ width: '50rem' }}>
+                    <StyledModalContentText>
+                        <Autocomplete
+                            multiple={true}
+                            options={nonCredentialedUsers}
+                            value={selectedNonCredentialedUsers}
+                            getOptionLabel={(option: any) => {
+                                return `${option.name} - ${option.email}`;
+                            }}
+                            isOptionEqualToValue={(option, value) => {
+                                return option.name === value.name;
+                            }}
+                            onChange={(event, newValue: any) => {
+                                setSelectedNonCredentialedUsers([...newValue]);
+                            }}
+                        ></Autocomplete>
+
+                        <div>
+                            <RadioGroup
+                                label={
+                                    'Please select what role you would like members to have'
+                                }
+                                onChange={(e) => {
+                                    setAddMemberRole(e.target.value);
+                                }}
+                            >
+                                <RadioGroup.Item
+                                    value="Author"
+                                    label="Author"
+                                />
+                                <RadioGroup.Item
+                                    value="Editor"
+                                    label="Editor"
+                                />
+                                <RadioGroup.Item
+                                    value="Read-Only"
+                                    label="Read-Only"
+                                />
+                            </RadioGroup>
+                        </div>
+                    </StyledModalContentText>
                 </Modal.Content>
                 <Modal.Actions>
                     <Button
@@ -3196,6 +3416,18 @@ const MembersTable = (props) => {
                         onClick={() => setAddMembersModal(false)}
                     >
                         Close
+                    </Button>
+                    <Button
+                        variant={'contained'}
+                        disabled={
+                            !addMemberRole ||
+                            selectedNonCredentialedUsers.length < 1
+                        }
+                        onClick={() => {
+                            submitNonCredUsers();
+                        }}
+                    >
+                        Submit
                     </Button>
                 </Modal.Actions>
             </Modal>
