@@ -16,6 +16,7 @@ export interface ToggleButtonGroupProps<V> {
      * The content of the component.
      */
     children?: React.ReactNode;
+
     /**
      * The color of the button when it is selected.
      * It supports both default and custom theme colors, which can be added as shown in the
@@ -36,11 +37,13 @@ export interface ToggleButtonGroupProps<V> {
      * @default false
      */
     exclusive?: boolean;
+
     /**
      * If `true`, the component is disabled. This implies that all ToggleButton children will be disabled.
      * @default false
      */
     disabled?: boolean;
+
     /**
      * If `true`, the button group will take up the full width of its container.
      * @default false
@@ -52,6 +55,7 @@ export interface ToggleButtonGroupProps<V> {
      * @default 'horizontal'
      */
     orientation?: "horizontal" | "vertical";
+
     /**
      * The size of the component.
      * @default 'medium'

@@ -64,11 +64,7 @@ export interface SwitchProps {
      * The value of the component. The DOM API casts this to a string.
      * The browser uses "on" as the default value.
      */
-<<<<<<< HEAD
     value?: boolean;
-=======
-    value?: any;
->>>>>>> ddfe6a8 (corrected types)
     sx?: SxProps;
 }
 

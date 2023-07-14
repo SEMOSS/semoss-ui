@@ -71,7 +71,7 @@ export interface SnackbarProps extends MuiSnackbarProps {
     /**
      * Replace the `SnackbarContent` component.
      */
-    children: React.ReactElement<any, any>;
+    children: React.ReactElement;
     /**
      * The anchor of the `Snackbar`.
      * On smaller screens, the component grows to occupy all the available width,
