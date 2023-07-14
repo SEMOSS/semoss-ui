@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import type { Meta, StoryObj } from "@storybook/react";
-import { Select, Stack, Box } from "../../";
+import { Select, Stack, Box, Checkbox } from "../../";
 
 const meta: Meta<typeof Select> = {
     title: "Components/Select",
@@ -74,6 +74,47 @@ const SelectComponent = (args) => {
             <Box>Value: {selected}</Box>
         </Stack>
     );
+};
+
+const SelectMultipleComponent = () => {
+    const [formState, setFormState] = React.useState({
+        userRoles: [],
+    });
+
+    const handleFieldChange = (event) => {
+        console.log(event);
+        setFormState((formState) => ({
+            ...formState,
+            [event.target.name]: event.target.value,
+        }));
+    };
+
+    console.log(formState);
+    return (
+        <Stack spacing={2}>
+            <Select
+                sx={{ width: "100%" }}
+                name="userRoles"
+                id="userRoles"
+                variant="outlined"
+                label="userRoles"
+                SelectProps={{
+                    multiple: true,
+                    value: formState.userRoles,
+                    onChange: handleFieldChange,
+                }}
+            >
+                <Select.Item value="admin">Admin</Select.Item>
+                <Select.Item value="user1">User1</Select.Item>
+                <Select.Item value="user2">User2</Select.Item>
+            </Select>
+            <Box>Value: {formState.userRoles.map((val) => `${val} `)}</Box>
+        </Stack>
+    );
+};
+
+export const Multiple: Story = {
+    render: () => <SelectMultipleComponent />,
 };
 
 export const Default: Story = {

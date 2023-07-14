@@ -1,4 +1,4 @@
-import { TextField } from "@mui/material";
+import { TextField, SelectProps as MuiSelectProps } from "@mui/material";
 import { SxProps } from "@mui/system";
 
 export interface SelectProps {
@@ -90,6 +90,16 @@ export interface SelectProps {
      * @default false
      */
     required?: boolean;
+
+    /**
+     * If `true`, the label is displayed as required and the `input` element is required.
+     * @default false
+     */
+    SelectProps?: {
+        multiple: boolean;
+        value: string[];
+        onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+    };
 
     /**
      * The size of the component.
