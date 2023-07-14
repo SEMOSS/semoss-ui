@@ -11,6 +11,7 @@ export default {
 const Template = (args) => {
     return (
         <TextField
+            {...args}
             InputProps={{
                 startAdornment: (
                     <InputAdornment position="start">

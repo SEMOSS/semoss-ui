@@ -1,21 +1,22 @@
-import { ReactNode } from "react";
 import {
     ToggleButtonGroup as MuiToggleButtonGroup,
     SxProps,
 } from "@mui/material";
 
-export interface ToggleButtonGroupProps {
+export interface ToggleButtonGroupProps<V> {
     /**
      * The currently selected value within the group or an array of selected
      * values when `exclusive` is false.
      *
      * The value must have reference equality with the option in order to be selected.
      */
-    value?: any;
+    value?: V;
+
     /**
      * The content of the component.
      */
     children?: React.ReactNode;
+
     /**
      * The color of the button when it is selected.
      * It supports both default and custom theme colors, which can be added as shown in the
@@ -36,11 +37,13 @@ export interface ToggleButtonGroupProps {
      * @default false
      */
     exclusive?: boolean;
+
     /**
      * If `true`, the component is disabled. This implies that all ToggleButton children will be disabled.
      * @default false
      */
     disabled?: boolean;
+
     /**
      * If `true`, the button group will take up the full width of its container.
      * @default false
@@ -52,6 +55,7 @@ export interface ToggleButtonGroupProps {
      * @default 'horizontal'
      */
     orientation?: "horizontal" | "vertical";
+
     /**
      * The size of the component.
      * @default 'medium'
@@ -62,7 +66,9 @@ export interface ToggleButtonGroupProps {
     sx?: SxProps;
 }
 
-export const ToggleButtonGroup = (props: ToggleButtonGroupProps) => {
+export const ToggleButtonGroup = (
+    props: ToggleButtonGroupProps<boolean | string | number>,
+) => {
     return (
         <MuiToggleButtonGroup {...props}>{props.children}</MuiToggleButtonGroup>
     );

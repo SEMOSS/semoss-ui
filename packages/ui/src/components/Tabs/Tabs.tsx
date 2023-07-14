@@ -1,9 +1,7 @@
-import MuiTabs from "@mui/material/Tabs";
+import { Tabs as MuiTabs } from "@mui/material";
 import { SxProps } from "@mui/system";
 
-import { TabsProps as MuiProps } from "@mui/material";
-
-export interface TabsProps {
+export interface TabsProps<V> {
     /**
      * The label for the Tabs as a string.
      */
@@ -30,15 +28,15 @@ export interface TabsProps {
     /**
      * Callback fired when the value changes.
      */
-    onChange?: (event: React.SyntheticEvent, value: any) => void;
+    onChange?: (event: React.SyntheticEvent, value: V) => void;
     /**
      * The value of the currently selected `Tab`.
      * If you don't want any selected `Tab`, you can set this prop to `false`.
      */
-    value?: any;
+    value?: V;
 }
 
-export const Tabs = (props: TabsProps) => {
+export const Tabs = (props: TabsProps<string | number>) => {
     const { sx } = props;
     return <MuiTabs sx={sx} {...props} />;
 };

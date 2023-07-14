@@ -65,7 +65,7 @@ export interface SelectProps {
     /**
      * Pass a ref to the `input` element.
      */
-    inputRef?: React.Ref<any>;
+    inputRef?: React.Ref<HTMLInputElement>;
 
     /**
      * The label content.
@@ -78,7 +78,7 @@ export interface SelectProps {
     name?: string;
 
     /** funciton fired as input changes */
-    onChange?: (val: any) => void;
+    onChange?: (e: React.ChangeEvent<HTMLInputElement>) => void;
 
     /**
      * The short hint displayed in the `input` before the user enters a value.
