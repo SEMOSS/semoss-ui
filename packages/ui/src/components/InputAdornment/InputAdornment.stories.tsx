@@ -1,8 +1,7 @@
 import React from "react";
-import { InputAdornment } from "./InputAdornment";
-import { Icon } from "../Icon";
-import MoreVertIcon from "@mui/icons-material/MoreVert";
-import { TextField } from "../TextField";
+import { MoreVert } from "@mui/icons-material";
+import { TextField } from "../../";
+import { InputAdornment } from "./";
 
 export default {
     title: "Components/InputAdornment",
@@ -15,7 +14,7 @@ const Template = (args) => {
             InputProps={{
                 startAdornment: (
                     <InputAdornment position="start">
-                        <MoreVertIcon />
+                        <MoreVert />
                     </InputAdornment>
                 ),
             }}

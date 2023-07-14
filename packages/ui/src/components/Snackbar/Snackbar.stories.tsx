@@ -1,9 +1,8 @@
 import React, { useState } from "react";
 import type { Meta, StoryObj } from "@storybook/react";
-import { Snackbar } from "../Snackbar/index";
-import { Button } from "../Button/index";
-import { IconButton } from "../IconButton/index";
-import CloseIcon from "@mui/icons-material/Close";
+import { Close } from "@mui/icons-material";
+import { Button, IconButton } from "../../";
+import { Snackbar } from "./";
 
 const meta: Meta<typeof Snackbar> = {
     title: "Components/Snackbar",
@@ -44,7 +43,7 @@ function SimpleSnackbar(args) {
                 color="inherit"
                 onClick={(e) => handleClose(e, "none")}
             >
-                <CloseIcon fontSize="small" />
+                <Close fontSize="small" />
             </IconButton>
         </>
     );

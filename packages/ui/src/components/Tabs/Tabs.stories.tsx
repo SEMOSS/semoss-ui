@@ -1,8 +1,8 @@
 import React, { useState, SyntheticEvent } from "react";
 import type { Meta, StoryObj } from "@storybook/react";
-import { Tabs } from "../Tabs/index";
-import { Box } from "../Box/index";
-import { Tab } from "../Tabs/index";
+import { Tabs } from "./";
+import { Box } from "../../";
+// import { Tab } from "../Tabs/index";
 
 const meta: Meta<typeof Tabs> = {
     title: "Components/Tabs",
@@ -64,9 +64,9 @@ function BasicTabs(args) {
                     textColor="secondary"
                     indicatorColor="secondary"
                 >
-                    <Tab label="Item One" {...a11yProps(0)} />
-                    <Tab label="Item Two" {...a11yProps(1)} />
-                    <Tab label="Item Three" {...a11yProps(2)} />
+                    <Tabs.Item label="Item One" {...a11yProps(0)} />
+                    <Tabs.Item label="Item Two" {...a11yProps(1)} />
+                    <Tabs.Item label="Item Three" {...a11yProps(2)} />
                 </Tabs>
             </Box>
             <TabPanel value={value} index={0}>

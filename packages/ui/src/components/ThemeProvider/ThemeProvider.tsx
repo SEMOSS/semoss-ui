@@ -3,12 +3,16 @@ import {
     createTheme,
     ThemeOptions,
     ThemeProvider as MuiThemeProvider,
+    CssBaseline,
 } from "@mui/material";
 import deepmerge from "deepmerge";
 
 import { lightTheme } from "../../theme";
 
 export interface ThemeProviderProps {
+    /** Apply the css reset */
+    reset?: boolean;
+
     /** Theme to pass into the provider */
     theme?: ThemeOptions;
 
@@ -17,12 +21,17 @@ export interface ThemeProviderProps {
 }
 
 export const ThemeProvider = (props: ThemeProviderProps) => {
-    const { children, theme = {} } = props;
+    const { reset = true, children, theme = {} } = props;
 
     // if the override any options and merge it with the default theme
     const t = useMemo(() => {
         return createTheme(deepmerge(lightTheme, theme));
     }, [theme]);
 
-    return <MuiThemeProvider theme={t}> {children} </MuiThemeProvider>;
+    return (
+        <MuiThemeProvider theme={t}>
+            {reset && <CssBaseline />}
+            {children}
+        </MuiThemeProvider>
+    );
 };

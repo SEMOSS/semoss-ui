@@ -15,10 +15,16 @@ export interface RadioGroupProps {
      * If you don't provide this prop, it falls back to a randomly generated name.
      */
     name?: string;
+
     /**
      * The default value. Use when the component is not controlled.
      */
     defaultValue?: any;
+
+    /**
+     * Value of the selected radio button. The DOM API casts this to a string.
+     */
+    value?: string;
 
     /** radio group label */
     label?: string | number;

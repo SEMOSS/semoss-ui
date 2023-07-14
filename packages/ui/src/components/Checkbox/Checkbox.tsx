@@ -64,7 +64,7 @@ export interface FormCheckboxProps {
     /**
      * A text or an element to be used in an enclosing label element.
      */
-    label: React.ReactNode;
+    label?: React.ReactNode;
 
     /**
      * The position of the label.

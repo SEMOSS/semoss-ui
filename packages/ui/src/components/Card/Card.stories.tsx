@@ -1,14 +1,7 @@
 import type { Meta, StoryObj } from "@storybook/react";
-import IconButton from "@mui/material/IconButton";
-import MoreVertIcon from "@mui/icons-material/MoreVert";
-import PersonIcon from "@mui/icons-material/Person";
-import AccessTimeIcon from "@mui/icons-material/AccessTime";
-import StarBorderIcon from "@mui/icons-material/StarBorder";
-import Icon from "@mui/material/Icon";
-
-import { Avatar } from "../Avatar/index";
-import { Card } from "./index";
-import { Chip } from "../Chip/index";
+import { MoreVert, Person, AccessTime, StarBorder } from "@mui/icons-material";
+import { IconButton, Icon, Chip, Avatar } from "../../";
+import { Card } from "./";
 import img from "./placeholder.png";
 
 const meta: Meta<typeof Card> = {
@@ -44,7 +37,7 @@ export const Primary: Story = {
                                 sx={{ width: "24px", height: "24px" }}
                             >
                                 <Icon>
-                                    <PersonIcon />
+                                    <Person />
                                 </Icon>
                             </Avatar>
                             <span
@@ -61,7 +54,7 @@ export const Primary: Story = {
                 }
                 action={
                     <IconButton aria-label="settings">
-                        <StarBorderIcon />
+                        <StarBorder />
                     </IconButton>
                 }
             />
@@ -86,7 +79,7 @@ export const Primary: Story = {
                 >
                     <div>
                         <IconButton aria-label="action">
-                            <AccessTimeIcon />
+                            <AccessTime />
                         </IconButton>
                         <span
                             style={{
@@ -100,7 +93,7 @@ export const Primary: Story = {
                     </div>
                     <div>
                         <IconButton>
-                            <MoreVertIcon />
+                            <MoreVert />
                         </IconButton>
                     </div>
                 </div>

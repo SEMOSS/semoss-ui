@@ -10,7 +10,18 @@ import {
     styled,
 } from '@semoss/ui';
 
-import * as Icons from '@semoss/ui';
+import {
+    Person,
+    Visibility,
+    ShowChart,
+    FolderOpen,
+    Star,
+    StarOutlineOutlined,
+    ArrowDropDown,
+    ArrowDropUp,
+    LockOpenRounded,
+    LockRounded,
+} from '@mui/icons-material';
 
 const StyledLandscapeCard = styled(Card)({
     display: 'flex',
@@ -115,7 +126,7 @@ const StyledAvatar = styled(Avatar)({
     gap: '10px',
 });
 
-const StyledPersonIcon = styled(Icons.Person)({
+const StyledPersonIcon = styled(Person)({
     display: 'flex',
     alignItems: 'flex-start',
 });
@@ -149,14 +160,18 @@ const StyledViewsTrendingDiv = styled('div')({
     gap: '4px',
 });
 
-const StyledEyeIcon = styled(Icons.Visibility)({
+const StyledEyeIcon = styled(Visibility)({
     display: 'flex',
     alignItems: 'flex-start',
+    // Needs to reference theme grey
+    color: 'rgba(0, 0, 0, 0.54)',
 });
 
-const StyledTrendingIcon = styled(Icons.ShowChart)({
+const StyledTrendingIcon = styled(ShowChart)({
     display: 'flex',
     alignItems: 'flex-start',
+    // Needs to reference theme grey
+    color: 'rgba(0, 0, 0, 0.54)',
 });
 
 const StyledLockButton = styled(IconButton)({
@@ -238,7 +253,7 @@ const StyledCardCategory = styled('div')({
     alignSelf: 'stretch',
 });
 
-const StyledCategoryIcon = styled(Icons.FolderOpen)({
+const StyledCategoryIcon = styled(FolderOpen)({
     display: 'flex',
     alignItems: 'flex-start',
 });
@@ -356,11 +371,7 @@ export const DatabaseLandscapeCard = (props: DatabaseCardProps) => {
                                 favorite(isFavorite);
                             }}
                         >
-                            {isFavorite ? (
-                                <Icons.Star />
-                            ) : (
-                                <Icons.StarOutlineOutlined />
-                            )}{' '}
+                            {isFavorite ? <Star /> : <StarOutlineOutlined />}{' '}
                         </IconButton>
                     </StyledLandscapeCardTitleDiv>
 
@@ -424,22 +435,18 @@ export const DatabaseLandscapeCard = (props: DatabaseCardProps) => {
                                 upvote(isUpvoted);
                             }}
                         >
-                            {isUpvoted ? (
-                                <Icons.ArrowDropDown />
-                            ) : (
-                                <Icons.ArrowDropUp />
-                            )}
+                            {isUpvoted ? <ArrowDropDown /> : <ArrowDropUp />}
                         </Button>
                         <Button disabled={true}>{votes}</Button>
                     </ButtonGroup>
                     <StyledViewsTrendingDiv>
-                        <StyledEyeIcon color="secondary" />
+                        <StyledEyeIcon />
                         <Typography color="secondary" variant="caption">
                             {views}
                         </Typography>
                     </StyledViewsTrendingDiv>
                     <StyledViewsTrendingDiv>
-                        <StyledTrendingIcon color="secondary" />
+                        <StyledTrendingIcon />
                         <Typography color="secondary" variant="caption">
                             {trending}
                         </Typography>
@@ -458,11 +465,7 @@ export const DatabaseLandscapeCard = (props: DatabaseCardProps) => {
                         global(isGlobal);
                     }}
                 >
-                    {isGlobal ? (
-                        <Icons.LockOpenRounded />
-                    ) : (
-                        <Icons.LockRounded />
-                    )}
+                    {isGlobal ? <LockOpenRounded /> : <LockRounded />}
                 </StyledLockButton>
             </StyledTileCardActions>
         </StyledLandscapeCard>
@@ -489,8 +492,6 @@ export const DatabaseTileCard = (props: DatabaseCardProps) => {
         global,
     } = props;
 
-    console.log(isGlobal);
-
     return (
         <StyledTileCard onClick={() => onClick(id)}>
             {/* Use Card.Media instead, uses img tag */}
@@ -515,9 +516,9 @@ export const DatabaseTileCard = (props: DatabaseCardProps) => {
                                     }}
                                 >
                                     {isFavorite ? (
-                                        <Icons.Star />
+                                        <Star />
                                     ) : (
-                                        <Icons.StarOutlineOutlined />
+                                        <StarOutlineOutlined />
                                     )}
                                 </IconButton>
                             </StyledCardHeader>
@@ -589,22 +590,18 @@ export const DatabaseTileCard = (props: DatabaseCardProps) => {
                                 upvote(isUpvoted);
                             }}
                         >
-                            {isUpvoted ? (
-                                <Icons.ArrowDropDown />
-                            ) : (
-                                <Icons.ArrowDropUp />
-                            )}
+                            {isUpvoted ? <ArrowDropDown /> : <ArrowDropUp />}
                         </Button>
                         <Button disabled={true}>{votes}</Button>
                     </ButtonGroup>
                     <StyledViewsTrendingDiv>
-                        <StyledEyeIcon color="secondary" />
+                        <StyledEyeIcon />
                         <Typography color="secondary" variant="caption">
                             {views}
                         </Typography>
                     </StyledViewsTrendingDiv>
                     <StyledViewsTrendingDiv>
-                        <StyledTrendingIcon color="secondary" />
+                        <StyledTrendingIcon />
                         <Typography color="secondary" variant="caption">
                             {trending}
                         </Typography>
@@ -621,11 +618,7 @@ export const DatabaseTileCard = (props: DatabaseCardProps) => {
                         global(isGlobal);
                     }}
                 >
-                    {isGlobal ? (
-                        <Icons.LockOpenRounded />
-                    ) : (
-                        <Icons.LockRounded />
-                    )}
+                    {isGlobal ? <LockOpenRounded /> : <LockRounded />}
                 </StyledLockButton>
             </StyledTileCardActions>
         </StyledTileCard>

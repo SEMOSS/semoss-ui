@@ -12,6 +12,7 @@ import {
     Card,
     Chip,
     Grid,
+    Search,
     Searchbar,
     Select,
     MenuItem,
@@ -20,11 +21,13 @@ import {
     ToggleButton,
     ToggleButtonGroup,
     Typography,
-    // Icons,
     styled,
 } from '@semoss/ui';
 
-import * as Icons from '@semoss/ui';
+import {
+    SpaceDashboardOutlined,
+    FormatListBulletedOutlined,
+} from '@mui/icons-material';
 import defaultDBImage from '../../assets/img/placeholder.png';
 
 import { DatabaseLandscapeCard, DatabaseTileCard } from '@/components/database';
@@ -54,7 +57,7 @@ const StyledSearchbarContainer = styled('div')({
     gap: '24px',
 });
 
-const StyledSearchbar = styled(Searchbar)({
+const StyledSearchbar = styled(Search)({
     width: '80%',
 });
 
@@ -163,7 +166,7 @@ export const DatabaseSettingsPage = () => {
     >(`
         MyDatabases(metaKeys = ${JSON.stringify(
             metaKeys,
-        )}, filterWord=["${search}"]);
+        )}, filterWord=["${search}"], userT=[true]);
     `);
 
     /**
@@ -179,11 +182,11 @@ export const DatabaseSettingsPage = () => {
         getDatabases.data.forEach((db, i) => {
             mutateListWithVotes.push({
                 ...db,
-                userVotes: i + 1,
+                upvotes: db.upvotes ? db.upvotes : 0,
                 hasVoted: false,
-                views: i + 200,
-                trending: i + 100,
-                owner: 'jbaxter6',
+                views: 'N/A',
+                trending: 'N/A',
+                owner: 'N/A',
             });
         });
 
@@ -265,7 +268,7 @@ export const DatabaseSettingsPage = () => {
     const upvoteDb = (db) => {
         let pixelString = '';
 
-        if (!db.userVote) {
+        if (!db.hasVoted) {
             pixelString += `VoteDatabase(database="${db.database_id}", vote=1)`;
         } else {
             pixelString += `UnvoteDatabase(database="${db.database_id}")`;
@@ -281,10 +284,10 @@ export const DatabaseSettingsPage = () => {
                 databases.forEach((database) => {
                     if (database.database_id === db.database_id) {
                         const newCopy = database;
-                        newCopy.userVotes = !db.userVote
-                            ? newCopy.userVotes + 1
-                            : newCopy.userVotes - 1;
-                        newCopy.userVote = !db.userVote ? true : false;
+                        newCopy.upvotes = !db.hasVoted
+                            ? newCopy.upvotes + 1
+                            : newCopy.upvotes - 1;
+                        newCopy.hasVoted = !db.hasVoted ? true : false;
 
                         newDatabases.push(newCopy);
                     } else {
@@ -352,6 +355,7 @@ export const DatabaseSettingsPage = () => {
                             }}
                             label="Database"
                             size="small"
+                            enableEndAdornment={true}
                             ref={searchbarRef}
                         />
                         <StyledSort
@@ -373,13 +377,13 @@ export const DatabaseSettingsPage = () => {
                                 onClick={(e, v) => setView(v)}
                                 value={'tile'}
                             >
-                                <Icons.SpaceDashboardOutlined />
+                                <SpaceDashboardOutlined />
                             </ToggleButton>
                             <ToggleButton
                                 onClick={(e, v) => setView(v)}
                                 value={'list'}
                             >
-                                <Icons.FormatListBulletedOutlined />
+                                <FormatListBulletedOutlined />
                             </ToggleButton>
                         </ToggleButtonGroup>
                     </StyledSearchbarContainer>
@@ -405,11 +409,11 @@ export const DatabaseSettingsPage = () => {
                                                   tag={db.tag}
                                                   owner={db.owner}
                                                   description={db.description}
-                                                  votes={db.userVotes}
-                                                  views={'1.2k'}
-                                                  trending={'1.2k'}
+                                                  votes={db.upvotes}
+                                                  views={db.views}
+                                                  trending={db.trending}
                                                   isGlobal={db.database_global}
-                                                  isUpvoted={db.userVote}
+                                                  isUpvoted={db.hasVoted}
                                                   isFavorite={isFavorited(
                                                       db.database_id,
                                                   )}
@@ -436,14 +440,14 @@ export const DatabaseSettingsPage = () => {
                                                   tag={db.tag}
                                                   owner={db.owner}
                                                   description={db.description}
-                                                  votes={db.userVotes}
-                                                  views={'1.2k'}
-                                                  trending={'1.2k'}
+                                                  votes={db.upvotes}
+                                                  views={db.views}
+                                                  trending={db.trending}
                                                   isGlobal={db.database_global}
                                                   isFavorite={isFavorited(
                                                       db.database_id,
                                                   )}
-                                                  isUpvoted={db.userVote}
+                                                  isUpvoted={db.hasVoted}
                                                   favorite={(val) => {
                                                       favoriteDb(db);
                                                   }}
