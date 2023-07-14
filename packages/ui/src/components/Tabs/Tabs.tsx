@@ -28,7 +28,7 @@ export interface TabsProps<V> {
     /**
      * Callback fired when the value changes.
      */
-    onChange?: (event: React.SyntheticEvent, value: any) => void;
+    onChange?: (event: React.SyntheticEvent, value: V) => void;
     /**
      * The value of the currently selected `Tab`.
      * If you don't want any selected `Tab`, you can set this prop to `false`.

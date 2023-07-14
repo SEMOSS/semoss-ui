@@ -8,11 +8,13 @@ export interface TabProps {
      * @default false
      */
     disabled?: boolean;
+
     /**
      * The position of the icon relative to the label.
      * @default 'top'
      */
     iconPosition?: "top" | "bottom" | "start" | "end";
+
     /**
      * The label element.
      */
