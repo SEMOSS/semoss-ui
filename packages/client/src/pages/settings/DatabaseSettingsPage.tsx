@@ -1,23 +1,14 @@
 import { useEffect, useState, useRef, useReducer } from 'react';
-import { useRootStore, useAPI, usePixel } from '@/hooks';
+import { useRootStore, usePixel } from '@/hooks';
 import { useSettings } from '@/hooks/useSettings';
 import { LoadingScreen } from '@/components/ui';
 import { MonolithStore } from '@/stores/monolith';
 
 import {
-    Avatar,
-    Autocomplete,
-    ButtonGroup,
-    Button,
-    Card,
-    Chip,
     Grid,
     Search,
-    Searchbar,
     Select,
     MenuItem,
-    Icon,
-    IconButton,
     ToggleButton,
     ToggleButtonGroup,
     Typography,
@@ -28,12 +19,14 @@ import {
     SpaceDashboardOutlined,
     FormatListBulletedOutlined,
 } from '@mui/icons-material';
+
+import {
+    DatabaseLandscapeCard,
+    DatabaseTileCard,
+    Permissions,
+} from '@/components/database';
+
 import defaultDBImage from '../../assets/img/placeholder.png';
-
-import { DatabaseLandscapeCard, DatabaseTileCard } from '@/components/database';
-
-import { Permissions } from '@/components/database';
-
 export interface DBMember {
     ID: string;
     NAME: string;
