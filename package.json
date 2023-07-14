@@ -13,6 +13,8 @@
     "author": "",
     "license": "GPL-2.0",
     "devDependencies": {
+        "@commitlint/cli": "^17.6.6",
+        "@commitlint/config-conventional": "^17.6.6",
         "cross-env": "^7.0.3",
         "husky": "^8.0.3",
         "lint-staged": "^13.2.2",
