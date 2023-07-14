@@ -1,4 +1,3 @@
-import { ReactNode } from "react";
 import MuiSlider from "@mui/material/Slider";
 import { SxProps } from "@mui/system";
 
