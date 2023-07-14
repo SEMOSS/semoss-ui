@@ -9,7 +9,7 @@ export interface RadioGroupProps {
 
     // * You can pull out the new value by accessing `event.target.value` (string).
     // */
-    onChange?: (event: any) => void;
+    onChange?: (event: React.ChangeEvent<HTMLInputElement>) => void;
     /**
      * The name used to reference the value of the control.
      * If you don't provide this prop, it falls back to a randomly generated name.
@@ -18,7 +18,7 @@ export interface RadioGroupProps {
     /**
      * The default value. Use when the component is not controlled.
      */
-    defaultValue?: any;
+    defaultValue?: string;
 
     /** radio group label */
     label?: string | number;

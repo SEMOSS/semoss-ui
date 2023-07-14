@@ -6,11 +6,12 @@ const meta: Meta<typeof Checkbox> = {
     title: "Components/Checkbox",
     component: Checkbox,
     args: {
-        defaultChecked: true,
         checked: false,
         disabled: false,
         label: "Checkbox Label",
-        size: "medium",
+        checkboxProps: {
+            size: "small",
+        },
     },
     argTypes: {
         label: {
@@ -19,8 +20,10 @@ const meta: Meta<typeof Checkbox> = {
         checked: {
             options: [true, false],
         },
-        size: {
-            options: ["medium", "small"],
+        checkboxProps: {
+            size: {
+                options: ["medium", "small"],
+            },
         },
     },
 };

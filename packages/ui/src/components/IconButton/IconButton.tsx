@@ -11,7 +11,7 @@ export interface IconButtonProps {
      * OnClick functionality
      * If defined, this is the function that will be called when the button is pressed
      */
-    onClick?: (e: any) => void;
+    onClick?: (e: React.MouseEvent<HTMLButtonElement>) => void;
 
     /**
      * The color of the component.

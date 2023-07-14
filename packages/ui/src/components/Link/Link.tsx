@@ -1,5 +1,6 @@
-import MuiLink from "@mui/material/Link";
+import { Link as MuiLink } from "@mui/material";
 import { SxProps } from "@mui/system";
+import React from "react";
 
 export interface LinkProps {
     /**
@@ -25,7 +26,7 @@ export interface LinkProps {
     /**
      * Callback fired when the link is clicked.
      */
-    onClick?: (event: any) => void;
+    onClick?: (event: React.MouseEvent<HTMLAnchorElement, MouseEvent>) => void;
 
     /**
      * The system prop that allows defining system overrides as well as additional CSS styles.
