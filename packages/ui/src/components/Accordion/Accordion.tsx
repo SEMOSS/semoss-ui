@@ -1,6 +1,6 @@
 import { Accordion as MuiAccordion } from "@mui/material/";
 import { SxProps } from "@mui/system";
-
+// testing commitlint here
 export type AccordionProps = {
     /**
      * The content of the component.
