@@ -52,7 +52,7 @@ export interface ChipProps {
      * Callback fired when the delete icon is clicked.
      * If set, the delete icon will be shown.
      */
-    onDelete?: React.EventHandler<any>;
+    onDelete?: (e: React.MouseEvent<HTMLButtonElement>) => void;
 
     /**
      * The size of the component.

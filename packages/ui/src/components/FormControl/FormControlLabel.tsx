@@ -10,7 +10,7 @@ export interface FormControlLabelProps {
     /**
      * A control element. For instance, it can be a `Radio`, a `Switch` or a `Checkbox`.
      */
-    control: React.ReactElement<any, any>;
+    control: React.ReactElement;
 
     /**
      * If `true`, the control is disabled.
@@ -25,7 +25,7 @@ export interface FormControlLabelProps {
     /**
      * Pass a ref to the `input` element.
      */
-    inputRef?: React.Ref<any>;
+    inputRef?: React.Ref<HTMLInputElement>;
 
     /**
      * A text or an element to be used in an enclosing label element.

@@ -1,4 +1,5 @@
 import MuiPhoneNumber from "mui-phone-number";
+import React from "react";
 
 export type PhoneNumberPickerProps = {
     //** abbrv to be passed in to select default country */
@@ -14,7 +15,7 @@ export type PhoneNumberPickerProps = {
     excludeCountries?: string[];
 
     //** function to fire when input changes */
-    onChange: (e: any) => void;
+    onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
 
     //** set the regions */
     regions?: [string] | string;

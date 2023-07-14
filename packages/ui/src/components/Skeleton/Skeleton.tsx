@@ -1,4 +1,3 @@
-import { ReactNode } from "react";
 import MuiSkeleton from "@mui/material/Skeleton";
 import { SxProps } from "@mui/system";
 

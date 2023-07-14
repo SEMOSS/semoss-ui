@@ -492,8 +492,6 @@ export const DatabaseTileCard = (props: DatabaseCardProps) => {
         global,
     } = props;
 
-    console.log(isGlobal);
-
     return (
         <StyledTileCard onClick={() => onClick(id)}>
             {/* Use Card.Media instead, uses img tag */}

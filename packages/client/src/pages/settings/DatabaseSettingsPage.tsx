@@ -1,23 +1,14 @@
 import { useEffect, useState, useRef, useReducer } from 'react';
-import { useRootStore, useAPI, usePixel } from '@/hooks';
+import { useRootStore, usePixel } from '@/hooks';
 import { useSettings } from '@/hooks/useSettings';
 import { LoadingScreen } from '@/components/ui';
 import { MonolithStore } from '@/stores/monolith';
 
 import {
-    Avatar,
-    Autocomplete,
-    ButtonGroup,
-    Button,
-    Card,
-    Chip,
     Grid,
     Search,
-    Searchbar,
     Select,
     MenuItem,
-    Icon,
-    IconButton,
     ToggleButton,
     ToggleButtonGroup,
     Typography,
@@ -28,12 +19,14 @@ import {
     SpaceDashboardOutlined,
     FormatListBulletedOutlined,
 } from '@mui/icons-material';
+
+import {
+    DatabaseLandscapeCard,
+    DatabaseTileCard,
+    Permissions,
+} from '@/components/database';
+
 import defaultDBImage from '../../assets/img/placeholder.png';
-
-import { DatabaseLandscapeCard, DatabaseTileCard } from '@/components/database';
-
-import { Permissions } from '@/components/database';
-
 export interface DBMember {
     ID: string;
     NAME: string;
@@ -137,8 +130,6 @@ export const DatabaseSettingsPage = () => {
             return;
         }
 
-        console.log(getFavoritedDatabases.data);
-
         dispatch({
             type: 'field',
             field: 'favoritedDbs',
@@ -168,7 +159,7 @@ export const DatabaseSettingsPage = () => {
     >(`
         MyDatabases(metaKeys = ${JSON.stringify(
             metaKeys,
-        )}, filterWord=["${search}"]);
+        )}, filterWord=["${search}"], userT=[true]);
     `);
 
     /**
@@ -184,11 +175,11 @@ export const DatabaseSettingsPage = () => {
         getDatabases.data.forEach((db, i) => {
             mutateListWithVotes.push({
                 ...db,
-                userVotes: i + 1,
-                userVote: false,
-                views: i + 200,
-                trending: i + 100,
-                owner: 'jbaxter6',
+                upvotes: db.upvotes ? db.upvotes : 0,
+                hasVoted: false,
+                views: 'N/A',
+                trending: 'N/A',
+                owner: 'N/A',
             });
         });
 
@@ -225,8 +216,6 @@ export const DatabaseSettingsPage = () => {
         monolithStore
             .setDatabaseFavorite(db.database_id, favorite)
             .then((response) => {
-                console.log(response);
-
                 if (!favorite) {
                     const newFavorites = favoritedDbs;
                     for (let i = newFavorites.length - 1; i >= 0; i--) {
@@ -235,16 +224,12 @@ export const DatabaseSettingsPage = () => {
                         }
                     }
 
-                    console.log(newFavorites);
-
                     dispatch({
                         type: 'field',
                         field: 'favoritedDbs',
                         value: newFavorites,
                     });
                 } else {
-                    console.log('add to list');
-
                     dispatch({
                         type: 'field',
                         field: 'favoritedDbs',
@@ -276,7 +261,7 @@ export const DatabaseSettingsPage = () => {
     const upvoteDb = (db) => {
         let pixelString = '';
 
-        if (!db.userVote) {
+        if (!db.hasVoted) {
             pixelString += `VoteDatabase(database="${db.database_id}", vote=1)`;
         } else {
             pixelString += `UnvoteDatabase(database="${db.database_id}")`;
@@ -292,10 +277,10 @@ export const DatabaseSettingsPage = () => {
                 databases.forEach((database) => {
                     if (database.database_id === db.database_id) {
                         const newCopy = database;
-                        newCopy.userVotes = !db.userVote
-                            ? newCopy.userVotes + 1
-                            : newCopy.userVotes - 1;
-                        newCopy.userVote = !db.userVote ? true : false;
+                        newCopy.upvotes = !db.hasVoted
+                            ? newCopy.upvotes + 1
+                            : newCopy.upvotes - 1;
+                        newCopy.hasVoted = !db.hasVoted ? true : false;
 
                         newDatabases.push(newCopy);
                     } else {
@@ -417,11 +402,11 @@ export const DatabaseSettingsPage = () => {
                                                   tag={db.tag}
                                                   owner={db.owner}
                                                   description={db.description}
-                                                  votes={db.userVotes}
-                                                  views={'1.2k'}
-                                                  trending={'1.2k'}
+                                                  votes={db.upvotes}
+                                                  views={db.views}
+                                                  trending={db.trending}
                                                   isGlobal={db.database_global}
-                                                  isUpvoted={db.userVote}
+                                                  isUpvoted={db.hasVoted}
                                                   isFavorite={isFavorited(
                                                       db.database_id,
                                                   )}
@@ -429,7 +414,7 @@ export const DatabaseSettingsPage = () => {
                                                       favoriteDb(db);
                                                   }}
                                                   onClick={(id) =>
-                                                      setSelectedApp(id)
+                                                      setSelectedApp(db)
                                                   }
                                                   upvote={(val) => {
                                                       upvoteDb(db);
@@ -448,19 +433,19 @@ export const DatabaseSettingsPage = () => {
                                                   tag={db.tag}
                                                   owner={db.owner}
                                                   description={db.description}
-                                                  votes={db.userVotes}
-                                                  views={'1.2k'}
-                                                  trending={'1.2k'}
+                                                  votes={db.upvotes}
+                                                  views={db.views}
+                                                  trending={db.trending}
                                                   isGlobal={db.database_global}
                                                   isFavorite={isFavorited(
                                                       db.database_id,
                                                   )}
-                                                  isUpvoted={db.userVote}
+                                                  isUpvoted={db.hasVoted}
                                                   favorite={(val) => {
                                                       favoriteDb(db);
                                                   }}
                                                   onClick={(id) =>
-                                                      setSelectedApp(id)
+                                                      setSelectedApp(db)
                                                   }
                                                   upvote={(val) => {
                                                       upvoteDb(db);

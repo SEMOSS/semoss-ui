@@ -1,12 +1,14 @@
-import React, { useEffect, useMemo, useState, useRef } from 'react';
+import React, {
+    useEffect,
+    useMemo,
+    useState,
+    useRef,
+    SyntheticEvent,
+} from 'react';
 import { Navigate, useResolvedPath, useNavigate } from 'react-router-dom';
 import { useForm, Controller, useFieldArray } from 'react-hook-form';
 
 import { useRootStore, useSettings, usePixel, useAPI } from '@/hooks';
-import { MonolithStore } from '@/stores/monolith';
-
-import avatar from '@/assets/img/Avatar.png';
-import avatar1 from '@/assets/img/Avatar1.png';
 
 import {
     Form,
@@ -19,7 +21,7 @@ import {
     Select,
     Switch,
     Popover,
-    Modal,
+    // Modal,
     styled,
     theme,
     useNotification,
@@ -29,30 +31,30 @@ import {
 import {
     ButtonGroup,
     Button,
+    Checkbox as MuiCheckbox,
     Table as MuiTable,
     styled as MuiStyled,
+    IconButton,
     ToggleTabsGroup,
-    Tabs,
-    Tab,
+    AvatarGroup,
+    Avatar,
+    Modal,
+    RadioGroup,
+    Typography,
+    Autocomplete,
 } from '@semoss/ui';
+
+import {
+    Check,
+    Close,
+    Delete,
+    FilterAltRounded,
+    SearchOutlined,
+} from '@mui/icons-material';
 
 import { LoadingScreen } from '@/components/ui';
 import { Card } from '@/components/ui';
 import { Field } from '@/components/form';
-
-import dayjs from 'dayjs';
-
-import {
-    mdiDelete,
-    mdiAccountFilter,
-    mdiFilterRemove,
-    mdiCheck,
-    mdiClose,
-    mdiLock,
-    mdiLockOpen,
-    mdiEye,
-    mdiEyeOff,
-} from '@mdi/js';
 
 const StyledContent = MuiStyled('div')({
     display: 'flex',
@@ -62,16 +64,10 @@ const StyledContent = MuiStyled('div')({
     alignItems: 'flex-start',
     gap: '16px',
     flexShrink: '0',
-    border: 'solid red',
+    // border: 'solid red',
 });
 
-const StyledButtonGroup = MuiStyled(ButtonGroup)(({ theme }) => ({
-    // display: "flex",
-    // padding: "3px 3px",
-    // alignItems: "center",
-    // width: "auto",
-    // background: theme.palette.grey['100']
-}));
+const StyledButtonGroup = MuiStyled(ButtonGroup)(({ theme }) => ({}));
 
 const StyledMemberContent = MuiStyled('div')({
     display: 'flex',
@@ -80,7 +76,6 @@ const StyledMemberContent = MuiStyled('div')({
     alignItems: 'flex-start',
     gap: '25px',
     flexShrink: '0',
-    border: 'solid blue',
 });
 
 const StyledMemberInnerContent = MuiStyled('div')({
@@ -91,11 +86,97 @@ const StyledMemberInnerContent = MuiStyled('div')({
     alignSelf: 'stretch',
 });
 
+const StyledTableContainer = MuiStyled(MuiTable.Container)({
+    borderRadius: '12px',
+    // background: #FFF;
+    /* Devias Drop Shadow */
+    boxShadow: '0px 5px 22px 0px rgba(0, 0, 0, 0.06)',
+});
+
 const StyledMemberTable = MuiStyled(MuiTable)({
+    // display: 'flex',
+    // flexDirection: 'column',
+    // alignItems: 'flex-start',
+    // width: '100%',
+});
+
+const StyledTableTitleContainer = MuiStyled('div')({
+    display: 'flex',
+    alignItems: 'center',
+    alignSelf: 'stretch',
+    boxShadow: '0px -1px 0px 0px rgba(0, 0, 0, 0.12) inset',
+});
+
+const StyledTableTitleDiv = MuiStyled('div')({
+    display: 'flex',
+    padding: '12px 24px 12px 16px',
+    alignItems: 'center',
+    gap: '10px',
+});
+
+const StyledTableTitleMemberContainer = MuiStyled('div')({
+    display: 'flex',
+    alignItems: 'flex-start',
+    flex: '1 0 0',
+});
+
+const StyledAvatarGroupContainer = MuiStyled('div')({
+    display: 'flex',
+    width: '130px',
+    height: '56px',
+    padding: '10px 16px',
+    flexDirection: 'column',
+    justifyContent: 'center',
+    alignItems: 'center',
+    gap: '10px',
+});
+
+const StyledTableTitleMemberCountContainer = MuiStyled('div')({
+    display: 'flex',
+    height: '56px',
+    padding: '6px 16px 6px 8px',
+    flexDirection: 'column',
+    justifyContent: 'center',
+    alignItems: 'center',
+    gap: '10px',
+});
+
+const StyledTableTitleMemberCount = MuiStyled('div')({
     display: 'flex',
     flexDirection: 'column',
     alignItems: 'flex-start',
-    width: '100%',
+});
+
+const StyledSearchButtonContainer = MuiStyled('div')({
+    display: 'flex',
+    padding: '5px 8px',
+    alignItems: 'center',
+    gap: '10px',
+});
+
+const StyledFilterButtonContainer = MuiStyled('div')({
+    display: 'flex',
+    padding: '5px 8px',
+    alignItems: 'center',
+    gap: '10px',
+});
+
+const StyledDeleteSelectedContainer = MuiStyled('div')({
+    display: 'flex',
+    padding: '10px 8px 10px 16px',
+    flexDirection: 'column',
+    justifyContent: 'center',
+    alignItems: 'center',
+    gap: '10px',
+});
+
+const StyledAddMemberContainer = MuiStyled('div')({
+    display: 'flex',
+    padding: '10px 24px 10px 8px',
+    flexDirection: 'column',
+    justifyContent: 'center',
+    alignItems: 'center',
+    gap: '10px',
 });
 
 // Old styles
@@ -130,7 +211,7 @@ const StyledCardContent = styled(Card.Content, {
     minHeight: '5rem',
 });
 
-const StyledTableContainer = styled('div', {
+const StyledTableCont = styled('div', {
     borderRadius: theme.radii.default,
     borderWidth: theme.borderWidths.default,
     borderColor: theme.colors['grey-4'],
@@ -163,10 +244,10 @@ const StyledTableFooterCenterDiv = styled('div', {
     fontSize: theme.fontSizes.xs,
 });
 
-const StyledModalFooter = styled(Modal.Footer, {
-    display: 'flex',
-    justifyContent: 'center',
-});
+// const StyledModalFooter = styled(Modal.Footer, {
+//     display: 'flex',
+//     justifyContent: 'center',
+// });
 
 const StyledHeader = styled('div', {
     display: 'flex',
@@ -593,18 +674,6 @@ export const Permissions = (props: PermissionsProps) => {
             : type === 'insight' &&
               `GetInsightUserAccessRequest(project='${projectid}', id='${id}');`;
 
-    // Pending Member Requests Pixel call
-    const pendingUserAccess = usePixel<
-        {
-            ENGINEID: string;
-            ID: string;
-            PERMISSION: number;
-            REQUEST_TIMESTAMP: string;
-            REQUEST_TYPE: string;
-            REQUEST_USERID: string;
-        }[]
-    >(adminMode ? getPendingUsersString : '');
-
     // -- State
 
     // delete db, proj, insight modal
@@ -718,111 +787,6 @@ export const Permissions = (props: PermissionsProps) => {
         return <Navigate to="/settings" replace />;
     }
 
-    console.log('page:', membersPage);
-
-    // getMembers for insights req's extra arg
-    const getMembers = useAPI([
-        getMembersString,
-        adminMode,
-        id,
-        searchFilter ? searchFilter : undefined,
-        permissionMapper[permissionFilter],
-        membersPage * limit - limit, // offset
-        limit,
-        projectid, // make optional --> handles insight
-    ]);
-
-    /**
-     * @name useEffect
-     * @desc - sets members in react hook form
-     */
-    useEffect(() => {
-        // REST call to get all credentialed members
-        if (getMembers.status !== 'SUCCESS' || !getMembers.data) {
-            return;
-        }
-
-        const members = [];
-
-        getMembers.data['members'].forEach((mem) => {
-            members.push(mem);
-        });
-
-        // set members in react hook form
-        setValue('MEMBERS', members);
-
-        if (!didMount.current) {
-            // set total members
-            setMembersCount(getMembers.data['totalMembers']);
-            didMount.current = true;
-        }
-
-        // Needed for total pages on pagination
-        setFilteredMembersCount(getMembers.data['totalMembers']);
-
-        return () => {
-            console.log('Cleaning members');
-            setValue('MEMBERS', []);
-            setSelectedMembers([]);
-            setSelectAllMembers(false);
-            setIndeterminate(false);
-        };
-    }, [getMembers.status, getMembers.data, searchFilter, permissionFilter]);
-
-    /**
-     * @name useEffect
-     * @desc - sets pending members in react hook form
-     */
-    useEffect(() => {
-        // pixel call to get pending members
-        if (pendingUserAccess.status !== 'SUCCESS' || !pendingUserAccess.data) {
-            return;
-        }
-
-        const newPendingMembers = [];
-
-        pendingUserAccess.data.forEach((mem) => {
-            newPendingMembers.push({
-                ...mem,
-                PERMISSION: permissionMapper[mem.PERMISSION], // comes in as 1,2,3 -> map to Author, Edit, Read-only
-            });
-        });
-
-        // set new members with the Pending Members in react hook form
-        setValue('PENDING_MEMBERS', newPendingMembers);
-
-        // notify user for pending members
-        if (newPendingMembers.length) {
-            let message =
-                newPendingMembers.length === 1
-                    ? `1 member has `
-                    : `${newPendingMembers.length} members have `;
-
-            message += `requested access to this ${type}`;
-
-            setTimeout(() => {
-                notification.add({
-                    color: 'success',
-                    content: message,
-                });
-                if (pendingTableRef.current) {
-                    pendingTableRef.current.scrollIntoView({
-                        block: 'start',
-                        behavior: 'smooth',
-                    });
-                }
-            }, 1000);
-        }
-
-        return () => {
-            console.log('cleaning Pending Members');
-            setValue('PENDING_MEMBERS', []);
-            setSelectedPendingMembers([]);
-            setSelectAllPendingMembers(false);
-            setPendingMembersIndeterminate(false);
-        };
-    }, [pendingUserAccess.status, pendingUserAccess.data]);
-
     /**
      * @name useEffect
      * @desc - Clean up page and filters
@@ -840,183 +804,6 @@ export const Permissions = (props: PermissionsProps) => {
             didMount.current = false;
         };
     }, [id, projectid]);
-
-    // API calls
-    /**
-     * @name getUsersNoCreds
-     * @desc Gets all users without credentials
-     */
-    const getUsersNoCreds = () => {
-        monolithStore[mapMonolithFunction(type, 'GetNonCredUsers')](
-            adminMode,
-            id,
-            projectid, // req'd for insight level calls
-        )
-            .then((response) => {
-                // setNonCredentialedUsers(response);
-                setValue('NON_CREDENTIALED_USERS', response);
-            })
-            .catch((err) => {
-                // throw error if promise doesn't fulfill
-                throw Error(err);
-            });
-    };
-
-    /**
-     * @name approveSelectedPendingMembers
-     * @param members - members to pass to approve api call
-     * @description Approve Selected Pending Members
-     */
-    const approveSelectedPendingMembers = (
-        members: PendingMember[],
-        quickActionFlag?: boolean, // quick approve button
-    ) => {
-        const requests = [];
-        // construct requests for post data
-        members.forEach((mem, i) => {
-            const memberRequest = {
-                requestid: mem.ID,
-                userid: mem.REQUEST_USERID,
-                permission: permissionMapper[mem.PERMISSION],
-            };
-            requests.push(memberRequest);
-        });
-
-        // hit api with req'd fields
-        monolithStore[mapMonolithFunction(type, 'ApproveUserRequest')](
-            adminMode,
-            id,
-            requests,
-            projectid,
-        )
-            .then((response) => {
-                // if (response.success) {
-                // get index of pending members in order to remove
-                const indexesToRemove = [];
-                requests.forEach((mem) => {
-                    pendingMembers.find((m, i) => {
-                        if (mem.userid === m.REQUEST_USERID)
-                            indexesToRemove.push(i);
-                    });
-                });
-
-                // remove indexes
-                pendingMemberRemove(indexesToRemove);
-
-                const newMemberCount = membersCount + requests.length;
-                setMembersCount(newMemberCount);
-
-                if (!quickActionFlag) {
-                    // remove from selected pending members
-                    setSelectedPendingMembers([]);
-                    setSelectAllCheckboxState('pending-table', []);
-                } else {
-                    let indexToRemoveFromSelected;
-                    // remove from selected
-                    selectedPendingMembers.find((m, i) => {
-                        if (m.ID !== requests[0].requestid) {
-                            indexToRemoveFromSelected = i;
-                        }
-                    });
-
-                    const filteredArr = selectedPendingMembers.splice(
-                        indexToRemoveFromSelected,
-                        1,
-                    );
-
-                    setSelectedPendingMembers(filteredArr);
-                    setSelectAllCheckboxState('pending-table', filteredArr);
-                }
-
-                notification.add({
-                    color: 'success',
-                    content: 'Succesfully approved user permissions',
-                });
-
-                getMembers.refresh();
-            })
-            .catch((error) => {
-                notification.add({
-                    color: 'error',
-                    content: error,
-                });
-            });
-    };
-
-    /**
-     * @name denySelectedPendingMembers
-     * @param members - members to pass to deny api call
-     * @param quickActionFlag - quick deny button on table
-     * @description Deny Selected Pending Members
-     */
-    const denySelectedPendingMembers = (
-        members: PendingMember[],
-        quickActionFlag?: boolean,
-    ) => {
-        const requestIds = [];
-        // construct userids for post data
-        members.forEach((mem: PendingMember, i) => {
-            requestIds.push(mem.ID);
-        });
-
-        // hit api with req'd fields
-        monolithStore[mapMonolithFunction(type, 'DenyUserRequest')](
-            adminMode,
-            id,
-            requestIds,
-            projectid,
-        )
-            .then((response) => {
-                // get index of pending members in order to remove
-                const indexesToRemove = [];
-                requestIds.forEach((mem) => {
-                    pendingMembers.find((m, i) => {
-                        if (mem === m.ID) indexesToRemove.push(i);
-                    });
-                });
-
-                // remove indexes from react hook form
-                pendingMemberRemove(indexesToRemove);
-
-                if (!quickActionFlag) {
-                    setSelectedPendingMembers([]);
-                    setSelectAllCheckboxState('pending-table', []);
-                    // close modal
-                    setDenySelectedModal(false);
-                } else {
-                    // remove from selected pending members
-                    let indexToRemoveFromSelected = 0;
-                    // remove from selected
-                    selectedPendingMembers.find((m, i) => {
-                        if (m.ID !== requestIds[0]) {
-                            indexToRemoveFromSelected = i;
-                        }
-                    });
-
-                    const filteredArr = selectedPendingMembers.splice(
-                        indexToRemoveFromSelected,
-                        1,
-                    );
-
-                    setSelectedPendingMembers(filteredArr);
-                    setSelectAllCheckboxState('pending-table', filteredArr);
-                    // close modal
-                    setDenySelectedModal(false);
-                }
-
-                notification.add({
-                    color: 'success',
-                    content: 'Succesfully denied user permissions',
-                });
-            })
-            .catch((error) => {
-                // show err to user
-                notification.add({
-                    color: 'error',
-                    content: error,
-                });
-            });
-    };
 
     const deleteWorkflow = () => {
         let pixelString = '';
@@ -1093,62 +880,6 @@ export const Permissions = (props: PermissionsProps) => {
             })
             .catch((error) => {
                 notification.add({ color: 'error', content: error });
-            });
-    };
-
-    /**
-     * @name submitNonCredUsers
-     * @description - hits api to submit selected non credentialed users
-     */
-    const submitNonCredUsers = () => {
-        const userRequests = [];
-        // construct for API
-        selectedNonCredentialedUsers.forEach((mem, i) => {
-            const requestTemplate = {
-                userid: mem.id,
-                permission: permissionMapper[addMemberPermissionField],
-            };
-            userRequests.push(requestTemplate);
-        });
-
-        monolithStore[mapMonolithFunction(type, 'AddMember')](
-            adminMode,
-            id,
-            userRequests,
-            projectid,
-        ) // fix this with projectId
-            .then((resp) => {
-                const newMemberCount =
-                    membersCount + selectedNonCredentialedUsers.length;
-
-                setMembersCount(newMemberCount);
-                // refresh getMembers hook
-                getMembers.refresh();
-                // clear selected members arr in state
-                setSelectedMembers([]);
-                // select all checkbox for db-members table
-                setSelectAllCheckboxState('members-table', []);
-                // close modal
-                setAddMembersModal(false);
-
-                setValue('ADD_MEMBER_PERMISSION', '');
-
-                notification.add({
-                    color: 'success',
-                    content: 'Successfully added member permissions',
-                });
-            })
-            .catch((error) => {
-                notification.add({
-                    color: 'error',
-                    content: error,
-                });
-
-                setAddMembersModal(false);
-
-                // reset add member modal
-                setValue('ADD_MEMBER_PERMISSION', '');
-                setValue('SELECTED_NON_CREDENTIALED_USERS', []);
             });
     };
 
@@ -1301,155 +1032,6 @@ export const Permissions = (props: PermissionsProps) => {
             });
     };
 
-    const deleteAllMembers = () => {
-        console.warn(
-            `Functionality is in development: Delete all ${type} members`,
-        );
-        notification.add({
-            color: 'warning',
-            content: `Functionality is in development: Delete all ${type} members`,
-        });
-
-        setTotalMembers(false);
-        setSelectedMembers([]);
-        setSelectAllCheckboxState('members-table', []);
-        setDeleteMembersModal(false);
-    };
-
-    const updateAllMembers = () => {
-        console.warn(
-            `Functionality is in development: Update all ${type} members`,
-        );
-        notification.add({
-            color: 'warning',
-            content: `Functionality is in development: Update all ${type} members`,
-        });
-        setValue('UPDATE_SELECTED_PERMISSION', '');
-        setTotalMembers(false);
-        setSelectedMembers([]);
-        setSelectAllCheckboxState('members-table', []);
-        setUpdateMembersModal(false);
-    };
-
-    // Handle state changes
-    /**
-     * @name setSelectAllCheckboxState
-     * @param table - which table are we setting Select All state for
-     * @param users - array of selected users
-     * @description determines state for select all checkbox on both tables
-     */
-    const setSelectAllCheckboxState = (
-        table: 'members-table' | 'pending-table',
-        users: Member[] | PendingMember[],
-    ) => {
-        let indeterminateBool = false;
-        let selectAllBool = false;
-
-        if (table === 'members-table') {
-            // indeterminate state
-            if (users.length !== 0 && users.length !== verifiedMembers.length)
-                indeterminateBool = true;
-            if (indeterminateBool !== indeterminate)
-                setIndeterminate(indeterminateBool);
-
-            // select all state
-            if (indeterminateBool) selectAllBool = true;
-            if (users.length === verifiedMembers.length) selectAllBool = true;
-
-            if (selectAllBool !== selectAllMembers)
-                setSelectAllMembers(selectAllBool);
-        } else {
-            // indeterminate state
-            if (users.length !== 0 && users.length !== pendingMembers.length)
-                indeterminateBool = true;
-            if (indeterminateBool !== pendingMembersIndeterminate)
-                setPendingMembersIndeterminate(indeterminateBool);
-
-            // select all state
-            if (indeterminateBool) selectAllBool = true;
-            if (users.length === pendingMembers.length) selectAllBool = true;
-
-            if (selectAllBool !== selectAllPendingMembers)
-                setSelectAllPendingMembers(selectAllBool);
-        }
-    };
-
-    /**
-     * @name removeSelectedUser
-     * @param table - determines which table
-     * @param user - user to remove
-     * @description removes selected member from selected state array
-     */
-    const removeSelectedUser = (
-        table: 'members-table' | 'pending-table',
-        user,
-    ) => {
-        let filtered;
-
-        if (table === 'members-table') {
-            filtered = selectedMembers.filter((u: Member) => {
-                // verify if this is unique id
-                if (user.id === undefined || user.id != u.id) {
-                    return true;
-                } else {
-                    return false;
-                }
-            });
-
-            // set selected members
-            setSelectedMembers(filtered);
-            // set state for select all checkbox
-            setSelectAllCheckboxState('members-table', filtered);
-        } else if (table === 'pending-table') {
-            filtered = selectedPendingMembers.filter((u: PendingMember) => {
-                // verify if this is unique id
-                if (
-                    user.REQUEST_USERID === undefined ||
-                    user.REQUEST_USERID != u.REQUEST_USERID
-                ) {
-                    return true;
-                } else {
-                    return false;
-                }
-            });
-
-            // set selected pending members
-            setSelectedPendingMembers(filtered);
-            // set state for select all checkbox
-            setSelectAllCheckboxState('pending-table', filtered);
-        }
-    };
-
-    /**
-     * @name addSelectedUser
-     * @param table - table to add a selected member to
-     * @param user - newly selected user
-     */
-    const addSelectedUser = (
-        table: 'members-table' | 'pending-table',
-        user: Member | PendingMember,
-    ) => {
-        if (table === 'members-table') {
-            // set new selected members
-            setSelectedMembers([...selectedMembers, user]);
-
-            // State changes for top level checkbox
-            setSelectAllCheckboxState('members-table', [
-                ...selectedMembers,
-                user,
-            ]);
-        } else {
-            // set new selected pending members
-            setSelectedPendingMembers([...selectedPendingMembers, user]);
-
-            // State changes for top level checkbox
-            setSelectAllCheckboxState('pending-table', [
-                ...selectedPendingMembers,
-                user,
-            ]);
-        }
-    };
-
     /**
      * @name resetMembersFilters
      * @description filters on members table
@@ -1460,14 +1042,6 @@ export const Permissions = (props: PermissionsProps) => {
     };
 
     // Helpers ---
-    /**
-     * @name getDisplay
-     * @desc gets display options for non credentialed users
-     * @param option - the object that is specified for the option
-     */
-    const getDisplay = (option) => {
-        return option.name;
-    };
 
     /**
      * @name showActionButtons
@@ -1520,113 +1094,26 @@ export const Permissions = (props: PermissionsProps) => {
         return count;
     };
 
-    // // show a loading screen when getPendingUsers is pending
-    // if (
-    //     pendingUserAccess.status !== 'SUCCESS' ||
-    // ) {
-    //     return (
-    //         <LoadingScreen.Trigger description="Retrieving pending members" />
-    //     );
-    // }
-
-    // show a loading screen when getMembers is pending
-    if (
-        getMembers.status !== 'SUCCESS' &&
-        // pendingUserAccess.status === 'SUCCESS' &&
-        !didMount.current
-    ) {
-        return <LoadingScreen.Trigger description="Getting members" />;
-    }
-
-    function createData(
-        name: string,
-        age: number,
-        location: string,
-        email: string,
-        number: string,
-    ) {
-        return {
-            name,
-            age,
-            location,
-            email,
-            number,
-            history: [
-                {
-                    date: '2020-01-05',
-                    customerId: '11091700',
-                    amount: 3,
-                },
-                {
-                    date: '2020-01-02',
-                    customerId: 'Anonymous',
-                    amount: 1,
-                },
-            ],
-        };
-    }
-
-    const rows = [
-        createData(
-            'John Smith',
-            19,
-            'Rosslyn, VA',
-            'j.smith@deloitte.com',
-            '555-555-5555',
-        ),
-        createData(
-            'Jane Smith',
-            20,
-            'Salem, WA',
-            'ja.smith@deloitte.com',
-            '555-555-5555',
-        ),
-        createData(
-            'Robert Smith',
-            21,
-            'Portland, OR',
-            'r.smith@deloitte.com',
-            '555-555-5555',
-        ),
-        createData(
-            'Claire Smith',
-            22,
-            'Tucson, AZ',
-            'c.smith@deloitte.com',
-            '555-555-5555',
-        ),
-        createData(
-            'Jane Smith',
-            23,
-            'Denver, CO',
-            'ne.smith@deloitte.com',
-            '555-555-5555',
-        ),
-    ];
-
+    /**
+     * @name handleChange
+     * @param event
+     * @param newValue
+     * @desc changes tab group
+     */
     const handleChange = (event: SyntheticEvent, newValue: number) => {
         setView(newValue);
     };
 
+    // Counts for pagination
+    const paginationOptions = {
+        membersPageCounts: [5],
+    };
+
+    membersCount > 9 && paginationOptions.membersPageCounts.push(10);
+    membersCount > 19 && paginationOptions.membersPageCounts.push(20);
+
     return (
         <StyledContent>
-            <StyledButtonGroup variant={'contained'}>
-                <Button
-                    onClick={() => {
-                        setView('members');
-                    }}
-                >
-                    Members
-                </Button>
-                <Button
-                    onClick={() => {
-                        setView('pending requests');
-                    }}
-                >
-                    Pending Requests
-                </Button>
-            </StyledButtonGroup>
-
             <ToggleTabsGroup
                 value={view}
                 onChange={handleChange}
@@ -1636,78 +1123,26 @@ export const Permissions = (props: PermissionsProps) => {
                 <ToggleTabsGroup.Item label="Pending Requests" />
             </ToggleTabsGroup>
 
-            <Tabs
-                value={0}
-                onChange={() => console.log('hey')}
-                aria-label="basic tabs example"
-                textColor="secondary"
-                indicatorColor="secondary"
-            >
-                <Tabs.Item value={0} label="Hey"></Tabs.Item>
-                <Tabs.Item value={1} label="Hi"></Tabs.Item>
-            </Tabs>
-            {view === 0 && <div>Members</div>}
-
-            {view === 1 && <div>Pending Members</div>}
-            <StyledMemberContent>
-                <StyledMemberInnerContent>
-                    {/* <StyledMemberTable>
-                    </StyledMemberTable> */}
-                    <MuiTable.Container>
-                        <MuiTable>
-                            <MuiTable.Head>
-                                <MuiTable.Row>
-                                    <MuiTable.Cell>Name</MuiTable.Cell>
-                                    <MuiTable.Cell align="right">
-                                        Age
-                                    </MuiTable.Cell>
-                                    <MuiTable.Cell align="right">
-                                        Location
-                                    </MuiTable.Cell>
-                                    <MuiTable.Cell align="right">
-                                        Email
-                                    </MuiTable.Cell>
-                                    <MuiTable.Cell align="right">
-                                        Number
-                                    </MuiTable.Cell>
-                                </MuiTable.Row>
-                            </MuiTable.Head>
-                            <MuiTable.Body>
-                                {rows.map((row) => (
-                                    <MuiTable.Row
-                                        key={row.name}
-                                        sx={{
-                                            '&:last-child td, &:last-child th':
-                                                {
-                                                    border: 0,
-                                                },
-                                        }}
-                                    >
-                                        <MuiTable.Cell
-                                            component="th"
-                                            scope="row"
-                                        >
-                                            {row.name}
-                                        </MuiTable.Cell>
-                                        <MuiTable.Cell align="right">
-                                            {row.age}
-                                        </MuiTable.Cell>
-                                        <MuiTable.Cell align="right">
-                                            {row.location}
-                                        </MuiTable.Cell>
-                                        <MuiTable.Cell align="right">
-                                            {row.email}
-                                        </MuiTable.Cell>
-                                        <MuiTable.Cell align="right">
-                                            {row.number}
-                                        </MuiTable.Cell>
-                                    </MuiTable.Row>
-                                ))}
-                            </MuiTable.Body>
-                        </MuiTable>
-                    </MuiTable.Container>
-                </StyledMemberInnerContent>
-            </StyledMemberContent>
+            {view === 0 && (
+                <MembersTable
+                    reactorPrefix={getMembersString}
+                    type={type}
+                    name={name}
+                    adminMode={adminMode}
+                    id={id}
+                    projectId={projectid}
+                />
+            )}
+            {view === 1 && (
+                <PendingMembersTable
+                    getPendingUsersString={getPendingUsersString}
+                    type={type}
+                    name={name}
+                    adminMode={adminMode}
+                    id={id}
+                    projectId={projectid}
+                />
+            )}
         </StyledContent>
 
         // <StyledSelectedApp>
@@ -1956,7 +1391,7 @@ export const Permissions = (props: PermissionsProps) => {
         //                 </Button>
         //             </StyledMembersDiv>
         //         </StyledFlexEnd> */}
-        //         <StyledTableContainer>
+        //         <StyledTableCont>
         //             <StyledHeader>
         //                 <StyledHeaderLeft>
         //                     <StyledTableLabel>Members</StyledTableLabel>
@@ -2306,10 +1741,10 @@ export const Permissions = (props: PermissionsProps) => {
         //                     of {filteredMembersCount} members
         //                 </StyledTableFooterDiv>
         //             </StyledTableFooter>
-        //         </StyledTableContainer>
+        //         </StyledTableCont>
 
         //         {pendingMembers.length ? (
-        //             <StyledTableContainer>
+        //             <StyledTableCont>
         //                 <StyledHeader>
         //                     <StyledHeaderLeft>
         //                         <StyledTableLabel>
@@ -2521,7 +1956,7 @@ export const Permissions = (props: PermissionsProps) => {
         //                         })}
         //                     </StyledTableBody>
         //                 </Table>
-        //             </StyledTableContainer>
+        //             </StyledTableCont>
         //         ) : null}
 
         //         <Modal
@@ -2941,3 +2376,1106 @@ export const Permissions = (props: PermissionsProps) => {
 };
 
 export default Permissions;
+
+const PendingMembersTable = (props) => {
+    const { name, type, adminMode, id, getPendingUsersString, projectId } =
+        props;
+    const { monolithStore } = useRootStore();
+    const notification = useNotification();
+
+    const [selectedPending, setSelectedPending] = useState([]);
+    const [pendingCount, setPendingCOunt] = useState(0);
+
+    const { control, watch, setValue } = useForm<{
+        PENDING_MEMBERS: PendingMember[];
+    }>({
+        defaultValues: {
+            // Members Table
+            PENDING_MEMBERS: [],
+        },
+    });
+
+    const { remove: pendingMemberRemove } = useFieldArray({
+        control,
+        name: 'PENDING_MEMBERS',
+    });
+    const pendingMembers = watch('PENDING_MEMBERS');
+
+    // Pending Member Requests Pixel call
+    const pendingUserAccess = usePixel<
+        {
+            ENGINEID: string;
+            ID: string;
+            PERMISSION: number;
+            REQUEST_TIMESTAMP: string;
+            REQUEST_TYPE: string;
+            REQUEST_USERID: string;
+        }[]
+    >(adminMode ? getPendingUsersString : '');
+
+    /**
+     * @name useEffect
+     * @desc - sets pending members in react hook form
+     */
+    useEffect(() => {
+        // pixel call to get pending members
+        if (pendingUserAccess.status !== 'SUCCESS' || !pendingUserAccess.data) {
+            return;
+        }
+
+        const newPendingMembers = [];
+
+        pendingUserAccess.data.forEach((mem) => {
+            newPendingMembers.push({
+                ...mem,
+                PERMISSION: permissionMapper[mem.PERMISSION], // comes in as 1,2,3 -> map to Author, Edit, Read-only
+            });
+        });
+
+        // set new members with the Pending Members in react hook form
+        setValue('PENDING_MEMBERS', newPendingMembers);
+
+        // notify user for pending members
+        if (newPendingMembers.length) {
+            let message =
+                newPendingMembers.length === 1
+                    ? `1 member has `
+                    : `${newPendingMembers.length} members have `;
+
+            message += `requested access to this ${type}`;
+        }
+
+        return () => {
+            console.log('cleaning Pending Members');
+            // setValue('PENDING_MEMBERS', []);
+            // setSelectedPendingMembers([]);
+            // setSelectAllPendingMembers(false);
+            // setPendingMembersIndeterminate(false);
+        };
+    }, [pendingUserAccess.status, pendingUserAccess.data]);
+
+    /** API Functions */
+    /**
+     * @name approvePendingMembers
+     * @param members - members to pass to approve api call
+     * @description Approve list of Pending Members
+     */
+    const approvePendingMembers = (
+        members: PendingMember[],
+        quickActionFlag?: boolean, // quick approve button
+    ) => {
+        const requests = [];
+        // construct requests for post data
+        members.forEach((mem, i) => {
+            const memberRequest = {
+                requestid: mem.ID,
+                userid: mem.REQUEST_USERID,
+                permission: permissionMapper[mem.PERMISSION],
+            };
+            requests.push(memberRequest);
+        });
+
+        debugger;
+
+        return;
+        // hit api with req'd fields
+        monolithStore[mapMonolithFunction(type, 'ApproveUserRequest')](
+            adminMode,
+            id,
+            requests,
+            projectId,
+        )
+            .then((response) => {
+                debugger;
+                // if (response.success) {
+                // get index of pending members in order to remove
+                const indexesToRemove = [];
+                requests.forEach((mem) => {
+                    pendingMembers.find((m, i) => {
+                        if (mem.userid === m.REQUEST_USERID)
+                            indexesToRemove.push(i);
+                    });
+                });
+
+                debugger;
+                // remove indexes
+                pendingMemberRemove(indexesToRemove);
+
+                if (!quickActionFlag) {
+                    // remove from selected pending members
+                    setSelectedPending([]);
+                } else {
+                    let indexToRemoveFromSelected;
+                    // remove from selected
+                    selectedPending.find((m, i) => {
+                        if (m.ID !== requests[0].requestid) {
+                            indexToRemoveFromSelected = i;
+                        }
+                    });
+
+                    const filteredArr = selectedPending.splice(
+                        indexToRemoveFromSelected,
+                        1,
+                    );
+
+                    setSelectedPending(filteredArr);
+                }
+
+                notification.add({
+                    color: 'success',
+                    content: 'Succesfully approved user permissions',
+                });
+            })
+            .catch((error) => {
+                notification.add({
+                    color: 'error',
+                    content: error,
+                });
+            });
+    };
+
+    /**
+     * @name denyPendingMembers
+     * @param members - members to pass to deny api call
+     * @param quickActionFlag - quick deny button on table
+     * @description Deny Selected Pending Members
+     */
+    const denyPendingMembers = (
+        members: PendingMember[],
+        quickActionFlag?: boolean,
+    ) => {
+        const requestIds = [];
+        // construct userids for post data
+        members.forEach((mem: PendingMember, i) => {
+            requestIds.push(mem.ID);
+        });
+
+        debugger;
+
+        return;
+
+        // hit api with req'd fields
+        monolithStore[mapMonolithFunction(type, 'DenyUserRequest')](
+            adminMode,
+            id,
+            requestIds,
+            projectId,
+        )
+            .then((response) => {
+                // get index of pending members in order to remove
+                const indexesToRemove = [];
+                requestIds.forEach((mem) => {
+                    pendingMembers.find((m, i) => {
+                        if (mem === m.ID) indexesToRemove.push(i);
+                    });
+                });
+
+                // remove indexes from react hook form
+                pendingMemberRemove(indexesToRemove);
+
+                if (!quickActionFlag) {
+                    setSelectedPendingMembers([]);
+                    setSelectAllCheckboxState('pending-table', []);
+                    // close modal
+                    setDenySelectedModal(false);
+                } else {
+                    // remove from selected pending members
+                    let indexToRemoveFromSelected = 0;
+                    // remove from selected
+                    selectedPendingMembers.find((m, i) => {
+                        if (m.ID !== requestIds[0]) {
+                            indexToRemoveFromSelected = i;
+                        }
+                    });
+
+                    const filteredArr = selectedPendingMembers.splice(
+                        indexToRemoveFromSelected,
+                        1,
+                    );
+
+                    setSelectedPendingMembers(filteredArr);
+                    setSelectAllCheckboxState('pending-table', filteredArr);
+                    // close modal
+                    setDenySelectedModal(false);
+                }
+
+                notification.add({
+                    color: 'success',
+                    content: 'Succesfully denied user permissions',
+                });
+            })
+            .catch((error) => {
+                // show err to user
+                notification.add({
+                    color: 'error',
+                    content: error,
+                });
+            });
+    };
+
+    /** HELPERS */
+
+    /**
+     * @name updatePendingMemberPermission
+     * @param mem
+     * @param value
+     * @desc Updates Member Permission
+     */
+    const updatePendingMemberPermission = (
+        mem: PendingMember,
+        value: 'Author' | 'Editor' | 'Read-Only',
+    ) => {
+        const updatedPendingMems = pendingMembers.map((user) => {
+            if (user.REQUEST_USERID === mem.REQUEST_USERID) {
+                return {
+                    ...user,
+                    PERMISSION: value,
+                };
+            } else {
+                return user;
+            }
+        });
+
+        setValue('PENDING_MEMBERS', updatedPendingMems);
+    };
+
+    return (
+        <StyledMemberContent>
+            <StyledMemberInnerContent>
+                <StyledTableContainer>
+                    <StyledTableTitleContainer>
+                        <StyledTableTitleDiv>
+                            <Typography variant={'h6'}>{name}</Typography>
+                        </StyledTableTitleDiv>
+
+                        <StyledTableTitleMemberCountContainer>
+                            <StyledTableTitleMemberCount>
+                                <Typography variant={'body1'}>
+                                    6 Members
+                                </Typography>
+                            </StyledTableTitleMemberCount>
+                        </StyledTableTitleMemberCountContainer>
+
+                        <StyledFilterButtonContainer>
+                            <IconButton>
+                                <FilterAltRounded></FilterAltRounded>
+                            </IconButton>
+                        </StyledFilterButtonContainer>
+
+                        {selectedPending.length > 0 && (
+                            <>
+                                <StyledDeleteSelectedContainer>
+                                    <Button
+                                        variant={'contained'}
+                                        color="error"
+                                        onClick={() => {}}
+                                    >
+                                        Deny Selected
+                                    </Button>
+                                </StyledDeleteSelectedContainer>
+                                <StyledAddMemberContainer>
+                                    <Button
+                                        variant={'contained'}
+                                        onClick={() => {}}
+                                    >
+                                        Approve Selected
+                                    </Button>
+                                </StyledAddMemberContainer>
+                            </>
+                        )}
+                    </StyledTableTitleContainer>
+                    <StyledMemberTable>
+                        <MuiTable.Head>
+                            <MuiTable.Row>
+                                <MuiTable.Cell>
+                                    <MuiCheckbox
+                                        checked={
+                                            selectedPending.length ===
+                                                pendingMembers.length &&
+                                            pendingMembers.length > 0
+                                        }
+                                        onChange={() => {
+                                            if (
+                                                selectedPending.length !==
+                                                pendingMembers.length
+                                            ) {
+                                                setSelectedPending(
+                                                    pendingMembers,
+                                                );
+                                            } else {
+                                                setSelectedPending([]);
+                                            }
+                                        }}
+                                    />
+                                </MuiTable.Cell>
+                                <MuiTable.Cell>Name</MuiTable.Cell>
+                                <MuiTable.Cell>Permission</MuiTable.Cell>
+                                <MuiTable.Cell>Request Date</MuiTable.Cell>
+                                <MuiTable.Cell>Actions</MuiTable.Cell>
+                            </MuiTable.Row>
+                        </MuiTable.Head>
+                        <MuiTable.Body>
+                            {pendingMembers.map((user: PendingMember, i) => {
+                                const isSelected = selectedPending.some(
+                                    (value: PendingMember) => {
+                                        return (
+                                            value.REQUEST_USERID ===
+                                            user.REQUEST_USERID
+                                        );
+                                    },
+                                );
+                                return (
+                                    <MuiTable.Row key={i}>
+                                        <MuiTable.Cell>
+                                            <MuiCheckbox
+                                                checked={isSelected}
+                                                onChange={() => {
+                                                    if (isSelected) {
+                                                        const selPending = [];
+                                                        selectedPending.forEach(
+                                                            (
+                                                                u: PendingMember,
+                                                            ) => {
+                                                                if (
+                                                                    u.REQUEST_USERID !==
+                                                                    user.REQUEST_USERID
+                                                                )
+                                                                    selPending.push(
+                                                                        u,
+                                                                    );
+                                                            },
+                                                        );
+
+                                                        setSelectedPending(
+                                                            selPending,
+                                                        );
+                                                    } else {
+                                                        setSelectedPending([
+                                                            ...selectedPending,
+                                                            user,
+                                                        ]);
+                                                    }
+                                                }}
+                                            />
+                                        </MuiTable.Cell>
+                                        <MuiTable.Cell
+                                            component="td"
+                                            scope="row"
+                                        >
+                                            {user.REQUEST_USERID}
+                                        </MuiTable.Cell>
+                                        <MuiTable.Cell>
+                                            <RadioGroup
+                                                row
+                                                value={user.PERMISSION}
+                                                onChange={(e) => {
+                                                    debugger;
+                                                    updatePendingMemberPermission(
+                                                        user,
+                                                        e.target.value,
+                                                    );
+                                                }}
+                                            >
+                                                <RadioGroup.Item
+                                                    value="Author"
+                                                    label="Author"
+                                                />
+                                                <RadioGroup.Item
+                                                    value="Editor"
+                                                    label="Editor"
+                                                />
+                                                <RadioGroup.Item
+                                                    value="Read-Only"
+                                                    label="Read-Only"
+                                                />
+                                            </RadioGroup>
+                                        </MuiTable.Cell>
+                                        <MuiTable.Cell>
+                                            {user.REQUEST_TIMESTAMP}
+                                        </MuiTable.Cell>
+                                        <MuiTable.Cell>
+                                            <IconButton
+                                                onClick={() => {
+                                                    approvePendingMembers(
+                                                        [user],
+                                                        true,
+                                                    );
+                                                }}
+                                            >
+                                                <Check color={'success'} />
+                                            </IconButton>
+                                            <IconButton
+                                                onClick={() => {
+                                                    denyPendingMembers(
+                                                        [user],
+                                                        true,
+                                                    );
+                                                }}
+                                            >
+                                                <Close />
+                                            </IconButton>
+                                        </MuiTable.Cell>
+                                    </MuiTable.Row>
+                                );
+                            })}
+                        </MuiTable.Body>
+                    </StyledMemberTable>
+                </StyledTableContainer>
+            </StyledMemberInnerContent>
+        </StyledMemberContent>
+    );
+};
+
+const StyledModalContentText = MuiStyled(Modal.ContentText)({
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '.5rem',
+});
+interface NonCredentialedUsers {}
+
+const MembersTable = (props) => {
+    const { name, type, adminMode, id, reactorPrefix, projectId } = props;
+    const { monolithStore } = useRootStore();
+    const notification = useNotification();
+
+    /** Member Table State */
+    const [membersCount, setMembersCount] = useState<number>(0);
+    const [filteredMembersCount, setFilteredMembersCount] = useState<number>(0);
+    const [membersPage, setMembersPage] = useState<number>(1);
+    const [limit, setLimit] = useState<number>(5);
+    const [selectedMembers, setSelectedMembers] = useState<Member[]>([]);
+
+    /** Delete Member */
+    const [deleteMembersModal, setDeleteMembersModal] =
+        useState<boolean>(false);
+    const [deleteMemberModal, setDeleteMemberModal] = useState<boolean>(false);
+    const [userToDelete, setUserToDelete] = useState<Member | null>();
+
+    /** Add Member State */
+    const [addMembersModal, setAddMembersModal] = useState<boolean>(false);
+    const [nonCredentialedUsers, setNonCredentialedUsers] = useState([]);
+    const [selectedNonCredentialedUsers, setSelectedNonCredentialedUsers] =
+        useState([]);
+    const [addMemberRole, setAddMemberRole] = useState<
+        'Author' | 'Editor' | 'Read-Only' | ''
+    >('');
+
+    const didMount = useRef<boolean>(false);
+
+    const { control, watch, setValue } = useForm<{
+        MEMBERS: Member[];
+
+        SEARCH_FILTER: string;
+        ACCESS_FILTER: string;
+    }>({
+        defaultValues: {
+            // Members Table
+            MEMBERS: [],
+            // Filters for Members table
+            SEARCH_FILTER: '',
+            ACCESS_FILTER: '',
+        },
+    });
+
+    const { remove: memberRemove } = useFieldArray({
+        control,
+        name: 'MEMBERS',
+    });
+
+    const searchFilter = watch('SEARCH_FILTER');
+    const permissionFilter = watch('ACCESS_FILTER');
+    const verifiedMembers = watch('MEMBERS');
+
+    const getMembers = useAPI([
+        reactorPrefix,
+        adminMode,
+        id,
+        searchFilter ? searchFilter : undefined,
+        permissionMapper[permissionFilter],
+        membersPage * limit - limit, // offset
+        limit,
+        projectId, // make optional --> handles insight
+    ]);
+
+    /**
+     * @name useEffect
+     * @desc - sets members in react hook form
+     */
+    useEffect(() => {
+        if (getMembers.status !== 'SUCCESS' || !getMembers.data) {
+            return;
+        }
+
+        const members = [];
+
+        getMembers.data['members'].forEach((mem) => {
+            members.push(mem);
+        });
+
+        setValue('MEMBERS', members);
+
+        if (!didMount.current) {
+            // set total members
+            setMembersCount(getMembers.data['totalMembers']);
+            didMount.current = true;
+        }
+
+        // Needed for total pages on pagination
+        setFilteredMembersCount(getMembers.data['totalMembers']);
+
+        return () => {
+            console.log('Cleaning members table');
+            setValue('MEMBERS', []);
+            setSelectedMembers([]);
+        };
+    }, [getMembers.status, getMembers.data, searchFilter, permissionFilter]);
+
+    /** MEMBER TABLE FUNCTIONS */
+    const updateSelectedUsers = (members, quickUpdate) => {
+        // Construct to send to API
+        const userArr = [];
+
+        members.forEach((mem, i) => {
+            userArr.push({
+                userid: mem.id,
+                permission: quickUpdate ? quickUpdate : 'OWNER',
+            });
+        });
+
+        monolithStore[mapMonolithFunction(type, 'UpdatePermissions')](
+            adminMode,
+            id,
+            userArr,
+            projectId,
+        )
+            .then((resp) => {
+                notification.add({
+                    color: 'success',
+                    content: 'Updated member permssions',
+                });
+            })
+            .catch((err) => {
+                notification.add({
+                    color: 'error',
+                    content: err,
+                });
+                getMembers.refresh();
+            });
+    };
+
+    /**
+     * @name deleteSelectedMembers
+     * @param members
+     */
+    const deleteSelectedMembers = (members: Member[]) => {
+        const userArr = [];
+        members.forEach((mem, i) => {
+            userArr.push(mem.id);
+        });
+
+        monolithStore[mapMonolithFunction(type, 'RemoveUserPermissions')](
+            adminMode,
+            id,
+            userArr,
+            projectId,
+        )
+            .then((resp) => {
+                if (
+                    verifiedMembers.length === userArr.length &&
+                    membersPage !== 1 &&
+                    membersPage !== filteredMembersCount / limit
+                ) {
+                    setMembersPage(membersPage - 1);
+                }
+
+                // get index of members in order to remove
+                const indexesToRemove = [];
+                userArr.forEach((mem) => {
+                    verifiedMembers.find((m, i) => {
+                        if (mem === m.id) indexesToRemove.push(i);
+                    });
+                });
+
+                // remove indexes from react hook form
+                memberRemove(indexesToRemove);
+
+                const newMemberCount = membersCount - userArr.length;
+                setMembersCount(newMemberCount);
+
+                // Clean selected Members in state
+                if (!userToDelete) {
+                    setSelectedMembers([]);
+                    setDeleteMembersModal(false);
+                } else {
+                    // Quick Delete one member
+                    const filteredSelectedMembers = selectedMembers.filter(
+                        // find the single member that is being deleted and remove from selected members
+                        (m) => m.id !== userToDelete.id,
+                    );
+
+                    // set new selected members
+                    setSelectedMembers(filteredSelectedMembers);
+                    setDeleteMemberModal(false);
+                }
+
+                notification.add({
+                    color: 'success',
+                    content: `Successfully removed ${
+                        userArr.length > 1 ? 'members' : 'member'
+                    } from ${type}`,
+                });
+
+                getMembers.refresh();
+            })
+            .catch((error) => {
+                notification.add({
+                    color: 'error',
+                    content: error,
+                });
+
+                setDeleteMembersModal(false);
+            });
+    };
+
+    /** ADD MEMBER FUNCTIONS */
+    /**
+     * @name getUsersNoCreds
+     * @desc Gets all users without credentials
+     */
+    const getUsersNoCreds = () => {
+        monolithStore[mapMonolithFunction(type, 'GetNonCredUsers')](
+            adminMode,
+            id,
+            projectId, // req'd for insight level calls
+        )
+            .then((response) => {
+                setNonCredentialedUsers(response);
+
+                setAddMembersModal(true);
+            })
+            .catch((err) => {
+                // throw error if promise doesn't fulfill
+                throw Error(err);
+            });
+    };
+
+    /**
+     * @name submitNonCredUsers
+     */
+    const submitNonCredUsers = () => {
+        const userRequests = [];
+        // construct for API
+        selectedNonCredentialedUsers.forEach((mem, i) => {
+            const requestTemplate = {
+                userid: mem.id,
+                permission: permissionMapper[addMemberRole],
+            };
+            userRequests.push(requestTemplate);
+        });
+
+        monolithStore[mapMonolithFunction(type, 'AddMember')](
+            adminMode,
+            id,
+            userRequests,
+            projectId,
+        ) // fix this with projectId
+            .then((resp) => {
+                getMembers.refresh();
+
+                setMembersCount(
+                    membersCount + selectedNonCredentialedUsers.length,
+                );
+                setAddMembersModal(false);
+                setSelectedNonCredentialedUsers([]);
+                setAddMemberRole('');
+
+                // setSelectedMembers([]);
+                // setSelectAllCheckboxState('members-table', []);
+
+                notification.add({
+                    color: 'success',
+                    content: 'Successfully added member permissions',
+                });
+            })
+            .catch((error) => {
+                setAddMembersModal(false);
+                setSelectedNonCredentialedUsers([]);
+                setAddMemberRole('');
+
+                notification.add({
+                    color: 'error',
+                    content: error,
+                });
+            });
+    };
+
+    /** HELPERS */
+    const Avatars = useMemo(() => {
+        if (!verifiedMembers.length) return [];
+
+        let i = 0;
+        let avatarList = [];
+        while (i < 5 && i < verifiedMembers.length) {
+            avatarList.push(
+                <Avatar key={i}>
+                    {verifiedMembers[i].name.charAt(0).toUpperCase()}
+                </Avatar>,
+            );
+
+            i++;
+        }
+
+        return avatarList;
+    }, [filteredMembersCount, verifiedMembers.length]);
+
+    const paginationOptions = {
+        membersPageCounts: [5],
+    };
+
+    membersCount > 9 && paginationOptions.membersPageCounts.push(10);
+    membersCount > 19 && paginationOptions.membersPageCounts.push(20);
+
+    /** END OF HELPERS */
+
+    /** LOADING */
+    if (getMembers.status !== 'SUCCESS' && !didMount.current) {
+        return <LoadingScreen.Trigger description="Getting members" />;
+    }
+
+    return (
+        <StyledMemberContent>
+            <StyledMemberInnerContent>
+                <StyledTableContainer>
+                    <StyledTableTitleContainer>
+                        <StyledTableTitleDiv>
+                            <Typography variant={'h6'}>{name}</Typography>
+                        </StyledTableTitleDiv>
+
+                        <StyledTableTitleMemberContainer>
+                            <StyledAvatarGroupContainer>
+                                <AvatarGroup
+                                    spacing={'small'}
+                                    variant={'circular'}
+                                    max={4}
+                                    total={filteredMembersCount}
+                                >
+                                    {Avatars.map((el) => {
+                                        return el;
+                                    })}
+                                </AvatarGroup>
+                            </StyledAvatarGroupContainer>
+                            <StyledTableTitleMemberCountContainer>
+                                <StyledTableTitleMemberCount>
+                                    <Typography variant={'body1'}>
+                                        {filteredMembersCount} Members
+                                    </Typography>
+                                </StyledTableTitleMemberCount>
+                            </StyledTableTitleMemberCountContainer>
+                        </StyledTableTitleMemberContainer>
+
+                        <StyledSearchButtonContainer>
+                            <IconButton>
+                                <SearchOutlined></SearchOutlined>
+                            </IconButton>
+                        </StyledSearchButtonContainer>
+
+                        <StyledFilterButtonContainer>
+                            <IconButton>
+                                <FilterAltRounded></FilterAltRounded>
+                            </IconButton>
+                        </StyledFilterButtonContainer>
+
+                        <StyledDeleteSelectedContainer>
+                            {selectedMembers.length > 0 && (
+                                <Button
+                                    variant={'contained'}
+                                    color="error"
+                                    onClick={() => setDeleteMembersModal(true)}
+                                >
+                                    Delete Selected
+                                </Button>
+                            )}
+                        </StyledDeleteSelectedContainer>
+                        <StyledAddMemberContainer>
+                            <Button
+                                variant={'contained'}
+                                onClick={() => {
+                                    getUsersNoCreds();
+                                }}
+                            >
+                                Add Members{' '}
+                            </Button>
+                        </StyledAddMemberContainer>
+                    </StyledTableTitleContainer>
+                    <StyledMemberTable>
+                        <MuiTable.Head>
+                            <MuiTable.Row>
+                                <MuiTable.Cell>
+                                    <MuiCheckbox
+                                        checked={
+                                            selectedMembers.length ===
+                                            verifiedMembers.length
+                                        }
+                                        onChange={() => {
+                                            if (
+                                                selectedMembers.length !==
+                                                verifiedMembers.length
+                                            ) {
+                                                setSelectedMembers(
+                                                    verifiedMembers,
+                                                );
+                                            } else {
+                                                setSelectedMembers([]);
+                                            }
+                                        }}
+                                    />
+                                </MuiTable.Cell>
+                                <MuiTable.Cell>Name</MuiTable.Cell>
+                                <MuiTable.Cell>Permission</MuiTable.Cell>
+                                <MuiTable.Cell>Permission Date</MuiTable.Cell>
+                                <MuiTable.Cell>Action</MuiTable.Cell>
+                            </MuiTable.Row>
+                        </MuiTable.Head>
+                        <MuiTable.Body sx={{ minHeight: '50rem' }}>
+                            {verifiedMembers.map((user, i) => {
+                                const isSelected = selectedMembers.some(
+                                    (value) => {
+                                        return value.id === user.id;
+                                    },
+                                );
+                                return (
+                                    <MuiTable.Row key={user.name + i}>
+                                        <MuiTable.Cell>
+                                            <MuiCheckbox
+                                                checked={isSelected}
+                                                onChange={() => {
+                                                    if (isSelected) {
+                                                        const selMembers = [];
+                                                        selectedMembers.forEach(
+                                                            (u) => {
+                                                                if (
+                                                                    u.id !==
+                                                                    user.id
+                                                                )
+                                                                    selMembers.push(
+                                                                        u,
+                                                                    );
+                                                            },
+                                                        );
+                                                        setSelectedMembers(
+                                                            selMembers,
+                                                        );
+                                                    } else {
+                                                        setSelectedMembers([
+                                                            ...selectedMembers,
+                                                            user,
+                                                        ]);
+                                                    }
+                                                }}
+                                            />
+                                        </MuiTable.Cell>
+                                        <MuiTable.Cell
+                                            component="td"
+                                            scope="row"
+                                        >
+                                            {user.id}: {user.name}
+                                        </MuiTable.Cell>
+                                        <MuiTable.Cell>
+                                            <RadioGroup
+                                                row
+                                                defaultValue={
+                                                    permissionMapper[
+                                                        user.permission
+                                                    ]
+                                                }
+                                                onChange={(e) => {
+                                                    console.log(
+                                                        'Hit Update Permission fn and fix in state',
+                                                    );
+                                                    updateSelectedUsers(
+                                                        [user],
+                                                        permissionMapper[
+                                                            e.target.value
+                                                        ],
+                                                    );
+                                                }}
+                                            >
+                                                <RadioGroup.Item
+                                                    value="Author"
+                                                    label="Author"
+                                                />
+                                                <RadioGroup.Item
+                                                    value="Editor"
+                                                    label="Editor"
+                                                />
+                                                <RadioGroup.Item
+                                                    value="Read-Only"
+                                                    label="Read-Only"
+                                                />
+                                            </RadioGroup>
+                                        </MuiTable.Cell>
+                                        <MuiTable.Cell>
+                                            Not Available
+                                        </MuiTable.Cell>
+                                        <MuiTable.Cell>
+                                            <IconButton
+                                                onClick={() => {
+                                                    // set user
+                                                    setUserToDelete(user);
+                                                    // open modal
+                                                    setDeleteMemberModal(true);
+                                                }}
+                                            >
+                                                <Delete></Delete>
+                                            </IconButton>
+                                        </MuiTable.Cell>
+                                    </MuiTable.Row>
+                                );
+                            })}
+                        </MuiTable.Body>
+                        <MuiTable.Footer>
+                            <MuiTable.Row>
+                                <MuiTable.Pagination
+                                    rowsPerPageOptions={
+                                        paginationOptions.membersPageCounts
+                                    }
+                                    onPageChange={(e, v) => {
+                                        setMembersPage(v + 1);
+                                        setSelectedMembers([]);
+                                    }}
+                                    page={membersPage - 1}
+                                    rowsPerPage={5}
+                                    count={filteredMembersCount}
+                                />
+                            </MuiTable.Row>
+                        </MuiTable.Footer>
+                    </StyledMemberTable>
+                </StyledTableContainer>
+            </StyledMemberInnerContent>
+            <Modal open={deleteMembersModal}>
+                <Modal.Title>Are you sure?</Modal.Title>
+                <Modal.Content>
+                    Would you like to delete all selected members
+                </Modal.Content>
+                <Modal.Actions>
+                    <Button
+                        variant="text"
+                        onClick={() => setDeleteMembersModal(false)}
+                    >
+                        Close
+                    </Button>
+                    <Button
+                        variant={'contained'}
+                        color="error"
+                        onClick={() => {
+                            deleteSelectedMembers(selectedMembers);
+                        }}
+                    >
+                        Confirm
+                    </Button>
+                </Modal.Actions>
+            </Modal>
+            <Modal open={deleteMemberModal} maxWidth="md">
+                <Modal.Title>
+                    <Typography variant="h6">Are you sure?</Typography>
+                </Modal.Title>
+                <Modal.Content>
+                    <Modal.ContentText>
+                        {userToDelete && (
+                            <Typography variant="body1">
+                                This will remove <b>{userToDelete.name}</b> from
+                                the {type}
+                            </Typography>
+                        )}
+                    </Modal.ContentText>
+                </Modal.Content>
+                <Modal.Actions>
+                    <Button
+                        variant="text"
+                        onClick={() => setDeleteMemberModal(false)}
+                    >
+                        Close
+                    </Button>
+                    <Button
+                        color="error"
+                        variant={'contained'}
+                        onClick={() => {
+                            if (!userToDelete) {
+                                console.error('No user to delete');
+                            }
+                            deleteSelectedMembers([userToDelete]);
+                        }}
+                    >
+                        Confirm
+                    </Button>
+                </Modal.Actions>
+            </Modal>
+
+            <Modal open={addMembersModal} maxWidth="md">
+                <Modal.Title>Add members to {type}</Modal.Title>
+                <Modal.Content sx={{ width: '50rem' }}>
+                    <StyledModalContentText>
+                        <Autocomplete
+                            multiple={true}
+                            options={nonCredentialedUsers}
+                            value={selectedNonCredentialedUsers}
+                            getOptionLabel={(option: any) => {
+                                return `${option.name} - ${option.email}`;
+                            }}
+                            isOptionEqualToValue={(option, value) => {
+                                return option.name === value.name;
+                            }}
+                            onChange={(event, newValue: any) => {
+                                setSelectedNonCredentialedUsers([...newValue]);
+                            }}
+                        ></Autocomplete>
+
+                        <div>
+                            <RadioGroup
+                                label={
+                                    'Please select what role you would like members to have'
+                                }
+                                onChange={(e) => {
+                                    setAddMemberRole(e.target.value);
+                                }}
+                            >
+                                <RadioGroup.Item
+                                    value="Author"
+                                    label="Author"
+                                />
+                                <RadioGroup.Item
+                                    value="Editor"
+                                    label="Editor"
+                                />
+                                <RadioGroup.Item
+                                    value="Read-Only"
+                                    label="Read-Only"
+                                />
+                            </RadioGroup>
+                        </div>
+                    </StyledModalContentText>
+                </Modal.Content>
+                <Modal.Actions>
+                    <Button
+                        variant="text"
+                        onClick={() => setAddMembersModal(false)}
+                    >
+                        Close
+                    </Button>
+                    <Button
+                        variant={'contained'}
+                        disabled={
+                            !addMemberRole ||
+                            selectedNonCredentialedUsers.length < 1
+                        }
+                        onClick={() => {
+                            submitNonCredUsers();
+                        }}
+                    >
+                        Submit
+                    </Button>
+                </Modal.Actions>
+            </Modal>
+        </StyledMemberContent>
+    );
+};

@@ -4,47 +4,12 @@ import { FormControlLabel } from "../../";
 
 export interface CheckboxProps {
     /**
-     * The system prop that allows defining system overrides as well as additional CSS styles.
-     */
-    sx?: SxProps;
-
-    //** determines default checked state */
-    defaultChecked?: boolean;
-
-    /**
-     * The id of the `input` element.
-     */
-    id?: string;
-
-    /**
-     * [Attributes](https://developer.mozilla.org/en-US/docs/Web/HTML/Element/input#Attributes) applied to the `input` element.
-     */
-    inputProps?: object;
-
-    /**
-     * The size of the component.
-     * `small` is equivalent to the dense checkbox styling.
-     * @default 'medium'
-     */
-    size?: "medium" | "small";
-
-    /**
-     * The value of the component. The DOM API casts this to a string.
-     * The browser uses "on" as the default value.
-     */
-    value?: any;
-}
-
-export interface FormCheckboxProps {
-    /**
      * If `true`, the component appears selected.
      */
     checked?: boolean;
 
-    /**
-     * A control element. For instance, it can be a `Radio`, a `Switch` or a `Checkbox`.
-     */
-    control?: React.ReactElement<any, any>;
+    //** determines default checked state */
+    defaultChecked?: boolean;
 
     /**
      * If `true`, the control is disabled.
@@ -59,12 +24,12 @@ export interface FormCheckboxProps {
     /**
      * Pass a ref to the `input` element.
      */
-    inputRef?: React.Ref<any>;
+    inputRef?: React.Ref<HTMLInputElement>;
 
     /**
      * A text or an element to be used in an enclosing label element.
      */
-    label: React.ReactNode;
+    label?: React.ReactNode;
 
     /**
      * The position of the label.
@@ -99,43 +64,49 @@ export interface FormCheckboxProps {
 
     value?: unknown;
 
-    //** below are checkbox specific props within the FormControlLabel control prop */
-
-    //** determines default checked state */
-    defaultChecked?: boolean;
-
     /**
      * The id of the `input` element.
      */
     id?: string;
 
-    /**
-     * The size of the component.
-     * `small` is equivalent to the dense checkbox styling.
-     * @default 'medium'
-     */
-    size?: "medium" | "small";
+    checkboxProps?: {
+        /**
+         * The system prop that allows defining system overrides as well as additional CSS styles.
+         */
+        sx?: SxProps;
+
+        /**
+         * The id of the `input` element.
+         */
+        id?: string;
+
+        /**
+         * [Attributes](https://developer.mozilla.org/en-US/docs/Web/HTML/Element/input#Attributes) applied to the `input` element.
+         */
+        inputProps?: object;
+
+        /**
+         * The size of the component.
+         * `small` is equivalent to the dense checkbox styling.
+         * @default 'medium'
+         */
+        size?: "medium" | "small";
+
+        /**
+         * The value of the component. The DOM API casts this to a string.
+         * The browser uses "on" as the default value.
+         */
+        value?: boolean;
+    };
 }
 
-export const _Checkbox = (props: CheckboxProps) => {
-    const { sx } = props;
-    return <MuiCheckbox sx={sx} {...props}></MuiCheckbox>;
-};
-
-export const Checkbox = (props: FormCheckboxProps) => {
-    const { sx, defaultChecked, size, id } = props;
+export const Checkbox = (props: CheckboxProps) => {
+    const { checkboxProps } = props;
 
     return (
         <FormControlLabel
-            sx={sx}
             {...props}
-            control={
-                <_Checkbox
-                    defaultChecked={defaultChecked}
-                    size={size}
-                    id={id}
-                />
-            }
+            control={<MuiCheckbox {...checkboxProps} />}
         />
     );
 };
