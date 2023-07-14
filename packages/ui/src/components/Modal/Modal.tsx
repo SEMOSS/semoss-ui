@@ -38,7 +38,7 @@ export interface ModalProps {
      * Set to `false` to disable `maxWidth`.
      * @default 'sm'
      */
-    maxWidth?: "sm" | "md" | "lg";
+    maxWidth?: "sm" | "md" | "lg" | false;
 
     /**
      * Callback fired when the component requests to be closed.

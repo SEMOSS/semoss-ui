@@ -71,16 +71,13 @@ export const TempPage = ({ title }: TempPageProps): JSX.Element => {
                     Home
                 </StyledLink>
 
-                <StyledLink to="/workspace" active={isActive('/workspace')}>
-                    Workspace
-                </StyledLink>
                 <StyledContainer>
                     <StyledContainer>
                         <StyledLink
-                            to="/workspace/pipeline"
-                            active={isActive('/workspace/pipeline')}
+                            to="/edit/1/pipeline"
+                            active={isActive('/edit/pipeline')}
                         >
-                            Pipeline
+                            Insight 1 Pipeline
                         </StyledLink>
                     </StyledContainer>
                 </StyledContainer>

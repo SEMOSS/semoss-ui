@@ -1,1 +1,0 @@
-export { WorkspaceRouter } from './WorkspaceRouter';

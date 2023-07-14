@@ -1,160 +1,19 @@
-import ReactFlow, { MiniMap, Controls, Node, Edge } from 'react-flow-renderer';
+import { useMemo } from 'react';
+import { observer } from 'mobx-react-lite';
+import ReactFlow, { MiniMap, Controls } from 'react-flow-renderer';
 import { styled } from '@semoss/ui';
 import DotGrid from '@/assets/img/DotGrid.svg';
 
+import { PipelineContext } from '@/contexts';
+import { PipelineStore } from '@/stores';
+
+import { NodeRegistry } from './pipeline.types';
 import { PipelineNode } from './PipelineNode';
-import { PipelineNodeData } from './pipeline.types';
+import { PipelineOverlay } from './PipelineOverlay';
 
 const nodeTypes = {
     pipeline: PipelineNode,
 };
-
-const nodes: Node<PipelineNodeData>[] = [
-    {
-        id: 'node--1',
-        type: 'pipeline',
-        data: {
-            widget: 'import',
-            parameters: {
-                FRAME: {
-                    type: 'frame',
-                    value: '',
-                },
-            },
-            input: [],
-            output: ['FRAME'],
-        },
-        position: {
-            x: 50,
-            y: 50,
-        },
-    },
-    {
-        id: 'node--2',
-        type: 'pipeline',
-        data: {
-            widget: 'import',
-            parameters: {
-                FRAME: {
-                    type: 'frame',
-                    value: '',
-                },
-            },
-            input: [],
-            output: ['FRAME'],
-        },
-        position: {
-            x: 50,
-            y: 250,
-        },
-    },
-    {
-        id: 'node--3',
-        type: 'pipeline',
-        data: {
-            widget: 'merge',
-
-            parameters: {
-                SOURCE_1: {
-                    type: 'frame',
-                    value: '',
-                },
-                SOURCE_2: {
-                    type: 'frame',
-                    value: '',
-                },
-                TARGET: {
-                    type: 'frame',
-                    value: '',
-                },
-            },
-            input: ['SOURCE_1', 'SOURCE_2'],
-            output: ['TARGET'],
-        },
-        position: {
-            x: 500,
-            y: 125,
-        },
-    },
-
-    {
-        id: 'node--4',
-        type: 'pipeline',
-        data: {
-            widget: 'agent',
-            parameters: {
-                PROMPT: {
-                    type: 'string',
-                    value: '',
-                },
-                FRAME: {
-                    type: 'frame',
-                    value: '',
-                },
-            },
-            input: ['FRAME', 'PROMPT'],
-            output: [],
-        },
-        position: {
-            x: 950,
-            y: 225,
-        },
-    },
-    {
-        id: 'node--5',
-        type: 'pipeline',
-        data: {
-            widget: 'prompt',
-            parameters: {
-                PROMPT: {
-                    type: 'string',
-                    value: '',
-                },
-            },
-            input: [],
-            output: ['PROMPT'],
-        },
-        position: {
-            x: 500,
-            y: 425,
-        },
-    },
-];
-
-const edges: Edge[] = [
-    {
-        id: 'edge--1',
-        type: 'pipeline',
-        source: 'node--1',
-        sourceHandle: 'FRAME',
-        target: 'node--3',
-        targetHandle: 'SOURCE_1',
-    },
-    {
-        id: 'edge--2',
-        type: 'pipeline',
-        source: 'node--2',
-        sourceHandle: 'FRAME',
-        target: 'node--3',
-        targetHandle: 'SOURCE_2',
-    },
-    {
-        id: 'edge--3',
-        type: 'pipeline',
-        source: 'node--3',
-        sourceHandle: 'FRAME',
-        target: 'node--4',
-        targetHandle: 'FRAME',
-    },
-    {
-        id: 'edge--5',
-        type: 'pipeline',
-        source: 'node--5',
-        sourceHandle: 'PROMPT',
-        target: 'node--4',
-        targetHandle: 'PROMPT',
-    },
-];
 
 const StyledGrid = styled('div')(({ theme }) => ({
     position: 'absolute',
@@ -167,19 +26,37 @@ const StyledGrid = styled('div')(({ theme }) => ({
     backgroundColor: theme.palette.background.default,
 }));
 
-export const Pipeline = (): JSX.Element => {
+interface PipelineProps {
+    /** Nodes that are available to the pipeline */
+    registry: NodeRegistry;
+}
+
+export const Pipeline = observer((props: PipelineProps): JSX.Element => {
+    const { registry } = props;
+
+    // create a new instance of the store and provide it to the childen
+    const store = useMemo(() => {
+        return new PipelineStore();
+    }, []);
+
     return (
-        <>
+        <PipelineContext.Provider
+            value={{
+                pipeline: store,
+                registry: registry,
+            }}
+        >
+            <PipelineOverlay />
             <StyledGrid>
                 <ReactFlow
-                    defaultNodes={nodes}
-                    defaultEdges={edges}
+                    nodes={store.renderedNodes}
+                    edges={store.renderedEdges}
                     nodeTypes={nodeTypes}
                 >
                     <MiniMap />
                     <Controls showInteractive={false} />
                 </ReactFlow>
             </StyledGrid>
-        </>
+        </PipelineContext.Provider>
     );
-};
+});

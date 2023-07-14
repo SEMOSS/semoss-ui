@@ -1,3 +1,4 @@
+import { observer } from 'mobx-react-lite';
 import { NodeProps, Handle, Position } from 'react-flow-renderer';
 import {
     styled,
@@ -5,16 +6,13 @@ import {
     Card,
     Icon,
     IconButton,
-    MoreVert,
     Stack,
     Typography,
-    CloudOutlined,
 } from '@semoss/ui';
+import { CloudOutlined, MoreVert } from '@mui/icons-material';
 
-import { PipelineNodeData } from './pipeline.types';
-import { useWorkspace } from '@/hooks';
-
-import { PromptDesigner } from '@/components/common';
+import { usePipeline } from '@/hooks';
+import { NodeData } from './pipeline.types';
 
 const StyledNode = styled(Card)(() => ({
     width: '344px',
@@ -74,25 +72,15 @@ const StyledParameterHandle = styled(Handle)(({ type, theme }) => ({
     },
 }));
 
-type PipelineNodeNodeProps = NodeProps<PipelineNodeData>;
+type PipelineNodeProps = NodeProps<NodeData>;
 
-export const PipelineNode = (props: PipelineNodeNodeProps) => {
+export const PipelineNode = observer((props: PipelineNodeProps) => {
     const { id, data } = props;
 
-    const { workspace } = useWorkspace();
-
-    /**
-     * Open the query overlay and set the json
-     * @param id - id to open in the overlay. If null, it will open a new one.
-     */
-    const openOverlay = () => {
-        workspace.openOverlay(() => {
-            return <PromptDesigner />;
-        });
-    };
+    const { pipeline } = usePipeline();
 
     return (
-        <StyledNode onClick={() => openOverlay()}>
+        <StyledNode onClick={() => pipeline.openOverlay(id)}>
             <Card.Header
                 title={
                     <Stack direction={'row'} spacing={1} alignItems={'center'}>
@@ -100,7 +88,7 @@ export const PipelineNode = (props: PipelineNodeNodeProps) => {
                             <CloudOutlined />
                         </StyledHeaderIcon>
                         <StyledHeaderTitle variant="body1">
-                            {data.widget}
+                            {data.name}
                         </StyledHeaderTitle>
                         <IconButton>
                             <MoreVert />
@@ -150,4 +138,4 @@ export const PipelineNode = (props: PipelineNodeNodeProps) => {
             </Card.Content>
         </StyledNode>
     );
-};
+});

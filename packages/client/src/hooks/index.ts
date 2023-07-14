@@ -1,5 +1,5 @@
 export * from './useAPI';
-export * from './useWorkspace';
+export * from './usePipeline';
 export * from './useDatabase';
 export * from './useMetamodel';
 export * from './useRootStore';

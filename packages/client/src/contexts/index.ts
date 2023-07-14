@@ -1,19 +1,22 @@
 import { DatabaseContextType, DatabaseContext } from './DatabaseContext';
+import { InsightContextType, InsightContext } from './InsightContext';
 import { MetamodelContextType, MetamodelContext } from './MetamodelContext';
 import { SettingsContextType, SettingsContext } from './SettingsContext';
 import { RootStoreContextType, RootStoreContext } from './RootStoreContext';
-import { WorkspaceContextType, WorkspaceContext } from './WorkspaceContext';
+import { PipelineContextType, PipelineContext } from './PipelineContext';
 export type {
     DatabaseContextType,
+    InsightContextType,
     MetamodelContextType,
     RootStoreContextType,
     SettingsContextType,
-    WorkspaceContextType,
+    PipelineContextType,
 };
 export {
     DatabaseContext,
+    InsightContext,
     MetamodelContext,
     SettingsContext,
     RootStoreContext,
-    WorkspaceContext,
+    PipelineContext,
 };

@@ -1,4 +1,4 @@
 import { RootStore } from './root';
-import { WorkspaceStore } from './workspace';
+import { PipelineStore } from './pipeline';
 
-export { RootStore, WorkspaceStore };
+export { RootStore, PipelineStore };

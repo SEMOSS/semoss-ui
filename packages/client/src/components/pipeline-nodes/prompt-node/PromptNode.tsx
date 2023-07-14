@@ -1,8 +1,17 @@
 import { useEffect, useState } from 'react';
-import { styled, Chip, Stack, Select, TextField, Button } from '@semoss/ui';
-import { Menu } from '@semoss/ui/src/components/Menu';
+import {
+    styled,
+    Chip,
+    Stack,
+    Select,
+    TextField,
+    Button,
+    Menu,
+} from '@semoss/ui';
 
-const prompts = [
+import { NodeComponent, NodeConfig } from '@/components/pipeline';
+
+const PROMPTS_API = [
     {
         id: 'prompt--0',
         name: 'English Translator',
@@ -77,7 +86,13 @@ const generateTokenId = () => {
     return `token--${++id}`;
 };
 
-export const PromptDesigner = () => {
+interface PromptNodeConfig extends NodeConfig<'prompt-node'> {
+    parameters: {
+        PROMPT: 'string';
+    };
+}
+
+export const PromptNode: NodeComponent<PromptNodeConfig> = () => {
     // TODO: Fix. This is hacky. Should use a proper library.
     const [prompt, setPrompt] = useState<string>('');
     const [tokens, setTokens] = useState<PromptToken[]>([]);
@@ -283,7 +298,7 @@ export const PromptDesigner = () => {
                     setPrompt(e.target.value as string);
                 }}
             >
-                {prompts.map((p) => (
+                {PROMPTS_API.map((p) => (
                     <Select.Item key={p.id} value={p.prompt}>
                         {p.name}
                     </Select.Item>
@@ -330,4 +345,17 @@ export const PromptDesigner = () => {
             </Stack>
         </StyledContainer>
     );
+};
+
+PromptNode.guid = 'prompt-node';
+PromptNode.config = {
+    name: 'Merge',
+    parameters: {
+        PROMPT: {
+            type: 'string',
+            value: '',
+        },
+    },
+    input: [],
+    output: ['PROMPT'],
 };
