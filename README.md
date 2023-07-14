@@ -52,3 +52,5 @@ Access application at (http://localhost:9090/semoss-ui/#!/)
 [Writing Stories](https://storybook.js.org/docs/react/writing-stories/introduction)
 
 [WAI-ARIA Authoring Practices 1.2](https://www.w3.org/TR/wai-aria-practices-1.2/)
+
+[Conventional Commits Docs](https://www.conventionalcommits.org/en/v1.0.0/)
