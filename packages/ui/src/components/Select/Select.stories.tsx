@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import type { Meta, StoryObj } from "@storybook/react";
-import { Select, Stack, Box, Checkbox } from "../../";
+import { Select, Stack, Box } from "../../";
 
 const meta: Meta<typeof Select> = {
     title: "Components/Select",

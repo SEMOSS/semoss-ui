@@ -1,4 +1,4 @@
-import { TextField, SelectProps as MuiSelectProps } from "@mui/material";
+import { TextField } from "@mui/material";
 import { SxProps } from "@mui/system";
 
 export interface SelectProps {
