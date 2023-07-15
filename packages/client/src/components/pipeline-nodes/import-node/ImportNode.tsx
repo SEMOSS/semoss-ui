@@ -27,11 +27,6 @@ const StyledContainer = styled(Stack)(({ theme }) => ({
     width: `${theme.breakpoints.values.sm}px`,
 }));
 
-const StyledQuery = styled(TextArea)(() => ({
-    height: '250px',
-    width: '100%',
-}));
-
 interface ImportNodeConfig extends NodeConfig<'import-node'> {
     parameters: {
         FRAME: 'frame';
@@ -41,13 +36,13 @@ interface ImportNodeConfig extends NodeConfig<'import-node'> {
 }
 
 export const ImportNode: NodeComponent<ImportNodeConfig> = (props) => {
-    const { parameters, saveParameters, closeNode } = props;
+    const { parameters, actions } = props;
 
     const [database, setDatabase] = useState(parameters.DATABASE.value);
     const [query, setQuery] = useState(parameters.QUERY.value);
 
     return (
-        <StyledContainer>
+        <StyledContainer spacing={2}>
             <Select
                 label="Select Database"
                 value={database}
@@ -62,14 +57,16 @@ export const ImportNode: NodeComponent<ImportNodeConfig> = (props) => {
                     </Select.Item>
                 ))}
             </Select>
-            <StyledQuery
+            <TextArea
+                label={'Enter Query:'}
+                rows={6}
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
-            ></StyledQuery>
+            ></TextArea>
             <Stack direction={'row'} justifyContent={'flex-end'}>
                 <Button
                     variant="contained"
-                    onClick={() => {
+                    onClick={async () => {
                         const frame = parameters.FRAME.value.name
                             ? parameters.FRAME
                             : ({
@@ -81,9 +78,8 @@ export const ImportNode: NodeComponent<ImportNodeConfig> = (props) => {
                                   },
                               } as NodeParameters['frame']);
 
-                        console.log(frame);
-
-                        saveParameters({
+                        // run the pixel
+                        await actions.run({
                             FRAME: frame,
                             DATABASE: {
                                 type: 'string',
@@ -95,7 +91,12 @@ export const ImportNode: NodeComponent<ImportNodeConfig> = (props) => {
                             },
                         });
 
-                        closeNode(frame.value.name);
+                        // simulate if successful
+                        actions.save({
+                            display: {
+                                name: frame.value.name,
+                            },
+                        });
                     }}
                 >
                     Import
@@ -107,7 +108,6 @@ export const ImportNode: NodeComponent<ImportNodeConfig> = (props) => {
 
 ImportNode.guid = 'import-node';
 ImportNode.config = {
-    name: 'Import',
     parameters: {
         FRAME: {
             type: 'frame',
@@ -127,11 +127,16 @@ ImportNode.config = {
     input: [],
     output: ['FRAME'],
 };
+ImportNode.display = {
+    name: 'Import',
+    description: '',
+    icon: '',
+};
 
 ImportNode.toPixel = (parameters) => {
     // construct the frame
     const frame = `CreateFrame().as(["${parameters.FRAME.value.name}"])`;
 
     // embed in the database query
-    return `Database(${parameters.DATABASE.value}) | Query() | Import(frame=[${frame}])`;
+    return `Database(${parameters.DATABASE.value}) | Query(<encode>${parameters.QUERY.value}</encode>) | Import(frame=[${frame}])`;
 };

@@ -1,15 +1,19 @@
 import { makeAutoObservable } from 'mobx';
-import { Node, Edge } from 'react-flow-renderer';
+import { Node, Edge, NodeChange, applyNodeChanges } from 'react-flow-renderer';
 
 import { NodeData } from '@/components/pipeline';
 
 const SAMPLE_NODES: Node<NodeData>[] = [
     {
-        id: 'node--1',
+        id: 'node--old--1',
         type: 'pipeline',
         data: {
             guid: 'import-node',
-            name: 'Import',
+            display: {
+                name: 'Import',
+                description: '',
+                icon: '',
+            },
             parameters: {
                 FRAME: {
                     type: 'frame',
@@ -35,17 +39,29 @@ const SAMPLE_NODES: Node<NodeData>[] = [
         },
     },
     {
-        id: 'node--2',
+        id: 'node--old--2',
         type: 'pipeline',
         data: {
             guid: 'import-node',
-            name: 'Import',
+            display: {
+                name: 'Import',
+                description: '',
+                icon: '',
+            },
             parameters: {
                 FRAME: {
                     type: 'frame',
                     value: {
                         name: '',
                     },
+                },
+                DATABASE: {
+                    type: 'string',
+                    value: '',
+                },
+                QUERY: {
+                    type: 'string',
+                    value: '',
                 },
             },
             input: [],
@@ -57,23 +73,25 @@ const SAMPLE_NODES: Node<NodeData>[] = [
         },
     },
     {
-        id: 'node--3',
+        id: 'node--old--3',
         type: 'pipeline',
         data: {
             guid: 'merge-node',
-            name: 'Merge',
+            display: {
+                name: 'Merge',
+                description: '',
+                icon: '',
+            },
             parameters: {
-                SOURCE_1: {
+                SOURCE: {
                     type: 'frame',
                     value: {
                         name: '',
                     },
                 },
-                SOURCE_2: {
-                    type: 'frame',
-                    value: {
-                        name: '',
-                    },
+                SOURCE_COLUMN: {
+                    type: 'string',
+                    value: '',
                 },
                 TARGET: {
                     type: 'frame',
@@ -81,8 +99,12 @@ const SAMPLE_NODES: Node<NodeData>[] = [
                         name: '',
                     },
                 },
+                TARGET_COLUMN: {
+                    type: 'string',
+                    value: '',
+                },
             },
-            input: ['SOURCE_1', 'SOURCE_2'],
+            input: ['SOURCE', 'TARGET'],
             output: ['TARGET'],
         },
         position: {
@@ -90,13 +112,16 @@ const SAMPLE_NODES: Node<NodeData>[] = [
             y: 125,
         },
     },
-
     {
-        id: 'node--4',
+        id: 'node--old--4',
         type: 'pipeline',
         data: {
             guid: 'agent-node',
-            name: 'Agent',
+            display: {
+                name: 'Agent',
+                description: '',
+                icon: '',
+            },
 
             parameters: {
                 PROMPT: {
@@ -119,11 +144,15 @@ const SAMPLE_NODES: Node<NodeData>[] = [
         },
     },
     {
-        id: 'node--5',
+        id: 'node--old--5',
         type: 'pipeline',
         data: {
             guid: 'prompt-node',
-            name: 'Prompt',
+            display: {
+                name: 'Prompt',
+                description: '',
+                icon: '',
+            },
             parameters: {
                 PROMPT: {
                     type: 'string',
@@ -142,35 +171,35 @@ const SAMPLE_NODES: Node<NodeData>[] = [
 
 const SAMPLE_EDGES: Edge[] = [
     {
-        id: 'edge--1',
+        id: 'edge--old--1',
         type: 'pipeline',
-        source: 'node--1',
+        source: 'node--old--1',
         sourceHandle: 'FRAME',
-        target: 'node--3',
-        targetHandle: 'SOURCE_1',
+        target: 'node--old--3',
+        targetHandle: 'SOURCE',
     },
     {
-        id: 'edge--2',
+        id: 'edge--old--2',
         type: 'pipeline',
-        source: 'node--2',
+        source: 'node--old--2',
         sourceHandle: 'FRAME',
-        target: 'node--3',
-        targetHandle: 'SOURCE_2',
+        target: 'node--old--3',
+        targetHandle: 'TARGET',
     },
     {
-        id: 'edge--3',
+        id: 'edge--old--3',
         type: 'pipeline',
-        source: 'node--3',
+        source: 'node--old--3',
         sourceHandle: 'FRAME',
-        target: 'node--4',
+        target: 'node--old--4',
         targetHandle: 'FRAME',
     },
     {
-        id: 'edge--5',
+        id: 'edge--old--5',
         type: 'pipeline',
-        source: 'node--5',
+        source: 'node--old--5',
         sourceHandle: 'PROMPT',
-        target: 'node--4',
+        target: 'node--old--4',
         targetHandle: 'PROMPT',
     },
 ];
@@ -187,9 +216,15 @@ export interface PipelineStoreInterface {
 
     /** Rendered graph information */
     graph: {
-        nodes: Record<string, Node<NodeData>>;
+        nodes: Node<NodeData>[];
         edges: Edge[];
     };
+
+    /** Recipie information */
+    recipe: {
+        pixel: string;
+        nodeId: string;
+    }[];
 }
 
 /**
@@ -202,20 +237,22 @@ export class PipelineStore {
             activeNode: '',
         },
         graph: {
-            nodes: {},
+            nodes: [],
             edges: [],
         },
+        recipe: [],
+    };
+
+    private _counter = {
+        node: 0,
+        edge: 0,
     };
 
     constructor() {
         this._store.graph = {
-            nodes: {},
+            nodes: SAMPLE_NODES,
             edges: SAMPLE_EDGES,
         };
-
-        for (const n of SAMPLE_NODES) {
-            this._store.graph.nodes[n.id] = n;
-        }
 
         // make it observable
         makeAutoObservable(this);
@@ -234,28 +271,40 @@ export class PipelineStore {
 
     /**
      * Get the graph information
-     * @returns the graph information
+     * @returns the graph
      */
     get graph() {
         return this._store.graph;
     }
 
     /**
-     * Get the graph information
-     * @returns list of rendered nodes
+     * Get node information
+     *
+     * @param id - id of the node
+     *
+     * @returns the node information
      */
-    get renderedNodes() {
-        return Object.values(this._store.graph.nodes) as Node<NodeData>[];
+    getNode(id: string): Node<NodeData> | null {
+        for (const n of this._store.graph.nodes) {
+            if (n.id === id) {
+                return n;
+            }
+        }
+
+        return null;
     }
 
+    /** Utility */
     /**
-     * Get the graph information
-     * @returns the graph information
+     * Open the overlay
+     *
+     * activeNode - current activeNode
      */
-    get renderedEdges() {
-        return this._store.graph.edges;
+    private generateId(name: 'node' | 'edge') {
+        return `${name}--${++this._counter[name]}`;
     }
 
+    /** Overlay */
     /**
      * Open the overlay
      *
@@ -280,39 +329,145 @@ export class PipelineStore {
         this.overlay.activeNode = null;
     }
 
+    /** Node */
     /**
-     * Save the parameters for a node
+     * Save information into the node
      *
      * @param id - id of the node
+     * @param options - options to save in the node
      */
-    saveParameters(id: string, parameters: Partial<NodeData['parameters']>) {
-        const node = this._store.graph.nodes[id];
+    addNode(
+        data: NodeData,
+        position: {
+            x: number;
+            y: number;
+        } = {
+            x: 0,
+            y: 0,
+        },
+    ) {
+        // generate an id
+        const id = this.generateId('node');
 
-        if (!node) {
-            throw `Node ${id} does not exist`;
-        }
+        // add the node
+        this._store.graph.nodes.push({
+            id: id,
+            type: 'pipeline',
+            data: data,
+            position: position,
+        });
+    }
 
-        // go through the parameters and only update if they exist
-        for (const p in parameters) {
-            if (p in node.data.parameters) {
-                node.data.parameters[p] = parameters[p];
+    /**
+     * Update the node
+     *
+     * @param id - id of the node
+     * @param options - options to save in the node
+     */
+    updateNode(changes: NodeChange[]) {
+        // get a map of id to idx
+        const map = this._store.graph.nodes.reduce((acc, val, idx) => {
+            acc[val.id] = idx;
+            return acc;
+        }, {});
+
+        console.log(map);
+
+        for (const c of changes) {
+            if (c.type === 'position') {
+                // check if it exists
+                if (!map[c.id]) {
+                    continue;
+                }
+
+                // update the node
+                const node = this._store.graph.nodes[map[c.id]];
+
+                console.log(node, c);
+                if (c.position) {
+                    console.log('applying');
+                    node.position = c.position;
+                }
+
+                if (c.positionAbsolute) {
+                    node.positionAbsolute = c.positionAbsolute;
+                }
+
+                if (c.dragging) {
+                    node.dragging = c.dragging;
+                }
             }
         }
     }
 
     /**
-     * Update the name of the node
+     * Save information into the node
      *
      * @param id - id of the node
-     * @param name - name of the node
+     * @param options - options to save in the node
      */
-    updateName(id: string, name: string) {
-        const node = this._store.graph.nodes[id];
-
+    saveNode(
+        id: string,
+        options: Partial<{
+            display: Partial<NodeData['display']>;
+            parameters: Partial<NodeData['parameters']>;
+        }>,
+    ) {
+        // get the node
+        const node = this.getNode(id);
         if (!node) {
             throw `Node ${id} does not exist`;
         }
 
-        node.data.name = name;
+        // go through the parameters and only update if they exist
+        if (options.parameters) {
+            for (const p in options.parameters) {
+                if (p in node.data.parameters) {
+                    node.data.parameters[p] = options.parameters[p];
+                }
+            }
+        }
+
+        // go through the display and only update if they exist
+        if (options.display) {
+            for (const d in options.display) {
+                if (d in node.data.display) {
+                    node.data.display[d] = options.display[d];
+                }
+            }
+        }
+    }
+
+    /** Pixel */
+    /**
+     * Query the backend
+     *
+     * @param id - id of the node
+     * @param pixel - pixel to query the backend with
+     */
+    async queryPixel(id: string, pixel: string) {
+        console.log('TODO ::: Query', id, pixel);
+    }
+
+    /**
+     * Run a pixel and add to the recipe
+     *
+     * @param id - id of the node
+     * @param options - options to save in the node
+     */
+    async runPixel(id: string, pixel: string) {
+        // get the node
+        const node = this.getNode(id);
+        if (!node) {
+            throw `Node ${id} does not exist`;
+        }
+
+        // add to the recipie
+        this._store.recipe.push({
+            nodeId: id,
+            pixel: pixel,
+        });
+
+        console.log('TODO ::: Run', id, pixel);
     }
 }

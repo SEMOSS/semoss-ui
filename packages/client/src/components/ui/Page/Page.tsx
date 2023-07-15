@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from 'react';
 import { styled, Container } from '@semoss/ui';
-import { SxProps } from '@mui/system';
 
 const StyledPage = styled('div')(() => ({
     height: '100%',
@@ -38,7 +37,6 @@ export interface PageProps {
 
     /** Content to include in the main section of the page */
     children: React.ReactNode;
-    sx?: SxProps;
 }
 
 export const Page = (props: PageProps): JSX.Element => {

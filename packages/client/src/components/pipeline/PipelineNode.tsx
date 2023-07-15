@@ -88,7 +88,7 @@ export const PipelineNode = observer((props: PipelineNodeProps) => {
                             <CloudOutlined />
                         </StyledHeaderIcon>
                         <StyledHeaderTitle variant="body1">
-                            {data.name}
+                            {data.display.name}
                         </StyledHeaderTitle>
                         <IconButton>
                             <MoreVert />

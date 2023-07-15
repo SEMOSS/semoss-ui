@@ -27,6 +27,10 @@ export type NodeParameters = {
         type: 'number';
         value: number;
     };
+    custom: {
+        type: 'custom';
+        value: unknown;
+    };
 };
 
 /**
@@ -36,8 +40,8 @@ export type NodeData<C extends NodeConfig = NodeConfig> = {
     /** Unique identifier for the node */
     guid: C['guid'];
 
-    /** Unique identifier for the node */
-    name: string;
+    /** Display Information */
+    display: NodeComponent<C>['display'];
 
     /** Paremeters used in the input / output / saved */
     parameters: {
@@ -60,21 +64,43 @@ interface NodeComponentProps<C extends NodeConfig = NodeConfig> {
         [P in keyof C['parameters']]: NodeParameters[C['parameters'][P]];
     };
 
-    /**
-     * Save the parameters
-     * @param parameters - updated parameters
-     */
-    saveParameters: (
-        parameters: Partial<{
-            [P in keyof C['parameters']]: NodeParameters[C['parameters'][P]];
-        }>,
-    ) => void;
+    /** Display Information */
+    display: NodeComponent<C>['display'];
 
     /**
-     * Close the node
-     * @param name - Updated name of the node
+     * Actions to interact with the pipeline
      */
-    closeNode: (name: string) => void;
+    actions: {
+        /**
+         * Close the pipeline
+         */
+        close: () => void;
+
+        /**
+         * Run a pixel against the backend
+         * @param pixel - pixel to run
+         */
+        query: (pixel: string) => Promise<unknown>;
+
+        /**
+         * run a pixel and return information if the pixel was successful
+         * @param parameters - parameters to run
+         */
+        run: (
+            parameters: Partial<NodeData<C>['parameters']>,
+        ) => Promise<unknown>;
+
+        /**
+         * Save information into the node
+         * @param options - options to save in the node
+         */
+        save: (
+            options: Partial<{
+                display: Partial<NodeData<C>['display']>;
+                parameters: Partial<NodeData<C>['parameters']>;
+            }>,
+        ) => void;
+    };
 }
 
 /**
@@ -87,9 +113,6 @@ export type NodeComponent<C extends NodeConfig = NodeConfig> =
 
         /** Configuration information */
         config: {
-            /** Name of the node */
-            name: string;
-
             /** Parameter values used in the input / output */
             parameters: {
                 [P in keyof C['parameters']]: NodeParameters[C['parameters'][P]];
@@ -100,6 +123,18 @@ export type NodeComponent<C extends NodeConfig = NodeConfig> =
 
             /** List of output data */
             output: (keyof C['parameters'])[];
+        };
+
+        /** Display information */
+        display: {
+            /** Name of the node */
+            name: string;
+
+            /** Description of the node */
+            description: string;
+
+            /** Description of the node */
+            icon: string;
         };
 
         /**

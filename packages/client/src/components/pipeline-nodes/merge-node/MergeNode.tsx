@@ -2,9 +2,10 @@ import { NodeComponent, NodeConfig } from '@/components/pipeline';
 
 interface MergeNodeConfig extends NodeConfig<'merge-node'> {
     parameters: {
-        SOURCE_1: 'frame';
-        SOURCE_2: 'frame';
+        SOURCE: 'frame';
+        SOURCE_COLUMN: 'string';
         TARGET: 'frame';
+        TARGET_COLUMN: 'string';
     };
 }
 
@@ -14,19 +15,16 @@ export const MergeNode: NodeComponent<MergeNodeConfig> = () => {
 
 MergeNode.guid = 'merge-node';
 MergeNode.config = {
-    name: 'Merge',
     parameters: {
-        SOURCE_1: {
+        SOURCE: {
             type: 'frame',
             value: {
                 name: '',
             },
         },
-        SOURCE_2: {
-            type: 'frame',
-            value: {
-                name: '',
-            },
+        SOURCE_COLUMN: {
+            type: 'string',
+            value: '',
         },
         TARGET: {
             type: 'frame',
@@ -34,7 +32,20 @@ MergeNode.config = {
                 name: '',
             },
         },
+        TARGET_COLUMN: {
+            type: 'string',
+            value: '',
+        },
     },
-    input: ['SOURCE_1', 'SOURCE_2'],
+    input: ['SOURCE', 'TARGET'],
     output: ['TARGET'],
+};
+MergeNode.display = {
+    name: 'Merge',
+    description: '',
+    icon: '',
+};
+
+MergeNode.toPixel = (parameters) => {
+    return `Frame(${parameters.SOURCE.value.name}) | Merge(joins=[(${parameters.SOURCE_COLUMN.value} inner.join ${parameters.TARGET_COLUMN.value})], frame=[${parameters.TARGET.value.name}]);`;
 };

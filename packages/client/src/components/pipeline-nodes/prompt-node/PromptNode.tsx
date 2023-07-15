@@ -88,14 +88,18 @@ const generateTokenId = () => {
 
 interface PromptNodeConfig extends NodeConfig<'prompt-node'> {
     parameters: {
-        PROMPT: 'string';
+        PROMPT: 'custom';
     };
 }
 
-export const PromptNode: NodeComponent<PromptNodeConfig> = () => {
+export const PromptNode: NodeComponent<PromptNodeConfig> = (props) => {
+    const { parameters, actions } = props;
+
     // TODO: Fix. This is hacky. Should use a proper library.
     const [prompt, setPrompt] = useState<string>('');
-    const [tokens, setTokens] = useState<PromptToken[]>([]);
+    const [tokens, setTokens] = useState<PromptToken[]>(
+        (parameters.PROMPT.value || []) as PromptToken[],
+    );
 
     const [tokenMenuActive, setTokenMenuActive] = useState<boolean>(false);
     const [tokenMenuPosition, setTokenMenuPosition] = useState<{
@@ -341,7 +345,20 @@ export const PromptNode: NodeComponent<PromptNodeConfig> = () => {
                 })}
             </StyledTokenContainer>
             <Stack direction={'row'} justifyContent={'flex-end'}>
-                <Button variant="contained">Create</Button>
+                <Button
+                    variant="contained"
+                    onClick={() => {
+                        // run the pixel
+                        actions.run({
+                            PROMPT: {
+                                type: 'custom',
+                                value: prompt,
+                            },
+                        });
+                    }}
+                >
+                    Save
+                </Button>
             </Stack>
         </StyledContainer>
     );
@@ -349,13 +366,18 @@ export const PromptNode: NodeComponent<PromptNodeConfig> = () => {
 
 PromptNode.guid = 'prompt-node';
 PromptNode.config = {
-    name: 'Merge',
     parameters: {
         PROMPT: {
-            type: 'string',
-            value: '',
+            type: 'custom',
+            value: [],
         },
     },
     input: [],
     output: ['PROMPT'],
 };
+PromptNode.display = {
+    name: 'Prompt',
+    description: '',
+    icon: '',
+};
+PromptNode.toPixel = () => '';

@@ -13,7 +13,6 @@ export const AgentNode: NodeComponent<AgentNodeConfig> = () => {
 
 AgentNode.guid = 'agent-node';
 AgentNode.config = {
-    name: 'Agent',
     parameters: {
         FRAME: {
             type: 'frame',
@@ -29,3 +28,10 @@ AgentNode.config = {
     input: ['FRAME', 'PROMPT'],
     output: [],
 };
+AgentNode.display = {
+    name: 'Agent',
+    description: '',
+    icon: '',
+};
+
+AgentNode.toPixel = () => '';
