@@ -35,6 +35,23 @@ export interface DBMember {
     SELECTED: boolean;
 }
 
+export interface Database {
+    app_cost: string;
+    app_favorite: number;
+    app_id: string;
+    app_name: string;
+    app_type: string;
+    database_cost: string;
+    database_id: string;
+    database_name: string;
+    database_type: string;
+    low_database_name: string;
+    database_global: true;
+    database_favorite?: number;
+    permission?: number;
+    user_permission?: number;
+}
+
 const StyledContainer = styled('div')({
     display: 'flex',
     width: 'auto',
@@ -91,10 +108,7 @@ export const DatabaseSettingsPage = () => {
     const [search, setSearch] = useState('');
     const [sort, setSort] = useState('Name');
 
-    const [selectedApp, setSelectedApp] =
-        useState<Awaited<ReturnType<MonolithStore['getDatabases']>>[number]>(
-            null,
-        );
+    const [selectedApp, setSelectedApp] = useState<Database>(null);
 
     // To focus when getting new results
     const searchbarRef = useRef(null);
@@ -465,9 +479,10 @@ export const DatabaseSettingsPage = () => {
                 <Permissions
                     config={{
                         id: selectedApp.database_id,
-                        name: selectedApp.database_name,
+                        name: formatDBName(selectedApp.database_name),
                         global: selectedApp.database_global,
-                        visibility: selectedApp.database_visibility,
+                        permission: selectedApp.permission,
+                        // visibility: selectedApp.database_visibility,
                     }}
                 ></Permissions>
             )}
