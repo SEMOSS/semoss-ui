@@ -94,10 +94,7 @@ const StyledTableContainer = MuiStyled(MuiTable.Container)({
 });
 
 const StyledMemberTable = MuiStyled(MuiTable)({
-    // display: 'flex',
-    // flexDirection: 'column',
-    // alignItems: 'flex-start',
-    // width: '100%',
+    minHeight: '503px', // 5 rows
 });
 
 const StyledTableTitleContainer = MuiStyled('div')({
@@ -177,6 +174,22 @@ const StyledAddMemberContainer = MuiStyled('div')({
     justifyContent: 'center',
     alignItems: 'center',
     gap: '10px',
+});
+
+const StyledNoMembersContainer = MuiStyled('div')({
+    width: '100%',
+    borderRadius: '12px',
+    boxShadow: '0px 5px 22px 0px rgba(0, 0, 0, 0.06)',
+});
+
+const StyledNoMembersDiv = MuiStyled('div')({
+    width: '100%',
+    height: '503px',
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '1rem',
+    justifyContent: 'center',
+    alignItems: 'center',
 });
 
 // Old styles
@@ -609,6 +622,7 @@ interface PermissionConfig {
     global: boolean;
     visibility?: boolean;
     projectid?: string;
+    permission?: number;
 }
 
 export interface PermissionsProps {
@@ -616,7 +630,14 @@ export interface PermissionsProps {
 }
 
 export const Permissions = (props: PermissionsProps) => {
-    const { id, name, global, visibility, projectid } = props.config;
+    const {
+        id,
+        name,
+        global,
+        visibility,
+        projectid,
+        permission = 3,
+    } = props.config;
 
     const resolvedPathname = useResolvedPath('').pathname;
 
@@ -1120,7 +1141,10 @@ export const Permissions = (props: PermissionsProps) => {
                 aria-label="basic tabs example"
             >
                 <ToggleTabsGroup.Item label="Members" />
-                <ToggleTabsGroup.Item label="Pending Requests" />
+                <ToggleTabsGroup.Item
+                    label="Pending Requests"
+                    disabled={permission === 3}
+                />
             </ToggleTabsGroup>
 
             {view === 0 && (
@@ -2477,7 +2501,6 @@ const PendingMembersTable = (props) => {
 
         debugger;
 
-        return;
         // hit api with req'd fields
         monolithStore[mapMonolithFunction(type, 'ApproveUserRequest')](
             adminMode,
@@ -2552,8 +2575,6 @@ const PendingMembersTable = (props) => {
 
         debugger;
 
-        return;
-
         // hit api with req'd fields
         monolithStore[mapMonolithFunction(type, 'DenyUserRequest')](
             adminMode,
@@ -2574,29 +2595,27 @@ const PendingMembersTable = (props) => {
                 pendingMemberRemove(indexesToRemove);
 
                 if (!quickActionFlag) {
-                    setSelectedPendingMembers([]);
-                    setSelectAllCheckboxState('pending-table', []);
+                    setSelectedPending([]);
                     // close modal
-                    setDenySelectedModal(false);
+                    // setDenySelectedModal(false);
                 } else {
                     // remove from selected pending members
                     let indexToRemoveFromSelected = 0;
                     // remove from selected
-                    selectedPendingMembers.find((m, i) => {
+                    selectedPending.find((m, i) => {
                         if (m.ID !== requestIds[0]) {
                             indexToRemoveFromSelected = i;
                         }
                     });
 
-                    const filteredArr = selectedPendingMembers.splice(
+                    const filteredArr = selectedPending.splice(
                         indexToRemoveFromSelected,
                         1,
                     );
 
-                    setSelectedPendingMembers(filteredArr);
-                    setSelectAllCheckboxState('pending-table', filteredArr);
+                    setSelectedPending(filteredArr);
                     // close modal
-                    setDenySelectedModal(false);
+                    // setDenySelectedModal(false);
                 }
 
                 notification.add({
@@ -2639,188 +2658,239 @@ const PendingMembersTable = (props) => {
         setValue('PENDING_MEMBERS', updatedPendingMems);
     };
 
+    const rowsToLoop = new Array(5).fill('');
+
     return (
         <StyledMemberContent>
             <StyledMemberInnerContent>
-                <StyledTableContainer>
-                    <StyledTableTitleContainer>
-                        <StyledTableTitleDiv>
-                            <Typography variant={'h6'}>{name}</Typography>
-                        </StyledTableTitleDiv>
+                {pendingMembers.length ? (
+                    <StyledTableContainer>
+                        <StyledTableTitleContainer>
+                            <StyledTableTitleDiv>
+                                <Typography variant={'h6'}>{name}</Typography>
+                            </StyledTableTitleDiv>
 
-                        <StyledTableTitleMemberCountContainer>
-                            <StyledTableTitleMemberCount>
-                                <Typography variant={'body1'}>
-                                    6 Members
-                                </Typography>
-                            </StyledTableTitleMemberCount>
-                        </StyledTableTitleMemberCountContainer>
+                            <StyledTableTitleMemberCountContainer>
+                                <StyledTableTitleMemberCount>
+                                    <Typography variant={'body1'}>
+                                        6 Members
+                                    </Typography>
+                                </StyledTableTitleMemberCount>
+                            </StyledTableTitleMemberCountContainer>
 
-                        <StyledFilterButtonContainer>
-                            <IconButton>
-                                <FilterAltRounded></FilterAltRounded>
-                            </IconButton>
-                        </StyledFilterButtonContainer>
+                            <StyledFilterButtonContainer>
+                                <IconButton>
+                                    <FilterAltRounded></FilterAltRounded>
+                                </IconButton>
+                            </StyledFilterButtonContainer>
 
-                        {selectedPending.length > 0 && (
-                            <>
-                                <StyledDeleteSelectedContainer>
-                                    <Button
-                                        variant={'contained'}
-                                        color="error"
-                                        onClick={() => {}}
-                                    >
-                                        Deny Selected
-                                    </Button>
-                                </StyledDeleteSelectedContainer>
-                                <StyledAddMemberContainer>
-                                    <Button
-                                        variant={'contained'}
-                                        onClick={() => {}}
-                                    >
-                                        Approve Selected
-                                    </Button>
-                                </StyledAddMemberContainer>
-                            </>
-                        )}
-                    </StyledTableTitleContainer>
-                    <StyledMemberTable>
-                        <MuiTable.Head>
-                            <MuiTable.Row>
-                                <MuiTable.Cell>
-                                    <MuiCheckbox
-                                        checked={
-                                            selectedPending.length ===
-                                                pendingMembers.length &&
-                                            pendingMembers.length > 0
-                                        }
-                                        onChange={() => {
-                                            if (
-                                                selectedPending.length !==
-                                                pendingMembers.length
-                                            ) {
-                                                setSelectedPending(
-                                                    pendingMembers,
+                            {selectedPending.length > 0 && (
+                                <>
+                                    <StyledDeleteSelectedContainer>
+                                        <Button
+                                            variant={'contained'}
+                                            color="error"
+                                            onClick={() => {
+                                                denyPendingMembers(
+                                                    selectedPending,
+                                                    false,
                                                 );
-                                            } else {
-                                                setSelectedPending([]);
-                                            }
-                                        }}
-                                    />
-                                </MuiTable.Cell>
-                                <MuiTable.Cell>Name</MuiTable.Cell>
-                                <MuiTable.Cell>Permission</MuiTable.Cell>
-                                <MuiTable.Cell>Request Date</MuiTable.Cell>
-                                <MuiTable.Cell>Actions</MuiTable.Cell>
-                            </MuiTable.Row>
-                        </MuiTable.Head>
-                        <MuiTable.Body>
-                            {pendingMembers.map((user: PendingMember, i) => {
-                                const isSelected = selectedPending.some(
-                                    (value: PendingMember) => {
-                                        return (
-                                            value.REQUEST_USERID ===
-                                            user.REQUEST_USERID
-                                        );
-                                    },
-                                );
-                                return (
-                                    <MuiTable.Row key={i}>
-                                        <MuiTable.Cell>
-                                            <MuiCheckbox
-                                                checked={isSelected}
-                                                onChange={() => {
-                                                    if (isSelected) {
-                                                        const selPending = [];
-                                                        selectedPending.forEach(
-                                                            (
-                                                                u: PendingMember,
-                                                            ) => {
-                                                                if (
-                                                                    u.REQUEST_USERID !==
-                                                                    user.REQUEST_USERID
-                                                                )
-                                                                    selPending.push(
-                                                                        u,
-                                                                    );
-                                                            },
-                                                        );
-
-                                                        setSelectedPending(
-                                                            selPending,
-                                                        );
-                                                    } else {
-                                                        setSelectedPending([
-                                                            ...selectedPending,
-                                                            user,
-                                                        ]);
-                                                    }
-                                                }}
-                                            />
-                                        </MuiTable.Cell>
-                                        <MuiTable.Cell
-                                            component="td"
-                                            scope="row"
+                                            }}
                                         >
-                                            {user.REQUEST_USERID}
-                                        </MuiTable.Cell>
-                                        <MuiTable.Cell>
-                                            <RadioGroup
-                                                row
-                                                value={user.PERMISSION}
-                                                onChange={(e) => {
-                                                    debugger;
-                                                    updatePendingMemberPermission(
-                                                        user,
-                                                        e.target.value,
+                                            Deny Selected
+                                        </Button>
+                                    </StyledDeleteSelectedContainer>
+                                    <StyledAddMemberContainer>
+                                        <Button
+                                            variant={'contained'}
+                                            onClick={() => {
+                                                approvePendingMembers(
+                                                    selectedPending,
+                                                    false,
+                                                );
+                                            }}
+                                        >
+                                            Approve Selected
+                                        </Button>
+                                    </StyledAddMemberContainer>
+                                </>
+                            )}
+                        </StyledTableTitleContainer>
+                        <StyledMemberTable>
+                            <MuiTable.Head>
+                                <MuiTable.Row>
+                                    <MuiTable.Cell>
+                                        <MuiCheckbox
+                                            checked={
+                                                selectedPending.length ===
+                                                    pendingMembers.length &&
+                                                pendingMembers.length > 0
+                                            }
+                                            onChange={() => {
+                                                if (
+                                                    selectedPending.length !==
+                                                    pendingMembers.length
+                                                ) {
+                                                    setSelectedPending(
+                                                        pendingMembers,
                                                     );
-                                                }}
+                                                } else {
+                                                    setSelectedPending([]);
+                                                }
+                                            }}
+                                        />
+                                    </MuiTable.Cell>
+                                    <MuiTable.Cell>Name</MuiTable.Cell>
+                                    <MuiTable.Cell>Permission</MuiTable.Cell>
+                                    <MuiTable.Cell>Request Date</MuiTable.Cell>
+                                    <MuiTable.Cell>Actions</MuiTable.Cell>
+                                </MuiTable.Row>
+                            </MuiTable.Head>
+                            <MuiTable.Body>
+                                {rowsToLoop.map((x, i) => {
+                                    const user = pendingMembers[i];
+
+                                    let isSelected = false;
+
+                                    if (user) {
+                                        isSelected = selectedPending.some(
+                                            (value: PendingMember) => {
+                                                return (
+                                                    value.REQUEST_USERID ===
+                                                    user.REQUEST_USERID
+                                                );
+                                            },
+                                        );
+                                    }
+                                    if (user) {
+                                        return (
+                                            <MuiTable.Row key={i}>
+                                                <MuiTable.Cell>
+                                                    <MuiCheckbox
+                                                        checked={isSelected}
+                                                        onChange={() => {
+                                                            if (isSelected) {
+                                                                const selPending =
+                                                                    [];
+                                                                selectedPending.forEach(
+                                                                    (
+                                                                        u: PendingMember,
+                                                                    ) => {
+                                                                        if (
+                                                                            u.REQUEST_USERID !==
+                                                                            user.REQUEST_USERID
+                                                                        )
+                                                                            selPending.push(
+                                                                                u,
+                                                                            );
+                                                                    },
+                                                                );
+
+                                                                setSelectedPending(
+                                                                    selPending,
+                                                                );
+                                                            } else {
+                                                                setSelectedPending(
+                                                                    [
+                                                                        ...selectedPending,
+                                                                        user,
+                                                                    ],
+                                                                );
+                                                            }
+                                                        }}
+                                                    />
+                                                </MuiTable.Cell>
+                                                <MuiTable.Cell
+                                                    component="td"
+                                                    scope="row"
+                                                >
+                                                    {user.REQUEST_USERID}
+                                                </MuiTable.Cell>
+                                                <MuiTable.Cell>
+                                                    <RadioGroup
+                                                        row
+                                                        value={user.PERMISSION}
+                                                        onChange={(e) => {
+                                                            updatePendingMemberPermission(
+                                                                user,
+                                                                e.target.value,
+                                                            );
+                                                        }}
+                                                    >
+                                                        <RadioGroup.Item
+                                                            value="Author"
+                                                            label="Author"
+                                                        />
+                                                        <RadioGroup.Item
+                                                            value="Editor"
+                                                            label="Editor"
+                                                        />
+                                                        <RadioGroup.Item
+                                                            value="Read-Only"
+                                                            label="Read-Only"
+                                                        />
+                                                    </RadioGroup>
+                                                </MuiTable.Cell>
+                                                <MuiTable.Cell>
+                                                    {user.REQUEST_TIMESTAMP}
+                                                </MuiTable.Cell>
+                                                <MuiTable.Cell>
+                                                    <IconButton
+                                                        onClick={() => {
+                                                            approvePendingMembers(
+                                                                [user],
+                                                                true,
+                                                            );
+                                                        }}
+                                                    >
+                                                        <Check
+                                                            color={'success'}
+                                                        />
+                                                    </IconButton>
+                                                    <IconButton
+                                                        onClick={() => {
+                                                            denyPendingMembers(
+                                                                [user],
+                                                                true,
+                                                            );
+                                                        }}
+                                                    >
+                                                        <Close />
+                                                    </IconButton>
+                                                </MuiTable.Cell>
+                                            </MuiTable.Row>
+                                        );
+                                    } else {
+                                        return (
+                                            <MuiTable.Row
+                                                key={i + 'No data available'}
                                             >
-                                                <RadioGroup.Item
-                                                    value="Author"
-                                                    label="Author"
-                                                />
-                                                <RadioGroup.Item
-                                                    value="Editor"
-                                                    label="Editor"
-                                                />
-                                                <RadioGroup.Item
-                                                    value="Read-Only"
-                                                    label="Read-Only"
-                                                />
-                                            </RadioGroup>
-                                        </MuiTable.Cell>
-                                        <MuiTable.Cell>
-                                            {user.REQUEST_TIMESTAMP}
-                                        </MuiTable.Cell>
-                                        <MuiTable.Cell>
-                                            <IconButton
-                                                onClick={() => {
-                                                    approvePendingMembers(
-                                                        [user],
-                                                        true,
-                                                    );
-                                                }}
-                                            >
-                                                <Check color={'success'} />
-                                            </IconButton>
-                                            <IconButton
-                                                onClick={() => {
-                                                    denyPendingMembers(
-                                                        [user],
-                                                        true,
-                                                    );
-                                                }}
-                                            >
-                                                <Close />
-                                            </IconButton>
-                                        </MuiTable.Cell>
-                                    </MuiTable.Row>
-                                );
-                            })}
-                        </MuiTable.Body>
-                    </StyledMemberTable>
-                </StyledTableContainer>
+                                                <MuiTable.Cell></MuiTable.Cell>
+                                                <MuiTable.Cell></MuiTable.Cell>
+                                                <MuiTable.Cell></MuiTable.Cell>
+                                                <MuiTable.Cell></MuiTable.Cell>
+                                                <MuiTable.Cell></MuiTable.Cell>
+                                            </MuiTable.Row>
+                                        );
+                                    }
+                                })}
+                            </MuiTable.Body>
+                        </StyledMemberTable>
+                    </StyledTableContainer>
+                ) : (
+                    <StyledNoMembersContainer>
+                        <StyledTableTitleContainer>
+                            <StyledTableTitleDiv>
+                                <Typography variant={'h6'}>{name}</Typography>
+                            </StyledTableTitleDiv>
+                        </StyledTableTitleContainer>
+                        <StyledNoMembersDiv>
+                            <Typography variant={'body1'}>
+                                No pending requests
+                            </Typography>
+                        </StyledNoMembersDiv>
+                    </StyledNoMembersContainer>
+                )}
             </StyledMemberInnerContent>
         </StyledMemberContent>
     );
@@ -3135,6 +3205,10 @@ const MembersTable = (props) => {
     membersCount > 9 && paginationOptions.membersPageCounts.push(10);
     membersCount > 19 && paginationOptions.membersPageCounts.push(20);
 
+    const rowsToLoop = new Array(5).fill('');
+
+    console.log(rowsToLoop);
+
     /** END OF HELPERS */
 
     /** LOADING */
@@ -3145,58 +3219,257 @@ const MembersTable = (props) => {
     return (
         <StyledMemberContent>
             <StyledMemberInnerContent>
-                <StyledTableContainer>
-                    <StyledTableTitleContainer>
-                        <StyledTableTitleDiv>
-                            <Typography variant={'h6'}>{name}</Typography>
-                        </StyledTableTitleDiv>
+                {verifiedMembers.length ? (
+                    <StyledTableContainer>
+                        <StyledTableTitleContainer>
+                            <StyledTableTitleDiv>
+                                <Typography variant={'h6'}>{name}</Typography>
+                            </StyledTableTitleDiv>
 
-                        <StyledTableTitleMemberContainer>
-                            <StyledAvatarGroupContainer>
-                                <AvatarGroup
-                                    spacing={'small'}
-                                    variant={'circular'}
-                                    max={4}
-                                    total={filteredMembersCount}
-                                >
-                                    {Avatars.map((el) => {
-                                        return el;
-                                    })}
-                                </AvatarGroup>
-                            </StyledAvatarGroupContainer>
-                            <StyledTableTitleMemberCountContainer>
-                                <StyledTableTitleMemberCount>
-                                    <Typography variant={'body1'}>
-                                        {filteredMembersCount} Members
-                                    </Typography>
-                                </StyledTableTitleMemberCount>
-                            </StyledTableTitleMemberCountContainer>
-                        </StyledTableTitleMemberContainer>
+                            <StyledTableTitleMemberContainer>
+                                <StyledAvatarGroupContainer>
+                                    <AvatarGroup
+                                        spacing={'small'}
+                                        variant={'circular'}
+                                        max={4}
+                                        total={filteredMembersCount}
+                                    >
+                                        {Avatars.map((el) => {
+                                            return el;
+                                        })}
+                                    </AvatarGroup>
+                                </StyledAvatarGroupContainer>
+                                <StyledTableTitleMemberCountContainer>
+                                    <StyledTableTitleMemberCount>
+                                        <Typography variant={'body1'}>
+                                            {filteredMembersCount} Members
+                                        </Typography>
+                                    </StyledTableTitleMemberCount>
+                                </StyledTableTitleMemberCountContainer>
+                            </StyledTableTitleMemberContainer>
 
-                        <StyledSearchButtonContainer>
-                            <IconButton>
-                                <SearchOutlined></SearchOutlined>
-                            </IconButton>
-                        </StyledSearchButtonContainer>
+                            <StyledSearchButtonContainer>
+                                <IconButton>
+                                    <SearchOutlined></SearchOutlined>
+                                </IconButton>
+                            </StyledSearchButtonContainer>
 
-                        <StyledFilterButtonContainer>
-                            <IconButton>
-                                <FilterAltRounded></FilterAltRounded>
-                            </IconButton>
-                        </StyledFilterButtonContainer>
+                            <StyledFilterButtonContainer>
+                                <IconButton>
+                                    <FilterAltRounded></FilterAltRounded>
+                                </IconButton>
+                            </StyledFilterButtonContainer>
 
-                        <StyledDeleteSelectedContainer>
-                            {selectedMembers.length > 0 && (
+                            <StyledDeleteSelectedContainer>
+                                {selectedMembers.length > 0 && (
+                                    <Button
+                                        variant={'contained'}
+                                        color="error"
+                                        onClick={() =>
+                                            setDeleteMembersModal(true)
+                                        }
+                                    >
+                                        Delete Selected
+                                    </Button>
+                                )}
+                            </StyledDeleteSelectedContainer>
+                            <StyledAddMemberContainer>
                                 <Button
                                     variant={'contained'}
-                                    color="error"
-                                    onClick={() => setDeleteMembersModal(true)}
+                                    onClick={() => {
+                                        getUsersNoCreds();
+                                    }}
                                 >
-                                    Delete Selected
+                                    Add Members{' '}
                                 </Button>
-                            )}
-                        </StyledDeleteSelectedContainer>
-                        <StyledAddMemberContainer>
+                            </StyledAddMemberContainer>
+                        </StyledTableTitleContainer>
+                        <StyledMemberTable>
+                            <MuiTable.Head>
+                                <MuiTable.Row>
+                                    <MuiTable.Cell>
+                                        <MuiCheckbox
+                                            checked={
+                                                selectedMembers.length ===
+                                                    verifiedMembers.length &&
+                                                verifiedMembers.length > 0
+                                            }
+                                            onChange={() => {
+                                                if (
+                                                    selectedMembers.length !==
+                                                    verifiedMembers.length
+                                                ) {
+                                                    setSelectedMembers(
+                                                        verifiedMembers,
+                                                    );
+                                                } else {
+                                                    setSelectedMembers([]);
+                                                }
+                                            }}
+                                        />
+                                    </MuiTable.Cell>
+                                    <MuiTable.Cell>Name</MuiTable.Cell>
+                                    <MuiTable.Cell>Permission</MuiTable.Cell>
+                                    <MuiTable.Cell>
+                                        Permission Date
+                                    </MuiTable.Cell>
+                                    <MuiTable.Cell>Action</MuiTable.Cell>
+                                </MuiTable.Row>
+                            </MuiTable.Head>
+                            <MuiTable.Body sx={{ minHeight: '50rem' }}>
+                                {rowsToLoop.map((x, i) => {
+                                    const user = verifiedMembers[i];
+
+                                    let isSelected = false;
+
+                                    if (user) {
+                                        isSelected = selectedMembers.some(
+                                            (value) => {
+                                                return value.id === user.id;
+                                            },
+                                        );
+                                    }
+                                    if (user) {
+                                        return (
+                                            <MuiTable.Row key={user.name + i}>
+                                                <MuiTable.Cell>
+                                                    <MuiCheckbox
+                                                        checked={isSelected}
+                                                        onChange={() => {
+                                                            if (isSelected) {
+                                                                const selMembers =
+                                                                    [];
+                                                                selectedMembers.forEach(
+                                                                    (u) => {
+                                                                        if (
+                                                                            u.id !==
+                                                                            user.id
+                                                                        )
+                                                                            selMembers.push(
+                                                                                u,
+                                                                            );
+                                                                    },
+                                                                );
+                                                                setSelectedMembers(
+                                                                    selMembers,
+                                                                );
+                                                            } else {
+                                                                setSelectedMembers(
+                                                                    [
+                                                                        ...selectedMembers,
+                                                                        user,
+                                                                    ],
+                                                                );
+                                                            }
+                                                        }}
+                                                    />
+                                                </MuiTable.Cell>
+                                                <MuiTable.Cell
+                                                    component="td"
+                                                    scope="row"
+                                                >
+                                                    {user.id}: {user.name}
+                                                </MuiTable.Cell>
+                                                <MuiTable.Cell>
+                                                    <RadioGroup
+                                                        row
+                                                        defaultValue={
+                                                            permissionMapper[
+                                                                user.permission
+                                                            ]
+                                                        }
+                                                        onChange={(e) => {
+                                                            console.log(
+                                                                'Hit Update Permission fn and fix in state',
+                                                            );
+                                                            updateSelectedUsers(
+                                                                [user],
+                                                                permissionMapper[
+                                                                    e.target
+                                                                        .value
+                                                                ],
+                                                            );
+                                                        }}
+                                                    >
+                                                        <RadioGroup.Item
+                                                            value="Author"
+                                                            label="Author"
+                                                        />
+                                                        <RadioGroup.Item
+                                                            value="Editor"
+                                                            label="Editor"
+                                                        />
+                                                        <RadioGroup.Item
+                                                            value="Read-Only"
+                                                            label="Read-Only"
+                                                        />
+                                                    </RadioGroup>
+                                                </MuiTable.Cell>
+                                                <MuiTable.Cell>
+                                                    Not Available
+                                                </MuiTable.Cell>
+                                                <MuiTable.Cell>
+                                                    <IconButton
+                                                        onClick={() => {
+                                                            // set user
+                                                            setUserToDelete(
+                                                                user,
+                                                            );
+                                                            // open modal
+                                                            setDeleteMemberModal(
+                                                                true,
+                                                            );
+                                                        }}
+                                                    >
+                                                        <Delete></Delete>
+                                                    </IconButton>
+                                                </MuiTable.Cell>
+                                            </MuiTable.Row>
+                                        );
+                                    } else {
+                                        return (
+                                            <MuiTable.Row
+                                                key={i + 'No data available'}
+                                            >
+                                                <MuiTable.Cell></MuiTable.Cell>
+                                                <MuiTable.Cell></MuiTable.Cell>
+                                                <MuiTable.Cell></MuiTable.Cell>
+                                                <MuiTable.Cell></MuiTable.Cell>
+                                                <MuiTable.Cell></MuiTable.Cell>
+                                            </MuiTable.Row>
+                                        );
+                                    }
+                                })}
+                            </MuiTable.Body>
+                            <MuiTable.Footer>
+                                <MuiTable.Row>
+                                    <MuiTable.Pagination
+                                        rowsPerPageOptions={
+                                            paginationOptions.membersPageCounts
+                                        }
+                                        onPageChange={(e, v) => {
+                                            setMembersPage(v + 1);
+                                            setSelectedMembers([]);
+                                        }}
+                                        page={membersPage - 1}
+                                        rowsPerPage={5}
+                                        count={filteredMembersCount}
+                                    />
+                                </MuiTable.Row>
+                            </MuiTable.Footer>
+                        </StyledMemberTable>
+                    </StyledTableContainer>
+                ) : (
+                    <StyledNoMembersContainer>
+                        <StyledTableTitleContainer>
+                            <StyledTableTitleDiv>
+                                <Typography variant={'h6'}>{name}</Typography>
+                            </StyledTableTitleDiv>
+                        </StyledTableTitleContainer>
+                        <StyledNoMembersDiv>
+                            <Typography variant={'body1'}>
+                                No members present
+                            </Typography>
                             <Button
                                 variant={'contained'}
                                 onClick={() => {
@@ -3205,152 +3478,9 @@ const MembersTable = (props) => {
                             >
                                 Add Members{' '}
                             </Button>
-                        </StyledAddMemberContainer>
-                    </StyledTableTitleContainer>
-                    <StyledMemberTable>
-                        <MuiTable.Head>
-                            <MuiTable.Row>
-                                <MuiTable.Cell>
-                                    <MuiCheckbox
-                                        checked={
-                                            selectedMembers.length ===
-                                            verifiedMembers.length
-                                        }
-                                        onChange={() => {
-                                            if (
-                                                selectedMembers.length !==
-                                                verifiedMembers.length
-                                            ) {
-                                                setSelectedMembers(
-                                                    verifiedMembers,
-                                                );
-                                            } else {
-                                                setSelectedMembers([]);
-                                            }
-                                        }}
-                                    />
-                                </MuiTable.Cell>
-                                <MuiTable.Cell>Name</MuiTable.Cell>
-                                <MuiTable.Cell>Permission</MuiTable.Cell>
-                                <MuiTable.Cell>Permission Date</MuiTable.Cell>
-                                <MuiTable.Cell>Action</MuiTable.Cell>
-                            </MuiTable.Row>
-                        </MuiTable.Head>
-                        <MuiTable.Body sx={{ minHeight: '50rem' }}>
-                            {verifiedMembers.map((user, i) => {
-                                const isSelected = selectedMembers.some(
-                                    (value) => {
-                                        return value.id === user.id;
-                                    },
-                                );
-                                return (
-                                    <MuiTable.Row key={user.name + i}>
-                                        <MuiTable.Cell>
-                                            <MuiCheckbox
-                                                checked={isSelected}
-                                                onChange={() => {
-                                                    if (isSelected) {
-                                                        const selMembers = [];
-                                                        selectedMembers.forEach(
-                                                            (u) => {
-                                                                if (
-                                                                    u.id !==
-                                                                    user.id
-                                                                )
-                                                                    selMembers.push(
-                                                                        u,
-                                                                    );
-                                                            },
-                                                        );
-                                                        setSelectedMembers(
-                                                            selMembers,
-                                                        );
-                                                    } else {
-                                                        setSelectedMembers([
-                                                            ...selectedMembers,
-                                                            user,
-                                                        ]);
-                                                    }
-                                                }}
-                                            />
-                                        </MuiTable.Cell>
-                                        <MuiTable.Cell
-                                            component="td"
-                                            scope="row"
-                                        >
-                                            {user.id}: {user.name}
-                                        </MuiTable.Cell>
-                                        <MuiTable.Cell>
-                                            <RadioGroup
-                                                row
-                                                defaultValue={
-                                                    permissionMapper[
-                                                        user.permission
-                                                    ]
-                                                }
-                                                onChange={(e) => {
-                                                    console.log(
-                                                        'Hit Update Permission fn and fix in state',
-                                                    );
-                                                    updateSelectedUsers(
-                                                        [user],
-                                                        permissionMapper[
-                                                            e.target.value
-                                                        ],
-                                                    );
-                                                }}
-                                            >
-                                                <RadioGroup.Item
-                                                    value="Author"
-                                                    label="Author"
-                                                />
-                                                <RadioGroup.Item
-                                                    value="Editor"
-                                                    label="Editor"
-                                                />
-                                                <RadioGroup.Item
-                                                    value="Read-Only"
-                                                    label="Read-Only"
-                                                />
-                                            </RadioGroup>
-                                        </MuiTable.Cell>
-                                        <MuiTable.Cell>
-                                            Not Available
-                                        </MuiTable.Cell>
-                                        <MuiTable.Cell>
-                                            <IconButton
-                                                onClick={() => {
-                                                    // set user
-                                                    setUserToDelete(user);
-                                                    // open modal
-                                                    setDeleteMemberModal(true);
-                                                }}
-                                            >
-                                                <Delete></Delete>
-                                            </IconButton>
-                                        </MuiTable.Cell>
-                                    </MuiTable.Row>
-                                );
-                            })}
-                        </MuiTable.Body>
-                        <MuiTable.Footer>
-                            <MuiTable.Row>
-                                <MuiTable.Pagination
-                                    rowsPerPageOptions={
-                                        paginationOptions.membersPageCounts
-                                    }
-                                    onPageChange={(e, v) => {
-                                        setMembersPage(v + 1);
-                                        setSelectedMembers([]);
-                                    }}
-                                    page={membersPage - 1}
-                                    rowsPerPage={5}
-                                    count={filteredMembersCount}
-                                />
-                            </MuiTable.Row>
-                        </MuiTable.Footer>
-                    </StyledMemberTable>
-                </StyledTableContainer>
+                        </StyledNoMembersDiv>
+                    </StyledNoMembersContainer>
+                )}
             </StyledMemberInnerContent>
             <Modal open={deleteMembersModal}>
                 <Modal.Title>Are you sure?</Modal.Title>
