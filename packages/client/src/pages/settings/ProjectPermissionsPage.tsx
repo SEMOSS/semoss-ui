@@ -1,107 +1,117 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef, useReducer } from 'react';
 
-import { styled, theme, Select, Icon } from '@semoss/components';
-import { mdiClipboardTextOutline } from '@mdi/js';
-
-import { useRootStore, useAPI, useSettings } from '../../hooks';
+import { useRootStore, usePixel, useSettings } from '../../hooks';
 import { LoadingScreen } from '@/components/ui';
+import { ProjectLandscapeCard, ProjectTileCard } from '@/components/project';
 import { Permissions } from '@/components/database';
 
-const StyledContainer = styled('div', {
-    margin: '0 auto',
-    paddingLeft: theme.space[8],
-    paddingRight: theme.space[8],
-    paddingBottom: theme.space[8],
-    '@sm': {
-        maxWidth: '640px',
-    },
-    '@md': {
-        maxWidth: '768px',
-    },
-    '@lg': {
-        maxWidth: '1024px',
-    },
-    '@xl': {
-        maxWidth: '1280px',
-    },
-    '@xxl': {
-        maxWidth: '1536px',
-    },
-});
+import {
+    Grid,
+    Search,
+    Select,
+    MenuItem,
+    ToggleButton,
+    ToggleButtonGroup,
+    Typography,
+    styled,
+} from '@semoss/ui';
 
-const StyledDescription = styled('div', {
-    color: theme.colors['grey-1'],
-    fontSize: theme.fontSizes.sm,
-    width: '100%',
-    maxWidth: '50%',
-    marginBottom: theme.space['6'],
-});
+import {
+    SpaceDashboardOutlined,
+    FormatListBulletedOutlined,
+} from '@mui/icons-material';
 
-const StyledLoadWorkflowContainer = styled('div', {
+const StyledContainer = styled('div')({
     display: 'flex',
+    width: 'auto',
     flexDirection: 'column',
-    justifyContent: 'center',
-    alignItems: 'center',
-    color: theme.colors['grey-2'],
-    backgroundColor: theme.colors.base,
-    marginTop: theme.space[4],
-    border: `${theme.borderWidths.default} solid ${theme.colors['grey-4']}`,
-    '@sm': {
-        minHeight: '5rem',
-    },
-    '@md': {
-        minHeight: '8rem',
-    },
-    '@lg': {
-        minHeight: '10rem',
-    },
-    '@xl': {
-        minHeight: '15rem',
-    },
-    '@xxl': {
-        minHeight: '30rem',
-    },
+    alignItems: 'flex-start',
+    gap: '24px',
 });
 
-const StyledIcon = styled(Icon, {
-    fontSize: '4rem',
-});
-
-const StyledDiv = styled('div', {
+const StyledSearchbarContainer = styled('div')({
     display: 'flex',
-    // border: 'solid',
+    width: '100%',
+    alignItems: 'flex-start',
+    gap: '24px',
 });
 
-const StyledChangeProject = styled('div', {
-    color: theme.colors['grey-1'],
-    fontSize: theme.fontSizes.md,
-    width: '100%',
-    maxWidth: '50%',
-    marginBottom: theme.space['6'],
-    // border: 'solid',
+const StyledSearchbar = styled(Search)({
+    width: '80%',
 });
+
+const StyledSort = styled(Select)({
+    display: 'flex',
+    width: '220px',
+    flexDirection: 'column',
+    alignItems: 'flex-start',
+    gap: '3px',
+    flexShrink: '0',
+});
+
+const initialState = {
+    projects: [],
+};
+
+const reducer = (state, action) => {
+    switch (action.type) {
+        case 'field': {
+            return {
+                ...state,
+                [action.field]: action.value,
+            };
+        }
+    }
+    return state;
+};
 
 export interface ProjectInterface {
     project_global: boolean;
     project_id: string;
     project_name: string;
-    project_permission: string;
-    project_visibility: boolean;
+    permission: number;
 }
 
 export const ProjectPermissionsPage = () => {
-    const { monolithStore } = useRootStore();
+    const { configStore, monolithStore } = useRootStore();
     const { adminMode } = useSettings();
 
-    const [projects, setProjects] = useState([]);
+    const [state, dispatch] = useReducer(reducer, initialState);
+    const { projects } = state;
+
+    const [view, setView] = useState('tile');
+    const [search, setSearch] = useState('');
+    const [sort, setSort] = useState('Name');
+
     const [selectedProject, setSelectedProject] =
         useState<ProjectInterface>(null);
 
-    const getProjects = useAPI(['getProjects', adminMode]);
+    // To focus when getting new results
+    const searchbarRef = useRef(null);
 
-    useEffect(() => {
-        setSelectedProject(null);
-    }, [projects]);
+    // get a list of the keys
+    const projectMetaKeys = configStore.store.config.projectMetaKeys.filter(
+        (k) => {
+            return (
+                k.display_options === 'single-checklist' ||
+                k.display_options === 'multi-checklist' ||
+                k.display_options === 'single-select' ||
+                k.display_options === 'multi-select' ||
+                k.display_options === 'single-typeahead' ||
+                k.display_options === 'multi-typeahead' ||
+                k.display_options === 'textarea'
+            );
+        },
+    );
+
+    // get metakeys to the ones we want
+    const metaKeys = projectMetaKeys.map((k) => {
+        return k.metakey;
+    });
+    // const getProjects = useAPI(['getProjects', adminMode]);
+    const getProjects = usePixel(`
+        MyProjects(metaKeys = ${JSON.stringify(metaKeys)});
+    `);
 
     useEffect(() => {
         // REST call to get all apps
@@ -109,31 +119,20 @@ export const ProjectPermissionsPage = () => {
             return;
         }
 
-        setProjects(getProjects.data);
+        dispatch({
+            type: 'field',
+            field: 'projects',
+            value: getProjects.data,
+        });
+
+        setSelectedProject(null);
+        searchbarRef.current?.focus();
 
         () => {
             console.warn('Cleaning up getProjects');
-            setProjects([]);
+            // setProjects([]);
         };
     }, [getProjects.status, getProjects.data]);
-
-    // show a loading screen when getProjects is pending
-    if (getProjects.status !== 'SUCCESS') {
-        return (
-            <LoadingScreen.Trigger description="Retrieving project folders" />
-        );
-    }
-
-    /**
-     * @name getDisplay
-     * @desc gets display options for the DB dropdown
-     * @param option - the object that is specified for the option
-     */
-    const getDisplay = (option) => {
-        return `${formatProjectName(option.project_name)} - ${
-            option.project_id
-        }`;
-    };
 
     const formatProjectName = (str) => {
         let i;
@@ -144,47 +143,116 @@ export const ProjectPermissionsPage = () => {
         return frags.join(' ');
     };
 
+    // show a loading screen when getProjects is pending
+    if (getProjects.status !== 'SUCCESS') {
+        return (
+            <LoadingScreen.Trigger description="Retrieving project folders" />
+        );
+    }
+
     return (
         <StyledContainer>
-            <>
-                <StyledDescription>
-                    View and edit settings for projects
-                </StyledDescription>
-                <div>
-                    <Select
-                        value={selectedProject}
-                        defaultValue={selectedProject}
-                        options={projects}
-                        getDisplay={getDisplay}
-                        onChange={(opt) => {
-                            // Set selected proj
-                            setSelectedProject(opt);
-                        }}
-                        placeholder="Select an option to view project specific settings"
-                    ></Select>
-                    {selectedProject ? (
-                        <>
-                            <Permissions
-                                config={{
-                                    id: selectedProject.project_id,
-                                    name: selectedProject.project_name,
-                                    global: selectedProject.project_global,
-                                    visibility:
-                                        selectedProject.project_visibility,
-                                }}
-                            ></Permissions>
-                        </>
-                    ) : (
-                        <StyledLoadWorkflowContainer>
-                            <StyledIcon
-                                size="xl"
-                                path={mdiClipboardTextOutline}
-                            ></StyledIcon>
-                            <p>SEMOSS is waiting on your selection</p>
-                        </StyledLoadWorkflowContainer>
-                    )}
-                </div>
-            </>
+            {!selectedProject ? (
+                <>
+                    <Typography variant={'body1'}>
+                        Select a project to start
+                    </Typography>
+                    <StyledSearchbarContainer>
+                        <StyledSearchbar
+                            value={search}
+                            onChange={(e) => {
+                                setSearch(e.target.value);
+                            }}
+                            label="Project"
+                            size="small"
+                            enableEndAdornment={true}
+                            ref={searchbarRef}
+                        />
+                        <StyledSort
+                            size={'small'}
+                            value={sort}
+                            onChange={(e) => setSort(e.target.value)}
+                        >
+                            <MenuItem value="Name">Name</MenuItem>
+                            <MenuItem value="Date Created">
+                                Date Created
+                            </MenuItem>
+                            <MenuItem value="Views">Views</MenuItem>
+                            <MenuItem value="Trending">Trending</MenuItem>
+                            <MenuItem value="Upvotes">Upvotes</MenuItem>
+                        </StyledSort>
+
+                        <ToggleButtonGroup size={'small'} value={view}>
+                            <ToggleButton
+                                onClick={(e, v) => setView(v)}
+                                value={'tile'}
+                            >
+                                <SpaceDashboardOutlined />
+                            </ToggleButton>
+                            <ToggleButton
+                                onClick={(e, v) => setView(v)}
+                                value={'list'}
+                            >
+                                <FormatListBulletedOutlined />
+                            </ToggleButton>
+                        </ToggleButtonGroup>
+                    </StyledSearchbarContainer>
+                    <Grid container spacing={3}>
+                        {projects.length
+                            ? projects.map((project, i) => {
+                                  return (
+                                      <Grid
+                                          item
+                                          key={i}
+                                          sm={view === 'list' ? 12 : 12}
+                                          md={view === 'list' ? 12 : 6}
+                                          lg={view === 'list' ? 12 : 4}
+                                          xl={view === 'list' ? 12 : 3}
+                                      >
+                                          {view === 'list' ? (
+                                              <ProjectTileCard
+                                                  name={formatProjectName(
+                                                      project.project_name,
+                                                  )}
+                                                  id={project.project_id}
+                                                  onClick={(id) =>
+                                                      setSelectedProject(
+                                                          project,
+                                                      )
+                                                  }
+                                                  description={'description'}
+                                              />
+                                          ) : (
+                                              <ProjectTileCard
+                                                  name={formatProjectName(
+                                                      project.project_name,
+                                                  )}
+                                                  id={project.project_id}
+                                                  onClick={(id) =>
+                                                      setSelectedProject(
+                                                          project,
+                                                      )
+                                                  }
+                                                  description={'description'}
+                                              />
+                                          )}
+                                      </Grid>
+                                  );
+                              })
+                            : 'No projects to choose from'}
+                    </Grid>
+                </>
+            ) : (
+                <Permissions
+                    config={{
+                        id: selectedProject.project_id,
+                        name: selectedProject.project_name,
+                        global: selectedProject.project_global,
+                        permission: selectedProject.permission,
+                        // visibility: selectedProject.project_visibility,
+                    }}
+                ></Permissions>
+            )}
         </StyledContainer>
     );
 };

@@ -34,6 +34,20 @@ interface ConfigStoreInterface {
             display_order: number;
             metakey: string;
         }[];
+        projectMetaKeys: {
+            display_options:
+                | 'input'
+                | 'textarea'
+                | 'markdown'
+                | 'single-checklist'
+                | 'multi-checklist'
+                | 'single-select'
+                | 'multi-select'
+                | 'single-typeahead'
+                | 'multi-typeahead';
+            display_order: number;
+            metakey: string;
+        }[];
         providers: string[];
         [key: string]: unknown;
     };
@@ -57,6 +71,7 @@ export class ConfigStore {
         },
         config: {
             databaseMetaKeys: [],
+            projectMetaKeys: [],
             providers: [],
         },
     };
@@ -139,6 +154,12 @@ export class ConfigStore {
                 // sort the keys
                 if (this._store.config.databaseMetaKeys) {
                     this._store.config.databaseMetaKeys.sort((a, b) =>
+                        a.display_order > b.display_order ? 1 : -1,
+                    );
+                }
+
+                if (this._store.config.projectMetaKeys) {
+                    this._store.config.projectMetaKeys.sort((a, b) =>
                         a.display_order > b.display_order ? 1 : -1,
                     );
                 }
