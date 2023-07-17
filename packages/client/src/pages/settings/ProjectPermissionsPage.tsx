@@ -246,7 +246,7 @@ export const ProjectPermissionsPage = () => {
                 <Permissions
                     config={{
                         id: selectedProject.project_id,
-                        name: selectedProject.project_name,
+                        name: formatProjectName(selectedProject.project_name),
                         global: selectedProject.project_global,
                         permission: selectedProject.permission,
                         // visibility: selectedProject.project_visibility,

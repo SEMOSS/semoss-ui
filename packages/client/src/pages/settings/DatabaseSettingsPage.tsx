@@ -72,10 +72,16 @@ const StyledSearchbar = styled(Search)({
 });
 
 const StyledSort = styled(Select)({
-    display: 'flex',
+    // display: 'flex',
+    // width: '220px',
+    // flexDirection: 'column',
+    // alignItems: 'flex-start',
+    // gap: '3px',
+    // flexShrink: '0',
+});
+
+const StyledMenuItem = styled(Select.Item)({
     width: '220px',
-    flexDirection: 'column',
-    alignItems: 'flex-start',
     gap: '3px',
     flexShrink: '0',
 });
@@ -370,13 +376,17 @@ export const DatabaseSettingsPage = () => {
                             value={sort}
                             onChange={(e) => setSort(e.target.value)}
                         >
-                            <MenuItem value="Name">Name</MenuItem>
-                            <MenuItem value="Date Created">
+                            <StyledMenuItem value="Name">name</StyledMenuItem>
+                            <StyledMenuItem value="Date Created">
                                 Date Created
-                            </MenuItem>
-                            <MenuItem value="Views">Views</MenuItem>
-                            <MenuItem value="Trending">Trending</MenuItem>
-                            <MenuItem value="Upvotes">Upvotes</MenuItem>
+                            </StyledMenuItem>
+                            <StyledMenuItem value="Views">Views</StyledMenuItem>
+                            <StyledMenuItem value="Trending">
+                                Trending
+                            </StyledMenuItem>
+                            <StyledMenuItem value="Upvotes">
+                                Upvotes
+                            </StyledMenuItem>
                         </StyledSort>
 
                         <ToggleButtonGroup size={'small'} value={view}>
@@ -482,7 +492,6 @@ export const DatabaseSettingsPage = () => {
                         name: formatDBName(selectedApp.database_name),
                         global: selectedApp.database_global,
                         permission: selectedApp.permission,
-                        // visibility: selectedApp.database_visibility,
                     }}
                 ></Permissions>
             )}

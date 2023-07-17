@@ -133,7 +133,7 @@ export const ProjectTileCard = (props) => {
                     <Box>
                         <Typography variant="body2">
                             {' '}
-                            20 Users · 10 Insights
+                            {/* 20 Users · 10 Insights */}
                         </Typography>
                     </Box>
                 </Box>
