@@ -161,6 +161,8 @@ import './components/markdown/markdown.directive';
 
 import './components/rewrite/rewrite.directive';
 
+import '../custom/override.scss';
+
 angular.module('app', [
     /** angular libs **/
     'ngAria',
