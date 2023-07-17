@@ -6,27 +6,13 @@ import React, {
     SyntheticEvent,
 } from 'react';
 import { Navigate, useResolvedPath, useNavigate } from 'react-router-dom';
-import { useForm, Controller, useFieldArray } from 'react-hook-form';
+import { useForm, useFieldArray } from 'react-hook-form';
 
 import { useRootStore, useSettings, usePixel, useAPI } from '@/hooks';
 
-import {
-    Form,
-    // Button,
-    Icon,
-    Checkbox,
-    Radio,
-    Grid,
-    Table,
-    Select,
-    Switch,
-    Popover,
-    // Modal,
-    styled,
-    theme,
-    useNotification,
-    Pagination,
-} from '@semoss/components';
+import { useNotification } from '@semoss/components';
+
+import { AppSettings } from '../project';
 
 import {
     ButtonGroup,
@@ -53,8 +39,6 @@ import {
 } from '@mui/icons-material';
 
 import { LoadingScreen } from '@/components/ui';
-import { Card } from '@/components/ui';
-import { Field } from '@/components/form';
 
 const StyledContent = MuiStyled('div')({
     display: 'flex',
@@ -192,349 +176,6 @@ const StyledNoMembersDiv = MuiStyled('div')({
     alignItems: 'center',
 });
 
-// Old styles
-const StyledSelectedApp = styled('div', {
-    marginTop: theme.space[4],
-});
-
-const StyledSettings = styled('div', {
-    marginBottom: theme.space[4],
-});
-
-const StyledCardHeader = styled(Card.Header, {
-    display: 'flex',
-    justifyContent: 'space-between',
-    alignItems: 'flex-start',
-    paddingTop: theme.space['2'],
-    paddingBottom: theme.space['0'],
-});
-
-const StyledLeft = styled('div', {
-    display: 'flex',
-    alignItems: 'center',
-});
-
-const StyledRight = styled('div', {
-    display: 'flex',
-    alignItems: 'center',
-});
-
-const StyledCardContent = styled(Card.Content, {
-    fontSize: theme.fontSizes.sm,
-    minHeight: '5rem',
-});
-
-const StyledTableCont = styled('div', {
-    borderRadius: theme.radii.default,
-    borderWidth: theme.borderWidths.default,
-    borderColor: theme.colors['grey-4'],
-    backgroundColor: theme.colors.base,
-    marginBottom: theme.space['8'],
-    height: 'fit-content',
-});
-
-const StyledTableFooter = styled('div', {
-    display: 'flex',
-    justifyContent: 'space-between',
-    borderTopWidth: theme.borderWidths.default,
-    borderTopColor: theme.colors['grey-4'],
-    // height: '30rem',
-});
-
-const StyledTableFooterDiv = styled('div', {
-    display: 'flex',
-    justifyContent: 'flex-end',
-    alignItems: 'flex-end',
-    width: '30%',
-    padding: theme.space['2'],
-    fontWeight: theme.fontWeights.light,
-});
-
-const StyledTableFooterCenterDiv = styled('div', {
-    width: '40%',
-    display: 'flex',
-    justifyContent: 'center',
-    fontSize: theme.fontSizes.xs,
-});
-
-// const StyledModalFooter = styled(Modal.Footer, {
-//     display: 'flex',
-//     justifyContent: 'center',
-// });
-
-const StyledHeader = styled('div', {
-    display: 'flex',
-    justifyContent: 'space-between',
-    borderBottomWidth: theme.borderWidths.default,
-    borderBottomColor: theme.colors['grey-4'],
-});
-
-const StyledHeaderLeft = styled('div', {
-    display: 'flex',
-    width: '30%',
-    padding: theme.space[2],
-    gap: '0.5rem',
-});
-
-const StyledHeaderRight = styled('div', {
-    display: 'flex',
-    justifyContent: 'flex-end',
-    width: '70%',
-    padding: theme.space[2],
-    gap: '0.5rem',
-});
-
-const StyledHeaderIcon = styled(Icon, {
-    height: '2rem',
-    width: '2rem',
-    marginRight: '.5rem',
-    display: 'flex',
-    alignItems: 'center',
-});
-
-const StyledFilter = styled('div', {
-    display: 'flex',
-    gap: '.5rem',
-    width: '50%',
-});
-
-const StyledTableLabel = styled('h1', {
-    fontSize: theme.fontSizes.md,
-    color: theme.colors['grey-1'],
-    fontWeight: theme.fontWeights.semibold,
-});
-
-const StyledMessageRow = styled('div', {
-    display: 'flex',
-    padding: theme.space[2],
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: '.5rem',
-    fontSize: theme.fontSizes.sm,
-
-    variants: {
-        warning: {
-            true: {
-                backgroundColor: theme.colors['warning-5'],
-            },
-            false: {},
-        },
-    },
-});
-
-const StyledTableBody = styled(Table.Body, {
-    // height: '10rem',
-    // minHeight: '10rem',
-    // background: 'red',
-});
-
-const StyledTableRow = styled(Table.Row, {
-    // display: 'flex',
-    // flexDirection: 'row',
-    // alignItems: 'center',
-});
-
-const StyledCell = styled(Table.Cell, {
-    height: '3rem',
-    minHeight: '3rem',
-    // border: 'solid blue',
-});
-
-const StyledSmallCell = styled(StyledCell, {
-    width: '10%',
-});
-
-const StyledProfileCell = styled(StyledCell, {
-    width: '20%',
-});
-
-const StyledAdditionalInfoCell = styled(StyledCell, {
-    width: '20%',
-});
-
-const StyledCellContent = styled('div', {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '.5rem',
-    height: '2rem',
-    minHeight: '2rem',
-});
-
-const StyledCellContentQuickActions = styled(StyledCellContent, {
-    justifyContent: 'center',
-});
-
-const StyledRadio = styled(Radio, {
-    width: '100%',
-});
-
-const StyledRowNum = styled('div', {
-    width: '2rem',
-    textOverflow: 'ellipsis',
-});
-
-const StyledField = styled('div', {
-    marginBottom: theme.space['4'],
-});
-
-const StyledFlex = styled('div', {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '.5rem',
-});
-
-const StyledFlexBetween = styled('div', {
-    display: 'flex',
-    justifyContent: 'space-between',
-    marginBottom: theme.space['1'],
-    fontSize: theme.fontSizes.sm,
-    // border: 'solid',
-});
-
-const StyledFlexEnd = styled('div', {
-    display: 'flex',
-    justifyContent: 'flex-end',
-    marginBottom: theme.space['1'],
-    fontSize: theme.fontSizes.sm,
-});
-
-const StyledMembersDiv = styled('div', {
-    display: 'flex',
-    alignItems: 'center',
-    gap: theme.space['4'],
-});
-
-const StyledAvatar = styled('img', {
-    verticalAlign: 'middle',
-    borderRadius: '50%',
-
-    '@sm': {
-        width: '1rem',
-        height: '1rem',
-    },
-    '@md': {
-        width: '1rem',
-        height: '1rem',
-    },
-    '@lg': {
-        width: '1rem',
-        height: '1rem',
-    },
-    '@xl': {
-        width: '2rem',
-        height: '2rem',
-    },
-    '@xxl': {
-        width: '3rem',
-        height: '3rem',
-    },
-});
-
-const StyledAvatarsDiv = styled('div', {
-    display: 'flex',
-    listStyleType: 'none',
-    flexDirection: 'row',
-});
-
-const StyledOverlappingImg = styled('img', {
-    backgroundColor: '#596376',
-    border: `2px solid ${theme.colors['base']}`,
-    borderRadius: '100%',
-    color: theme.colors['base'],
-    display: 'block',
-    fontWeight: theme.fontWeights.bold,
-    textAlign: 'center',
-    transition: 'margin 0.1s ease-in-out',
-    marginLeft: '-15px',
-    '&:first-child': {
-        zIndex: '1',
-        marginLeft: '0px',
-    },
-    '&:nth-child(2)': {
-        zIndex: '2',
-    },
-    '&:nth-child(3)': {
-        zIndex: '3',
-    },
-    '&:nth-child(4)': {
-        zIndex: '4',
-    },
-    '&:nth-child(5)': {
-        zIndex: '5',
-    },
-
-    '@sm': {
-        width: '.2rem',
-        height: '.2rem',
-    },
-    '@md': {
-        width: '2rem',
-        height: '2rem',
-    },
-    '@lg': {
-        width: '2rem',
-        height: '2rem',
-    },
-    '@xl': {
-        width: '2rem',
-        height: '2rem',
-    },
-    '@xxl': {
-        width: '3rem',
-        height: '3rem',
-    },
-});
-
-const StyledOverlappingDiv = styled('div', {
-    backgroundColor: theme.colors['primary-1'],
-    border: `2px solid ${theme.colors['base']}`,
-    borderRadius: '100%',
-    color: theme.colors.base,
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    fontWeight: theme.fontSizes['2'],
-    textAlign: 'center',
-    transition: 'margin 0.1s ease-in-out',
-    marginLeft: '-15px',
-    zIndex: '5',
-    '@sm': {
-        width: '.2rem',
-        height: '.2rem',
-    },
-    '@md': {
-        width: '2rem',
-        height: '2rem',
-    },
-    '@lg': {
-        width: '2rem',
-        height: '2rem',
-    },
-    '@xl': {
-        width: '2rem',
-        height: '2rem',
-    },
-    '@xxl': {
-        width: '3rem',
-        height: '3rem',
-    },
-});
-
-const StyledMembersCount = styled('div', {
-    display: 'flex',
-    alignItems: 'center',
-    gap: theme.space['2'],
-});
-
-const FilterLabel = styled('div', {
-    position: 'static',
-    float: 'left',
-    display: 'inline-block',
-    padding: '0 8px 0 0',
-    lineHeight: '32px',
-    width: '190px',
-});
-
 // maps for permissions,
 const permissionMapper = {
     1: 'Author', // BE: 'DISPLAY'
@@ -643,9 +284,6 @@ export const Permissions = (props: PermissionsProps) => {
 
     // New Design State Items
     const [view, setView] = useState(0);
-    // const [value, setValue] = useState(0);
-
-    // End of new Design State Items
 
     // Helper hooks
     const { monolithStore } = useRootStore();
@@ -697,23 +335,6 @@ export const Permissions = (props: PermissionsProps) => {
     // delete db, proj, insight modal
     const [deleteWorkflowModal, setDeleteWorkflowModal] = useState(false);
 
-    // Selected MEMBERS
-    const [selectedMembers, setSelectedMembers] = useState([]);
-
-    // Members Modal
-    const [addMembersModal, setAddMembersModal] = useState(false);
-    const [deleteMembersModal, setDeleteMembersModal] = useState(false);
-    const [updateMembersModal, setUpdateMembersModal] = useState(false);
-
-    // individual member deletion
-    const [deleteMemberModal, setDeleteMemberModal] = useState(false);
-
-    // Pending Members Modal
-    const [denySelectedModal, setDenySelectedModal] = useState(false);
-
-    // Members count and Pagination
-    const [membersCount, setMembersCount] = useState(0);
-    const [filteredMembersCount, setFilteredMembersCount] = useState(0);
     const [membersPage, setMembersPage] = useState(1);
 
     const { control, watch, setValue } = useForm<{
@@ -753,23 +374,6 @@ export const Permissions = (props: PermissionsProps) => {
         },
     });
 
-    // various members from react hook form
-    const pendingMembers = watch('PENDING_MEMBERS');
-
-    const nonCredentialedUsers = watch('NON_CREDENTIALED_USERS');
-    const selectedNonCredentialedUsers = watch(
-        'SELECTED_NON_CREDENTIALED_USERS',
-    );
-
-    // permission field in modals
-    const updatedPermissionField = watch('UPDATE_SELECTED_PERMISSION');
-    const addMemberPermissionField = watch('ADD_MEMBER_PERMISSION');
-
-    // Filters on Members Table
-    const searchFilter = watch('MEMBER_SEARCH_FILTER');
-    const permissionFilter = watch('MEMBER_ACCESS_FILTER');
-
-    // workflow attrs
     const visibilityField = watch('VISIBILITY');
     const globalField = watch('GLOBAL');
 
@@ -908,9 +512,7 @@ export const Permissions = (props: PermissionsProps) => {
                 indexesToUpdate.forEach((i) => {
                     setValue(
                         `MEMBERS.${i}.permission`,
-                        quickUpdate
-                            ? quickUpdate
-                            : permissionMapper[updatedPermissionField],
+                        quickUpdate ? quickUpdate : 'OWNER',
                     );
                 });
 
@@ -923,31 +525,17 @@ export const Permissions = (props: PermissionsProps) => {
 
                 if (quickUpdate) return;
                 // clear selected members arr in state
-                setSelectedMembers([]);
+                // setSelectedMembers([]);
                 // select all checkbox for db-members table
                 // setSelectAllCheckboxState('members-table', []);
                 // reset modal field
                 setValue('UPDATE_SELECTED_PERMISSION', '');
                 // close modal
-                setUpdateMembersModal(false);
+                // setUpdateMembersModal(false);
             })
             .catch((error) => {
                 notification.add({ color: 'error', content: error });
             });
-    };
-
-    // Helpers ---
-
-    /**
-     * @name filterCount
-     * @desc used to return count of how many filters are being used
-     */
-    const filterCount = () => {
-        let count = 0;
-        if (permissionFilter) {
-            count += 1;
-        }
-        return count;
     };
 
     /**
@@ -960,14 +548,7 @@ export const Permissions = (props: PermissionsProps) => {
         setView(newValue);
     };
 
-    // Counts for pagination
-    const paginationOptions = {
-        membersPageCounts: [5],
-    };
-
-    membersCount > 9 && paginationOptions.membersPageCounts.push(10);
-    membersCount > 19 && paginationOptions.membersPageCounts.push(20);
-
+    console.log(type);
     return (
         <StyledContent>
             <ToggleTabsGroup
@@ -980,6 +561,9 @@ export const Permissions = (props: PermissionsProps) => {
                     label="Pending Requests"
                     disabled={permission === 3}
                 />
+                {type === 'project' && (
+                    <ToggleTabsGroup.Item label="Data Apps" />
+                )}
             </ToggleTabsGroup>
 
             {view === 0 && (
@@ -1002,6 +586,7 @@ export const Permissions = (props: PermissionsProps) => {
                     projectId={projectid}
                 />
             )}
+            {view === 2 && <AppSettings id={id} />}
         </StyledContent>
     );
 };
@@ -1240,12 +825,11 @@ const PendingMembersTable = (props) => {
     };
 
     /** HELPERS */
-
     /**
      * @name updatePendingMemberPermission
      * @param mem
      * @param value
-     * @desc Updates Member Permission
+     * @desc Updates pending member permission in radiogroup
      */
     const updatePendingMemberPermission = (
         mem: PendingMember,
@@ -1262,6 +846,18 @@ const PendingMembersTable = (props) => {
             }
         });
 
+        const updateSelectedPendingMems = selectedPending.map((user) => {
+            if (user.REQUEST_USERID === mem.REQUEST_USERID) {
+                return {
+                    ...user,
+                    PERMISSION: value,
+                };
+            } else {
+                return user;
+            }
+        });
+
+        setSelectedPending(updateSelectedPendingMems);
         setValue('PENDING_MEMBERS', updatedPendingMems);
     };
 
@@ -1277,25 +873,34 @@ const PendingMembersTable = (props) => {
                                 <Typography variant={'h6'}>{name}</Typography>
                             </StyledTableTitleDiv>
 
-                            <StyledTableTitleMemberCountContainer>
-                                <StyledTableTitleMemberCount>
-                                    <Typography variant={'body1'}>
-                                        6 Members
-                                    </Typography>
-                                </StyledTableTitleMemberCount>
-                            </StyledTableTitleMemberCountContainer>
+                            <StyledTableTitleMemberContainer>
+                                <StyledTableTitleMemberCountContainer>
+                                    <StyledTableTitleMemberCount>
+                                        <Typography variant={'body1'}>
+                                            {pendingMembers.length} pending
+                                            requests
+                                        </Typography>
+                                    </StyledTableTitleMemberCount>
+                                </StyledTableTitleMemberCountContainer>
+                            </StyledTableTitleMemberContainer>
+
+                            {/* <StyledSearchButtonContainer>
+                                <IconButton>
+                                    <SearchOutlined></SearchOutlined>
+                                </IconButton>
+                            </StyledSearchButtonContainer>
 
                             <StyledFilterButtonContainer>
                                 <IconButton>
                                     <FilterAltRounded></FilterAltRounded>
                                 </IconButton>
-                            </StyledFilterButtonContainer>
+                            </StyledFilterButtonContainer> */}
 
                             {selectedPending.length > 0 && (
                                 <>
                                     <StyledDeleteSelectedContainer>
                                         <Button
-                                            variant={'contained'}
+                                            variant={'outlined'}
                                             color="error"
                                             onClick={() => {
                                                 denyPendingMembers(
@@ -1791,7 +1396,7 @@ const MembersTable = (props) => {
         if (!verifiedMembers.length) return [];
 
         let i = 0;
-        let avatarList = [];
+        const avatarList = [];
         while (i < 5 && i < verifiedMembers.length) {
             avatarList.push(
                 <Avatar key={i}>
@@ -1870,7 +1475,7 @@ const MembersTable = (props) => {
                             <StyledDeleteSelectedContainer>
                                 {selectedMembers.length > 0 && (
                                     <Button
-                                        variant={'contained'}
+                                        variant={'outlined'}
                                         color="error"
                                         onClick={() =>
                                             setDeleteMembersModal(true)
@@ -1989,6 +1594,7 @@ const MembersTable = (props) => {
                                                             console.log(
                                                                 'Hit Update Permission fn and fix in state',
                                                             );
+                                                            debugger;
                                                             updateSelectedUsers(
                                                                 [user],
                                                                 permissionMapper[
