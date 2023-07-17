@@ -1,6 +1,14 @@
-// @import '~theme';
+@import '~theme';
+
+// @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap');
+
+// body {
+//     font-family: 'Plus Jakarta Sans', sans-serif;
+// }
 
 // .home {
+//     background-color: #ffffff;
+
 //     &__nav {
 //         background-color: get-background-color('nav');
 
@@ -13,5 +21,60 @@
 // .home-nav {
 //     &__btn {
 //         color: get-text-color('white');
+//     }
+// }
+
+// .smss-card-grid {
+//     box-shadow: 0px 5px 22px 0px rgba(0, 0, 0, 0.04),
+//         0px 4px 4px 0.5px rgba(0, 0, 0, 0.03);
+//     border-radius: 12px;
+// }
+
+// .landing-nav {
+//     background: #f7fee7;
+//     &__top {
+//         background: #f7fee7;
+//         padding: 8px;
+//     }
+
+//     &__bottom {
+//         background: #f7fee7;
+//         padding: 8px;
+//     }
+//     &__collapse {
+//         background: #f7fee7;
+
+//         & .smss-collapsible__header {
+//             background: #f7fee7;
+//         }
+//     }
+
+//     &__scroll {
+//         & .smss-input {
+//             background: #f7fee7;
+//         }
+//     }
+// }
+
+// .catalog {
+//     &__left {
+//         background: #f7fee7;
+//         padding: 8px;
+
+//         & .smss-search__input {
+//             background: #f7fee7;
+//         }
+//     }
+
+//     &__collapse {
+//         background: #f7fee7;
+
+//         & .smss-collapsible__header {
+//             background: #f7fee7;
+//         }
+
+//         & .smss-checklist__list__options {
+//             background: #f7fee7;
+//         }
 //     }
 // }
