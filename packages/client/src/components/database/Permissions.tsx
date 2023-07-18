@@ -42,6 +42,12 @@ import {
     RadioGroup,
     Typography,
     Autocomplete,
+    Card as MuiCard,
+    Box,
+    Chip,
+    Icon as MuiIcon,
+    Link,
+    Stack,
 } from '@semoss/ui';
 
 import {
@@ -50,6 +56,9 @@ import {
     Delete,
     FilterAltRounded,
     SearchOutlined,
+    Person2Rounded,
+    EditRounded,
+    RemoveRedEyeRounded,
 } from '@mui/icons-material';
 
 import { LoadingScreen } from '@/components/ui';
@@ -190,6 +199,10 @@ const StyledNoMembersDiv = MuiStyled('div')({
     gap: '1rem',
     justifyContent: 'center',
     alignItems: 'center',
+});
+
+const StyledCard = MuiStyled(Card)({
+    borderRadius: '12px',
 });
 
 // Old styles
@@ -1507,6 +1520,7 @@ const StyledModalContentText = MuiStyled(Modal.ContentText)({
     display: 'flex',
     flexDirection: 'column',
     gap: '.5rem',
+    marginTop: '12px',
 });
 interface NonCredentialedUsers {}
 
@@ -2149,13 +2163,14 @@ const MembersTable = (props) => {
             </Modal>
 
             <Modal open={addMembersModal} maxWidth="md">
-                <Modal.Title>Add members to {type}</Modal.Title>
+                <Modal.Title>Add Members</Modal.Title>
                 <Modal.Content sx={{ width: '50rem' }}>
                     <StyledModalContentText>
                         <Autocomplete
+                            label="Search"
                             multiple={true}
                             options={nonCredentialedUsers}
-                            value={selectedNonCredentialedUsers}
+                            value={[...selectedNonCredentialedUsers]}
                             getOptionLabel={(option: any) => {
                                 return `${option.name} - ${option.email}`;
                             }}
@@ -2165,39 +2180,262 @@ const MembersTable = (props) => {
                             onChange={(event, newValue: any) => {
                                 setSelectedNonCredentialedUsers([...newValue]);
                             }}
-                        ></Autocomplete>
+                        />
 
-                        <div>
+                        {selectedNonCredentialedUsers &&
+                            selectedNonCredentialedUsers.map((user, idx) => {
+                                return (
+                                    <Box
+                                        key={idx}
+                                        sx={{
+                                            display: 'flex',
+                                            justifyContent: 'left',
+                                            align: 'center',
+                                        }}
+                                    >
+                                        <Box
+                                            sx={{
+                                                display: 'flex',
+                                                justifyContent: 'center',
+                                                marginTop: '18px',
+                                                marginRight: '8px',
+                                            }}
+                                        >
+                                            <Box
+                                                sx={{
+                                                    display: 'flex',
+                                                    height: '80px',
+                                                    width: '80px',
+                                                    justifyContent: 'center',
+                                                    alignItems: 'center',
+                                                    border: '0.5px solid rgba(0, 0, 0, .2)',
+                                                    borderRadius: '50%',
+                                                }}
+                                            >
+                                                <Avatar
+                                                    aria-label="avatar"
+                                                    sx={{
+                                                        width: '60px',
+                                                        height: '60px',
+                                                    }}
+                                                >
+                                                    <MuiIcon>
+                                                        <Person2Rounded />
+                                                    </MuiIcon>
+                                                </Avatar>
+                                            </Box>
+                                        </Box>
+                                        <MuiCard.Header
+                                            title={
+                                                <Typography variant="h5">
+                                                    {user.name}
+                                                </Typography>
+                                            }
+                                            sx={{ color: '#000' }}
+                                            subheader={
+                                                <Box
+                                                    sx={{
+                                                        display: 'flex',
+                                                        gap: 2,
+                                                        marginTop: '4px',
+                                                    }}
+                                                >
+                                                    <span
+                                                        style={{
+                                                            opacity: 0.9,
+                                                            fontSize: '14px',
+                                                        }}
+                                                    >
+                                                        User ID:
+                                                        <Chip
+                                                            label={user.id}
+                                                            size="small"
+                                                        />
+                                                    </span>
+                                                    •{' '}
+                                                    <span>
+                                                        Email:{' '}
+                                                        <Link
+                                                            href={`mailto:${user.email}`}
+                                                            underline="none"
+                                                        >
+                                                            {user.email}
+                                                        </Link>
+                                                    </span>
+                                                </Box>
+                                            }
+                                        />
+                                    </Box>
+                                );
+                            })}
+
+                        <Typography
+                            variant="subtitle1"
+                            sx={{
+                                pt: '12px',
+                                pb: '12px',
+                                fontWeight: 'bold',
+                                fontSize: '16',
+                            }}
+                        >
+                            Permissions
+                        </Typography>
+                        <Box
+                            sx={{
+                                backgroundColor: 'rgba(0,0,0,.03)',
+                                padding: '10px',
+                                borderRadius: '8px',
+                            }}
+                        >
                             <RadioGroup
-                                label={
-                                    'Please select what role you would like members to have'
-                                }
+                                label={''}
                                 onChange={(e) => {
                                     setAddMemberRole(e.target.value);
                                 }}
                             >
-                                <RadioGroup.Item
-                                    value="Author"
-                                    label="Author"
-                                />
-                                <RadioGroup.Item
-                                    value="Editor"
-                                    label="Editor"
-                                />
-                                <RadioGroup.Item
-                                    value="Read-Only"
-                                    label="Read-Only"
-                                />
+                                <Stack spacing={1}>
+                                    <StyledCard>
+                                        <MuiCard.Header
+                                            title={
+                                                <Box
+                                                    sx={{
+                                                        display: 'flex',
+                                                        fontSize: '16px',
+                                                    }}
+                                                >
+                                                    <Avatar
+                                                        sx={{
+                                                            width: '20px',
+                                                            height: '20px',
+                                                            mt: '6px',
+                                                            marginRight: '12px',
+                                                            fontSize: '12px',
+                                                            fontWeight: 'bold',
+                                                            backgroundColor:
+                                                                'rgba(0, 0, 0, .5)',
+                                                        }}
+                                                    >
+                                                        A
+                                                    </Avatar>
+                                                    Author
+                                                </Box>
+                                            }
+                                            sx={{ color: '#000' }}
+                                            subheader={
+                                                <Box
+                                                    sx={{ marginLeft: '30px' }}
+                                                >
+                                                    Ability to provision other
+                                                    users, edit database details
+                                                    and hide or delete the
+                                                    database.
+                                                </Box>
+                                            }
+                                            action={
+                                                <RadioGroup.Item
+                                                    value="Author"
+                                                    label=""
+                                                />
+                                            }
+                                        />
+                                    </StyledCard>
+                                    <StyledCard>
+                                        <MuiCard.Header
+                                            title={
+                                                <Box
+                                                    sx={{
+                                                        display: 'flex',
+                                                        fontSize: '16px',
+                                                    }}
+                                                >
+                                                    <MuiIcon
+                                                        sx={{
+                                                            width: '20px',
+                                                            height: '20px',
+                                                            mt: '6px',
+                                                            marginRight: '12px',
+                                                            fontSize: '12px',
+                                                            fontWeight: 'bold',
+                                                            color: 'rgba(0, 0, 0, .5)',
+                                                        }}
+                                                    >
+                                                        <EditRounded />
+                                                    </MuiIcon>
+                                                    Editor
+                                                </Box>
+                                            }
+                                            sx={{ color: '#000' }}
+                                            subheader={
+                                                <Box
+                                                    sx={{ marginLeft: '30px' }}
+                                                >
+                                                    Has the ability to use the
+                                                    database to generate
+                                                    insights and can query
+                                                    against the database.
+                                                </Box>
+                                            }
+                                            action={
+                                                <RadioGroup.Item
+                                                    value="Editor"
+                                                    label=""
+                                                />
+                                            }
+                                        />
+                                    </StyledCard>
+                                    <StyledCard>
+                                        <MuiCard.Header
+                                            title={
+                                                <Box
+                                                    sx={{
+                                                        display: 'flex',
+                                                        fontSize: '16px',
+                                                    }}
+                                                >
+                                                    <MuiIcon
+                                                        sx={{
+                                                            width: '20px',
+                                                            height: '20px',
+                                                            mt: '6px',
+                                                            marginRight: '12px',
+                                                            fontSize: '12px',
+                                                            fontWeight: 'bold',
+                                                            color: 'rgba(0, 0, 0, .5)',
+                                                        }}
+                                                    >
+                                                        <RemoveRedEyeRounded />
+                                                    </MuiIcon>
+                                                    Read-Only
+                                                </Box>
+                                            }
+                                            sx={{ color: '#000' }}
+                                            subheader={
+                                                <Box
+                                                    sx={{ marginLeft: '30px' }}
+                                                >
+                                                    Can view insights built
+                                                    using the database.
+                                                </Box>
+                                            }
+                                            action={
+                                                <RadioGroup.Item
+                                                    value="Read-Only"
+                                                    label=""
+                                                />
+                                            }
+                                        />
+                                    </StyledCard>
+                                </Stack>
                             </RadioGroup>
-                        </div>
+                        </Box>
                     </StyledModalContentText>
                 </Modal.Content>
                 <Modal.Actions>
                     <Button
-                        variant="text"
+                        variant="outlined"
                         onClick={() => setAddMembersModal(false)}
                     >
-                        Close
+                        Cancel
                     </Button>
                     <Button
                         variant={'contained'}
@@ -2209,7 +2447,7 @@ const MembersTable = (props) => {
                             submitNonCredUsers();
                         }}
                     >
-                        Submit
+                        Save
                     </Button>
                 </Modal.Actions>
             </Modal>
