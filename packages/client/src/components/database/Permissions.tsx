@@ -1,10 +1,4 @@
-import React, {
-    useEffect,
-    useMemo,
-    useState,
-    useRef,
-    SyntheticEvent,
-} from 'react';
+import { useEffect, useMemo, useState, useRef, SyntheticEvent } from 'react';
 import { Navigate, useResolvedPath, useNavigate } from 'react-router-dom';
 import { useForm, Controller, useFieldArray } from 'react-hook-form';
 
@@ -1038,7 +1032,6 @@ const PendingMembersTable = (props) => {
     const notification = useNotification();
 
     const [selectedPending, setSelectedPending] = useState([]);
-    const [pendingCount, setPendingCOunt] = useState(0);
 
     const { control, watch, setValue } = useForm<{
         PENDING_MEMBERS: PendingMember[];
@@ -1129,8 +1122,6 @@ const PendingMembersTable = (props) => {
             requests.push(memberRequest);
         });
 
-        debugger;
-
         // hit api with req'd fields
         monolithStore[mapMonolithFunction(type, 'ApproveUserRequest')](
             adminMode,
@@ -1139,7 +1130,6 @@ const PendingMembersTable = (props) => {
             projectId,
         )
             .then((response) => {
-                debugger;
                 // if (response.success) {
                 // get index of pending members in order to remove
                 const indexesToRemove = [];
@@ -1150,7 +1140,6 @@ const PendingMembersTable = (props) => {
                     });
                 });
 
-                debugger;
                 // remove indexes
                 pendingMemberRemove(indexesToRemove);
 
@@ -1202,8 +1191,6 @@ const PendingMembersTable = (props) => {
         members.forEach((mem: PendingMember, i) => {
             requestIds.push(mem.ID);
         });
-
-        debugger;
 
         // hit api with req'd fields
         monolithStore[mapMonolithFunction(type, 'DenyUserRequest')](
@@ -1272,7 +1259,7 @@ const PendingMembersTable = (props) => {
      */
     const updatePendingMemberPermission = (
         mem: PendingMember,
-        value: 'Author' | 'Editor' | 'Read-Only',
+        value: string,
     ) => {
         const updatedPendingMems = pendingMembers.map((user) => {
             if (user.REQUEST_USERID === mem.REQUEST_USERID) {
@@ -1443,7 +1430,8 @@ const PendingMembersTable = (props) => {
                                                         onChange={(e) => {
                                                             updatePendingMemberPermission(
                                                                 user,
-                                                                e.target.value,
+                                                                e.target
+                                                                    .value as Role,
                                                             );
                                                         }}
                                                     >
@@ -1532,7 +1520,9 @@ const StyledModalContentText = MuiStyled(Modal.ContentText)({
     gap: '.5rem',
     marginTop: '12px',
 });
-interface NonCredentialedUsers {}
+
+type Role = 'Author' | 'Editor' | 'Read-Only' | '' | null;
+
 const MembersTable = (props) => {
     const { name, type, adminMode, id, reactorPrefix, projectId } = props;
     const { monolithStore } = useRootStore();
@@ -1556,9 +1546,7 @@ const MembersTable = (props) => {
     const [nonCredentialedUsers, setNonCredentialedUsers] = useState([]);
     const [selectedNonCredentialedUsers, setSelectedNonCredentialedUsers] =
         useState([]);
-    const [addMemberRole, setAddMemberRole] = useState<
-        'Author' | 'Editor' | 'Read-Only' | ''
-    >('');
+    const [addMemberRole, setAddMemberRole] = useState<Role>('');
 
     const didMount = useRef<boolean>(false);
 
@@ -1818,7 +1806,7 @@ const MembersTable = (props) => {
         if (!verifiedMembers.length) return [];
 
         let i = 0;
-        let avatarList = [];
+        const avatarList = [];
         while (i < 5 && i < verifiedMembers.length) {
             avatarList.push(
                 <Avatar key={i}>
@@ -2175,7 +2163,7 @@ const MembersTable = (props) => {
                 </Modal.Actions>
             </Modal>
 
-            <Modal open={addMembersModal} maxWidth="md">
+            <Modal open={addMembersModal} maxWidth="lg">
                 <Modal.Title>Add Members</Modal.Title>
                 <Modal.Content sx={{ width: '50rem' }}>
                     <StyledModalContentText>
@@ -2212,6 +2200,10 @@ const MembersTable = (props) => {
                                             display: 'flex',
                                             justifyContent: 'left',
                                             align: 'center',
+                                            backgroundColor:
+                                                idx % 2 !== 0
+                                                    ? 'rgba(0, 0, 0, .01)'
+                                                    : '',
                                         }}
                                     >
                                         <Box
@@ -2294,7 +2286,9 @@ const MembersTable = (props) => {
                                             action={
                                                 <IconButton
                                                     sx={{
-                                                        color: '#da291c',
+                                                        mt: '16px',
+                                                        color: 'rgba( 0, 0, 0, .7)',
+                                                        mr: '24px',
                                                     }}
                                                     onClick={() => {
                                                         const filtered =
@@ -2337,7 +2331,7 @@ const MembersTable = (props) => {
                             <RadioGroup
                                 label={''}
                                 onChange={(e) => {
-                                    setAddMemberRole(e.target.value);
+                                    setAddMemberRole(e.target.value as Role);
                                 }}
                             >
                                 <Stack spacing={1}>
