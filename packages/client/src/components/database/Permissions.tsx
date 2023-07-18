@@ -56,14 +56,24 @@ import {
     Delete,
     FilterAltRounded,
     SearchOutlined,
-    Person2Rounded,
     EditRounded,
     RemoveRedEyeRounded,
+    ClearRounded,
 } from '@mui/icons-material';
 
 import { LoadingScreen } from '@/components/ui';
 import { Card } from '@/components/ui';
 import { Field } from '@/components/form';
+
+const colors = [
+    '#22A4FF',
+    '#FA3F20',
+    '#FA3F20',
+    '#FF9800',
+    '#FF9800',
+    '#22A4FF',
+    '#4CAF50',
+];
 
 const StyledContent = MuiStyled('div')({
     display: 'flex',
@@ -1523,7 +1533,6 @@ const StyledModalContentText = MuiStyled(Modal.ContentText)({
     marginTop: '12px',
 });
 interface NonCredentialedUsers {}
-
 const MembersTable = (props) => {
     const { name, type, adminMode, id, reactorPrefix, projectId } = props;
     const { monolithStore } = useRootStore();
@@ -1740,8 +1749,12 @@ const MembersTable = (props) => {
             projectId, // req'd for insight level calls
         )
             .then((response) => {
-                setNonCredentialedUsers(response);
-
+                const users = response.map((val) => {
+                    val.color =
+                        colors[Math.floor(Math.random() * colors.length)];
+                    return val;
+                });
+                setNonCredentialedUsers(users);
                 setAddMembersModal(true);
             })
             .catch((err) => {
@@ -2184,6 +2197,14 @@ const MembersTable = (props) => {
 
                         {selectedNonCredentialedUsers &&
                             selectedNonCredentialedUsers.map((user, idx) => {
+                                const space = user.name.indexOf(' ');
+                                const initial = user.name
+                                    ? space > -1
+                                        ? `${user.name[0].toUpperCase()}${user.name[
+                                              space + 1
+                                          ].toUpperCase()}`
+                                        : user.name[0].toUpperCase()
+                                    : user.id[0].toUpperCase();
                                 return (
                                     <Box
                                         key={idx}
@@ -2197,7 +2218,8 @@ const MembersTable = (props) => {
                                             sx={{
                                                 display: 'flex',
                                                 justifyContent: 'center',
-                                                marginTop: '18px',
+                                                marginTop: '6px',
+                                                marginLeft: '8px',
                                                 marginRight: '8px',
                                             }}
                                         >
@@ -2208,20 +2230,22 @@ const MembersTable = (props) => {
                                                     width: '80px',
                                                     justifyContent: 'center',
                                                     alignItems: 'center',
-                                                    border: '0.5px solid rgba(0, 0, 0, .2)',
+                                                    border: '0.5px solid rgba(0, 0, 0, .05)',
                                                     borderRadius: '50%',
                                                 }}
                                             >
                                                 <Avatar
                                                     aria-label="avatar"
                                                     sx={{
+                                                        display: 'flex',
                                                         width: '60px',
                                                         height: '60px',
+                                                        fontSize: '24px',
+                                                        backgroundColor:
+                                                            user.color,
                                                     }}
                                                 >
-                                                    <MuiIcon>
-                                                        <Person2Rounded />
-                                                    </MuiIcon>
+                                                    {initial}
                                                 </Avatar>
                                             </Box>
                                         </Box>
@@ -2231,7 +2255,10 @@ const MembersTable = (props) => {
                                                     {user.name}
                                                 </Typography>
                                             }
-                                            sx={{ color: '#000' }}
+                                            sx={{
+                                                color: '#000',
+                                                width: '100%',
+                                            }}
                                             subheader={
                                                 <Box
                                                     sx={{
@@ -2263,6 +2290,26 @@ const MembersTable = (props) => {
                                                         </Link>
                                                     </span>
                                                 </Box>
+                                            }
+                                            action={
+                                                <IconButton
+                                                    sx={{
+                                                        color: '#da291c',
+                                                    }}
+                                                    onClick={() => {
+                                                        const filtered =
+                                                            selectedNonCredentialedUsers.filter(
+                                                                (val) =>
+                                                                    val.id !==
+                                                                    user.id,
+                                                            );
+                                                        setSelectedNonCredentialedUsers(
+                                                            filtered,
+                                                        );
+                                                    }}
+                                                >
+                                                    <ClearRounded />
+                                                </IconButton>
                                             }
                                         />
                                     </Box>
