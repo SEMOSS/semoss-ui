@@ -1,16 +1,31 @@
-import React, { useEffect, useState, useReducer } from 'react';
+import React, {
+    useEffect,
+    useState,
+    useReducer,
+    useRef,
+    SyntheticEvent,
+} from 'react';
 import { useForm } from 'react-hook-form';
 import {
     Table,
     Form,
     useNotification,
-    styled,
+    styled as styledOld,
     theme,
 } from '@semoss/components';
 
 import { useAPI, useRootStore } from '@/hooks';
 import { LoadingScreen } from '@/components/ui';
-import { Divider, Accordion, Button, TextField, Typography } from '@semoss/ui';
+import {
+    Divider,
+    Accordion,
+    Button,
+    Search,
+    styled,
+    TextField,
+    ToggleTabsGroup,
+    Typography,
+} from '@semoss/ui';
 import google from '../../assets/img/google.png';
 import ms from '../../assets/img/ms.png';
 import dropbox from '../../assets/img/dropbox.png';
@@ -40,7 +55,7 @@ const SOCIAL = {
     },
 };
 
-const StyledImage = styled('img', {
+const StyledImage = styled('img')({
     objectFit: 'cover',
     maxHeight: '28px',
     maxWidth: '28px',
@@ -48,11 +63,9 @@ const StyledImage = styled('img', {
     padding: '4px',
 });
 
-const StyledContainer = styled('div', {
+const StyledContainer = styled('div')(({ theme }) => ({
     margin: '0 auto',
-    paddingLeft: theme.space[8],
-    paddingRight: theme.space[8],
-    paddingBottom: theme.space[8],
+    paddingBottom: theme.spacing(8),
     '@sm': {
         maxWidth: '640px',
     },
@@ -68,27 +81,49 @@ const StyledContainer = styled('div', {
     '@xxl': {
         maxWidth: '1536px',
     },
-});
+}));
 
-const StyledDescription = styled('div', {
-    color: theme.colors['grey-1'],
-    fontSize: theme.fontSizes.md,
-    width: '100%',
-    maxWidth: '50%',
-    marginBottom: theme.space['6'],
-});
-
-const StyledAccordionContent = styled(Accordion.Content, {
+const StyledAccordionContent = styled(Accordion.Content)(({ theme }) => ({
     height: 'auto',
-    margin: theme.space['2'],
-});
+    margin: theme.spacing(2),
+}));
 
-const StyledActionButtonsDiv = styled('div', {
+const StyledTitle = styled('div')(({ theme }) => ({
+    marginBottom: theme.spacing(2),
+    display: 'flex',
+    justifyContent: 'space-between',
+}));
+
+const StyledActionButtonsDiv = styled('div')(({ theme }) => ({
     display: 'flex',
     justifyContent: 'center',
     gap: '.5rem',
-    marginTop: theme.space['2'],
+}));
+
+const StyledButton = styled(Button)({
+    textTransform: 'none',
+    fontWeight: 'bold',
 });
+
+const StyledForm = styled(Form)(({ theme }) => ({
+    marginLeft: theme.spacing(8),
+    width: '100%',
+}));
+
+const StyledKeyValue = styled('div')(({ theme }) => ({
+    display: 'flex',
+    marginBottom: theme.spacing(2),
+}));
+
+const StyledPropContainer = styled('div')(({ theme }) => ({
+    display: 'flex',
+    flexDirection: 'column',
+    marginBottom: theme.spacing(2),
+    padding: '24px',
+    borderRadius: '15px',
+    backgroundColor: 'rgba(255, 255, 255, 1)',
+    boxShadow: '0px 5px 5px rgba(0, 0, 0, 0.03)',
+}));
 
 const initialState = {
     socialProps: {},
@@ -114,13 +149,17 @@ export const SocialPropertiesPage = () => {
     const { socialProps } = state;
 
     const [accordionValue, setAccordionValue] = useState<string>();
-    const [search, setSearch] = useState<string>('');
 
     const [authentication, setAuthentication] = useState(
         Object.keys(socialProps),
     );
     const [authExpanded, setAuthExpanded] = useState(false);
     const [emailExpanded, setEmailExpanded] = useState(false);
+
+    const [tabValue, setTabValue] = useState(0);
+
+    const [authSearch, setAuthSearch] = useState('');
+    const authSearchBarRef = useRef(null);
 
     const loginProperties = useAPI(['getLoginProperties']);
 
@@ -155,24 +194,24 @@ export const SocialPropertiesPage = () => {
             value: formattedProperties,
         });
         setAuthentication(Object.keys(formattedProperties));
-        // setSocialProps(formattedProperties);
+        authSearchBarRef.current?.focus();
     }, [loginProperties.status, loginProperties.data]);
 
     useEffect(() => {
         // reset the options if there is no search value
-        if (!search) {
+        if (!authSearch) {
             setAuthentication(Object.keys(socialProps));
             return;
         }
 
-        const cleanedSearch = search.toLowerCase();
+        const cleanedSearch = authSearch.toLowerCase();
 
         const filtered = authentication.filter((c) => {
             return c.toLowerCase().includes(cleanedSearch);
         });
 
         setAuthentication(filtered);
-    }, [search]);
+    }, [authSearch]);
 
     // show a loading screen when loginProperties is pending
     if (loginProperties.status !== 'SUCCESS' || !Object.keys(socialProps)) {
@@ -180,6 +219,10 @@ export const SocialPropertiesPage = () => {
             <LoadingScreen.Trigger description="Retrieving social properties" />
         );
     }
+
+    const onTabChange = (event: SyntheticEvent, newValue: number) => {
+        setTabValue(newValue);
+    };
 
     const changeSocialProps = (fieldName, value) => {
         const socialPropsCopy = socialProps;
@@ -206,10 +249,19 @@ export const SocialPropertiesPage = () => {
                         >
                             <strong>Authentication</strong>
                         </Accordion.Trigger>
+                        <Search
+                            value={authSearch}
+                            onChange={(e) => {
+                                setAuthSearch(e.target.value);
+                            }}
+                            placeholder="Search . . ."
+                        />
                         {authentication.map((value) => {
                             return (
                                 <Accordion.Content sx={{ fontSize: '14px' }}>
                                     <Button
+                                        sx={{ textTransform: 'none' }}
+                                        color="inherit"
                                         onClick={() => setAccordionValue(value)}
                                     >
                                         <StyledImage
@@ -226,7 +278,7 @@ export const SocialPropertiesPage = () => {
                             );
                         })}
                     </Accordion>
-                    <Accordion
+                    {/* <Accordion
                         expanded={emailExpanded}
                         onChange={() => setEmailExpanded(!emailExpanded)}
                     >
@@ -250,7 +302,7 @@ export const SocialPropertiesPage = () => {
                                 </Accordion.Content>
                             );
                         })}
-                    </Accordion>
+                    </Accordion> */}
                 </div>
                 {accordionValue && (
                     <SocialProperty
@@ -266,14 +318,34 @@ export const SocialPropertiesPage = () => {
         );
     };
 
+    const customTogglePanel = (
+        children: React.ReactNode,
+        index: number,
+        value: number,
+    ) => {
+        return (
+            <div hidden={value !== index}>
+                {value === index && <div>{children}</div>}
+            </div>
+        );
+    };
+
     return (
-        <StyledContainer>
-            <StyledDescription>
-                Use this portal to change social property settings
-            </StyledDescription>
-            <Divider />
-            {settingsPage()}
-        </StyledContainer>
+        <>
+            <StyledContainer>
+                <Divider sx={{ marginBottom: '16px' }} />
+
+                <ToggleTabsGroup
+                    sx={{ marginBottom: '16px' }}
+                    value={tabValue}
+                    onChange={onTabChange}
+                >
+                    <ToggleTabsGroup.Item label="Settings" />
+                    <ToggleTabsGroup.Item label="File Contents" />
+                </ToggleTabsGroup>
+                {customTogglePanel(settingsPage(), 0, tabValue)}
+            </StyledContainer>
+        </>
     );
 };
 
@@ -345,16 +417,15 @@ const SocialProperty = (props) => {
     });
 
     return (
-        <Form>
-            <div style={{ display: 'flex' }}>
+        <StyledForm>
+            <StyledTitle>
                 <Typography variant="h5">
                     {fieldName.charAt(0).toUpperCase() + fieldName.slice(1)}
                 </Typography>
 
                 <StyledActionButtonsDiv>
-                    <Button
-                        // size="sm"
-                        // color="grey"
+                    <StyledButton
+                        variant="outlined"
                         onClick={() => {
                             if (!defaultValues) {
                                 reset();
@@ -364,26 +435,38 @@ const SocialProperty = (props) => {
                         }}
                     >
                         Reset
-                    </Button>
-                    <Button onClick={() => onSubmit()}>Save</Button>
+                    </StyledButton>
+                    <StyledButton
+                        variant="contained"
+                        onClick={() => onSubmit()}
+                    >
+                        Save
+                    </StyledButton>
                 </StyledActionButtonsDiv>
-            </div>
+            </StyledTitle>
 
             {fields.map((f, i) => {
                 return (
-                    <div>
-                        {console.log(f)}
-                        <TextField
-                            label="key"
-                            defaultValue={f.label}
-                            variant="outlined"
-                        />
-                        <TextField label="value" defaultValue={f.value} />
+                    <StyledPropContainer>
+                        <StyledKeyValue>
+                            <TextField
+                                label="key"
+                                defaultValue={f.label}
+                                variant="outlined"
+                                sx={{ marginRight: '12px' }}
+                                fullWidth
+                            />
+                            <TextField
+                                label="value"
+                                defaultValue={f.value}
+                                fullWidth
+                            />
+                        </StyledKeyValue>
                         <TextField placeholder="Description"></TextField>
-                    </div>
+                    </StyledPropContainer>
                 );
             })}
-        </Form>
+        </StyledForm>
     );
 };
 

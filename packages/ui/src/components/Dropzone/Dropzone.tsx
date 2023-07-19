@@ -3,7 +3,7 @@ import {
     useDropzone,
     DropzoneOptions as MuiDropzoneOptions,
 } from "react-dropzone";
-import { SxProps } from '@mui/system';
+import { SxProps } from "@mui/system";
 import { FileUploadOutlined } from "@mui/icons-material";
 import {
     Avatar,
@@ -13,7 +13,6 @@ import {
     TextField,
     Typography,
 } from "../../";
-import { SxProps } from "@mui/system";
 
 export interface DropzoneAreaProps extends MuiDropzoneOptions {
     /** custom style object */

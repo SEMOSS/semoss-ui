@@ -105,7 +105,6 @@ export const SettingsLayout = () => {
                             {!adminMode || matchedRoute.path !== ''
                                 ? matchedRoute.description
                                 : matchedRoute.adminDescription}
-                            {matchedRoute.description}
                         </Typography>
                     </Stack>
                 }
