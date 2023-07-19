@@ -465,7 +465,6 @@ export const DatabaseLandscapeCard = (props: DatabaseCardProps) => {
                     onClick={(e) => {
                         e.stopPropagation();
 
-                        console.log('click global');
                         global(isGlobal);
                     }}
                 >
