@@ -10,10 +10,12 @@ import {
 } from 'react-router-dom';
 import { styled, Stack } from '@semoss/ui';
 import { useAPI } from '@/hooks';
+
 import {
     DatabaseContext,
     DatabaseContextType,
 } from '@/contexts/DatabaseContext';
+
 import { LoadingScreen } from '@/components/ui';
 import { DatabaseShell } from '@/components/database';
 
@@ -107,6 +109,24 @@ export const DatabaseLayout = () => {
                             selected={isActive('settings')}
                         >
                             Settings
+                        </StyledTab>
+                    )}
+                    {(databaseContextType.role === 'EDITOR' ||
+                        databaseContextType.role === 'OWNER') && (
+                        <StyledTab to="replace" selected={isActive('replace')}>
+                            Replace Data
+                        </StyledTab>
+                    )}
+                    {(databaseContextType.role === 'EDITOR' ||
+                        databaseContextType.role === 'OWNER') && (
+                        <StyledTab to="query" selected={isActive('query')}>
+                            Query Data
+                        </StyledTab>
+                    )}
+                    {(databaseContextType.role === 'EDITOR' ||
+                        databaseContextType.role === 'OWNER') && (
+                        <StyledTab to="update" selected={isActive('update')}>
+                            Update SMSS
                         </StyledTab>
                     )}
                 </Stack>

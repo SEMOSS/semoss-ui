@@ -1,15 +1,15 @@
-import React from "react";
+import React, { ReactNode } from "react";
 import { Tabs, TabsProps } from "../Tabs";
 import { Box } from "../Box";
 import { styled } from "@mui/material";
 import { Theme } from "@mui/material/styles";
 import { SxProps } from "@mui/system";
 
-export interface ToggleTabsProps extends TabsProps {
+export interface ToggleTabsProps extends TabsProps<any> {
     // * Props applied to the tab indicator element.
-    TabIndicatorProps?: React.HTMLAttributes<HTMLDivElement> & {
-        sx?: SxProps<Theme>;
-    };
+    children?: ReactNode;
+    TabIndicatorProps?: React.HTMLAttributes<HTMLDivElement>;
+    sx?: SxProps<Theme>;
 }
 
 const StyledBox = styled(Box)(({ theme }) => ({

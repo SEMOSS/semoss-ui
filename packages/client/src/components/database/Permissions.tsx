@@ -1,10 +1,4 @@
-import React, {
-    useEffect,
-    useMemo,
-    useState,
-    useRef,
-    SyntheticEvent,
-} from 'react';
+import { useEffect, useMemo, useState, useRef, SyntheticEvent } from 'react';
 import { Navigate, useResolvedPath, useNavigate } from 'react-router-dom';
 import { useForm, useFieldArray } from 'react-hook-form';
 
@@ -28,6 +22,12 @@ import {
     RadioGroup,
     Typography,
     Autocomplete,
+    Card as MuiCard,
+    Box,
+    Chip,
+    Icon as MuiIcon,
+    Link,
+    Stack,
 } from '@semoss/ui';
 
 import {
@@ -36,9 +36,22 @@ import {
     Delete,
     FilterAltRounded,
     SearchOutlined,
+    EditRounded,
+    RemoveRedEyeRounded,
+    ClearRounded,
 } from '@mui/icons-material';
 
 import { LoadingScreen } from '@/components/ui';
+
+const colors = [
+    '#22A4FF',
+    '#FA3F20',
+    '#FA3F20',
+    '#FF9800',
+    '#FF9800',
+    '#22A4FF',
+    '#4CAF50',
+];
 
 const StyledContent = MuiStyled('div')({
     display: 'flex',
@@ -176,6 +189,10 @@ const StyledNoMembersDiv = MuiStyled('div')({
     alignItems: 'center',
 });
 
+const StyledCard = MuiStyled(MuiCard)({
+    borderRadius: '12px',
+});
+
 // maps for permissions,
 const permissionMapper = {
     1: 'Author', // BE: 'DISPLAY'
@@ -263,7 +280,7 @@ interface PermissionConfig {
     global: boolean;
     visibility?: boolean;
     projectid?: string;
-    permission?: number;
+    // permission?: number;
 }
 
 export interface PermissionsProps {
@@ -271,14 +288,7 @@ export interface PermissionsProps {
 }
 
 export const Permissions = (props: PermissionsProps) => {
-    const {
-        id,
-        name,
-        global,
-        visibility,
-        projectid,
-        permission = 3,
-    } = props.config;
+    const { id, name, global, visibility, projectid } = props.config;
 
     const resolvedPathname = useResolvedPath('').pathname;
 
@@ -286,8 +296,12 @@ export const Permissions = (props: PermissionsProps) => {
     const [view, setView] = useState(0);
 
     // Helper hooks
-    const { monolithStore } = useRootStore();
-    const { adminMode } = useSettings();
+    const { monolithStore, configStore } = useRootStore();
+    const adminMode = configStore.store.user.admin;
+
+    // Actually see if user is an owner or editor, quick fix
+    const permission = adminMode ? 1 : 3;
+
     const notification = useNotification();
     const navigate = useNavigate();
 
@@ -599,7 +613,6 @@ const PendingMembersTable = (props) => {
     const notification = useNotification();
 
     const [selectedPending, setSelectedPending] = useState([]);
-    const [pendingCount, setPendingCOunt] = useState(0);
 
     const { control, watch, setValue } = useForm<{
         PENDING_MEMBERS: PendingMember[];
@@ -690,8 +703,6 @@ const PendingMembersTable = (props) => {
             requests.push(memberRequest);
         });
 
-        debugger;
-
         // hit api with req'd fields
         monolithStore[mapMonolithFunction(type, 'ApproveUserRequest')](
             adminMode,
@@ -700,7 +711,6 @@ const PendingMembersTable = (props) => {
             projectId,
         )
             .then((response) => {
-                debugger;
                 // if (response.success) {
                 // get index of pending members in order to remove
                 const indexesToRemove = [];
@@ -711,7 +721,6 @@ const PendingMembersTable = (props) => {
                     });
                 });
 
-                debugger;
                 // remove indexes
                 pendingMemberRemove(indexesToRemove);
 
@@ -763,8 +772,6 @@ const PendingMembersTable = (props) => {
         members.forEach((mem: PendingMember, i) => {
             requestIds.push(mem.ID);
         });
-
-        debugger;
 
         // hit api with req'd fields
         monolithStore[mapMonolithFunction(type, 'DenyUserRequest')](
@@ -832,7 +839,7 @@ const PendingMembersTable = (props) => {
      */
     const updatePendingMemberPermission = (
         mem: PendingMember,
-        value: 'Author' | 'Editor' | 'Read-Only',
+        value: string,
     ) => {
         const updatedPendingMems = pendingMembers.map((user) => {
             if (user.REQUEST_USERID === mem.REQUEST_USERID) {
@@ -1026,7 +1033,8 @@ const PendingMembersTable = (props) => {
                                                         onChange={(e) => {
                                                             updatePendingMemberPermission(
                                                                 user,
-                                                                e.target.value,
+                                                                e.target
+                                                                    .value as Role,
                                                             );
                                                         }}
                                                     >
@@ -1113,8 +1121,10 @@ const StyledModalContentText = MuiStyled(Modal.ContentText)({
     display: 'flex',
     flexDirection: 'column',
     gap: '.5rem',
+    marginTop: '12px',
 });
-interface NonCredentialedUsers {}
+
+type Role = 'Author' | 'Editor' | 'Read-Only' | '' | null;
 
 const MembersTable = (props) => {
     const { name, type, adminMode, id, reactorPrefix, projectId } = props;
@@ -1139,9 +1149,7 @@ const MembersTable = (props) => {
     const [nonCredentialedUsers, setNonCredentialedUsers] = useState([]);
     const [selectedNonCredentialedUsers, setSelectedNonCredentialedUsers] =
         useState([]);
-    const [addMemberRole, setAddMemberRole] = useState<
-        'Author' | 'Editor' | 'Read-Only' | ''
-    >('');
+    const [addMemberRole, setAddMemberRole] = useState<Role>('');
 
     const didMount = useRef<boolean>(false);
 
@@ -1332,8 +1340,12 @@ const MembersTable = (props) => {
             projectId, // req'd for insight level calls
         )
             .then((response) => {
-                setNonCredentialedUsers(response);
-
+                const users = response.map((val) => {
+                    val.color =
+                        colors[Math.floor(Math.random() * colors.length)];
+                    return val;
+                });
+                setNonCredentialedUsers(users);
                 setAddMembersModal(true);
             })
             .catch((err) => {
@@ -1753,16 +1765,21 @@ const MembersTable = (props) => {
                 </Modal.Actions>
             </Modal>
 
-            <Modal open={addMembersModal} maxWidth="md">
-                <Modal.Title>Add members to {type}</Modal.Title>
+            <Modal open={addMembersModal} maxWidth="lg">
+                <Modal.Title>Add Members</Modal.Title>
                 <Modal.Content sx={{ width: '50rem' }}>
                     <StyledModalContentText>
                         <Autocomplete
+                            label="Search"
                             multiple={true}
                             options={nonCredentialedUsers}
-                            value={selectedNonCredentialedUsers}
+                            limitTags={2}
+                            getLimitTagsText={() =>
+                                ` +${selectedNonCredentialedUsers.length - 2}`
+                            }
+                            value={[...selectedNonCredentialedUsers]}
                             getOptionLabel={(option: any) => {
-                                return `${option.name} - ${option.email}`;
+                                return `${option.name}`;
                             }}
                             isOptionEqualToValue={(option, value) => {
                                 return option.name === value.name;
@@ -1770,39 +1787,302 @@ const MembersTable = (props) => {
                             onChange={(event, newValue: any) => {
                                 setSelectedNonCredentialedUsers([...newValue]);
                             }}
-                        ></Autocomplete>
+                        />
 
-                        <div>
+                        {selectedNonCredentialedUsers &&
+                            selectedNonCredentialedUsers.map((user, idx) => {
+                                const space = user.name.indexOf(' ');
+                                const initial = user.name
+                                    ? space > -1
+                                        ? `${user.name[0].toUpperCase()}${user.name[
+                                              space + 1
+                                          ].toUpperCase()}`
+                                        : user.name[0].toUpperCase()
+                                    : user.id[0].toUpperCase();
+                                return (
+                                    <Box
+                                        key={idx}
+                                        sx={{
+                                            display: 'flex',
+                                            justifyContent: 'left',
+                                            align: 'center',
+                                            backgroundColor:
+                                                idx % 2 !== 0
+                                                    ? 'rgba(0, 0, 0, .03)'
+                                                    : '',
+                                        }}
+                                    >
+                                        <Box
+                                            sx={{
+                                                display: 'flex',
+                                                justifyContent: 'center',
+                                                marginTop: '6px',
+                                                marginLeft: '8px',
+                                                marginRight: '8px',
+                                            }}
+                                        >
+                                            <Box
+                                                sx={{
+                                                    display: 'flex',
+                                                    height: '80px',
+                                                    width: '80px',
+                                                    justifyContent: 'center',
+                                                    alignItems: 'center',
+                                                    border: '0.5px solid rgba(0, 0, 0, .05)',
+                                                    borderRadius: '50%',
+                                                }}
+                                            >
+                                                <Avatar
+                                                    aria-label="avatar"
+                                                    sx={{
+                                                        display: 'flex',
+                                                        width: '60px',
+                                                        height: '60px',
+                                                        fontSize: '24px',
+                                                        backgroundColor:
+                                                            user.color,
+                                                    }}
+                                                >
+                                                    {initial}
+                                                </Avatar>
+                                            </Box>
+                                        </Box>
+                                        <MuiCard.Header
+                                            title={
+                                                <Typography variant="h5">
+                                                    {user.name}
+                                                </Typography>
+                                            }
+                                            sx={{
+                                                color: '#000',
+                                                width: '100%',
+                                            }}
+                                            subheader={
+                                                <Box
+                                                    sx={{
+                                                        display: 'flex',
+                                                        gap: 2,
+                                                        marginTop: '4px',
+                                                    }}
+                                                >
+                                                    <span
+                                                        style={{
+                                                            opacity: 0.9,
+                                                            fontSize: '14px',
+                                                        }}
+                                                    >
+                                                        {`User ID: `}
+                                                        <Chip
+                                                            label={user.id}
+                                                            size="small"
+                                                        />
+                                                    </span>
+                                                    {`• `}
+                                                    <span>
+                                                        {`Email: `}
+                                                        <Link
+                                                            href={`mailto:${user.email}`}
+                                                            underline="none"
+                                                        >
+                                                            {user.email}
+                                                        </Link>
+                                                    </span>
+                                                </Box>
+                                            }
+                                            action={
+                                                <IconButton
+                                                    sx={{
+                                                        mt: '16px',
+                                                        color: 'rgba( 0, 0, 0, .7)',
+                                                        mr: '24px',
+                                                    }}
+                                                    onClick={() => {
+                                                        const filtered =
+                                                            selectedNonCredentialedUsers.filter(
+                                                                (val) =>
+                                                                    val.id !==
+                                                                    user.id,
+                                                            );
+                                                        setSelectedNonCredentialedUsers(
+                                                            filtered,
+                                                        );
+                                                    }}
+                                                >
+                                                    <ClearRounded />
+                                                </IconButton>
+                                            }
+                                        />
+                                    </Box>
+                                );
+                            })}
+
+                        <Typography
+                            variant="subtitle1"
+                            sx={{
+                                pt: '12px',
+                                pb: '12px',
+                                fontWeight: 'bold',
+                                fontSize: '16',
+                            }}
+                        >
+                            Permissions
+                        </Typography>
+                        <Box
+                            sx={{
+                                backgroundColor: 'rgba(0,0,0,.03)',
+                                padding: '10px',
+                                borderRadius: '8px',
+                            }}
+                        >
                             <RadioGroup
-                                label={
-                                    'Please select what role you would like members to have'
-                                }
+                                label={''}
                                 onChange={(e) => {
-                                    setAddMemberRole(e.target.value);
+                                    setAddMemberRole(e.target.value as Role);
                                 }}
                             >
-                                <RadioGroup.Item
-                                    value="Author"
-                                    label="Author"
-                                />
-                                <RadioGroup.Item
-                                    value="Editor"
-                                    label="Editor"
-                                />
-                                <RadioGroup.Item
-                                    value="Read-Only"
-                                    label="Read-Only"
-                                />
+                                <Stack spacing={1}>
+                                    <StyledCard>
+                                        <MuiCard.Header
+                                            title={
+                                                <Box
+                                                    sx={{
+                                                        display: 'flex',
+                                                        fontSize: '16px',
+                                                    }}
+                                                >
+                                                    <Avatar
+                                                        sx={{
+                                                            width: '20px',
+                                                            height: '20px',
+                                                            mt: '6px',
+                                                            marginRight: '12px',
+                                                            fontSize: '12px',
+                                                            fontWeight: 'bold',
+                                                            backgroundColor:
+                                                                'rgba(0, 0, 0, .5)',
+                                                        }}
+                                                    >
+                                                        A
+                                                    </Avatar>
+                                                    Author
+                                                </Box>
+                                            }
+                                            sx={{ color: '#000' }}
+                                            subheader={
+                                                <Box
+                                                    sx={{ marginLeft: '30px' }}
+                                                >
+                                                    Ability to provision other
+                                                    users, edit database details
+                                                    and hide or delete the
+                                                    database.
+                                                </Box>
+                                            }
+                                            action={
+                                                <RadioGroup.Item
+                                                    value="Author"
+                                                    label=""
+                                                />
+                                            }
+                                        />
+                                    </StyledCard>
+                                    <StyledCard>
+                                        <MuiCard.Header
+                                            title={
+                                                <Box
+                                                    sx={{
+                                                        display: 'flex',
+                                                        fontSize: '16px',
+                                                    }}
+                                                >
+                                                    <MuiIcon
+                                                        sx={{
+                                                            width: '20px',
+                                                            height: '20px',
+                                                            mt: '6px',
+                                                            marginRight: '12px',
+                                                            fontSize: '12px',
+                                                            fontWeight: 'bold',
+                                                            color: 'rgba(0, 0, 0, .5)',
+                                                        }}
+                                                    >
+                                                        <EditRounded />
+                                                    </MuiIcon>
+                                                    Editor
+                                                </Box>
+                                            }
+                                            sx={{ color: '#000' }}
+                                            subheader={
+                                                <Box
+                                                    sx={{ marginLeft: '30px' }}
+                                                >
+                                                    Has the ability to use the
+                                                    database to generate
+                                                    insights and can query
+                                                    against the database.
+                                                </Box>
+                                            }
+                                            action={
+                                                <RadioGroup.Item
+                                                    value="Editor"
+                                                    label=""
+                                                />
+                                            }
+                                        />
+                                    </StyledCard>
+                                    <StyledCard>
+                                        <MuiCard.Header
+                                            title={
+                                                <Box
+                                                    sx={{
+                                                        display: 'flex',
+                                                        fontSize: '16px',
+                                                    }}
+                                                >
+                                                    <MuiIcon
+                                                        sx={{
+                                                            width: '20px',
+                                                            height: '20px',
+                                                            mt: '6px',
+                                                            marginRight: '12px',
+                                                            fontSize: '12px',
+                                                            fontWeight: 'bold',
+                                                            color: 'rgba(0, 0, 0, .5)',
+                                                        }}
+                                                    >
+                                                        <RemoveRedEyeRounded />
+                                                    </MuiIcon>
+                                                    Read-Only
+                                                </Box>
+                                            }
+                                            sx={{ color: '#000' }}
+                                            subheader={
+                                                <Box
+                                                    sx={{ marginLeft: '30px' }}
+                                                >
+                                                    Can view insights built
+                                                    using the database.
+                                                </Box>
+                                            }
+                                            action={
+                                                <RadioGroup.Item
+                                                    value="Read-Only"
+                                                    label=""
+                                                />
+                                            }
+                                        />
+                                    </StyledCard>
+                                </Stack>
                             </RadioGroup>
-                        </div>
+                        </Box>
                     </StyledModalContentText>
                 </Modal.Content>
                 <Modal.Actions>
                     <Button
-                        variant="text"
+                        variant="outlined"
                         onClick={() => setAddMembersModal(false)}
                     >
-                        Close
+                        Cancel
                     </Button>
                     <Button
                         variant={'contained'}
@@ -1814,7 +2094,7 @@ const MembersTable = (props) => {
                             submitNonCredUsers();
                         }}
                     >
-                        Submit
+                        Save
                     </Button>
                 </Modal.Actions>
             </Modal>

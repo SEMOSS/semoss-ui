@@ -9,7 +9,7 @@ const StyledPage = styled('div')(() => ({
     overflowY: 'auto',
 
     // Set this in Theme
-    backgroundColor: '#FBFBFB',
+    backgroundColor: '#FFF',
 }));
 
 const StyledPageHeader = styled('div', {
@@ -29,7 +29,7 @@ const StyledPageHeader = styled('div', {
     marginBottom: theme.spacing(2),
 
     // Set this in Theme
-    backgroundColor: '#FBFBFB',
+    backgroundColor: '#FFF',
 }));
 
 export interface PageProps {

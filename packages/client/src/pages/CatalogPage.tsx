@@ -1,143 +1,58 @@
 import { useEffect, useState } from 'react';
+import { observer } from 'mobx-react-lite';
 import {
     styled,
-    Input,
+    Stack,
+    Typography,
+    Search,
     Button,
-    Icon,
+    ToggleButton,
+    ToggleButtonGroup,
     Grid,
-    Checklist,
-} from '@semoss/components';
-import { Link } from 'react-router-dom';
-import { observer } from 'mobx-react-lite';
+    List,
+} from '@semoss/ui';
+import {
+    SpaceDashboardOutlined,
+    FormatListBulletedOutlined,
+    Inventory2Outlined,
+    DataObjectOutlined,
+    MenuBookOutlined,
+} from '@mui/icons-material';
 
-import { theme } from '@/theme';
-import { Page } from '@/components/ui';
-import { DatabaseCard } from '@/components/database';
+import defaultDBImage from '@/assets/img/placeholder.png';
+import { DatabaseLandscapeCard, DatabaseTileCard } from '@/components/database';
 import { usePixel, useRootStore } from '@/hooks';
+import { Page } from '@/components/ui';
 
-const TabContainer = styled('div', {
-    fontSize: '1rem',
-    height: '2em',
+const StyledContainer = styled('div')(({ theme }) => ({
     display: 'flex',
-    width: '50%',
-    justifyContent: 'space-between',
-    marginLeft: 15,
-});
+    height: '100%',
+    gap: theme.spacing(3),
+    paddingTop: theme.spacing(1),
+    paddingBottom: theme.spacing(1),
+}));
 
-const StyledTitleGroup = styled('div', {
+const StyledFitler = styled('div')(({ theme }) => ({
     display: 'flex',
-    alignItems: 'center',
-    gap: theme.space['4'],
-});
+    flexDirection: 'column',
+    height: '100%',
+    width: '355px',
+    gap: theme.spacing(2),
+}));
 
-const StyledTitle = styled('h1', {
-    color: theme.colors['grey-1'],
-    fontSize: theme.fontSizes.xxl,
-    fontWeight: theme.fontWeights.semibold,
-});
-
-const StyledCatalog = styled('div', {
-    display: 'flex',
-    gap: theme.space['4'],
-});
-
-const StyledMenu = styled('div', {
-    flexShrink: '0',
-    width: theme.space['72'],
-});
-
-const StyledControl = styled('div', {
-    position: 'sticky',
-    top: '80px',
+const StyledFilterList = styled(List)(({ theme }) => ({
     width: '100%',
-});
+    // TODO: set this in theme
+    background: '#FAFAFA',
+    borderRadius: theme.shape.borderRadius,
+}));
 
-const StyledControlHeader = styled('div', {
+const StyledContent = styled('div')(({ theme }) => ({
     display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-});
-
-const StyledControlTitle = styled('h5', {
-    color: theme.colors['grey-2'],
-    fontSize: theme.fontSizes.sm,
-    fontWeight: theme.fontWeights.semibold,
-    textTransform: 'uppercase',
-});
-
-const StyledSearch = styled(Input, {
-    marginBottom: theme.space['4'],
-});
-
-const StyledFilter = styled('ul', {
-    width: '100%',
-    borderRadius: theme.radii.default,
-    backgroundColor: theme.colors.base,
-    borderWidth: theme.borderWidths.default,
-    borderColor: theme.colors['grey-4'],
-});
-const DataCatalogTitleWrapper = styled('div', {
-    width: theme.space['72'],
-});
-
-const StyledFilterItem = styled('li', {
-    paddingLeft: theme.space['4'],
-    paddingRight: theme.space['4'],
-    paddingTop: theme.space['2'],
-    paddingBottom: theme.space['2'],
-    borderBottomWidth: theme.borderWidths.default,
-    borderBottomColor: theme.colors['grey-4'],
-    cursor: 'pointer',
-    '&:last-child': {
-        borderBottom: 'none',
-    },
-    variants: {
-        open: {
-            true: {
-                backgroundColor: theme.colors['primary-5'],
-            },
-            false: {
-                '&:hover': {
-                    backgroundColor: theme.colors['primary-5'],
-                },
-            },
-        },
-    },
-});
-
-const StyledFilterTitle = styled('span', {
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    fontSize: theme.fontSizes.sm,
-});
-
-const StyledFilterIcon = styled(Icon, {
-    fill: theme.colors['primary-1'],
-});
-
-const StyledFilterOpen = styled('div', {
-    paddingTop: theme.space['4'],
-    paddingLeft: theme.space['4'],
-});
-
-const StyledLink = styled(Link, {
-    display: 'inline-block',
-    width: '100%',
-});
-
-const StyledGrid = styled(Grid, {
-    flex: 1,
-    overflow: 'hidden',
-});
-
-const ButtonWrapper = styled('div', {
-    // width: theme.space['72'],
-    width: '85%',
-    display: 'flex',
-    justifyContent: 'space-between',
-});
-
+    flexDirection: 'column',
+    height: '100%',
+    flex: '1',
+}));
 /**
  * Catalog landing Page
  * Landing page to view the available datasets and search through it
@@ -168,10 +83,11 @@ export const CatalogPage = observer((): JSX.Element => {
     const [search, setSearch] = useState<string>('');
 
     // which view we are on
-    const [view, setView] = useState<string>('My Databases');
+    const [mode, setMode] = useState<string>('My Databases');
+    const [view, setView] = useState<'list' | 'tile'>('tile');
 
     const dbPixelPrefix: string =
-        view === 'My Databases' ? `MyDatabases` : 'MyDiscoverableDatabases';
+        mode === 'My Databases' ? `MyDatabases` : 'MyDiscoverableDatabases';
 
     // track the options
     const [filterOptions, setFilterOptions] = useState<
@@ -263,6 +179,11 @@ export const CatalogPage = observer((): JSX.Element => {
             : '',
     );
 
+    /**
+     *
+     * @param opt - option for the field color
+     * @returns color
+     */
     const setFieldOptionColor = (opt: string): string => {
         return tagColors[
             opt
@@ -271,6 +192,21 @@ export const CatalogPage = observer((): JSX.Element => {
                 .reduce((a, b) => a + b) % 8
         ];
     };
+
+    /**
+     * @name formatDBName
+     * @param str
+     * @returns formatted db name
+     */
+    const formatDBName = (str: string) => {
+        let i;
+        const frags = str.split('_');
+        for (i = 0; i < frags.length; i++) {
+            frags[i] = frags[i].charAt(0).toUpperCase() + frags[i].slice(1);
+        }
+        return frags.join(' ');
+    };
+
     useEffect(() => {
         if (getCatalogFilters.status !== 'SUCCESS') {
             return;
@@ -305,44 +241,138 @@ export const CatalogPage = observer((): JSX.Element => {
     return (
         <Page
             header={
-                <StyledTitleGroup>
-                    <DataCatalogTitleWrapper>
-                        <StyledTitle>Data Catalog</StyledTitle>
-                    </DataCatalogTitleWrapper>
-                    <ButtonWrapper>
-                        <TabContainer>
-                            {buttons.map((button, idx) => {
-                                return (
-                                    <Button
-                                        style={{ width: 168 }}
-                                        key={idx}
-                                        onClick={() => setView(buttons[idx])}
-                                    >
-                                        {button}
-                                    </Button>
-                                );
-                            })}
-                        </TabContainer>
-                        <div>
-                            <Link to={'/import'}>
-                                <Button
-                                    prepend={
-                                        <Icon
-                                            path={
-                                                'M9,20.42L2.79,14.21L5.62,11.38L9,14.77L18.88,4.88L21.71,7.71L9,20.42Z'
-                                            }
-                                        ></Icon>
-                                    }
-                                >
-                                    New Database
-                                </Button>
-                            </Link>
-                        </div>
-                    </ButtonWrapper>
-                </StyledTitleGroup>
+                <Stack
+                    direction="row"
+                    alignItems={'center'}
+                    justifyContent={'space-between'}
+                    spacing={4}
+                >
+                    <Stack direction="row" alignItems={'center'} spacing={2}>
+                        <Typography variant={'h6'}>Catalog</Typography>
+                        <Search size={'small'} label={'Search'} />
+                    </Stack>
+                    <Stack direction="row" alignItems={'center'} spacing={3}>
+                        <Button variant={'contained'}>Add Database</Button>
+
+                        <ToggleButtonGroup size={'small'} value={view}>
+                            <ToggleButton
+                                onClick={(e, v) => setView('tile')}
+                                value={'tile'}
+                            >
+                                <SpaceDashboardOutlined />
+                            </ToggleButton>
+                            <ToggleButton
+                                onClick={(e, v) => setView('list')}
+                                value={'list'}
+                            >
+                                <FormatListBulletedOutlined />
+                            </ToggleButton>
+                        </ToggleButtonGroup>
+                    </Stack>
+                </Stack>
             }
         >
-            <StyledCatalog>
+            <StyledContainer>
+                <StyledFitler>
+                    <StyledFilterList dense={true}>
+                        <List.Item>
+                            <List.ItemButton selected={true}>
+                                <List.Icon>
+                                    <DataObjectOutlined />
+                                </List.Icon>
+                                <List.ItemText primary={'Data Catalog'} />
+                            </List.ItemButton>
+                        </List.Item>
+                        <List.Item>
+                            <List.ItemButton>
+                                <List.Icon>
+                                    <Inventory2Outlined />
+                                </List.Icon>
+                                <List.ItemText primary={'Storage Catalog'} />
+                            </List.ItemButton>
+                        </List.Item>
+                        <List.Item>
+                            <List.ItemButton>
+                                <List.Icon>
+                                    <MenuBookOutlined />
+                                </List.Icon>
+                                <List.ItemText primary={'Model Catalog'} />
+                            </List.ItemButton>
+                        </List.Item>
+                    </StyledFilterList>
+                    <StyledFilterList dense={true}>
+                        <List.Item>
+                            <List.ItemText primary={'Filter By'} />
+                        </List.Item>
+                        <List.Item>
+                            <List.ItemButton>
+                                <List.Icon>
+                                    <Inventory2Outlined />
+                                </List.Icon>
+                                <List.ItemText primary={'Storage Catalog'} />
+                            </List.ItemButton>
+                        </List.Item>
+                        <List.Item>
+                            <List.ItemButton>
+                                <List.Icon>
+                                    <MenuBookOutlined />
+                                </List.Icon>
+                                <List.ItemText primary={'Model Catalog'} />
+                            </List.ItemButton>
+                        </List.Item>
+                    </StyledFilterList>
+                </StyledFitler>
+
+                <StyledContent>
+                    {getDatabases.status === 'SUCCESS' ? (
+                        <Grid container spacing={3}>
+                            {getDatabases.data.map((db) => {
+                                return (
+                                    <Grid
+                                        key={db.database_id}
+                                        item
+                                        sm={view === 'list' ? 12 : 12}
+                                        md={view === 'list' ? 12 : 6}
+                                        lg={view === 'list' ? 12 : 4}
+                                        xl={view === 'list' ? 12 : 3}
+                                    >
+                                        {view === 'list' ? (
+                                            <DatabaseLandscapeCard
+                                                name={formatDBName(db.app_name)}
+                                                id={db.app_id}
+                                                image={defaultDBImage}
+                                                tag={db.tag}
+                                                owner={db.owner}
+                                                description={db.description}
+                                                votes={db.upvotes}
+                                                views={db.views}
+                                                trending={db.trending}
+                                                isGlobal={db.database_global}
+                                                isUpvoted={db.hasVoted}
+                                            />
+                                        ) : (
+                                            <DatabaseTileCard
+                                                name={formatDBName(db.app_name)}
+                                                id={db.app_id}
+                                                image={defaultDBImage}
+                                                tag={db.tag}
+                                                owner={db.owner}
+                                                description={db.description}
+                                                votes={db.upvotes}
+                                                views={db.views}
+                                                trending={db.trending}
+                                                isGlobal={db.database_global}
+                                                isUpvoted={db.hasVoted}
+                                            />
+                                        )}
+                                    </Grid>
+                                );
+                            })}
+                        </Grid>
+                    ) : null}
+                </StyledContent>
+            </StyledContainer>
+            {/* <StyledCatalog>
                 <StyledMenu>
                     {getCatalogFilters.status === 'SUCCESS' ? (
                         <StyledControl>
@@ -359,7 +389,7 @@ export const CatalogPage = observer((): JSX.Element => {
                             <StyledControlHeader>
                                 <StyledControlTitle>Filter</StyledControlTitle>
                             </StyledControlHeader>
-                            <StyledFilter>
+                            <StyledFilterOld>
                                 {databaseMetaKeys.map((key) => {
                                     const { metakey, display_options } = key;
 
@@ -462,7 +492,7 @@ export const CatalogPage = observer((): JSX.Element => {
                                         </StyledFilterItem>
                                     );
                                 })}
-                            </StyledFilter>
+                            </StyledFilterOld>
                         </StyledControl>
                     ) : null}
                 </StyledMenu>
@@ -503,7 +533,7 @@ export const CatalogPage = observer((): JSX.Element => {
                         })}
                     </StyledGrid>
                 ) : null}
-            </StyledCatalog>
+            </StyledCatalog> */}
         </Page>
     );
 });

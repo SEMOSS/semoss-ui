@@ -3,6 +3,7 @@ import {
     useDropzone,
     DropzoneOptions as MuiDropzoneOptions,
 } from "react-dropzone";
+import { SxProps } from "@mui/system";
 import { FileUploadOutlined } from "@mui/icons-material";
 import {
     Avatar,
