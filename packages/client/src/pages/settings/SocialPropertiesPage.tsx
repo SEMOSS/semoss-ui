@@ -154,7 +154,7 @@ export const SocialPropertiesPage = () => {
     const [authentication, setAuthentication] = useState(
         Object.keys(socialProps),
     );
-    const [authExpanded, setAuthExpanded] = useState(false);
+    const [authExpanded, setAuthExpanded] = useState(true);
     const [emailExpanded, setEmailExpanded] = useState(false);
 
     const [tabValue, setTabValue] = useState(0);
@@ -194,6 +194,8 @@ export const SocialPropertiesPage = () => {
             field: 'socialProps',
             value: formattedProperties,
         });
+
+        setAccordionValue(Object.keys(formattedProperties)[0]);
         setAuthentication(Object.keys(formattedProperties));
         authSearchBarRef.current?.focus();
     }, [loginProperties.status, loginProperties.data]);
@@ -263,7 +265,9 @@ export const SocialPropertiesPage = () => {
                                     <Button
                                         sx={{ textTransform: 'none' }}
                                         color="inherit"
-                                        onClick={() => setAccordionValue(value)}
+                                        onClick={() => {
+                                            setAccordionValue(value);
+                                        }}
                                     >
                                         <StyledImage
                                             src={
