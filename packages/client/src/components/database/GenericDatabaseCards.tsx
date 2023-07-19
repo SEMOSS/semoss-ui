@@ -29,6 +29,8 @@ const StyledLandscapeCard = styled(Card)({
     flexDirection: 'column',
     alignItems: 'flex-start',
     gap: '8px',
+    boxShadow:
+        '0px 5px 22px 0px rgba(0, 0, 0, 0.04), 0px 4px 4px 0.5px rgba(0, 0, 0, 0.03)',
 
     '&:hover': {
         cursor: 'pointer',
@@ -187,6 +189,8 @@ const StyledTileCard = styled(Card)({
     flexDirection: 'column',
     alignItems: 'flex-start',
     gap: '16px',
+    boxShadow:
+        '0px 5px 22px 0px rgba(0, 0, 0, 0.04), 0px 4px 4px 0.5px rgba(0, 0, 0, 0.03)',
 
     '&:hover': {
         cursor: 'pointer',
@@ -273,7 +277,7 @@ const StyledPublishedByContainer = styled('div')({
     alignSelf: 'stretch',
 });
 
-const StyedCardDescription = styled(Typography)({
+const StyledCardDescription = styled(Typography)({
     display: 'flex',
     flexDirection: 'column',
     alignSelf: 'stretch',
@@ -547,11 +551,11 @@ export const DatabaseTileCard = (props: DatabaseCardProps) => {
                                 </StyledPublishedByLabel>
                             </StyledPublishedByContainer>
 
-                            <StyedCardDescription variant={'body2'}>
+                            <StyledCardDescription variant={'body2'}>
                                 {description
                                     ? description
                                     : 'No description available'}
-                            </StyedCardDescription>
+                            </StyledCardDescription>
                             <StyledChipDiv>
                                 {tag !== undefined &&
                                     (typeof tag === 'object' ? (

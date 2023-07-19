@@ -26,9 +26,11 @@ const StyledSetHeader = styled('div')(({ theme }) => ({
     marginBottom: theme.spacing(4),
 }));
 
-//
-const DEFAULT_CARDS = SETTINGS_ROUTES.filter((r) => !!r.path);
+const DEFAULT_CARDS = SETTINGS_ROUTES.filter(
+    (r) => !!r.path && r.history.length < 2,
+);
 
+console.log('', DEFAULT_CARDS);
 export const SettingsIndexPage = () => {
     const navigate = useNavigate();
     const [cards, setCards] = useState(DEFAULT_CARDS);
