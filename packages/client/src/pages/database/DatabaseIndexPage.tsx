@@ -1,5 +1,6 @@
 import { useState, useMemo } from 'react';
-import { styled, Stack, Button, Chip, EditOutlined } from '@semoss/ui';
+import { styled, Stack, Button, Chip } from '@semoss/ui';
+import { EditOutlined } from '@mui/icons-material';
 import { Link } from 'react-router-dom';
 import { observer } from 'mobx-react-lite';
 
