@@ -17,6 +17,17 @@ import { useNavigate } from 'react-router-dom';
 import { useSettings } from '@/hooks';
 import { LoadingScreen } from '@/components/ui';
 
+import { SEMOSS } from '@/assets/img/SEMOSS';
+import { DatabaseLayers } from '@/assets/img/DatabaseLayers';
+import { Folder } from '@/assets/img/Folder';
+import { Group } from '@/assets/img/Group';
+import { Construction } from '@/assets/img/Construction';
+import { AdminPanel } from '@/assets/img/AdminPanel';
+import { Link } from '@/assets/img/Link';
+import { GroupRounded } from '@/assets/img/GroupRounded';
+import { PersonRounded } from '@/assets/img/PersonRounded';
+import { PaintRounded } from '@/assets/img/PaintRounded';
+
 import { SETTINGS_ROUTES } from './settings.constants';
 
 const StyledContainer = styled('div')(({ theme }) => ({
@@ -25,6 +36,11 @@ const StyledContainer = styled('div')(({ theme }) => ({
     flexDirection: 'column',
     alignItems: 'flex-start',
     gap: theme.spacing(3),
+}));
+
+const StyledCard = styled(Card)(({ theme }) => ({
+    overflow: 'hidden',
+    height: theme.spacing(20),
 }));
 
 const StyledSearchbarContainer = styled('div')(({ theme }) => ({
@@ -61,6 +77,21 @@ const CardActionsRight = styled('div')({
 const DEFAULT_CARDS = SETTINGS_ROUTES.filter(
     (r) => !!r.path && r.history.length < 2,
 );
+
+const IconMapper = {
+    'Database Settings': <DatabaseLayers />,
+    'Project Settings': <Folder />,
+    'Insight Settings': <SEMOSS />,
+    'Member Settings': <Group />,
+    Configuration: <Construction />,
+    'Admin Query': <AdminPanel />,
+    'External Connections': <Link />,
+    Teams: <GroupRounded />,
+    'Teams Management': <GroupRounded />,
+    'Teams Permissions': <GroupRounded />,
+    'My Profile': <PersonRounded />,
+    Theming: <PaintRounded />,
+};
 
 console.log('', DEFAULT_CARDS);
 export const SettingsIndexPage = () => {
@@ -114,11 +145,11 @@ export const SettingsIndexPage = () => {
                 {cards.map((c, i) => {
                     return (
                         <Grid item key={i} sm={12} md={6} lg={4} xl={3}>
-                            <Card onClick={() => navigate(c.path)}>
+                            <StyledCard onClick={() => navigate(c.path)}>
                                 <Card.Header
                                     title={c.title}
                                     titleTypographyProps={{ variant: 'h5' }}
-                                    avatar={<StyledIcon path={c.icon} />}
+                                    avatar={IconMapper[c.title]}
                                 />
                                 <Card.Content sx={{ marginTop: -2 }}>
                                     <Typography variant="caption">
@@ -135,7 +166,7 @@ export const SettingsIndexPage = () => {
                                     </CardActionsLeft>
                                     <CardActionsRight>tbd</CardActionsRight>
                                 </Card.Actions> */}
-                            </Card>
+                            </StyledCard>
                         </Grid>
                     );
                 })}

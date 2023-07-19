@@ -130,6 +130,10 @@ const StyledPersonIcon = styled(Person)(() => ({
     alignItems: 'flex-start',
 }));
 
+const StyledPublishedIcon = styled(PublishedWithChanges)(() => ({
+    marginRight: '5px',
+}));
+
 const StyledSwitchIcon = styled(ToggleOff)(({ theme }) => ({
     display: 'flex',
     alignItems: 'flex-start',
@@ -379,7 +383,7 @@ export const AppSettings = (props) => {
                                         publish();
                                     }}
                                 >
-                                    <PublishedWithChanges />
+                                    <StyledPublishedIcon />
                                     Publish
                                 </StyledRightButton>
                             </StyledSubRow>
