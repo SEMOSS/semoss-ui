@@ -26,6 +26,7 @@ import {
     ToggleTabsGroup,
     Typography,
 } from '@semoss/ui';
+import Editor from '@monaco-editor/react';
 import google from '../../assets/img/google.png';
 import ms from '../../assets/img/ms.png';
 import dropbox from '../../assets/img/dropbox.png';
@@ -318,6 +319,36 @@ export const SocialPropertiesPage = () => {
         );
     };
 
+    const fileContentsPage = () => {
+        const defaultTyping = `this is a line of code
+        that will result
+        in something happening
+        once saved
+        you can also use
+        the reset button to clear this space
+        and start over
+        if you desire
+        `;
+        return (
+            <StyledPropContainer>
+                <StyledTitle>
+                    <Typography variant="h5">social.properties</Typography>
+
+                    <StyledActionButtonsDiv>
+                        <StyledButton variant="outlined">Reset</StyledButton>
+                        <StyledButton variant="contained">Save</StyledButton>
+                    </StyledActionButtonsDiv>
+                </StyledTitle>
+                <Divider sx={{ marginBottom: '8px' }} />
+                <Editor
+                    height="60vh"
+                    defaultLanguage="javascript"
+                    defaultValue={defaultTyping}
+                />
+            </StyledPropContainer>
+        );
+    };
+
     const customTogglePanel = (
         children: React.ReactNode,
         index: number,
@@ -344,6 +375,7 @@ export const SocialPropertiesPage = () => {
                     <ToggleTabsGroup.Item label="File Contents" />
                 </ToggleTabsGroup>
                 {customTogglePanel(settingsPage(), 0, tabValue)}
+                {customTogglePanel(fileContentsPage(), 1, tabValue)}
             </StyledContainer>
         </>
     );
