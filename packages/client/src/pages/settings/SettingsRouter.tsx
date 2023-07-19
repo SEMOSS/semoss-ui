@@ -5,9 +5,14 @@ import { SETTINGS_ROUTES } from './settings.constants';
 
 import { SettingsLayout } from './SettingsLayout';
 import { SettingsIndexPage } from './SettingsIndexPage';
+
+import { DatabaseSettingsDetailPage } from './DatabaseSettingsDetailPage';
 import { DatabaseSettingsPage } from './DatabaseSettingsPage';
-import { ProjectPermissionsPage } from './ProjectPermissionsPage';
-import { InsightPermissionsPage } from './InsightPermissionsPage';
+import { ProjectSettingsPage } from './ProjectSettingsPage';
+import { ProjectSettingsDetailPage } from './ProjectSettingsDetailPage';
+import { InsightSettingsPage } from './InsightSettingsPage';
+import { InsightSettingsDetailPage } from './InsightSettingsDetailPage';
+
 import { MemberSettingsPage } from './MemberSettingsPage';
 import { SocialPropertiesPage } from './SocialPropertiesPage';
 import { AdminQueryPage } from './AdminQueryPage';
@@ -21,9 +26,14 @@ import { ThemePage } from './ThemePage';
 // map each route to a component
 const SETTINGS_COMPONETS = {
     '': SettingsIndexPage,
-    'database-settings': DatabaseSettingsPage,
-    'project-permissions': ProjectPermissionsPage,
-    'insight-permissions': InsightPermissionsPage,
+
+    database: DatabaseSettingsPage,
+    'database/:id': DatabaseSettingsDetailPage,
+    project: ProjectSettingsPage,
+    'project/:id': ProjectSettingsDetailPage,
+    insight: InsightSettingsPage,
+    'insight/:id/:projectId': InsightSettingsDetailPage,
+
     members: MemberSettingsPage,
     'social-properties': SocialPropertiesPage,
     'admin-query': AdminQueryPage,

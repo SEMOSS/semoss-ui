@@ -24,7 +24,10 @@ import { usePixel, useRootStore } from '@/hooks';
 import { LoadingScreen } from '@/components/ui';
 
 const StyledAppSettings = styled('div')({
+    display: 'flex',
+    flexDirection: 'column',
     width: '100%',
+    gap: '1rem',
 });
 
 const StyledCardContainer = styled('div')(({ theme }) => ({
