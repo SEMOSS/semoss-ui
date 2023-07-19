@@ -175,7 +175,7 @@ export const AppSettings = (props) => {
     const [user, setUser] = useState<User>({});
     const [enablePublish, setEnablePublish] = useState<boolean>(true);
 
-    const getProjectReactors = usePixel(
+    const getProjectReactors = usePixel<string[]>(
         `GetProjectAvailableReactors(project=['${id}']);`,
     );
 
@@ -189,19 +189,12 @@ export const AppSettings = (props) => {
         `GetProjectAvailableReactors(project=['${id}']);`,
     );
 
-    //on mount, set link, set initial reactors, set last compiled by
     useEffect(() => {
         if (
             getProjectReactors.status !== 'SUCCESS' ||
             !getProjectReactors.data
         ) {
-            setReactors([
-                'reloadInsightClasses',
-                'getAllCasesInTriage',
-                'moveCases',
-                'assignNextCase',
-                'getNextCase',
-            ]);
+            return;
         }
 
         if (getPortalLink.status !== 'SUCCESS') {
@@ -216,7 +209,31 @@ export const AppSettings = (props) => {
                 time: '10:00AM',
             });
         }
-    }, []);
+    }, [getProjectReactors.status, getProjectReactors.data]);
+
+    useEffect(() => {
+        if (getPortalLink.status !== 'SUCCESS' || !getPortalLink.data) {
+            return;
+        }
+
+        setPortalLink('https://amedeloitte.sharepoint.com/:p:/s/123456');
+    }, [getPortalLink.status, getPortalLink.data]);
+
+    useEffect(() => {
+        if (
+            getLastCompiledPerson.status !== 'SUCCESS' ||
+            !getLastCompiledPerson.data
+        ) {
+            return;
+        }
+
+        setUser({
+            id: 'test',
+            name: 'Rose Memis',
+            date: '7/18/2023',
+            time: '10:00AM',
+        });
+    }, [getLastCompiledPerson.status, getLastCompiledPerson.data]);
 
     /** LOADING */
     if (getProjectReactors.status !== 'SUCCESS') {
@@ -451,7 +468,7 @@ export const AppSettings = (props) => {
                     <StyledCardRight>
                         <StyledTable>
                             <Table.Body>
-                                {reactors.map((reactor, i) => {
+                                {getProjectReactors.data.map((reactor, i) => {
                                     return (
                                         <Table.Row key={reactor + i}>
                                             <Table.Cell>{reactor}</Table.Cell>
