@@ -1,4 +1,3 @@
-//TODO add theme. variables
 import { useEffect, useState } from 'react';
 import {
     Avatar,
@@ -8,7 +7,6 @@ import {
     Typography,
     Divider,
     TextField,
-    InputAdornment,
     styled,
 } from '@semoss/ui';
 
@@ -18,7 +16,6 @@ import {
     Cached,
     PublishedWithChanges,
     InsertLink,
-    Circle,
 } from '@mui/icons-material';
 
 import { useNotification } from '@semoss/components';
@@ -26,81 +23,66 @@ import { useNotification } from '@semoss/components';
 import { usePixel, useRootStore } from '@/hooks';
 import { LoadingScreen } from '@/components/ui';
 
-// Members Table
-interface User {
-    id: string;
-    name: string;
-    date: string;
-    time: string;
-}
-
 const StyledAppSettings = styled('div')({
     width: '100%',
 });
 
-const StyledCardContainer = styled('div')({
+const StyledCardContainer = styled('div')(({ theme }) => ({
     width: '100%',
-    gap: '16px',
+    gap: theme.spacing(2),
     display: 'flex',
     background: '#FFF',
     alignSelf: 'stretch',
-    borderRadius: '12px',
+    borderRadius: theme.shape.borderRadius,
     alignItems: 'flex-start',
     boxShadow: '0px 5px 22px 0px rgba(0, 0, 0, 0.06)',
-});
+}));
 
-const StyledTopCardContainer = styled('div')({
+const StyledTopCardContainer = styled('div')(({ theme }) => ({
     width: '100%',
-    gap: '16px',
+    gap: theme.spacing(2),
     display: 'flex',
     background: '#FFF',
     alignSelf: 'stretch',
-    borderRadius: '12px',
+    borderRadius: theme.shape.borderRadius,
     alignItems: 'flex-start',
     boxShadow: '0px 5px 22px 0px rgba(0, 0, 0, 0.06)',
-    marginBottom: '10px',
-});
+    marginBottom: theme.spacing(1),
+}));
 
-const StyledRightSwitch = styled(Switch)({
+const StyledRightSwitch = styled(Switch)(({ theme }) => ({
     marginLeft: 'auto',
-    paddingRight: '10px',
-});
+    paddingRight: theme.spacing(1),
+}));
 
-const StyledRightButton = styled(Button)({
+const StyledRightButton = styled(Button)(({ theme }) => ({
     marginLeft: 'auto',
-    paddingRight: '10px',
-});
+    paddingRight: theme.spacing(1),
+}));
 
-const StyledCardDiv = styled('div')({
-    gap: '16px',
+const StyledCardDiv = styled('div')(({ theme }) => ({
+    gap: theme.spacing(2),
     flex: '1 0 0',
     display: 'flex',
-    padding: '16px',
+    padding: theme.spacing(2),
     alignItems: 'flex-start',
-});
+}));
 
-const StyledCardLeft = styled('div')({
+const StyledCardLeft = styled('div')(({ theme }) => ({
     display: 'flex',
-    height: '260px',
+    height: theme.spacing(33),
     width: '50%',
     gap: '1rem',
     flexDirection: 'column',
     alignItems: 'flex-start',
-});
+}));
 
-const StyledListItemHeader = styled('div')({
+const StyledListItemHeader = styled('div')(({ theme }) => ({
     display: 'flex',
-    width: '628px',
+    width: theme.spacing(79),
     flexDirection: 'column',
     alignItems: 'flex-start',
-});
-
-const StyledListItemSubheader = styled('div')({
-    display: 'flex',
-    width: '628px',
-    flexDirection: 'column',
-    alignItems: 'flex-start',
-});
+}));
 
 const StyledSubColumn = styled('div')({
     display: 'flex',
@@ -111,11 +93,10 @@ const StyledSubColumn = styled('div')({
 const StyledSubRow = styled('div')({
     display: 'flex',
     flexDirection: 'row',
-    alignItems: 'flex-start',
+    alignItems: 'center',
     alignContent: 'center',
     width: '100%',
-    alignItem: 'center',
-    marginBottom: '10px',
+    margin: '10px 0',
 });
 
 const StyledLeftActionContainer = styled('div')({
@@ -133,72 +114,71 @@ const StyledLeftActionDiv = styled('div')({
     justifyContent: 'center',
 });
 
-const StyledActionDivLeft = styled('div')((theme) => ({
+const StyledActionDivLeft = styled('div')(({ theme }) => ({
     display: 'flex',
-    paddingRight: '8px',
+    paddingRight: theme.spacing(4),
     justifyContent: 'center',
     alignItems: 'center',
     gap: '10px',
 }));
 
-const StyledPersonIcon = styled(Person)({
+const StyledPersonIcon = styled(Person)(() => ({
     display: 'flex',
     alignItems: 'flex-start',
-});
+}));
 
-const StyledSwitchIcon = styled(ToggleOff)({
+const StyledSwitchIcon = styled(ToggleOff)(({ theme }) => ({
     display: 'flex',
     alignItems: 'flex-start',
-});
+    marginRight: theme.spacing(1),
+}));
 
-const StyledRefreshIcon = styled(Cached)({
+const StyledRefreshIcon = styled(Cached)(({ theme }) => ({
     display: 'flex',
     alignItems: 'flex-start',
-});
+    marginRight: theme.spacing(1),
+}));
 
-const StyledCircleIcon = styled(Circle)({
-    opacity: '.5',
-    fontSize: '7px',
-});
-
-const StyledCardRight = styled('div')({
+const StyledCardRight = styled('div')(() => ({
     width: '50%',
-});
+}));
 
-const StyledTableRow = styled(Table.Row)({
-    borderLeft: 'solid red',
-    borderRight: 'solid red',
+const StyledTable = styled(Table)(({ theme }) => ({
+    borderRadius: theme.shape.borderRadius,
+    borderColor: theme.palette.divider,
+    borderStyle: 'solid',
+}));
 
-    '&:first-child': {
-        borderTop: 'solid yellow',
-    },
-    '&:last-child': {
-        borderBottom: 'solid yellow',
-    },
-});
+// User Table
+interface User {
+    id: string;
+    name: string;
+    date: string;
+    time: string;
+}
 
 export const AppSettings = (props) => {
     const { id } = props;
     const { monolithStore } = useRootStore();
     const notification = useNotification();
-    // const [enablePublishing, setEnablePublishing] = useState(null);
 
+    //states on initial load
     const [portalLink, setPortalLink] = useState<string>('');
     const [reactors, setReactors] = useState([]);
     const [user, setUser] = useState<User>({});
-    const [enablePublish, setEnablePublish] = useState<boolean>(false);
+    const [enablePublish, setEnablePublish] = useState<boolean>(true);
 
     const getProjectReactors = usePixel(
         `GetProjectAvailableReactors(project=['${id}']);`,
     );
 
     const getPortalLink = usePixel(
-        //pixel fetch link
-        //if setPortalLink else display none?
+        //pixel fetch link --> dummy pixel
         `GetProjectAvailableReactors(project=['${id}']);`,
     );
 
     const getLastCompiledPerson = usePixel(
+        //pixel fetch user info --> dummy pixel
         `GetProjectAvailableReactors(project=['${id}']);`,
     );
 
@@ -237,8 +217,6 @@ export const AppSettings = (props) => {
     }
 
     const recompileReactors = () => {
-        // console.log('test recompile');
-
         const pixelString = `ReloadInsightClasses('${id}');`;
 
         monolithStore
@@ -273,8 +251,6 @@ export const AppSettings = (props) => {
     };
 
     const publish = () => {
-        // console.log('test publish');
-
         const pixelString = `PublishProject('${id}');`;
 
         monolithStore
@@ -285,7 +261,6 @@ export const AppSettings = (props) => {
 
                 output = response.pixelReturn[0].output;
                 type = response.pixelReturn[0].operationType[0];
-                // console.log('output is publish', output);
 
                 if (type.indexOf('ERROR') > -1) {
                     notification.add({
@@ -313,7 +288,7 @@ export const AppSettings = (props) => {
 
     const enablePublishing = () => {
         setEnablePublish((publish) => !publish);
-        // console.log('test enable publishing');
+        console.log('test enable publishing', enablePublish);
         //if enablePublish --> hit new reactor
 
         if (enablePublish)
@@ -345,9 +320,6 @@ export const AppSettings = (props) => {
                                 <Typography variant="body2">
                                     {user.name}
                                 </Typography>
-
-                                <StyledCircleIcon />
-
                                 <Typography variant="body2">
                                     {user.time}
                                 </Typography>
@@ -374,7 +346,6 @@ export const AppSettings = (props) => {
                                 </Typography>
 
                                 <StyledRightSwitch
-                                    title={`Enable Publishing`}
                                     value={enablePublish}
                                     onClick={() => {
                                         enablePublishing();
@@ -411,19 +382,11 @@ export const AppSettings = (props) => {
                             </StyledSubRow>
 
                             <StyledSubRow>
-                                {/* <InputAdornment
-                                InputProps={{
-                                    startAdornment: <InsertLink />,
-                                }}
-                                focused={false}
-                                variant={"outlined"}
-                                >
-                                </InputAdornment> */}
-
                                 <TextField
                                     focused={false}
                                     label={'Link'}
                                     variant={'outlined'}
+                                    defaultValue={portalLink}
                                     sx={{ width: '100%' }}
                                     InputProps={{
                                         startAdornment: <InsertLink />,
@@ -444,9 +407,9 @@ export const AppSettings = (props) => {
                             <Typography variant="h6">Reactors</Typography>
                         </StyledListItemHeader>
 
-                        <StyledListItemSubheader>
+                        <StyledListItemHeader>
                             Custom reactors created for the portal.
-                        </StyledListItemSubheader>
+                        </StyledListItemHeader>
                         <Button
                             variant="contained"
                             onClick={() => {
@@ -468,11 +431,6 @@ export const AppSettings = (props) => {
                                 <Typography variant="body2">
                                     {user.name}
                                 </Typography>
-
-                                <Typography variant="body2">
-                                    <StyledCircleIcon />
-                                </Typography>
-
                                 <Typography variant="body2">
                                     {user.time}
                                 </Typography>
@@ -484,30 +442,20 @@ export const AppSettings = (props) => {
                         </StyledLeftActionContainer>
                     </StyledCardLeft>
                     <StyledCardRight>
-                        <Table>
+                        <StyledTable>
                             <Table.Body>
                                 {reactors.map((reactor, i) => {
                                     return (
-                                        <StyledTableRow key={reactor + i}>
+                                        <Table.Row key={reactor + i}>
                                             <Table.Cell>{reactor}</Table.Cell>
                                             <Table.Cell align="right">
                                                 <Person fontSize="medium" />
                                             </Table.Cell>
-                                        </StyledTableRow>
+                                        </Table.Row>
                                     );
                                 })}
-                                {/* {getProjectReactors.data.map((reactor, i) => {
-                                    return (
-                                        <StyledTableRow key={reactor + i}>
-                                            <Table.Cell>{reactor}</Table.Cell>
-                                            <Table.Cell align="right">
-                                                <Person />
-                                            </Table.Cell>
-                                        </StyledTableRow>
-                                    );
-                                })} */}
                             </Table.Body>
-                        </Table>
+                        </StyledTable>
                     </StyledCardRight>
                 </StyledCardDiv>
             </StyledCardContainer>
