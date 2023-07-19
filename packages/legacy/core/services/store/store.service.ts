@@ -3165,10 +3165,23 @@ function storeService(
                                                     ].push(headerInfo);
                                                 }
                                                 // for merging layers
-                                                viewInfo.tasks[layerIndex].keys[
-                                                    taskOption.layout
-                                                ].push(headerInfo);
-                                                break;
+                                            if (
+                                                    taskOption.layout !== 'Graph' &&
+                                                    taskOption.layout !== 'GraphGL' &&
+                                                    taskOption.layout !== 'VivaGraph'
+                                                ) {
+                                                    // for merging layers
+                                                    viewInfo.tasks[layerIndex].keys[taskOption.layout].push(headerInfo);
+                                                    break;
+                                                } else {
+                                                    const layout = viewInfo.tasks[layerIndex].keys[taskOption.layout];
+                                                    if (headerInfo.model === 'start' || headerInfo.model === 'end') {
+                                                        layout.push(headerInfo);
+                                                    } else if (headerInfo.model === 'facet') {
+                                                        layout.push(headerInfo);
+                                                        break;
+                                                    }
+                                                }
                                             }
                                         }
                                     }

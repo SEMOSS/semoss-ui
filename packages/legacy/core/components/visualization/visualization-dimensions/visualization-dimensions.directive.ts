@@ -951,26 +951,36 @@ function visualizationDimensionsDirective($timeout, semossCoreService) {
                 allMath = true,
                 oldGroupBy: any[] = [],
                 math = false;
+
             // if graph and not in grid frame, automatically paint, so lets just set
-            if (
-                (scope.visualizationDimensions.active.layout === 'Graph' ||
-                    scope.visualizationDimensions.active.layout ===
-                        'VivaGraph' ||
-                    scope.visualizationDimensions.active.layout ===
-                        'GraphGL') &&
-                scope.visualizationDimensions.frame.type === 'GRAPH'
-            ) {
+            const isGraph =
+                scope.visualizationDimensions.active.layout === 'Graph' ||
+                scope.visualizationDimensions.active.layout === 'VivaGraph' ||
+                scope.visualizationDimensions.active.layout === 'GraphGL';
+
+            if (isGraph && scope.visualizationDimensions.frame.type === 'GRAPH') {
                 valid = true;
             } else {
                 // don't run if we don't have the selectors...
                 if (!scope.visualizationDimensions.fields.list.length) {
                     valid = false;
+                } else {
+                    if (
+                        isGraph &&
+                        scope.visualizationDimensions.fields.list.filter(
+                            (list) => list.model === 'start',
+                        )[0].selected.length !==
+                            scope.visualizationDimensions.fields.list.filter(
+                                (list) => list.model === 'end',
+                            )[0].selected.length
+                    ) {
+                        valid = false;
+                    }
                 }
 
                 for (
                     let listIdx = 0,
-                        listLen =
-                            scope.visualizationDimensions.fields.list.length;
+                        listLen = scope.visualizationDimensions.fields.list.length;
                     listIdx < listLen;
                     listIdx++
                 ) {
@@ -1019,15 +1029,14 @@ function visualizationDimensionsDirective($timeout, semossCoreService) {
                             valid = false;
                             scope.widgetCtrl.alert(
                                 'warn',
-                                'At least 1 group dimension is required'
+                                'At least 1 group dimension is required',
                             );
                             for (
                                 let selectedIdx = 0;
                                 selectedIdx < field.selected.length;
                                 selectedIdx++
                             ) {
-                                const oldGroupField =
-                                    field.selected[selectedIdx];
+                                const oldGroupField = field.selected[selectedIdx];
                                 if (oldGroupField.alias === oldGroupBy[0]) {
                                     oldGroupField.math = 'Group';
                                     scope.visualizationDimensions.fields.list[
@@ -1043,7 +1052,7 @@ function visualizationDimensionsDirective($timeout, semossCoreService) {
                 if (
                     scope.visualizationDimensions.facet.allInstances &&
                     scope.visualizationDimensions.facet.allInstanceCharts.indexOf(
-                        scope.visualizationDimensions.active.layout
+                        scope.visualizationDimensions.active.layout,
                     ) !== -1
                 ) {
                     scope.visualizationDimensions.facet.selectedViewType =
@@ -1058,6 +1067,7 @@ function visualizationDimensionsDirective($timeout, semossCoreService) {
                 createVisualization();
             }
         }
+  
 
         /**
          * @name addField
@@ -1471,7 +1481,14 @@ function visualizationDimensionsDirective($timeout, semossCoreService) {
                         components: [
                             'visualization',
                             {
-                                type: scope.visualizationDimensions.type,
+                                type:
+                                    type === 'standard' &&
+                                    scope.visualizationDimensions.active.layout ===
+                                        'Graph' &&
+                                    scope.visualizationDimensions.active.type ===
+                                        'standard'
+                                        ? type
+                                        : scope.visualizationDimensions.type,
                             },
                         ],
                         terminal: true,

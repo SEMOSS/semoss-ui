@@ -563,11 +563,14 @@ function gantt(semossCoreService) {
         function formatFiscalData() {
             var dateStart, dateEnd, fiscalData;
 
+                    
             dateStart = d3.min(ganttConfig.chartData, function (d) {
-                return new Date(d.start);
+                return new Date(
+                    Date.parse(d.start) >= Date.parse(d.end) ? d.end : d.start,
+                );
             });
             dateEnd = d3.max(ganttConfig.chartData, function (d) {
-                return new Date(d.end);
+                return new Date(Date.parse(d.end) <= Date.parse(d.start) ? d.start : d.end);
             });
             dateStart = new Date(
                 dateStart.getFullYear(),
@@ -1912,10 +1915,7 @@ function gantt(semossCoreService) {
                 tooltipText +=
                     '' +
                     'Date: ' +
-                    visualizationUniversal.formatValue(
-                        dataObj.date,
-                        startType
-                    ) +
+                    visualizationUniversal.formatValue(dataObj.date, startType) +
                     '<br>';
                 tooltipText +=
                     'Tasks: ' +
@@ -1940,16 +1940,13 @@ function gantt(semossCoreService) {
                     'Start Date: ' +
                     visualizationUniversal.formatValue(
                         dataObj.dateStart,
-                        startType
+                        startType,
                     ) +
                     '<br>';
                 tooltipText +=
                     '' +
                     'End Date: ' +
-                    visualizationUniversal.formatValue(
-                        dataObj.dateEnd,
-                        startType
-                    ) +
+                    visualizationUniversal.formatValue(dataObj.dateEnd, startType) +
                     '<br>';
                 if (dataObj.description) {
                     tooltipText +=
@@ -1972,49 +1969,61 @@ function gantt(semossCoreService) {
                             i++
                         ) {
                             tooltipType =
-                                dataTypes[
-                                    ganttConfig.modelKeyMapping[key][i]
-                                ][0];
+                                dataTypes[ganttConfig.modelKeyMapping[key][i]][0];
                             tooltipText +=
                                 '<b>' +
-                                cleanValue(
-                                    ganttConfig.modelKeyMapping[key][i]
-                                ) +
+                                cleanValue(ganttConfig.modelKeyMapping[key][i]) +
                                 ':</b> ' +
                                 visualizationUniversal.formatValue(
                                     dataObj[key][i],
-                                    tooltipType
+                                    tooltipType,
                                 );
                             tooltipText += '<br>';
                         }
                     } else {
-                        // Skips duplicate tooltip entries
-                        if (
-                            (key === 'ganttBar' &&
-                                !ganttConfig.uiOptions.ganttGroupView) ||
-                            (key === 'task' && dataObj.task === dataObj.group)
-                        ) {
-                            continue;
-                        }
-                        if (
-                            key === 'ganttBar' &&
-                            ganttConfig.uiOptions.ganttGroupView
-                        ) {
-                            tooltipText +=
-                                '<span style="display:inline-block;margin-right:5px;border-radius:10px;width:10px;height:10px;background-color:' +
-                                color +
-                                ';"></span>';
-                            tooltipText +=
-                                '<b>' +
-                                cleanValue(ganttConfig.modelKeyMapping.group) +
-                                ':</b> ' +
-                                cleanValue(dataObj[key]);
-                        } else {
-                            if (key === 'task') {
+                        const toolTipKeyText = cleanValue(
+                            ganttConfig.modelKeyMapping[key],
+                        );
+                        if (tooltipText.indexOf(toolTipKeyText) === -1) {
+                            // Skips duplicate tooltip entries
+                            if (
+                                (key === 'ganttBar' &&
+                                    !ganttConfig.uiOptions.ganttGroupView) ||
+                                (key === 'task' && dataObj.task === dataObj.group)
+                            ) {
+                                continue;
+                            }
+                            if (
+                                key === 'ganttBar' &&
+                                ganttConfig.uiOptions.ganttGroupView
+                            ) {
                                 tooltipText +=
                                     '<span style="display:inline-block;margin-right:5px;border-radius:10px;width:10px;height:10px;background-color:' +
                                     color +
                                     ';"></span>';
+                                tooltipText +=
+                                    '<b>' +
+                                    cleanValue(ganttConfig.modelKeyMapping.group) +
+                                    ':</b> ' +
+                                    cleanValue(dataObj[key]);
+                            } else {
+                                if (key === 'task') {
+                                    tooltipText +=
+                                        '<span style="display:inline-block;margin-right:5px;border-radius:10px;width:10px;height:10px;background-color:' +
+                                        color +
+                                        ';"></span>';
+                                }
+                                formatType =
+                                    dataTypes[ganttConfig.modelKeyMapping[key]][0];
+                                tooltipText +=
+                                    '<b>' +
+                                    '' +
+                                    toolTipKeyText +
+                                    ':</b> ' +
+                                    visualizationUniversal.formatValue(
+                                        dataObj[key],
+                                        formatType,
+                                    );
                             }
                             formatType =
                                 dataTypes[ganttConfig.modelKeyMapping[key]][0];
@@ -2025,7 +2034,7 @@ function gantt(semossCoreService) {
                                 ':</b> ' +
                                 visualizationUniversal.formatValue(
                                     dataObj[key],
-                                    formatType
+                                    formatType,
                                 );
                         }
 
@@ -2037,10 +2046,7 @@ function gantt(semossCoreService) {
                 }
             }
 
-            if (
-                dataObj.hasOwnProperty('start') &&
-                dataObj.hasOwnProperty('end')
-            ) {
+            if (dataObj.hasOwnProperty('start') && dataObj.hasOwnProperty('end')) {
                 startDate = new Date(dataObj.start);
                 endDate = new Date(dataObj.end);
                 timeDiff = Math.abs(endDate.getTime() - startDate.getTime());
@@ -2055,7 +2061,6 @@ function gantt(semossCoreService) {
 
             return tooltipText;
         }
-
         /**
          * @name cleanValue
          * @desc Removes underscores and truncates decimals in item
