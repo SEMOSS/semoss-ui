@@ -2171,9 +2171,13 @@ const MembersTable = (props) => {
                             label="Search"
                             multiple={true}
                             options={nonCredentialedUsers}
+                            limitTags={2}
+                            getLimitTagsText={() =>
+                                ` +${selectedNonCredentialedUsers.length - 2}`
+                            }
                             value={[...selectedNonCredentialedUsers]}
                             getOptionLabel={(option: any) => {
-                                return `${option.name} - ${option.email}`;
+                                return `${option.name}`;
                             }}
                             isOptionEqualToValue={(option, value) => {
                                 return option.name === value.name;
@@ -2202,7 +2206,7 @@ const MembersTable = (props) => {
                                             align: 'center',
                                             backgroundColor:
                                                 idx % 2 !== 0
-                                                    ? 'rgba(0, 0, 0, .01)'
+                                                    ? 'rgba(0, 0, 0, .03)'
                                                     : '',
                                         }}
                                     >
@@ -2265,15 +2269,15 @@ const MembersTable = (props) => {
                                                             fontSize: '14px',
                                                         }}
                                                     >
-                                                        User ID:
+                                                        {`User ID: `}
                                                         <Chip
                                                             label={user.id}
                                                             size="small"
                                                         />
                                                     </span>
-                                                    •{' '}
+                                                    {`• `}
                                                     <span>
-                                                        Email:{' '}
+                                                        {`Email: `}
                                                         <Link
                                                             href={`mailto:${user.email}`}
                                                             underline="none"
