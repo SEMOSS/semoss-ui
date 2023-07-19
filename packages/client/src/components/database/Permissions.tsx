@@ -263,7 +263,7 @@ interface PermissionConfig {
     global: boolean;
     visibility?: boolean;
     projectid?: string;
-    permission?: number;
+    // permission?: number;
 }
 
 export interface PermissionsProps {
@@ -271,14 +271,7 @@ export interface PermissionsProps {
 }
 
 export const Permissions = (props: PermissionsProps) => {
-    const {
-        id,
-        name,
-        global,
-        visibility,
-        projectid,
-        permission = 3,
-    } = props.config;
+    const { id, name, global, visibility, projectid } = props.config;
 
     const resolvedPathname = useResolvedPath('').pathname;
 
@@ -286,8 +279,12 @@ export const Permissions = (props: PermissionsProps) => {
     const [view, setView] = useState(0);
 
     // Helper hooks
-    const { monolithStore } = useRootStore();
-    const { adminMode } = useSettings();
+    const { monolithStore, configStore } = useRootStore();
+    const adminMode = configStore.store.user.admin;
+
+    // Actually see if user is an owner or editor, quick fix
+    const permission = adminMode ? 1 : 3;
+
     const notification = useNotification();
     const navigate = useNavigate();
 

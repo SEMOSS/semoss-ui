@@ -14,11 +14,12 @@ import {
     DatabaseIndexPage,
     DatabaseMetadataPage,
     DatabaseSettingsPage,
+    DatabaseReplaceDataPage,
+    DatabaseQueryDataPage,
+    DatabaseUpdateSMSSPage,
 } from './database';
 
 import { SettingsRouter } from './settings';
-
-// import { JobsPage } from './jobs';
 
 export const Router = observer(() => {
     const { configStore } = useRootStore();
@@ -49,6 +50,18 @@ export const Router = observer(() => {
                         <Route
                             path="settings"
                             element={<DatabaseSettingsPage />}
+                        />
+                        <Route
+                            path="replace"
+                            element={<DatabaseReplaceDataPage />}
+                        />
+                        <Route
+                            path="query"
+                            element={<DatabaseQueryDataPage />}
+                        />
+                        <Route
+                            path="update"
+                            element={<DatabaseUpdateSMSSPage />}
                         />
                     </Route>
                     <Route index element={<Navigate to="/catalog" replace />} />
