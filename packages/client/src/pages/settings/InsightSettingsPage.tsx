@@ -105,14 +105,14 @@ export interface InsightInterface {
     view_count: number;
 }
 
-export const InsightPermissionsPage = () => {
+export const InsightSettingsPage = () => {
     const { adminMode } = useSettings();
 
     const [insights, setInsights] = useState<InsightInterface[]>([]);
     const [selectedInsight, setSelectedInsight] =
         useState<InsightInterface>(null);
 
-    // const getInsights = useAPI(['getInsights', adminMode]);
+    const getInsights = useAPI(['getInsights', adminMode]);
 
     // useEffect(() => {
     //     // REST call to get all apps

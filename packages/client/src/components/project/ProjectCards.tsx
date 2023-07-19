@@ -119,7 +119,7 @@ export const ProjectTileCard = (props) => {
                     <Typography variant="body1">{name}</Typography>
                 </StyledTileTitleContainer>
             </StyledTileCardHeader>
-            <StyledTileCardContent>
+            {/* <StyledTileCardContent>
                 <StyledTileCardRowsContainer>
                     <StyledTileCardRowsDiv>
                         <StyledTileCardRows>
@@ -133,7 +133,7 @@ export const ProjectTileCard = (props) => {
                     <Box>
                         <Typography variant="body2">
                             {' '}
-                            {/* 20 Users · 10 Insights */}
+                            20 Users · 10 Insights
                         </Typography>
                     </Box>
                 </Box>
@@ -146,7 +146,7 @@ export const ProjectTileCard = (props) => {
                 <IconButton>
                     <MoreVert />
                 </IconButton>
-            </StyledTileCardActionsContainer>
+            </StyledTileCardActionsContainer> */}
         </StyledTileCard>
     );
 };

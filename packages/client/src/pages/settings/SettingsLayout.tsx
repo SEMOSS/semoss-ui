@@ -1,5 +1,11 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Outlet, Link, useLocation, matchPath } from 'react-router-dom';
+import {
+    Outlet,
+    Link,
+    useLocation,
+    matchPath,
+    useParams,
+} from 'react-router-dom';
 import { styled, Typography, Breadcrumbs } from '@semoss/ui';
 
 import { useRootStore } from '@/hooks';
@@ -23,7 +29,8 @@ const StyledLink = {
 };
 export const SettingsLayout = () => {
     const { monolithStore } = useRootStore();
-    const { pathname } = useLocation();
+    const { id } = useParams();
+    const { pathname, state } = useLocation();
 
     // track the active breadcrumbs
     const [adminMode, setAdminMode] = useState(false);
@@ -54,26 +61,12 @@ export const SettingsLayout = () => {
             });
     }, []);
 
-    // const showAdminToggle = () => {
-    //     let bool = false;
-
-    //     if (admin) {
-    //         bool = true;
-    //     }
-
-    //     if (isActive('/settings/social-properties')) {
-    //         bool = false;
-    //     } else if (isActive('/settings/admin-query')) {
-    //         bool = false;
-    //     }
-
-    //     return bool;
-    // };
-
     if (!matchedRoute) {
         return null;
     }
 
+    console.log(state, 'state');
+    console.log(matchedRoute, 'matched');
     return (
         <SettingsContext.Provider
             value={{
@@ -89,23 +82,35 @@ export const SettingsLayout = () => {
                                     <Link style={StyledLink} to={'.'}>
                                         Settings
                                     </Link>
-                                    <Link
-                                        style={StyledLink}
-                                        to={matchedRoute.path}
-                                    >
-                                        {matchedRoute.title}
-                                    </Link>
+
+                                    {matchedRoute.history.map((link, i) => {
+                                        return (
+                                            <Link
+                                                style={StyledLink}
+                                                to={link.replace('<id>', id)}
+                                                key={i + link}
+                                                state={...state}
+                                            >
+                                                {link.includes('<id>')
+                                                    ? id
+                                                    : matchedRoute.title}
+                                            </Link>
+                                        );
+                                    })}
                                 </Breadcrumbs>
                             ) : null}
                         </div>
                         <Typography variant="h4">
-                            {matchedRoute.title}
+                            {matchedRoute.history.length < 2
+                                ? matchedRoute.title
+                                : state
+                                ? state.name
+                                : matchedRoute.title}
                         </Typography>
                         <Typography variant="body1">
                             {!adminMode || matchedRoute.path !== ''
                                 ? matchedRoute.description
                                 : matchedRoute.adminDescription}
-                            {matchedRoute.description}
                         </Typography>
                     </Stack>
                 }
