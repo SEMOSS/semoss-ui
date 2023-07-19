@@ -1,84 +1,25 @@
-import React, { useEffect, useState, useRef } from 'react';
-import { styled, theme, Select, Icon } from '@semoss/components';
-import { mdiTextBoxMultipleOutline } from '@mdi/js';
-
-import { useRootStore, useAPI, useSettings, usePixel } from '@/hooks';
+import React, { useEffect, useState, useRef, useReducer } from 'react';
+import { useRootStore, useSettings, usePixel } from '@/hooks';
 import { LoadingScreen } from '@/components/ui';
-import { Permissions } from '@/components/database';
+import { useNavigate } from 'react-router-dom';
 
-const StyledContainer = styled('div', {
-    margin: '0 auto',
-    paddingLeft: theme.space[8],
-    paddingRight: theme.space[8],
-    paddingBottom: theme.space[8],
-    '@sm': {
-        maxWidth: '640px',
-    },
-    '@md': {
-        maxWidth: '768px',
-    },
-    '@lg': {
-        maxWidth: '1024px',
-    },
-    '@xl': {
-        maxWidth: '1280px',
-    },
-    '@xxl': {
-        maxWidth: '1536px',
-    },
-});
+import {
+    Grid,
+    Search,
+    Select,
+    MenuItem,
+    ToggleButton,
+    ToggleButtonGroup,
+    Typography,
+    styled,
+} from '@semoss/ui';
 
-const StyledDescription = styled('div', {
-    color: theme.colors['grey-1'],
-    fontSize: theme.fontSizes.sm,
-    width: '100%',
-    maxWidth: '50%',
-    marginBottom: theme.space['6'],
-});
+import {
+    SpaceDashboardOutlined,
+    FormatListBulletedOutlined,
+} from '@mui/icons-material';
 
-const StyledLoadWorkflowContainer = styled('div', {
-    display: 'flex',
-    flexDirection: 'column',
-    justifyContent: 'center',
-    alignItems: 'center',
-    color: theme.colors['grey-2'],
-    backgroundColor: theme.colors.base,
-    marginTop: theme.space[4],
-    border: `${theme.borderWidths.default} solid ${theme.colors['grey-4']}`,
-    '@sm': {
-        minHeight: '5rem',
-    },
-    '@md': {
-        minHeight: '8rem',
-    },
-    '@lg': {
-        minHeight: '10rem',
-    },
-    '@xl': {
-        minHeight: '15rem',
-    },
-    '@xxl': {
-        minHeight: '30rem',
-    },
-});
-
-const StyledIcon = styled(Icon, {
-    fontSize: '4rem',
-});
-
-const StyledDiv = styled('div', {
-    display: 'flex',
-    // border: 'solid',
-});
-
-const StyledChangeInsight = styled('div', {
-    color: theme.colors['grey-1'],
-    fontSize: theme.fontSizes.md,
-    width: '100%',
-    maxWidth: '50%',
-    marginBottom: theme.space['6'],
-    // border: 'solid',
-});
+import { InsightLandscapeCard, InsightTileCard } from '@/components/insight';
 
 export interface InsightInterface {
     app_id: string;
@@ -89,60 +30,104 @@ export interface InsightInterface {
     cachedOn: string;
     created_on: string;
     description: string;
-    insight_global: boolean;
-    insight_permission: number;
     last_modified_on: string;
     layout: string;
     low_name: string;
     name: string;
     permission: number;
-    project_global: boolean;
-    project_id: string;
-    project_insight_id: string;
-    project_name: string;
-    project_permission: number;
+    insight_global: boolean;
+    insight_id: string;
+    insight_insight_id: string;
+    insight_name: string;
+    insight_permission: number;
     tags: string[];
     view_count: number;
 }
 
+const StyledContainer = styled('div')({
+    display: 'flex',
+    width: 'auto',
+    flexDirection: 'column',
+    alignItems: 'flex-start',
+    gap: '24px',
+});
+
+const StyledSearchbarContainer = styled('div')({
+    display: 'flex',
+    width: '100%',
+    alignItems: 'flex-start',
+    gap: '24px',
+});
+
+const StyledSearchbar = styled(Search)({
+    width: '80%',
+});
+
+const StyledSort = styled(Select)({
+    // display: 'flex',
+    // width: '220px',
+    // flexDirection: 'column',
+    // alignItems: 'flex-start',
+    // gap: '3px',
+    // flexShrink: '0',
+});
+
+const StyledMenuItem = styled(Select.Item)({
+    width: '220px',
+    gap: '3px',
+    flexShrink: '0',
+});
+
+const initialState = {
+    insights: [],
+};
+
+const reducer = (state, action) => {
+    switch (action.type) {
+        case 'field': {
+            return {
+                ...state,
+                [action.field]: action.value,
+            };
+        }
+    }
+    return state;
+};
+
 export const InsightSettingsPage = () => {
     const { adminMode } = useSettings();
+    const navigate = useNavigate();
 
-    const [insights, setInsights] = useState<InsightInterface[]>([]);
-    const [selectedInsight, setSelectedInsight] =
-        useState<InsightInterface>(null);
+    const [state, dispatch] = useReducer(reducer, initialState);
+    const { insights } = state;
 
-    const getInsights = useAPI(['getInsights', adminMode]);
+    const [view, setView] = useState('tile');
+    const [search, setSearch] = useState('');
+    const [sort, setSort] = useState('name');
 
-    // useEffect(() => {
-    //     // REST call to get all apps
-    //     if (getInsights.status !== 'SUCCESS' || !getInsights.data) {
-    //         return;
-    //     }
+    // To focus when getting new results
+    const searchbarRef = useRef(null);
 
-    //     setInsights(getInsights.data);
+    const getInsights = usePixel(
+        `GetInsights(filterWord=["${search}"], onlyFavorites=[false], sort=["${sort}"]);`,
+    );
 
-    //     () => {
-    //         console.warn('Cleaning up getInsights');
-    //         setInsights([]);
-    //     };
-    // }, [getInsights.status, getInsights.data]);
+    useEffect(() => {
+        // Pixel call to get all apps
+        if (getInsights.status !== 'SUCCESS' || !getInsights.data) {
+            return;
+        }
 
-    // // // show a loading screen when getApps is pending
-    // if (getInsights.status !== 'SUCCESS') {
-    //     return (
-    //         <LoadingScreen.Trigger description="Retrieving insights and projects" />
-    //     );
-    // }
+        dispatch({
+            type: 'field',
+            field: 'insights',
+            value: getInsights.data,
+        });
 
-    /**
-     * @name getDisplay
-     * @desc gets display options for the Insight dropdown
-     * @param option - the object that is specified for the option
-     */
-    const getDisplay = (option) => {
-        return `${option.name} - ${option.project_name}`;
-    };
+        () => {
+            console.warn('Cleaning up getInsights');
+        };
+    }, [getInsights.status, getInsights.data]);
 
     const formatInsightName = (str) => {
         let i;
@@ -153,44 +138,102 @@ export const InsightSettingsPage = () => {
         return frags.join(' ');
     };
 
+    // // Issue with focus on searchbar after
+    // if (getInsights.status !== 'SUCCESS') {
+    //     return <LoadingScreen.Trigger description="Retrieving insights" />;
+    // } else {
+    //     searchbarRef.current?.focus();
+    // }
+
     return (
         <StyledContainer>
-            <>
-                <StyledDescription>
-                    View and edit settings for project insights
-                </StyledDescription>
-                <div>
-                    <Select
-                        value={selectedInsight}
-                        options={insights}
-                        getDisplay={getDisplay}
-                        onChange={(opt: InsightInterface) => {
-                            // Set selected Insight
-                            setSelectedInsight(opt);
-                        }}
-                        placeholder="Select an option to view insight specific settings"
-                    ></Select>
-                    {selectedInsight ? (
-                        <Permissions
-                            config={{
-                                id: selectedInsight.app_insight_id,
-                                name: selectedInsight.name,
-                                global: selectedInsight.insight_global,
-                                visibility: undefined,
-                                projectid: selectedInsight.project_id,
-                            }}
-                        ></Permissions>
-                    ) : (
-                        <StyledLoadWorkflowContainer>
-                            <StyledIcon
-                                size="xl"
-                                path={mdiTextBoxMultipleOutline}
-                            ></StyledIcon>
-                            <p>SEMOSS is waiting on your selection</p>
-                        </StyledLoadWorkflowContainer>
-                    )}
-                </div>
-            </>
+            <StyledSearchbarContainer>
+                <StyledSearchbar
+                    value={search}
+                    onChange={(e) => {
+                        setSearch(e.target.value);
+                    }}
+                    label="Insights"
+                    size="small"
+                    enableEndAdornment={true}
+                    ref={searchbarRef}
+                />
+
+                <StyledSort
+                    size={'small'}
+                    value={sort}
+                    onChange={(e) => setSort(e.target.value)}
+                >
+                    <StyledMenuItem value="name">Name</StyledMenuItem>
+                </StyledSort>
+
+                <ToggleButtonGroup size={'small'} value={view}>
+                    <ToggleButton onClick={(e, v) => setView(v)} value={'tile'}>
+                        <SpaceDashboardOutlined />
+                    </ToggleButton>
+                    <ToggleButton onClick={(e, v) => setView(v)} value={'list'}>
+                        <FormatListBulletedOutlined />
+                    </ToggleButton>
+                </ToggleButtonGroup>
+            </StyledSearchbarContainer>
+            <Grid container spacing={3}>
+                {insights.length
+                    ? insights.map((insight, i) => {
+                          return (
+                              <Grid
+                                  item
+                                  key={i}
+                                  sm={view === 'list' ? 12 : 12}
+                                  md={view === 'list' ? 12 : 6}
+                                  lg={view === 'list' ? 12 : 4}
+                                  xl={view === 'list' ? 12 : 3}
+                              >
+                                  {view === 'list' ? (
+                                      <InsightTileCard
+                                          name={formatInsightName(insight.name)}
+                                          description={insight.description}
+                                          onClick={() => {
+                                              console.log('navigating');
+                                              navigate(
+                                                  `${insight.project_insight_id}/${insight.project_id}`,
+                                                  {
+                                                      state: {
+                                                          name: formatInsightName(
+                                                              insight.name,
+                                                          ),
+                                                          global: false,
+                                                          permission: 3,
+                                                      },
+                                                  },
+                                              );
+                                          }}
+                                      />
+                                  ) : (
+                                      <InsightTileCard
+                                          name={formatInsightName(insight.name)}
+                                          description={insight.description}
+                                          onClick={() => {
+                                              console.log('navigate');
+                                              navigate(
+                                                  `${insight.project_insight_id}/${insight.project_id}`,
+                                                  {
+                                                      state: {
+                                                          name: formatInsightName(
+                                                              insight.name,
+                                                          ),
+                                                          global: false,
+                                                          permission: 3,
+                                                      },
+                                                  },
+                                              );
+                                          }}
+                                      />
+                                  )}
+                              </Grid>
+                          );
+                      })
+                    : 'No insights to choose from'}
+            </Grid>
         </StyledContainer>
     );
 };

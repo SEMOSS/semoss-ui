@@ -112,7 +112,9 @@ export const ProjectSettingsPage = () => {
     });
     // const getProjects = useAPI(['getProjects', adminMode]);
     const getProjects = usePixel(`
-        MyProjects(metaKeys = ${JSON.stringify(metaKeys)});
+        MyProjects(metaKeys = ${JSON.stringify(
+            metaKeys,
+        )}, filterWord=["${search}"]);
     `);
 
     useEffect(() => {
@@ -145,12 +147,12 @@ export const ProjectSettingsPage = () => {
         return frags.join(' ');
     };
 
-    // show a loading screen when getProjects is pending
-    if (getProjects.status !== 'SUCCESS') {
-        return (
-            <LoadingScreen.Trigger description="Retrieving project folders" />
-        );
-    }
+    // // show a loading screen when getProjects is pending
+    // if (getProjects.status !== 'SUCCESS') {
+    //     return (
+    //         <LoadingScreen.Trigger description="Retrieving project folders" />
+    //     );
+    // }
 
     return (
         <StyledContainer>
