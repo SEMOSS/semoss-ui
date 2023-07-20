@@ -360,6 +360,20 @@ function homeDirective(
             scope.home.backgroundImage = theme.backgroundImage;
             scope.home.backgroundImageOpacity = theme.backgroundImageOpacity;
             scope.home.includeNameWithLogo = theme.includeNameWithLogo;
+
+            // go through each provider and update native based on the name
+            for (
+                let providerIdx = 0,
+                    providerLen = scope.home.login.providers.length;
+                providerIdx < providerLen;
+                providerIdx++
+            ) {
+                const p = scope.home.login.providers[providerIdx];
+
+                if (p.provider === 'native') {
+                    p.name = scope.home.name;
+                }
+            }
         }
 
         /**

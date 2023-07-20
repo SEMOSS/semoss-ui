@@ -19,9 +19,9 @@ const Stack = styled('div')(({ theme }) => ({
     gap: theme.spacing(1),
 }));
 
-const StyledBreadcrumbs = styled(Breadcrumbs)({
-    marginTop: '1rem',
-});
+// const StyledBreadcrumbs = styled(Breadcrumbs)({
+//     marginTop: '1rem',
+// });
 
 const StyledLink = {
     textDecoration: 'none',
@@ -79,10 +79,9 @@ export const SettingsLayout = () => {
                         <div>
                             {matchedRoute.path ? (
                                 <Breadcrumbs separator="/">
-                                    <Link style={StyledLink} to={'.'}>
+                                    <Link to={'.'} style={StyledLink}>
                                         Settings
                                     </Link>
-
                                     {matchedRoute.history.map((link, i) => {
                                         return (
                                             <Link

@@ -172,6 +172,9 @@ export const lightTheme: CustomThemeOptions = {
             lineHeight: "160%",
             letterSpacing: "0.15px",
         },
+        button: {
+            textTransform: "none",
+        },
     },
     space: {
         auto: "auto",

@@ -19,6 +19,9 @@ export interface BadgeProps {
      */
     anchorOrigin?: BadgeOrigin;
 
+    /** count of badges */
+    badgeContent?: number;
+
     /**
      * The color of the component.
      * It supports both default and custom theme colors, which can be added as shown in the

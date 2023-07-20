@@ -428,7 +428,7 @@ export const DatabaseLandscapeCard = (props: DatabaseCardProps) => {
             <StyledTileCardActions>
                 <StyledLeftActions>
                     <ButtonGroup size="sm" color="secondary">
-                        <Button
+                        <ButtonGroup.Item
                             title={
                                 isUpvoted
                                     ? `Downvote ${name}`
@@ -440,8 +440,10 @@ export const DatabaseLandscapeCard = (props: DatabaseCardProps) => {
                             }}
                         >
                             {isUpvoted ? <ArrowDropDown /> : <ArrowDropUp />}
-                        </Button>
-                        <Button disabled={true}>{votes}</Button>
+                        </ButtonGroup.Item>
+                        <ButtonGroup.Item disabled={true}>
+                            {votes}
+                        </ButtonGroup.Item>
                     </ButtonGroup>
                     <StyledViewsTrendingDiv>
                         <StyledEyeIcon />
@@ -465,7 +467,6 @@ export const DatabaseLandscapeCard = (props: DatabaseCardProps) => {
                     onClick={(e) => {
                         e.stopPropagation();
 
-                        console.log('click global');
                         global(isGlobal);
                     }}
                 >
@@ -583,7 +584,7 @@ export const DatabaseTileCard = (props: DatabaseCardProps) => {
             <StyledTileCardActions>
                 <StyledLeftActions>
                     <ButtonGroup size="sm" color="secondary">
-                        <Button
+                        <ButtonGroup.Item
                             title={
                                 isUpvoted
                                     ? `Downvote ${name}`
@@ -595,8 +596,10 @@ export const DatabaseTileCard = (props: DatabaseCardProps) => {
                             }}
                         >
                             {isUpvoted ? <ArrowDropDown /> : <ArrowDropUp />}
-                        </Button>
-                        <Button disabled={true}>{votes}</Button>
+                        </ButtonGroup.Item>
+                        <ButtonGroup.Item disabled={true}>
+                            {votes}
+                        </ButtonGroup.Item>
                     </ButtonGroup>
                     <StyledViewsTrendingDiv>
                         <StyledEyeIcon />
