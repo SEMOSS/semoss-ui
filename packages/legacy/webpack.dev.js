@@ -3,7 +3,9 @@ const { merge } = require('webpack-merge'),
     MiniCssExtractPlugin = require('mini-css-extract-plugin'),
     HtmlWebpackPlugin = require('html-webpack-plugin');
 
-module.exports = (env) => {
+const { CUSTOMIZATION } = require('./custom/theme.js');
+
+module.exports = () => {
     return merge(common, {
         mode: 'development',
         stats: {
@@ -39,7 +41,8 @@ module.exports = (env) => {
                 template: './core/template.ejs',
                 filename: '../../../index.html',
                 inject: false,
-                title: env,
+                title: CUSTOMIZATION.page.title,
+                favicon:CUSTOMIZATION.page.favicon
             }),
         ],
     });
