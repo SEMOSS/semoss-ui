@@ -30,8 +30,6 @@ export const ThemeProvider = (props: ThemeProviderProps) => {
         return createTheme(deepmerge(lightTheme, theme));
     }, [theme]);
 
-    debugger;
-
     return (
         <MuiThemeProvider theme={t}>
             {reset && <CssBaseline />}
