@@ -44,24 +44,20 @@ export interface InsightInterface {
     view_count: number;
 }
 
-const StyledContainer = styled('div')({
+const StyledContainer = styled('div')(({ theme }) => ({
     display: 'flex',
     width: 'auto',
     flexDirection: 'column',
     alignItems: 'flex-start',
-    gap: '24px',
-});
+    gap: theme.spacing(3),
+}));
 
-const StyledSearchbarContainer = styled('div')({
+const StyledSearchbarContainer = styled('div')(({ theme }) => ({
     display: 'flex',
     width: '100%',
     alignItems: 'flex-start',
-    gap: '24px',
-});
-
-const StyledSearchbar = styled(Search)({
-    width: '80%',
-});
+    gap: theme.spacing(3),
+}));
 
 const StyledSort = styled(Select)({
     // display: 'flex',
@@ -148,15 +144,16 @@ export const InsightSettingsPage = () => {
     return (
         <StyledContainer>
             <StyledSearchbarContainer>
-                <StyledSearchbar
+                <Search
                     value={search}
                     onChange={(e) => {
                         setSearch(e.target.value);
                     }}
                     label="Insights"
                     size="small"
-                    enableEndAdornment={true}
-                    ref={searchbarRef}
+                    sx={{ width: '80%' }}
+                    // enableEndAdornment={true}
+                    // ref={searchbarRef}
                 />
 
                 <StyledSort

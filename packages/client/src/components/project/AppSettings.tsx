@@ -23,12 +23,15 @@ import { useNotification } from '@semoss/components';
 import { usePixel, useRootStore } from '@/hooks';
 import { LoadingScreen } from '@/components/ui';
 
-const StyledAppSettings = styled('div')({
+import { Java } from '@/assets/img/Java';
+
+const StyledAppSettings = styled('div')(({ theme }) => ({
     display: 'flex',
     flexDirection: 'column',
     width: '100%',
     gap: '1rem',
-});
+    marginBottom: theme.spacing(10),
+}));
 
 const StyledCardContainer = styled('div')(({ theme }) => ({
     width: '100%',
@@ -119,7 +122,7 @@ const StyledLeftActionDiv = styled('div')({
 
 const StyledActionDivLeft = styled('div')(({ theme }) => ({
     display: 'flex',
-    paddingRight: theme.spacing(4),
+    paddingRight: theme.spacing(3),
     justifyContent: 'center',
     alignItems: 'center',
     gap: '10px',
@@ -151,9 +154,11 @@ const StyledCardRight = styled('div')(() => ({
 }));
 
 const StyledTable = styled(Table)(({ theme }) => ({
-    borderRadius: theme.shape.borderRadius,
-    borderColor: theme.palette.divider,
+    borderRadius: theme.spacing(1),
+    borderColor: '#BDBDBD',
     borderStyle: 'solid',
+    borderCollapse: 'initial',
+    borderWidth: 'thin',
 }));
 
 // User Table
@@ -173,7 +178,7 @@ export const AppSettings = (props) => {
     const [portalLink, setPortalLink] = useState<string>('');
     const [reactors, setReactors] = useState([]);
     const [user, setUser] = useState<User>({});
-    const [enablePublish, setEnablePublish] = useState<boolean>(true);
+    const [enablePublish, setEnablePublish] = useState(false);
 
     const getProjectReactors = usePixel(
         `GetProjectAvailableReactors(project=['${id}']);`,
@@ -282,8 +287,6 @@ export const AppSettings = (props) => {
                     color: 'success',
                     content: 'Successfully published',
                 });
-
-                //if success setPortalLink?
             })
             .catch((error) => {
                 notification.add({
@@ -293,16 +296,31 @@ export const AppSettings = (props) => {
             });
     };
 
+    //enable publishing pixel on toggle
     const enablePublishing = () => {
-        setEnablePublish((publish) => !publish);
-        console.log('test enable publishing', enablePublish);
-        //if enablePublish --> hit new reactor
+        const pixelString = `GetProjectPortalDetails('${id}');`;
 
-        if (enablePublish)
+        monolithStore.runQuery(pixelString).then((response) => {
+            let output = undefined;
+            let type = undefined;
+
+            output = response.pixelReturn[0].output;
+            type = response.pixelReturn[0].operationType[0];
+
+            if (type.indexOf('ERROR') > -1) {
+                setEnablePublish(false);
+                notification.add({
+                    color: 'error',
+                    content: output,
+                });
+                return;
+            }
+
             notification.add({
                 color: 'success',
                 content: 'Successfully enabled publishing',
             });
+        });
     };
 
     return (
@@ -353,119 +371,129 @@ export const AppSettings = (props) => {
                                 </Typography>
 
                                 <StyledRightSwitch
+                                    checked={enablePublish}
                                     value={enablePublish}
-                                    onClick={() => {
-                                        enablePublishing();
+                                    onChange={() => {
+                                        setEnablePublish(!enablePublish);
+                                        if (!enablePublish) enablePublishing();
                                     }}
                                 ></StyledRightSwitch>
                             </StyledSubRow>
                         </StyledSubColumn>
 
-                        <Divider />
+                        {enablePublish && (
+                            <>
+                                <Divider />
 
-                        <StyledSubColumn>
-                            <StyledSubRow>
-                                <StyledRefreshIcon />
-                                <Typography variant="subtitle1">
-                                    Publish Portal
-                                </Typography>
-                            </StyledSubRow>
+                                <StyledSubColumn>
+                                    <StyledSubRow>
+                                        <StyledRefreshIcon />
+                                        <Typography variant="subtitle1">
+                                            Publish Portal
+                                        </Typography>
+                                    </StyledSubRow>
 
-                            <StyledSubRow>
-                                <Typography variant="body2">
-                                    Publish the portal to generate a shareable
-                                    link.
-                                </Typography>
+                                    <StyledSubRow>
+                                        <Typography variant="body2">
+                                            Publish the portal to generate a
+                                            shareable link.
+                                        </Typography>
 
-                                <StyledRightButton
-                                    variant="outlined"
-                                    onClick={() => {
-                                        publish();
-                                    }}
-                                >
-                                    <StyledPublishedIcon />
-                                    Publish
-                                </StyledRightButton>
-                            </StyledSubRow>
+                                        <StyledRightButton
+                                            variant="outlined"
+                                            onClick={() => {
+                                                publish();
+                                            }}
+                                        >
+                                            <StyledPublishedIcon />
+                                            Publish
+                                        </StyledRightButton>
+                                    </StyledSubRow>
 
-                            <StyledSubRow>
-                                <TextField
-                                    focused={false}
-                                    label={'Link'}
-                                    variant={'outlined'}
-                                    defaultValue={portalLink}
-                                    sx={{ width: '100%' }}
-                                    InputProps={{
-                                        startAdornment: <InsertLink />,
-                                    }}
-                                >
-                                    {portalLink}
-                                </TextField>
-                            </StyledSubRow>
-                        </StyledSubColumn>
+                                    <StyledSubRow>
+                                        <TextField
+                                            focused={false}
+                                            label={'Link'}
+                                            variant={'outlined'}
+                                            defaultValue={portalLink}
+                                            sx={{ width: '100%' }}
+                                            InputProps={{
+                                                startAdornment: <InsertLink />,
+                                            }}
+                                        >
+                                            {portalLink}
+                                        </TextField>
+                                    </StyledSubRow>
+                                </StyledSubColumn>
+                            </>
+                        )}
                     </StyledCardRight>
                 </StyledCardDiv>
             </StyledTopCardContainer>
 
-            <StyledCardContainer>
-                <StyledCardDiv>
-                    <StyledCardLeft>
-                        <StyledListItemHeader>
-                            <Typography variant="h6">Reactors</Typography>
-                        </StyledListItemHeader>
+            {enablePublish && (
+                <StyledCardContainer>
+                    <StyledCardDiv>
+                        <StyledCardLeft>
+                            <StyledListItemHeader>
+                                <Typography variant="h6">Reactors</Typography>
+                            </StyledListItemHeader>
 
-                        <StyledListItemHeader>
-                            Custom reactors created for the portal.
-                        </StyledListItemHeader>
-                        <Button
-                            variant="contained"
-                            onClick={() => {
-                                recompileReactors();
-                            }}
-                        >
-                            Recompile
-                        </Button>
-                        <StyledLeftActionContainer>
-                            <StyledLeftActionDiv>
-                                <StyledActionDivLeft>
+                            <StyledListItemHeader>
+                                Custom reactors created for the portal.
+                            </StyledListItemHeader>
+                            <Button
+                                variant="contained"
+                                onClick={() => {
+                                    recompileReactors();
+                                }}
+                            >
+                                Recompile
+                            </Button>
+                            <StyledLeftActionContainer>
+                                <StyledLeftActionDiv>
+                                    <StyledActionDivLeft>
+                                        <Typography variant="body2">
+                                            Last compiled by:
+                                        </Typography>
+                                    </StyledActionDivLeft>
+                                    <Avatar>
+                                        <StyledPersonIcon />
+                                    </Avatar>
                                     <Typography variant="body2">
-                                        Last compiled by:
+                                        {user.name}
                                     </Typography>
-                                </StyledActionDivLeft>
-                                <Avatar>
-                                    <StyledPersonIcon />
-                                </Avatar>
-                                <Typography variant="body2">
-                                    {user.name}
-                                </Typography>
-                                <Typography variant="body2">
-                                    {user.time}
-                                </Typography>
-                                <Typography variant="body2">on</Typography>
-                                <Typography variant="body2">
-                                    {user.date}
-                                </Typography>
-                            </StyledLeftActionDiv>{' '}
-                        </StyledLeftActionContainer>
-                    </StyledCardLeft>
-                    <StyledCardRight>
-                        <StyledTable>
-                            <Table.Body>
-                                {reactors.map((reactor, i) => {
-                                    return (
-                                        <Table.Row key={reactor + i}>
-                                            <Table.Cell>{reactor}</Table.Cell>
-                                            <Table.Cell align="right">
-                                                <Person fontSize="medium" />
-                                            </Table.Cell>
-                                        </Table.Row>
-                                    );
-                                })}
-                            </Table.Body>
-                        </StyledTable>
-                    </StyledCardRight>
-                </StyledCardDiv>
-            </StyledCardContainer>
+                                    <Typography variant="body2">
+                                        {user.time}
+                                    </Typography>
+                                    <Typography variant="body2">on</Typography>
+                                    <Typography variant="body2">
+                                        {user.date}
+                                    </Typography>
+                                </StyledLeftActionDiv>{' '}
+                            </StyledLeftActionContainer>
+                        </StyledCardLeft>
+                        <StyledCardRight>
+                            <StyledTable>
+                                <Table.Body>
+                                    {reactors.map((reactor, i) => {
+                                        return (
+                                            <Table.Row key={reactor + i}>
+                                                <Table.Cell>
+                                                    {reactor}
+                                                </Table.Cell>
+                                                <Table.Cell align="right">
+                                                    <Java />
+                                                </Table.Cell>
+                                            </Table.Row>
+                                        );
+                                    })}
+                                </Table.Body>
+                            </StyledTable>
+                        </StyledCardRight>
+                    </StyledCardDiv>
+                </StyledCardContainer>
+            )}
         </StyledAppSettings>
     );
 };
