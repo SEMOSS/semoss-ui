@@ -1,6 +1,7 @@
 import { useMemo } from "react";
 import {
     createTheme,
+    experimental_extendTheme as extendTheme,
     ThemeOptions,
     ThemeProvider as MuiThemeProvider,
     CssBaseline,
@@ -25,8 +26,11 @@ export const ThemeProvider = (props: ThemeProviderProps) => {
 
     // if the override any options and merge it with the default theme
     const t = useMemo(() => {
+        // extendTheme to get added properties to theme
         return createTheme(deepmerge(lightTheme, theme));
     }, [theme]);
+
+    debugger;
 
     return (
         <MuiThemeProvider theme={t}>

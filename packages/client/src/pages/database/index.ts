@@ -5,7 +5,6 @@ import { DatabaseSettingsPage } from './DatabaseSettingsPage';
 
 import { DatabaseQueryDataPage } from './DatabaseQueryDataPage';
 import { DatabaseReplaceDataPage } from './DatabaseReplaceDataPage';
-import { DatabaseUpdateSMSSPage } from './DatabaseUpdateSMSSPage';
 
 export {
     DatabaseLayout,
@@ -14,5 +13,4 @@ export {
     DatabaseSettingsPage,
     DatabaseQueryDataPage,
     DatabaseReplaceDataPage,
-    DatabaseUpdateSMSSPage,
 };

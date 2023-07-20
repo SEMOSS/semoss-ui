@@ -56,11 +56,11 @@ const colors = [
 const StyledContent = MuiStyled('div')({
     display: 'flex',
     width: '100%',
-    // height: '992px',
     flexDirection: 'column',
     alignItems: 'flex-start',
     gap: '16px',
     flexShrink: '0',
+    // height: '992px',
     // border: 'solid red',
 });
 
@@ -1603,7 +1603,6 @@ const MembersTable = (props) => {
                                                             console.log(
                                                                 'Hit Update Permission fn and fix in state',
                                                             );
-                                                            debugger;
                                                             updateSelectedUsers(
                                                                 [user],
                                                                 permissionMapper[

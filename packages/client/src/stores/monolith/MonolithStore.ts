@@ -362,6 +362,7 @@ export class MonolithStore {
         return response.data;
     }
 
+    // ----- Users Start -----
     /**
      * @name getDatabaseUsers
      * @param admin
@@ -449,123 +450,6 @@ export class MonolithStore {
         return response.data;
     }
 
-    /** change to /database
-     * @name setDatabaseGlobal
-     * @param admin
-     * @param appId
-     * @param global
-     */
-    async setDatabaseGlobal(admin: boolean, appId: string, global: boolean) {
-        let url = `${BACKEND}/api/auth/`,
-            postData = '';
-
-        if (admin) {
-            url += 'admin/';
-        }
-
-        // change to database
-        url += 'app/setAppGlobal';
-
-        postData += 'appId=' + encodeURIComponent(appId);
-        postData += '&public=' + encodeURIComponent(global);
-
-        const response = await axios
-            .post<{ success: boolean }>(url, postData, {
-                headers: {
-                    'content-type': 'application/x-www-form-urlencoded',
-                },
-            })
-            .catch((error) => {
-                throw Error(error);
-            });
-
-        return response;
-    }
-    /** change to /database
-     * @name setDatabaseDiscoverable
-     * @param admin
-     * @param appId
-     * @param discoverable
-     */
-    async setDatabaseDiscoverable(
-        admin: boolean,
-        appId: string,
-        discoverable: boolean,
-    ) {
-        let url = `${BACKEND}/api/auth/`,
-            postData = '';
-
-        if (admin) {
-            url += 'admin/';
-        }
-
-        // change to database
-        url += 'app/setAppDiscoverable';
-
-        postData += 'appId=' + encodeURIComponent(appId);
-        postData += '&discoverable=' + encodeURIComponent(discoverable);
-
-        const response = await axios
-            .post<{ success: boolean }>(url, postData, {
-                headers: {
-                    'content-type': 'application/x-www-form-urlencoded',
-                },
-            })
-            .catch((error) => {
-                throw Error(error);
-            });
-
-        return response;
-    }
-
-    /** change to /database
-     * @name setDatabaseVisiblity
-     * @param admin
-     * @param appId
-     * @param visible
-     */
-    async setDatabaseVisiblity(admin, appId, visible) {
-        let url = `${BACKEND}/api/auth/`,
-            postData = '';
-
-        // if (admin) {
-        //     url += 'admin/';
-        // }
-
-        // change to database
-        url += 'app/setAppVisibility';
-
-        postData += 'appId=' + encodeURIComponent(appId);
-        postData += '&visibility=' + encodeURIComponent(visible);
-
-        const response = await axios.post<{ success: boolean }>(url, postData, {
-            headers: {
-                'content-type': 'application/x-www-form-urlencoded',
-            },
-        });
-
-        return response;
-    }
-
-    async setDatabaseFavorite(dbId: string, favorite: boolean) {
-        let url = `${BACKEND}/api/auth/`,
-            postData = '';
-
-        url += 'database/setDatabaseFavorite';
-        postData += 'databaseId=' + encodeURIComponent(dbId);
-        postData += '&isFavorite=' + encodeURIComponent(favorite);
-
-        const response = await axios.post<{ success: boolean }>(url, postData, {
-            headers: {
-                'content-type': 'application/x-www-form-urlencoded',
-            },
-        });
-
-        return response;
-    }
-
-    // ----------------------------------------------------------------------
-    // ----> Database Pending Members actions
     /**
      * @name approveDatabaseUserAccessRequest
      * @param admin
@@ -634,8 +518,6 @@ export class MonolithStore {
         // figure out whether we want to do .catch here
     }
 
-    // ----------------------------------------------------------------------
-    // Database Verified Members actions
     /**
      * @name addDatabaseUserPermissions
      * @param admin
@@ -739,6 +621,153 @@ export class MonolithStore {
 
         // figure out whether we want to do .catch here
     }
+
+    // ----- Members End -----
+    // ----- Properties Start -----
+
+    /**
+     * @name updateDatabaseSmmsProperties
+     * @param databaseId
+     * @param smssProps
+     * @returns
+     */
+    async updateDatabaseSmssProperties(databaseId: string, smssProps: string) {
+        let url = `${BACKEND}/api/app-${databaseId}/updateSmssFile`,
+            postData = '';
+
+        postData += 'databaseId=' + encodeURIComponent(databaseId);
+        postData += '&smss=' + encodeURIComponent(smssProps);
+
+        const response = await axios
+            .post<{ success: boolean }>(url, postData, {
+                headers: {
+                    'content-type': 'application/x-www-form-urlencoded',
+                },
+            })
+            .catch((error) => {
+                throw Error(error);
+            });
+
+        return response;
+    }
+
+    /**
+     * @name setDatabaseGlobal
+     * @param admin
+     * @param appId
+     * @param global
+     */
+    async setDatabaseGlobal(admin: boolean, appId: string, global: boolean) {
+        let url = `${BACKEND}/api/auth/`,
+            postData = '';
+
+        if (admin) {
+            url += 'admin/';
+        }
+
+        // change to database
+        url += 'app/setAppGlobal';
+
+        postData += 'appId=' + encodeURIComponent(appId);
+        postData += '&public=' + encodeURIComponent(global);
+
+        const response = await axios
+            .post<{ success: boolean }>(url, postData, {
+                headers: {
+                    'content-type': 'application/x-www-form-urlencoded',
+                },
+            })
+            .catch((error) => {
+                throw Error(error);
+            });
+
+        return response;
+    }
+
+    /**
+     * @name setDatabaseDiscoverable
+     * @param admin
+     * @param appId
+     * @param discoverable
+     */
+    async setDatabaseDiscoverable(
+        admin: boolean,
+        appId: string,
+        discoverable: boolean,
+    ) {
+        let url = `${BACKEND}/api/auth/`,
+            postData = '';
+
+        if (admin) {
+            url += 'admin/';
+        }
+
+        // change to database
+        url += 'app/setAppDiscoverable';
+
+        postData += 'appId=' + encodeURIComponent(appId);
+        postData += '&discoverable=' + encodeURIComponent(discoverable);
+
+        const response = await axios
+            .post<{ success: boolean }>(url, postData, {
+                headers: {
+                    'content-type': 'application/x-www-form-urlencoded',
+                },
+            })
+            .catch((error) => {
+                throw Error(error);
+            });
+
+        return response;
+    }
+
+    /**
+     * @name setDatabaseVisiblity
+     * @param admin
+     * @param appId
+     * @param visible
+     */
+    async setDatabaseVisiblity(admin, appId, visible) {
+        let url = `${BACKEND}/api/auth/`,
+            postData = '';
+
+        // if (admin) {
+        //     url += 'admin/';
+        // }
+
+        // change to database
+        url += 'app/setAppVisibility';
+
+        postData += 'appId=' + encodeURIComponent(appId);
+        postData += '&visibility=' + encodeURIComponent(visible);
+
+        const response = await axios.post<{ success: boolean }>(url, postData, {
+            headers: {
+                'content-type': 'application/x-www-form-urlencoded',
+            },
+        });
+
+        return response;
+    }
+
+    async setDatabaseFavorite(dbId: string, favorite: boolean) {
+        let url = `${BACKEND}/api/auth/`,
+            postData = '';
+
+        url += 'database/setDatabaseFavorite';
+        postData += 'databaseId=' + encodeURIComponent(dbId);
+        postData += '&isFavorite=' + encodeURIComponent(favorite);
+
+        const response = await axios.post<{ success: boolean }>(url, postData, {
+            headers: {
+                'content-type': 'application/x-www-form-urlencoded',
+            },
+        });
+
+        return response;
+    }
+
+    // ----- Properties End -----
 
     // ----------------------------------------------------------------------
     // Project Level

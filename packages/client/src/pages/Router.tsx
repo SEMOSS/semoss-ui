@@ -16,7 +16,6 @@ import {
     DatabaseSettingsPage,
     DatabaseReplaceDataPage,
     DatabaseQueryDataPage,
-    DatabaseUpdateSMSSPage,
 } from './database';
 
 import { SettingsRouter } from './settings';
@@ -58,10 +57,6 @@ export const Router = observer(() => {
                         <Route
                             path="query"
                             element={<DatabaseQueryDataPage />}
-                        />
-                        <Route
-                            path="update"
-                            element={<DatabaseUpdateSMSSPage />}
                         />
                     </Route>
                     <Route index element={<Navigate to="/catalog" replace />} />

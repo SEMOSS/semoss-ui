@@ -123,12 +123,6 @@ export const DatabaseLayout = () => {
                             Query Data
                         </StyledTab>
                     )}
-                    {(databaseContextType.role === 'EDITOR' ||
-                        databaseContextType.role === 'OWNER') && (
-                        <StyledTab to="update" selected={isActive('update')}>
-                            Update SMSS
-                        </StyledTab>
-                    )}
                 </Stack>
                 <StyledDocument>
                     <Outlet />
