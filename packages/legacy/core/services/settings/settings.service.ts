@@ -1,8 +1,10 @@
 import Utility from '../../utility/utility.js';
-import variables from '@/style/src/variables.scss';
 import angular from 'angular';
 import GetThemesReturn from './GetThemesReturn.js';
 import Theme from './Theme.js';
+
+// inject customization
+import { CUSTOMIZATION } from '@/custom/theme';
 
 export default angular
     .module('app.settings.service', [])
@@ -21,58 +23,61 @@ function settingsService(
             id: 'BASE',
             name: 'Default',
             isActive: true,
-            theme: {
-                name: 'SEMOSS',
-                logo: '',
-                isLogoUrl: false,
-                includeNameWithLogo: true,
-                loginAndSignupTextCustomHtml: '',
-                loginCenterHTML: '',
-                loginImage: '',
-                isLoginImageUrl: true,
-                backgroundImage: '',
-                homeIntroImage: '',
-                isHomeIntroImageUrl: false,
-                homeIntroObj: {
-                    infoCards: [
-                        {
-                            title: '%theme.name% 101',
-                            description:
-                                'What %theme.name% is and how to leverage it for intelligent business',
-                            image: 'logo',
-                            click: '101',
-                            color: 'blue',
-                        },
-                        {
-                            title: 'Use Cases',
-                            description:
-                                'Explore how %theme.name% helps solve real-world business problems',
-                            image: 'briefcase',
-                            click: 'uses',
-                            color: 'purple',
-                        },
-                    ],
-                    homeIntroHtml: '',
+            theme: customMerge(
+                {
+                    name: 'SEMOSS',
+                    logo: '',
+                    isLogoUrl: false,
+                    includeNameWithLogo: true,
+                    loginAndSignupTextCustomHtml: '',
+                    loginCenterHTML: '',
+                    loginImage: '',
+                    isLoginImageUrl: true,
+                    backgroundImage: '',
+                    homeIntroImage: '',
+                    isHomeIntroImageUrl: false,
+                    homeIntroObj: {
+                        infoCards: [
+                            {
+                                title: '%theme.name% 101',
+                                description:
+                                    'What %theme.name% is and how to leverage it for intelligent business',
+                                image: 'logo',
+                                click: '101',
+                                color: 'blue',
+                            },
+                            {
+                                title: 'Use Cases',
+                                description:
+                                    'Explore how %theme.name% helps solve real-world business problems',
+                                image: 'briefcase',
+                                click: 'uses',
+                                color: 'purple',
+                            },
+                        ],
+                        homeIntroHtml: '',
+                    },
+                    backgroundImageOpacity: 0.95,
+                    visualizationBackgroundColor: '#FFFFFF',
+                    visualizationColorPalette: 'Semoss',
+                    helpDropdown: {
+                        showUserGuideSection: true,
+                        showContactUsHeading: true,
+                        showContactUsSection: true,
+                        contactUsIcon: '',
+                        contactUsLink: 'semoss@semoss.org',
+                        isContactUsLinkUrl: false,
+                        contactUsTitle: 'Email Us',
+                        contactUsDescription: '',
+                        descriptionFontSize: 'regular',
+                    },
+                    homeLeftNavItems: {
+                        preLeftMenuBtnOptions: [],
+                        postLeftMenuBtnOptions: [],
+                    },
                 },
-                backgroundImageOpacity: 0.95,
-                visualizationBackgroundColor: '#FFFFFF',
-                visualizationColorPalette: 'Semoss',
-                helpDropdown: {
-                    showUserGuideSection: true,
-                    showContactUsHeading: true,
-                    showContactUsSection: true,
-                    contactUsIcon: '',
-                    contactUsLink: 'semoss@semoss.org',
-                    isContactUsLinkUrl: false,
-                    contactUsTitle: 'Email Us',
-                    contactUsDescription: '',
-                    descriptionFontSize: 'regular',
-                },
-                homeLeftNavItems: {
-                    preLeftMenuBtnOptions: [],
-                    postLeftMenuBtnOptions: [],
-                },
-            },
+                CUSTOMIZATION.theme
+            ),
         },
         _state = {
             base: BASE_THEME,

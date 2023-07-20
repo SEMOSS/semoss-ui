@@ -12,13 +12,17 @@
               content="">
         <meta name="keywords"
               content="">       
-        <title>SEMOSS</title>             
+        <title><%= htmlWebpackPlugin.options.title %></title>
         <!-- Polyfills must be loaded first-->
        
         <%= htmlWebpackPlugin.tags.headTags %>
-        <link rel="icon"
+        <%= htmlWebpackPlugin.options.favicon %>
+        <!-- <link rel="icon"
               type="image/png"
-              href="./packages/legacy/core/resources/img/favicon.png">
+              href="./packages/legacy/core/resources/img/favicon.png"> -->
+
+
+
 </head>
 
 <body ng-cloak>
