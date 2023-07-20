@@ -64,8 +64,6 @@ const StyledContent = MuiStyled('div')({
     // border: 'solid red',
 });
 
-const StyledButtonGroup = MuiStyled(ButtonGroup)(({ theme }) => ({}));
-
 const StyledMemberContent = MuiStyled('div')({
     display: 'flex',
     width: '100%',

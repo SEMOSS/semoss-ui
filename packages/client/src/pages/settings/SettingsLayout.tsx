@@ -79,10 +79,9 @@ export const SettingsLayout = () => {
                         <div>
                             {matchedRoute.path ? (
                                 <Breadcrumbs separator="/">
-                                    <Link style={StyledLink} to={'.'}>
+                                    <Link to={'.'} style={StyledLink}>
                                         Settings
                                     </Link>
-
                                     {matchedRoute.history.map((link, i) => {
                                         return (
                                             <Link
