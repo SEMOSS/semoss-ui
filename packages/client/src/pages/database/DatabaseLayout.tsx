@@ -43,7 +43,7 @@ const StyledTab = styled(Link, {
 
 const StyledDocument = styled('div')(({ theme }) => ({
     width: '100%',
-    padding: theme.spacing(4),
+    padding: theme.spacing(2),
     borderWidth: '1px',
     borderStyle: 'solid',
     borderColor: theme.palette.divider,

@@ -19,9 +19,9 @@ const Stack = styled('div')(({ theme }) => ({
     gap: theme.spacing(1),
 }));
 
-const StyledBreadcrumbs = styled(Breadcrumbs)({
-    marginTop: '1rem',
-});
+// const StyledBreadcrumbs = styled(Breadcrumbs)({
+//     marginTop: '1rem',
+// });
 
 const StyledLink = {
     textDecoration: 'none',

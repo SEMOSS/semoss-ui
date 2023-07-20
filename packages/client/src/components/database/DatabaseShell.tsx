@@ -1,7 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { useNotification } from '@semoss/components';
-import { styled, Stack, Typography, Button, LinearProgress } from '@semoss/ui';
-
+import {
+    styled,
+    Stack,
+    Typography,
+    Button,
+    Breadcrumbs,
+    LinearProgress,
+} from '@semoss/ui';
+import { Link } from 'react-router-dom';
 import { AddCircle } from '@mui/icons-material';
 
 import { Page, LoadingScreen } from '@/components/ui';
@@ -43,6 +50,10 @@ const StyledUsabilityProgress = styled(LinearProgress)(({ theme }) => ({
     width: theme.spacing(1),
 }));
 
+const StyledLink = styled(Link)(({ theme }) => ({
+    textDecoration: 'none',
+    color: 'inherit',
+}));
 interface DatabaseShellProps {
     /** Children to wrap in the RootStore */
     children: React.ReactNode;
@@ -158,20 +169,41 @@ export const DatabaseShell = (props: DatabaseShellProps) => {
     return (
         <Page
             header={
-                <Stack
-                    direction="row"
-                    justifyContent={'space-between'}
-                    width={'100%'}
-                >
-                    <Typography variant="h4">{data.database_name}</Typography>
-                    <Button startIcon={<AddCircle />} variant={'contained'}>
-                        New Insight
-                    </Button>
+                <Stack>
+                    <Breadcrumbs>
+                        <StyledLink to="/catalog">Data Catalog</StyledLink>
+                        <StyledLink to={`/database/${id}`}>
+                            {data.database_name}
+                        </StyledLink>
+                    </Breadcrumbs>
+                    <Stack
+                        direction="row"
+                        justifyContent={'space-between'}
+                        width={'100%'}
+                    >
+                        <Typography variant="h4">
+                            Data Catalog Overview
+                        </Typography>
+                        <Stack direction="row">
+                            <Button>Print Metadata</Button>
+                            <Button>Print Metadata</Button>
+
+                            <Button
+                                startIcon={<AddCircle />}
+                                variant={'contained'}
+                            >
+                                New Insight
+                            </Button>
+                        </Stack>
+                    </Stack>
                 </Stack>
             }
         >
             <StyledInfo>
                 <StyledInfoLeft>
+                    <Typography variant={'h6'} fontWeight={'medium'}>
+                        {data.database_name}
+                    </Typography>
                     <StyledInfoDescription variant={'subtitle1'}>
                         {data.description}
                     </StyledInfoDescription>

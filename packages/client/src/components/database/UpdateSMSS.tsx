@@ -63,6 +63,7 @@ export const UpdateSMSS = (props: UpdateSMSSProps) => {
                 {initialValue !== value && (
                     <Button
                         variant={'contained'}
+                        size={'small'}
                         onClick={() => {
                             updateSMSSProperties();
                         }}
