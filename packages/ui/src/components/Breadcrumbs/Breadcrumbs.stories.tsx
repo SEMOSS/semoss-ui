@@ -1,6 +1,6 @@
 import React from "react";
 import { Breadcrumbs } from "./";
-import { Link, Stack } from "../../";
+import { Stack } from "../../";
 import { StarOutlined } from "@mui/icons-material";
 
 export default {
@@ -30,55 +30,55 @@ const Template = (args) => {
     return (
         <Stack spacing={2}>
             <Breadcrumbs {...args}>
-                <Link href="#" underline="hover" color="inherit">
+                <Breadcrumbs.Item href="#" underline="hover" color="inherit">
                     Link 1
-                </Link>
-                <Link href="#" underline="hover" color="inherit">
+                </Breadcrumbs.Item>
+                <Breadcrumbs.Item href="#" underline="hover" color="inherit">
                     Link 2
-                </Link>
-                <Link href="#" underline="hover" color="inherit">
+                </Breadcrumbs.Item>
+                <Breadcrumbs.Item href="#" underline="hover" color="inherit">
                     Link 3
-                </Link>
-                <Link href="#" underline="hover" color="inherit">
+                </Breadcrumbs.Item>
+                <Breadcrumbs.Item href="#" underline="hover" color="inherit">
                     Link 4
-                </Link>
-                <Link href="#" underline="hover" color="inherit">
+                </Breadcrumbs.Item>
+                <Breadcrumbs.Item href="#" underline="hover" color="inherit">
                     Link 5
-                </Link>
-                <Link href="#" underline="hover" color="inherit">
+                </Breadcrumbs.Item>
+                <Breadcrumbs.Item href="#" underline="hover" color="inherit">
                     Link 6
-                </Link>
+                </Breadcrumbs.Item>
             </Breadcrumbs>
             <Breadcrumbs maxItems={2}>
-                <Link href="#" underline="hover" color="inherit">
+                <Breadcrumbs.Item href="#" underline="hover" color="inherit">
                     Link 1
-                </Link>
-                <Link href="#" underline="hover" color="inherit">
+                </Breadcrumbs.Item>
+                <Breadcrumbs.Item href="#" underline="hover" color="inherit">
                     Link 2
-                </Link>
-                <Link href="#" underline="hover" color="inherit">
+                </Breadcrumbs.Item>
+                <Breadcrumbs.Item href="#" underline="hover" color="inherit">
                     Link 3
-                </Link>
+                </Breadcrumbs.Item>
             </Breadcrumbs>
             <Breadcrumbs maxItems={2}>
-                <Link href="#" underline="hover" color="inherit">
+                <Breadcrumbs.Item href="#" underline="hover" color="inherit">
                     <StarOutlined
                         sx={{ fontSize: "1rem", mr: 0.5 }}
                     ></StarOutlined>
                     Link 1
-                </Link>
-                <Link href="#" underline="hover" color="inherit">
+                </Breadcrumbs.Item>
+                <Breadcrumbs.Item href="#" underline="hover" color="inherit">
                     <StarOutlined
                         sx={{ fontSize: "1rem", mr: 0.5 }}
                     ></StarOutlined>
                     Link 2
-                </Link>
-                <Link href="#" underline="hover" color="inherit">
+                </Breadcrumbs.Item>
+                <Breadcrumbs.Item href="#" underline="hover" color="inherit">
                     <StarOutlined
                         sx={{ fontSize: "1rem", mr: 0.5 }}
                     ></StarOutlined>
                     Link 3
-                </Link>
+                </Breadcrumbs.Item>
             </Breadcrumbs>
         </Stack>
     );

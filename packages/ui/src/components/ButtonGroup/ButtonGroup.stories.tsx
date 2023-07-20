@@ -1,7 +1,5 @@
 import React from "react";
-import { ButtonGroup } from "./ButtonGroup";
-
-import { Button } from "../Button";
+import { ButtonGroup } from "./";
 
 export default {
     title: "Components/ButtonGroup",
@@ -11,8 +9,8 @@ export default {
 const Template = (args) => {
     return (
         <ButtonGroup {...args}>
-            <Button>Button 1</Button>
-            <Button>Button 2</Button>
+            <ButtonGroup.Item>Button 1</ButtonGroup.Item>
+            <ButtonGroup.Item>Button 2</ButtonGroup.Item>
         </ButtonGroup>
     );
 };

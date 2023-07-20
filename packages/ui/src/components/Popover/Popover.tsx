@@ -71,6 +71,9 @@ export interface PopoverProps {
      */
     elevation?: number;
 
+    /** element id */
+    id: string | undefined;
+
     /**
      * Specifies how close to the edge of the window the popover can appear.
      * @default 16
