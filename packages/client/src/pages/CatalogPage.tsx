@@ -58,8 +58,8 @@ const StyledFilterList = styled(List)(({ theme }) => ({
 
 const StyledNestedFilterList = styled(List)(({ theme }) => ({
     width: '100%',
+    marginRight: theme.spacing(2),
     // marginLeft: theme.spacing(2),
-    // marginRight: theme.spacing(2),
 }));
 
 const StyledContent = styled('div')(({ theme }) => ({
@@ -394,7 +394,7 @@ export const CatalogPage = observer((): JSX.Element => {
                     </StyledFilterList>
 
                     {catalogType === 'database' && (
-                        <StyledFilterList>
+                        <StyledFilterList dense={true}>
                             <List.Item>
                                 <List.ItemButton
                                     selected={mode === 'My Databases'}
@@ -467,7 +467,7 @@ export const CatalogPage = observer((): JSX.Element => {
                                         {/* <TextField
                                             label={} 
                                         /> */}
-                                        <StyledNestedFilterList>
+                                        <StyledNestedFilterList dense={true}>
                                             {list.map((filterOption, i) => {
                                                 return (
                                                     <List.Item
