@@ -66,6 +66,9 @@ export const lightTheme: CustomThemeOptions = {
             light: "#4CAF50",
             dark: "#006500",
         },
+        background: {
+            default: "#FAFAFA",
+        },
     },
     shape: {
         borderRadiusNone: 0,
@@ -229,6 +232,10 @@ export const darkTheme: CustomThemeOptions = {
             main: "#26890D",
             light: "#A1D396",
             dark: "#005A00",
+        },
+        background: {
+            default: "#FAFAFA",
+            paper: "#FFF",
         },
     },
     shape: {
