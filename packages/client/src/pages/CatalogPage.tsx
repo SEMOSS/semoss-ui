@@ -30,6 +30,8 @@ import { DatabaseLandscapeCard, DatabaseTileCard } from '@/components/database';
 import { usePixel, useRootStore } from '@/hooks';
 import { Page } from '@/components/ui';
 
+import { Database } from '@/assets/img/Database';
+
 const StyledStack = styled(Stack)(({ theme }) => ({
     // paddingTop: theme.spacing(1)
 }));
@@ -73,7 +75,7 @@ const StyledContent = styled('div')(({ theme }) => ({
  * Landing page to view the available datasets and search through it
  */
 export const CatalogPage = observer((): JSX.Element => {
-    const { configStore } = useRootStore();
+    const { configStore, monolithStore } = useRootStore();
     const navigate = useNavigate();
     const { search: catalogParams } = useLocation();
 
@@ -104,7 +106,8 @@ export const CatalogPage = observer((): JSX.Element => {
                 k.display_options === 'single-select' ||
                 k.display_options === 'multi-select' ||
                 k.display_options === 'single-typeahead' ||
-                k.display_options === 'multi-typeahead'
+                k.display_options === 'multi-typeahead' ||
+                k.display_options === 'textarea'
             );
         },
     );
@@ -121,20 +124,25 @@ export const CatalogPage = observer((): JSX.Element => {
     const [mode, setMode] = useState<string>('My Databases');
     const [view, setView] = useState<'list' | 'tile'>('tile');
 
+    const [favorited, setFavorited] = useState([]);
+
     const dbPixelPrefix: string =
         mode === 'My Databases' ? `MyEngines` : 'MyDiscoverableEngines';
 
     // track the options
     const [filterOptions, setFilterOptions] = useState<
-        Record<string, { value: string; count: number; selected: boolean }[]>
+        Record<string, { value: string; count: number }[]>
     >({});
 
-    // track which filters are opened / closed
+    // track which filters are opened as well as value
     const [filterVisibility, setFilterVisibility] = useState<
-        Record<string, boolean>
+        Record<string, { open: boolean; value: string[] }>
     >(() => {
         return databaseMetaKeys.reduce((prev, current) => {
-            prev[current.metakey] = false;
+            prev[current.metakey] = {
+                open: false,
+                value: [],
+            };
 
             return prev;
         }, {});
@@ -168,13 +176,21 @@ export const CatalogPage = observer((): JSX.Element => {
         'olive',
     ];
 
+    // construct filters to send to metafilters
     const metaFilters = {};
     for (const key in filterValues) {
         const filter = filterValues[key];
-        if (filter && filter.length > 0) {
-            metaFilters[key] = filter;
+        const filterVal = filterVisibility[key].value;
+        if (filter && filterVal.length > 0) {
+            metaFilters[key] = filterVal;
         }
     }
+
+    const getFavoritedDatabases = usePixel(`
+        ${dbPixelPrefix}(metaKeys = ${JSON.stringify(
+        metaKeys,
+    )}, filterWord=["${search}"], onlyFavorites=[true]);
+    `);
 
     const getDatabases = usePixel<
         {
@@ -187,6 +203,8 @@ export const CatalogPage = observer((): JSX.Element => {
             database_id: string;
             database_name: string;
             database_type: string;
+            database_created_by: string;
+            database_date_created: string;
             description: string;
             low_database_name: string;
             permission: number;
@@ -244,6 +262,66 @@ export const CatalogPage = observer((): JSX.Element => {
         return frags.join(' ');
     };
 
+    /**
+     * @name setSelectedFilters
+     */
+    const setSelectedFilters = (
+        filterLabel: string,
+        filter: { value: string; count: number },
+    ) => {
+        // first find specific filter
+        const newValue = filterVisibility[filterLabel].value;
+        const index = newValue.indexOf(filter.value);
+
+        if (index === -1) {
+            newValue.push(filter.value);
+        } else {
+            newValue.splice(index, 1);
+        }
+
+        // Now update filter object to have new selected values
+        setFilterVisibility({ ...filterVisibility });
+    };
+
+    /**
+     * @name favoriteDb
+     * @param db
+     */
+    const favoriteDb = (db) => {
+        const favorite = !isFavorited(db.database_id);
+        monolithStore
+            .setDatabaseFavorite(db.database_id, favorite)
+            .then((response) => {
+                if (!favorite) {
+                    const newFavorites = favorited;
+                    for (let i = newFavorites.length - 1; i >= 0; i--) {
+                        if (newFavorites[i].database_id === db.database_id) {
+                            newFavorites.splice(i, 1);
+                        }
+                    }
+
+                    setFavorited(newFavorites);
+                } else {
+                    setFavorited([...favorited, db]);
+                }
+            })
+            .catch((err) => {
+                // throw error if promise doesn't fulfill
+                throw Error(err);
+            });
+    };
+
+    /**
+     * @name isFavorited
+     * @param id
+     */
+    const isFavorited = (id) => {
+        const favorites = favorited;
+
+        if (!favorites) return false;
+        return favorites.some((el) => el.database_id === id);
+    };
+
     useEffect(() => {
         if (getCatalogFilters.status !== 'SUCCESS') {
             return;
@@ -259,38 +337,33 @@ export const CatalogPage = observer((): JSX.Element => {
                 value: current.METAVALUE,
                 count: current.count,
                 color: setFieldOptionColor(current.METAVALUE),
-                selected: false,
             });
-            // setFieldOptionColor(output[i].METAVALUE, output[i].METAKEY)
             return prev;
         }, {});
 
-        // debugger;
-
-        updated['domain'] = [
-            {
-                color: 'purple',
-                count: 1,
-                value: 'Doctor',
-            },
-            {
-                color: 'purple',
-                count: 1,
-                value: 'Doctor',
-            },
-            {
-                color: 'purple',
-                count: 1,
-                value: 'Doctor',
-            },
-        ];
+        // mimic other filters for testing
+        // updated['domain'] = [
+        //     {
+        //         color: 'purple',
+        //         count: 1,
+        //         value: 'One',
+        //     },
+        //     {
+        //         color: 'purple',
+        //         count: 1,
+        //         value: 'Two',
+        //     },
+        // ];
 
         setFilterOptions(updated);
     }, [getCatalogFilters.status, getCatalogFilters.data]);
 
-    const setSelectedFilters = () => {
-        console.log('set filters');
-    };
+    useEffect(() => {
+        if (getFavoritedDatabases.status !== 'SUCCESS') {
+            return;
+        }
+        setFavorited(getFavoritedDatabases.data);
+    }, [getFavoritedDatabases.status, getFavoritedDatabases.data]);
 
     // finish loading the page
     if (
@@ -300,15 +373,6 @@ export const CatalogPage = observer((): JSX.Element => {
         return <>ERROR</>;
     }
 
-    // if (
-    //     getDatabases.status === 'SUCCESS'
-    // ) {
-    //     debugger
-    // }
-
-    // console.log('filt options', filterOptions)
-
-    console.log('fil visibility', filterVisibility);
     return (
         <Page
             header={
@@ -356,7 +420,7 @@ export const CatalogPage = observer((): JSX.Element => {
                             <List.ItemButton
                                 selected={catalogType === 'database'}
                                 onClick={() => {
-                                    navigate(``);
+                                    navigate(`/catalog?type=database`);
                                 }}
                             >
                                 <List.Icon>
@@ -369,7 +433,7 @@ export const CatalogPage = observer((): JSX.Element => {
                             <List.ItemButton
                                 selected={catalogType === 'storage'}
                                 onClick={() => {
-                                    navigate(``);
+                                    navigate(`/catalog?type=storage`);
                                 }}
                             >
                                 <List.Icon>
@@ -382,13 +446,13 @@ export const CatalogPage = observer((): JSX.Element => {
                             <List.ItemButton
                                 selected={catalogType === 'model'}
                                 onClick={() => {
-                                    navigate(``);
+                                    navigate(`/catalog?type=model`);
                                 }}
                             >
                                 <List.Icon>
                                     <MenuBookOutlined />
                                 </List.Icon>
-                                <List.ItemText primary={'Model Catalog'} />
+                                <List.ItemText primary={'Model Catalogs'} />
                             </List.ItemButton>
                         </List.Item>
                     </StyledFilterList>
@@ -440,18 +504,20 @@ export const CatalogPage = observer((): JSX.Element => {
                                                         ...filterVisibility,
                                                     };
                                                     visibleFilters[entries[0]] =
-                                                        !visibleFilters[
-                                                            entries[0]
-                                                        ];
+                                                        {
+                                                            open: !visibleFilters[
+                                                                entries[0]
+                                                            ].open,
+                                                            value: [],
+                                                        };
 
                                                     setFilterVisibility(
                                                         visibleFilters,
                                                     );
                                                 }}
                                             >
-                                                {filterVisibility[
-                                                    entries[0]
-                                                ] ? (
+                                                {filterVisibility[entries[0]]
+                                                    .open ? (
                                                     <ExpandLess />
                                                 ) : (
                                                     <ExpandMore />
@@ -463,7 +529,9 @@ export const CatalogPage = observer((): JSX.Element => {
                                             primary={formatDBName(entries[0])}
                                         />
                                     </List.Item>
-                                    <Collapse in={filterVisibility[entries[0]]}>
+                                    <Collapse
+                                        in={filterVisibility[entries[0]].open}
+                                    >
                                         {/* <TextField
                                             label={} 
                                         /> */}
@@ -478,15 +546,17 @@ export const CatalogPage = observer((): JSX.Element => {
                                                     >
                                                         <List.ItemButton
                                                             selected={
-                                                                filterOption.selected
+                                                                filterVisibility[
+                                                                    entries[0]
+                                                                ].value.indexOf(
+                                                                    filterOption.value,
+                                                                ) > -1
                                                             }
                                                             onClick={() => {
-                                                                console.log(
-                                                                    'modify filter options',
+                                                                setSelectedFilters(
+                                                                    entries[0],
                                                                     filterOption,
                                                                 );
-
-                                                                setSelectedFilters();
                                                             }}
                                                         >
                                                             <List.ItemText
@@ -525,13 +595,19 @@ export const CatalogPage = observer((): JSX.Element => {
                                                 id={db.app_id}
                                                 image={defaultDBImage}
                                                 tag={db.tag}
-                                                owner={db.owner}
+                                                owner={db.database_created_by}
                                                 description={db.description}
                                                 votes={db.upvotes}
                                                 views={db.views}
                                                 trending={db.trending}
                                                 isGlobal={db.database_global}
                                                 isUpvoted={db.hasVoted}
+                                                isFavorite={isFavorited(
+                                                    db.database_id,
+                                                )}
+                                                favorite={() => {
+                                                    favoriteDb(db);
+                                                }}
                                                 onClick={() => {
                                                     navigate(
                                                         `/database/${db.app_id}`,
@@ -544,13 +620,19 @@ export const CatalogPage = observer((): JSX.Element => {
                                                 id={db.app_id}
                                                 image={defaultDBImage}
                                                 tag={db.tag}
-                                                owner={db.owner}
+                                                owner={db.database_created_by}
                                                 description={db.description}
                                                 votes={db.upvotes}
                                                 views={db.views}
                                                 trending={db.trending}
                                                 isGlobal={db.database_global}
                                                 isUpvoted={db.hasVoted}
+                                                isFavorite={isFavorited(
+                                                    db.database_id,
+                                                )}
+                                                favorite={() => {
+                                                    favoriteDb(db);
+                                                }}
                                                 onClick={() => {
                                                     navigate(
                                                         `/database/${db.app_id}`,

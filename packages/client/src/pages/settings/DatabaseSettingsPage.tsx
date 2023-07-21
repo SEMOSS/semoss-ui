@@ -172,6 +172,8 @@ export const DatabaseSettingsPage = () => {
             database_id: string;
             database_name: string;
             database_type: string;
+            database_created_by: string;
+            database_date_created: string;
             description: string;
             low_database_name: string;
             permission: number;
@@ -201,7 +203,6 @@ export const DatabaseSettingsPage = () => {
                 hasVoted: false,
                 views: 'N/A',
                 trending: 'N/A',
-                owner: 'N/A',
             });
         });
 
@@ -408,7 +409,7 @@ export const DatabaseSettingsPage = () => {
                                           id={db.app_id}
                                           image={defaultDBImage}
                                           tag={db.tag}
-                                          owner={db.owner}
+                                          owner={db.database_created_by}
                                           description={db.description}
                                           votes={db.upvotes}
                                           views={db.views}
@@ -445,7 +446,7 @@ export const DatabaseSettingsPage = () => {
                                           id={db.app_id}
                                           image={defaultDBImage}
                                           tag={db.tag}
-                                          owner={db.owner}
+                                          owner={db.database_created_by}
                                           description={db.description}
                                           votes={db.upvotes}
                                           views={db.views}
