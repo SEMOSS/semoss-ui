@@ -2,14 +2,12 @@ import React, { useEffect, useState } from 'react';
 import { styled, Container } from '@semoss/ui';
 import { SxProps } from '@mui/system';
 
-const StyledPage = styled('div')(() => ({
+const StyledPage = styled('div')(({ theme }) => ({
     height: '100%',
     width: '100%',
     overflowX: 'hidden',
     overflowY: 'auto',
-
-    // Set this in Theme
-    backgroundColor: '#FFF',
+    backgroundColor: theme.palette.background.paper,
 }));
 
 const StyledPageHeader = styled('div', {
@@ -20,16 +18,17 @@ const StyledPageHeader = styled('div', {
 }>(({ theme, stuck }) => ({
     position: 'sticky',
     top: '-1px',
-    paddingTop: '1px',
-    paddingBottom: '1px',
+    paddingTop: theme.spacing(5),
+    paddingBottom: theme.spacing(5),
     // Checkout user permissions, and the stacked avatars
     zIndex: 10,
-    borderBottom: stuck ? 1 : 'none',
-    borderBottomColor: theme.palette.grey['500'],
+    borderBottom: stuck ? `solid ${theme.palette.divider}` : 'none',
+    // borderBottomWidth: '1px',
+    // borderBottomStyle: 'solid',
+    // borderBottomColor: theme.palette.divider,
     marginBottom: theme.spacing(2),
-
     // Set this in Theme
-    backgroundColor: '#FFF',
+    backgroundColor: theme.palette.background.paper,
 }));
 
 export interface PageProps {

@@ -54,6 +54,13 @@ const StyledLink = styled(Link)(({ theme }) => ({
     textDecoration: 'none',
     color: 'inherit',
 }));
+
+const StyledDatabaseImage = styled('img')({
+    width: '288px',
+    height: '161.723px',
+    flexShrink: '0',
+    borderRadius: '8.862px',
+});
 interface DatabaseShellProps {
     /** Children to wrap in the RootStore */
     children: React.ReactNode;
@@ -185,8 +192,8 @@ export const DatabaseShell = (props: DatabaseShellProps) => {
                             Data Catalog Overview
                         </Typography>
                         <Stack direction="row">
-                            <Button>Print Metadata</Button>
-                            <Button>Print Metadata</Button>
+                            {/* <Button>Print Metadata</Button>
+                            <Button>Print Metadata</Button> */}
 
                             <Button
                                 startIcon={<AddCircle />}
@@ -213,7 +220,7 @@ export const DatabaseShell = (props: DatabaseShellProps) => {
                     </StyledInfoFooter>
                 </StyledInfoLeft>
                 <StyledInfoRight>
-                    <img
+                    <StyledDatabaseImage
                         src={`${process.env.MODULE}/api/app-${id}/appImage/download`}
                     />
                     {votes && (
@@ -247,18 +254,24 @@ export const DatabaseShell = (props: DatabaseShellProps) => {
                         // </Stack>
                     )}
                     <Stack
-                        direction="row"
-                        alignItems={'center'}
+                        // direction="row"
+                        alignItems={'flex-end'}
                         spacing={1}
                         marginBottom={2}
                     >
-                        <StyledUsabilityProgress
+                        <Typography variant={'body2'}>
+                            Published by: J. Smiths
+                        </Typography>
+                        <Typography variant={'body2'}>
+                            Published: 01/23/2023
+                        </Typography>
+                        {/* <StyledUsabilityProgress
                             value={usabilityData * 10}
                             variant={'determinate'}
                         />
                         <Typography variant="body2">
                             {usabilityData * 10}%
-                        </Typography>
+                        </Typography> */}
 
                         {/* <Tooltip title="The SEMOSS Usability Score is calculated by the datasets level of documentation">
                             <IconButton size="small">

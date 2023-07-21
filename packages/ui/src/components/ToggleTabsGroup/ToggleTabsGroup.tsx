@@ -14,9 +14,9 @@ export interface ToggleTabsProps extends TabsProps<any> {
 
 const StyledBox = styled(Box)(({ theme }) => ({
     backgroundColor:
-        theme.palette.mode === "dark" ? "#0000000A" : "rgba(4, 113, 240, 0.04)",
+        theme.palette.mode === "dark" ? "#0000000A" : "rgba(0, 0, 0, 0.04)",
     border: theme.palette.mode === "dark" ? "1px" : 0,
-    borderRadius: "6px",
+    borderRadius: "12px",
     width: "fit-content",
     borderColor: "rgba(4, 113, 240, 0.5)",
 }));
@@ -31,7 +31,7 @@ const StyledToggleGroup = styled(Tabs)(({ theme }) => ({
         color:
             theme.palette.mode === "dark"
                 ? "#8BCAFF"
-                : theme.palette.primary.light,
+                : theme.palette.text.disabled,
         fontWeight: 700,
     },
     "& .MuiTab-root.Mui-selected": {
@@ -40,6 +40,7 @@ const StyledToggleGroup = styled(Tabs)(({ theme }) => ({
                 ? "rgba(4, 113, 240, 0.16)"
                 : "#FFFFFF",
         fontWeight: 700,
+        color: theme.palette.text.secondary,
     },
 }));
 

@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { observer } from 'mobx-react-lite';
 import {
+    Collapse,
     styled,
     Stack,
     Typography,
@@ -17,12 +18,20 @@ import {
     Inventory2Outlined,
     DataObjectOutlined,
     MenuBookOutlined,
+    SendIcon,
 } from '@mui/icons-material';
+
+import { useNavigate } from 'react-router-dom';
 
 import defaultDBImage from '@/assets/img/placeholder.png';
 import { DatabaseLandscapeCard, DatabaseTileCard } from '@/components/database';
 import { usePixel, useRootStore } from '@/hooks';
 import { Page } from '@/components/ui';
+import { ListItemIcon } from '@semoss/ui/dist/components/List/ListItemIcon';
+
+const StyledStack = styled(Stack)(({ theme }) => ({
+    // paddingTop: theme.spacing(1)
+}));
 
 const StyledContainer = styled('div')(({ theme }) => ({
     display: 'flex',
@@ -59,6 +68,7 @@ const StyledContent = styled('div')(({ theme }) => ({
  */
 export const CatalogPage = observer((): JSX.Element => {
     const { configStore } = useRootStore();
+    const navigate = useNavigate();
 
     // get a list of the keys
     const databaseMetaKeys = configStore.store.config.databaseMetaKeys.filter(
@@ -87,7 +97,7 @@ export const CatalogPage = observer((): JSX.Element => {
     const [view, setView] = useState<'list' | 'tile'>('tile');
 
     const dbPixelPrefix: string =
-        mode === 'My Databases' ? `MyDatabases` : 'MyDiscoverableDatabases';
+        mode === 'My Databases' ? `MyEngines` : 'MyDiscoverableEngines';
 
     // track the options
     const [filterOptions, setFilterOptions] = useState<
@@ -104,6 +114,7 @@ export const CatalogPage = observer((): JSX.Element => {
             return prev;
         }, {});
     });
+
     // track the filter values
     const [filterValues, setFilterValues] = useState<
         Record<string, string[] | string | null>
@@ -156,13 +167,14 @@ export const CatalogPage = observer((): JSX.Element => {
             permission: number;
             tag: string;
             user_permission: number;
+            upvotes: number;
         }[]
     >(
         `${dbPixelPrefix}( metaKeys = ${JSON.stringify(
             metaKeys,
         )} , metaFilters = [ ${JSON.stringify(
             metaFilters,
-        )} ] , filterWord=["${search}"]) ;`,
+        )} ] , filterWord=["${search}"], userT = [true]) ;`,
     );
 
     const getCatalogFilters = usePixel<
@@ -212,6 +224,8 @@ export const CatalogPage = observer((): JSX.Element => {
             return;
         }
 
+        debugger;
+
         // format the catalog data into a map
         const updated = getCatalogFilters.data.reduce((prev, current) => {
             if (!prev[current.METAKEY]) {
@@ -238,18 +252,33 @@ export const CatalogPage = observer((): JSX.Element => {
         return <>ERROR</>;
     }
 
+    // if (
+    //     getDatabases.status === 'SUCCESS'
+    // ) {
+    //     debugger
+    // }
+
+    // console.log('filt options', filterOptions)
+
+    console.log('fil visibility', filterVisibility);
     return (
         <Page
             header={
-                <Stack
+                <StyledStack
                     direction="row"
                     alignItems={'center'}
                     justifyContent={'space-between'}
                     spacing={4}
                 >
                     <Stack direction="row" alignItems={'center'} spacing={2}>
-                        <Typography variant={'h6'}>Catalog</Typography>
-                        <Search size={'small'} label={'Search'} />
+                        <Typography variant={'h4'}>Catalog</Typography>
+                        <Search
+                            size={'small'}
+                            label={'Search'}
+                            onChange={(e) => {
+                                setSearch(e.target.value);
+                            }}
+                        />
                     </Stack>
                     <Stack direction="row" alignItems={'center'} spacing={3}>
                         <Button variant={'contained'}>Add Database</Button>
@@ -269,7 +298,7 @@ export const CatalogPage = observer((): JSX.Element => {
                             </ToggleButton>
                         </ToggleButtonGroup>
                     </Stack>
-                </Stack>
+                </StyledStack>
             }
         >
             <StyledContainer>
@@ -304,6 +333,31 @@ export const CatalogPage = observer((): JSX.Element => {
                         <List.Item>
                             <List.ItemText primary={'Filter By'} />
                         </List.Item>
+
+                        {Object.entries(filterOptions).map((entries) => {
+                            const list = entries[1];
+                            console.log(list);
+                            return (
+                                <>
+                                    <List.ItemButton>
+                                        <List.ItemText
+                                            primary={formatDBName(entries[0])}
+                                        />
+                                    </List.ItemButton>
+                                    <Collapse in={filterVisibility[entries[0]]}>
+                                        {list.map((filterOption) => {
+                                            return (
+                                                <div>{filterOption.value}</div>
+                                                // <List.Item>
+                                                //     <List.ItemText primary={filterOption.value}/>
+                                                // </ List.Item>
+                                            );
+                                        })}
+                                    </Collapse>
+                                </>
+                            );
+                        })}
+
                         <List.Item>
                             <List.ItemButton>
                                 <List.Icon>
@@ -349,6 +403,11 @@ export const CatalogPage = observer((): JSX.Element => {
                                                 trending={db.trending}
                                                 isGlobal={db.database_global}
                                                 isUpvoted={db.hasVoted}
+                                                onClick={() => {
+                                                    navigate(
+                                                        `/database/${db.app_id}`,
+                                                    );
+                                                }}
                                             />
                                         ) : (
                                             <DatabaseTileCard
@@ -363,6 +422,11 @@ export const CatalogPage = observer((): JSX.Element => {
                                                 trending={db.trending}
                                                 isGlobal={db.database_global}
                                                 isUpvoted={db.hasVoted}
+                                                onClick={() => {
+                                                    navigate(
+                                                        `/database/${db.app_id}`,
+                                                    );
+                                                }}
                                             />
                                         )}
                                     </Grid>

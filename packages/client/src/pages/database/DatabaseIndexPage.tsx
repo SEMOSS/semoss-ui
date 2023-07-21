@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react';
-import { styled, Stack, Button, Chip } from '@semoss/ui';
+import { styled, Stack, Button, Chip, Typography } from '@semoss/ui';
 import { EditOutlined } from '@mui/icons-material';
 import { Link } from 'react-router-dom';
 import { observer } from 'mobx-react-lite';
@@ -114,13 +114,17 @@ export const DatabaseIndexPage = observer(() => {
             )}
             {dbMetaData.markdown && (
                 <Section>
-                    <Section.Header>About</Section.Header>
+                    <Section.Header>
+                        <Typography variant={'h6'}>About</Typography>
+                    </Section.Header>
                     <Markdown content={dbMetaData.markdown} />
                 </Section>
             )}
             {dbMetaData.tags && (
                 <Section>
-                    <Section.Header>Tags</Section.Header>
+                    <Section.Header>
+                        <Typography variant={'h6'}>Tags</Typography>
+                    </Section.Header>
                     <Stack direction={'row'} spacing={1} flexWrap={'wrap'}>
                         {dbMetaData.tags.map((tag) => {
                             return (
@@ -146,7 +150,9 @@ export const DatabaseIndexPage = observer(() => {
 
                 return (
                     <Section key={k.metakey}>
-                        <Section.Header>{k.metakey}</Section.Header>
+                        <Section.Header>
+                            <Typography variant={'h6'}>{k.metakey}</Typography>
+                        </Section.Header>
                         {k.display_options === 'multi-checklist' ||
                         k.display_options === 'multi-select' ||
                         k.display_options === 'multi-typeahead' ? (
@@ -174,14 +180,18 @@ export const DatabaseIndexPage = observer(() => {
                 );
             })}
             <Section>
-                <Section.Header>Statistics</Section.Header>
+                <Section.Header>
+                    <Typography variant={'h6'}>Statistics</Typography>
+                </Section.Header>
                 <div>
                     <p>Total Uses:</p>
                     <p>Total Views:</p>
                 </div>
             </Section>
             <Section>
-                <Section.Header>Similar</Section.Header>
+                <Section.Header>
+                    <Typography variant={'h6'}>Similar</Typography>
+                </Section.Header>
                 <Stack direction={'row'} flexWrap={'nowrap'} overflow={'auto'}>
                     {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15].map(
                         (v, idx) => {
