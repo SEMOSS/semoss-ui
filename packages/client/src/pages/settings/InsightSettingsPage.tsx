@@ -59,15 +59,6 @@ const StyledSearchbarContainer = styled('div')(({ theme }) => ({
     gap: theme.spacing(3),
 }));
 
-const StyledSort = styled(Select)({
-    // display: 'flex',
-    // width: '220px',
-    // flexDirection: 'column',
-    // alignItems: 'flex-start',
-    // gap: '3px',
-    // flexShrink: '0',
-});
-
 const StyledMenuItem = styled(Select.Item)({
     width: '220px',
     gap: '3px',
@@ -156,13 +147,13 @@ export const InsightSettingsPage = () => {
                     // ref={searchbarRef}
                 />
 
-                <StyledSort
+                <Select
                     size={'small'}
                     value={sort}
                     onChange={(e) => setSort(e.target.value)}
                 >
                     <StyledMenuItem value="name">Name</StyledMenuItem>
-                </StyledSort>
+                </Select>
 
                 <ToggleButtonGroup size={'small'} value={view}>
                     <ToggleButton onClick={(e, v) => setView(v)} value={'tile'}>

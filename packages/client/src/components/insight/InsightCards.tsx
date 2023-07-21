@@ -76,7 +76,7 @@ export const InsightTileCard = (props) => {
                 <StyledTileCardActionsLeft>
                     <AccessTimeFilled />
                     <Typography variant="caption">
-                        {modifiedDate ? modifiedDate : '7/19/2023 10:00AM'}
+                        {modifiedDate ? modifiedDate : '7/19/2023 · 10:00AM'}
                     </Typography>
                 </StyledTileCardActionsLeft>
                 {/* <IconButton>
