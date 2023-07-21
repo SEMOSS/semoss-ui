@@ -13,21 +13,22 @@ import {
     List,
 } from '@semoss/ui';
 import {
-    SpaceDashboardOutlined,
+    DataObjectOutlined,
+    ExpandLess,
+    ExpandMore,
     FormatListBulletedOutlined,
     Inventory2Outlined,
-    DataObjectOutlined,
     MenuBookOutlined,
-    SendIcon,
+    People,
+    SpaceDashboardOutlined,
 } from '@mui/icons-material';
 
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 
 import defaultDBImage from '@/assets/img/placeholder.png';
 import { DatabaseLandscapeCard, DatabaseTileCard } from '@/components/database';
 import { usePixel, useRootStore } from '@/hooks';
 import { Page } from '@/components/ui';
-import { ListItemIcon } from '@semoss/ui/dist/components/List/ListItemIcon';
 
 const StyledStack = styled(Stack)(({ theme }) => ({
     // paddingTop: theme.spacing(1)
@@ -51,9 +52,14 @@ const StyledFitler = styled('div')(({ theme }) => ({
 
 const StyledFilterList = styled(List)(({ theme }) => ({
     width: '100%',
-    // TODO: set this in theme
-    background: '#FAFAFA',
+    background: theme.palette.background.default,
     borderRadius: theme.shape.borderRadius,
+}));
+
+const StyledNestedFilterList = styled(List)(({ theme }) => ({
+    width: '100%',
+    // marginLeft: theme.spacing(2),
+    // marginRight: theme.spacing(2),
 }));
 
 const StyledContent = styled('div')(({ theme }) => ({
@@ -69,6 +75,25 @@ const StyledContent = styled('div')(({ theme }) => ({
 export const CatalogPage = observer((): JSX.Element => {
     const { configStore } = useRootStore();
     const navigate = useNavigate();
+    const { search: catalogParams } = useLocation();
+
+    /** This page is shared by db, storage, model */
+    let catalogType = '';
+
+    switch (catalogParams) {
+        case '':
+            catalogType = 'database';
+            break;
+        case '?type=database':
+            catalogType = 'database';
+            break;
+        case '?type=model':
+            catalogType = 'model';
+            break;
+        case '?type=storage':
+            catalogType = 'storage';
+            break;
+    }
 
     // get a list of the keys
     const databaseMetaKeys = configStore.store.config.databaseMetaKeys.filter(
@@ -101,7 +126,7 @@ export const CatalogPage = observer((): JSX.Element => {
 
     // track the options
     const [filterOptions, setFilterOptions] = useState<
-        Record<string, { value: string; count: number }[]>
+        Record<string, { value: string; count: number; selected: boolean }[]>
     >({});
 
     // track which filters are opened / closed
@@ -109,7 +134,7 @@ export const CatalogPage = observer((): JSX.Element => {
         Record<string, boolean>
     >(() => {
         return databaseMetaKeys.reduce((prev, current) => {
-            prev[current.metakey] = true;
+            prev[current.metakey] = false;
 
             return prev;
         }, {});
@@ -131,7 +156,7 @@ export const CatalogPage = observer((): JSX.Element => {
         }, {});
     });
 
-    const buttons = ['My Databases', 'Community Databases'];
+    // const buttons = ['My Databases', 'Community Databases'];
     const tagColors = [
         'blue',
         'orange',
@@ -224,8 +249,6 @@ export const CatalogPage = observer((): JSX.Element => {
             return;
         }
 
-        debugger;
-
         // format the catalog data into a map
         const updated = getCatalogFilters.data.reduce((prev, current) => {
             if (!prev[current.METAKEY]) {
@@ -236,13 +259,38 @@ export const CatalogPage = observer((): JSX.Element => {
                 value: current.METAVALUE,
                 count: current.count,
                 color: setFieldOptionColor(current.METAVALUE),
+                selected: false,
             });
             // setFieldOptionColor(output[i].METAVALUE, output[i].METAKEY)
             return prev;
         }, {});
 
+        // debugger;
+
+        updated['domain'] = [
+            {
+                color: 'purple',
+                count: 1,
+                value: 'Doctor',
+            },
+            {
+                color: 'purple',
+                count: 1,
+                value: 'Doctor',
+            },
+            {
+                color: 'purple',
+                count: 1,
+                value: 'Doctor',
+            },
+        ];
+
         setFilterOptions(updated);
     }, [getCatalogFilters.status, getCatalogFilters.data]);
+
+    const setSelectedFilters = () => {
+        console.log('set filters');
+    };
 
     // finish loading the page
     if (
@@ -305,7 +353,12 @@ export const CatalogPage = observer((): JSX.Element => {
                 <StyledFitler>
                     <StyledFilterList dense={true}>
                         <List.Item>
-                            <List.ItemButton selected={true}>
+                            <List.ItemButton
+                                selected={catalogType === 'database'}
+                                onClick={() => {
+                                    navigate(``);
+                                }}
+                            >
                                 <List.Icon>
                                     <DataObjectOutlined />
                                 </List.Icon>
@@ -313,7 +366,12 @@ export const CatalogPage = observer((): JSX.Element => {
                             </List.ItemButton>
                         </List.Item>
                         <List.Item>
-                            <List.ItemButton>
+                            <List.ItemButton
+                                selected={catalogType === 'storage'}
+                                onClick={() => {
+                                    navigate(``);
+                                }}
+                            >
                                 <List.Icon>
                                     <Inventory2Outlined />
                                 </List.Icon>
@@ -321,7 +379,12 @@ export const CatalogPage = observer((): JSX.Element => {
                             </List.ItemButton>
                         </List.Item>
                         <List.Item>
-                            <List.ItemButton>
+                            <List.ItemButton
+                                selected={catalogType === 'model'}
+                                onClick={() => {
+                                    navigate(``);
+                                }}
+                            >
                                 <List.Icon>
                                     <MenuBookOutlined />
                                 </List.Icon>
@@ -329,6 +392,37 @@ export const CatalogPage = observer((): JSX.Element => {
                             </List.ItemButton>
                         </List.Item>
                     </StyledFilterList>
+
+                    {catalogType === 'database' && (
+                        <StyledFilterList>
+                            <List.Item>
+                                <List.ItemButton
+                                    selected={mode === 'My Databases'}
+                                    onClick={() => setMode('My Databases')}
+                                >
+                                    <List.Icon>
+                                        <People />
+                                    </List.Icon>
+                                    <List.ItemText primary={'My Databases'} />
+                                </List.ItemButton>
+                            </List.Item>
+                            <List.Item>
+                                <List.ItemButton
+                                    selected={mode === 'Discoverable Databases'}
+                                    onClick={() => {
+                                        setMode('Discoverable Databases');
+                                    }}
+                                >
+                                    <List.Icon>
+                                        <People />
+                                    </List.Icon>
+                                    <List.ItemText
+                                        primary={'Discoverable Databases'}
+                                    />
+                                </List.ItemButton>
+                            </List.Item>
+                        </StyledFilterList>
+                    )}
                     <StyledFilterList dense={true}>
                         <List.Item>
                             <List.ItemText primary={'Filter By'} />
@@ -336,44 +430,79 @@ export const CatalogPage = observer((): JSX.Element => {
 
                         {Object.entries(filterOptions).map((entries) => {
                             const list = entries[1];
-                            console.log(list);
                             return (
                                 <>
-                                    <List.ItemButton>
+                                    <List.Item
+                                        secondaryAction={
+                                            <List.ItemButton
+                                                onClick={() => {
+                                                    const visibleFilters = {
+                                                        ...filterVisibility,
+                                                    };
+                                                    visibleFilters[entries[0]] =
+                                                        !visibleFilters[
+                                                            entries[0]
+                                                        ];
+
+                                                    setFilterVisibility(
+                                                        visibleFilters,
+                                                    );
+                                                }}
+                                            >
+                                                {filterVisibility[
+                                                    entries[0]
+                                                ] ? (
+                                                    <ExpandLess />
+                                                ) : (
+                                                    <ExpandMore />
+                                                )}
+                                            </List.ItemButton>
+                                        }
+                                    >
                                         <List.ItemText
                                             primary={formatDBName(entries[0])}
                                         />
-                                    </List.ItemButton>
+                                    </List.Item>
                                     <Collapse in={filterVisibility[entries[0]]}>
-                                        {list.map((filterOption) => {
-                                            return (
-                                                <div>{filterOption.value}</div>
-                                                // <List.Item>
-                                                //     <List.ItemText primary={filterOption.value}/>
-                                                // </ List.Item>
-                                            );
-                                        })}
+                                        {/* <TextField
+                                            label={} 
+                                        /> */}
+                                        <StyledNestedFilterList>
+                                            {list.map((filterOption, i) => {
+                                                return (
+                                                    <List.Item
+                                                        key={i}
+                                                        secondaryAction={
+                                                            filterOption.count
+                                                        }
+                                                    >
+                                                        <List.ItemButton
+                                                            selected={
+                                                                filterOption.selected
+                                                            }
+                                                            onClick={() => {
+                                                                console.log(
+                                                                    'modify filter options',
+                                                                    filterOption,
+                                                                );
+
+                                                                setSelectedFilters();
+                                                            }}
+                                                        >
+                                                            <List.ItemText
+                                                                primary={
+                                                                    filterOption.value
+                                                                }
+                                                            />
+                                                        </List.ItemButton>
+                                                    </List.Item>
+                                                );
+                                            })}
+                                        </StyledNestedFilterList>
                                     </Collapse>
                                 </>
                             );
                         })}
-
-                        <List.Item>
-                            <List.ItemButton>
-                                <List.Icon>
-                                    <Inventory2Outlined />
-                                </List.Icon>
-                                <List.ItemText primary={'Storage Catalog'} />
-                            </List.ItemButton>
-                        </List.Item>
-                        <List.Item>
-                            <List.ItemButton>
-                                <List.Icon>
-                                    <MenuBookOutlined />
-                                </List.Icon>
-                                <List.ItemText primary={'Model Catalog'} />
-                            </List.ItemButton>
-                        </List.Item>
                     </StyledFilterList>
                 </StyledFitler>
 
