@@ -106,8 +106,7 @@ export const CatalogPage = observer((): JSX.Element => {
                 k.display_options === 'single-select' ||
                 k.display_options === 'multi-select' ||
                 k.display_options === 'single-typeahead' ||
-                k.display_options === 'multi-typeahead' ||
-                k.display_options === 'textarea'
+                k.display_options === 'multi-typeahead'
             );
         },
     );
@@ -186,9 +185,12 @@ export const CatalogPage = observer((): JSX.Element => {
         }
     }
 
+    let metaKeysDescription = [...metaKeys, 'description'];
+    // console.log('new', metaKeysDescription)    // metaKeysDescription.push('description');
+
     const getFavoritedDatabases = usePixel(`
         ${dbPixelPrefix}(metaKeys = ${JSON.stringify(
-        metaKeys,
+        metaKeysDescription,
     )}, filterWord=["${search}"], onlyFavorites=[true]);
     `);
 
@@ -214,7 +216,7 @@ export const CatalogPage = observer((): JSX.Element => {
         }[]
     >(
         `${dbPixelPrefix}( metaKeys = ${JSON.stringify(
-            metaKeys,
+            metaKeysDescription,
         )} , metaFilters = [ ${JSON.stringify(
             metaFilters,
         )} ] , filterWord=["${search}"], userT = [true]) ;`,
