@@ -1,4 +1,4 @@
-import MuiChip from "@mui/material/Chip";
+import { Chip as MuiChip, ChipProps } from "@mui/material";
 import { SxProps } from "@mui/system";
 
 export interface ChipProps {
