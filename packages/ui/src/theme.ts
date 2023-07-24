@@ -5,6 +5,68 @@ export { styled };
 export type { ThemeOptions };
 
 export interface CustomThemeOptions extends ThemeOptions {
+    altPalette?: {
+        semossBlue: {
+            50?: string;
+            100?: string;
+            200?: string;
+            300?: string;
+            400?: string;
+            500?: string;
+            600?: string;
+            700?: string;
+            800?: string;
+            900?: string;
+        };
+        green: {
+            50?: string;
+            100?: string;
+            200?: string;
+            300?: string;
+            400?: string;
+            500?: string;
+            600?: string;
+            700?: string;
+            800?: string;
+            900?: string;
+        };
+        darkBlue: {
+            50?: string;
+            100?: string;
+            200?: string;
+            300?: string;
+            400?: string;
+            500?: string;
+            600?: string;
+            700?: string;
+            800?: string;
+            900?: string;
+        };
+        pink: {
+            50?: string;
+            100?: string;
+            200?: string;
+            300?: string;
+            400?: string;
+            500?: string;
+            600?: string;
+            700?: string;
+            800?: string;
+            900?: string;
+        };
+        purple: {
+            50?: string;
+            100?: string;
+            200?: string;
+            300?: string;
+            400?: string;
+            500?: string;
+            600?: string;
+            700?: string;
+            800?: string;
+            900?: string;
+        };
+    };
     shape: {
         borderRadiusNone: number;
         borderRadius: number;
@@ -34,6 +96,68 @@ export interface CustomThemeOptions extends ThemeOptions {
 }
 
 export const lightTheme: CustomThemeOptions = {
+    altPalette: {
+        semossBlue: {
+            "50": "#E2F2FF",
+            "100": "BADEFF",
+            "200": "8BCAFF",
+            "300": "55B5FF",
+            "400": "22A4FF",
+            "500": "0094FF",
+            "600": "0085FF",
+            "700": "0471F0",
+            "800": "1260DD",
+            "900": "1C3FBE",
+        },
+        green: {
+            "50": "#DEF4F3",
+            "100": "ABE4E0",
+            "200": "6FD4CB",
+            "300": "07C2B6",
+            "400": "00B4A4",
+            "500": "00A593",
+            "600": "009785",
+            "700": "008674",
+            "800": "007664",
+            "900": "005946",
+        },
+        darkBlue: {
+            "50": "#EAE4F2",
+            "100": "C9BCE0",
+            "200": "A690CC",
+            "300": "8364B8",
+            "400": "6944AA",
+            "500": "4F249B",
+            "600": "471F96",
+            "700": "3A188E",
+            "800": "2D1286",
+            "900": "150578",
+        },
+        pink: {
+            "50": "#FFE6F0",
+            "100": "FFC0D9",
+            "200": "FF97C0",
+            "300": "FF6DA6",
+            "400": "FF4E90",
+            "500": "FF337B",
+            "600": "ED2F77",
+            "700": "D62C71",
+            "800": "C0286C",
+            "900": "992263",
+        },
+        purple: {
+            "50": "#F1E9FB",
+            "100": "DAC9F5",
+            "200": "C3A5F0",
+            "300": "AA7EEA",
+            "400": "975FE4",
+            "500": "8340DE",
+            "600": "783BD7",
+            "700": "6A32CE",
+            "800": "5D2BC7",
+            "900": "481EB8",
+        },
+    },
     palette: {
         mode: "light",
         primary: {
