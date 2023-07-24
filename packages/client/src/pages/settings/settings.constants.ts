@@ -1,6 +1,7 @@
 import {
     mdiAccountGroup,
     mdiClipboardTextOutline,
+    mdiClock,
     mdiCog,
     mdiDatabase,
     mdiDatabaseSearch,
@@ -145,5 +146,18 @@ export const SETTINGS_ROUTES: {
         description: 'Update theme, this is an admin process.',
         icon: mdiDatabase,
         history: ['settings/'],
+    },
+    {
+        title: 'Jobs',
+        path: 'jobs',
+        description: 'Search by job name or filter using job tags',
+        icon: mdiClock,
+    },
+    {
+        // TODO remove this route - using it now to look at old jobs page.
+        title: 'Old Jobs',
+        path: 'jobs-old',
+        description: 'old jobs page using @semoss/components library',
+        icon: mdiClock,
     },
 ];
