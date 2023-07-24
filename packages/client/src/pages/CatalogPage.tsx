@@ -1,7 +1,10 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useReducer } from 'react';
 import { observer } from 'mobx-react-lite';
 import {
+    Avatar,
+    Chip,
     Collapse,
+    Divider,
     styled,
     Stack,
     Typography,
@@ -58,10 +61,30 @@ const StyledFilterList = styled(List)(({ theme }) => ({
     borderRadius: theme.shape.borderRadius,
 }));
 
+const StyledChipList = styled('div')(({ theme }) => ({
+    display: 'flex',
+    flexDirection: 'row',
+    marginLeft: theme.spacing(2),
+    gap: theme.spacing(2),
+}));
+
+const StyledFilter = styled('div')(({ theme }) => ({
+    // borderBottom: `2px solid ${theme.palette.divider}`,
+    // '&:last-child': {
+    //     borderBottom: 'none', // Remove the border-bottom for the last child
+    //     boxShadow: 'none', // Remove the box-shadow for the last child
+    // },
+}));
+
 const StyledNestedFilterList = styled(List)(({ theme }) => ({
     width: '100%',
     marginRight: theme.spacing(2),
-    // marginLeft: theme.spacing(2),
+}));
+
+const StyledAvatarCount = styled(Avatar)(({ theme }) => ({
+    width: '32px',
+    height: '32px',
+    color: theme.palette.grey['100'],
 }));
 
 const StyledContent = styled('div')(({ theme }) => ({
@@ -70,6 +93,24 @@ const StyledContent = styled('div')(({ theme }) => ({
     height: '100%',
     flex: '1',
 }));
+
+const initialState = {
+    favoritedDbs: [],
+    databases: [],
+};
+
+const reducer = (state, action) => {
+    switch (action.type) {
+        case 'field': {
+            return {
+                ...state,
+                [action.field]: action.value,
+            };
+        }
+    }
+    return state;
+};
+
 /**
  * Catalog landing Page
  * Landing page to view the available datasets and search through it
@@ -116,14 +157,15 @@ export const CatalogPage = observer((): JSX.Element => {
         return k.metakey;
     });
 
+    const [state, dispatch] = useReducer(reducer, initialState);
+    const { favoritedDbs, databases } = state;
+
     // save the search string
     const [search, setSearch] = useState<string>('');
 
     // which view we are on
     const [mode, setMode] = useState<string>('My Databases');
     const [view, setView] = useState<'list' | 'tile'>('tile');
-
-    const [favorited, setFavorited] = useState([]);
 
     const dbPixelPrefix: string =
         mode === 'My Databases' ? `MyEngines` : 'MyDiscoverableEngines';
@@ -185,7 +227,7 @@ export const CatalogPage = observer((): JSX.Element => {
         }
     }
 
-    let metaKeysDescription = [...metaKeys, 'description'];
+    const metaKeysDescription = [...metaKeys, 'description'];
     // console.log('new', metaKeysDescription)    // metaKeysDescription.push('description');
 
     const getFavoritedDatabases = usePixel(`
@@ -266,6 +308,7 @@ export const CatalogPage = observer((): JSX.Element => {
 
     /**
      * @name setSelectedFilters
+     * @desc sets filter value for each filter (tag, domain, etc.)
      */
     const setSelectedFilters = (
         filterLabel: string,
@@ -286,6 +329,43 @@ export const CatalogPage = observer((): JSX.Element => {
     };
 
     /**
+     * @name setGlobal
+     * @param db
+     */
+    const setGlobal = (db) => {
+        monolithStore
+            .setDatabaseGlobal(
+                configStore.store.user.admin,
+                db.database_id,
+                !db.database_global,
+            )
+            .then((response) => {
+                if (response.data.success) {
+                    const newDatabases = [];
+                    databases.forEach((database) => {
+                        if (database.database_id === db.database_id) {
+                            const newCopy = database;
+                            newCopy.database_global = !db.database_global;
+
+                            newDatabases.push(newCopy);
+                        } else {
+                            newDatabases.push(database);
+                        }
+                    });
+
+                    dispatch({
+                        type: 'field',
+                        field: 'database',
+                        value: newDatabases,
+                    });
+                }
+            })
+            .catch((error) => {
+                console.error(error);
+            });
+    };
+
+    /**
      * @name favoriteDb
      * @param db
      */
@@ -295,16 +375,24 @@ export const CatalogPage = observer((): JSX.Element => {
             .setDatabaseFavorite(db.database_id, favorite)
             .then((response) => {
                 if (!favorite) {
-                    const newFavorites = favorited;
+                    const newFavorites = favoritedDbs;
                     for (let i = newFavorites.length - 1; i >= 0; i--) {
                         if (newFavorites[i].database_id === db.database_id) {
                             newFavorites.splice(i, 1);
                         }
                     }
 
-                    setFavorited(newFavorites);
+                    dispatch({
+                        type: 'field',
+                        field: 'favoritedDbs',
+                        value: newFavorites,
+                    });
                 } else {
-                    setFavorited([...favorited, db]);
+                    dispatch({
+                        type: 'field',
+                        field: 'favoritedDbs',
+                        value: [...favoritedDbs, db],
+                    });
                 }
             })
             .catch((err) => {
@@ -316,14 +404,45 @@ export const CatalogPage = observer((): JSX.Element => {
     /**
      * @name isFavorited
      * @param id
+     * @desc determines if card is favorited
      */
     const isFavorited = (id) => {
-        const favorites = favorited;
+        const favorites = favoritedDbs;
 
         if (!favorites) return false;
         return favorites.some((el) => el.database_id === id);
     };
 
+    /**
+     * @desc catalog filters
+     */
+    useEffect(() => {
+        if (getDatabases.status !== 'SUCCESS') {
+            return;
+        }
+
+        const mutateListWithVotes = [];
+
+        getDatabases.data.forEach((db, i) => {
+            mutateListWithVotes.push({
+                ...db,
+                upvotes: db.upvotes ? db.upvotes : 0,
+                hasVoted: false,
+                views: 'N/A',
+                trending: 'N/A',
+            });
+        });
+
+        dispatch({
+            type: 'field',
+            field: 'databases',
+            value: mutateListWithVotes,
+        });
+    }, [getDatabases.status, getDatabases.data]);
+
+    /**
+     * @desc catalog filters
+     */
     useEffect(() => {
         if (getCatalogFilters.status !== 'SUCCESS') {
             return;
@@ -344,18 +463,18 @@ export const CatalogPage = observer((): JSX.Element => {
         }, {});
 
         // mimic other filters for testing
-        // updated['domain'] = [
-        //     {
-        //         color: 'purple',
-        //         count: 1,
-        //         value: 'One',
-        //     },
-        //     {
-        //         color: 'purple',
-        //         count: 1,
-        //         value: 'Two',
-        //     },
-        // ];
+        updated['domain'] = [
+            {
+                color: 'purple',
+                count: 1,
+                value: 'One',
+            },
+            {
+                color: 'purple',
+                count: 1,
+                value: 'Two',
+            },
+        ];
 
         setFilterOptions(updated);
     }, [getCatalogFilters.status, getCatalogFilters.data]);
@@ -364,7 +483,12 @@ export const CatalogPage = observer((): JSX.Element => {
         if (getFavoritedDatabases.status !== 'SUCCESS') {
             return;
         }
-        setFavorited(getFavoritedDatabases.data);
+
+        dispatch({
+            type: 'field',
+            field: 'favoritedDbs',
+            value: getFavoritedDatabases.data,
+        });
     }, [getFavoritedDatabases.status, getFavoritedDatabases.data]);
 
     // finish loading the page
@@ -397,14 +521,20 @@ export const CatalogPage = observer((): JSX.Element => {
                     <Stack direction="row" alignItems={'center'} spacing={3}>
                         <Button variant={'contained'}>Add Database</Button>
 
-                        <ToggleButtonGroup size={'small'} value={view}>
+                        <ToggleButtonGroup
+                            size={'small'}
+                            value={view}
+                            color="primary"
+                        >
                             <ToggleButton
+                                color="primary"
                                 onClick={(e, v) => setView('tile')}
                                 value={'tile'}
                             >
                                 <SpaceDashboardOutlined />
                             </ToggleButton>
                             <ToggleButton
+                                color="primary"
                                 onClick={(e, v) => setView('list')}
                                 value={'list'}
                             >
@@ -454,50 +584,46 @@ export const CatalogPage = observer((): JSX.Element => {
                                 <List.Icon>
                                     <MenuBookOutlined />
                                 </List.Icon>
-                                <List.ItemText primary={'Model Catalogs'} />
+                                <List.ItemText primary={'Model Catalog'} />
                             </List.ItemButton>
                         </List.Item>
                     </StyledFilterList>
 
-                    {catalogType === 'database' && (
-                        <StyledFilterList dense={true}>
-                            <List.Item>
-                                <List.ItemButton
-                                    selected={mode === 'My Databases'}
-                                    onClick={() => setMode('My Databases')}
-                                >
-                                    <List.Icon>
-                                        <People />
-                                    </List.Icon>
-                                    <List.ItemText primary={'My Databases'} />
-                                </List.ItemButton>
-                            </List.Item>
-                            <List.Item>
-                                <List.ItemButton
-                                    selected={mode === 'Discoverable Databases'}
-                                    onClick={() => {
-                                        setMode('Discoverable Databases');
-                                    }}
-                                >
-                                    <List.Icon>
-                                        <People />
-                                    </List.Icon>
-                                    <List.ItemText
-                                        primary={'Discoverable Databases'}
-                                    />
-                                </List.ItemButton>
-                            </List.Item>
-                        </StyledFilterList>
-                    )}
                     <StyledFilterList dense={true}>
                         <List.Item>
                             <List.ItemText primary={'Filter By'} />
                         </List.Item>
 
-                        {Object.entries(filterOptions).map((entries) => {
+                        {catalogType === 'database' && (
+                            <StyledChipList>
+                                <Chip
+                                    label={'My Databases'}
+                                    color={
+                                        mode === 'My Databases'
+                                            ? 'primary'
+                                            : 'default'
+                                    }
+                                    onClick={() => setMode('My Databases')}
+                                ></Chip>
+                                <Chip
+                                    label={'Discoverable Databases'}
+                                    color={
+                                        mode === 'Discoverable Databases'
+                                            ? 'primary'
+                                            : 'default'
+                                    }
+                                    onClick={() => {
+                                        setMode('Discoverable Databases');
+                                    }}
+                                ></Chip>
+                            </StyledChipList>
+                        )}
+
+                        {/* <StyledFilterContainer> */}
+                        {Object.entries(filterOptions).map((entries, i) => {
                             const list = entries[1];
                             return (
-                                <>
+                                <StyledFilter key={i}>
                                     <List.Item
                                         secondaryAction={
                                             <List.ItemButton
@@ -543,7 +669,19 @@ export const CatalogPage = observer((): JSX.Element => {
                                                     <List.Item
                                                         key={i}
                                                         secondaryAction={
-                                                            filterOption.count
+                                                            <StyledAvatarCount
+                                                                variant={
+                                                                    'rounded'
+                                                                }
+                                                                sx={{
+                                                                    height: '32px',
+                                                                    width: '32px',
+                                                                }}
+                                                            >
+                                                                {
+                                                                    filterOption.count
+                                                                }
+                                                            </StyledAvatarCount>
                                                         }
                                                     >
                                                         <List.ItemButton
@@ -572,16 +710,18 @@ export const CatalogPage = observer((): JSX.Element => {
                                             })}
                                         </StyledNestedFilterList>
                                     </Collapse>
-                                </>
+                                    <Divider />
+                                </StyledFilter>
                             );
                         })}
+                        {/* </StyledFilterContainer> */}
                     </StyledFilterList>
                 </StyledFitler>
 
                 <StyledContent>
-                    {getDatabases.status === 'SUCCESS' ? (
+                    {databases.length ? (
                         <Grid container spacing={3}>
-                            {getDatabases.data.map((db) => {
+                            {databases.map((db) => {
                                 return (
                                     <Grid
                                         key={db.database_id}
@@ -615,6 +755,9 @@ export const CatalogPage = observer((): JSX.Element => {
                                                         `/database/${db.app_id}`,
                                                     );
                                                 }}
+                                                global={() => {
+                                                    setGlobal(db);
+                                                }}
                                             />
                                         ) : (
                                             <DatabaseTileCard
@@ -640,6 +783,9 @@ export const CatalogPage = observer((): JSX.Element => {
                                                         `/database/${db.app_id}`,
                                                     );
                                                 }}
+                                                global={() => {
+                                                    setGlobal(db);
+                                                }}
                                             />
                                         )}
                                     </Grid>
@@ -649,168 +795,6 @@ export const CatalogPage = observer((): JSX.Element => {
                     ) : null}
                 </StyledContent>
             </StyledContainer>
-            {/* <StyledCatalog>
-                <StyledMenu>
-                    {getCatalogFilters.status === 'SUCCESS' ? (
-                        <StyledControl>
-                            <StyledControlHeader>
-                                <StyledControlTitle>Search</StyledControlTitle>
-                            </StyledControlHeader>
-                            <StyledSearch
-                                size="lg"
-                                value={search}
-                                onChange={(s: string) => {
-                                    setSearch(s);
-                                }}
-                            />
-                            <StyledControlHeader>
-                                <StyledControlTitle>Filter</StyledControlTitle>
-                            </StyledControlHeader>
-                            <StyledFilterOld>
-                                {databaseMetaKeys.map((key) => {
-                                    const { metakey, display_options } = key;
-
-                                    // don't show if there are no options
-                                    if (
-                                        !filterOptions[metakey] ||
-                                        filterOptions[metakey].length === 0
-                                    ) {
-                                        return null;
-                                    }
-
-                                    const multiple =
-                                        display_options === 'multi-checklist' ||
-                                        display_options === 'multi-select' ||
-                                        display_options === 'multi-typeahead';
-
-                                    return (
-                                        <StyledFilterItem
-                                            key={metakey}
-                                            open={filterVisibility[metakey]}
-                                            onClick={() => {
-                                                const updated = {
-                                                    ...filterVisibility,
-                                                };
-
-                                                updated[metakey] =
-                                                    !updated[metakey];
-
-                                                setFilterVisibility(updated);
-                                            }}
-                                        >
-                                            <StyledFilterTitle>
-                                                <span>
-                                                    <b>
-                                                        Filter by{' '}
-                                                        {metakey
-                                                            .slice(0, 1)
-                                                            .toUpperCase() +
-                                                            metakey.slice(1)}
-                                                    </b>
-                                                </span>
-                                                <StyledFilterIcon
-                                                    color="primary"
-                                                    path={
-                                                        'M9,20.42L2.79,14.21L5.62,11.38L9,14.77L18.88,4.88L21.71,7.71L9,20.42Z'
-                                                    }
-                                                ></StyledFilterIcon>
-                                            </StyledFilterTitle>
-                                            {filterVisibility[metakey] && (
-                                                <StyledFilterOpen
-                                                    onClick={(event) =>
-                                                        event.stopPropagation()
-                                                    }
-                                                >
-                                                    <Checklist
-                                                        defaultValue={
-                                                            multiple ? [] : null
-                                                        }
-                                                        multiple={multiple}
-                                                        options={
-                                                            filterOptions[
-                                                                metakey
-                                                            ] || []
-                                                        }
-                                                        getDisplay={(
-                                                            option,
-                                                        ) => {
-                                                            return `${option.value} (${option.count})`;
-                                                        }}
-                                                        getKey={(option) => {
-                                                            return option.value;
-                                                        }}
-                                                        onChange={(option) => {
-                                                            const updated = {
-                                                                ...filterValues,
-                                                            };
-
-                                                            if (option) {
-                                                                updated[
-                                                                    metakey
-                                                                ] = multiple
-                                                                    ? option.map(
-                                                                          (o) =>
-                                                                              o.value,
-                                                                      )
-                                                                    : option.value;
-                                                            } else {
-                                                                updated[
-                                                                    metakey
-                                                                ] = null;
-                                                            }
-
-                                                            setFilterValues(
-                                                                updated,
-                                                            );
-                                                        }}
-                                                    />
-                                                </StyledFilterOpen>
-                                            )}
-                                        </StyledFilterItem>
-                                    );
-                                })}
-                            </StyledFilterOld>
-                        </StyledControl>
-                    ) : null}
-                </StyledMenu>
-                {getDatabases.status === 'SUCCESS' ? (
-                    <StyledGrid gutterX={theme.space['8']}>
-                        {getDatabases.data.map((database) => {
-                            const database_name = String(
-                                database.database_name,
-                            ).replace(/_/g, ' ');
-
-                            return (
-                                <Grid.Item
-                                    key={database.database_id}
-                                    responsive={{
-                                        sm: 12,
-                                        md: 6,
-                                        lg: 4,
-                                        xl: 3,
-                                    }}
-                                >
-                                    <StyledLink
-                                        to={`/database/${database.database_id}`}
-                                    >
-                                        <DatabaseCard
-                                            name={database_name}
-                                            description={database.description}
-                                            image={`${process.env.MODULE}/api/app-${database.database_id}/appImage/download`}
-                                            tag={database.tag}
-                                            global={
-                                                view === 'My Databases'
-                                                    ? true
-                                                    : false
-                                            }
-                                        ></DatabaseCard>
-                                    </StyledLink>
-                                </Grid.Item>
-                            );
-                        })}
-                    </StyledGrid>
-                ) : null}
-            </StyledCatalog> */}
         </Page>
     );
 });
