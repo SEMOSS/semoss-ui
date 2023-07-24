@@ -79,7 +79,7 @@ export interface ChipProps {
 }
 
 export const Chip = (props: ChipProps) => {
-    const { variantColor, variant = "filled" } = props;
+    const { variantColor = "default", variant = "filled" } = props;
 
     const styledChips = {
         default: {
