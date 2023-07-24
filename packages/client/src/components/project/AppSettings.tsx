@@ -1,11 +1,22 @@
 import React, { useEffect } from 'react';
-import { Avatar, Button, Table, Typography, styled } from '@semoss/ui';
-import { Person } from '@mui/icons-material';
+import {
+    Alert,
+    Avatar,
+    Button,
+    Table,
+    Typography,
+    Switch,
+    styled,
+} from '@semoss/ui';
+import { Person, ToggleOffRounded } from '@mui/icons-material';
 import { usePixel } from '@/hooks';
 import { LoadingScreen } from '@/components/ui';
 
 const StyledAppSettings = styled('div')({
+    display: 'flex',
+    flexDirection: 'column',
     width: '100%',
+    gap: '1rem',
 });
 
 const StyledCardContainer = styled('div')({
@@ -82,16 +93,59 @@ const StyledCardRight = styled('div')({
     width: '50%',
 });
 
-const StyledTableRow = styled(Table.Row)({
-    borderLeft: 'solid red',
-    borderRight: 'solid red',
+const StyledCardRightContent = styled('div')({
+    display: 'flex',
+    gap: '4px',
+    alignSelf: 'stretch',
+    flexDirection: 'column',
+    alignItems: 'flex-start',
+});
+
+const StyledCardRightTop = styled('div')({
+    display: 'flex',
+    padding: '16px',
+    width: '100%',
+    gap: '16px',
+    flex: '1 0 0',
+    alignItems: 'flex-start',
+});
+
+const StyledEnablePublishLeft = styled('div')({});
+
+const StyledEnablePublishMiddle = styled('div')({});
+
+const StyledEnablePublishRight = styled('div')({});
+
+const StyledCardRightBottom = styled('div')({
+    display: 'flex',
+    height: '149px',
+    width: '100%',
+    padding: '6px 0px',
+    gap: '18px',
+    alignSelf: 'stretch',
+    flexDirection: 'column',
+    alignItems: 'flex-start',
+});
+
+const StyledTableRow = styled(Table.Row)((theme) => ({
+    borderLeft: `solid #e0e0e0`,
+    borderRight: `solid #e0e0e0`,
 
     '&:first-child': {
-        borderTop: 'solid yellow',
+        borderTop: `solid #e0e0e0`,
+        borderRadius: 8,
     },
     '&:last-child': {
-        borderBottom: 'solid yellow',
+        borderBottom: `solid #e0e0e0`,
+        borderRadius: 8,
     },
+}));
+
+const StyledIcon = styled(Person)({
+    display: 'flex',
+    alignItems: 'flex-start',
+    // Needs to reference theme grey
+    color: 'rgba(0, 0, 0, 0.54)',
 });
 
 export const AppSettings = (props) => {
@@ -118,7 +172,36 @@ export const AppSettings = (props) => {
 
     return (
         <StyledAppSettings>
-            <div></div>
+            <StyledCardContainer>
+                <StyledCardDiv>
+                    <StyledCardLeft>
+                        <StyledListItemHeader>
+                            <Typography variant="h6">Portal</Typography>
+                        </StyledListItemHeader>
+                    </StyledCardLeft>
+                    <StyledCardRight>
+                        <StyledCardRightContent>
+                            <StyledCardRightTop>
+                                <StyledEnablePublishLeft>
+                                    <ToggleOffRounded />
+                                </StyledEnablePublishLeft>
+                                <StyledEnablePublishMiddle>
+                                    <Typography variant={'body2'}>
+                                        Enable Publishing
+                                    </Typography>
+                                    <Typography variant={'caption'}>
+                                        Enable the publishing of the portal
+                                    </Typography>
+                                </StyledEnablePublishMiddle>
+                                <StyledEnablePublishRight>
+                                    <Switch color="primary" />
+                                </StyledEnablePublishRight>
+                            </StyledCardRightTop>
+                            <StyledCardRightBottom></StyledCardRightBottom>
+                        </StyledCardRightContent>
+                    </StyledCardRight>
+                </StyledCardDiv>
+            </StyledCardContainer>
             <StyledCardContainer>
                 <StyledCardDiv>
                     <StyledCardLeft>
@@ -155,7 +238,7 @@ export const AppSettings = (props) => {
                                         <StyledTableRow key={reactor + i}>
                                             <Table.Cell>{reactor}</Table.Cell>
                                             <Table.Cell align="right">
-                                                <Person />
+                                                <StyledIcon />
                                             </Table.Cell>
                                         </StyledTableRow>
                                     );

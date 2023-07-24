@@ -298,11 +298,11 @@ export const Permissions = (props: PermissionsProps) => {
 
     // Props we use for api fns to hit | "project, database, insight"
     const type: 'database' | 'project' | 'insight' | '' =
-        resolvedPathname.includes('database-settings')
+        resolvedPathname.includes('database')
             ? 'database'
-            : resolvedPathname.includes('project-permissions')
+            : resolvedPathname.includes('project')
             ? 'project'
-            : resolvedPathname.includes('insight-permissions')
+            : resolvedPathname.includes('insight')
             ? 'insight'
             : resolvedPathname.includes(`database/${id}`)
             ? 'database'
@@ -548,7 +548,6 @@ export const Permissions = (props: PermissionsProps) => {
         setView(newValue);
     };
 
-    console.log(type);
     return (
         <StyledContent>
             <ToggleTabsGroup
@@ -870,7 +869,9 @@ const PendingMembersTable = (props) => {
                     <StyledTableContainer>
                         <StyledTableTitleContainer>
                             <StyledTableTitleDiv>
-                                <Typography variant={'h6'}>{name}</Typography>
+                                <Typography variant={'h6'}>
+                                    Pending Requests
+                                </Typography>
                             </StyledTableTitleDiv>
 
                             <StyledTableTitleMemberContainer>
@@ -1419,8 +1420,6 @@ const MembersTable = (props) => {
 
     const rowsToLoop = new Array(5).fill('');
 
-    console.log(rowsToLoop);
-
     /** END OF HELPERS */
 
     /** LOADING */
@@ -1435,7 +1434,7 @@ const MembersTable = (props) => {
                     <StyledTableContainer>
                         <StyledTableTitleContainer>
                             <StyledTableTitleDiv>
-                                <Typography variant={'h6'}>{name}</Typography>
+                                <Typography variant={'h6'}>Members</Typography>
                             </StyledTableTitleDiv>
 
                             <StyledTableTitleMemberContainer>

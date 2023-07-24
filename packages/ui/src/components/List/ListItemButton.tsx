@@ -61,6 +61,5 @@ export interface ListItemButtonProps {
 }
 
 export const ListItemButton = (props: ListItemButtonProps) => {
-    const { sx = { opacity: "54%" } } = props;
-    return <MuiListItemButton sx={sx} {...props} />;
+    return <MuiListItemButton {...props} />;
 };
