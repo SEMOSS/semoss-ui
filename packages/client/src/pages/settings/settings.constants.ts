@@ -152,6 +152,7 @@ export const SETTINGS_ROUTES: {
         path: 'jobs',
         description: 'Search by job name or filter using job tags',
         icon: mdiClock,
+        history: ['settings/'],
     },
     {
         // TODO remove this route - using it now to look at old jobs page.
@@ -159,5 +160,6 @@ export const SETTINGS_ROUTES: {
         path: 'jobs-old',
         description: 'old jobs page using @semoss/components library',
         icon: mdiClock,
+        history: ['settings/'],
     },
 ];
