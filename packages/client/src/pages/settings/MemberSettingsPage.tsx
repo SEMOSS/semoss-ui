@@ -4,17 +4,26 @@ import { useSettings } from '@/hooks/useSettings';
 import {
     styled,
     theme,
-    Modal,
-    Button,
+    Modal as oldModal,
     Form,
     Icon,
     Popover,
     Select,
     useNotification,
-    Switch,
+    // Switch,
     Grid,
     IconButton,
 } from '@semoss/components';
+import { Delete } from '@mui/icons-material';
+import {
+    List,
+    Modal,
+    Button,
+    TextField,
+    PhoneNumberPicker,
+    Checkbox,
+    Switch,
+} from '@semoss/ui';
 import { Card } from '@/components/ui';
 import { LoadingScreen } from '@/components/ui';
 import { useForm, useFormState } from 'react-hook-form';
@@ -189,6 +198,7 @@ export const MemberSettingsPage = () => {
     const notification = useNotification();
     const [members, setMembers] = useState([]);
     const [addMemberModal, setAddMemberModal] = useState(false);
+    const [memberInfoModal, setMemberInfoModal] = useState(false);
     const [activeMember, setActiveMember] = useState<Member>(null);
     const [pendingMember, setPendingMember] = useState<PendingMember>(null);
 
@@ -335,19 +345,119 @@ export const MemberSettingsPage = () => {
             setMembers([]);
         };
     }, [getMembers.status, getMembers.data]);
-
     // show a loading screen when getProjects is pending
     if (getMembers.status !== 'SUCCESS') {
         return (
             <LoadingScreen.Trigger description="Retrieving member information" />
         );
     }
+
+    const buildMemberModal = () => {
+        console.log(memberInfoModal);
+        console.log(activeMember);
+        return (
+            <>
+                {activeMember && (
+                    <>
+                        <Modal.Title>{activeMember.username}</Modal.Title>
+                        <Modal.Content>
+                            <TextField
+                                value={activeMember.id}
+                                label="User Id"
+                                onChange={(e) => {
+                                    activeMember['newId'] = e.target.value;
+                                }}
+                                placeholder="User ID"
+                            />
+                            <TextField
+                                label="Username"
+                                value={activeMember.username}
+                                placeholder="Username"
+                            />
+                            <TextField
+                                label="Name"
+                                value={activeMember.name}
+                                helperText="Name is Required"
+                                required
+                            />
+                            <TextField
+                                label="Password"
+                                type="password"
+                                value={activeMember.password}
+                                placeholder="********"
+                            />
+                            <TextField
+                                label="Email"
+                                helperText="Email is required"
+                                value={activeMember.email}
+                            />
+                            <PhoneNumberPicker
+                                defaultCountry={'us'}
+                                onChange={() => console.log('hi')}
+                                value={activeMember.phone || '+1 '}
+                            />
+                            {console.log(activeMember.publisher)}
+                            <Checkbox
+                                label="Publisher?"
+                                labelPlacement="start"
+                                checked={activeMember?.publisher}
+                            />
+                            <Checkbox
+                                label="Exporter"
+                                labelPlacement="start"
+                                checked={activeMember?.exporter}
+                            />
+                            Make Admin?{' '}
+                            <Switch edge="start" checked={activeMember.admin} />
+                        </Modal.Content>
+                        <Modal.Actions>
+                            <Button onClick={() => setMemberInfoModal(false)}>
+                                Close
+                            </Button>
+                        </Modal.Actions>
+                    </>
+                )}
+            </>
+        );
+    };
+    const buildListItems = () => {
+        return members.map((mem) => {
+            return (
+                <List.Item
+                    divider
+                    secondaryAction={
+                        <List.ItemButton
+                            onClick={() => {
+                                deleteActiveMember(mem);
+                            }}
+                        >
+                            <Delete />
+                        </List.ItemButton>
+                    }
+                >
+                    <List.ItemButton
+                        onClick={() => {
+                            setActiveMember(mem);
+                            // reset(mem)
+                            setMemberInfoModal(true);
+                            buildMemberModal();
+                        }}
+                    >
+                        <List.ItemText
+                            primary={mem.username}
+                            secondary={mem.name}
+                        />
+                    </List.ItemButton>
+                </List.Item>
+            );
+        });
+    };
     return (
         <div>
             <StyledContainer>
                 <StyledEnd>
                     <Button
-                        variant="outline"
+                        variant="outlined"
                         prepend={<StyledButtonIcon path={mdiPlusThick} />}
                         style={{ textAlign: 'right', marginRight: 0 }}
                         onClick={() => {
@@ -379,6 +489,7 @@ export const MemberSettingsPage = () => {
                         }}
                         placeholder="Select an option to view member specific settings"
                     ></Select>
+                    {members && <List>{buildListItems()}</List>}
                     {activeMember ? (
                         <div>
                             <StyledSelectedApp>
@@ -752,8 +863,10 @@ export const MemberSettingsPage = () => {
                 </div>
             </StyledContainer>
 
+            {/* MemberInfoModal */}
+            <Modal open={memberInfoModal}>{buildMemberModal()}</Modal>
             {/* Add New User Modal */}
-            <Modal
+            {/* <oldModal
                 open={addMemberModal}
                 onOpen={(open) => {
                     setAddMemberModal(open);
@@ -762,11 +875,11 @@ export const MemberSettingsPage = () => {
                     setAddMemberModal(false);
                 }}
             >
-                <Modal.Content size={'lg'}>
-                    <Modal.Header description="Enter the data of the members you would like to add:">
+                <oldModal.Content size={'lg'}>
+                    <oldModal.Header description="Enter the data of the members you would like to add:">
                         Add Member
-                    </Modal.Header>
-                    <Modal.Body>
+                    </oldModal.Header>
+                    <oldModal.Body>
                         <Form>
                             <div>
                                 <Field
@@ -969,9 +1082,9 @@ export const MemberSettingsPage = () => {
                                 </StyledSelectedApp>
                             </div>
                         </Form>
-                    </Modal.Body>
-                </Modal.Content>
-            </Modal>
+                    </oldModal.Body>
+                </oldModal.Content>
+            </oldModal> */}
         </div>
     );
 };
