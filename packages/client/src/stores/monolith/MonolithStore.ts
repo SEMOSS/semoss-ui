@@ -1467,6 +1467,7 @@ export class MonolithStore {
 
         return response.data;
     }
+
     async getApps(databaseId: string) {
         const url = `${BACKEND}/api/auth/admin/app/getApps?databaseId=${databaseId}`;
         const response = await axios.get(url).catch((error) => {

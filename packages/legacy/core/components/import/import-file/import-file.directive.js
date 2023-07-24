@@ -302,6 +302,8 @@ function importFileDirective(
         function setFileType() {
             var oldExtension;
 
+            debugger
+
             // set to step 1
             if (scope.importFile.step !== 'initial') {
                 setFile();
@@ -357,10 +359,12 @@ function importFileDirective(
                 scope.importFile.databaseType.options = [];
             }
 
+            debugger
             // keep track of the old one
             old = scope.importFile.databaseType.selected;
             if (scope.importCtrl.replace) {
                 // set the file
+                debugger
                 if (scope.importCtrl.replace.app_type === 'H2_DB') {
                     scope.importFile.databaseType.selected = 'H2';
                 } else {
@@ -613,6 +617,8 @@ function importFileDirective(
                                 scope.importFile.fileType === 'CSV' ||
                                 scope.importFile.fileType === 'TSV'
                             ) {
+
+                                debugger
                                 if (
                                     scope.importFile.metamodelType.selected ===
                                     'As Flat Table'
@@ -1692,6 +1698,8 @@ function importFileDirective(
          */
         function initialize() {
             scope.$watch('importFile.fileType', function (newValue, oldValue) {
+
+                debugger
                 if (!angular.equals(newValue, oldValue)) {
                     setFileType();
                     onDatabaseChange();

@@ -68,6 +68,7 @@ export const lightTheme: CustomThemeOptions = {
         },
         background: {
             default: "#FAFAFA",
+            paper: "#FFF",
         },
     },
     shape: {

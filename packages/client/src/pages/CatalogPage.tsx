@@ -13,21 +13,24 @@ import {
     List,
 } from '@semoss/ui';
 import {
-    SpaceDashboardOutlined,
+    DataObjectOutlined,
+    ExpandLess,
+    ExpandMore,
     FormatListBulletedOutlined,
     Inventory2Outlined,
-    DataObjectOutlined,
     MenuBookOutlined,
-    SendIcon,
+    People,
+    SpaceDashboardOutlined,
 } from '@mui/icons-material';
 
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 
 import defaultDBImage from '@/assets/img/placeholder.png';
 import { DatabaseLandscapeCard, DatabaseTileCard } from '@/components/database';
 import { usePixel, useRootStore } from '@/hooks';
 import { Page } from '@/components/ui';
-import { ListItemIcon } from '@semoss/ui/dist/components/List/ListItemIcon';
+
+import { Database } from '@/assets/img/Database';
 
 const StyledStack = styled(Stack)(({ theme }) => ({
     // paddingTop: theme.spacing(1)
@@ -51,9 +54,14 @@ const StyledFitler = styled('div')(({ theme }) => ({
 
 const StyledFilterList = styled(List)(({ theme }) => ({
     width: '100%',
-    // TODO: set this in theme
-    background: '#FAFAFA',
+    background: theme.palette.background.default,
     borderRadius: theme.shape.borderRadius,
+}));
+
+const StyledNestedFilterList = styled(List)(({ theme }) => ({
+    width: '100%',
+    marginRight: theme.spacing(2),
+    // marginLeft: theme.spacing(2),
 }));
 
 const StyledContent = styled('div')(({ theme }) => ({
@@ -67,8 +75,27 @@ const StyledContent = styled('div')(({ theme }) => ({
  * Landing page to view the available datasets and search through it
  */
 export const CatalogPage = observer((): JSX.Element => {
-    const { configStore } = useRootStore();
+    const { configStore, monolithStore } = useRootStore();
     const navigate = useNavigate();
+    const { search: catalogParams } = useLocation();
+
+    /** This page is shared by db, storage, model */
+    let catalogType = '';
+
+    switch (catalogParams) {
+        case '':
+            catalogType = 'database';
+            break;
+        case '?type=database':
+            catalogType = 'database';
+            break;
+        case '?type=model':
+            catalogType = 'model';
+            break;
+        case '?type=storage':
+            catalogType = 'storage';
+            break;
+    }
 
     // get a list of the keys
     const databaseMetaKeys = configStore.store.config.databaseMetaKeys.filter(
@@ -96,6 +123,8 @@ export const CatalogPage = observer((): JSX.Element => {
     const [mode, setMode] = useState<string>('My Databases');
     const [view, setView] = useState<'list' | 'tile'>('tile');
 
+    const [favorited, setFavorited] = useState([]);
+
     const dbPixelPrefix: string =
         mode === 'My Databases' ? `MyEngines` : 'MyDiscoverableEngines';
 
@@ -104,12 +133,15 @@ export const CatalogPage = observer((): JSX.Element => {
         Record<string, { value: string; count: number }[]>
     >({});
 
-    // track which filters are opened / closed
+    // track which filters are opened as well as value
     const [filterVisibility, setFilterVisibility] = useState<
-        Record<string, boolean>
+        Record<string, { open: boolean; value: string[] }>
     >(() => {
         return databaseMetaKeys.reduce((prev, current) => {
-            prev[current.metakey] = true;
+            prev[current.metakey] = {
+                open: false,
+                value: [],
+            };
 
             return prev;
         }, {});
@@ -131,7 +163,7 @@ export const CatalogPage = observer((): JSX.Element => {
         }, {});
     });
 
-    const buttons = ['My Databases', 'Community Databases'];
+    // const buttons = ['My Databases', 'Community Databases'];
     const tagColors = [
         'blue',
         'orange',
@@ -143,13 +175,24 @@ export const CatalogPage = observer((): JSX.Element => {
         'olive',
     ];
 
+    // construct filters to send to metafilters
     const metaFilters = {};
     for (const key in filterValues) {
         const filter = filterValues[key];
-        if (filter && filter.length > 0) {
-            metaFilters[key] = filter;
+        const filterVal = filterVisibility[key].value;
+        if (filter && filterVal.length > 0) {
+            metaFilters[key] = filterVal;
         }
     }
+
+    let metaKeysDescription = [...metaKeys, 'description'];
+    // console.log('new', metaKeysDescription)    // metaKeysDescription.push('description');
+
+    const getFavoritedDatabases = usePixel(`
+        ${dbPixelPrefix}(metaKeys = ${JSON.stringify(
+        metaKeysDescription,
+    )}, filterWord=["${search}"], onlyFavorites=[true]);
+    `);
 
     const getDatabases = usePixel<
         {
@@ -162,6 +205,8 @@ export const CatalogPage = observer((): JSX.Element => {
             database_id: string;
             database_name: string;
             database_type: string;
+            database_created_by: string;
+            database_date_created: string;
             description: string;
             low_database_name: string;
             permission: number;
@@ -171,7 +216,7 @@ export const CatalogPage = observer((): JSX.Element => {
         }[]
     >(
         `${dbPixelPrefix}( metaKeys = ${JSON.stringify(
-            metaKeys,
+            metaKeysDescription,
         )} , metaFilters = [ ${JSON.stringify(
             metaFilters,
         )} ] , filterWord=["${search}"], userT = [true]) ;`,
@@ -219,12 +264,70 @@ export const CatalogPage = observer((): JSX.Element => {
         return frags.join(' ');
     };
 
+    /**
+     * @name setSelectedFilters
+     */
+    const setSelectedFilters = (
+        filterLabel: string,
+        filter: { value: string; count: number },
+    ) => {
+        // first find specific filter
+        const newValue = filterVisibility[filterLabel].value;
+        const index = newValue.indexOf(filter.value);
+
+        if (index === -1) {
+            newValue.push(filter.value);
+        } else {
+            newValue.splice(index, 1);
+        }
+
+        // Now update filter object to have new selected values
+        setFilterVisibility({ ...filterVisibility });
+    };
+
+    /**
+     * @name favoriteDb
+     * @param db
+     */
+    const favoriteDb = (db) => {
+        const favorite = !isFavorited(db.database_id);
+        monolithStore
+            .setDatabaseFavorite(db.database_id, favorite)
+            .then((response) => {
+                if (!favorite) {
+                    const newFavorites = favorited;
+                    for (let i = newFavorites.length - 1; i >= 0; i--) {
+                        if (newFavorites[i].database_id === db.database_id) {
+                            newFavorites.splice(i, 1);
+                        }
+                    }
+
+                    setFavorited(newFavorites);
+                } else {
+                    setFavorited([...favorited, db]);
+                }
+            })
+            .catch((err) => {
+                // throw error if promise doesn't fulfill
+                throw Error(err);
+            });
+    };
+
+    /**
+     * @name isFavorited
+     * @param id
+     */
+    const isFavorited = (id) => {
+        const favorites = favorited;
+
+        if (!favorites) return false;
+        return favorites.some((el) => el.database_id === id);
+    };
+
     useEffect(() => {
         if (getCatalogFilters.status !== 'SUCCESS') {
             return;
         }
-
-        debugger;
 
         // format the catalog data into a map
         const updated = getCatalogFilters.data.reduce((prev, current) => {
@@ -237,12 +340,32 @@ export const CatalogPage = observer((): JSX.Element => {
                 count: current.count,
                 color: setFieldOptionColor(current.METAVALUE),
             });
-            // setFieldOptionColor(output[i].METAVALUE, output[i].METAKEY)
             return prev;
         }, {});
 
+        // mimic other filters for testing
+        // updated['domain'] = [
+        //     {
+        //         color: 'purple',
+        //         count: 1,
+        //         value: 'One',
+        //     },
+        //     {
+        //         color: 'purple',
+        //         count: 1,
+        //         value: 'Two',
+        //     },
+        // ];
+
         setFilterOptions(updated);
     }, [getCatalogFilters.status, getCatalogFilters.data]);
+
+    useEffect(() => {
+        if (getFavoritedDatabases.status !== 'SUCCESS') {
+            return;
+        }
+        setFavorited(getFavoritedDatabases.data);
+    }, [getFavoritedDatabases.status, getFavoritedDatabases.data]);
 
     // finish loading the page
     if (
@@ -252,15 +375,6 @@ export const CatalogPage = observer((): JSX.Element => {
         return <>ERROR</>;
     }
 
-    // if (
-    //     getDatabases.status === 'SUCCESS'
-    // ) {
-    //     debugger
-    // }
-
-    // console.log('filt options', filterOptions)
-
-    console.log('fil visibility', filterVisibility);
     return (
         <Page
             header={
@@ -305,7 +419,12 @@ export const CatalogPage = observer((): JSX.Element => {
                 <StyledFitler>
                     <StyledFilterList dense={true}>
                         <List.Item>
-                            <List.ItemButton selected={true}>
+                            <List.ItemButton
+                                selected={catalogType === 'database'}
+                                onClick={() => {
+                                    navigate(`/catalog?type=database`);
+                                }}
+                            >
                                 <List.Icon>
                                     <DataObjectOutlined />
                                 </List.Icon>
@@ -313,7 +432,12 @@ export const CatalogPage = observer((): JSX.Element => {
                             </List.ItemButton>
                         </List.Item>
                         <List.Item>
-                            <List.ItemButton>
+                            <List.ItemButton
+                                selected={catalogType === 'storage'}
+                                onClick={() => {
+                                    navigate(`/catalog?type=storage`);
+                                }}
+                            >
                                 <List.Icon>
                                     <Inventory2Outlined />
                                 </List.Icon>
@@ -321,14 +445,50 @@ export const CatalogPage = observer((): JSX.Element => {
                             </List.ItemButton>
                         </List.Item>
                         <List.Item>
-                            <List.ItemButton>
+                            <List.ItemButton
+                                selected={catalogType === 'model'}
+                                onClick={() => {
+                                    navigate(`/catalog?type=model`);
+                                }}
+                            >
                                 <List.Icon>
                                     <MenuBookOutlined />
                                 </List.Icon>
-                                <List.ItemText primary={'Model Catalog'} />
+                                <List.ItemText primary={'Model Catalogs'} />
                             </List.ItemButton>
                         </List.Item>
                     </StyledFilterList>
+
+                    {catalogType === 'database' && (
+                        <StyledFilterList dense={true}>
+                            <List.Item>
+                                <List.ItemButton
+                                    selected={mode === 'My Databases'}
+                                    onClick={() => setMode('My Databases')}
+                                >
+                                    <List.Icon>
+                                        <People />
+                                    </List.Icon>
+                                    <List.ItemText primary={'My Databases'} />
+                                </List.ItemButton>
+                            </List.Item>
+                            <List.Item>
+                                <List.ItemButton
+                                    selected={mode === 'Discoverable Databases'}
+                                    onClick={() => {
+                                        setMode('Discoverable Databases');
+                                    }}
+                                >
+                                    <List.Icon>
+                                        <People />
+                                    </List.Icon>
+                                    <List.ItemText
+                                        primary={'Discoverable Databases'}
+                                    />
+                                </List.ItemButton>
+                            </List.Item>
+                        </StyledFilterList>
+                    )}
                     <StyledFilterList dense={true}>
                         <List.Item>
                             <List.ItemText primary={'Filter By'} />
@@ -336,44 +496,85 @@ export const CatalogPage = observer((): JSX.Element => {
 
                         {Object.entries(filterOptions).map((entries) => {
                             const list = entries[1];
-                            console.log(list);
                             return (
                                 <>
-                                    <List.ItemButton>
+                                    <List.Item
+                                        secondaryAction={
+                                            <List.ItemButton
+                                                onClick={() => {
+                                                    const visibleFilters = {
+                                                        ...filterVisibility,
+                                                    };
+                                                    visibleFilters[entries[0]] =
+                                                        {
+                                                            open: !visibleFilters[
+                                                                entries[0]
+                                                            ].open,
+                                                            value: [],
+                                                        };
+
+                                                    setFilterVisibility(
+                                                        visibleFilters,
+                                                    );
+                                                }}
+                                            >
+                                                {filterVisibility[entries[0]]
+                                                    .open ? (
+                                                    <ExpandLess />
+                                                ) : (
+                                                    <ExpandMore />
+                                                )}
+                                            </List.ItemButton>
+                                        }
+                                    >
                                         <List.ItemText
                                             primary={formatDBName(entries[0])}
                                         />
-                                    </List.ItemButton>
-                                    <Collapse in={filterVisibility[entries[0]]}>
-                                        {list.map((filterOption) => {
-                                            return (
-                                                <div>{filterOption.value}</div>
-                                                // <List.Item>
-                                                //     <List.ItemText primary={filterOption.value}/>
-                                                // </ List.Item>
-                                            );
-                                        })}
+                                    </List.Item>
+                                    <Collapse
+                                        in={filterVisibility[entries[0]].open}
+                                    >
+                                        {/* <TextField
+                                            label={} 
+                                        /> */}
+                                        <StyledNestedFilterList dense={true}>
+                                            {list.map((filterOption, i) => {
+                                                return (
+                                                    <List.Item
+                                                        key={i}
+                                                        secondaryAction={
+                                                            filterOption.count
+                                                        }
+                                                    >
+                                                        <List.ItemButton
+                                                            selected={
+                                                                filterVisibility[
+                                                                    entries[0]
+                                                                ].value.indexOf(
+                                                                    filterOption.value,
+                                                                ) > -1
+                                                            }
+                                                            onClick={() => {
+                                                                setSelectedFilters(
+                                                                    entries[0],
+                                                                    filterOption,
+                                                                );
+                                                            }}
+                                                        >
+                                                            <List.ItemText
+                                                                primary={
+                                                                    filterOption.value
+                                                                }
+                                                            />
+                                                        </List.ItemButton>
+                                                    </List.Item>
+                                                );
+                                            })}
+                                        </StyledNestedFilterList>
                                     </Collapse>
                                 </>
                             );
                         })}
-
-                        <List.Item>
-                            <List.ItemButton>
-                                <List.Icon>
-                                    <Inventory2Outlined />
-                                </List.Icon>
-                                <List.ItemText primary={'Storage Catalog'} />
-                            </List.ItemButton>
-                        </List.Item>
-                        <List.Item>
-                            <List.ItemButton>
-                                <List.Icon>
-                                    <MenuBookOutlined />
-                                </List.Icon>
-                                <List.ItemText primary={'Model Catalog'} />
-                            </List.ItemButton>
-                        </List.Item>
                     </StyledFilterList>
                 </StyledFitler>
 
@@ -396,13 +597,19 @@ export const CatalogPage = observer((): JSX.Element => {
                                                 id={db.app_id}
                                                 image={defaultDBImage}
                                                 tag={db.tag}
-                                                owner={db.owner}
+                                                owner={db.database_created_by}
                                                 description={db.description}
                                                 votes={db.upvotes}
                                                 views={db.views}
                                                 trending={db.trending}
                                                 isGlobal={db.database_global}
                                                 isUpvoted={db.hasVoted}
+                                                isFavorite={isFavorited(
+                                                    db.database_id,
+                                                )}
+                                                favorite={() => {
+                                                    favoriteDb(db);
+                                                }}
                                                 onClick={() => {
                                                     navigate(
                                                         `/database/${db.app_id}`,
@@ -415,13 +622,19 @@ export const CatalogPage = observer((): JSX.Element => {
                                                 id={db.app_id}
                                                 image={defaultDBImage}
                                                 tag={db.tag}
-                                                owner={db.owner}
+                                                owner={db.database_created_by}
                                                 description={db.description}
                                                 votes={db.upvotes}
                                                 views={db.views}
                                                 trending={db.trending}
                                                 isGlobal={db.database_global}
                                                 isUpvoted={db.hasVoted}
+                                                isFavorite={isFavorited(
+                                                    db.database_id,
+                                                )}
+                                                favorite={() => {
+                                                    favoriteDb(db);
+                                                }}
                                                 onClick={() => {
                                                     navigate(
                                                         `/database/${db.app_id}`,
