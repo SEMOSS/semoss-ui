@@ -1,6 +1,5 @@
 import type { Meta, StoryObj } from "@storybook/react";
 import { Chip } from "../Chip/index";
-import { Stack } from "../../";
 
 const onClick = () => {
     return true;

@@ -1,6 +1,5 @@
 import { Chip as MuiChip } from "@mui/material";
 import { SxProps } from "@mui/system";
-import { styled } from "../../";
 
 export interface ChipProps {
     /**
