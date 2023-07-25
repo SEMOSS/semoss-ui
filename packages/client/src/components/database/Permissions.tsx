@@ -55,7 +55,7 @@ const colors = [
 
 const StyledContent = MuiStyled('div')(({ theme }) => ({
     display: 'flex',
-    width: theme.space['auto'],
+    width: '100%',
     flexDirection: 'column',
     alignItems: 'flex-start',
     gap: theme.space['05'],
