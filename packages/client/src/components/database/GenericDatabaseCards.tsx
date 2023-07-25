@@ -23,6 +23,9 @@ import {
     LockRounded,
 } from '@mui/icons-material';
 
+import defaultDBImage from '../../assets/img/placeholder.png';
+import { formatName } from '@/utils';
+
 const StyledLandscapeCard = styled(Card)({
     display: 'flex',
     paddingBottom: '8px',
@@ -308,7 +311,7 @@ interface DatabaseCardProps {
     description: string;
 
     /** Image of the Database */
-    image: string;
+    image?: string;
 
     /** Tag of the Database */
     tag?: string[] | string;
@@ -340,7 +343,7 @@ export const DatabaseLandscapeCard = (props: DatabaseCardProps) => {
         name,
         id,
         description,
-        image,
+        image = defaultDBImage,
         tag,
         isGlobal,
         isFavorite,
@@ -361,7 +364,9 @@ export const DatabaseLandscapeCard = (props: DatabaseCardProps) => {
                 <StyledLandscapeCardImg src={image} />
                 <StyledLandscapeCardHeaderDiv>
                     <StyledLandscapeCardTitleDiv>
-                        <Typography variant={'body1'}>{name}</Typography>
+                        <Typography variant={'body1'}>
+                            {formatName(name)}
+                        </Typography>
                         <IconButton
                             size={'small'}
                             title={
@@ -482,7 +487,7 @@ export const DatabaseTileCard = (props: DatabaseCardProps) => {
         name,
         id,
         description,
-        image,
+        image = defaultDBImage,
         tag,
         isGlobal,
         isFavorite,
@@ -507,7 +512,7 @@ export const DatabaseTileCard = (props: DatabaseCardProps) => {
                         <StyledCardContainer>
                             <StyledCardHeader>
                                 <StyledDbName variant={'body1'}>
-                                    {name}
+                                    {formatName(name)}
                                 </StyledDbName>
                                 <IconButton
                                     title={
@@ -628,6 +633,25 @@ export const DatabaseTileCard = (props: DatabaseCardProps) => {
                     {isGlobal ? <LockOpenRounded /> : <LockRounded />}
                 </StyledLockButton>
             </StyledTileCardActions>
+        </StyledTileCard>
+    );
+};
+
+export interface PlainDatabaseCardProps {
+    /** Name of the Database */
+    name: string;
+    /** Image of the Database */
+    image?: string;
+
+    onClick: () => void;
+}
+
+export const PlainDatabaseCard = (props) => {
+    const { name, image = defaultDBImage, onClick } = props;
+    return (
+        <StyledTileCard onClick={onClick}>
+            <StyledCardImage src={image} sx={{ height: '118px' }} />
+            <StyledTileCardContent>{formatName(name)}</StyledTileCardContent>
         </StyledTileCard>
     );
 };

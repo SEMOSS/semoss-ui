@@ -103,11 +103,11 @@ export const DatabaseShell = (props: DatabaseShellProps) => {
         `GetUserDatabaseVotes(database = "${id}");`,
     );
 
-    const {
-        status: usabilityStatus,
-        data: usabilityData,
-        refresh: usabilityRefresh,
-    } = usePixel<number>(`UsabilityScore(database = '${id}');`);
+    // const {
+    //     status: usabilityStatus,
+    //     data: usabilityData,
+    //     refresh: usabilityRefresh,
+    // } = usePixel<number>(`UsabilityScore(database = '${id}');`);
 
     useEffect(() => {
         if (voteStatus !== 'SUCCESS') {
@@ -166,12 +166,10 @@ export const DatabaseShell = (props: DatabaseShellProps) => {
         return <LoadingScreen.Trigger description="Getting Social Stats" />;
     }
 
-    // show a loading screen when it is pending
-    if (usabilityStatus !== 'SUCCESS') {
-        return <LoadingScreen.Trigger description="Getting Usability Score" />;
-    }
-
-    console.log(usabilityData);
+    // // show a loading screen when it is pending
+    // if (usabilityStatus !== 'SUCCESS') {
+    //     return <LoadingScreen.Trigger description="Getting Usability Score" />;
+    // }
 
     return (
         <Page
@@ -223,36 +221,36 @@ export const DatabaseShell = (props: DatabaseShellProps) => {
                     <StyledDatabaseImage
                         src={`${process.env.MODULE}/api/app-${id}/appImage/download`}
                     />
-                    {votes && (
+                    {/* {votes && (
                         <></>
-                        // <Stack direction="row" spacing={1} marginBottom={2}>
-                        //     <p>
-                        //         {votes.total}{' '}
-                        //         {votes.total === 1
-                        //             ? 'member likes'
-                        //             : 'members like'}{' '}
-                        //         this dataset
-                        //     </p>
+                        <Stack direction="row" spacing={1} marginBottom={2}>
+                            <p>
+                                {votes.total}{' '}
+                                {votes.total === 1
+                                    ? 'member likes'
+                                    : 'members like'}{' '}
+                                this dataset
+                            </p>
 
-                        //     <IconButton
-                        //         size="sm"
-                        //         color={'grey'}
-                        //         onClick={() => {
-                        //             // if true ? downvote : upvote
-                        //             voteDatabase(votes.userVote ? false : true);
-                        //         }}
-                        //     >
-                        //         <Icon
-                        //             path={
-                        //                 votes.userVote
-                        //                     ? mdiThumbUp
-                        //                     : mdiThumbUpOutline
-                        //             }
-                        //             size="md"
-                        //         ></Icon>
-                        //     </IconButton>
-                        // </Stack>
-                    )}
+                            <IconButton
+                                size="sm"
+                                color={'grey'}
+                                onClick={() => {
+                                    // if true ? downvote : upvote
+                                    voteDatabase(votes.userVote ? false : true);
+                                }}
+                            >
+                                <Icon
+                                    path={
+                                        votes.userVote
+                                            ? mdiThumbUp
+                                            : mdiThumbUpOutline
+                                    }
+                                    size="md"
+                                ></Icon>
+                            </IconButton>
+                        </Stack>
+                    )} */}
                     <Stack
                         // direction="row"
                         alignItems={'flex-end'}
