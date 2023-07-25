@@ -50,6 +50,7 @@ const Template = (args) => {
                 value={value}
                 onChange={handleChange}
                 aria-label="basic tabs example"
+                boxSx={{ borderRadius: "12px 12px 0px 0px", width: "100%" }}
             >
                 <ToggleTabsGroup.Item label="Item One" />
                 <ToggleTabsGroup.Item label="Item Two" />
