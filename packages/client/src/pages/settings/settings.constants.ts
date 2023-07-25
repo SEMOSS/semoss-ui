@@ -128,7 +128,7 @@ export const SETTINGS_ROUTES: {
     {
         title: 'Teams Permissions',
         path: 'teams-permissions',
-        description: 'Edit permission roles of teams.',
+        description: 'Manage and create teams at the group level.',
         icon: mdiDatabase,
         history: ['settings/'],
     },
