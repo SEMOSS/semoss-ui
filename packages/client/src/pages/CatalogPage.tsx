@@ -414,6 +414,51 @@ export const CatalogPage = observer((): JSX.Element => {
     };
 
     /**
+     * @name upvoteDb
+     * @param db
+     */
+    const upvoteDb = (db) => {
+        let pixelString = '';
+
+        if (!db.hasVoted) {
+            pixelString += `VoteDatabase(database="${db.database_id}", vote=1)`;
+        } else {
+            pixelString += `UnvoteDatabase(database="${db.database_id}")`;
+        }
+
+        monolithStore.runQuery(pixelString).then((response) => {
+            const type = response.pixelReturn[0].operationType;
+            const pixelResponse = response.pixelReturn[0].output;
+
+            if (type.indexOf('ERROR') === -1) {
+                const newDatabases = [];
+
+                databases.forEach((database) => {
+                    if (database.database_id === db.database_id) {
+                        const newCopy = database;
+                        newCopy.upvotes = !db.hasVoted
+                            ? newCopy.upvotes + 1
+                            : newCopy.upvotes - 1;
+                        newCopy.hasVoted = !db.hasVoted ? true : false;
+
+                        newDatabases.push(newCopy);
+                    } else {
+                        newDatabases.push(database);
+                    }
+                });
+
+                dispatch({
+                    type: 'field',
+                    field: 'database',
+                    value: newDatabases,
+                });
+            } else {
+                console.error('Error voting for DB');
+            }
+        });
+    };
+
+    /**
      * @desc catalog filters
      */
     useEffect(() => {
@@ -461,20 +506,6 @@ export const CatalogPage = observer((): JSX.Element => {
             });
             return prev;
         }, {});
-
-        // mimic other filters for testing
-        updated['domain'] = [
-            {
-                color: 'purple',
-                count: 1,
-                value: 'One',
-            },
-            {
-                color: 'purple',
-                count: 1,
-                value: 'Two',
-            },
-        ];
 
         setFilterOptions(updated);
     }, [getCatalogFilters.status, getCatalogFilters.data]);
@@ -619,7 +650,6 @@ export const CatalogPage = observer((): JSX.Element => {
                             </StyledChipList>
                         )}
 
-                        {/* <StyledFilterContainer> */}
                         {Object.entries(filterOptions).map((entries, i) => {
                             const list = entries[1];
                             return (
@@ -714,7 +744,6 @@ export const CatalogPage = observer((): JSX.Element => {
                                 </StyledFilter>
                             );
                         })}
-                        {/* </StyledFilterContainer> */}
                     </StyledFilterList>
                 </StyledFitler>
 
@@ -747,16 +776,19 @@ export const CatalogPage = observer((): JSX.Element => {
                                                 isFavorite={isFavorited(
                                                     db.database_id,
                                                 )}
-                                                favorite={() => {
-                                                    favoriteDb(db);
-                                                }}
                                                 onClick={() => {
                                                     navigate(
                                                         `/database/${db.app_id}`,
                                                     );
                                                 }}
+                                                favorite={() => {
+                                                    favoriteDb(db);
+                                                }}
                                                 global={() => {
                                                     setGlobal(db);
+                                                }}
+                                                upvote={(val) => {
+                                                    upvoteDb(db);
                                                 }}
                                             />
                                         ) : (
@@ -785,6 +817,9 @@ export const CatalogPage = observer((): JSX.Element => {
                                                 }}
                                                 global={() => {
                                                     setGlobal(db);
+                                                }}
+                                                upvote={(val) => {
+                                                    upvoteDb(db);
                                                 }}
                                             />
                                         )}

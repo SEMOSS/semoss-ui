@@ -8,7 +8,7 @@ import {
     Link,
     matchPath,
 } from 'react-router-dom';
-import { styled, Stack, ToggleButtonGroup } from '@semoss/ui';
+import { styled, Stack, ToggleTabsGroup } from '@semoss/ui';
 import { useAPI } from '@/hooks';
 
 import {
@@ -49,6 +49,10 @@ const StyledDocument = styled('div')(({ theme }) => ({
     borderColor: theme.palette.divider,
     borderRadius: theme.shape.borderRadius,
     backgroundColor: theme.palette.background.default,
+}));
+
+const StyledToggleTabsGroup = styled(ToggleTabsGroup)(({ theme }) => ({
+    width: '100%',
 }));
 
 /**
@@ -95,12 +99,32 @@ export const DatabaseLayout = () => {
     return (
         <DatabaseContext.Provider value={databaseContextType}>
             <DatabaseShell>
-                {/* <ToggleTabsGroup>
-                    <ToggleTabsGroup.Item>
-                        Hey
-                    </ToggleTabsGroup.Item>
-
-                </ToggleTabsGroup> */}
+                {/* <StyledToggleTabsGroup>
+                    <ToggleTabsGroup.Item
+                        onClick={() => {
+                            console.log('set tab');
+                        }}
+                        label="Overview"
+                    ></ToggleTabsGroup.Item>
+                    <ToggleTabsGroup.Item
+                        onClick={() => {
+                            console.log('set tab');
+                        }}
+                        label="Settings"
+                    ></ToggleTabsGroup.Item>
+                    <ToggleTabsGroup.Item
+                        onClick={() => {
+                            console.log('set tab');
+                        }}
+                        label="Metadata"
+                    ></ToggleTabsGroup.Item>
+                    <ToggleTabsGroup.Item
+                        onClick={() => {
+                            console.log('set tab');
+                        }}
+                        label="Data"
+                    ></ToggleTabsGroup.Item>
+                </StyledToggleTabsGroup> */}
                 <Stack direction={'row'} alignItems={'center'}>
                     <StyledTab to="" selected={isActive('')}>
                         Home
