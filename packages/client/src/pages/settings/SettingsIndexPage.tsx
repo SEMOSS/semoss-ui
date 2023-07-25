@@ -98,7 +98,6 @@ const IconMapper = {
     Theming: <PaintRounded />,
 };
 
-console.log('', DEFAULT_CARDS);
 export const SettingsIndexPage = () => {
     const navigate = useNavigate();
     const [cards, setCards] = useState(DEFAULT_CARDS);

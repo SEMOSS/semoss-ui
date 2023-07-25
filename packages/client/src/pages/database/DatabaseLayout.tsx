@@ -1,4 +1,4 @@
-import { useCallback } from 'react';
+import { SyntheticEvent, useCallback } from 'react';
 import {
     useParams,
     useLocation,
@@ -7,8 +7,9 @@ import {
     Navigate,
     Link,
     matchPath,
+    useNavigate,
 } from 'react-router-dom';
-import { styled, Stack, ToggleButtonGroup } from '@semoss/ui';
+import { styled, Stack, ToggleTabsGroup } from '@semoss/ui';
 import { useAPI } from '@/hooks';
 
 import {
@@ -44,11 +45,21 @@ const StyledTab = styled(Link, {
 const StyledDocument = styled('div')(({ theme }) => ({
     width: '100%',
     padding: theme.spacing(2),
-    borderWidth: '1px',
-    borderStyle: 'solid',
-    borderColor: theme.palette.divider,
-    borderRadius: theme.shape.borderRadius,
+    // borderWidth: '1px',
+    // borderStyle: 'solid',
+    // borderColor: theme.palette.divider,
+    // borderRadius: theme.shape.borderRadius,
     backgroundColor: theme.palette.background.default,
+}));
+
+const StyledToggleTabsGroup = styled(ToggleTabsGroup)(({ theme }) => ({
+    borderRadius: '12px 12px 0px 0px',
+}));
+
+const StyledDiv = styled('div')(({ theme }) => ({
+    width: '100%',
+    borderRadius: '12px 12px 0px 0px',
+    // backgroundColor: 'rgba(0, 0, 0, 0.38)',
 }));
 
 /**
@@ -58,24 +69,52 @@ export const DatabaseLayout = () => {
     const { id } = useParams();
     const resolvedPath = useResolvedPath('');
     const location = useLocation();
+    const navigate = useNavigate();
 
     // get the user's role
     const getUserAppPermission = useAPI(['getUserAppPermission', id]);
 
-    /**
-     * Check if a path is active
-     * @param path - path to check against
-     * @returns true if the path is active
-     */
-    const isActive = useCallback(
-        (path: string) => {
-            return !!matchPath(
-                `${resolvedPath.pathname}/${path}`,
-                location.pathname,
-            );
+    const tabMenu = [
+        {
+            label: 'Overview',
+            path: '',
+            show: true,
         },
-        [resolvedPath, location],
-    );
+        {
+            label: 'Metadata',
+            path: '/metadata',
+            show: true,
+        },
+        {
+            label: 'Settings',
+            path: '/settings',
+            show: false,
+        },
+        {
+            label: 'Data',
+            path: '/data',
+            show: false,
+        },
+    ];
+
+    /**
+     * Gets active tab
+     * @returns index of selectedTab
+     */
+    const activeTab = useCallback(() => {
+        let val = 0;
+        tabMenu.forEach((obj, i) => {
+            if (
+                matchPath(
+                    `${resolvedPath.pathname}${obj.path}`,
+                    location.pathname,
+                )
+            ) {
+                val = i;
+            }
+        });
+        return val;
+    }, [resolvedPath, location]);
 
     // if the database isn't found, navigate to the Home Page
     if (!id || getUserAppPermission.status === 'ERROR') {
@@ -92,16 +131,38 @@ export const DatabaseLayout = () => {
         role: getUserAppPermission.data.permission,
     };
 
+    if (
+        databaseContextType.role === 'EDITOR' ||
+        databaseContextType.role === 'OWNER'
+    ) {
+        tabMenu[2].show = true;
+        tabMenu[3].show = true;
+    }
+
     return (
         <DatabaseContext.Provider value={databaseContextType}>
             <DatabaseShell>
-                {/* <ToggleTabsGroup>
-                    <ToggleTabsGroup.Item>
-                        Hey
-                    </ToggleTabsGroup.Item>
-
-                </ToggleTabsGroup> */}
-                <Stack direction={'row'} alignItems={'center'}>
+                <StyledDiv>
+                    <StyledToggleTabsGroup
+                        value={activeTab()}
+                        onChange={(e: SyntheticEvent, val: number) => {
+                            const navigateObj = tabMenu[val];
+                            navigate(`.${navigateObj.path}`);
+                        }}
+                    >
+                        {tabMenu.map((obj, i) => {
+                            if (obj.show) {
+                                return (
+                                    <ToggleTabsGroup.Item
+                                        key={i}
+                                        label={obj.label}
+                                    ></ToggleTabsGroup.Item>
+                                );
+                            }
+                        })}
+                    </StyledToggleTabsGroup>
+                </StyledDiv>
+                {/* <Stack direction={'row'} alignItems={'center'}>
                     <StyledTab to="" selected={isActive('')}>
                         Home
                     </StyledTab>
@@ -129,7 +190,7 @@ export const DatabaseLayout = () => {
                             Query Data
                         </StyledTab>
                     )}
-                </Stack>
+                </Stack> */}
                 <StyledDocument>
                     <Outlet />
                 </StyledDocument>
