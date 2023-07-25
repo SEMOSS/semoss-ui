@@ -197,13 +197,7 @@ export const DatabaseIndexPage = observer(() => {
                         (v, idx) => {
                             return (
                                 <StyledLink key={idx} to={`/database/${idx}`}>
-                                    <DatabaseCard
-                                        name={`Database ${idx}`}
-                                        description={
-                                            'Lorem ipsum dolor sit amet consectetur adipiscing elit'
-                                        }
-                                        image={Cat}
-                                    ></DatabaseCard>
+                                    `Database ${idx}`
                                 </StyledLink>
                             );
                         },
