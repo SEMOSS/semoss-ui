@@ -53,16 +53,14 @@ const colors = [
     '#4CAF50',
 ];
 
-const StyledContent = MuiStyled('div')({
+const StyledContent = MuiStyled('div')(({ theme }) => ({
     display: 'flex',
-    width: '100%',
+    width: theme.space['auto'],
     flexDirection: 'column',
     alignItems: 'flex-start',
-    gap: '16px',
+    gap: theme.space['05'],
     flexShrink: '0',
-    // height: '992px',
-    // border: 'solid red',
-});
+}));
 
 const StyledMemberContent = MuiStyled('div')({
     display: 'flex',
