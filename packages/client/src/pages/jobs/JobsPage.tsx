@@ -38,7 +38,6 @@ import {
 import {
     Button,
     Checkbox,
-    Input,
     Modal,
     Select,
     styled,
@@ -50,6 +49,9 @@ import {
     Accordion,
     Search,
     ToggleTabsGroup,
+    Collapse,
+    Typography,
+    Chip,
 } from '@semoss/ui';
 import { SyntheticEvent, useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
@@ -118,8 +120,35 @@ import { KeyboardArrowDown, KeyboardArrowUp } from '@mui/icons-material';
 //     textAlign: 'center',
 //     float: 'left',
 // });
+interface TabPanelProps {
+    children?: React.ReactNode;
+    index: number;
+    value: number;
+}
+function TabPanel(props: TabPanelProps) {
+    const { children, value, index, ...other } = props;
+    return (
+        <div
+            role="tabpanel"
+            hidden={value !== index}
+            id={`simple-tabpanel-${index}`}
+            aria-labelledby={`simple-tab-${index}`}
+            {...other}
+        >
+            {value === index && (
+                <Box
+                    sx={{
+                        p: 3,
+                    }}
+                >
+                    <div>{children}</div>
+                </Box>
+            )}
+        </div>
+    );
+}
 
-function HistroryRow(props) {
+function HistoryRow(props) {
     const { row } = props;
     const [open, setOpen] = useState(false);
     return (
@@ -131,20 +160,27 @@ function HistroryRow(props) {
                     },
                 }}
             >
+                {' '}
                 <Table.Cell>
                     <IconButton
                         aria-label="expand row"
-                        size="small"
+                        size="sm"
                         onClick={() => setOpen(!open)}
                     >
                         {open ? <KeyboardArrowUp /> : <KeyboardArrowDown />}
                     </IconButton>
                 </Table.Cell>
-                <Table.Cell>{row.name}</Table.Cell>
-                <Table.Cell align="left">{row.age}</Table.Cell>
-                <Table.Cell align="left">{row.location}</Table.Cell>
-                <Table.Cell align="left">{row.email}</Table.Cell>
-                <Table.Cell align="left">{row.number}</Table.Cell>
+                <Table.Cell align="left">{row.name}</Table.Cell>
+                <Table.Cell align="left">{row.jobName}</Table.Cell>
+                <Table.Cell align="left">{row.execStart}</Table.Cell>
+                <Table.Cell align="left">{row.execDelta}</Table.Cell>
+                <Table.Cell align="left">
+                    <Chip
+                        label={row.success ? 'Success' : 'Failed'}
+                        avatar={null}
+                        color={row.success ? 'success' : 'error'}
+                    />
+                </Table.Cell>
             </Table.Row>
             <Table.Row>
                 <Table.Cell
@@ -154,87 +190,23 @@ function HistroryRow(props) {
                     }}
                     colSpan={6}
                 >
-                    <Collapse in={open} timeout="auto" unmountOnExit>
+                    <Collapse
+                        in={open}
+                        timeout="auto"
+                        //unmountOnExit
+                    >
                         <Box
                             sx={{
                                 margin: 1,
                             }}
                         >
-                            <Typography
-                                variant="h6"
-                                gutterBottom
-                                component="div"
-                            >
-                                History
-                            </Typography>
-                            <Table size="small" aria-label="purchases">
-                                <Table.Head>
-                                    <Table.Row>
-                                        <Table.Cell>Date</Table.Cell>
-                                        <Table.Cell>Customer</Table.Cell>
-                                        <Table.Cell align="right">
-                                            Amount
-                                        </Table.Cell>
-                                        <Table.Cell align="right">
-                                            Total price ($)
-                                        </Table.Cell>
-                                    </Table.Row>
-                                </Table.Head>
-                                <Table.Body>
-                                    {row.history.map((historyRow) => (
-                                        <Table.Row key={historyRow.date}>
-                                            <Table.Cell
-                                                component="th"
-                                                scope="row"
-                                            >
-                                                {historyRow.date}
-                                            </Table.Cell>
-                                            <Table.Cell>
-                                                {historyRow.customerId}
-                                            </Table.Cell>
-                                            <Table.Cell align="right">
-                                                {historyRow.amount}
-                                            </Table.Cell>
-                                            <Table.Cell align="right">
-                                                {Math.round(
-                                                    historyRow.amount * 100,
-                                                ) / 50}
-                                            </Table.Cell>
-                                        </Table.Row>
-                                    ))}
-                                </Table.Body>
-                            </Table>
+                            Output:
+                            {row.schedulerOutput}
                         </Box>
                     </Collapse>
                 </Table.Cell>
             </Table.Row>
         </>
-    );
-}
-
-function HistoryTable() {
-    return (
-        <Table.Container>
-            <Table aria-label="collapsible table">
-                <Table.Head>
-                    <Table.Row>
-                        <Table.Cell align="left">
-                            <></>
-                        </Table.Cell>
-                        <Table.Cell align="left">Name</Table.Cell>
-                        <Table.Cell align="left">Age</Table.Cell>
-                        <Table.Cell align="left">Location</Table.Cell>
-                        <Table.Cell align="left">Email</Table.Cell>
-                        <Table.Cell align="left">Phone Number</Table.Cell>
-                    </Table.Row>
-                </Table.Head>
-                <Table.Body>
-                    {history.map((row) => (
-                        <Row key={row.name} row={row} />
-                    ))}
-                </Table.Body>
-            </Table>
-        </Table.Container>
     );
 }
 
@@ -269,10 +241,11 @@ export function JobsPage() {
     const user = configStore.store.user;
     const config = configStore.store.config;
 
-    const tabs = [{ value: 'All' }, { value: 'Active' }, { value: 'Inactive' }];
+    const tabs = ['All', 'Active', 'Inactive'];
 
     const [searchValue, setSearchValue] = useState('');
-    const [selectedTab, setSelectedTab] = useState('All');
+    const [historySearchValue, setHistorySearchValue] = useState('');
+    const [selectedTab, setSelectedTab] = useState(tabs[0]);
     const [ownerType, setOwnerType] = useState('All Jobs');
     const [newJobModalSelectedTab, setNewJobModalSelectedTab] =
         useState('job-details');
@@ -299,6 +272,10 @@ export function JobsPage() {
     const [historyExpanded, setHistoryExpanded] = useState(false);
 
     const [page, setPage] = useState<number>(0);
+
+    // pagination for history table
+    const [historyPage, setHistoryPage] = useState<number>(0);
+    const [historyRowsPerPage, setHistoryRowsPerPage] = useState<number>(5);
 
     // default values
     const customJobDefaultValues = {
@@ -1038,6 +1015,14 @@ export function JobsPage() {
                                       headers['IS_LATEST']
                                   ]
                                 : false,
+                            //capture scheduler output
+                            schedulerOutput: headers.hasOwnProperty(
+                                'SCHEDULER_OUTPUT',
+                            )
+                                ? output['data'].values[valueIdx][
+                                      headers['SCHEDULER_OUTPUT']
+                                  ]
+                                : 'No Output.',
                         };
 
                         historyData.push(job);
@@ -1226,9 +1211,9 @@ export function JobsPage() {
             })
             .filter((job) => {
                 switch (selectedTab) {
-                    case 'active':
+                    case 'Active':
                         return job.NEXT_FIRE_TIME !== 'INACTIVE';
-                    case 'inactive':
+                    case 'Inactive':
                         return job.NEXT_FIRE_TIME === 'INACTIVE';
                     default:
                         return true;
@@ -1239,6 +1224,16 @@ export function JobsPage() {
                     ? true
                     : job.USER_ID === user.id;
             });
+    };
+
+    const filterHistory = (jobs: any[]) => {
+        return jobs.filter((job) => {
+            return historySearchValue.length > 0
+                ? job.jobName
+                      .toLowerCase()
+                      .includes(historySearchValue.toLowerCase())
+                : true;
+        });
     };
 
     const getTargetDatabaseTables = (databaseId: string) => {
@@ -1546,320 +1541,289 @@ export function JobsPage() {
 
     return (
         <div>
-            <Tabs
-                value={selectedTab}
-                onChange={(event: SyntheticEvent, value: number) => {
-                    console.log(value);
-                    setSelectedTab(value);
-                }}
-                aria-label="basic tabs example"
-                textColor="secondary"
-                indicatorColor="secondary"
-            >
-                <Tabs.Item label="All" />
-                <Tabs.Item label="Active" />
-                <Tabs.Item label="Inactive" />
-            </Tabs>
-            {tabs.map((tab, i) => {
-                <Tabs.Panel value={tab.value} index={i}>
-                    <Table.Container>
-                        <Table aria-label="collapsible table" size="small">
-                            <Table.Head>
-                                <Table.Row>
-                                    <Table.Cell align="left"></Table.Cell>
-                                    <Table.Cell>
-                                        <Search />
-                                    </Table.Cell>
-                                    <Table.Cell>
-                                        <Icon>
-                                            <FilterAltIcon />
-                                        </Icon>
-                                    </Table.Cell>
-                                    <Table.Cell align="right">
-                                        <Button variant="outlined">
-                                            <Icon>
-                                                <MenuIcon />
-                                            </Icon>
-                                            Columns
-                                        </Button>
-                                    </Table.Cell>
-                                    <Table.Cell align="right">
-                                        <Button variant="contained">
-                                            <Icon>
-                                                <AddIcon />
-                                            </Icon>
-                                            Add New
-                                        </Button>
-                                    </Table.Cell>
-                                </Table.Row>
-                            </Table.Head>
-                            <Table.Body>
-                                <Table.Row>
-                                    <Table.Cell align="left">
-                                        {/* to check uncheck all jobs */}
-                                        <Checkbox
-                                            label=""
-                                            value={allChecked}
-                                            onChange={(e) => {
-                                                setAllChecked(e);
-                                                if (e) {
-                                                    // add all these jobs to resume jobs
-                                                    setJobsToResume(
-                                                        filterJobs(jobs).filter(
-                                                            (j) =>
-                                                                j.NEXT_FIRE_TIME ===
-                                                                'INACTIVE',
+            <Table.Container>
+                <Table aria-label="collapsible table" size="small">
+                    <Table.Head>
+                        <Table.Row>
+                            <Table.Cell align="left">
+                                <Tabs
+                                    value={tabs.indexOf(selectedTab)}
+                                    onChange={(
+                                        event: SyntheticEvent,
+                                        value: number,
+                                    ) => {
+                                        setSelectedTab(tabs[value]);
+                                    }}
+                                    textColor="primary"
+                                    indicatorColor="primary"
+                                >
+                                    <Tabs.Item label="All" />
+                                    <Tabs.Item label="Active" />
+                                    <Tabs.Item label="Inactive" />
+                                </Tabs>
+                            </Table.Cell>
+                            <Table.Cell>
+                                <Search
+                                    placeholder="Search"
+                                    fullWidth
+                                    onChange={(e) =>
+                                        setSearchValue(e.target.value)
+                                    }
+                                />
+                            </Table.Cell>
+                            <Table.Cell>
+                                <Icon>
+                                    <FilterAltIcon />
+                                </Icon>
+                            </Table.Cell>
+                            <Table.Cell align="right">
+                                <Button variant="outlined">
+                                    <Icon>
+                                        <MenuIcon />
+                                    </Icon>
+                                    Columns
+                                </Button>
+                            </Table.Cell>
+                            <Table.Cell align="right">
+                                <Button variant="contained">
+                                    <Icon>
+                                        <AddIcon />
+                                    </Icon>
+                                    Add New
+                                </Button>
+                            </Table.Cell>
+                        </Table.Row>
+                    </Table.Head>
+                    <Table.Body>
+                        <Table.Row>
+                            <Table.Cell align="left">
+                                {/* to check uncheck all jobs */}
+                                <Checkbox
+                                    value={allChecked}
+                                    onChange={(e) => {
+                                        const checked = e.target.checked;
+                                        //console.log(checked);
+                                        setAllChecked(checked);
+                                        if (checked) {
+                                            // add all these jobs to resume jobs
+                                            setJobsToResume(
+                                                filterJobs(jobs).filter(
+                                                    (j) =>
+                                                        j.NEXT_FIRE_TIME ===
+                                                        'INACTIVE',
+                                                ),
+                                            );
+                                            // add all these jobs to pause jobs
+                                            setJobsToPause(
+                                                filterJobs(jobs).filter(
+                                                    (j) =>
+                                                        j.NEXT_FIRE_TIME !==
+                                                        'INACTIVE',
+                                                ),
+                                            );
+                                        } else {
+                                            // remove all these jobs to resume jobs
+                                            const removeFromResume = filterJobs(
+                                                jobs,
+                                            ).filter(
+                                                (j) =>
+                                                    j.NEXT_FIRE_TIME ===
+                                                    'INACTIVE',
+                                            );
+                                            setJobsToResume((prev) =>
+                                                prev.filter(
+                                                    (p) =>
+                                                        !removeFromResume.some(
+                                                            (e) =>
+                                                                e.jobId !==
+                                                                p.jobId,
                                                         ),
-                                                    );
-                                                    // add all these jobs to pause jobs
-                                                    setJobsToPause(
-                                                        filterJobs(jobs).filter(
-                                                            (j) =>
-                                                                j.NEXT_FIRE_TIME !==
-                                                                'INACTIVE',
-                                                        ),
-                                                    );
-                                                } else {
-                                                    // remove all these jobs to resume jobs
-                                                    const removeFromResume =
-                                                        filterJobs(jobs).filter(
-                                                            (j) =>
-                                                                j.NEXT_FIRE_TIME ===
-                                                                'INACTIVE',
-                                                        );
-                                                    setJobsToResume((prev) =>
-                                                        prev.filter(
-                                                            (p) =>
-                                                                !removeFromResume.some(
-                                                                    (e) =>
-                                                                        e.jobId !==
-                                                                        p.jobId,
-                                                                ),
-                                                        ),
-                                                    );
+                                                ),
+                                            );
 
-                                                    // remove all these jobs to pause jobs
-                                                    const removeFromPause =
-                                                        filterJobs(jobs).filter(
-                                                            (j) =>
-                                                                j.NEXT_FIRE_TIME !==
-                                                                'INACTIVE',
-                                                        );
+                                            // remove all these jobs to pause jobs
+                                            const removeFromPause = filterJobs(
+                                                jobs,
+                                            ).filter(
+                                                (j) =>
+                                                    j.NEXT_FIRE_TIME !==
+                                                    'INACTIVE',
+                                            );
 
-                                                    setJobsToPause((prev) =>
-                                                        prev.filter(
-                                                            (p) =>
-                                                                !removeFromPause.some(
-                                                                    (e) =>
-                                                                        e.jobId !==
-                                                                        p.jobId,
-                                                                ),
+                                            setJobsToPause((prev) =>
+                                                prev.filter(
+                                                    (p) =>
+                                                        !removeFromPause.some(
+                                                            (e) =>
+                                                                e.jobId !==
+                                                                p.jobId,
                                                         ),
-                                                    );
-                                                }
-                                            }}
-                                        />
-                                    </Table.Cell>
-                                    <Table.Cell align="left">Name</Table.Cell>
-                                    <Table.Cell align="left">Type</Table.Cell>
-                                    <Table.Cell align="left">
-                                        Frequency
-                                    </Table.Cell>
-                                    <Table.Cell align="left">
-                                        Time Zone
-                                    </Table.Cell>
-                                    <Table.Cell align="left">Tags</Table.Cell>
-                                    <Table.Cell align="left">
-                                        Last Run
-                                    </Table.Cell>
-                                    <Table.Cell align="left">
-                                        Modified By
-                                    </Table.Cell>
-                                    <Table.Cell align="left">
-                                        Actions
-                                    </Table.Cell>
-                                </Table.Row>
-                                {filterJobs(jobs).length === 0 ? (
-                                    <Table.Row
-                                    // style={{
-                                    //     columnSpan: 'all',
-                                    // }}
-                                    >
+                                                ),
+                                            );
+                                        }
+                                    }}
+                                />
+                            </Table.Cell>
+                            <Table.Cell align="left">Name</Table.Cell>
+                            <Table.Cell align="left">Type</Table.Cell>
+                            <Table.Cell align="left">Frequency</Table.Cell>
+                            <Table.Cell align="left">Time Zone</Table.Cell>
+                            <Table.Cell align="left">Tags</Table.Cell>
+                            <Table.Cell align="left">Last Run</Table.Cell>
+                            <Table.Cell align="left">Modified By</Table.Cell>
+                            <Table.Cell align="left">Actions</Table.Cell>
+                        </Table.Row>
+                        {filterJobs(jobs).length === 0 ? (
+                            <Table.Row
+                            // style={{
+                            //     columnSpan: 'all',
+                            // }}
+                            >
+                                <Table.Cell>
+                                    <span>No jobs, please try again.</span>
+                                </Table.Cell>
+                            </Table.Row>
+                        ) : (
+                            filterJobs(jobs).map((job, i) => {
+                                return (
+                                    <Table.Row key={i}>
                                         <Table.Cell>
-                                            <span>
-                                                No jobs, please try again.
-                                            </span>
+                                            <Checkbox
+                                                value={
+                                                    jobsToResume.some(
+                                                        (x) =>
+                                                            x.jobId ===
+                                                            job.jobId,
+                                                    ) ||
+                                                    jobsToPause.some(
+                                                        (x) =>
+                                                            x.jobId ===
+                                                            job.jobId,
+                                                    )
+                                                }
+                                                onChange={(e) => {
+                                                    const checked =
+                                                        e.target.checked;
+                                                    if (checked) {
+                                                        job.NEXT_FIRE_TIME ===
+                                                        'INACTIVE'
+                                                            ? setJobsToResume(
+                                                                  (prev) => [
+                                                                      ...prev,
+                                                                      job,
+                                                                  ],
+                                                              )
+                                                            : setJobsToPause(
+                                                                  (prev) => [
+                                                                      ...prev,
+                                                                      job,
+                                                                  ],
+                                                              );
+                                                    } else {
+                                                        job.NEXT_FIRE_TIME ===
+                                                        'INACTIVE'
+                                                            ? setJobsToResume(
+                                                                  (prev) =>
+                                                                      prev.filter(
+                                                                          (p) =>
+                                                                              p.jobId !==
+                                                                              job.jobId,
+                                                                      ),
+                                                              )
+                                                            : setJobsToPause(
+                                                                  (prev) =>
+                                                                      prev.filter(
+                                                                          (p) =>
+                                                                              p.jobId !==
+                                                                              job.jobId,
+                                                                      ),
+                                                              );
+                                                    }
+                                                }}
+                                            />
+                                        </Table.Cell>
+                                        <Table.Cell>{job.jobName}</Table.Cell>
+                                        <Table.Cell>{job.jobType}</Table.Cell>
+                                        <Table.Cell>
+                                            {convertTimeToFrequencyString(job)}
+                                        </Table.Cell>
+                                        <Table.Cell>Time Zone</Table.Cell>
+                                        <Table.Cell>
+                                            {job.jobTags &&
+                                                job.jobTags
+                                                    .split(',')
+                                                    .map((tag) => {
+                                                        return (
+                                                            <Chip
+                                                                label={tag}
+                                                                avatar={null}
+                                                            />
+                                                        );
+                                                    })}
+                                        </Table.Cell>
+                                        <Table.Cell>
+                                            {convertTimeToLastRunString(job)}
+                                        </Table.Cell>
+                                        <Table.Cell>{job.USER_ID}</Table.Cell>
+                                        <Table.Cell
+                                        // sx={{
+                                        //     display: 'flex',
+                                        //     flexDirection: 'row',
+                                        // }}
+                                        >
+                                            <IconButton
+                                                color="primary"
+                                                size="sm"
+                                                onClick={() => {
+                                                    executeJob(
+                                                        job.jobId,
+                                                        job.jobGroup,
+                                                    );
+                                                }}
+                                            >
+                                                <PlayArrowIcon />
+                                            </IconButton>
+                                            <IconButton
+                                                color="primary"
+                                                size="sm"
+                                                onClick={() => {
+                                                    setSelectedJob(job);
+                                                    setShowJobModal(true);
+                                                }}
+                                            >
+                                                <EditIcon />
+                                            </IconButton>
+                                            <IconButton
+                                                color="primary"
+                                                size="sm"
+                                                onClick={() => {
+                                                    setSelectedJob(job);
+                                                    setShowDeleteModal(true);
+                                                }}
+                                            >
+                                                <DeleteIcon />
+                                            </IconButton>
                                         </Table.Cell>
                                     </Table.Row>
-                                ) : (
-                                    filterJobs(jobs).map((job, i) => {
-                                        return (
-                                            <Table.Row key={i}>
-                                                <Table.Cell>
-                                                    <Checkbox
-                                                        label=""
-                                                        value={
-                                                            jobsToResume.some(
-                                                                (x) =>
-                                                                    x.jobId ===
-                                                                    job.jobId,
-                                                            ) ||
-                                                            jobsToPause.some(
-                                                                (x) =>
-                                                                    x.jobId ===
-                                                                    job.jobId,
-                                                            )
-                                                        }
-                                                        onChange={(e) => {
-                                                            if (e) {
-                                                                job.NEXT_FIRE_TIME ===
-                                                                'INACTIVE'
-                                                                    ? setJobsToResume(
-                                                                          (
-                                                                              prev,
-                                                                          ) => [
-                                                                              ...prev,
-                                                                              job,
-                                                                          ],
-                                                                      )
-                                                                    : setJobsToPause(
-                                                                          (
-                                                                              prev,
-                                                                          ) => [
-                                                                              ...prev,
-                                                                              job,
-                                                                          ],
-                                                                      );
-                                                            } else {
-                                                                job.NEXT_FIRE_TIME ===
-                                                                'INACTIVE'
-                                                                    ? setJobsToResume(
-                                                                          (
-                                                                              prev,
-                                                                          ) =>
-                                                                              prev.filter(
-                                                                                  (
-                                                                                      p,
-                                                                                  ) =>
-                                                                                      p.jobId !==
-                                                                                      job.jobId,
-                                                                              ),
-                                                                      )
-                                                                    : setJobsToPause(
-                                                                          (
-                                                                              prev,
-                                                                          ) =>
-                                                                              prev.filter(
-                                                                                  (
-                                                                                      p,
-                                                                                  ) =>
-                                                                                      p.jobId !==
-                                                                                      job.jobId,
-                                                                              ),
-                                                                      );
-                                                            }
-                                                        }}
-                                                    />
-                                                </Table.Cell>
-                                                <Table.Cell>
-                                                    {job.jobName}
-                                                </Table.Cell>
-                                                <Table.Cell>
-                                                    {job.jobType}
-                                                </Table.Cell>
-                                                <Table.Cell>
-                                                    {convertTimeToFrequencyString(
-                                                        job,
-                                                    )}
-                                                </Table.Cell>
-                                                <Table.Cell>
-                                                    Time Zone
-                                                </Table.Cell>
-                                                <Table.Cell>
-                                                    {job.jobTags}
-                                                </Table.Cell>
-                                                <Table.Cell>
-                                                    {convertTimeToLastRunString(
-                                                        job,
-                                                    )}
-                                                </Table.Cell>
-                                                <Table.Cell>
-                                                    {job.USER_ID}
-                                                </Table.Cell>
-                                                <Table.Cell
-                                                // style={{
-                                                //     display: 'flex',
-                                                //     flexDirection: 'row',
-                                                // }}
-                                                >
-                                                    <Button
-                                                        children={
-                                                            <Icon>
-                                                                <PlayArrowIcon />
-                                                            </Icon>
-                                                        }
-                                                        variant="text"
-                                                        size="small"
-                                                        onClick={() => {
-                                                            executeJob(
-                                                                job.jobId,
-                                                                job.jobGroup,
-                                                            );
-                                                        }}
-                                                    />
-                                                    <Button
-                                                        children={
-                                                            <Icon>
-                                                                <EditIcon />
-                                                            </Icon>
-                                                        }
-                                                        variant="text"
-                                                        size="small"
-                                                        onClick={() => {
-                                                            setSelectedJob(job);
-                                                            setShowJobModal(
-                                                                true,
-                                                            );
-                                                        }}
-                                                    />
-                                                    <Button
-                                                        children={
-                                                            <Icon>
-                                                                <DeleteIcon />
-                                                            </Icon>
-                                                        }
-                                                        variant="text"
-                                                        size="small"
-                                                        onClick={() => {
-                                                            setSelectedJob(job);
-                                                            setShowDeleteModal(
-                                                                true,
-                                                            );
-                                                        }}
-                                                    />
-                                                </Table.Cell>
-                                            </Table.Row>
-                                        );
-                                    })
-                                )}
-                            </Table.Body>
-                            <Table.Footer>
-                                <Table.Row>
-                                    <Table.Pagination
-                                        rowsPerPageOptions={[5, 10, 25]}
-                                        onPageChange={(e, v) => {
-                                            setPage(v);
-                                        }}
-                                        page={page}
-                                        rowsPerPage={5}
-                                        count={10}
-                                    />
-                                </Table.Row>
-                            </Table.Footer>
-                        </Table>
-                    </Table.Container>
-                </Tabs.Panel>;
-            })}
+                                );
+                            })
+                        )}
+                    </Table.Body>
+                    <Table.Footer>
+                        <Table.Row>
+                            <Table.Pagination
+                                rowsPerPageOptions={[5, 10, 25]}
+                                onPageChange={(e, v) => {
+                                    setHistoryPage(v);
+                                }}
+                                page={historyPage}
+                                rowsPerPage={5}
+                                count={10}
+                            />
+                        </Table.Row>
+                    </Table.Footer>
+                </Table>
+            </Table.Container>
 
             <Accordion
                 expanded={historyExpanded}
@@ -1871,11 +1835,21 @@ export function JobsPage() {
             >
                 <Accordion.Trigger>History</Accordion.Trigger>
                 <Accordion.Content>
-                    <Search fullWidth={true} />
+                    <Search
+                        fullWidth={true}
+                        placeholder="Search"
+                        onChange={(e) => setHistorySearchValue(e.target.value)}
+                    />
                     <Table.Container>
                         <Table aria-label="collapsible table">
                             <Table.Head>
                                 <Table.Row>
+                                    <Table.Cell align="left">
+                                        <></>
+                                    </Table.Cell>
+                                    <Table.Cell align="left">
+                                        <></>
+                                    </Table.Cell>
                                     <Table.Cell align="left">Name</Table.Cell>
                                     <Table.Cell align="left">
                                         Run Date
@@ -1885,7 +1859,7 @@ export function JobsPage() {
                                 </Table.Row>
                             </Table.Head>
                             <Table.Body>
-                                {filterJobs(history).length === 0 ? (
+                                {filterHistory(history).length === 0 ? (
                                     <Table.Row>
                                         <Table.Cell
                                         // style={{ columnSpan: 'all' }}
@@ -1897,34 +1871,29 @@ export function JobsPage() {
                                         </Table.Cell>
                                     </Table.Row>
                                 ) : (
-                                    filterJobs(history).map((job, i) => {
-                                        return (
-                                            <Table.Row key={i}>
-                                                <Table.Cell>
-                                                    {job.jobName}
-                                                </Table.Cell>
-                                                <Table.Cell>
-                                                    {/* <Icon
-                                                        path={mdiCalendarMonth}
-                                                    /> */}
-                                                    {job.execStart}
-                                                </Table.Cell>
-                                                <Table.Cell>
-                                                    {/* <Icon
-                                                        path={mdiClockOutline}
-                                                    /> */}
-                                                    {job.execDelta}
-                                                </Table.Cell>
-                                                <Table.Cell>
-                                                    {job.success
-                                                        ? 'Success'
-                                                        : 'Failed'}
-                                                </Table.Cell>
-                                            </Table.Row>
-                                        );
+                                    filterHistory(history).map((history, i) => {
+                                        return <HistoryRow row={history} />;
                                     })
                                 )}
                             </Table.Body>
+                            <Table.Footer>
+                                <Table.Row>
+                                    <Table.Pagination
+                                        rowsPerPageOptions={[5, 10, 25]}
+                                        onPageChange={(e, v) => {
+                                            setHistoryPage(v);
+                                        }}
+                                        page={historyPage}
+                                        rowsPerPage={historyRowsPerPage}
+                                        onRowsPerPageChange={(e) => {
+                                            setHistoryRowsPerPage(
+                                                e.target.value,
+                                            );
+                                        }}
+                                        count={10}
+                                    />
+                                </Table.Row>
+                            </Table.Footer>
                         </Table>
                     </Table.Container>
                 </Accordion.Content>
