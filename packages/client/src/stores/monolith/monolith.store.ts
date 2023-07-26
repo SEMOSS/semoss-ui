@@ -2,7 +2,7 @@ import axios from 'axios';
 import { makeAutoObservable } from 'mobx';
 
 import { Role } from '@/types';
-import { RootStore } from '@/stores/';
+import { RootStore } from '@/stores';
 
 const BACKEND = `${process.env.ENDPOINT}${process.env.MODULE}`;
 
@@ -632,9 +632,9 @@ export class MonolithStore {
      * @returns
      */
     async updateDatabaseSmssProperties(databaseId: string, smssProps: string) {
-        let url = `${BACKEND}/api/app-${databaseId}/updateSmssFile`,
-            postData = '';
+        const url = `${BACKEND}/api/app-${databaseId}/updateSmssFile`;
 
+        let postData = '';
         postData += 'databaseId=' + encodeURIComponent(databaseId);
         postData += '&smss=' + encodeURIComponent(smssProps);
 

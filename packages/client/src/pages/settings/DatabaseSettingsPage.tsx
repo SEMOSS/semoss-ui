@@ -3,7 +3,7 @@ import { useRootStore, usePixel } from '@/hooks';
 import { useSettings } from '@/hooks/useSettings';
 import { useNavigate } from 'react-router-dom';
 import { LoadingScreen } from '@/components/ui';
-import { MonolithStore } from '@/stores/monolith';
+import { MonolithStore } from '@/stores';
 
 import {
     Grid,

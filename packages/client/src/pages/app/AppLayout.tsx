@@ -1,8 +1,9 @@
 import { observer } from 'mobx-react-lite';
-import { Outlet, Link } from 'react-router-dom';
-import { styled, Stack, Icon } from '@semoss/ui';
+import { Outlet, Link, useNavigate } from 'react-router-dom';
+import { styled, Stack, Icon, Chip } from '@semoss/ui';
 
 import { AccountCircle } from '@mui/icons-material';
+import { useRootStore } from '@/hooks';
 
 const NAV_HEIGHT = '48px';
 const NAV_ICON_WIDTH = '56px';
@@ -67,6 +68,24 @@ const StyledContent = styled('div')(() => ({
  * Layout for the app
  */
 export const AppLayout = observer(() => {
+    const { workspaceStore } = useRootStore();
+
+    // navigation
+    const navigate = useNavigate();
+
+    /**
+     * Select an app
+     */
+    const selectApp = (id: string) => {
+        // open the app
+        const app = workspaceStore.selectApp(id);
+
+        // navigate to it
+        if (app) {
+            navigate(`app`);
+        }
+    };
+
     return (
         <>
             <StyledHeader>
@@ -93,7 +112,26 @@ export const AppLayout = observer(() => {
                     </svg>
                     SEMOSS
                 </StyledHeaderLogo>
-                <Stack flex={1}>&nbsp;</Stack>
+                <Stack
+                    flex={1}
+                    flexDirection={'row'}
+                    alignItems={'center'}
+                    spacing={1}
+                    flexWrap={'wrap'}
+                >
+                    {workspaceStore.appList.map((a) => {
+                        return (
+                            <Chip
+                                key={a.id}
+                                variant="filled"
+                                label={a.options.name}
+                                clickable={true}
+                                color="primary"
+                                onClick={() => selectApp(a.id)}
+                            />
+                        );
+                    })}
+                </Stack>
                 <StyledHeaderLogout>
                     <Icon>
                         <AccountCircle />

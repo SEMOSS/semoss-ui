@@ -1,6 +1,7 @@
 import { makeAutoObservable, runInAction } from 'mobx';
 
-import { RootStore } from '@/stores/';
+import { RootStore } from '@/stores';
+import { runPixel } from '@/api';
 
 interface ConfigStoreInterface {
     /** Status of the application */
@@ -258,6 +259,7 @@ export class ConfigStore {
             // clear the info and reset the user
             this._store.user = {
                 loggedIn: true,
+                admin: false,
                 id: '',
                 name: '',
                 email: '',
@@ -288,6 +290,7 @@ export class ConfigStore {
             // clear the info and reset the user
             this._store.user = {
                 loggedIn: true,
+                admin: false,
                 id: '',
                 name: '',
                 email: '',
@@ -299,5 +302,17 @@ export class ConfigStore {
 
         // success
         return true;
+    }
+
+    /**
+     * Run a pixel string
+     *
+     * @param pixel - pixel to execute
+     */
+    async runPixel<O extends unknown[] | []>(pixel: string) {
+        return await runPixel<O>(
+            this._store.insightID ? this._store.insightID : 'new',
+            pixel,
+        );
     }
 }
