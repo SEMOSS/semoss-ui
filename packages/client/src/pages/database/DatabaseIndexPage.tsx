@@ -18,6 +18,8 @@ import {
 } from '@mui/icons-material';
 import { SEMOSS } from '@/assets/img/SEMOSS';
 
+import { formatName } from '@/utils';
+
 import { Link } from 'react-router-dom';
 import { observer } from 'mobx-react-lite';
 
@@ -87,15 +89,14 @@ export const DatabaseIndexPage = observer(() => {
                 k.metakey !== 'description' &&
                 k.metakey !== 'markdown' &&
                 k.metakey !== 'tags'
-                // && k.metakey !== 'tag'
             );
         },
     );
 
-    // debugger
     // kets to get dbMetaData for
     const metaKeys = [
         'markdown',
+        'description',
         // 'tags',  // Comes in as 'tag' either a string or string[]
         ...databaseMetaKeys.map((k) => k.metakey),
     ];
@@ -121,7 +122,6 @@ export const DatabaseIndexPage = observer(() => {
         }
 
         return metaKeys.reduce((prev, curr) => {
-            // debugger;
             // tag and domain either come in as a string or a string[]
             // format these as string[] for autocomplete if comes in as string
             if (curr === 'domain' || curr === 'tag') {
@@ -200,8 +200,8 @@ export const DatabaseIndexPage = observer(() => {
             )}
             {databaseMetaKeys.map((k) => {
                 if (
-                    dbMetaData[k.metakey] === undefined ||
-                    !Array.isArray(dbMetaData[k.metakey])
+                    values[k.metakey] === undefined ||
+                    !Array.isArray(values[k.metakey])
                 ) {
                     return null;
                 }
@@ -209,7 +209,9 @@ export const DatabaseIndexPage = observer(() => {
                 return (
                     <Section key={k.metakey}>
                         <Section.Header>
-                            <Typography variant={'h6'}>{k.metakey}</Typography>
+                            <Typography variant={'h6'}>
+                                {formatName(k.metakey)}
+                            </Typography>
                         </Section.Header>
                         {k.display_options === 'multi-checklist' ||
                         k.display_options === 'multi-select' ||
@@ -219,7 +221,7 @@ export const DatabaseIndexPage = observer(() => {
                                 spacing={1}
                                 flexWrap={'wrap'}
                             >
-                                {dbMetaData[k.metakey].map((tag) => {
+                                {values[k.metakey].map((tag) => {
                                     return (
                                         <Chip
                                             key={tag}
@@ -232,7 +234,7 @@ export const DatabaseIndexPage = observer(() => {
                                 })}
                             </Stack>
                         ) : (
-                            <>{dbMetaData[k.metakey]}</>
+                            <>{values[k.metakey]}</>
                         )}
                     </Section>
                 );
@@ -241,88 +243,6 @@ export const DatabaseIndexPage = observer(() => {
                 <Section.Header>
                     <Typography variant={'h6'}>Statistics</Typography>
                 </Section.Header>
-                {/* <Grid container spacing={3}>
-                    <Grid item sm={12} md={6} lg={4} xl={3}>
-                        <Card>
-                            <StyledCardContent>
-                                <StyledCardImageContainer>
-                                    <Icon color="primary">
-                                        <RemoveRedEyeOutlined />
-                                    </Icon>
-                                </StyledCardImageContainer>
-
-                                <StyledCardDetailsContainer>
-                                    <Typography variant="caption">
-                                        Views
-                                    </Typography>
-                                    <Typography variant="caption">
-                                        100
-                                    </Typography>
-                                </StyledCardDetailsContainer>
-                            </StyledCardContent>
-                        </Card>
-                    </Grid>
-                    <Grid item sm={12} md={6} lg={4} xl={3}>
-                        <Card>
-                            <StyledCardContent>
-                                <StyledCardImageContainer>
-                                    <Icon color="primary">
-                                        <DownloadForOffline />
-                                    </Icon>
-                                </StyledCardImageContainer>
-
-                                <StyledCardDetailsContainer>
-                                    <Typography variant="caption">
-                                        Downloads
-                                    </Typography>
-                                    <Typography variant="caption">
-                                        100
-                                    </Typography>
-                                </StyledCardDetailsContainer>
-                            </StyledCardContent>
-                        </Card>
-                    </Grid>
-                    <Grid item sm={12} md={6} lg={4} xl={3}>
-                        <Card>
-                            <StyledCardContent>
-                                <StyledCardImageContainer>
-                                    <Icon color="primary">
-                                        <SEMOSS width={36} height={40} />
-                                    </Icon>
-                                </StyledCardImageContainer>
-
-                                <StyledCardDetailsContainer>
-                                    <Typography variant="caption">
-                                        Insights
-                                    </Typography>
-                                    <Typography variant="caption">
-                                        100
-                                    </Typography>
-                                </StyledCardDetailsContainer>
-                            </StyledCardContent>
-                        </Card>
-                    </Grid>
-                    <Grid item sm={12} md={6} lg={4} xl={3}>
-                        <Card>
-                            <StyledCardContent>
-                                <StyledCardImageContainer>
-                                    <Icon color="primary">
-                                        <Star />
-                                    </Icon>
-                                </StyledCardImageContainer>
-
-                                <StyledCardDetailsContainer>
-                                    <Typography variant="caption">
-                                        Usability
-                                    </Typography>
-                                    <Typography variant="caption">
-                                        /10
-                                    </Typography>
-                                </StyledCardDetailsContainer>
-                            </StyledCardContent>
-                        </Card>
-                    </Grid>
-                </Grid> */}
                 <DatabaseStatistics id={id} />
             </Section>
             <Section>
@@ -330,17 +250,6 @@ export const DatabaseIndexPage = observer(() => {
                     <Typography variant={'h6'}>Similar</Typography>
                 </Section.Header>
                 <SimilarDatabases id={id} />
-                {/* <Stack direction={'row'} flexWrap={'nowrap'} overflow={'auto'}>
-                    {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15].map(
-                        (v, idx) => {
-                            return (
-                                <StyledLink key={idx} to={`/database/${idx}`}>
-                                    `Database ${idx}`
-                                </StyledLink>
-                            );
-                        },
-                    )}
-                </Stack> */}
             </Section>
         </StyledPage>
     );
