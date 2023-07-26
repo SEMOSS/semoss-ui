@@ -87,14 +87,16 @@ export const DatabaseIndexPage = observer(() => {
                 k.metakey !== 'description' &&
                 k.metakey !== 'markdown' &&
                 k.metakey !== 'tags'
+                // && k.metakey !== 'tag'
             );
         },
     );
 
+    // debugger
     // kets to get dbMetaData for
     const metaKeys = [
         'markdown',
-        'tags',
+        // 'tags',  // Comes in as 'tag' either a string or string[]
         ...databaseMetaKeys.map((k) => k.metakey),
     ];
 
@@ -119,7 +121,18 @@ export const DatabaseIndexPage = observer(() => {
         }
 
         return metaKeys.reduce((prev, curr) => {
-            prev[curr] = dbMetaData[curr];
+            // debugger;
+            // tag and domain either come in as a string or a string[]
+            // format these as string[] for autocomplete if comes in as string
+            if (curr === 'domain' || curr === 'tag') {
+                if (typeof dbMetaData[curr] === 'string') {
+                    prev[curr] = [dbMetaData[curr]];
+                } else {
+                    prev[curr] = dbMetaData[curr];
+                }
+            } else {
+                prev[curr] = dbMetaData[curr];
+            }
             return prev;
         }, {});
     }, [dbMetaStatus, dbMetaData, JSON.stringify(metaKeys)]);

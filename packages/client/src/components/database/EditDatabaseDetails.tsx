@@ -166,7 +166,6 @@ export const EditDatabaseDetails = observer(
                     <Stack spacing={4}>
                         {databaseMetaKeys.map((key) => {
                             const { metakey, display_options } = key;
-
                             const label =
                                 metakey.slice(0, 1).toUpperCase() +
                                 metakey.slice(1);
@@ -217,37 +216,38 @@ export const EditDatabaseDetails = observer(
                                 );
                             } else if (display_options === 'single-typeahead') {
                                 return (
-                                    <Controller
-                                        key={metakey}
-                                        name={metakey}
-                                        control={control}
-                                        render={({ field }) => {
-                                            return (
-                                                <Autocomplete<string, false>
-                                                    label={label}
-                                                    options={
-                                                        filterOptions[metakey]
-                                                            ? filterOptions[
-                                                                  metakey
-                                                              ]
-                                                            : []
-                                                    }
-                                                    value={
-                                                        (field.value as string) ||
-                                                        ''
-                                                    }
-                                                    onChange={(
-                                                        event,
-                                                        newValue,
-                                                    ) => {
-                                                        field.onChange(
-                                                            newValue,
-                                                        );
-                                                    }}
-                                                />
-                                            );
-                                        }}
-                                    />
+                                    <div>Autocomplete1</div>
+                                    // <Controller
+                                    //     key={metakey}
+                                    //     name={metakey}
+                                    //     control={control}
+                                    //     render={({ field }) => {
+                                    //         return (
+                                    //             <Autocomplete<string, false>
+                                    //                 label={label}
+                                    //                 options={
+                                    //                     filterOptions[metakey]
+                                    //                         ? filterOptions[
+                                    //                               metakey
+                                    //                           ]
+                                    //                         : []
+                                    //                 }
+                                    //                 value={
+                                    //                     (field.value as string) ||
+                                    //                     ''
+                                    //                 }
+                                    //                 onChange={(
+                                    //                     event,
+                                    //                     newValue,
+                                    //                 ) => {
+                                    //                     field.onChange(
+                                    //                         newValue,
+                                    //                     );
+                                    //                 }}
+                                    //             />
+                                    //         );
+                                    //     }}
+                                    // />
                                 );
                             } else if (display_options === 'multi-typeahead') {
                                 return (
@@ -257,11 +257,13 @@ export const EditDatabaseDetails = observer(
                                         control={control}
                                         render={({ field }) => {
                                             console.log(filterOptions[metakey]);
+                                            console.log('value', field.value);
                                             return (
                                                 <Autocomplete<string, true>
                                                     multiple={true}
                                                     label={label}
                                                     options={
+                                                        // []
                                                         filterOptions[metakey]
                                                             ? filterOptions[
                                                                   metakey
@@ -287,7 +289,7 @@ export const EditDatabaseDetails = observer(
                                 );
                             }
 
-                            return null;
+                            // return null;
                         })}
                     </Stack>
                 </Modal.Content>
