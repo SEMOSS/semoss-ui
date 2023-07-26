@@ -1,5 +1,10 @@
 import React from 'react';
-import { Permissions, UpdateSMSS } from '@/components/database';
+import {
+    MembersTable,
+    Permissions,
+    PendingMembersTable,
+    UpdateSMSS,
+} from '@/components/database';
 import { useDatabase } from '@/hooks';
 import { styled } from '@semoss/ui';
 
@@ -18,12 +23,19 @@ export const DatabaseSettingsPage = () => {
 
     return (
         <StyledContainer>
-            <Permissions
-                config={{
-                    id: id,
-                    name: 'get name',
-                    global: false,
-                }}
+            <PendingMembersTable
+                type={'database'}
+                name={'name'}
+                adminMode={true}
+                id={id}
+                projectId={undefined}
+            />
+            <MembersTable
+                type={'database'}
+                name={'name'}
+                adminMode={true}
+                id={id}
+                projectId={undefined}
             />
             <UpdateSMSS id={id} />
         </StyledContainer>

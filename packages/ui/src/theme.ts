@@ -288,6 +288,10 @@ export const lightTheme: CustomThemeOptions = {
     spacing: 8,
 };
 
+// const StyledComponent = styled('div')(({theme}) => {
+//     marginLeft: theme.spacing(5) // 40px
+// }))
+
 // spacing: [
 //     "auto", // 0
 //     "100%", // 1
@@ -306,6 +310,10 @@ export const lightTheme: CustomThemeOptions = {
 //     "96px", // 14
 //     "160px", // 15
 // ],
+
+// const StyledComponent = styled('div')(({theme}) => {
+//     marginLeft: theme.spacing(5) // 8px
+// }))
 
 export const darkTheme: CustomThemeOptions = {
     palette: {

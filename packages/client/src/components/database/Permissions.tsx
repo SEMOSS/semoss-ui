@@ -323,25 +323,6 @@ export const Permissions = (props: PermissionsProps) => {
         return <Navigate to="/settings" replace />;
     }
 
-    // apiString for getMembers useAPI Hook
-    const getMembersString =
-        type === 'database'
-            ? 'getDatabaseUsers'
-            : type === 'project'
-            ? 'getProjectUsers'
-            : type === 'insight' && 'getInsightUsers';
-
-    // apiString for pendingUserAccess usePixel Hook
-    const getPendingUsersString =
-        type === 'database'
-            ? `GetDatabaseUserAccessRequest(database='${id}');`
-            : type === 'project'
-            ? `GetProjectUserAccessRequest(project='${id}')`
-            : type === 'insight' &&
-              `GetInsightUserAccessRequest(project='${projectid}', id='${id}');`;
-
-    // -- State
-
     // delete db, proj, insight modal
     const [deleteWorkflowModal, setDeleteWorkflowModal] = useState(false);
 
@@ -386,10 +367,6 @@ export const Permissions = (props: PermissionsProps) => {
 
     const visibilityField = watch('VISIBILITY');
     const globalField = watch('GLOBAL');
-
-    if (!getMembersString) {
-        return <Navigate to="/settings" replace />;
-    }
 
     /**
      * @name useEffect
@@ -565,7 +542,7 @@ export const Permissions = (props: PermissionsProps) => {
                 onChange={handleChange}
                 aria-label="basic tabs example"
             >
-                <ToggleTabsGroup.Item label="Members" />
+                <ToggleTabsGroup.Item label="Member" />
                 <ToggleTabsGroup.Item
                     label="Pending Requests"
                     disabled={permission === 3}
@@ -577,7 +554,6 @@ export const Permissions = (props: PermissionsProps) => {
 
             {view === 0 && (
                 <MembersTable
-                    reactorPrefix={getMembersString}
                     type={type}
                     name={name}
                     adminMode={adminMode}
@@ -587,7 +563,7 @@ export const Permissions = (props: PermissionsProps) => {
             )}
             {view === 1 && (
                 <PendingMembersTable
-                    getPendingUsersString={getPendingUsersString}
+                    // getPendingUsersString={getPendingUsersString}
                     type={type}
                     name={name}
                     adminMode={adminMode}
@@ -600,11 +576,8 @@ export const Permissions = (props: PermissionsProps) => {
     );
 };
 
-export default Permissions;
-
-const PendingMembersTable = (props) => {
-    const { name, type, adminMode, id, getPendingUsersString, projectId } =
-        props;
+export const PendingMembersTable = (props) => {
+    const { name, type, adminMode, id, projectId } = props;
     const { monolithStore } = useRootStore();
     const notification = useNotification();
 
@@ -624,6 +597,14 @@ const PendingMembersTable = (props) => {
         name: 'PENDING_MEMBERS',
     });
     const pendingMembers = watch('PENDING_MEMBERS');
+
+    const getPendingUsersString =
+        type === 'database'
+            ? `GetDatabaseUserAccessRequest(database='${id}');`
+            : type === 'project'
+            ? `GetProjectUserAccessRequest(project='${id}')`
+            : type === 'insight' &&
+              `GetInsightUserAccessRequest(project='${projectId}', id='${id}');`;
 
     // Pending Member Requests Pixel call
     const pendingUserAccess = usePixel<
@@ -1122,8 +1103,8 @@ const StyledModalContentText = MuiStyled(Modal.ContentText)({
 
 type Role = 'Author' | 'Editor' | 'Read-Only' | '' | null;
 
-const MembersTable = (props) => {
-    const { name, type, adminMode, id, reactorPrefix, projectId } = props;
+export const MembersTable = (props) => {
+    const { type, adminMode, id, projectId } = props;
     const { monolithStore } = useRootStore();
     const notification = useNotification();
 
@@ -1173,8 +1154,16 @@ const MembersTable = (props) => {
     const permissionFilter = watch('ACCESS_FILTER');
     const verifiedMembers = watch('MEMBERS');
 
+    // apiString for getMembers useAPI Hook
+    const getMembersString =
+        type === 'database'
+            ? 'getDatabaseUsers'
+            : type === 'project'
+            ? 'getProjectUsers'
+            : type === 'insight' && 'getInsightUsers';
+
     const getMembers = useAPI([
-        reactorPrefix,
+        getMembersString,
         adminMode,
         id,
         searchFilter ? searchFilter : undefined,
@@ -1682,7 +1671,7 @@ const MembersTable = (props) => {
                     <StyledNoMembersContainer>
                         <StyledTableTitleContainer>
                             <StyledTableTitleDiv>
-                                <Typography variant={'h6'}>{name}</Typography>
+                                <Typography variant={'h6'}>Members</Typography>
                             </StyledTableTitleDiv>
                         </StyledTableTitleContainer>
                         <StyledNoMembersDiv>
