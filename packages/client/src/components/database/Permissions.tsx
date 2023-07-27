@@ -92,9 +92,7 @@ const StyledTableContainer = MuiStyled(MuiTable.Container)({
     boxShadow: '0px 5px 22px 0px rgba(0, 0, 0, 0.06)',
 });
 
-const StyledMemberTable = MuiStyled(MuiTable)({
-    minHeight: '503px', // 5 rows
-});
+const StyledMemberTable = MuiStyled(MuiTable)({});
 
 const StyledTableTitleContainer = MuiStyled('div')({
     display: 'flex',
@@ -1584,7 +1582,7 @@ export const MembersTable = (props) => {
                                     <MuiTable.Cell>Action</MuiTable.Cell>
                                 </MuiTable.Row>
                             </MuiTable.Head>
-                            <MuiTable.Body sx={{ minHeight: '50rem' }}>
+                            <MuiTable.Body>
                                 {rowsToLoop.map((x, i) => {
                                     const user = verifiedMembers[i];
 
