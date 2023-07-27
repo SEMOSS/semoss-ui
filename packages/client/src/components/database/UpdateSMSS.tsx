@@ -60,21 +60,20 @@ export const UpdateSMSS = (props: UpdateSMSSProps) => {
         <StyledContainer>
             <StyledTopDiv>
                 <Typography variant={'h6'}>SMSS Properties</Typography>
-                {initialValue !== value && (
-                    <Button
-                        variant={'contained'}
-                        size={'small'}
-                        onClick={() => {
-                            updateSMSSProperties();
-                        }}
-                    >
-                        Update SMSS
-                    </Button>
-                )}
+                <Button
+                    variant={'contained'}
+                    size={'small'}
+                    disabled={initialValue !== value}
+                    onClick={() => {
+                        updateSMSSProperties();
+                    }}
+                >
+                    Update SMSS
+                </Button>
             </StyledTopDiv>
             <StyledPaper elevation={1}>
                 <Editor
-                    defaultValue={'SMSS Values'}
+                    defaultValue={''}
                     value={value}
                     language={'plaintext'}
                     onChange={(newValue, e) => {

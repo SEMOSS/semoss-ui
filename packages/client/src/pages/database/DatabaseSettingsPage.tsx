@@ -1,12 +1,12 @@
-import React from 'react';
 import {
     MembersTable,
-    Permissions,
     PendingMembersTable,
     UpdateSMSS,
+    WorkflowAccess,
 } from '@/components/database';
 import { useDatabase } from '@/hooks';
 import { styled } from '@semoss/ui';
+import { useNavigate } from 'react-router-dom';
 
 const StyledContainer = styled('div')(({ theme }) => ({
     width: '100%',
@@ -20,9 +20,19 @@ const StyledContainer = styled('div')(({ theme }) => ({
 
 export const DatabaseSettingsPage = () => {
     const { id } = useDatabase();
+    const navigate = useNavigate();
 
     return (
         <StyledContainer>
+            <WorkflowAccess
+                type={'database'}
+                id={id}
+                projectId={undefined}
+                onDelete={() => {
+                    console.log('navigate to catalog');
+                    navigate('/catalog');
+                }}
+            />
             <PendingMembersTable
                 type={'database'}
                 name={'name'}
