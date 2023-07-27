@@ -126,16 +126,16 @@ export const CatalogPage = observer((): JSX.Element => {
 
     switch (catalogParams) {
         case '':
-            catalogType = 'database';
+            catalogType = 'DATABASE';
             break;
         case '?type=database':
-            catalogType = 'database';
+            catalogType = 'DATABASE';
             break;
         case '?type=model':
-            catalogType = 'model';
+            catalogType = 'MODEL';
             break;
         case '?type=storage':
-            catalogType = 'storage';
+            catalogType = 'STORAGE';
             break;
     }
 
@@ -177,9 +177,9 @@ export const CatalogPage = observer((): JSX.Element => {
         Record<string, { value: string; count: number }[]>
     >({});
 
-    // track which filters are opened as well as value
+    // track which filters are opened their selected value, and search term
     const [filterVisibility, setFilterVisibility] = useState<
-        Record<string, { open: boolean; value: string[] }>
+        Record<string, { open: boolean; value: string[]; search: string }>
     >(() => {
         return databaseMetaKeys.reduce((prev, current) => {
             prev[current.metakey] = {
@@ -231,12 +231,11 @@ export const CatalogPage = observer((): JSX.Element => {
     }
 
     const metaKeysDescription = [...metaKeys, 'description'];
-    // console.log('new', metaKeysDescription)    // metaKeysDescription.push('description');
 
     const getFavoritedDatabases = usePixel(`
         ${dbPixelPrefix}(metaKeys = ${JSON.stringify(
         metaKeysDescription,
-    )}, filterWord=["${search}"], onlyFavorites=[true]);
+    )}, filterWord=["${search}"], onlyFavorites=[true], engineTypes=['${catalogType}']);
     `);
 
     const getDatabases = usePixel<
@@ -264,8 +263,15 @@ export const CatalogPage = observer((): JSX.Element => {
             metaKeysDescription,
         )} , metaFilters = [ ${JSON.stringify(
             metaFilters,
-        )} ] , filterWord=["${search}"], userT = [true]) ;`,
+        )} ] , filterWord=["${search}"], userT = [true], engineTypes=['${catalogType}']) ;`,
     );
+
+    const catalogFilterPrefix =
+        catalogType === 'DATABASE'
+            ? 'GetDatabaseMetaValues'
+            : catalogType === 'MODEL'
+            ? 'GetModelMetaValues'
+            : 'GetStorageMetaValues';
 
     const getCatalogFilters = usePixel<
         {
@@ -275,7 +281,7 @@ export const CatalogPage = observer((): JSX.Element => {
         }[]
     >(
         metaKeys.length > 0
-            ? `GetDatabaseMetaValues ( metaKeys = ${JSON.stringify(
+            ? `${catalogFilterPrefix}( metaKeys = ${JSON.stringify(
                   metaKeys,
               )} ) ;`
             : '',
@@ -581,7 +587,7 @@ export const CatalogPage = observer((): JSX.Element => {
         >
             <StyledContainer>
                 <StyledFitler>
-                    <StyledFilterList dense={true}>
+                    {/* <StyledFilterList dense={true}>
                         <List.Item>
                             <List.ItemButton
                                 sx={{ borderRadius: 8 }}
@@ -591,7 +597,20 @@ export const CatalogPage = observer((): JSX.Element => {
                                 }}
                             >
                                 <List.Icon>
-                                    <DataObjectOutlined />
+                                    <svg
+                                        xmlns="http://www.w3.org/2000/svg"
+                                        width="20"
+                                        height="20"
+                                        viewBox="0 0 20 20"
+                                        fill="none"
+                                    >
+                                        <path
+                                            fillRule="evenodd"
+                                            clipRule="evenodd"
+                                            d="M8 0C3.58 0 0 1.79 0 4V14C0 16.21 3.59 18 8 18C12.41 18 16 16.21 16 14V4C16 1.79 12.42 0 8 0ZM14 14C14 14.5 11.87 16 8 16C4.13 16 2 14.5 2 14V11.77C3.61 12.55 5.72 13 8 13C10.28 13 12.39 12.55 14 11.77V14ZM14 9.45C12.7 10.4 10.42 11 8 11C5.58 11 3.3 10.4 2 9.45V6.64C3.47 7.47 5.61 8 8 8C10.39 8 12.53 7.47 14 6.64V9.45ZM8 6C4.13 6 2 4.5 2 4C2 3.5 4.13 2 8 2C11.87 2 14 3.5 14 4C14 4.5 11.87 6 8 6Z"
+                                            fill="#5C5C5C"
+                                        />
+                                    </svg>
                                 </List.Icon>
                                 <List.ItemText primary={'Data Catalog'} />
                             </List.ItemButton>
@@ -630,7 +649,7 @@ export const CatalogPage = observer((): JSX.Element => {
                                 <List.ItemText primary={'Model Catalog'} />
                             </List.ItemButton>
                         </List.Item>
-                    </StyledFilterList>
+                    </StyledFilterList> */}
 
                     <StyledFilterList dense={true}>
                         <List.Item
@@ -654,7 +673,7 @@ export const CatalogPage = observer((): JSX.Element => {
                         </List.Item>
 
                         <Collapse in={filterByVisibility}>
-                            {catalogType === 'database' && (
+                            {catalogType === 'DATABASE' && (
                                 <StyledChipList>
                                     <Chip
                                         label={'My Databases'}

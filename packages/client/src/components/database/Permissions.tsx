@@ -602,6 +602,11 @@ export const WorkflowAccess = (props: WorkflowAccessProps) => {
                     }
                     action={
                         <Switch
+                            title={
+                                discoverable
+                                    ? `Make ${type} non-discoverable`
+                                    : `Make ${type} discoverable`
+                            }
                             checked={discoverable}
                             onChange={() => {
                                 changeDiscoverable();
@@ -609,8 +614,11 @@ export const WorkflowAccess = (props: WorkflowAccessProps) => {
                         ></Switch>
                     }
                 >
-                    <Alert.Title>Discoverable</Alert.Title>
-                    Users cannot request access to this database if private
+                    <Alert.Title>
+                        {discoverable ? 'Discoverable' : 'Non-Discoverable'}
+                    </Alert.Title>
+                    Users {discoverable ? 'can' : 'cannot'} request access to
+                    this database if private
                 </StyledAlert>
             </Grid>
             <Grid item>
@@ -1002,7 +1010,7 @@ export const PendingMembersTable = (props) => {
                                 </MuiTable.Row>
                             </MuiTable.Head>
                             <MuiTable.Body>
-                                {rowsToLoop.map((x, i) => {
+                                {pendingMembers.map((x, i) => {
                                     const user = pendingMembers[i];
 
                                     let isSelected = false;
@@ -1583,7 +1591,7 @@ export const MembersTable = (props) => {
                                 </MuiTable.Row>
                             </MuiTable.Head>
                             <MuiTable.Body>
-                                {rowsToLoop.map((x, i) => {
+                                {verifiedMembers.map((x, i) => {
                                     const user = verifiedMembers[i];
 
                                     let isSelected = false;

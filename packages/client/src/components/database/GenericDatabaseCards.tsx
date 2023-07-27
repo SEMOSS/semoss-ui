@@ -191,6 +191,7 @@ const StyledTileCard = styled(Card)({
     padding: '0px 0px 8px 0px',
     flexDirection: 'column',
     alignItems: 'flex-start',
+    // width: '226px',
     gap: '16px',
     boxShadow:
         '0px 5px 22px 0px rgba(0, 0, 0, 0.04), 0px 4px 4px 0.5px rgba(0, 0, 0, 0.03)',
@@ -198,6 +199,10 @@ const StyledTileCard = styled(Card)({
     '&:hover': {
         cursor: 'pointer',
     },
+});
+
+const StyledPlainTileCard = styled(StyledTileCard)({
+    height: '100%',
 });
 
 const StyledTileCardContent = styled(Card.Content)({
@@ -224,7 +229,10 @@ const StyledCardRowsDiv = styled('div')({
 const StyledCardContainer = styled('div')({
     display: 'flex',
     flexDirection: 'column',
+    width: '100%',
+    overflow: 'hidden',
     alignItems: 'flex-start',
+    // border: 'solid red',
     gap: '8px',
     flex: '1 0 0',
 });
@@ -280,6 +288,13 @@ const StyledPublishedByContainer = styled('div')({
     alignSelf: 'stretch',
 });
 
+const StyledCardDescriptionContainer = styled('div')({
+    height: '60px',
+    width: '100%',
+    overflow: 'hidden',
+    // border: 'solid yellow',
+});
+
 const StyledCardDescription = styled(Typography)({
     display: 'flex',
     flexDirection: 'column',
@@ -289,6 +304,8 @@ const StyledCardDescription = styled(Typography)({
     whiteSpace: 'pre-wrap',
     overflow: 'hidden',
     textOverflow: 'ellipsis',
+    // width: '90%',
+    // border: 'solid blue',
 });
 
 const StyledChipDiv = styled('div')({
@@ -557,11 +574,14 @@ export const DatabaseTileCard = (props: DatabaseCardProps) => {
                                 </StyledPublishedByLabel>
                             </StyledPublishedByContainer>
 
+                            {/* <StyledCardDescriptionContainer> */}
                             <StyledCardDescription variant={'body2'}>
                                 {description
                                     ? description
                                     : 'No description available'}
                             </StyledCardDescription>
+                            {/* </StyledCardDescriptionContainer> */}
+
                             <StyledChipDiv>
                                 {tag !== undefined &&
                                     (typeof tag === 'object' ? (
@@ -649,9 +669,21 @@ export interface PlainDatabaseCardProps {
 export const PlainDatabaseCard = (props) => {
     const { name, image = defaultDBImage, onClick } = props;
     return (
-        <StyledTileCard onClick={onClick}>
+        <StyledPlainTileCard onClick={onClick}>
             <StyledCardImage src={image} sx={{ height: '118px' }} />
-            <StyledTileCardContent>{formatName(name)}</StyledTileCardContent>
-        </StyledTileCard>
+            <StyledTileCardContent>
+                <StyledCardRows>
+                    <StyledCardRowsDiv>
+                        <StyledCardContainer>
+                            <StyledCardHeader>
+                                <StyledDbName variant={'body1'}>
+                                    {formatName(name)}
+                                </StyledDbName>
+                            </StyledCardHeader>
+                        </StyledCardContainer>
+                    </StyledCardRowsDiv>
+                </StyledCardRows>
+            </StyledTileCardContent>
+        </StyledPlainTileCard>
     );
 };

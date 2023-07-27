@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { Stack, styled } from '@semoss/ui';
 import { usePixel } from '@/hooks';
 import { PlainDatabaseCard } from './GenericDatabaseCards';
+import { LoadingScreen } from '@/components/ui';
 
 interface SimilarDatabasesProps {
     id: string;
@@ -41,7 +42,9 @@ export const SimilarDatabases = (props: SimilarDatabasesProps) => {
             </Stack>
         );
     } else if (status === 'LOADING') {
-        return <div>Loading</div>;
+        return (
+            <LoadingScreen.Trigger description="Getting Similar Databases" />
+        );
     } else {
         return <div>Placeholder</div>;
     }

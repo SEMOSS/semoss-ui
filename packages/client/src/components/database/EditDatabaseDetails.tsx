@@ -271,6 +271,7 @@ export const EditDatabaseDetails = observer(
                                             console.log('value', field.value);
                                             return (
                                                 <Autocomplete<string, true>
+                                                    freeSolo={true}
                                                     multiple={true}
                                                     label={label}
                                                     options={
