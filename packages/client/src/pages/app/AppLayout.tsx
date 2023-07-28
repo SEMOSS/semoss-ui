@@ -58,8 +58,8 @@ const StyledHeaderLogout = styled('div')(({ theme }) => ({
 }));
 
 const StyledContent = styled('div')(() => ({
+    position: 'relative',
     paddingTop: NAV_HEIGHT,
-    paddingLeft: NAV_ICON_WIDTH,
     height: '100%',
     width: '100%',
 }));

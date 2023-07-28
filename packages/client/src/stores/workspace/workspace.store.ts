@@ -110,15 +110,10 @@ export class WorkspaceStore {
         const { output } = response[0];
 
         // create a new app
-        const app = new WorkspaceApp(
-            this._root,
-            output.insightData.insightID,
-            {
-                name: `App ${Object.keys(this._store.apps).length + 1}`,
-                ...options,
-            },
-            config,
-        );
+        const app = new WorkspaceApp(this._root, output.insightData.insightID, {
+            name: `App ${Object.keys(this._store.apps).length + 1}`,
+            ...options,
+        });
 
         // select it loading
         runInAction(() => {
@@ -195,7 +190,6 @@ export class WorkspaceStore {
     /**
      * Run a pixel in the workspace
      * @param pixel - pixel to execute
-     * @param mode - mode of the pixel to run (silent or active)
      * @returns void
      */
     private async run<O extends unknown[] | []>(pixel: string) {

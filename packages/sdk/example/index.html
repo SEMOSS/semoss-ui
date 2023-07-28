@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>This is the title of the webpage!</title>
+
+        <link
+            rel="stylesheet"
+            href="https://cdn.jsdelivr.net/npm/water.css@2/out/water.css"
+        />
+    </head>
+
+    <body>
+        <main>
+            <h4>Portal Integration</h4>
+            <div>
+                <p>Is Loading: <span id="loading">True</span></p>
+                <p>Color: <span id="color">None</span></p>
+                <button id="update">Update</button>
+            </div>
+        </main>
+
+        <script type="module">
+            import { Semoss } from '../src/semoss.js';
+
+            // create a new instance of the listener
+            const semoss = new Semoss({
+                endpoint: 'http://localhost:9090/MonolithDev',
+            });
+
+            // grab the elements
+            const loadingEle = document.body.querySelector('#loading');
+            const colorEle = document.body.querySelector('#color');
+            const updateEle = document.body.querySelector('#update');
+
+            /** Helpers */
+            /**
+             * Refresh the view based on the config
+             */
+            const sync = async (config) => {
+                if (config) {
+                    if (config.color) {
+                        colorEle.style.color = config.color;
+                        colorEle.innerHTML = config.color;
+                    }
+                }
+            };
+
+            /**
+             * Initialize the app
+             */
+            const update = async () => {
+                loadingEle.innerHTML = 'true';
+
+                // update the config
+                const config = await semoss.update({
+                    color: `#${Math.floor(Math.random() * 16777215).toString(
+                        16
+                    )}`,
+                });
+                sync(config);
+
+                loadingEle.innerHTML = 'false';
+            };
+
+            /**
+             * Initialize the app
+             */
+            const initialize = async () => {
+                loadingEle.innerHTML = 'true';
+
+                // connect to semoss
+                const config = await semoss.initialize();
+                sync(config);
+
+                loadingEle.innerHTML = 'false';
+            };
+
+            // add events
+            updateEle.addEventListener('click', update);
+
+            //get the initial data
+            initialize();
+        </script>
+    </body>
+</html>
