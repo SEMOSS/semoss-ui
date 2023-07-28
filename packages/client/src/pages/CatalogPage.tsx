@@ -559,7 +559,12 @@ export const CatalogPage = observer((): JSX.Element => {
                         />
                     </Stack>
                     <Stack direction="row" alignItems={'center'} spacing={3}>
-                        <Button variant={'contained'}>Add Database</Button>
+                        <Button
+                            variant={'contained'}
+                            onClick={() => navigate(`/import-database`)}
+                        >
+                            Add Database
+                        </Button>
 
                         <ToggleButtonGroup
                             size={'small'}

@@ -19,6 +19,7 @@ export * from "./components/Collapse";
 export * from "./components/Colorpicker";
 export * from "./components/Container";
 export * from "./components/Divider";
+export * from "./components/FileDropzone";
 export * from "./components/FormControl";
 export * from "./components/Grid";
 export * from "./components/Icon";

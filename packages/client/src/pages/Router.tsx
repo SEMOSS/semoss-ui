@@ -19,6 +19,7 @@ import {
     DatabaseSettingsPage,
     DatabaseReplaceDataPage,
     DatabaseQueryDataPage,
+    DatabaseImport,
 } from './database';
 import { SettingsRouter } from './settings';
 import { AppRouter } from './app';
@@ -36,6 +37,10 @@ export const Router = observer(() => {
             <Route path="/" element={<AuthenticatedLayout />}>
                 <Route path="*" element={<SideNavLayout />}>
                     <Route index element={<HomePage />} />
+                    <Route
+                        path="import-database"
+                        element={<DatabaseImport />}
+                    />
                     <Route path="catalog" element={<CatalogPage />} />
                     <Route
                         path="import"
