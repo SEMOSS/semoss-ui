@@ -69,6 +69,7 @@ export class MonolithStore {
                 pixelReturn: {
                     isMeta: boolean;
                     operationType: string[];
+                    additionalOutput: { output: string }[];
                     output: any;
                     pixelExpression: string;
                     pixelId: string;

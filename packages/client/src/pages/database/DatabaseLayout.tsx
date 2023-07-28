@@ -1,4 +1,4 @@
-import { SyntheticEvent, useCallback } from 'react';
+import { SyntheticEvent, useCallback, useState, useMemo } from 'react';
 import {
     useParams,
     useLocation,
@@ -10,7 +10,7 @@ import {
     useNavigate,
 } from 'react-router-dom';
 import { styled, Stack, ToggleTabsGroup } from '@semoss/ui';
-import { useAPI } from '@/hooks';
+import { usePixel, useAPI, useRootStore } from '@/hooks';
 
 import {
     DatabaseContext,
@@ -67,9 +67,65 @@ const StyledDiv = styled('div')(({ theme }) => ({
  */
 export const DatabaseLayout = () => {
     const { id } = useParams();
+    const { configStore } = useRootStore();
     const resolvedPath = useResolvedPath('');
     const location = useLocation();
     const navigate = useNavigate();
+
+    // filter metakeys to the ones we want
+    const databaseMetaKeys = configStore.store.config.databaseMetaKeys.filter(
+        (k) => {
+            return (
+                k.metakey !== 'description' &&
+                k.metakey !== 'markdown' &&
+                k.metakey !== 'tags'
+            );
+        },
+    );
+
+    // kets to get dbMetaData for
+    const metaKeys = [
+        'markdown',
+        'description',
+        // 'tags',  // Comes in as 'tag' either a string or string[]
+        ...databaseMetaKeys.map((k) => k.metakey),
+    ];
+
+    // get the metadata
+    const {
+        status: dbMetaStatus,
+        data: dbMetaData,
+        refresh: dbMetaRefresh,
+    } = usePixel<{
+        markdown?: string;
+        tags?: string[];
+    }>(
+        `GetDatabaseMetadata(database=["${id}"], metaKeys=${JSON.stringify([
+            metaKeys,
+        ])}); `,
+    );
+
+    // convert the data into an object
+    const values = useMemo(() => {
+        if (dbMetaStatus !== 'SUCCESS') {
+            return {};
+        }
+
+        return metaKeys.reduce((prev, curr) => {
+            // tag and domain either come in as a string or a string[]
+            // format these as string[] for autocomplete if comes in as string
+            if (curr === 'domain' || curr === 'tag') {
+                if (typeof dbMetaData[curr] === 'string') {
+                    prev[curr] = [dbMetaData[curr]];
+                } else {
+                    prev[curr] = dbMetaData[curr];
+                }
+            } else {
+                prev[curr] = dbMetaData[curr];
+            }
+            return prev;
+        }, {});
+    }, [dbMetaStatus, dbMetaData, JSON.stringify(metaKeys)]);
 
     // get the user's role
     const getUserAppPermission = useAPI(['getUserAppPermission', id]);
@@ -129,6 +185,8 @@ export const DatabaseLayout = () => {
     const databaseContextType: DatabaseContextType = {
         id: id,
         role: getUserAppPermission.data.permission,
+        refresh: dbMetaRefresh,
+        metaVals: values, // Put this here so edit can be in header
     };
 
     if (

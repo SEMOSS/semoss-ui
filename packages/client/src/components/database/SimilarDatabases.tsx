@@ -30,6 +30,7 @@ export const SimilarDatabases = (props: SimilarDatabasesProps) => {
                     return (
                         <StyledCardContainer key={i}>
                             <PlainDatabaseCard
+                                id={db.database_id}
                                 name={db.database_name}
                                 onClick={() => {
                                     console.log('navigating');
