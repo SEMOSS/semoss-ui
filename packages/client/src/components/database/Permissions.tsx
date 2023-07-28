@@ -1145,7 +1145,9 @@ export const PendingMembersTable = (props) => {
                     <StyledNoMembersContainer>
                         <StyledTableTitleContainer>
                             <StyledTableTitleDiv>
-                                <Typography variant={'h6'}>{name}</Typography>
+                                <Typography variant={'h6'}>
+                                    Pending Requests
+                                </Typography>
                             </StyledTableTitleDiv>
                         </StyledTableTitleContainer>
                         <StyledNoMembersDiv>
