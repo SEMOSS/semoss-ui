@@ -70,6 +70,7 @@
 
                 // connect to semoss
                 const config = await semoss.initialize();
+                console.log(config);
                 sync(config);
 
                 loadingEle.innerHTML = 'false';

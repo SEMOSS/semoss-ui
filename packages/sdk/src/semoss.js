@@ -143,8 +143,12 @@ export class Semoss {
             // get the config
             const response = await this.run('GetAppConfig();');
 
-            if (response.pixelReturn && response.pixelReturn[0]) {
-                this._store.config = response.pixelReturn[0];
+            if (
+                response.pixelReturn &&
+                response.pixelReturn[0] &&
+                response.pixelReturn[0].output
+            ) {
+                this._store.config = response.pixelReturn[0].output;
             }
         }
     };

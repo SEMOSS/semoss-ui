@@ -17,9 +17,9 @@ export const HomePage = observer((): JSX.Element => {
     /**
      * Open an app
      */
-    const openNewApp = async () => {
+    const openNewApp = async (config: Record<string, unknown> = {}) => {
         // open the app
-        const app = await workspaceStore.openNewApp();
+        const app = await workspaceStore.openNewApp(config);
 
         // navigate to it
         if (app) {
@@ -56,6 +56,25 @@ export const HomePage = observer((): JSX.Element => {
             <Stack spacing={1}>
                 <div>Loading {JSON.stringify(workspaceStore.isLoading)}</div>
                 <Button onClick={() => openNewApp()}>New App</Button>
+                <Button
+                    onClick={() =>
+                        openNewApp({
+                            color: 'red',
+                        })
+                    }
+                >
+                    New Red App
+                </Button>
+                <Button
+                    onClick={() =>
+                        openNewApp({
+                            color: 'green',
+                        })
+                    }
+                >
+                    New Green App
+                </Button>
+
                 {workspaceStore.appList.map((a) => {
                     return (
                         <Button
@@ -65,8 +84,7 @@ export const HomePage = observer((): JSX.Element => {
                                 selectApp(a.id);
                             }}
                         >
-                            {a.options.name} Is Loading:
-                            {JSON.stringify(a.isLoading)}
+                            {a.options.name}
                         </Button>
                     );
                 })}

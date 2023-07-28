@@ -402,6 +402,8 @@ importers:
 
   packages/playsheet: {}
 
+  packages/sdk: {}
+
   packages/ui:
     dependencies:
       '@babel/core':

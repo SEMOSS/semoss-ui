@@ -96,9 +96,9 @@ export class WorkspaceStore {
                 },
             ]
         >(
-            `OpenEmptyInsight(recipe=["<sEncode>SetInsightConfig(${JSON.stringify(
+            `OpenEmptyInsight(recipe=["<sEncode>SetAppConfig(${JSON.stringify(
                 config,
-            )});}</sEncode>"])`,
+            )});</sEncode>"])`,
         );
 
         // ignore if no response
