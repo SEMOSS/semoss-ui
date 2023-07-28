@@ -23,6 +23,9 @@ import {
     LockRounded,
 } from '@mui/icons-material';
 
+import defaultDBImage from '../../assets/img/placeholder.png';
+import { formatName } from '@/utils';
+
 const StyledLandscapeCard = styled(Card)({
     display: 'flex',
     paddingBottom: '8px',
@@ -188,6 +191,7 @@ const StyledTileCard = styled(Card)({
     padding: '0px 0px 8px 0px',
     flexDirection: 'column',
     alignItems: 'flex-start',
+    // width: '226px',
     gap: '16px',
     boxShadow:
         '0px 5px 22px 0px rgba(0, 0, 0, 0.04), 0px 4px 4px 0.5px rgba(0, 0, 0, 0.03)',
@@ -195,6 +199,10 @@ const StyledTileCard = styled(Card)({
     '&:hover': {
         cursor: 'pointer',
     },
+});
+
+const StyledPlainTileCard = styled(StyledTileCard)({
+    height: '100%',
 });
 
 const StyledTileCardContent = styled(Card.Content)({
@@ -221,7 +229,10 @@ const StyledCardRowsDiv = styled('div')({
 const StyledCardContainer = styled('div')({
     display: 'flex',
     flexDirection: 'column',
+    width: '100%',
+    overflow: 'hidden',
     alignItems: 'flex-start',
+    // border: 'solid red',
     gap: '8px',
     flex: '1 0 0',
 });
@@ -277,6 +288,13 @@ const StyledPublishedByContainer = styled('div')({
     alignSelf: 'stretch',
 });
 
+const StyledCardDescriptionContainer = styled('div')({
+    height: '60px',
+    width: '100%',
+    overflow: 'hidden',
+    // border: 'solid yellow',
+});
+
 const StyledCardDescription = styled(Typography)({
     display: 'flex',
     flexDirection: 'column',
@@ -286,6 +304,8 @@ const StyledCardDescription = styled(Typography)({
     whiteSpace: 'pre-wrap',
     overflow: 'hidden',
     textOverflow: 'ellipsis',
+    // width: '90%',
+    // border: 'solid blue',
 });
 
 const StyledChipDiv = styled('div')({
@@ -308,7 +328,7 @@ interface DatabaseCardProps {
     description: string;
 
     /** Image of the Database */
-    image: string;
+    image?: string;
 
     /** Tag of the Database */
     tag?: string[] | string;
@@ -340,7 +360,7 @@ export const DatabaseLandscapeCard = (props: DatabaseCardProps) => {
         name,
         id,
         description,
-        image,
+        image = defaultDBImage,
         tag,
         isGlobal,
         isFavorite,
@@ -361,7 +381,9 @@ export const DatabaseLandscapeCard = (props: DatabaseCardProps) => {
                 <StyledLandscapeCardImg src={image} />
                 <StyledLandscapeCardHeaderDiv>
                     <StyledLandscapeCardTitleDiv>
-                        <Typography variant={'body1'}>{name}</Typography>
+                        <Typography variant={'body1'}>
+                            {formatName(name)}
+                        </Typography>
                         <IconButton
                             size={'small'}
                             title={
@@ -482,7 +504,7 @@ export const DatabaseTileCard = (props: DatabaseCardProps) => {
         name,
         id,
         description,
-        image,
+        image = defaultDBImage,
         tag,
         isGlobal,
         isFavorite,
@@ -507,7 +529,7 @@ export const DatabaseTileCard = (props: DatabaseCardProps) => {
                         <StyledCardContainer>
                             <StyledCardHeader>
                                 <StyledDbName variant={'body1'}>
-                                    {name}
+                                    {formatName(name)}
                                 </StyledDbName>
                                 <IconButton
                                     title={
@@ -552,11 +574,14 @@ export const DatabaseTileCard = (props: DatabaseCardProps) => {
                                 </StyledPublishedByLabel>
                             </StyledPublishedByContainer>
 
+                            {/* <StyledCardDescriptionContainer> */}
                             <StyledCardDescription variant={'body2'}>
                                 {description
                                     ? description
                                     : 'No description available'}
                             </StyledCardDescription>
+                            {/* </StyledCardDescriptionContainer> */}
+
                             <StyledChipDiv>
                                 {tag !== undefined &&
                                     (typeof tag === 'object' ? (
@@ -629,5 +654,36 @@ export const DatabaseTileCard = (props: DatabaseCardProps) => {
                 </StyledLockButton>
             </StyledTileCardActions>
         </StyledTileCard>
+    );
+};
+
+export interface PlainDatabaseCardProps {
+    /** Name of the Database */
+    name: string;
+    /** Image of the Database */
+    image?: string;
+
+    onClick: () => void;
+}
+
+export const PlainDatabaseCard = (props) => {
+    const { name, image = defaultDBImage, onClick } = props;
+    return (
+        <StyledPlainTileCard onClick={onClick}>
+            <StyledCardImage src={image} sx={{ height: '118px' }} />
+            <StyledTileCardContent>
+                <StyledCardRows>
+                    <StyledCardRowsDiv>
+                        <StyledCardContainer>
+                            <StyledCardHeader>
+                                <StyledDbName variant={'body1'}>
+                                    {formatName(name)}
+                                </StyledDbName>
+                            </StyledCardHeader>
+                        </StyledCardContainer>
+                    </StyledCardRowsDiv>
+                </StyledCardRows>
+            </StyledTileCardContent>
+        </StyledPlainTileCard>
     );
 };

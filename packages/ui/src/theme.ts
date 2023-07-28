@@ -218,6 +218,7 @@ export const lightTheme: CustomThemeOptions = {
             fontWeight: "300",
             lineHeight: "116.7%",
             letterSpacing: "-1.5px",
+            textTransform: "none",
         },
         h2: {
             /* Typography/H2 */
@@ -226,6 +227,7 @@ export const lightTheme: CustomThemeOptions = {
             fontWeight: "300",
             lineHeight: "120%",
             letterSpacing: "-0.5px",
+            textTransform: "none",
         },
         h3: {
             /* Typography/H3 */
@@ -233,6 +235,7 @@ export const lightTheme: CustomThemeOptions = {
             fontStyle: "normal",
             fontWeight: "400",
             lineHeight: "116.7%",
+            textTransform: "none",
         },
         h4: {
             /* Typography/H4 */
@@ -241,6 +244,7 @@ export const lightTheme: CustomThemeOptions = {
             fontWeight: "400",
             lineHeight: "123.5%",
             letterSpacing: "0.25px",
+            textTransform: "none",
         },
         h5: {
             /* Typography/H5 */
@@ -248,6 +252,7 @@ export const lightTheme: CustomThemeOptions = {
             fontStyle: "normal",
             fontWeight: "500",
             lineHeight: "133.4%",
+            textTransform: "none",
         },
         h6: {
             /* Typography/H6 */
@@ -256,6 +261,7 @@ export const lightTheme: CustomThemeOptions = {
             fontWeight: "500",
             lineHeight: "160%",
             letterSpacing: "0.15px",
+            textTransform: "none",
         },
         button: {
             textTransform: "none",
@@ -281,6 +287,33 @@ export const lightTheme: CustomThemeOptions = {
     },
     spacing: 8,
 };
+
+// const StyledComponent = styled('div')(({theme}) => {
+//     marginLeft: theme.spacing(5) // 40px
+// }))
+
+// spacing: [
+//     "auto", // 0
+//     "100%", // 1
+//     "0px", // 2
+//     "2px", // 3
+//     "4px", // 4
+//     "8px", // 5
+//     "12px", // 6
+//     "16px", // 7
+//     "24px", // 8
+//     "32px", // 9
+//     "40px", // 10
+//     "48px", // 11
+//     "64px", // 12
+//     "80px", // 13
+//     "96px", // 14
+//     "160px", // 15
+// ],
+
+// const StyledComponent = styled('div')(({theme}) => {
+//     marginLeft: theme.spacing(5) // 8px
+// }))
 
 export const darkTheme: CustomThemeOptions = {
     palette: {
@@ -446,6 +479,7 @@ export const darkTheme: CustomThemeOptions = {
             fontWeight: "300",
             lineHeight: "116.7%",
             letterSpacing: "-1.5px",
+            textTransform: "none",
         },
         h2: {
             /* Typography/H2 */
@@ -454,6 +488,7 @@ export const darkTheme: CustomThemeOptions = {
             fontWeight: "300",
             lineHeight: "120%",
             letterSpacing: "-0.5px",
+            textTransform: "none",
         },
         h3: {
             /* Typography/H3 */
@@ -461,6 +496,7 @@ export const darkTheme: CustomThemeOptions = {
             fontStyle: "normal",
             fontWeight: "400",
             lineHeight: "116.7%",
+            textTransform: "none",
         },
         h4: {
             /* Typography/H4 */
@@ -469,6 +505,7 @@ export const darkTheme: CustomThemeOptions = {
             fontWeight: "400",
             lineHeight: "123.5%",
             letterSpacing: "0.25px",
+            textTransform: "none",
         },
         h5: {
             /* Typography/H5 */
@@ -476,6 +513,7 @@ export const darkTheme: CustomThemeOptions = {
             fontStyle: "normal",
             fontWeight: "500",
             lineHeight: "133.4%",
+            textTransform: "none",
         },
         h6: {
             /* Typography/H6 */
@@ -484,6 +522,7 @@ export const darkTheme: CustomThemeOptions = {
             fontWeight: "500",
             lineHeight: "160%",
             letterSpacing: "0.15px",
+            textTransform: "none",
         },
     },
     space: {

@@ -14,6 +14,7 @@ import {
     ToggleButtonGroup,
     Grid,
     List,
+    TextField,
 } from '@semoss/ui';
 import {
     DataObjectOutlined,
@@ -125,16 +126,16 @@ export const CatalogPage = observer((): JSX.Element => {
 
     switch (catalogParams) {
         case '':
-            catalogType = 'database';
+            catalogType = 'DATABASE';
             break;
         case '?type=database':
-            catalogType = 'database';
+            catalogType = 'DATABASE';
             break;
         case '?type=model':
-            catalogType = 'model';
+            catalogType = 'MODEL';
             break;
         case '?type=storage':
-            catalogType = 'storage';
+            catalogType = 'STORAGE';
             break;
     }
 
@@ -166,6 +167,7 @@ export const CatalogPage = observer((): JSX.Element => {
     // which view we are on
     const [mode, setMode] = useState<string>('My Databases');
     const [view, setView] = useState<'list' | 'tile'>('tile');
+    const [filterByVisibility, setFilterByVisibility] = useState(true);
 
     const dbPixelPrefix: string =
         mode === 'My Databases' ? `MyEngines` : 'MyDiscoverableEngines';
@@ -175,14 +177,15 @@ export const CatalogPage = observer((): JSX.Element => {
         Record<string, { value: string; count: number }[]>
     >({});
 
-    // track which filters are opened as well as value
+    // track which filters are opened their selected value, and search term
     const [filterVisibility, setFilterVisibility] = useState<
-        Record<string, { open: boolean; value: string[] }>
+        Record<string, { open: boolean; value: string[]; search: string }>
     >(() => {
         return databaseMetaKeys.reduce((prev, current) => {
             prev[current.metakey] = {
                 open: false,
                 value: [],
+                search: '',
             };
 
             return prev;
@@ -228,12 +231,11 @@ export const CatalogPage = observer((): JSX.Element => {
     }
 
     const metaKeysDescription = [...metaKeys, 'description'];
-    // console.log('new', metaKeysDescription)    // metaKeysDescription.push('description');
 
     const getFavoritedDatabases = usePixel(`
         ${dbPixelPrefix}(metaKeys = ${JSON.stringify(
         metaKeysDescription,
-    )}, filterWord=["${search}"], onlyFavorites=[true]);
+    )}, filterWord=["${search}"], onlyFavorites=[true], engineTypes=['${catalogType}']);
     `);
 
     const getDatabases = usePixel<
@@ -261,8 +263,15 @@ export const CatalogPage = observer((): JSX.Element => {
             metaKeysDescription,
         )} , metaFilters = [ ${JSON.stringify(
             metaFilters,
-        )} ] , filterWord=["${search}"], userT = [true]) ;`,
+        )} ] , filterWord=["${search}"], userT = [true], engineTypes=['${catalogType}']) ;`,
     );
+
+    const catalogFilterPrefix =
+        catalogType === 'DATABASE'
+            ? 'GetDatabaseMetaValues'
+            : catalogType === 'MODEL'
+            ? 'GetModelMetaValues'
+            : 'GetStorageMetaValues';
 
     const getCatalogFilters = usePixel<
         {
@@ -272,7 +281,7 @@ export const CatalogPage = observer((): JSX.Element => {
         }[]
     >(
         metaKeys.length > 0
-            ? `GetDatabaseMetaValues ( metaKeys = ${JSON.stringify(
+            ? `${catalogFilterPrefix}( metaKeys = ${JSON.stringify(
                   metaKeys,
               )} ) ;`
             : '',
@@ -578,22 +587,38 @@ export const CatalogPage = observer((): JSX.Element => {
         >
             <StyledContainer>
                 <StyledFitler>
-                    <StyledFilterList dense={true}>
+                    {/* <StyledFilterList dense={true}>
                         <List.Item>
                             <List.ItemButton
+                                sx={{ borderRadius: 8 }}
                                 selected={catalogType === 'database'}
                                 onClick={() => {
                                     navigate(`/catalog?type=database`);
                                 }}
                             >
                                 <List.Icon>
-                                    <DataObjectOutlined />
+                                    <svg
+                                        xmlns="http://www.w3.org/2000/svg"
+                                        width="20"
+                                        height="20"
+                                        viewBox="0 0 20 20"
+                                        fill="none"
+                                    >
+                                        <path
+                                            fillRule="evenodd"
+                                            clipRule="evenodd"
+                                            d="M8 0C3.58 0 0 1.79 0 4V14C0 16.21 3.59 18 8 18C12.41 18 16 16.21 16 14V4C16 1.79 12.42 0 8 0ZM14 14C14 14.5 11.87 16 8 16C4.13 16 2 14.5 2 14V11.77C3.61 12.55 5.72 13 8 13C10.28 13 12.39 12.55 14 11.77V14ZM14 9.45C12.7 10.4 10.42 11 8 11C5.58 11 3.3 10.4 2 9.45V6.64C3.47 7.47 5.61 8 8 8C10.39 8 12.53 7.47 14 6.64V9.45ZM8 6C4.13 6 2 4.5 2 4C2 3.5 4.13 2 8 2C11.87 2 14 3.5 14 4C14 4.5 11.87 6 8 6Z"
+                                            fill="#5C5C5C"
+                                        />
+                                    </svg>
                                 </List.Icon>
                                 <List.ItemText primary={'Data Catalog'} />
                             </List.ItemButton>
                         </List.Item>
                         <List.Item>
                             <List.ItemButton
+                                sx={{ borderRadius: 8 }}
+                                disabled={true}
                                 selected={catalogType === 'storage'}
                                 onClick={() => {
                                     navigate(`/catalog?type=storage`);
@@ -607,6 +632,12 @@ export const CatalogPage = observer((): JSX.Element => {
                         </List.Item>
                         <List.Item>
                             <List.ItemButton
+                                sx={
+                                    {
+                                        // borderRadius: 4
+                                    }
+                                }
+                                disabled={true}
                                 selected={catalogType === 'model'}
                                 onClick={() => {
                                     navigate(`/catalog?type=model`);
@@ -618,132 +649,199 @@ export const CatalogPage = observer((): JSX.Element => {
                                 <List.ItemText primary={'Model Catalog'} />
                             </List.ItemButton>
                         </List.Item>
-                    </StyledFilterList>
+                    </StyledFilterList> */}
 
                     <StyledFilterList dense={true}>
-                        <List.Item>
+                        <List.Item
+                            secondaryAction={
+                                <List.ItemButton
+                                    onClick={() => {
+                                        setFilterByVisibility(
+                                            !filterByVisibility,
+                                        );
+                                    }}
+                                >
+                                    {filterByVisibility ? (
+                                        <ExpandLess />
+                                    ) : (
+                                        <ExpandMore />
+                                    )}
+                                </List.ItemButton>
+                            }
+                        >
                             <List.ItemText primary={'Filter By'} />
                         </List.Item>
 
-                        {catalogType === 'database' && (
-                            <StyledChipList>
-                                <Chip
-                                    label={'My Databases'}
-                                    color={
-                                        mode === 'My Databases'
-                                            ? 'primary'
-                                            : 'default'
-                                    }
-                                    onClick={() => setMode('My Databases')}
-                                ></Chip>
-                                <Chip
-                                    label={'Discoverable Databases'}
-                                    color={
-                                        mode === 'Discoverable Databases'
-                                            ? 'primary'
-                                            : 'default'
-                                    }
-                                    onClick={() => {
-                                        setMode('Discoverable Databases');
-                                    }}
-                                ></Chip>
-                            </StyledChipList>
-                        )}
+                        <Collapse in={filterByVisibility}>
+                            {catalogType === 'DATABASE' && (
+                                <StyledChipList>
+                                    <Chip
+                                        label={'My Databases'}
+                                        color={
+                                            mode === 'My Databases'
+                                                ? 'primary'
+                                                : 'default'
+                                        }
+                                        onClick={() => setMode('My Databases')}
+                                    ></Chip>
+                                    <Chip
+                                        label={'Discoverable Databases'}
+                                        color={
+                                            mode === 'Discoverable Databases'
+                                                ? 'primary'
+                                                : 'default'
+                                        }
+                                        onClick={() => {
+                                            setMode('Discoverable Databases');
+                                        }}
+                                    ></Chip>
+                                </StyledChipList>
+                            )}
 
-                        {Object.entries(filterOptions).map((entries, i) => {
-                            const list = entries[1];
-                            return (
-                                <StyledFilter key={i}>
-                                    <List.Item
-                                        secondaryAction={
-                                            <List.ItemButton
-                                                onClick={() => {
+                            {Object.entries(filterOptions).map((entries, i) => {
+                                const list = entries[1];
+                                let shownListItems = 0; // for show more functionality
+                                return (
+                                    <StyledFilter key={i}>
+                                        <List.Item>
+                                            <List.ItemText
+                                                primary={formatDBName(
+                                                    entries[0],
+                                                )}
+                                            />
+                                        </List.Item>
+                                        <List.Item>
+                                            <TextField
+                                                label={'Search'}
+                                                size={'small'}
+                                                sx={{
+                                                    width: '100%',
+                                                }}
+                                                onChange={(e) => {
                                                     const visibleFilters = {
                                                         ...filterVisibility,
                                                     };
                                                     visibleFilters[entries[0]] =
                                                         {
-                                                            open: !visibleFilters[
+                                                            open: visibleFilters[
                                                                 entries[0]
                                                             ].open,
-                                                            value: [],
+                                                            value: visibleFilters[
+                                                                entries[0]
+                                                            ].value,
+                                                            search: e.target
+                                                                .value,
                                                         };
-
                                                     setFilterVisibility(
                                                         visibleFilters,
                                                     );
                                                 }}
-                                            >
-                                                {filterVisibility[entries[0]]
-                                                    .open ? (
-                                                    <ExpandLess />
-                                                ) : (
-                                                    <ExpandMore />
-                                                )}
-                                            </List.ItemButton>
-                                        }
-                                    >
-                                        <List.ItemText
-                                            primary={formatDBName(entries[0])}
-                                        />
-                                    </List.Item>
-                                    <Collapse
-                                        in={filterVisibility[entries[0]].open}
-                                    >
-                                        {/* <TextField
-                                            label={} 
-                                        /> */}
+                                            />
+                                        </List.Item>
                                         <StyledNestedFilterList dense={true}>
                                             {list.map((filterOption, i) => {
-                                                return (
-                                                    <List.Item
-                                                        key={i}
-                                                        secondaryAction={
-                                                            <StyledAvatarCount
-                                                                variant={
-                                                                    'rounded'
-                                                                }
-                                                                sx={{
-                                                                    height: '32px',
-                                                                    width: '32px',
-                                                                }}
-                                                            >
-                                                                {
-                                                                    filterOption.count
-                                                                }
-                                                            </StyledAvatarCount>
-                                                        }
-                                                    >
-                                                        <List.ItemButton
-                                                            selected={
+                                                if (
+                                                    shownListItems > 4 &&
+                                                    !filterVisibility[
+                                                        entries[0]
+                                                    ].open
+                                                ) {
+                                                    return;
+                                                } else {
+                                                    if (
+                                                        filterOption.value
+                                                            .toLowerCase()
+                                                            .includes(
                                                                 filterVisibility[
                                                                     entries[0]
-                                                                ].value.indexOf(
-                                                                    filterOption.value,
-                                                                ) > -1
-                                                            }
-                                                            onClick={() => {
-                                                                setSelectedFilters(
-                                                                    entries[0],
-                                                                    filterOption,
-                                                                );
-                                                            }}
-                                                        >
-                                                            <List.ItemText
-                                                                primary={
-                                                                    filterOption.value
+                                                                ].search.toLowerCase(),
+                                                            )
+                                                    ) {
+                                                        shownListItems += 1;
+                                                        return (
+                                                            <List.Item
+                                                                key={i}
+                                                                secondaryAction={
+                                                                    <StyledAvatarCount
+                                                                        variant={
+                                                                            'rounded'
+                                                                        }
+                                                                        sx={{
+                                                                            height: '32px',
+                                                                            width: '32px',
+                                                                        }}
+                                                                    >
+                                                                        {
+                                                                            filterOption.count
+                                                                        }
+                                                                    </StyledAvatarCount>
                                                                 }
-                                                            />
-                                                        </List.ItemButton>
-                                                    </List.Item>
-                                                );
+                                                            >
+                                                                <List.ItemButton
+                                                                    selected={
+                                                                        filterVisibility[
+                                                                            entries[0]
+                                                                        ].value.indexOf(
+                                                                            filterOption.value,
+                                                                        ) > -1
+                                                                    }
+                                                                    onClick={() => {
+                                                                        setSelectedFilters(
+                                                                            entries[0],
+                                                                            filterOption,
+                                                                        );
+                                                                    }}
+                                                                >
+                                                                    <List.ItemText
+                                                                        primary={
+                                                                            filterOption.value
+                                                                        }
+                                                                    />
+                                                                </List.ItemButton>
+                                                            </List.Item>
+                                                        );
+                                                    }
+                                                }
                                             })}
+                                            <List.Item>
+                                                <Button
+                                                    onClick={() => {
+                                                        const visibleFilters = {
+                                                            ...filterVisibility,
+                                                        };
+                                                        visibleFilters[
+                                                            entries[0]
+                                                        ] = {
+                                                            open: !visibleFilters[
+                                                                entries[0]
+                                                            ].open,
+                                                            value: visibleFilters[
+                                                                entries[0]
+                                                            ].value,
+                                                            search: visibleFilters[
+                                                                entries[0]
+                                                            ].search,
+                                                        };
+
+                                                        setFilterVisibility(
+                                                            visibleFilters,
+                                                        );
+                                                    }}
+                                                >
+                                                    Show{' '}
+                                                    {filterVisibility[
+                                                        entries[0]
+                                                    ].open
+                                                        ? 'Less'
+                                                        : 'More'}
+                                                </Button>
+                                            </List.Item>
                                         </StyledNestedFilterList>
-                                    </Collapse>
-                                    <Divider />
-                                </StyledFilter>
-                            );
-                        })}
+                                        {/* <Divider /> */}
+                                    </StyledFilter>
+                                );
+                            })}
+                        </Collapse>
                     </StyledFilterList>
                 </StyledFitler>
 
@@ -758,7 +856,7 @@ export const CatalogPage = observer((): JSX.Element => {
                                         sm={view === 'list' ? 12 : 12}
                                         md={view === 'list' ? 12 : 6}
                                         lg={view === 'list' ? 12 : 4}
-                                        xl={view === 'list' ? 12 : 3}
+                                        xl={view === 'list' ? 12 : 4}
                                     >
                                         {view === 'list' ? (
                                             <DatabaseLandscapeCard

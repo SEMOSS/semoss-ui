@@ -144,6 +144,10 @@ export const DatabaseLayout = () => {
             <DatabaseShell>
                 <StyledDiv>
                     <StyledToggleTabsGroup
+                        boxSx={{
+                            borderRadius: '12px 12px 0px 0px',
+                            width: '100%',
+                        }}
                         value={activeTab()}
                         onChange={(e: SyntheticEvent, val: number) => {
                             const navigateObj = tabMenu[val];

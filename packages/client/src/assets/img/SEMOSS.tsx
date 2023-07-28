@@ -1,10 +1,15 @@
-export const SEMOSS = () => {
+interface IconProps {
+    width?: number;
+    height?: number;
+}
+export const SEMOSS = (props: IconProps) => {
+    const { width = 40, height = 46 } = props;
     return (
         <svg
             xmlns="http://www.w3.org/2000/svg"
-            width="40"
-            height="46"
-            viewBox="0 0 40 46"
+            width={width}
+            height={height}
+            viewBox={`0 0 ${width} ${height}`}
             fill="none"
         >
             <path

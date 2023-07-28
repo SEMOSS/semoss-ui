@@ -9,8 +9,10 @@ import { useNotification } from '@semoss/components';
 import { AppSettings } from '../project';
 
 import {
+    Alert,
     ButtonGroup,
     Button,
+    Grid,
     Checkbox as MuiCheckbox,
     Table as MuiTable,
     styled as MuiStyled,
@@ -28,6 +30,7 @@ import {
     Icon as MuiIcon,
     Link,
     Stack,
+    ToggleButton,
 } from '@semoss/ui';
 
 import {
@@ -39,9 +42,12 @@ import {
     EditRounded,
     RemoveRedEyeRounded,
     ClearRounded,
+    Lock,
+    VisibilityOffRounded,
 } from '@mui/icons-material';
 
 import { LoadingScreen } from '@/components/ui';
+import { Switch } from '@semoss/ui';
 
 const colors = [
     '#22A4FF',
@@ -55,7 +61,7 @@ const colors = [
 
 const StyledContent = MuiStyled('div')(({ theme }) => ({
     display: 'flex',
-    width: theme.space['auto'],
+    width: '100%',
     flexDirection: 'column',
     alignItems: 'flex-start',
     gap: theme.space['05'],
@@ -86,9 +92,7 @@ const StyledTableContainer = MuiStyled(MuiTable.Container)({
     boxShadow: '0px 5px 22px 0px rgba(0, 0, 0, 0.06)',
 });
 
-const StyledMemberTable = MuiStyled(MuiTable)({
-    minHeight: '503px', // 5 rows
-});
+const StyledMemberTable = MuiStyled(MuiTable)({});
 
 const StyledTableTitleContainer = MuiStyled('div')({
     display: 'flex',
@@ -189,6 +193,16 @@ const StyledCard = MuiStyled(MuiCard)({
     borderRadius: '12px',
 });
 
+const StyledIcon = MuiStyled(MuiIcon)(({ theme }) => ({
+    // width: '20px',
+    // height: '20px',
+    // mt: '6px',
+    // marginRight: '12px',
+    // fontSize: '12px',
+    // fontWeight: 'bold',
+    color: 'rgba(0, 0, 0, .5)',
+}));
+
 // maps for permissions,
 const permissionMapper = {
     1: 'Author', // BE: 'DISPLAY'
@@ -285,26 +299,17 @@ export interface PermissionsProps {
 
 export const Permissions = (props: PermissionsProps) => {
     const { id, name, global, visibility, projectid } = props.config;
-
     const resolvedPathname = useResolvedPath('').pathname;
-
-    // New Design State Items
-    const [view, setView] = useState(0);
 
     // Helper hooks
     const { monolithStore, configStore } = useRootStore();
     const adminMode = configStore.store.user.admin;
 
+    // New Design State Items
+    const [view, setView] = useState(0);
+
     // Actually see if user is an owner or editor, quick fix
     const permission = adminMode ? 1 : 3;
-
-    const notification = useNotification();
-    const navigate = useNavigate();
-
-    // used to get total members on first mount
-    const didMount = useRef(false);
-
-    const limit = 5;
 
     // Props we use for api fns to hit | "project, database, insight"
     const type: 'database' | 'project' | 'insight' | '' =
@@ -322,170 +327,6 @@ export const Permissions = (props: PermissionsProps) => {
     if (!type) {
         return <Navigate to="/settings" replace />;
     }
-
-    // apiString for getMembers useAPI Hook
-    const getMembersString =
-        type === 'database'
-            ? 'getDatabaseUsers'
-            : type === 'project'
-            ? 'getProjectUsers'
-            : type === 'insight' && 'getInsightUsers';
-
-    // apiString for pendingUserAccess usePixel Hook
-    const getPendingUsersString =
-        type === 'database'
-            ? `GetDatabaseUserAccessRequest(database='${id}');`
-            : type === 'project'
-            ? `GetProjectUserAccessRequest(project='${id}')`
-            : type === 'insight' &&
-              `GetInsightUserAccessRequest(project='${projectid}', id='${id}');`;
-
-    // -- State
-
-    // delete db, proj, insight modal
-    const [deleteWorkflowModal, setDeleteWorkflowModal] = useState(false);
-
-    const [membersPage, setMembersPage] = useState(1);
-
-    const { control, watch, setValue } = useForm<{
-        PENDING_MEMBERS: PendingMember[];
-        MEMBERS: Member[];
-        NON_CREDENTIALED_USERS: any[];
-        SELECTED_NON_CREDENTIALED_USERS: any[];
-
-        MEMBER_SEARCH_FILTER: string;
-        MEMBER_ACCESS_FILTER: string;
-
-        UPDATE_SELECTED_PERMISSION: string;
-        ADD_MEMBER_PERMISSION: string;
-
-        GLOBAL: boolean;
-        VISIBILITY: boolean;
-    }>({
-        defaultValues: {
-            // Pending Members Table
-            PENDING_MEMBERS: [],
-            // Members Table
-            MEMBERS: [],
-            SELECTED_NON_CREDENTIALED_USERS: [],
-            NON_CREDENTIALED_USERS: [],
-
-            // Filters for Members table
-            MEMBER_SEARCH_FILTER: '',
-            MEMBER_ACCESS_FILTER: '',
-
-            // Members Table: Update Selected Modal
-            UPDATE_SELECTED_PERMISSION: '',
-            // Permission for Add Member modal
-            ADD_MEMBER_PERMISSION: '',
-
-            GLOBAL: false,
-            VISIBILITY: false,
-        },
-    });
-
-    const visibilityField = watch('VISIBILITY');
-    const globalField = watch('GLOBAL');
-
-    if (!getMembersString) {
-        return <Navigate to="/settings" replace />;
-    }
-
-    /**
-     * @name useEffect
-     * @desc - Clean up page and filters
-     */
-    useEffect(() => {
-        setValue('GLOBAL', global);
-        setValue('VISIBILITY', visibility);
-        return () => {
-            // clean up and reset
-            setMembersPage(1);
-            setValue('MEMBER_ACCESS_FILTER', '');
-            setValue('MEMBER_SEARCH_FILTER', '');
-            setValue('GLOBAL', false);
-            setValue('VISIBILITY', false);
-            didMount.current = false;
-        };
-    }, [id, projectid]);
-
-    const deleteWorkflow = () => {
-        let pixelString = '';
-        if (type === 'database') {
-            pixelString = `DeleteDatabase(database=['${id}']);`;
-        } else {
-            pixelString = `DeleteProject(project=['${id}']);`;
-        }
-
-        monolithStore.runQuery(pixelString).then((response) => {
-            const type = response.pixelReturn[0].operationType;
-            const output = response.pixelReturn[0].output;
-            if (type.indexOf('ERROR') === -1) {
-                notification.add({
-                    color: 'success',
-                    content: `Successfully deleted ${type}`,
-                });
-
-                // go back to settings
-                navigate('/settings');
-            } else {
-                notification.add({
-                    color: 'error',
-                    content: output,
-                });
-                setDeleteWorkflowModal(false);
-            }
-        });
-    };
-
-    /**
-     * @name changeVisibility
-     */
-    const changeVisibility = () => {
-        monolithStore[mapMonolithFunction(type, 'SetVisible')](
-            adminMode,
-            id,
-            !visibilityField,
-        )
-            .then((response) => {
-                if (response.data) {
-                    setValue('VISIBILITY', !visibilityField);
-
-                    notification.add({
-                        color: 'success',
-                        content: 'Succesfully editted visibility.',
-                    });
-                }
-            })
-            .catch((error) => {
-                notification.add({ color: 'error', content: error });
-            });
-    };
-
-    /**
-     * @name changeGlobal
-     */
-    const changeGlobal = () => {
-        monolithStore[mapMonolithFunction(type, 'SetGlobal')](
-            adminMode,
-            id,
-            !globalField,
-            projectid,
-        )
-            .then((response) => {
-                if (response.data.success) {
-                    setValue('GLOBAL', !globalField);
-
-                    notification.add({
-                        color: 'success',
-                        content: 'Succesfully editted global property.',
-                    });
-                }
-            })
-            .catch((error) => {
-                notification.add({ color: 'error', content: error });
-            });
-    };
 
     /**
      * @name updateSelectedUsers
@@ -519,32 +360,34 @@ export const Permissions = (props: PermissionsProps) => {
                 // try updating project permissions
                 // update through ui rather than refreshing api call
 
-                indexesToUpdate.forEach((i) => {
-                    setValue(
-                        `MEMBERS.${i}.permission`,
-                        quickUpdate ? quickUpdate : 'OWNER',
-                    );
-                });
+                // indexesToUpdate.forEach((i) => {
+                //     setValue(
+                //         `MEMBERS.${i}.permission`,
+                //         quickUpdate ? quickUpdate : 'OWNER',
+                //     );
+                // });
 
-                notification.add({
-                    color: 'success',
-                    content: quickUpdate
-                        ? `${members[0].id} has been updated`
-                        : 'All selected members have been updated',
-                });
+                // notification.add({
+                //     color: 'success',
+                //     content: quickUpdate
+                //         ? `${members[0].id} has been updated`
+                //         : 'All selected members have been updated',
+                // });
 
                 if (quickUpdate) return;
                 // clear selected members arr in state
                 // setSelectedMembers([]);
                 // select all checkbox for db-members table
                 // setSelectAllCheckboxState('members-table', []);
+
                 // reset modal field
-                setValue('UPDATE_SELECTED_PERMISSION', '');
+                // setValue('UPDATE_SELECTED_PERMISSION', '');
+
                 // close modal
                 // setUpdateMembersModal(false);
             })
             .catch((error) => {
-                notification.add({ color: 'error', content: error });
+                // notification.add({ color: 'error', content: error });
             });
     };
 
@@ -565,7 +408,7 @@ export const Permissions = (props: PermissionsProps) => {
                 onChange={handleChange}
                 aria-label="basic tabs example"
             >
-                <ToggleTabsGroup.Item label="Members" />
+                <ToggleTabsGroup.Item label="Member" />
                 <ToggleTabsGroup.Item
                     label="Pending Requests"
                     disabled={permission === 3}
@@ -577,7 +420,6 @@ export const Permissions = (props: PermissionsProps) => {
 
             {view === 0 && (
                 <MembersTable
-                    reactorPrefix={getMembersString}
                     type={type}
                     name={name}
                     adminMode={adminMode}
@@ -587,7 +429,6 @@ export const Permissions = (props: PermissionsProps) => {
             )}
             {view === 1 && (
                 <PendingMembersTable
-                    getPendingUsersString={getPendingUsersString}
                     type={type}
                     name={name}
                     adminMode={adminMode}
@@ -600,11 +441,209 @@ export const Permissions = (props: PermissionsProps) => {
     );
 };
 
-export default Permissions;
+const StyledAlert = MuiStyled(Alert)(({ theme }) => ({
+    width: '468px',
+    height: theme.spacing(13),
+    backgroundColor: theme.palette.background.paper,
+}));
 
-const PendingMembersTable = (props) => {
-    const { name, type, adminMode, id, getPendingUsersString, projectId } =
-        props;
+interface WorkflowAccessProps {
+    type: 'database' | 'project' | 'insight';
+    id: string;
+    projectId: string;
+    onDelete: () => void;
+}
+
+export const WorkflowAccess = (props: WorkflowAccessProps) => {
+    const { type, id, projectId, onDelete } = props;
+
+    const { monolithStore, configStore } = useRootStore();
+    const admin = configStore.store.user.admin;
+    const notification = useNotification();
+
+    const [discoverable, setDiscoverable] = useState(false);
+    const [global, setGlobal] = useState(false);
+
+    const getWorkflowInfoString =
+        type === 'database'
+            ? `DatabaseInfo(database='${id}');`
+            : type === 'project'
+            ? `ProjectInfo(project='${id}')`
+            : type === 'insight' && `1+1`;
+
+    const workflowInfo = usePixel<{
+        database_global: boolean;
+        database_discoverable: boolean;
+    }>(getWorkflowInfoString);
+
+    useEffect(() => {
+        // pixel call to get pending members
+        if (workflowInfo.status !== 'SUCCESS' || !workflowInfo.data) {
+            return;
+        }
+
+        setDiscoverable(workflowInfo.data.database_discoverable);
+        setGlobal(workflowInfo.data.database_global);
+    }, [workflowInfo.status, workflowInfo.data]);
+
+    const deleteWorkflow = () => {
+        let pixelString = '';
+        if (type === 'database') {
+            pixelString = `DeleteDatabase(database=['${id}']);`;
+        } else {
+            pixelString = `DeleteProject(project=['${id}']);`;
+        }
+
+        monolithStore.runQuery(pixelString).then((response) => {
+            const type = response.pixelReturn[0].operationType;
+            const output = response.pixelReturn[0].output;
+            if (type.indexOf('ERROR') === -1) {
+                notification.add({
+                    color: 'success',
+                    content: `Successfully deleted ${type}`,
+                });
+
+                // go back to settings
+                onDelete();
+            } else {
+                notification.add({
+                    color: 'error',
+                    content: output,
+                });
+                // setDeleteWorkflowModal(false);
+            }
+        });
+    };
+
+    /**
+     * @name changeDiscoverable
+     */
+    const changeDiscoverable = () => {
+        monolithStore[mapMonolithFunction(type, 'SetVisible')](
+            admin,
+            id,
+            !discoverable,
+        )
+            .then((response) => {
+                if (response.data) {
+                    setDiscoverable(!discoverable);
+
+                    notification.add({
+                        color: 'success',
+                        content: 'Succesfully editted visibility.',
+                    });
+                }
+            })
+            .catch((error) => {
+                notification.add({ color: 'error', content: error });
+            });
+    };
+
+    /**
+     * @name changeGlobal
+     */
+    const changeGlobal = () => {
+        monolithStore[mapMonolithFunction(type, 'SetGlobal')](
+            admin,
+            id,
+            !global,
+            projectId,
+        )
+            .then((response) => {
+                if (response.data.success) {
+                    setGlobal(!global);
+
+                    notification.add({
+                        color: 'success',
+                        content: 'Succesfully editted global property.',
+                    });
+                }
+            })
+            .catch((error) => {
+                notification.add({ color: 'error', content: error });
+            });
+    };
+
+    return (
+        <Grid container spacing={3}>
+            <Grid item>
+                <StyledAlert
+                    icon={
+                        <StyledIcon>
+                            <Lock />
+                        </StyledIcon>
+                    }
+                    action={
+                        <Switch
+                            title={
+                                global
+                                    ? `Make ${type} private`
+                                    : `Make ${type} public`
+                            }
+                            checked={global}
+                            onChange={() => {
+                                changeGlobal();
+                            }}
+                        ></Switch>
+                    }
+                >
+                    <Alert.Title>{global ? 'Public' : 'Private'}</Alert.Title>
+                    {global
+                        ? 'All members can access'
+                        : 'No one outside of the specified member group can access'}
+                </StyledAlert>
+            </Grid>
+            <Grid item>
+                <StyledAlert
+                    icon={
+                        <StyledIcon>
+                            <VisibilityOffRounded />
+                        </StyledIcon>
+                    }
+                    action={
+                        <Switch
+                            title={
+                                discoverable
+                                    ? `Make ${type} non-discoverable`
+                                    : `Make ${type} discoverable`
+                            }
+                            checked={discoverable}
+                            onChange={() => {
+                                changeDiscoverable();
+                            }}
+                        ></Switch>
+                    }
+                >
+                    <Alert.Title>
+                        {discoverable ? 'Discoverable' : 'Non-Discoverable'}
+                    </Alert.Title>
+                    Users {discoverable ? 'can' : 'cannot'} request access to
+                    this database if private
+                </StyledAlert>
+            </Grid>
+            <Grid item>
+                <StyledAlert
+                    icon={
+                        <StyledIcon>
+                            <Delete />
+                        </StyledIcon>
+                    }
+                    action={
+                        <Button variant="contained" color="error">
+                            Delete
+                        </Button>
+                    }
+                >
+                    <Alert.Title>Delete Database</Alert.Title>
+                    Remove database from catalog
+                </StyledAlert>
+            </Grid>
+        </Grid>
+    );
+};
+
+export const PendingMembersTable = (props) => {
+    const { name, type, adminMode, id, projectId } = props;
     const { monolithStore } = useRootStore();
     const notification = useNotification();
 
@@ -624,6 +663,14 @@ const PendingMembersTable = (props) => {
         name: 'PENDING_MEMBERS',
     });
     const pendingMembers = watch('PENDING_MEMBERS');
+
+    const getPendingUsersString =
+        type === 'database'
+            ? `GetDatabaseUserAccessRequest(database='${id}');`
+            : type === 'project'
+            ? `GetProjectUserAccessRequest(project='${id}')`
+            : type === 'insight' &&
+              `GetInsightUserAccessRequest(project='${projectId}', id='${id}');`;
 
     // Pending Member Requests Pixel call
     const pendingUserAccess = usePixel<
@@ -963,7 +1010,7 @@ const PendingMembersTable = (props) => {
                                 </MuiTable.Row>
                             </MuiTable.Head>
                             <MuiTable.Body>
-                                {rowsToLoop.map((x, i) => {
+                                {pendingMembers.map((x, i) => {
                                     const user = pendingMembers[i];
 
                                     let isSelected = false;
@@ -1122,8 +1169,8 @@ const StyledModalContentText = MuiStyled(Modal.ContentText)({
 
 type Role = 'Author' | 'Editor' | 'Read-Only' | '' | null;
 
-const MembersTable = (props) => {
-    const { name, type, adminMode, id, reactorPrefix, projectId } = props;
+export const MembersTable = (props) => {
+    const { type, adminMode, id, projectId } = props;
     const { monolithStore } = useRootStore();
     const notification = useNotification();
 
@@ -1173,8 +1220,16 @@ const MembersTable = (props) => {
     const permissionFilter = watch('ACCESS_FILTER');
     const verifiedMembers = watch('MEMBERS');
 
+    // apiString for getMembers useAPI Hook
+    const getMembersString =
+        type === 'database'
+            ? 'getDatabaseUsers'
+            : type === 'project'
+            ? 'getProjectUsers'
+            : type === 'insight' && 'getInsightUsers';
+
     const getMembers = useAPI([
-        reactorPrefix,
+        getMembersString,
         adminMode,
         id,
         searchFilter ? searchFilter : undefined,
@@ -1535,8 +1590,8 @@ const MembersTable = (props) => {
                                     <MuiTable.Cell>Action</MuiTable.Cell>
                                 </MuiTable.Row>
                             </MuiTable.Head>
-                            <MuiTable.Body sx={{ minHeight: '50rem' }}>
-                                {rowsToLoop.map((x, i) => {
+                            <MuiTable.Body>
+                                {verifiedMembers.map((x, i) => {
                                     const user = verifiedMembers[i];
 
                                     let isSelected = false;
@@ -1682,7 +1737,7 @@ const MembersTable = (props) => {
                     <StyledNoMembersContainer>
                         <StyledTableTitleContainer>
                             <StyledTableTitleDiv>
-                                <Typography variant={'h6'}>{name}</Typography>
+                                <Typography variant={'h6'}>Members</Typography>
                             </StyledTableTitleDiv>
                         </StyledTableTitleContainer>
                         <StyledNoMembersDiv>

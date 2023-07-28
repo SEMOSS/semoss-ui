@@ -1,15 +1,17 @@
 import React, { useState, useEffect } from 'react';
 import { useNotification } from '@semoss/components';
 import {
+    Breadcrumbs,
+    Button,
+    Icon,
+    IconButton,
+    LinearProgress,
     styled,
     Stack,
     Typography,
-    Button,
-    Breadcrumbs,
-    LinearProgress,
 } from '@semoss/ui';
 import { Link } from 'react-router-dom';
-import { AddCircle } from '@mui/icons-material';
+import { Edit, SimCardDownload, AddCircle } from '@mui/icons-material';
 
 import { Page, LoadingScreen } from '@/components/ui';
 import { useRootStore, useDatabase, usePixel } from '@/hooks';
@@ -103,11 +105,11 @@ export const DatabaseShell = (props: DatabaseShellProps) => {
         `GetUserDatabaseVotes(database = "${id}");`,
     );
 
-    const {
-        status: usabilityStatus,
-        data: usabilityData,
-        refresh: usabilityRefresh,
-    } = usePixel<number>(`UsabilityScore(database = '${id}');`);
+    // const {
+    //     status: usabilityStatus,
+    //     data: usabilityData,
+    //     refresh: usabilityRefresh,
+    // } = usePixel<number>(`UsabilityScore(database = '${id}');`);
 
     useEffect(() => {
         if (voteStatus !== 'SUCCESS') {
@@ -156,6 +158,21 @@ export const DatabaseShell = (props: DatabaseShellProps) => {
         });
     };
 
+    /**
+     * @name exportDB
+     * @desc export DB pixel
+     */
+    const exportDB = () => {
+        const pixel = `META|ExportDatabase(database=["${id}"] );`;
+
+        monolithStore.runQuery(pixel).then((response) => {
+            const output = response.pixelReturn[0].output,
+                insightID = response.insightID;
+
+            monolithStore.download(insightID, output);
+        });
+    };
+
     // show a loading screen when it is pending
     if (status !== 'SUCCESS') {
         return <LoadingScreen.Trigger description="Opening Database" />;
@@ -166,12 +183,10 @@ export const DatabaseShell = (props: DatabaseShellProps) => {
         return <LoadingScreen.Trigger description="Getting Social Stats" />;
     }
 
-    // show a loading screen when it is pending
-    if (usabilityStatus !== 'SUCCESS') {
-        return <LoadingScreen.Trigger description="Getting Usability Score" />;
-    }
-
-    console.log(usabilityData);
+    // // show a loading screen when it is pending
+    // if (usabilityStatus !== 'SUCCESS') {
+    //     return <LoadingScreen.Trigger description="Getting Usability Score" />;
+    // }
 
     return (
         <Page
@@ -192,15 +207,27 @@ export const DatabaseShell = (props: DatabaseShellProps) => {
                             Data Catalog Overview
                         </Typography>
                         <Stack direction="row">
-                            {/* <Button>Print Metadata</Button>
-                            <Button>Print Metadata</Button> */}
+                            <Button
+                                startIcon={<SimCardDownload />}
+                                variant="outlined"
+                                onClick={() => exportDB()}
+                            >
+                                Export
+                            </Button>
 
                             <Button
+                                startIcon={<Edit />}
+                                variant="contained"
+                                onClick={() => console.log('hello')}
+                            >
+                                Edit
+                            </Button>
+                            {/* <Button
                                 startIcon={<AddCircle />}
                                 variant={'contained'}
                             >
                                 New Insight
-                            </Button>
+                            </Button> */}
                         </Stack>
                     </Stack>
                 </Stack>
@@ -223,36 +250,36 @@ export const DatabaseShell = (props: DatabaseShellProps) => {
                     <StyledDatabaseImage
                         src={`${process.env.MODULE}/api/app-${id}/appImage/download`}
                     />
-                    {votes && (
+                    {/* {votes && (
                         <></>
-                        // <Stack direction="row" spacing={1} marginBottom={2}>
-                        //     <p>
-                        //         {votes.total}{' '}
-                        //         {votes.total === 1
-                        //             ? 'member likes'
-                        //             : 'members like'}{' '}
-                        //         this dataset
-                        //     </p>
+                        <Stack direction="row" spacing={1} marginBottom={2}>
+                            <p>
+                                {votes.total}{' '}
+                                {votes.total === 1
+                                    ? 'member likes'
+                                    : 'members like'}{' '}
+                                this dataset
+                            </p>
 
-                        //     <IconButton
-                        //         size="sm"
-                        //         color={'grey'}
-                        //         onClick={() => {
-                        //             // if true ? downvote : upvote
-                        //             voteDatabase(votes.userVote ? false : true);
-                        //         }}
-                        //     >
-                        //         <Icon
-                        //             path={
-                        //                 votes.userVote
-                        //                     ? mdiThumbUp
-                        //                     : mdiThumbUpOutline
-                        //             }
-                        //             size="md"
-                        //         ></Icon>
-                        //     </IconButton>
-                        // </Stack>
-                    )}
+                            <IconButton
+                                size="sm"
+                                color={'grey'}
+                                onClick={() => {
+                                    // if true ? downvote : upvote
+                                    voteDatabase(votes.userVote ? false : true);
+                                }}
+                            >
+                                <Icon
+                                    path={
+                                        votes.userVote
+                                            ? mdiThumbUp
+                                            : mdiThumbUpOutline
+                                    }
+                                    size="md"
+                                ></Icon>
+                            </IconButton>
+                        </Stack>
+                    )} */}
                     <Stack
                         // direction="row"
                         alignItems={'flex-end'}
