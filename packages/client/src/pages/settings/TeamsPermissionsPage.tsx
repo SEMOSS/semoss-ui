@@ -17,6 +17,7 @@ import {
     Link,
     styled,
 } from '@semoss/ui';
+import { Collapse } from '@mui/material';
 import {
     Search,
     EditRounded,
@@ -24,12 +25,14 @@ import {
     FilterAltRounded,
     Person2Rounded,
     ClearRounded,
+    DeleteRounded,
 } from '@mui/icons-material/';
 
 import { useRootStore } from '@/hooks';
 
 const StyledTableBox = styled(Box)({
-    marginTop: '16px',
+    boxShadow: '0px 5px 22px 0px rgba(0, 0, 0, 0.06)',
+    marginBottom: '6rem',
 });
 
 const StyledTableHead = styled(Table.Head)({
@@ -378,6 +381,7 @@ const AddTeamModal = (props: ModalProps) => {
 
 export const TeamsPermissionsPage = () => {
     const [search, setSearch] = React.useState('');
+    const [openSearch, setOpenSearch] = React.useState(false);
     const [currentPage, setCurrentPage] = React.useState(0);
     const [rowsPerPage, setRowsPerPage] = React.useState(10);
     const [open, setOpen] = React.useState(false);
@@ -388,7 +392,9 @@ export const TeamsPermissionsPage = () => {
 
     const indexOfLastPost = (currentPage + 1) * rowsPerPage;
     const indexOfFirstPost = indexOfLastPost - rowsPerPage;
-    const currentData = data.slice(indexOfFirstPost, indexOfLastPost);
+    const currentData = data
+        .filter((val) => val.name.toLowerCase().includes(search.toLowerCase()))
+        .slice(indexOfFirstPost, indexOfLastPost);
 
     const handleChangePage = (
         event: React.MouseEvent<HTMLButtonElement> | null,
@@ -491,7 +497,7 @@ export const TeamsPermissionsPage = () => {
     };
 
     return (
-        <Box>
+        <>
             <StyledTableBox>
                 <StyledTableHead>
                     <Box
@@ -510,9 +516,32 @@ export const TeamsPermissionsPage = () => {
                             padding: '10px 24px 10px 8px',
                         }}
                     >
-                        <IconButton>
-                            <Search />
-                        </IconButton>
+                        {!openSearch ? (
+                            <IconButton>
+                                <Search
+                                    onClick={() => setOpenSearch(!openSearch)}
+                                />
+                            </IconButton>
+                        ) : (
+                            <Collapse orientation="horizontal" in={openSearch}>
+                                <TextField
+                                    size="small"
+                                    label="Search Team Names"
+                                    value={search}
+                                    onChange={(e) => {
+                                        setCurrentPage(0);
+                                        setSearch(e);
+                                    }}
+                                    InputProps={{
+                                        endAdornment: (
+                                            <InputAdornment position="end">
+                                                <Search />
+                                            </InputAdornment>
+                                        ),
+                                    }}
+                                />
+                            </Collapse>
+                        )}
                         <IconButton>
                             <FilterAltRounded />
                         </IconButton>
@@ -543,6 +572,7 @@ export const TeamsPermissionsPage = () => {
                                         fontWeight: 'bold',
                                         lineHeight: '24px' /* 171.429% */,
                                         letterSpacing: '0.4px',
+                                        alignItems: 'left',
                                     }}
                                 >
                                     {typeof cell.name === 'string' && cell.name}
@@ -551,46 +581,52 @@ export const TeamsPermissionsPage = () => {
                         })}
                     </Table.Head>
                     <Table.Body>
-                        {currentData
-                            .filter((val) =>
-                                val.name
-                                    .toLowerCase()
-                                    .includes(search.toLowerCase()),
-                            )
-                            .map((val, idx) => {
-                                return (
-                                    <Table.Row key={idx}>
-                                        <Table.Cell>{val.name}</Table.Cell>
-                                        <Table.Cell>
-                                            {val.description}
-                                        </Table.Cell>
-                                        <Table.Cell>
-                                            {val.date_created}
-                                        </Table.Cell>
-                                        <Table.Cell>
-                                            {val.number_of_members}
-                                        </Table.Cell>
-                                        <Table.Cell>
-                                            <Box
-                                                sx={{
-                                                    display: 'flex',
-                                                    padding: '10px 0px',
-                                                    alignItems: 'center',
-                                                    gap: '6px',
-                                                }}
-                                            >
-                                                <Avatar>
-                                                    <Person2Rounded />
-                                                </Avatar>
-                                                {val.created_by}
-                                            </Box>
-                                        </Table.Cell>
-                                        <Table.Cell
+                        {currentData.map((val, idx) => {
+                            return (
+                                <Table.Row key={idx}>
+                                    <Table.Cell
+                                        sx={{ padding: '0px 0px 0px 16px' }}
+                                    >
+                                        {val.name}
+                                    </Table.Cell>
+                                    <Table.Cell
+                                        sx={{ padding: '0px 0px 0px 16px' }}
+                                    >
+                                        {val.description}
+                                    </Table.Cell>
+                                    <Table.Cell
+                                        sx={{ padding: '0px 0px 0px 16px' }}
+                                    >
+                                        {val.date_created}
+                                    </Table.Cell>
+                                    <Table.Cell
+                                        sx={{ padding: '0px 0px 0px 16px' }}
+                                    >
+                                        {val.number_of_members}
+                                    </Table.Cell>
+                                    <Table.Cell
+                                        sx={{ padding: '0px 0px 0px 16px' }}
+                                    >
+                                        <Box
+                                            sx={{
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                gap: '6px',
+                                            }}
+                                        >
+                                            <Avatar>
+                                                <Person2Rounded />
+                                            </Avatar>
+                                            {val.created_by}
+                                        </Box>
+                                    </Table.Cell>
+                                    <Table.Cell>
+                                        <Box
                                             sx={{
                                                 display: 'flex',
                                                 flexDirection: 'row',
                                                 gap: 0.5,
-                                                padding: '26px',
+                                                alignItems: 'left',
                                             }}
                                         >
                                             <IconButton
@@ -607,29 +643,36 @@ export const TeamsPermissionsPage = () => {
                                                     border: '0.938px solid rgba(0, 0, 0, 0.10)',
                                                 }}
                                             >
+                                                <DeleteRounded color="primary" />
+                                            </IconButton>
+                                            <IconButton
+                                                sx={{
+                                                    borderRadius: '7.5px',
+                                                    border: '0.938px solid rgba(0, 0, 0, 0.10)',
+                                                }}
+                                            >
                                                 <EastRounded color="primary" />
                                             </IconButton>
-                                        </Table.Cell>
-                                    </Table.Row>
-                                );
-                            })}
+                                        </Box>
+                                    </Table.Cell>
+                                </Table.Row>
+                            );
+                        })}
                     </Table.Body>
-                </Table>
-                <Box
-                    sx={{
-                        display: 'flex',
-                        justifyContent: 'flex-end',
-                        mt: '16px',
-                    }}
-                >
                     <Table.Pagination
-                        count={data.length}
+                        count={
+                            search
+                                ? currentData.length >= 10
+                                    ? currentData.length + 1
+                                    : currentData.length
+                                : data.length
+                        }
                         page={currentPage}
                         onPageChange={handleChangePage}
                         rowsPerPage={rowsPerPage}
                         onRowsPerPageChange={handleChangeRowsPerPage}
                     />
-                </Box>
+                </Table>
             </StyledTableBox>
             <AddTeamModal
                 open={open}
@@ -641,6 +684,6 @@ export const TeamsPermissionsPage = () => {
                     setSelectedNonCredentialedUsers
                 }
             />
-        </Box>
+        </>
     );
 };
