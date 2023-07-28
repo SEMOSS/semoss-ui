@@ -207,7 +207,7 @@ export const ProjectSettingsPage = () => {
                                               project.project_name,
                                           )}
                                           id={project.project_id}
-                                          description={'description'}
+                                          description={project.description}
                                           onClick={(id) => {
                                               navigate(
                                                   `${project.project_id}`,
@@ -229,12 +229,8 @@ export const ProjectSettingsPage = () => {
                                               project.project_name,
                                           )}
                                           id={project.project_id}
-                                          description={'description'}
+                                          description={project.description}
                                           onClick={(id) => {
-                                              console.log(
-                                                  'navigate',
-                                                  project.project_id,
-                                              );
                                               navigate(
                                                   `${project.project_id}`,
                                                   {
