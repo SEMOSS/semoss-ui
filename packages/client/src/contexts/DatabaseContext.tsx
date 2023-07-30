@@ -11,6 +11,10 @@ export type DatabaseContextType = {
 
     /** User's role associated with the database */
     role: Role;
+
+    refresh: () => void;
+
+    metaVals: any;
 };
 
 /**

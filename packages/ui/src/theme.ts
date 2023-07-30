@@ -63,7 +63,7 @@ export const lightTheme: CustomThemeOptions = {
             dark: "#1260DD",
         },
         secondary: {
-            main: "#D9D9D9",
+            main: "#D9D9D9", // rgba(0, 0, 0, 0.6)
             light: "#F2F2F2",
             dark: "#B5B5B5",
         },
@@ -324,7 +324,7 @@ export const darkTheme: CustomThemeOptions = {
             dark: "#1C3FBE",
         },
         secondary: {
-            main: "#6D6D6D",
+            main: "#6D6D6D", // rgba(0, 0, 0, 0.6)
             light: "#E9E9E9",
             dark: "#3B3B3B",
         },

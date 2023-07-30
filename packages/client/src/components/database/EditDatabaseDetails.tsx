@@ -133,7 +133,8 @@ export const EditDatabaseDetails = observer(
                     )}], jsonCleanup=[true])`,
                 )
                 .then((response) => {
-                    const { output, operationType } = response.pixelReturn[0];
+                    const { output, additionalOutput, operationType } =
+                        response.pixelReturn[0];
 
                     // track the errors
                     if (operationType.indexOf('ERROR') > -1) {
@@ -147,7 +148,7 @@ export const EditDatabaseDetails = observer(
 
                     notification.add({
                         color: 'success',
-                        content: output,
+                        content: additionalOutput[0].output,
                     });
 
                     // close it and succesfully message

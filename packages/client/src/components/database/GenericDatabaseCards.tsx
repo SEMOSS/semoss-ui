@@ -378,7 +378,10 @@ export const DatabaseLandscapeCard = (props: DatabaseCardProps) => {
     return (
         <StyledLandscapeCard onClick={() => onClick(id)}>
             <StyledLandscapeCardHeader>
-                <StyledLandscapeCardImg src={image} />
+                <StyledLandscapeCardImg
+                    src={`${process.env.MODULE}/api/app-${id}/appImage/download`}
+                    // src={image}
+                />
                 <StyledLandscapeCardHeaderDiv>
                     <StyledLandscapeCardTitleDiv>
                         <Typography variant={'body1'}>
@@ -522,7 +525,11 @@ export const DatabaseTileCard = (props: DatabaseCardProps) => {
     return (
         <StyledTileCard onClick={() => onClick(id)}>
             {/* Use Card.Media instead, uses img tag */}
-            <StyledCardImage src={image} sx={{ height: '118px' }} />
+            <StyledCardImage
+                // src={image}
+                src={`${process.env.MODULE}/api/app-${id}/appImage/download`}
+                sx={{ height: '118px' }}
+            />
             <StyledTileCardContent>
                 <StyledCardRows>
                     <StyledCardRowsDiv>
@@ -667,10 +674,14 @@ export interface PlainDatabaseCardProps {
 }
 
 export const PlainDatabaseCard = (props) => {
-    const { name, image = defaultDBImage, onClick } = props;
+    const { id, name, image = defaultDBImage, onClick } = props;
     return (
         <StyledPlainTileCard onClick={onClick}>
-            <StyledCardImage src={image} sx={{ height: '118px' }} />
+            <StyledCardImage
+                // src={image}
+                src={`${process.env.MODULE}/api/app-${id}/appImage/download`}
+                sx={{ height: '118px' }}
+            />
             <StyledTileCardContent>
                 <StyledCardRows>
                     <StyledCardRowsDiv>

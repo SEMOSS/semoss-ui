@@ -73,14 +73,8 @@ const StyledCardDetailsContainer = styled('div')(({ theme }) => ({
 }));
 
 export const DatabaseIndexPage = observer(() => {
-    const { id, role } = useDatabase();
+    const { id, metaVals } = useDatabase();
     const { configStore } = useRootStore();
-
-    // set if it can edit
-    const canEdit = role === 'OWNER' || role === 'EDITOR';
-
-    // track the edit state
-    const [edit, setEdit] = useState(false);
 
     // filter metakeys to the ones we want
     const databaseMetaKeys = configStore.store.config.databaseMetaKeys.filter(
@@ -93,98 +87,26 @@ export const DatabaseIndexPage = observer(() => {
         },
     );
 
-    // kets to get dbMetaData for
-    const metaKeys = [
-        'markdown',
-        'description',
-        // 'tags',  // Comes in as 'tag' either a string or string[]
-        ...databaseMetaKeys.map((k) => k.metakey),
-    ];
-
-    // get the metadata
-    const {
-        status: dbMetaStatus,
-        data: dbMetaData,
-        refresh: dbMetaRefresh,
-    } = usePixel<{
-        markdown?: string;
-        tags?: string[];
-    }>(
-        `GetDatabaseMetadata(database=["${id}"], metaKeys=${JSON.stringify([
-            metaKeys,
-        ])}); `,
-    );
-
-    // convert the data into an object
-    const values = useMemo(() => {
-        if (dbMetaStatus !== 'SUCCESS') {
-            return {};
-        }
-
-        return metaKeys.reduce((prev, curr) => {
-            // tag and domain either come in as a string or a string[]
-            // format these as string[] for autocomplete if comes in as string
-            if (curr === 'domain' || curr === 'tag') {
-                if (typeof dbMetaData[curr] === 'string') {
-                    prev[curr] = [dbMetaData[curr]];
-                } else {
-                    prev[curr] = dbMetaData[curr];
-                }
-            } else {
-                prev[curr] = dbMetaData[curr];
-            }
-            return prev;
-        }, {});
-    }, [dbMetaStatus, dbMetaData, JSON.stringify(metaKeys)]);
-
-    if (dbMetaStatus !== 'SUCCESS') {
-        return <LoadingScreen.Trigger description="Getting Database Details" />;
-    }
+    console.log('METAVALS', metaVals);
 
     return (
         <StyledPage>
-            {canEdit && (
-                <StyledEditorHolder>
-                    {edit && (
-                        <EditDatabaseDetails
-                            values={values}
-                            open={edit}
-                            onClose={(success) => {
-                                // reload if successfully submitted
-                                if (success) {
-                                    dbMetaRefresh();
-                                }
-
-                                setEdit(false);
-                            }}
-                        ></EditDatabaseDetails>
-                    )}
-                    <Button
-                        onClick={() => setEdit(!edit)}
-                        startIcon={<EditOutlined />}
-                        size={'small'}
-                        variant={'outlined'}
-                    >
-                        Edit
-                    </Button>
-                </StyledEditorHolder>
-            )}
-            {dbMetaData.markdown && (
+            {metaVals.markdown && (
                 <Section>
                     <Section.Header>
                         <Typography variant={'h6'}>Details</Typography>
                     </Section.Header>
-                    <Markdown content={dbMetaData.markdown} />
+                    <Markdown content={metaVals.markdown} />
                 </Section>
             )}
 
-            {dbMetaData.tags && (
+            {metaVals.tags && (
                 <Section>
                     <Section.Header>
                         <Typography variant={'h6'}>Tags</Typography>
                     </Section.Header>
                     <Stack direction={'row'} spacing={1} flexWrap={'wrap'}>
-                        {dbMetaData.tags.map((tag) => {
+                        {meta.tags.map((tag) => {
                             return (
                                 <Chip
                                     key={tag}
@@ -200,8 +122,8 @@ export const DatabaseIndexPage = observer(() => {
             )}
             {databaseMetaKeys.map((k) => {
                 if (
-                    values[k.metakey] === undefined ||
-                    !Array.isArray(values[k.metakey])
+                    metaVals[k.metakey] === undefined ||
+                    !Array.isArray(metaVals[k.metakey])
                 ) {
                     return null;
                 }
@@ -221,7 +143,7 @@ export const DatabaseIndexPage = observer(() => {
                                 spacing={1}
                                 flexWrap={'wrap'}
                             >
-                                {values[k.metakey].map((tag) => {
+                                {metaVals[k.metakey].map((tag) => {
                                     return (
                                         <Chip
                                             key={tag}
@@ -234,7 +156,7 @@ export const DatabaseIndexPage = observer(() => {
                                 })}
                             </Stack>
                         ) : (
-                            <>{values[k.metakey]}</>
+                            <>{metaVals[k.metakey]}</>
                         )}
                     </Section>
                 );

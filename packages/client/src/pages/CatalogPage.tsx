@@ -34,6 +34,7 @@ import { DatabaseLandscapeCard, DatabaseTileCard } from '@/components/database';
 import { usePixel, useRootStore } from '@/hooks';
 import { Page } from '@/components/ui';
 
+import { formatName } from '@/utils';
 import { Database } from '@/assets/img/Database';
 
 const StyledStack = styled(Stack)(({ theme }) => ({
@@ -126,16 +127,16 @@ export const CatalogPage = observer((): JSX.Element => {
 
     switch (catalogParams) {
         case '':
-            catalogType = 'DATABASE';
+            catalogType = 'Database';
             break;
         case '?type=database':
-            catalogType = 'DATABASE';
+            catalogType = 'Database';
             break;
         case '?type=model':
-            catalogType = 'MODEL';
+            catalogType = 'Model';
             break;
         case '?type=storage':
-            catalogType = 'STORAGE';
+            catalogType = 'Storage';
             break;
     }
 
@@ -235,7 +236,7 @@ export const CatalogPage = observer((): JSX.Element => {
     const getFavoritedDatabases = usePixel(`
         ${dbPixelPrefix}(metaKeys = ${JSON.stringify(
         metaKeysDescription,
-    )}, filterWord=["${search}"], onlyFavorites=[true], engineTypes=['${catalogType}']);
+    )}, filterWord=["${search}"], onlyFavorites=[true], engineTypes=['${catalogType.toUpperCase()}']);
     `);
 
     const getDatabases = usePixel<
@@ -263,15 +264,8 @@ export const CatalogPage = observer((): JSX.Element => {
             metaKeysDescription,
         )} , metaFilters = [ ${JSON.stringify(
             metaFilters,
-        )} ] , filterWord=["${search}"], userT = [true], engineTypes=['${catalogType}']) ;`,
+        )} ] , filterWord=["${search}"], userT = [true], engineTypes=['${catalogType.toUpperCase()}']) ;`,
     );
-
-    const catalogFilterPrefix =
-        catalogType === 'DATABASE'
-            ? 'GetDatabaseMetaValues'
-            : catalogType === 'MODEL'
-            ? 'GetModelMetaValues'
-            : 'GetStorageMetaValues';
 
     const getCatalogFilters = usePixel<
         {
@@ -281,7 +275,7 @@ export const CatalogPage = observer((): JSX.Element => {
         }[]
     >(
         metaKeys.length > 0
-            ? `${catalogFilterPrefix}( metaKeys = ${JSON.stringify(
+            ? `GetEngineMetaValues( engineTypes=['${catalogType.toUpperCase()}'], metaKeys = ${JSON.stringify(
                   metaKeys,
               )} ) ;`
             : '',
@@ -559,7 +553,7 @@ export const CatalogPage = observer((): JSX.Element => {
                         />
                     </Stack>
                     <Stack direction="row" alignItems={'center'} spacing={3}>
-                        <Button variant={'contained'}>Add Database</Button>
+                        <Button variant={'contained'}>Add {catalogType}</Button>
 
                         <ToggleButtonGroup
                             size={'small'}
@@ -673,7 +667,7 @@ export const CatalogPage = observer((): JSX.Element => {
                         </List.Item>
 
                         <Collapse in={filterByVisibility}>
-                            {catalogType === 'DATABASE' && (
+                            {catalogType.toUpperCase() === 'DATABASE' && (
                                 <StyledChipList>
                                     <Chip
                                         label={'My Databases'}

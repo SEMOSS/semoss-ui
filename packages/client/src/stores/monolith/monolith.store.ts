@@ -69,6 +69,7 @@ export class MonolithStore {
                 pixelReturn: {
                     isMeta: boolean;
                     operationType: string[];
+                    additionalOutput: { output: string }[];
                     output: any;
                     pixelExpression: string;
                     pixelId: string;
@@ -224,30 +225,6 @@ export class MonolithStore {
             }, 1000);
         });
     }
-
-    // /**
-    //  * @name downloadFile
-    //  * @desc this call will create a get to download a file
-    //  * @param insightID - insightID to execute the pixel against
-    //  * @param fileKey - id for the file to grab
-    //  */
-    // downloadFile = (insightID: string, fileKey: string): void => {
-    //     const url = `${MODULE}/api/engine/downloadFile?insightId=${insightID}&fileKey=${encodeURIComponent(
-    //         fileKey,
-    //     )}`;
-
-    //     const link: HTMLAnchorElement = document.createElement('a');
-
-    //     link.href = url;
-
-    //     link.target = '_blank';
-
-    //     document.body.appendChild(link);
-
-    //     link.click();
-
-    //     document.body.removeChild(link);
-    // };
 
     /**
      * @name getLoginProperties
@@ -622,7 +599,7 @@ export class MonolithStore {
         // figure out whether we want to do .catch here
     }
 
-    // ----- Members End -----
+    // ----- Users End -----
     // ----- Properties Start -----
 
     /**
@@ -809,6 +786,8 @@ export class MonolithStore {
         return response.data;
     }
 
+    // ----- Users Start -----
+
     /**
      * @name getProjectUsers
      * @param admin
@@ -831,7 +810,6 @@ export class MonolithStore {
         }
 
         url += 'project/getProjectUsers';
-        // jbaxter6
         // get the response
         const response = await axios
             .get<{
@@ -894,64 +872,6 @@ export class MonolithStore {
         return response.data;
     }
 
-    /**
-     * @name setProjectGlobal
-     * @param admin
-     * @param appId
-     * @param global
-     */
-    async setProjectGlobal(admin, appId, global: boolean) {
-        let url = `${BACKEND}/api/auth/`,
-            postData = '';
-
-        if (admin) {
-            url += 'admin/';
-        }
-
-        url += 'project/setProjectGlobal';
-
-        postData += 'projectId=' + encodeURIComponent(appId);
-        postData += '&public=' + encodeURIComponent(global);
-
-        const response = await axios.post<{ success: boolean }>(url, postData, {
-            headers: {
-                'content-type': 'application/x-www-form-urlencoded',
-            },
-        });
-
-        return response;
-    }
-
-    /**
-     * @name setProjectVisiblity
-     * @param admin
-     * @param appId
-     * @param visible
-     */
-    async setProjectVisiblity(admin, appId, visible) {
-        let url = `${BACKEND}/api/auth/`,
-            postData = '';
-
-        // if (admin) {
-        //     url += 'admin/';
-        // }
-
-        // change to database
-        url += 'project/setProjectVisibility';
-
-        postData += 'projectId=' + encodeURIComponent(appId);
-        postData += '&visibility=' + encodeURIComponent(visible);
-
-        const response = await axios.post<{ success: boolean }>(url, postData, {
-            headers: {
-                'content-type': 'application/x-www-form-urlencoded',
-            },
-        });
-
-        return response;
-    }
-    // ----------------------------------------------------------------------
-    // Project Pending Member Actions
     /**
      * @name approveProjectUserAccessRequest
      * @param admin
@@ -1019,8 +939,6 @@ export class MonolithStore {
 
         // figure out whether we want to do .catch here
     }
-
-    // Verified Project Member actions
 
     /**
      * @name addProjectUserPermissions
@@ -1125,6 +1043,107 @@ export class MonolithStore {
 
         // figure out whether we want to do .catch here
     }
+    // ----- Users End -----
+    // ----- Properties Start -----
+
+    /**
+     * @name setProjectGlobal
+     * @param admin
+     * @param appId
+     * @param global
+     */
+    async setProjectGlobal(admin, appId, global: boolean) {
+        let url = `${BACKEND}/api/auth/`,
+            postData = '';
+
+        if (admin) {
+            url += 'admin/';
+        }
+
+        url += 'project/setProjectGlobal';
+
+        postData += 'projectId=' + encodeURIComponent(appId);
+        postData += '&public=' + encodeURIComponent(global);
+
+        const response = await axios.post<{ success: boolean }>(url, postData, {
+            headers: {
+                'content-type': 'application/x-www-form-urlencoded',
+            },
+        });
+
+        return response;
+    }
+
+    /**
+     * @name setProjectVisiblity
+     * @param admin
+     * @param appId
+     * @param visible
+     */
+    async setProjectVisiblity(admin, appId, visible) {
+        let url = `${BACKEND}/api/auth/`,
+            postData = '';
+
+        // if (admin) {
+        //     url += 'admin/';
+        // }
+
+        // change to database
+        url += 'project/setProjectVisibility';
+
+        postData += 'projectId=' + encodeURIComponent(appId);
+        postData += '&visibility=' + encodeURIComponent(visible);
+
+        const response = await axios.post<{ success: boolean }>(url, postData, {
+            headers: {
+                'content-type': 'application/x-www-form-urlencoded',
+            },
+        });
+
+        return response;
+    }
+
+    // ----- Properties End -----
+    // ----- Portal Start -----
+
+    /**
+     * @name setProjectPortal
+     * @param projectId
+     * @param hasPortal
+     * @param portalName
+     */
+    async setProjectPortal(
+        admin: boolean,
+        projectId: string,
+        hasPortal: boolean,
+        portalName?: string,
+    ) {
+        let url = `${BACKEND}/api/auth/`,
+            postData = '';
+
+        // if (admin) {
+        //     url += 'admin/';
+        // }
+
+        url += 'project/setProjectPortal';
+
+        postData += 'projectId=' + encodeURIComponent(projectId);
+        postData += '&hasPortal=' + encodeURIComponent(hasPortal);
+
+        if (portalName) {
+            postData += '&projectId=' + encodeURIComponent(portalName);
+        }
+
+        const response = await axios.post<{ success: boolean }>(url, postData, {
+            headers: {
+                'content-type': 'application/x-www-form-urlencoded',
+            },
+        });
+
+        return response;
+    }
+
+    // ----- Portal End -----
 
     // ----------------------------------------------------------------------
     // Insight Level
