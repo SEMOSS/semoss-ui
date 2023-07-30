@@ -66,10 +66,10 @@ export class WorkspaceStore {
      */
     get appList() {
         return Object.values(this._store.apps).sort((a, b) => {
-            if (a.options.name < b.options.name) {
+            if (a.display.name < b.display.name) {
                 return -1;
             }
-            if (a.options.name > b.options.name) {
+            if (a.display.name > b.display.name) {
                 return 1;
             }
             return 0;
@@ -81,10 +81,17 @@ export class WorkspaceStore {
     // *********************************************************
     /**
      * Open a new insight
+     *
+     * @param type - type of app to open
+     * @param options - options to associate with the app
+     * @param display - display information for the app
+     * @param config - configuration to load with the app
      */
     async openNewApp(
+        type: string,
+        options: Partial<WorkspaceApp['env']> = {},
+        display: Partial<WorkspaceApp['display']> = {},
         config: Record<string, unknown> = {},
-        options: Partial<WorkspaceApp['options']> = {},
     ): Promise<WorkspaceApp> {
         // get the response
         const response = await this.run<
@@ -110,10 +117,16 @@ export class WorkspaceStore {
         const { output } = response[0];
 
         // create a new app
-        const app = new WorkspaceApp(this._root, output.insightData.insightID, {
-            name: `App ${Object.keys(this._store.apps).length + 1}`,
-            ...options,
-        });
+        const app = new WorkspaceApp(
+            this._root,
+            output.insightData.insightID,
+            type,
+            options,
+            {
+                name: `App ${Object.keys(this._store.apps).length + 1}`,
+                ...display,
+            },
+        );
 
         // select it loading
         runInAction(() => {

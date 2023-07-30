@@ -21,6 +21,7 @@ const StyledHeader = styled('div')(({ theme }) => ({
     overflow: 'hidden',
     color: 'rgba(235, 238, 254, 1)',
     backgroundColor: theme.palette.common.black,
+    zIndex: 10,
 }));
 
 const StyledHeaderLogo = styled(Link)(({ theme }) => ({
@@ -70,20 +71,12 @@ const StyledContent = styled('div')(() => ({
 export const AppLayout = observer(() => {
     const { workspaceStore } = useRootStore();
 
-    // navigation
-    const navigate = useNavigate();
-
     /**
      * Select an app
      */
     const selectApp = (id: string) => {
         // open the app
-        const app = workspaceStore.selectApp(id);
-
-        // navigate to it
-        if (app) {
-            navigate(`app`);
-        }
+        workspaceStore.selectApp(id);
     };
 
     return (
@@ -114,9 +107,9 @@ export const AppLayout = observer(() => {
                 </StyledHeaderLogo>
                 <Stack
                     flex={1}
-                    flexDirection={'row'}
+                    direction={'row'}
                     alignItems={'center'}
-                    spacing={1}
+                    gap={1}
                     flexWrap={'wrap'}
                 >
                     {workspaceStore.appList.map((a) => {
@@ -124,7 +117,7 @@ export const AppLayout = observer(() => {
                             <Chip
                                 key={a.id}
                                 variant="filled"
-                                label={a.options.name}
+                                label={a.display.name}
                                 clickable={true}
                                 color="primary"
                                 onClick={() => selectApp(a.id)}
