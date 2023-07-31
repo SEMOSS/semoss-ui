@@ -12,6 +12,8 @@ import { SideNavLayout } from './SideNavLayout';
 import { LoginPage } from './LoginPage';
 import { HomePage } from './HomePage';
 import { CatalogPage } from './CatalogPage';
+import { ImportStorage } from './storage';
+
 import {
     DatabaseLayout,
     DatabaseIndexPage,
@@ -37,10 +39,7 @@ export const Router = observer(() => {
                 <Route path="*" element={<SideNavLayout />}>
                     <Route index element={<HomePage />} />
                     <Route path="catalog" element={<CatalogPage />} />
-                    <Route
-                        path="import"
-                        element={<TempPage title={'Import'} />}
-                    />
+                    <Route path="import" element={<ImportStorage />} />
                     <Route path="database" element={<Outlet />}>
                         <Route path=":id" element={<DatabaseLayout />}>
                             <Route index element={<DatabaseIndexPage />} />

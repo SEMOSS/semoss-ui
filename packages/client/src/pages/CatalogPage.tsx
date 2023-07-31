@@ -553,7 +553,14 @@ export const CatalogPage = observer((): JSX.Element => {
                         />
                     </Stack>
                     <Stack direction="row" alignItems={'center'} spacing={3}>
-                        <Button variant={'contained'}>Add {catalogType}</Button>
+                        <Button
+                            variant={'contained'}
+                            onClick={() => {
+                                navigate('/import');
+                            }}
+                        >
+                            Add {catalogType}
+                        </Button>
 
                         <ToggleButtonGroup
                             size={'small'}
@@ -696,27 +703,29 @@ export const CatalogPage = observer((): JSX.Element => {
                                 const list = entries[1];
                                 let shownListItems = 0; // for show more functionality
                                 return (
-                                    <StyledFilter key={i}>
-                                        <List.Item>
-                                            <List.ItemText
-                                                primary={formatDBName(
-                                                    entries[0],
-                                                )}
-                                            />
-                                        </List.Item>
-                                        <List.Item>
-                                            <TextField
-                                                label={'Search'}
-                                                size={'small'}
-                                                sx={{
-                                                    width: '100%',
-                                                }}
-                                                onChange={(e) => {
-                                                    const visibleFilters = {
-                                                        ...filterVisibility,
-                                                    };
-                                                    visibleFilters[entries[0]] =
-                                                        {
+                                    <>
+                                        <StyledFilter key={i}>
+                                            <List.Item>
+                                                <List.ItemText
+                                                    primary={formatDBName(
+                                                        entries[0],
+                                                    )}
+                                                />
+                                            </List.Item>
+                                            <List.Item>
+                                                <TextField
+                                                    label={'Search'}
+                                                    size={'small'}
+                                                    sx={{
+                                                        width: '100%',
+                                                    }}
+                                                    onChange={(e) => {
+                                                        const visibleFilters = {
+                                                            ...filterVisibility,
+                                                        };
+                                                        visibleFilters[
+                                                            entries[0]
+                                                        ] = {
                                                             open: visibleFilters[
                                                                 entries[0]
                                                             ].open,
@@ -726,113 +735,119 @@ export const CatalogPage = observer((): JSX.Element => {
                                                             search: e.target
                                                                 .value,
                                                         };
-                                                    setFilterVisibility(
-                                                        visibleFilters,
-                                                    );
-                                                }}
-                                            />
-                                        </List.Item>
-                                        <StyledNestedFilterList dense={true}>
-                                            {list.map((filterOption, i) => {
-                                                if (
-                                                    shownListItems > 4 &&
-                                                    !filterVisibility[
-                                                        entries[0]
-                                                    ].open
-                                                ) {
-                                                    return;
-                                                } else {
-                                                    if (
-                                                        filterOption.value
-                                                            .toLowerCase()
-                                                            .includes(
-                                                                filterVisibility[
-                                                                    entries[0]
-                                                                ].search.toLowerCase(),
-                                                            )
-                                                    ) {
-                                                        shownListItems += 1;
-                                                        return (
-                                                            <List.Item
-                                                                key={i}
-                                                                secondaryAction={
-                                                                    <StyledAvatarCount
-                                                                        variant={
-                                                                            'rounded'
-                                                                        }
-                                                                        sx={{
-                                                                            height: '32px',
-                                                                            width: '32px',
-                                                                        }}
-                                                                    >
-                                                                        {
-                                                                            filterOption.count
-                                                                        }
-                                                                    </StyledAvatarCount>
-                                                                }
-                                                            >
-                                                                <List.ItemButton
-                                                                    selected={
-                                                                        filterVisibility[
-                                                                            entries[0]
-                                                                        ].value.indexOf(
-                                                                            filterOption.value,
-                                                                        ) > -1
-                                                                    }
-                                                                    onClick={() => {
-                                                                        setSelectedFilters(
-                                                                            entries[0],
-                                                                            filterOption,
-                                                                        );
-                                                                    }}
-                                                                >
-                                                                    <List.ItemText
-                                                                        primary={
-                                                                            filterOption.value
-                                                                        }
-                                                                    />
-                                                                </List.ItemButton>
-                                                            </List.Item>
-                                                        );
-                                                    }
-                                                }
-                                            })}
-                                            <List.Item>
-                                                <Button
-                                                    onClick={() => {
-                                                        const visibleFilters = {
-                                                            ...filterVisibility,
-                                                        };
-                                                        visibleFilters[
-                                                            entries[0]
-                                                        ] = {
-                                                            open: !visibleFilters[
-                                                                entries[0]
-                                                            ].open,
-                                                            value: visibleFilters[
-                                                                entries[0]
-                                                            ].value,
-                                                            search: visibleFilters[
-                                                                entries[0]
-                                                            ].search,
-                                                        };
-
                                                         setFilterVisibility(
                                                             visibleFilters,
                                                         );
                                                     }}
-                                                >
-                                                    Show{' '}
-                                                    {filterVisibility[
-                                                        entries[0]
-                                                    ].open
-                                                        ? 'Less'
-                                                        : 'More'}
-                                                </Button>
+                                                />
                                             </List.Item>
-                                        </StyledNestedFilterList>
+                                            <StyledNestedFilterList
+                                                dense={true}
+                                            >
+                                                {list.map((filterOption, i) => {
+                                                    if (
+                                                        shownListItems > 4 &&
+                                                        !filterVisibility[
+                                                            entries[0]
+                                                        ].open
+                                                    ) {
+                                                        return;
+                                                    } else {
+                                                        if (
+                                                            filterOption.value
+                                                                .toLowerCase()
+                                                                .includes(
+                                                                    filterVisibility[
+                                                                        entries[0]
+                                                                    ].search.toLowerCase(),
+                                                                )
+                                                        ) {
+                                                            shownListItems += 1;
+                                                            return (
+                                                                <List.Item
+                                                                    key={i}
+                                                                    secondaryAction={
+                                                                        <StyledAvatarCount
+                                                                            variant={
+                                                                                'rounded'
+                                                                            }
+                                                                            sx={{
+                                                                                height: '32px',
+                                                                                width: '32px',
+                                                                            }}
+                                                                        >
+                                                                            {
+                                                                                filterOption.count
+                                                                            }
+                                                                        </StyledAvatarCount>
+                                                                    }
+                                                                >
+                                                                    <List.ItemButton
+                                                                        selected={
+                                                                            filterVisibility[
+                                                                                entries[0]
+                                                                            ].value.indexOf(
+                                                                                filterOption.value,
+                                                                            ) >
+                                                                            -1
+                                                                        }
+                                                                        onClick={() => {
+                                                                            setSelectedFilters(
+                                                                                entries[0],
+                                                                                filterOption,
+                                                                            );
+                                                                        }}
+                                                                    >
+                                                                        <List.ItemText
+                                                                            primary={
+                                                                                filterOption.value
+                                                                            }
+                                                                        />
+                                                                    </List.ItemButton>
+                                                                </List.Item>
+                                                            );
+                                                        }
+                                                    }
+                                                })}
+                                                <List.Item>
+                                                    <Button
+                                                        onClick={() => {
+                                                            const visibleFilters =
+                                                                {
+                                                                    ...filterVisibility,
+                                                                };
+                                                            visibleFilters[
+                                                                entries[0]
+                                                            ] = {
+                                                                open: !visibleFilters[
+                                                                    entries[0]
+                                                                ].open,
+                                                                value: visibleFilters[
+                                                                    entries[0]
+                                                                ].value,
+                                                                search: visibleFilters[
+                                                                    entries[0]
+                                                                ].search,
+                                                            };
+
+                                                            setFilterVisibility(
+                                                                visibleFilters,
+                                                            );
+                                                        }}
+                                                    >
+                                                        Show{' '}
+                                                        {filterVisibility[
+                                                            entries[0]
+                                                        ].open
+                                                            ? 'Less'
+                                                            : 'More'}
+                                                    </Button>
+                                                </List.Item>
+                                            </StyledNestedFilterList>
+                                            {/* <Divider /> */}
+                                        </StyledFilter>
                                         {/* <Divider /> */}
-                                    </StyledFilter>
+                                    </>
                                 );
                             })}
                         </Collapse>

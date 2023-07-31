@@ -3,6 +3,7 @@ import { useNotification } from '@semoss/components';
 import {
     Breadcrumbs,
     Button,
+    Chip,
     LinearProgress,
     styled,
     Stack,
@@ -41,8 +42,19 @@ const StyledInfoRight = styled('div')(({ theme }) => ({
 }));
 
 const StyledInfoDescription = styled(Typography)(() => ({
+    // display: 'flex',
+    // width: '699px',
+    // height: '174px',
+    // flexDirection: 'column',
+    // alignItems: 'flex-start',
     maxWidth: '50%',
     textOverflow: 'ellipsis',
+}));
+
+const StyledChipContainer = styled('div')(({ theme }) => ({
+    display: 'flex',
+    alignItems: 'flex-start',
+    gap: theme.spacing(1),
 }));
 
 const StyledInfoFooter = styled(Typography)(() => ({
@@ -66,12 +78,6 @@ const StyledDatabaseImage = styled('img')({
     flexShrink: '0',
     borderRadius: '8.862px',
 });
-
-const StyledEditorHolder = styled('div')(() => ({
-    position: 'absolute',
-    top: '0',
-    right: '0',
-}));
 
 interface DatabaseShellProps {
     /** Children to wrap in the RootStore */
@@ -213,6 +219,8 @@ export const DatabaseShell = (props: DatabaseShellProps) => {
         return <LoadingScreen.Trigger description="Getting Social Stats" />;
     }
 
+    console.log('metavals', metaVals);
+
     return (
         <Page
             header={
@@ -288,9 +296,18 @@ export const DatabaseShell = (props: DatabaseShellProps) => {
                         {metaVals.description}
                     </StyledInfoDescription>
 
-                    <StyledInfoFooter variant={'caption'}>
-                        Updated {data.last_updated}
-                    </StyledInfoFooter>
+                    <StyledChipContainer>
+                        {metaVals.tag &&
+                            metaVals.tag.map((tag, i) => {
+                                return (
+                                    <Chip
+                                        key={i}
+                                        variant={'outlined'}
+                                        label={tag}
+                                    />
+                                );
+                            })}
+                    </StyledChipContainer>
                 </StyledInfoLeft>
                 <StyledInfoRight>
                     <StyledDatabaseImage
@@ -298,10 +315,13 @@ export const DatabaseShell = (props: DatabaseShellProps) => {
                     />
                     <Stack alignItems={'flex-end'} spacing={1} marginBottom={2}>
                         <Typography variant={'body2'}>
-                            Published by: J. Smiths
+                            Published by: J. Smith
                         </Typography>
                         <Typography variant={'body2'}>
                             Published: 01/23/2023
+                        </Typography>
+                        <Typography variant={'body2'}>
+                            Updated {data.last_updated}
                         </Typography>
                     </Stack>
                 </StyledInfoRight>

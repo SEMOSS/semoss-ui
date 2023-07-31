@@ -165,6 +165,13 @@ const StyledViewsTrendingDiv = styled('div')({
     gap: '4px',
 });
 
+const StyledButtonGroup = styled(ButtonGroup)({
+    // borderRadius: '8px',
+    // border: '1px solid rgba(0, 0, 0, 0.23)'
+});
+
+const StyledButtonGroupItem = styled(ButtonGroup.Item)({});
+
 const StyledEyeIcon = styled(Visibility)({
     display: 'flex',
     alignItems: 'flex-start',
@@ -243,6 +250,12 @@ const StyledCardImage = styled('img')({
     alignItems: 'flex-start',
     gap: '10px',
     alignSelf: 'stretch',
+
+    overflowClipMargin: 'content-box',
+    overflow: 'clip',
+    objectFit: 'cover',
+    width: '100%',
+    // aspectRatio: '1/1'
 });
 
 const StyledCardHeader = styled('div')({
@@ -526,7 +539,6 @@ export const DatabaseTileCard = (props: DatabaseCardProps) => {
         <StyledTileCard onClick={() => onClick(id)}>
             {/* Use Card.Media instead, uses img tag */}
             <StyledCardImage
-                // src={image}
                 src={`${process.env.MODULE}/api/app-${id}/appImage/download`}
                 sx={{ height: '118px' }}
             />
@@ -615,7 +627,7 @@ export const DatabaseTileCard = (props: DatabaseCardProps) => {
             </StyledTileCardContent>
             <StyledTileCardActions>
                 <StyledLeftActions>
-                    <ButtonGroup size="sm" color="secondary">
+                    <StyledButtonGroup size="sm" color="secondary">
                         <ButtonGroup.Item
                             title={
                                 isUpvoted
@@ -632,7 +644,7 @@ export const DatabaseTileCard = (props: DatabaseCardProps) => {
                         <ButtonGroup.Item disabled={true}>
                             {votes}
                         </ButtonGroup.Item>
-                    </ButtonGroup>
+                    </StyledButtonGroup>
                     <StyledViewsTrendingDiv>
                         <StyledEyeIcon />
                         <Typography color="secondary" variant="caption">

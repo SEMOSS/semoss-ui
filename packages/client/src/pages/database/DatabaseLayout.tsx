@@ -45,10 +45,6 @@ const StyledTab = styled(Link, {
 const StyledDocument = styled('div')(({ theme }) => ({
     width: '100%',
     padding: theme.spacing(2),
-    // borderWidth: '1px',
-    // borderStyle: 'solid',
-    // borderColor: theme.palette.divider,
-    // borderRadius: theme.shape.borderRadius,
     backgroundColor: theme.palette.background.default,
 }));
 
@@ -59,7 +55,6 @@ const StyledToggleTabsGroup = styled(ToggleTabsGroup)(({ theme }) => ({
 const StyledDiv = styled('div')(({ theme }) => ({
     width: '100%',
     borderRadius: '12px 12px 0px 0px',
-    // backgroundColor: 'rgba(0, 0, 0, 0.38)',
 }));
 
 /**
@@ -146,11 +141,11 @@ export const DatabaseLayout = () => {
             path: '/settings',
             show: false,
         },
-        {
-            label: 'Data',
-            path: '/data',
-            show: false,
-        },
+        // {
+        //     label: 'Data',
+        //     path: '/data',
+        //     show: false,
+        // },
     ];
 
     /**
@@ -186,7 +181,7 @@ export const DatabaseLayout = () => {
         id: id,
         role: getUserAppPermission.data.permission,
         refresh: dbMetaRefresh,
-        metaVals: values, // Put this here so edit can be in header
+        metaVals: values, // Needed so edit button can be in header
     };
 
     if (
@@ -194,7 +189,7 @@ export const DatabaseLayout = () => {
         databaseContextType.role === 'OWNER'
     ) {
         tabMenu[2].show = true;
-        tabMenu[3].show = true;
+        // tabMenu[3].show = true;
     }
 
     return (
@@ -224,35 +219,6 @@ export const DatabaseLayout = () => {
                         })}
                     </StyledToggleTabsGroup>
                 </StyledDiv>
-                {/* <Stack direction={'row'} alignItems={'center'}>
-                    <StyledTab to="" selected={isActive('')}>
-                        Home
-                    </StyledTab>
-                    <StyledTab to="metadata" selected={isActive('metadata')}>
-                        Metadata
-                    </StyledTab>
-                    {(databaseContextType.role === 'EDITOR' ||
-                        databaseContextType.role === 'OWNER') && (
-                        <StyledTab
-                            to="settings"
-                            selected={isActive('settings')}
-                        >
-                            Settings
-                        </StyledTab>
-                    )}
-                    {(databaseContextType.role === 'EDITOR' ||
-                        databaseContextType.role === 'OWNER') && (
-                        <StyledTab to="replace" selected={isActive('replace')}>
-                            Replace Data
-                        </StyledTab>
-                    )}
-                    {(databaseContextType.role === 'EDITOR' ||
-                        databaseContextType.role === 'OWNER') && (
-                        <StyledTab to="query" selected={isActive('query')}>
-                            Query Data
-                        </StyledTab>
-                    )}
-                </Stack> */}
                 <StyledDocument>
                     <Outlet />
                 </StyledDocument>

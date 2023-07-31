@@ -130,7 +130,7 @@ export const SettingsIndexPage = () => {
                     onChange={(e) => {
                         setSearch(e.target.value);
                     }}
-                    placeholder={'Search Databases'}
+                    placeholder={'Search'}
                     InputProps={{
                         startAdornment: <SearchIcon />,
                     }}

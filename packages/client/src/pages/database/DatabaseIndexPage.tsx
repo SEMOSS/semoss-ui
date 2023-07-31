@@ -100,7 +100,7 @@ export const DatabaseIndexPage = observer(() => {
                 </Section>
             )}
 
-            {metaVals.tags && (
+            {/* {metaVals.tags && (
                 <Section>
                     <Section.Header>
                         <Typography variant={'h6'}>Tags</Typography>
@@ -119,7 +119,7 @@ export const DatabaseIndexPage = observer(() => {
                         })}
                     </Stack>
                 </Section>
-            )}
+            )} */}
             {databaseMetaKeys.map((k) => {
                 if (
                     metaVals[k.metakey] === undefined ||
