@@ -305,9 +305,9 @@ export function JobsPage() {
     const historyStartIndex = historyPage * historyRowsPerPage;
     const historyEndIndex = historyStartIndex + historyRowsPerPage;
 
-    // columns
+    // columns selector
+    const [searchColumnType, setSearchColumnType] = useState<string>('');
     const [jobColumns, setJobColumns] = useState([
-        // one for checkboxes too ?
         {
             renderHeader: () => {
                 return (
@@ -404,6 +404,8 @@ export function JobsPage() {
                     </>
                 );
             },
+            hideable: false,
+            columnType: '',
         },
         {
             renderHeader: () => {
@@ -420,6 +422,8 @@ export function JobsPage() {
             renderData: (job) => {
                 return job.jobName;
             },
+            hideable: true,
+            columnType: 'Name',
         },
         {
             renderHeader: () => {
@@ -429,6 +433,8 @@ export function JobsPage() {
             renderData: (job) => {
                 return job.jobType;
             },
+            hideable: true,
+            columnType: 'Type',
         },
         {
             renderHeader: () => {
@@ -438,6 +444,8 @@ export function JobsPage() {
             renderData: (job) => {
                 return convertTimeToFrequencyString(job);
             },
+            hideable: true,
+            columnType: 'Frequency',
         },
         {
             renderHeader: () => {
@@ -447,6 +455,8 @@ export function JobsPage() {
             renderData: (job) => {
                 return 'how to extract time zone?';
             },
+            hideable: true,
+            columnType: 'Time Zone',
         },
         {
             renderHeader: () => {
@@ -461,6 +471,8 @@ export function JobsPage() {
                     })
                 );
             },
+            hideable: true,
+            columnType: 'Tags',
         },
         {
             renderHeader: () => {
@@ -470,6 +482,8 @@ export function JobsPage() {
             renderData: (job) => {
                 return convertTimeToLastRunString(job);
             },
+            hideable: true,
+            columnType: 'Last Run',
         },
         {
             renderHeader: () => {
@@ -479,6 +493,8 @@ export function JobsPage() {
             renderData: (job) => {
                 return job.USER_ID;
             },
+            hideable: true,
+            columnType: 'Modified By',
         },
         {
             renderHeader: () => {
@@ -504,9 +520,8 @@ export function JobsPage() {
                                 setSelectedJob(job);
                                 setShowJobModal(true);
                             }}
-                        >
-                            <EditIcon />
-                        </IconButton>
+                            children={<EditIcon />}
+                        />
                         <IconButton
                             color="primary"
                             size="md"
@@ -514,12 +529,13 @@ export function JobsPage() {
                                 setSelectedJob(job);
                                 setShowDeleteModal(true);
                             }}
-                        >
-                            <DeleteIcon />
-                        </IconButton>
+                            children={<DeleteIcon />}
+                        />
                     </>
                 );
             },
+            hideable: true,
+            columnType: 'Actions',
         },
     ]);
 
@@ -1790,7 +1806,7 @@ export function JobsPage() {
     }, [jobTypeTemplate]);
     return (
         <div>
-            <Grid container spacing={2}>
+            <Grid container spacing={3}>
                 <Grid item>
                     <Card>
                         <Card.Content>
@@ -1843,8 +1859,7 @@ export function JobsPage() {
             </Grid>
             <Table.Container>
                 <Table aria-label="collapsible table" size="small">
-                    {/* <StyledTableHeader></StyledTableHeader> */}
-                    <Table.Body>
+                    <StyledTableHeader>
                         <Table.Row>
                             <Table.Cell align="left">
                                 <Tabs
@@ -1896,23 +1911,68 @@ export function JobsPage() {
                                     id={'column-selector'}
                                     open={Boolean(columnSelectorAnchorEl)}
                                     anchorEl={columnSelectorAnchorEl}
-                                    onClose={() =>
-                                        setColumnSelectorAnchorEl(null)
-                                    }
+                                    onClose={() => {
+                                        setColumnSelectorAnchorEl(null);
+                                        setSearchColumnType('');
+                                    }}
                                     anchorOrigin={{
                                         vertical: 'bottom',
                                         horizontal: 'left',
+                                    }}
+                                    sx={{
+                                        display: 'flex',
+                                        flexDirection: 'column',
                                     }}
                                 >
                                     <Search
                                         placeholder="Search Column Type"
                                         size="small"
                                         onChange={(e) => {
-                                            // search column types
-                                            //setSearchValue(e.target.value)
+                                            setSearchColumnType(
+                                                e.target.value
+                                                    .toLocaleLowerCase()
+                                                    .trim(),
+                                            );
                                         }}
                                     />
                                     {/* checklist of column names here */}
+                                    {jobColumns.map((col, i) => {
+                                        return (
+                                            col.hideable &&
+                                            col.columnType
+                                                .toLocaleLowerCase()
+                                                .includes(searchColumnType) && (
+                                                <Checkbox
+                                                    key={i}
+                                                    label={col.columnType}
+                                                    checked={col.showColumn}
+                                                    onChange={(e) => {
+                                                        const checked =
+                                                            e.target.checked;
+                                                        // find obejct matching col.columnType and switch col.showColumn
+                                                        const n = [];
+                                                        jobColumns.forEach(
+                                                            (jc) => {
+                                                                if (
+                                                                    jc.columnType ===
+                                                                    col.columnType
+                                                                ) {
+                                                                    n.push({
+                                                                        ...jc,
+                                                                        showColumn:
+                                                                            checked,
+                                                                    });
+                                                                } else {
+                                                                    n.push(jc);
+                                                                }
+                                                            },
+                                                        );
+                                                        setJobColumns(n);
+                                                    }}
+                                                />
+                                            )
+                                        );
+                                    })}
                                 </Popover>
                             </Table.Cell>
                             <Table.Cell align="right">
@@ -1923,6 +1983,8 @@ export function JobsPage() {
                                 ></Button>
                             </Table.Cell>
                         </Table.Row>
+                    </StyledTableHeader>
+                    <Table.Body>
                         <Table.Row>
                             {jobColumns.map((col) => {
                                 return (
@@ -2075,6 +2137,53 @@ export function JobsPage() {
                     </Table.Container>
                 </Accordion.Content>
             </Accordion>
+            <Modal
+                onClose={() => {
+                    setShowDeleteModal(false);
+                    setSelectedJob(null);
+                }}
+                open={showDeleteModal}
+            >
+                <Modal.Content>
+                    <Modal.Title>
+                        Delete Job ({selectedJob?.jobName})
+                    </Modal.Title>
+                    <Modal.Content>
+                        <p>
+                            Confirm Delete.{' '}
+                            <span
+                                style={{
+                                    color: 'red',
+                                }}
+                            >
+                                Warning: Action is Permanent
+                            </span>
+                        </p>
+                    </Modal.Content>
+                    <Modal.Actions>
+                        <Button
+                            variant="text"
+                            onClick={() => {
+                                setShowDeleteModal(false);
+                            }}
+                        >
+                            Cancel
+                        </Button>
+                        <Button
+                            variant="contained"
+                            color="error"
+                            onClick={() => {
+                                deleteJob(
+                                    selectedJob.jobId,
+                                    selectedJob.jobGroup,
+                                );
+                            }}
+                        >
+                            Delete
+                        </Button>
+                    </Modal.Actions>
+                </Modal.Content>
+            </Modal>
         </div>
     );
 }
