@@ -75,7 +75,8 @@ export interface ChipProps {
         | "lcgreen"
         | "lcpink"
         | "lcpurple"
-        | "lcindigo";
+        | "lcindigo"
+        | "lcprimary";
 }
 
 export const Chip = (props: ChipProps) => {

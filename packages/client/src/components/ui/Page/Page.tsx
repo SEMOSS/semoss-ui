@@ -8,6 +8,10 @@ const StyledPage = styled('div')(({ theme }) => ({
     overflowX: 'hidden',
     overflowY: 'auto',
     backgroundColor: theme.palette.background.paper,
+
+    display: 'flex',
+    flexDirection: 'column',
+    gap: theme.spacing(2),
 }));
 
 const StyledPageHeader = styled('div', {

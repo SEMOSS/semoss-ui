@@ -690,19 +690,20 @@ export const CatalogPage = observer((): JSX.Element => {
                                 <StyledChipList>
                                     <Chip
                                         label={'My Databases'}
-                                        color={
+                                        variant="filled"
+                                        variantColor={
                                             mode === 'My Databases'
                                                 ? 'primary'
-                                                : 'default'
+                                                : 'lcprimary'
                                         }
                                         onClick={() => setMode('My Databases')}
                                     ></Chip>
                                     <Chip
                                         label={'Discoverable Databases'}
-                                        color={
+                                        variantColor={
                                             mode === 'Discoverable Databases'
                                                 ? 'primary'
-                                                : 'default'
+                                                : 'lcprimary'
                                         }
                                         onClick={() => {
                                             setMode('Discoverable Databases');

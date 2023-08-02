@@ -548,8 +548,8 @@ export const DatabaseTileCard = (props: DatabaseCardProps) => {
                         <StyledAvatar>
                             <StyledPersonIcon />
                         </StyledAvatar>
-                        <StyledPublishedByLabel>
-                            Published by: {owner}
+                        <StyledPublishedByLabel variant={'caption'}>
+                            Publishes by: {owner}
                         </StyledPublishedByLabel>
                     </StyledPublishedByContainer>
                 }

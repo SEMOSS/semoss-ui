@@ -44,7 +44,7 @@ type Story = StoryObj<typeof Chip>;
 export const Outlined: Story = {
     render: (args) => (
         <>
-            <Chip label="Chip" {...args} variantColor="default" />
+            <Chip label="Chip" {...args} />
             <Chip label="Chip" variantColor="indigo" variant="outlined" />
             <Chip label="Chip" variantColor="indigo" variant="filled" />
             <Chip label="Chip" variantColor="turqoise" variant="filled" />
