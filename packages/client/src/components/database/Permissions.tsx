@@ -64,7 +64,7 @@ const StyledContent = MuiStyled('div')(({ theme }) => ({
     width: '100%',
     flexDirection: 'column',
     alignItems: 'flex-start',
-    gap: theme.space['05'],
+    gap: theme.spacing(2),
     flexShrink: '0',
 }));
 
