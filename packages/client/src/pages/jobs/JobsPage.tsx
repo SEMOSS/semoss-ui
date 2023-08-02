@@ -20,6 +20,7 @@ import MenuIcon from '@mui/icons-material/Menu';
 import AddIcon from '@mui/icons-material/Add';
 //import Icon from '@mdi/react';
 import {
+    Flex,
     IconButton,
     //     Button,
     //     Checkbox,
@@ -88,6 +89,11 @@ import {
 
 const StyledTableHeader = styled(Table.Head)(({ theme }) => ({
     width: theme.spacing(7.5),
+}));
+
+const StyledPopover = styled(Popover)(() => ({
+    display: 'flex',
+    flexDirection: 'column',
 }));
 
 // const StyledContainer = styled('div', {
@@ -1552,7 +1558,7 @@ export function JobsPage() {
 
     useEffect(() => {
         getHistory(selectedTags);
-    });
+    }, []);
 
     useEffect(() => {
         if (showJobModal && !selectedJob) {
@@ -1857,195 +1863,189 @@ export function JobsPage() {
                     </Card>
                 </Grid>
             </Grid>
-            <Table.Container>
-                <Table aria-label="collapsible table" size="small">
-                    <StyledTableHeader>
-                        <Table.Row>
-                            <Table.Cell align="left">
-                                <Tabs
-                                    value={tabs.indexOf(selectedTab)}
-                                    onChange={(
-                                        event: SyntheticEvent,
-                                        value: number,
-                                    ) => {
-                                        setSelectedTab(tabs[value]);
-                                    }}
-                                    textColor="primary"
-                                    indicatorColor="primary"
-                                >
-                                    <Tabs.Item label="All" />
-                                    <Tabs.Item label="Active" />
-                                    <Tabs.Item label="Inactive" />
-                                </Tabs>
-                            </Table.Cell>
-                            <Table.Cell>
-                                <Search
-                                    placeholder="Search"
-                                    fullWidth
-                                    size="small"
-                                    onChange={(e) =>
-                                        setSearchValue(e.target.value)
-                                    }
-                                />
-                            </Table.Cell>
-                            <Table.Cell>
-                                <Icon>
-                                    <FilterAltIcon />
-                                </Icon>
-                            </Table.Cell>
-                            <Table.Cell align="right">
-                                <Button
-                                    variant="outlined"
-                                    onClick={(event) => {
-                                        setColumnSelectorAnchorEl(
-                                            event.currentTarget,
-                                        );
-                                    }}
-                                >
-                                    <Icon>
-                                        <MenuIcon />
-                                    </Icon>
-                                    Columns
-                                </Button>
-                                <Popover
-                                    id={'column-selector'}
-                                    open={Boolean(columnSelectorAnchorEl)}
-                                    anchorEl={columnSelectorAnchorEl}
-                                    onClose={() => {
-                                        setColumnSelectorAnchorEl(null);
-                                        setSearchColumnType('');
-                                    }}
-                                    anchorOrigin={{
-                                        vertical: 'bottom',
-                                        horizontal: 'left',
-                                    }}
-                                    sx={{
-                                        display: 'flex',
-                                        flexDirection: 'column',
-                                    }}
-                                >
-                                    <Search
-                                        placeholder="Search Column Type"
-                                        size="small"
-                                        onChange={(e) => {
-                                            setSearchColumnType(
-                                                e.target.value
-                                                    .toLocaleLowerCase()
-                                                    .trim(),
-                                            );
-                                        }}
-                                    />
-                                    {/* checklist of column names here */}
-                                    {jobColumns.map((col, i) => {
-                                        return (
-                                            col.hideable &&
-                                            col.columnType
-                                                .toLocaleLowerCase()
-                                                .includes(searchColumnType) && (
-                                                <Checkbox
-                                                    key={i}
-                                                    label={col.columnType}
-                                                    checked={col.showColumn}
-                                                    onChange={(e) => {
-                                                        const checked =
-                                                            e.target.checked;
-                                                        // find obejct matching col.columnType and switch col.showColumn
-                                                        const n = [];
-                                                        jobColumns.forEach(
-                                                            (jc) => {
-                                                                if (
-                                                                    jc.columnType ===
-                                                                    col.columnType
-                                                                ) {
-                                                                    n.push({
-                                                                        ...jc,
-                                                                        showColumn:
-                                                                            checked,
-                                                                    });
-                                                                } else {
-                                                                    n.push(jc);
-                                                                }
-                                                            },
-                                                        );
-                                                        setJobColumns(n);
-                                                    }}
-                                                />
-                                            )
-                                        );
-                                    })}
-                                </Popover>
-                            </Table.Cell>
-                            <Table.Cell align="right">
-                                <Button
-                                    variant="contained"
-                                    startIcon={<AddIcon />}
-                                    children={'Add New'}
-                                ></Button>
-                            </Table.Cell>
-                        </Table.Row>
-                    </StyledTableHeader>
-                    <Table.Body>
-                        <Table.Row>
-                            {jobColumns.map((col) => {
-                                return (
-                                    col.showColumn && (
-                                        <Table.Cell align="left">
-                                            {col.renderHeader()}
-                                        </Table.Cell>
-                                    )
-                                );
-                            })}
-                        </Table.Row>
-                        {filterJobs(jobs).length === 0 ? (
-                            <Table.Row
-                            // style={{
-                            //     columnSpan: 'all',
-                            // }}
+
+            <Table aria-label="collapsible table" stickyHeader>
+                <Table.Header>
+                    <Table.Row>
+                        <Table.Cell align="left">
+                            <Tabs
+                                value={tabs.indexOf(selectedTab)}
+                                onChange={(
+                                    event: SyntheticEvent,
+                                    value: number,
+                                ) => {
+                                    setSelectedTab(tabs[value]);
+                                }}
+                                textColor="primary"
+                                indicatorColor="primary"
                             >
-                                <Table.Cell>
-                                    <span>No jobs, please try again.</span>
-                                </Table.Cell>
-                            </Table.Row>
-                        ) : (
-                            filterJobs(jobs)
-                                .slice(jobsStartIndex, jobsEndIndex)
-                                .map((job, i) => {
-                                    return (
-                                        <Table.Row key={i}>
-                                            {jobColumns.map((col) => {
-                                                return (
-                                                    col.showColumn && (
-                                                        <Table.Cell>
-                                                            {col.renderData(
-                                                                job,
-                                                            )}
-                                                        </Table.Cell>
-                                                    )
-                                                );
-                                            })}
-                                        </Table.Row>
-                                    );
-                                })
-                        )}
-                    </Table.Body>
-                    <Table.Footer>
-                        <Table.Row>
-                            <Table.Pagination
-                                rowsPerPageOptions={[5, 10, 25]}
-                                onPageChange={(e, v) => {
-                                    setJobsPage(v);
-                                }}
-                                page={jobsPage}
-                                rowsPerPage={jobsRowsPerPage}
-                                onRowsPerPageChange={(e) => {
-                                    setJobsRowsPerPage(e.target.value);
-                                }}
-                                count={filterJobs(jobs).length}
+                                <Tabs.Item label="All" />
+                                <Tabs.Item label="Active" />
+                                <Tabs.Item label="Inactive" />
+                            </Tabs>
+                        </Table.Cell>
+                        <Table.Cell>
+                            <Search
+                                placeholder="Search"
+                                fullWidth
+                                size="small"
+                                onChange={(e) => setSearchValue(e.target.value)}
                             />
+                        </Table.Cell>
+                        <Table.Cell>
+                            <Icon>
+                                <FilterAltIcon />
+                            </Icon>
+                        </Table.Cell>
+                        <Table.Cell align="right">
+                            <Button
+                                variant="outlined"
+                                onClick={(event) => {
+                                    setColumnSelectorAnchorEl(
+                                        event.currentTarget,
+                                    );
+                                }}
+                            >
+                                <Icon>
+                                    <MenuIcon />
+                                </Icon>
+                                Columns
+                            </Button>
+                            <StyledPopover
+                                id={'column-selector'}
+                                open={Boolean(columnSelectorAnchorEl)}
+                                anchorEl={columnSelectorAnchorEl}
+                                onClose={() => {
+                                    setColumnSelectorAnchorEl(null);
+                                    setSearchColumnType('');
+                                }}
+                                anchorOrigin={{
+                                    vertical: 'bottom',
+                                    horizontal: 'left',
+                                }}
+                                // sx={{
+                                //     display: 'flex',
+                                //     flexDirection: 'column'
+                                // }}
+                            >
+                                <Search
+                                    placeholder="Search Column Type"
+                                    size="small"
+                                    onChange={(e) => {
+                                        setSearchColumnType(
+                                            e.target.value
+                                                .toLocaleLowerCase()
+                                                .trim(),
+                                        );
+                                    }}
+                                />
+                                {/* checklist of column names here */}
+                                {jobColumns.map((col, i) => {
+                                    return (
+                                        col.hideable &&
+                                        col.columnType
+                                            .toLocaleLowerCase()
+                                            .includes(searchColumnType) && (
+                                            <Checkbox
+                                                key={i}
+                                                label={col.columnType}
+                                                checked={col.showColumn}
+                                                onChange={(e) => {
+                                                    const checked =
+                                                        e.target.checked;
+                                                    // find obejct matching col.columnType and switch col.showColumn
+                                                    const n = [];
+                                                    jobColumns.forEach((jc) => {
+                                                        if (
+                                                            jc.columnType ===
+                                                            col.columnType
+                                                        ) {
+                                                            n.push({
+                                                                ...jc,
+                                                                showColumn:
+                                                                    checked,
+                                                            });
+                                                        } else {
+                                                            n.push(jc);
+                                                        }
+                                                    });
+                                                    setJobColumns(n);
+                                                }}
+                                            />
+                                        )
+                                    );
+                                })}
+                            </StyledPopover>
+                        </Table.Cell>
+                        <Table.Cell align="right">
+                            <Button
+                                variant="contained"
+                                startIcon={<AddIcon />}
+                                children={'Add New'}
+                            ></Button>
+                        </Table.Cell>
+                    </Table.Row>
+                </Table.Header>
+                <Table.Body>
+                    <Table.Row>
+                        {jobColumns.map((col) => {
+                            return (
+                                col.showColumn && (
+                                    <Table.Cell align="left">
+                                        {col.renderHeader()}
+                                    </Table.Cell>
+                                )
+                            );
+                        })}
+                    </Table.Row>
+                    {filterJobs(jobs).length === 0 ? (
+                        <Table.Row
+                        // style={{
+                        //     columnSpan: 'all',
+                        // }}
+                        >
+                            <Table.Cell>
+                                <span>No jobs, please try again.</span>
+                            </Table.Cell>
                         </Table.Row>
-                    </Table.Footer>
-                </Table>
-            </Table.Container>
+                    ) : (
+                        filterJobs(jobs)
+                            .slice(jobsStartIndex, jobsEndIndex)
+                            .map((job, i) => {
+                                return (
+                                    <Table.Row key={i}>
+                                        {jobColumns.map((col) => {
+                                            return (
+                                                col.showColumn && (
+                                                    <Table.Cell>
+                                                        {col.renderData(job)}
+                                                    </Table.Cell>
+                                                )
+                                            );
+                                        })}
+                                    </Table.Row>
+                                );
+                            })
+                    )}
+                </Table.Body>
+                <Table.Footer>
+                    <Table.Row>
+                        <Table.Pagination
+                            rowsPerPageOptions={[5, 10, 25]}
+                            onPageChange={(e, v) => {
+                                setJobsPage(v);
+                            }}
+                            page={jobsPage}
+                            rowsPerPage={jobsRowsPerPage}
+                            onRowsPerPageChange={(e) => {
+                                setJobsRowsPerPage(e.target.value);
+                            }}
+                            count={filterJobs(jobs).length}
+                        />
+                    </Table.Row>
+                </Table.Footer>
+            </Table>
+
             <Accordion
                 expanded={historyExpanded}
                 onChange={(e) => {
