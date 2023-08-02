@@ -261,6 +261,7 @@ export class ConfigStore {
                 id: '',
                 name: '',
                 email: '',
+                admin: false,
             };
         });
 
@@ -291,6 +292,7 @@ export class ConfigStore {
                 id: '',
                 name: '',
                 email: '',
+                admin: false,
             };
         });
 

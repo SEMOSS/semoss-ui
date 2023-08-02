@@ -33,6 +33,15 @@ export interface TypographyProps {
         | "button"
         | "overline";
     sx?: SxProps;
+    fontWeight?: "light" | "regular" | "medium" | "500" | "bold";
+    color?:
+        | "inherit"
+        | "primary"
+        | "secondary"
+        | "success"
+        | "error"
+        | "info"
+        | "warning";
 }
 
 export const Typography = (props: TypographyProps) => {

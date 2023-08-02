@@ -1,10 +1,8 @@
 import {
     Avatar,
     ButtonGroup,
-    Button,
     Card,
     Chip,
-    Icon,
     IconButton,
     Typography,
     styled,
@@ -14,7 +12,6 @@ import {
     Person,
     Visibility,
     ShowChart,
-    FolderOpen,
     Star,
     StarOutlineOutlined,
     ArrowDropDown,
@@ -117,7 +114,6 @@ const StyledLandscapeCardDescription = styled(Typography)({
     maxHeight: '60px',
     overflow: 'hidden',
     whiteSpace: 'pre-wrap',
-    overflow: 'hidden',
     textOverflow: 'ellipsis',
 });
 
@@ -260,39 +256,12 @@ const StyledDbName = styled(Typography)({
     alignSelf: 'stretch',
 });
 
-const StyledCardCategory = styled('div')({
-    display: 'flex',
-    justifyContent: 'center',
-    alignItems: 'center',
-    gap: '4px',
-    alignSelf: 'stretch',
-});
-
-const StyledCategoryIcon = styled(FolderOpen)({
-    display: 'flex',
-    alignItems: 'flex-start',
-});
-
-const StyledCategoryLabel = styled(Typography)({
-    display: 'flex',
-    flexDirection: 'column',
-    alignItems: 'flex-start',
-    flex: '1 0 0',
-});
-
 const StyledPublishedByContainer = styled('div')({
     display: 'flex',
     justifyContent: 'center',
     alignItems: 'center',
     gap: '4px',
     alignSelf: 'stretch',
-});
-
-const StyledCardDescriptionContainer = styled('div')({
-    height: '60px',
-    width: '100%',
-    overflow: 'hidden',
-    // border: 'solid yellow',
 });
 
 const StyledCardDescription = styled(Typography)({
@@ -452,7 +421,7 @@ export const DatabaseLandscapeCard = (props: DatabaseCardProps) => {
             </StyledLandscapeCardDescriptionContainer>
             <StyledTileCardActions>
                 <StyledLeftActions>
-                    <ButtonGroup size="sm" color="secondary">
+                    <ButtonGroup size="small" color="secondary">
                         <ButtonGroup.Item
                             title={
                                 isUpvoted
@@ -615,7 +584,7 @@ export const DatabaseTileCard = (props: DatabaseCardProps) => {
             </StyledTileCardContent>
             <StyledTileCardActions>
                 <StyledLeftActions>
-                    <ButtonGroup size="sm" color="secondary">
+                    <ButtonGroup size="small" color="secondary">
                         <ButtonGroup.Item
                             title={
                                 isUpvoted

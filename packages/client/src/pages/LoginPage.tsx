@@ -81,6 +81,11 @@ const StyledActionText = styled('div', {
     fontSize: theme.fontSizes.sm,
 });
 
+interface TypeUserLogin {
+    USERNAME: string;
+    PASSWORD: string;
+}
+
 /**
  * LoginPage
  */
@@ -106,31 +111,33 @@ export const LoginPage = observer(() => {
     /**
      * Allow the user to login
      */
-    const login = handleSubmit(async (data) => {
-        // turn on loading
-        setLoading(true);
+    const login = handleSubmit(
+        async (data: TypeUserLogin): Promise<TypeUserLogin> => {
+            // turn on loading
+            setLoading(true);
 
-        if (!data.USERNAME || !data.PASSWORD) {
-            setError('Username and Password is Required');
-            return;
-        }
+            if (!data.USERNAME || !data.PASSWORD) {
+                setError('Username and Password is Required');
+                return;
+            }
 
-        await configStore
-            .login(data.USERNAME, data.PASSWORD)
-            .then(() => {
-                // turn off loading
-                setLoading(false);
+            await configStore
+                .login(data.USERNAME, data.PASSWORD)
+                .then(() => {
+                    // turn off loading
+                    setLoading(false);
 
-                // noop
-                // (handled  by the configStore)
-            })
-            .catch((error) => {
-                // turn off loading
-                setLoading(false);
+                    // noop
+                    // (handled  by the configStore)
+                })
+                .catch((error) => {
+                    // turn off loading
+                    setLoading(false);
 
-                setError(error.message);
-            });
-    });
+                    setError(error.message);
+                });
+        },
+    );
 
     /**
      * Allow the user to use oauth to login
