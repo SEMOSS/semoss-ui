@@ -19,23 +19,7 @@ import FilterAltIcon from '@mui/icons-material/FilterAlt';
 import MenuIcon from '@mui/icons-material/Menu';
 import AddIcon from '@mui/icons-material/Add';
 //import Icon from '@mdi/react';
-import {
-    Flex,
-    IconButton,
-    //     Button,
-    //     Checkbox,
-    //     Dropdown,
-    //     Flex,
-    //     Form,
-    //     Input,
-    //     Modal,
-    //     Select,
-    //    styled,
-    //     Table,
-    //     Tabs,
-    //     theme,
-    useNotification,
-} from '@semoss/components';
+import { useNotification } from '@semoss/components';
 import {
     Button,
     Checkbox,
@@ -57,6 +41,7 @@ import {
     Grid,
     Card,
     Popover,
+    IconButton,
 } from '@semoss/ui';
 import { SyntheticEvent, useEffect, useRef, useState } from 'react';
 import { useForm } from 'react-hook-form';
@@ -87,62 +72,11 @@ import {
     SearchRounded,
 } from '@mui/icons-material';
 
-const StyledTableHeader = styled(Table.Head)(({ theme }) => ({
-    width: theme.spacing(7.5),
-}));
-
 const StyledPopover = styled(Popover)(() => ({
     display: 'flex',
     flexDirection: 'column',
 }));
 
-// const StyledContainer = styled('div', {
-//     display: 'flex',
-//     flexDirection: 'column',
-//     rowGap: '20px',
-//     margin: '0 auto',
-//     paddingLeft: theme.space[8],
-//     paddingRight: theme.space[8],
-//     paddingBottom: theme.space[8],
-//     '@sm': {
-//         maxWidth: '640px',
-//     },
-//     '@md': {
-//         maxWidth: '768px',
-//     },
-//     '@lg': {
-//         maxWidth: '1024px',
-//     },
-//     '@xl': {
-//         maxWidth: '1280px',
-//     },
-//     '@xxl': {
-//         maxWidth: '1536px',
-//     },
-// });
-
-// const StyledHeaderIcon = styled(Icon, {
-//     height: '1rem',
-//     width: '1rem',
-//     marginRight: '.5rem',
-//     display: 'flex',
-//     alignItems: 'center',
-// });
-
-// const TimeSpacer = styled('div', {
-//     overflow: 'hidden',
-//     textOverflow: 'ellipsis',
-//     whiteSpace: 'nowrap',
-//     height: '2em',
-//     lineHeight: '2em',
-//     fontSize: '0.875rem',
-//     color: 'var(--color-grey-2)',
-//     width: '0.5rem',
-//     marginRight: '0.5rem',
-//     marginLeft: '0.5rem',
-//     textAlign: 'center',
-//     float: 'left',
-// });
 interface TabPanelProps {
     children?: React.ReactNode;
     index: number;
@@ -186,7 +120,7 @@ function HistoryRow(props) {
                 <Table.Cell>
                     <IconButton
                         aria-label="expand row"
-                        size="sm"
+                        size="small"
                         onClick={() => setOpen(!open)}
                     >
                         {open ? <KeyboardArrowUp /> : <KeyboardArrowDown />}
@@ -322,24 +256,36 @@ export function JobsPage() {
                         onChange={(e) => {
                             const checked = e.target.checked;
                             setAllChecked(checked);
+                            const currentPageJobs = filterJobs(jobs).slice(
+                                jobsStartIndex,
+                                jobsEndIndex,
+                            );
                             if (checked) {
                                 // add all these jobs to resume jobs
+                                console.log(
+                                    currentPageJobs.filter(
+                                        (j) => j.NEXT_FIRE_TIME === 'INACTIVE',
+                                    ),
+                                );
+                                console.log(
+                                    currentPageJobs.filter(
+                                        (j) => j.NEXT_FIRE_TIME !== 'INACTIVE',
+                                    ),
+                                );
                                 setJobsToResume(
-                                    filterJobs(jobs).filter(
+                                    currentPageJobs.filter(
                                         (j) => j.NEXT_FIRE_TIME === 'INACTIVE',
                                     ),
                                 );
                                 // add all these jobs to pause jobs
                                 setJobsToPause(
-                                    filterJobs(jobs).filter(
+                                    currentPageJobs.filter(
                                         (j) => j.NEXT_FIRE_TIME !== 'INACTIVE',
                                     ),
                                 );
                             } else {
                                 // remove all these jobs to resume jobs
-                                const removeFromResume = filterJobs(
-                                    jobs,
-                                ).filter(
+                                const removeFromResume = currentPageJobs.filter(
                                     (j) => j.NEXT_FIRE_TIME === 'INACTIVE',
                                 );
                                 setJobsToResume((prev) =>
@@ -352,7 +298,7 @@ export function JobsPage() {
                                 );
 
                                 // remove all these jobs to pause jobs
-                                const removeFromPause = filterJobs(jobs).filter(
+                                const removeFromPause = currentPageJobs.filter(
                                     (j) => j.NEXT_FIRE_TIME !== 'INACTIVE',
                                 );
 
@@ -459,7 +405,7 @@ export function JobsPage() {
             },
             showColumn: true,
             renderData: (job) => {
-                return 'how to extract time zone?';
+                return 'N/A'; // be needs to include time zone in ListAllJobs()
             },
             hideable: true,
             columnType: 'Time Zone',
@@ -493,6 +439,17 @@ export function JobsPage() {
         },
         {
             renderHeader: () => {
+                return 'Created By';
+            },
+            showColumn: true,
+            renderData: (job) => {
+                return 'N/A';
+            },
+            hideable: true,
+            columnType: 'Created By',
+        },
+        {
+            renderHeader: () => {
                 return 'Modified By';
             },
             showColumn: true,
@@ -504,6 +461,28 @@ export function JobsPage() {
         },
         {
             renderHeader: () => {
+                return 'Last Run By';
+            },
+            showColumn: true,
+            renderData: (job) => {
+                return 'N/A';
+            },
+            hideable: true,
+            columnType: 'Last Run By',
+        },
+        {
+            renderHeader: () => {
+                return 'Modified Date';
+            },
+            showColumn: true,
+            renderData: (job) => {
+                return 'N/A';
+            },
+            hideable: true,
+            columnType: 'Modified Date',
+        },
+        {
+            renderHeader: () => {
                 return 'Actions';
             },
             showColumn: true,
@@ -512,7 +491,7 @@ export function JobsPage() {
                     <>
                         <IconButton
                             color="primary"
-                            size="md"
+                            size="medium"
                             onClick={() => {
                                 executeJob(job.jobId, job.jobGroup);
                             }}
@@ -521,16 +500,17 @@ export function JobsPage() {
                         </IconButton>
                         <IconButton
                             color="primary"
-                            size="md"
+                            size="medium"
                             onClick={() => {
                                 setSelectedJob(job);
                                 setShowJobModal(true);
                             }}
+                            disabled
                             children={<EditIcon />}
                         />
                         <IconButton
                             color="primary"
-                            size="md"
+                            size="medium"
                             onClick={() => {
                                 setSelectedJob(job);
                                 setShowDeleteModal(true);
@@ -1344,6 +1324,7 @@ export function JobsPage() {
                     color: 'error',
                     content: output,
                 });
+                getHistory(selectedTags);
             }
         });
     };
@@ -1559,6 +1540,9 @@ export function JobsPage() {
     useEffect(() => {
         getHistory(selectedTags);
     }, []);
+
+    console.log(jobsToResume);
+    console.log(jobsToPause);
 
     useEffect(() => {
         if (showJobModal && !selectedJob) {
@@ -1863,9 +1847,8 @@ export function JobsPage() {
                     </Card>
                 </Grid>
             </Grid>
-
-            <Table aria-label="collapsible table" stickyHeader>
-                <Table.Header>
+            <Table aria-label="collapsible table">
+                <Table.Head sx={{ display: 'table-caption', width: '100%' }}>
                     <Table.Row>
                         <Table.Cell align="left">
                             <Tabs
@@ -1892,11 +1875,11 @@ export function JobsPage() {
                                 onChange={(e) => setSearchValue(e.target.value)}
                             />
                         </Table.Cell>
-                        <Table.Cell>
+                        {/* <Table.Cell>
                             <Icon>
                                 <FilterAltIcon />
                             </Icon>
-                        </Table.Cell>
+                        </Table.Cell> */}
                         <Table.Cell align="right">
                             <Button
                                 variant="outlined"
@@ -1925,7 +1908,7 @@ export function JobsPage() {
                                 }}
                                 // sx={{
                                 //     display: 'flex',
-                                //     flexDirection: 'column'
+                                //     flexDirection: 'column',
                                 // }}
                             >
                                 <Search
@@ -1985,7 +1968,7 @@ export function JobsPage() {
                             ></Button>
                         </Table.Cell>
                     </Table.Row>
-                </Table.Header>
+                </Table.Head>
                 <Table.Body>
                     <Table.Row>
                         {jobColumns.map((col) => {
@@ -2034,6 +2017,9 @@ export function JobsPage() {
                             rowsPerPageOptions={[5, 10, 25]}
                             onPageChange={(e, v) => {
                                 setJobsPage(v);
+                                setAllChecked(false);
+                                setJobsToResume([]);
+                                setJobsToPause([]);
                             }}
                             page={jobsPage}
                             rowsPerPage={jobsRowsPerPage}
