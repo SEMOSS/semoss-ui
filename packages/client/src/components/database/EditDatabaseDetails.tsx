@@ -1,6 +1,13 @@
 import { useState, useEffect } from 'react';
 import { useNotification } from '@semoss/components';
-import { Modal, Button, Stack, TextArea, Autocomplete } from '@semoss/ui';
+import {
+    Modal,
+    Button,
+    Stack,
+    TextField,
+    TextArea,
+    Autocomplete,
+} from '@semoss/ui';
 import { useForm, Controller } from 'react-hook-form';
 import { observer } from 'mobx-react-lite';
 
@@ -126,7 +133,8 @@ export const EditDatabaseDetails = observer(
                     )}], jsonCleanup=[true])`,
                 )
                 .then((response) => {
-                    const { output, operationType } = response.pixelReturn[0];
+                    const { output, additionalOutput, operationType } =
+                        response.pixelReturn[0];
 
                     // track the errors
                     if (operationType.indexOf('ERROR') > -1) {
@@ -140,7 +148,7 @@ export const EditDatabaseDetails = observer(
 
                     notification.add({
                         color: 'success',
-                        content: output,
+                        content: additionalOutput[0].output,
                     });
 
                     // close it and succesfully message
@@ -157,6 +165,7 @@ export const EditDatabaseDetails = observer(
         return (
             <Modal
                 open={open}
+                maxWidth={'md'}
                 onClose={() => {
                     onClose(false);
                 }}
@@ -166,7 +175,6 @@ export const EditDatabaseDetails = observer(
                     <Stack spacing={4}>
                         {databaseMetaKeys.map((key) => {
                             const { metakey, display_options } = key;
-
                             const label =
                                 metakey.slice(0, 1).toUpperCase() +
                                 metakey.slice(1);
@@ -200,7 +208,11 @@ export const EditDatabaseDetails = observer(
                                         control={control}
                                         render={({ field }) => {
                                             return (
-                                                <TextArea
+                                                <TextField
+                                                    multiline
+                                                    minRows={3}
+                                                    maxRows={3}
+                                                    label={label}
                                                     value={
                                                         (field.value as string) ||
                                                         ''
@@ -257,11 +269,14 @@ export const EditDatabaseDetails = observer(
                                         control={control}
                                         render={({ field }) => {
                                             console.log(filterOptions[metakey]);
+                                            console.log('value', field.value);
                                             return (
                                                 <Autocomplete<string, true>
+                                                    freeSolo={true}
                                                     multiple={true}
                                                     label={label}
                                                     options={
+                                                        // []
                                                         filterOptions[metakey]
                                                             ? filterOptions[
                                                                   metakey
@@ -287,7 +302,7 @@ export const EditDatabaseDetails = observer(
                                 );
                             }
 
-                            return null;
+                            // return null;
                         })}
                     </Stack>
                 </Modal.Content>

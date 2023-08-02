@@ -8,7 +8,12 @@ import { SxProps } from "@mui/system";
 export interface ToggleTabsProps extends TabsProps<any> {
     // * Props applied to the tab indicator element.
     children?: ReactNode;
+
+    // width?: "full" | "fit-content";
     TabIndicatorProps?: React.HTMLAttributes<HTMLDivElement>;
+
+    boxSx?: SxProps;
+
     sx?: SxProps<Theme>;
 }
 
@@ -45,9 +50,9 @@ const StyledToggleGroup = styled(Tabs)(({ theme }) => ({
 }));
 
 export const ToggleTabsGroup = (props: ToggleTabsProps) => {
-    const { sx } = props;
+    const { sx, boxSx } = props;
     return (
-        <StyledBox>
+        <StyledBox sx={boxSx}>
             <StyledToggleGroup
                 TabIndicatorProps={{ style: { display: "none" } }}
                 sx={sx}

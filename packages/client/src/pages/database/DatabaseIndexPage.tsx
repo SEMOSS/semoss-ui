@@ -1,15 +1,35 @@
-import { useState, useMemo } from 'react';
-import { styled, Stack, Button, Chip, Typography } from '@semoss/ui';
-import { EditOutlined } from '@mui/icons-material';
+import React, { useState, useMemo } from 'react';
+import {
+    Button,
+    Card,
+    Chip,
+    Grid,
+    Icon,
+    Stack,
+    styled,
+    Typography,
+} from '@semoss/ui';
+
+import {
+    EditOutlined,
+    Star,
+    DownloadForOffline,
+    RemoveRedEyeOutlined,
+} from '@mui/icons-material';
+import { SEMOSS } from '@/assets/img/SEMOSS';
+
+import { formatName } from '@/utils';
+
 import { Link } from 'react-router-dom';
 import { observer } from 'mobx-react-lite';
-
-import Cat from '@/assets/img/cat.jpg';
 
 import { Section, LoadingScreen } from '@/components/ui';
 import { Markdown } from '@/components/common';
 import { DatabaseCard, EditDatabaseDetails } from '@/components/database';
 import { usePixel, useDatabase, useRootStore } from '@/hooks';
+import { theme } from '@semoss/components';
+import { SimilarDatabases } from '@/components/database/SimilarDatabases';
+import { DatabaseStatistics } from '@/components/database/DatabaseStatistics';
 
 const StyledPage = styled('div')(() => ({
     position: 'relative',
@@ -26,15 +46,35 @@ const StyledLink = styled(Link)(() => ({
     display: 'inline-block',
 }));
 
+const StyledCardImageContainer = styled('div')(({ theme }) => ({
+    display: 'flex',
+    justifyContent: 'center',
+    alignItems: 'center',
+    width: theme.spacing(7.5),
+    height: theme.spacing(7.5),
+    borderRadius: theme.spacing(0.75),
+    backgroundColor: theme.palette.semossBlue['50'],
+}));
+
+const StyledCardContent = styled('div')(({ theme }) => ({
+    gap: '10px',
+    display: 'flex',
+    alignItems: 'center',
+    alignSelf: 'stretch',
+    padding: theme.spacing(2),
+}));
+
+const StyledCardDetailsContainer = styled('div')(({ theme }) => ({
+    display: 'flex',
+    flex: '1 0 0',
+    flexDirection: 'column',
+    alignItems: 'flex-start',
+    gap: theme.spacing(0.5),
+}));
+
 export const DatabaseIndexPage = observer(() => {
-    const { id, role } = useDatabase();
+    const { id, metaVals } = useDatabase();
     const { configStore } = useRootStore();
-
-    // set if it can edit
-    const canEdit = role === 'OWNER' || role === 'EDITOR';
-
-    // track the edit state
-    const [edit, setEdit] = useState(false);
 
     // filter metakeys to the ones we want
     const databaseMetaKeys = configStore.store.config.databaseMetaKeys.filter(
@@ -47,86 +87,26 @@ export const DatabaseIndexPage = observer(() => {
         },
     );
 
-    // kets to get dbMetaData for
-    const metaKeys = [
-        'markdown',
-        'tags',
-        ...databaseMetaKeys.map((k) => k.metakey),
-    ];
-
-    // get the metadata
-    const {
-        status: dbMetaStatus,
-        data: dbMetaData,
-        refresh: dbMetaRefresh,
-    } = usePixel<{
-        markdown?: string;
-        tags?: string[];
-    }>(
-        `GetDatabaseMetadata(database=["${id}"], metaKeys=${JSON.stringify([
-            metaKeys,
-        ])}); `,
-    );
-
-    // convert the data into an object
-    const values = useMemo(() => {
-        if (dbMetaStatus !== 'SUCCESS') {
-            return {};
-        }
-
-        return metaKeys.reduce((prev, curr) => {
-            prev[curr] = dbMetaData[curr];
-            return prev;
-        }, {});
-    }, [dbMetaStatus, dbMetaData, JSON.stringify(metaKeys)]);
-
-    if (dbMetaStatus !== 'SUCCESS') {
-        return <LoadingScreen.Trigger description="Getting Database Details" />;
-    }
+    console.log('METAVALS', metaVals);
 
     return (
         <StyledPage>
-            {canEdit && (
-                <StyledEditorHolder>
-                    {edit && (
-                        <EditDatabaseDetails
-                            values={values}
-                            open={edit}
-                            onClose={(success) => {
-                                // reload if successfully submitted
-                                if (success) {
-                                    dbMetaRefresh();
-                                }
-
-                                setEdit(false);
-                            }}
-                        ></EditDatabaseDetails>
-                    )}
-                    <Button
-                        onClick={() => setEdit(!edit)}
-                        startIcon={<EditOutlined />}
-                        size={'small'}
-                        variant={'outlined'}
-                    >
-                        Edit
-                    </Button>
-                </StyledEditorHolder>
-            )}
-            {dbMetaData.markdown && (
+            {metaVals.markdown && (
                 <Section>
                     <Section.Header>
-                        <Typography variant={'h6'}>About</Typography>
+                        <Typography variant={'h6'}>Details</Typography>
                     </Section.Header>
-                    <Markdown content={dbMetaData.markdown} />
+                    <Markdown content={metaVals.markdown} />
                 </Section>
             )}
-            {dbMetaData.tags && (
+
+            {/* {metaVals.tags && (
                 <Section>
                     <Section.Header>
                         <Typography variant={'h6'}>Tags</Typography>
                     </Section.Header>
                     <Stack direction={'row'} spacing={1} flexWrap={'wrap'}>
-                        {dbMetaData.tags.map((tag) => {
+                        {meta.tags.map((tag) => {
                             return (
                                 <Chip
                                     key={tag}
@@ -139,11 +119,11 @@ export const DatabaseIndexPage = observer(() => {
                         })}
                     </Stack>
                 </Section>
-            )}
+            )} */}
             {databaseMetaKeys.map((k) => {
                 if (
-                    dbMetaData[k.metakey] === undefined ||
-                    !Array.isArray(dbMetaData[k.metakey])
+                    metaVals[k.metakey] === undefined ||
+                    !Array.isArray(metaVals[k.metakey])
                 ) {
                     return null;
                 }
@@ -151,7 +131,9 @@ export const DatabaseIndexPage = observer(() => {
                 return (
                     <Section key={k.metakey}>
                         <Section.Header>
-                            <Typography variant={'h6'}>{k.metakey}</Typography>
+                            <Typography variant={'h6'}>
+                                {formatName(k.metakey)}
+                            </Typography>
                         </Section.Header>
                         {k.display_options === 'multi-checklist' ||
                         k.display_options === 'multi-select' ||
@@ -161,7 +143,7 @@ export const DatabaseIndexPage = observer(() => {
                                 spacing={1}
                                 flexWrap={'wrap'}
                             >
-                                {dbMetaData[k.metakey].map((tag) => {
+                                {metaVals[k.metakey].map((tag) => {
                                     return (
                                         <Chip
                                             key={tag}
@@ -174,7 +156,7 @@ export const DatabaseIndexPage = observer(() => {
                                 })}
                             </Stack>
                         ) : (
-                            <>{dbMetaData[k.metakey]}</>
+                            <>{metaVals[k.metakey]}</>
                         )}
                     </Section>
                 );
@@ -183,32 +165,13 @@ export const DatabaseIndexPage = observer(() => {
                 <Section.Header>
                     <Typography variant={'h6'}>Statistics</Typography>
                 </Section.Header>
-                <div>
-                    <p>Total Uses:</p>
-                    <p>Total Views:</p>
-                </div>
+                <DatabaseStatistics id={id} />
             </Section>
             <Section>
                 <Section.Header>
                     <Typography variant={'h6'}>Similar</Typography>
                 </Section.Header>
-                <Stack direction={'row'} flexWrap={'nowrap'} overflow={'auto'}>
-                    {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15].map(
-                        (v, idx) => {
-                            return (
-                                <StyledLink key={idx} to={`/database/${idx}`}>
-                                    <DatabaseCard
-                                        name={`Database ${idx}`}
-                                        description={
-                                            'Lorem ipsum dolor sit amet consectetur adipiscing elit'
-                                        }
-                                        image={Cat}
-                                    ></DatabaseCard>
-                                </StyledLink>
-                            );
-                        },
-                    )}
-                </Stack>
+                <SimilarDatabases id={id} />
             </Section>
         </StyledPage>
     );

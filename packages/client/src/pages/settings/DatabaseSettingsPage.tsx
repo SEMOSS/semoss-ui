@@ -28,6 +28,8 @@ import {
 } from '@/components/database';
 
 import defaultDBImage from '../../assets/img/placeholder.png';
+import { formatName } from '@/utils';
+
 export interface DBMember {
     ID: string;
     NAME: string;
@@ -217,20 +219,6 @@ export const DatabaseSettingsPage = () => {
     }, [getDatabases.status, getDatabases.data]);
 
     /**
-     * @name formatDBName
-     * @param str
-     * @returns formatted db name
-     */
-    const formatDBName = (str: string) => {
-        let i;
-        const frags = str.split('_');
-        for (i = 0; i < frags.length; i++) {
-            frags[i] = frags[i].charAt(0).toUpperCase() + frags[i].slice(1);
-        }
-        return frags.join(' ');
-    };
-
-    /**
      * @name favoriteDb
      * @param db
      */
@@ -405,7 +393,7 @@ export const DatabaseSettingsPage = () => {
                               >
                                   {view === 'list' ? (
                                       <DatabaseLandscapeCard
-                                          name={formatDBName(db.app_name)}
+                                          name={db.app_name}
                                           id={db.app_id}
                                           image={defaultDBImage}
                                           tag={db.tag}
@@ -425,7 +413,7 @@ export const DatabaseSettingsPage = () => {
                                           onClick={(id) => {
                                               navigate(`${db.app_id}`, {
                                                   state: {
-                                                      name: formatDBName(
+                                                      name: formatName(
                                                           db.database_name,
                                                       ),
                                                       global: db.database_global,
@@ -442,7 +430,7 @@ export const DatabaseSettingsPage = () => {
                                       />
                                   ) : (
                                       <DatabaseTileCard
-                                          name={formatDBName(db.app_name)}
+                                          name={db.app_name}
                                           id={db.app_id}
                                           image={defaultDBImage}
                                           tag={db.tag}
@@ -462,7 +450,7 @@ export const DatabaseSettingsPage = () => {
                                           onClick={() => {
                                               navigate(`${db.app_id}`, {
                                                   state: {
-                                                      name: formatDBName(
+                                                      name: formatName(
                                                           db.database_name,
                                                       ),
                                                       global: db.database_global,

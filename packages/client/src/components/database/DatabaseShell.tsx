@@ -1,15 +1,21 @@
 import React, { useState, useEffect } from 'react';
 import { useNotification } from '@semoss/components';
 import {
+    Breadcrumbs,
+    Button,
+    Chip,
+    LinearProgress,
     styled,
     Stack,
     Typography,
-    Button,
-    Breadcrumbs,
-    LinearProgress,
 } from '@semoss/ui';
 import { Link } from 'react-router-dom';
-import { AddCircle } from '@mui/icons-material';
+import {
+    ArrowCircleDown,
+    EditOutlined,
+    SimCardDownload,
+} from '@mui/icons-material';
+import { EditDatabaseDetails } from '@/components/database';
 
 import { Page, LoadingScreen } from '@/components/ui';
 import { useRootStore, useDatabase, usePixel } from '@/hooks';
@@ -36,8 +42,19 @@ const StyledInfoRight = styled('div')(({ theme }) => ({
 }));
 
 const StyledInfoDescription = styled(Typography)(() => ({
+    // display: 'flex',
+    // width: '699px',
+    // height: '174px',
+    // flexDirection: 'column',
+    // alignItems: 'flex-start',
     maxWidth: '50%',
     textOverflow: 'ellipsis',
+}));
+
+const StyledChipContainer = styled('div')(({ theme }) => ({
+    display: 'flex',
+    alignItems: 'flex-start',
+    gap: theme.spacing(1),
 }));
 
 const StyledInfoFooter = styled(Typography)(() => ({
@@ -61,6 +78,7 @@ const StyledDatabaseImage = styled('img')({
     flexShrink: '0',
     borderRadius: '8.862px',
 });
+
 interface DatabaseShellProps {
     /** Children to wrap in the RootStore */
     children: React.ReactNode;
@@ -73,13 +91,19 @@ export const DatabaseShell = (props: DatabaseShellProps) => {
     const { children } = props;
 
     // get the database information
-    const { id } = useDatabase();
+    const { id, role, metaVals, refresh } = useDatabase();
 
     // Service for Axios calls
     const { monolithStore } = useRootStore();
 
     // notification service
     const notification = useNotification();
+
+    // set if it can edit
+    const canEdit = role === 'OWNER' || role === 'EDITOR';
+
+    // track the edit state
+    const [edit, setEdit] = useState(false);
 
     // mutible votes object
     const [votes, setVotes] = useState<
@@ -103,11 +127,11 @@ export const DatabaseShell = (props: DatabaseShellProps) => {
         `GetUserDatabaseVotes(database = "${id}");`,
     );
 
-    const {
-        status: usabilityStatus,
-        data: usabilityData,
-        refresh: usabilityRefresh,
-    } = usePixel<number>(`UsabilityScore(database = '${id}');`);
+    // const {
+    //     status: usabilityStatus,
+    //     data: usabilityData,
+    //     refresh: usabilityRefresh,
+    // } = usePixel<number>(`UsabilityScore(database = '${id}');`);
 
     useEffect(() => {
         if (voteStatus !== 'SUCCESS') {
@@ -156,6 +180,35 @@ export const DatabaseShell = (props: DatabaseShellProps) => {
         });
     };
 
+    /**
+     * @name printMeta
+     * @desc export DB pixel
+     */
+    const printMeta = () => {
+        const pixel = `META|DatabaseMetadataToPdf(database=["${id}"] );`;
+        monolithStore.runQuery(pixel).then((response) => {
+            const output = response.pixelReturn[0].output,
+                insightID = response.insightID;
+
+            monolithStore.download(insightID, output);
+        });
+    };
+
+    /**
+     * @name exportDB
+     * @desc export DB pixel
+     */
+    const exportDB = () => {
+        const pixel = `META|ExportDatabase(database=["${id}"] );`;
+
+        monolithStore.runQuery(pixel).then((response) => {
+            const output = response.pixelReturn[0].output,
+                insightID = response.insightID;
+
+            monolithStore.download(insightID, output);
+        });
+    };
+
     // show a loading screen when it is pending
     if (status !== 'SUCCESS') {
         return <LoadingScreen.Trigger description="Opening Database" />;
@@ -166,12 +219,7 @@ export const DatabaseShell = (props: DatabaseShellProps) => {
         return <LoadingScreen.Trigger description="Getting Social Stats" />;
     }
 
-    // show a loading screen when it is pending
-    if (usabilityStatus !== 'SUCCESS') {
-        return <LoadingScreen.Trigger description="Getting Usability Score" />;
-    }
-
-    console.log(usabilityData);
+    console.log('metavals', metaVals);
 
     return (
         <Page
@@ -192,15 +240,48 @@ export const DatabaseShell = (props: DatabaseShellProps) => {
                             Data Catalog Overview
                         </Typography>
                         <Stack direction="row">
-                            {/* <Button>Print Metadata</Button>
-                            <Button>Print Metadata</Button> */}
-
                             <Button
-                                startIcon={<AddCircle />}
-                                variant={'contained'}
+                                startIcon={<ArrowCircleDown />}
+                                variant="outlined"
+                                onClick={() => printMeta()}
                             >
-                                New Insight
+                                Print Metadata
                             </Button>
+                            {role === 'OWNER' && (
+                                <Button
+                                    startIcon={<SimCardDownload />}
+                                    variant="outlined"
+                                    onClick={() => exportDB()}
+                                >
+                                    Export
+                                </Button>
+                            )}
+                            {canEdit && (
+                                <>
+                                    {edit && (
+                                        <EditDatabaseDetails
+                                            values={metaVals}
+                                            open={edit}
+                                            onClose={(success) => {
+                                                // reload if successfully submitted
+                                                if (success) {
+                                                    refresh();
+                                                    // dbMetaRefresh();
+                                                }
+
+                                                setEdit(false);
+                                            }}
+                                        ></EditDatabaseDetails>
+                                    )}
+                                    <Button
+                                        onClick={() => setEdit(!edit)}
+                                        startIcon={<EditOutlined />}
+                                        variant={'contained'}
+                                    >
+                                        Edit
+                                    </Button>
+                                </>
+                            )}
                         </Stack>
                     </Stack>
                 </Stack>
@@ -212,72 +293,36 @@ export const DatabaseShell = (props: DatabaseShellProps) => {
                         {data.database_name}
                     </Typography>
                     <StyledInfoDescription variant={'subtitle1'}>
-                        {data.description}
+                        {metaVals.description}
                     </StyledInfoDescription>
 
-                    <StyledInfoFooter variant={'caption'}>
-                        Updated {data.last_updated}
-                    </StyledInfoFooter>
+                    <StyledChipContainer>
+                        {metaVals.tag &&
+                            metaVals.tag.map((tag, i) => {
+                                return (
+                                    <Chip
+                                        key={i}
+                                        variant={'outlined'}
+                                        label={tag}
+                                    />
+                                );
+                            })}
+                    </StyledChipContainer>
                 </StyledInfoLeft>
                 <StyledInfoRight>
                     <StyledDatabaseImage
                         src={`${process.env.MODULE}/api/app-${id}/appImage/download`}
                     />
-                    {votes && (
-                        <></>
-                        // <Stack direction="row" spacing={1} marginBottom={2}>
-                        //     <p>
-                        //         {votes.total}{' '}
-                        //         {votes.total === 1
-                        //             ? 'member likes'
-                        //             : 'members like'}{' '}
-                        //         this dataset
-                        //     </p>
-
-                        //     <IconButton
-                        //         size="sm"
-                        //         color={'grey'}
-                        //         onClick={() => {
-                        //             // if true ? downvote : upvote
-                        //             voteDatabase(votes.userVote ? false : true);
-                        //         }}
-                        //     >
-                        //         <Icon
-                        //             path={
-                        //                 votes.userVote
-                        //                     ? mdiThumbUp
-                        //                     : mdiThumbUpOutline
-                        //             }
-                        //             size="md"
-                        //         ></Icon>
-                        //     </IconButton>
-                        // </Stack>
-                    )}
-                    <Stack
-                        // direction="row"
-                        alignItems={'flex-end'}
-                        spacing={1}
-                        marginBottom={2}
-                    >
+                    <Stack alignItems={'flex-end'} spacing={1} marginBottom={2}>
                         <Typography variant={'body2'}>
-                            Published by: J. Smiths
+                            Published by: J. Smith
                         </Typography>
                         <Typography variant={'body2'}>
                             Published: 01/23/2023
                         </Typography>
-                        {/* <StyledUsabilityProgress
-                            value={usabilityData * 10}
-                            variant={'determinate'}
-                        />
-                        <Typography variant="body2">
-                            {usabilityData * 10}%
-                        </Typography> */}
-
-                        {/* <Tooltip title="The SEMOSS Usability Score is calculated by the datasets level of documentation">
-                            <IconButton size="small">
-                                <InfoOutlined />
-                            </IconButton>
-                        </Tooltip> */}
+                        <Typography variant={'body2'}>
+                            Updated {data.last_updated}
+                        </Typography>
                     </Stack>
                 </StyledInfoRight>
             </StyledInfo>

@@ -43,6 +43,11 @@ const StyledCard = styled(Card)(({ theme }) => ({
     height: theme.spacing(20),
 }));
 
+const StyledCardContent = styled(Card.Content)(({ theme }) => ({
+    overflow: 'hidden',
+    textOverflow: 'ellipsis',
+}));
+
 const StyledSearchbarContainer = styled('div')(({ theme }) => ({
     display: 'flex',
     width: '100%',
@@ -93,7 +98,6 @@ const IconMapper = {
     Theming: <PaintRounded />,
 };
 
-console.log('', DEFAULT_CARDS);
 export const SettingsIndexPage = () => {
     const navigate = useNavigate();
     const [cards, setCards] = useState(DEFAULT_CARDS);
@@ -126,7 +130,7 @@ export const SettingsIndexPage = () => {
                     onChange={(e) => {
                         setSearch(e.target.value);
                     }}
-                    placeholder={'Search Databases'}
+                    placeholder={'Search'}
                     InputProps={{
                         startAdornment: <SearchIcon />,
                     }}
@@ -151,11 +155,11 @@ export const SettingsIndexPage = () => {
                                     titleTypographyProps={{ variant: 'h5' }}
                                     avatar={IconMapper[c.title]}
                                 />
-                                <Card.Content sx={{ marginTop: -2 }}>
+                                <StyledCardContent sx={{ marginTop: -2 }}>
                                     <Typography variant="caption">
                                         {c.description}
                                     </Typography>
-                                </Card.Content>
+                                </StyledCardContent>
                                 {/* disabled for now */}
                                 {/* <Card.Actions>
                                     <CardActionsLeft>
