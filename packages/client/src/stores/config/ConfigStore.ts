@@ -17,6 +17,7 @@ interface ConfigStoreInterface {
         id: string;
         name: string;
         email: string;
+        admin: boolean;
     };
     /** Config information */
     config: {
@@ -68,6 +69,7 @@ export class ConfigStore {
             id: '',
             name: '',
             email: '',
+            admin: false,
         },
         config: {
             databaseMetaKeys: [],
@@ -191,6 +193,8 @@ export class ConfigStore {
                 `GetUserInfo();`,
             );
 
+            const isAdmin = await monolithStore.isAdminUser();
+
             const output = pixelReturn[0].output;
             const type = pixelReturn[0].operationType;
 
@@ -206,6 +210,7 @@ export class ConfigStore {
                     id: '',
                     name: '',
                     email: '',
+                    admin: false,
                 };
 
                 if (output['SAML']) {
@@ -219,6 +224,8 @@ export class ConfigStore {
                 this._store.user.id = user.id || '';
                 this._store.user.name = user.name || '';
                 this._store.user.email = user.email || '';
+
+                this._store.user.admin = isAdmin;
 
                 // set the status as an success
                 this._store.status = 'SUCCESS';

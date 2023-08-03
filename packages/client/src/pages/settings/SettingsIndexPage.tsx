@@ -1,40 +1,106 @@
 import { useState, useEffect } from 'react';
-import { styled, Grid, Card, Typography, TextField } from '@semoss/ui';
 import {
-    mdiAccountGroup,
-    mdiClipboardTextOutline,
-    mdiDatabase,
-    mdiDatabaseSearch,
-    mdiTabletCellphone,
-    mdiTextBoxMultipleOutline,
-    mdiClock,
-} from '@mdi/js';
+    Card,
+    Grid,
+    IconButton,
+    MenuItem,
+    Select,
+    Search,
+    styled,
+    Typography,
+} from '@semoss/ui';
+
+import { Icon } from '@semoss/components';
+
+import { Search as SearchIcon, MoreVert } from '@mui/icons-material';
+
 import { useNavigate } from 'react-router-dom';
 import { useSettings } from '@/hooks';
 import { LoadingScreen } from '@/components/ui';
 
+import { SEMOSS } from '@/assets/img/SEMOSS';
+import { DatabaseLayers } from '@/assets/img/DatabaseLayers';
+import { Folder } from '@/assets/img/Folder';
+import { Group } from '@/assets/img/Group';
+import { Construction } from '@/assets/img/Construction';
+import { AdminPanel } from '@/assets/img/AdminPanel';
+import { Link } from '@/assets/img/Link';
+import { GroupRounded } from '@/assets/img/GroupRounded';
+import { PersonRounded } from '@/assets/img/PersonRounded';
+import { PaintRounded } from '@/assets/img/PaintRounded';
+
 import { SETTINGS_ROUTES } from './settings.constants';
 
-const StyledSearch = styled('div')({
-    width: '50%',
+const StyledContainer = styled('div')(({ theme }) => ({
+    display: 'flex',
+    width: 'auto',
+    flexDirection: 'column',
+    alignItems: 'flex-start',
+    gap: theme.spacing(3),
+}));
+
+const StyledCard = styled(Card)(({ theme }) => ({}));
+
+const StyledCardHeader = styled(Card.Header)(({ theme }) => ({
+    height: theme.spacing(7.75),
+    margin: '0px 0px 0px 0px',
+}));
+
+const StyledCardContent = styled(Card.Content)(({ theme }) => ({
+    height: theme.spacing(5),
+    margin: '0px 0px 0px 0px',
+}));
+
+const StyledSearchbarContainer = styled('div')(({ theme }) => ({
+    display: 'flex',
+    width: '100%',
+    alignItems: 'flex-start',
+    gap: theme.spacing(3),
+}));
+
+const StyledSort = styled(Select)(({ theme }) => ({
+    width: '20%',
+}));
+
+const StyledIcon = styled(Icon)({
+    fontSize: '30px',
 });
 
-const StyledSetHeader = styled('div')(({ theme }) => ({
+const CardActionsLeft = styled('div')({
     display: 'flex',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: theme.spacing(4),
-}));
+    width: '100%',
+    alignItems: 'flex-start',
+});
+
+const CardActionsRight = styled('div')({
+    display: 'flex',
+    marginLeft: 'auto',
+});
 
 const DEFAULT_CARDS = SETTINGS_ROUTES.filter(
     (r) => !!r.path && r.history.length < 2,
 );
 
-console.log('', DEFAULT_CARDS);
+const IconMapper = {
+    'Database Settings': <DatabaseLayers />,
+    'Project Settings': <Folder />,
+    'Insight Settings': <SEMOSS />,
+    'Member Settings': <Group />,
+    Configuration: <Construction />,
+    'Admin Query': <AdminPanel />,
+    'External Connections': <Link />,
+    Teams: <GroupRounded />,
+    'Teams Management': <GroupRounded />,
+    'Teams Permissions': <GroupRounded />,
+    'My Profile': <PersonRounded />,
+    Theming: <PaintRounded />,
+};
+
 export const SettingsIndexPage = () => {
     const navigate = useNavigate();
     const [cards, setCards] = useState(DEFAULT_CARDS);
     const [search, setSearch] = useState<string>('');
+    const [sort, setSort] = useState('Name');
 
     const { adminMode } = useSettings();
 
@@ -55,37 +121,66 @@ export const SettingsIndexPage = () => {
     }, [search]);
 
     return (
-        <>
-            <StyledSetHeader>
-                <StyledSearch>
-                    <TextField
-                        label={'Search Databases'}
-                        onChange={(e) => {
-                            setSearch(e.target.value);
-                        }}
-                        placeholder={'Search....'}
-                    />
-                    {/* <Input
-                        // Move to Header
-                    ></Input> */}
-                </StyledSearch>
-            </StyledSetHeader>
+        <StyledContainer>
+            <StyledSearchbarContainer>
+                <Search
+                    label={'Searching'}
+                    size={'small'}
+                    onChange={(e) => {
+                        setSearch(e.target.value);
+                    }}
+                    placeholder={'Search'}
+                    InputProps={{
+                        startAdornment: <SearchIcon />,
+                    }}
+                    sx={{ width: '80%' }}
+                />
+                <StyledSort
+                    size={'small'}
+                    label={'Sort'}
+                    value={sort}
+                    onChange={(e) => setSort(e.target.value)}
+                >
+                    <MenuItem value="Name">Name</MenuItem>
+                </StyledSort>
+            </StyledSearchbarContainer>
+
             <Grid container spacing={2}>
                 {cards.map((c, i) => {
                     return (
                         <Grid item key={i} sm={12} md={6} lg={4} xl={3}>
-                            <Card onClick={() => navigate(c.path)}>
-                                <Card.Header title={c.title} />
-                                <Card.Content sx={{ marginTop: -2 }}>
-                                    <Typography variant="caption">
+                            <StyledCard onClick={() => navigate(c.path)}>
+                                <StyledCardHeader
+                                    // sx={{ height: '62px' }}
+                                    title={c.title}
+                                    titleTypographyProps={{ variant: 'body1' }}
+                                    avatar={IconMapper[c.title]}
+                                />
+                                <StyledCardContent>
+                                    <Typography variant="body2">
                                         {c.description}
                                     </Typography>
-                                </Card.Content>
-                            </Card>
+                                </StyledCardContent>
+                                {/* disabled for now */}
+                                <Card.Actions>
+                                    <CardActionsLeft>
+                                        {' '}
+                                        {/* <AccessTime fontSize="small" />
+                                        <Typography variant="caption">
+                                            7/19/2023 10:00AM
+                                        </Typography> */}
+                                    </CardActionsLeft>
+                                    <CardActionsRight>
+                                        <IconButton disabled={true}>
+                                            <MoreVert />
+                                        </IconButton>
+                                    </CardActionsRight>
+                                </Card.Actions>
+                            </StyledCard>
                         </Grid>
                     );
                 })}
             </Grid>
-        </>
+        </StyledContainer>
     );
 };

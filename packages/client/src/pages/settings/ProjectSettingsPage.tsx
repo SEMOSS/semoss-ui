@@ -22,20 +22,20 @@ import {
     FormatListBulletedOutlined,
 } from '@mui/icons-material';
 
-const StyledContainer = styled('div')({
+const StyledContainer = styled('div')(({ theme }) => ({
     display: 'flex',
     width: 'auto',
     flexDirection: 'column',
     alignItems: 'flex-start',
-    gap: '24px',
-});
+    gap: theme.spacing(3),
+}));
 
-const StyledSearchbarContainer = styled('div')({
+const StyledSearchbarContainer = styled('div')(({ theme }) => ({
     display: 'flex',
     width: '100%',
     alignItems: 'flex-start',
-    gap: '24px',
-});
+    gap: theme.spacing(3),
+}));
 
 const StyledSearchbar = styled(Search)({
     width: '80%',
@@ -151,7 +151,7 @@ export const ProjectSettingsPage = () => {
     return (
         <StyledContainer>
             <StyledSearchbarContainer>
-                <StyledSearchbar
+                <Search
                     value={search}
                     onChange={(e) => {
                         setSearch(e.target.value);
@@ -160,8 +160,9 @@ export const ProjectSettingsPage = () => {
                     size="small"
                     enableEndAdornment={true}
                     ref={searchbarRef}
+                    sx={{ width: '80%' }}
                 />
-                <StyledSort
+                <Select
                     size={'small'}
                     value={sort}
                     onChange={(e) => setSort(e.target.value)}
@@ -171,7 +172,7 @@ export const ProjectSettingsPage = () => {
                     <MenuItem value="Views">Views</MenuItem>
                     <MenuItem value="Trending">Trending</MenuItem>
                     <MenuItem value="Upvotes">Upvotes</MenuItem>
-                </StyledSort>
+                </Select>
 
                 <ToggleButtonGroup size={'small'} value={view}>
                     <ToggleButton onClick={(e, v) => setView(v)} value={'tile'}>
@@ -200,7 +201,7 @@ export const ProjectSettingsPage = () => {
                                               project.project_name,
                                           )}
                                           id={project.project_id}
-                                          description={'description'}
+                                          description={project.description}
                                           onClick={(id) => {
                                               navigate(
                                                   `${project.project_id}`,
@@ -222,12 +223,8 @@ export const ProjectSettingsPage = () => {
                                               project.project_name,
                                           )}
                                           id={project.project_id}
-                                          description={'description'}
+                                          description={project.description}
                                           onClick={(id) => {
-                                              console.log(
-                                                  'navigate',
-                                                  project.project_id,
-                                              );
                                               navigate(
                                                   `${project.project_id}`,
                                                   {

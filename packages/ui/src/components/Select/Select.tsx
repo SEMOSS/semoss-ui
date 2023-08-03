@@ -92,6 +92,16 @@ export interface SelectProps {
     required?: boolean;
 
     /**
+     * If `true`, the label is displayed as required and the `input` element is required.
+     * @default false
+     */
+    SelectProps?: {
+        multiple: boolean;
+        value: string[];
+        onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+    };
+
+    /**
      * The size of the component.
      */
     size?: "small" | "medium";
@@ -113,6 +123,5 @@ export interface SelectProps {
 }
 
 export const Select = (props: SelectProps) => {
-    const { sx } = props;
-    return <TextField variant="outlined" select sx={sx} {...props} />;
+    return <TextField variant="outlined" select {...props} />;
 };

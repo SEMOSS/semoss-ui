@@ -28,6 +28,8 @@ import {
 } from '@/components/database';
 
 import defaultDBImage from '../../assets/img/placeholder.png';
+import { formatName } from '@/utils';
+
 export interface DBMember {
     ID: string;
     NAME: string;
@@ -74,12 +76,6 @@ const StyledSearchbar = styled(Search)({
 
 const StyledSort = styled(Select)({
     width: '10%',
-    // display: 'flex',
-    // width: '220px',
-    // flexDirection: 'column',
-    // alignItems: 'flex-start',
-    // gap: '3px',
-    // flexShrink: '0',
 });
 
 const StyledMenuItem = styled(Select.Item)({
@@ -173,6 +169,8 @@ export const DatabaseSettingsPage = () => {
             database_id: string;
             database_name: string;
             database_type: string;
+            database_created_by: string;
+            database_date_created: string;
             description: string;
             low_database_name: string;
             permission: number;
@@ -202,7 +200,6 @@ export const DatabaseSettingsPage = () => {
                 hasVoted: false,
                 views: 'N/A',
                 trending: 'N/A',
-                owner: 'N/A',
             });
         });
 
@@ -215,20 +212,6 @@ export const DatabaseSettingsPage = () => {
         setSelectedApp(null);
         searchbarRef.current?.focus();
     }, [getDatabases.status, getDatabases.data]);
-
-    /**
-     * @name formatDBName
-     * @param str
-     * @returns formatted db name
-     */
-    const formatDBName = (str: string) => {
-        let i;
-        const frags = str.split('_');
-        for (i = 0; i < frags.length; i++) {
-            frags[i] = frags[i].charAt(0).toUpperCase() + frags[i].slice(1);
-        }
-        return frags.join(' ');
-    };
 
     /**
      * @name favoriteDb
@@ -405,11 +388,11 @@ export const DatabaseSettingsPage = () => {
                               >
                                   {view === 'list' ? (
                                       <DatabaseLandscapeCard
-                                          name={formatDBName(db.app_name)}
+                                          name={db.app_name}
                                           id={db.app_id}
                                           image={defaultDBImage}
                                           tag={db.tag}
-                                          owner={db.owner}
+                                          owner={db.database_created_by}
                                           description={db.description}
                                           votes={db.upvotes}
                                           views={db.views}
@@ -425,7 +408,7 @@ export const DatabaseSettingsPage = () => {
                                           onClick={(id) => {
                                               navigate(`${db.app_id}`, {
                                                   state: {
-                                                      name: formatDBName(
+                                                      name: formatName(
                                                           db.database_name,
                                                       ),
                                                       global: db.database_global,
@@ -442,11 +425,11 @@ export const DatabaseSettingsPage = () => {
                                       />
                                   ) : (
                                       <DatabaseTileCard
-                                          name={formatDBName(db.app_name)}
+                                          name={db.app_name}
                                           id={db.app_id}
                                           image={defaultDBImage}
                                           tag={db.tag}
-                                          owner={db.owner}
+                                          owner={db.database_created_by}
                                           description={db.description}
                                           votes={db.upvotes}
                                           views={db.views}
@@ -462,7 +445,7 @@ export const DatabaseSettingsPage = () => {
                                           onClick={() => {
                                               navigate(`${db.app_id}`, {
                                                   state: {
-                                                      name: formatDBName(
+                                                      name: formatName(
                                                           db.database_name,
                                                       ),
                                                       global: db.database_global,

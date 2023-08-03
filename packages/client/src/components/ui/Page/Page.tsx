@@ -2,14 +2,16 @@ import React, { useEffect, useState } from 'react';
 import { styled, Container } from '@semoss/ui';
 import { SxProps } from '@mui/system';
 
-const StyledPage = styled('div')(() => ({
+const StyledPage = styled('div')(({ theme }) => ({
     height: '100%',
     width: '100%',
     overflowX: 'hidden',
     overflowY: 'auto',
+    backgroundColor: theme.palette.background.paper,
 
-    // Set this in Theme
-    backgroundColor: '#FBFBFB',
+    display: 'flex',
+    flexDirection: 'column',
+    gap: theme.spacing(2),
 }));
 
 const StyledPageHeader = styled('div', {
@@ -20,16 +22,17 @@ const StyledPageHeader = styled('div', {
 }>(({ theme, stuck }) => ({
     position: 'sticky',
     top: '-1px',
-    paddingTop: '1px',
-    paddingBottom: '1px',
+    paddingTop: theme.spacing(5),
+    paddingBottom: theme.spacing(1),
     // Checkout user permissions, and the stacked avatars
     zIndex: 10,
-    borderBottom: stuck ? 1 : 'none',
-    borderBottomColor: theme.palette.grey['500'],
-    marginBottom: theme.spacing(2),
-
+    borderBottom: stuck ? `solid ${theme.palette.divider}` : 'none',
     // Set this in Theme
-    backgroundColor: '#FBFBFB',
+    backgroundColor: theme.palette.background.paper,
+}));
+
+const StyledContainer = styled(Container)(({ theme }) => ({
+    width: '1271px',
 }));
 
 export interface PageProps {
@@ -73,12 +76,13 @@ export const Page = (props: PageProps): JSX.Element => {
                     ref={(node) => setHeaderElement(node)}
                     stuck={stuck}
                 >
-                    <Container maxWidth="xl" sx={sx}>
+                    <StyledContainer maxWidth={false} sx={sx}>
                         {header}
-                    </Container>
+                    </StyledContainer>
                 </StyledPageHeader>
             )}
-            <Container maxWidth="xl">{children}</Container>
+            <StyledContainer maxWidth={false}>{children}</StyledContainer>
+            {/* <div>{children}</div> */}
         </StyledPage>
     );
 };

@@ -1,15 +1,17 @@
 import { useContext } from 'react';
 
-import { DatabaseContext, DatabaseContextType } from '@/contexts';
+import { EngineContext, EngineContextType } from '@/contexts';
 
 /**
- * Access the current Database Context
- * @returns the Database Context
+ * Access the current Engine Context
+ * @returns the Engine Context
  */
-export function useDatabase(): DatabaseContextType {
-    const context = useContext(DatabaseContext);
+export function useDatabase(): EngineContextType {
+    const context = useContext(EngineContext);
     if (context === undefined) {
-        throw new Error('useDatabase must be used within DatabaseProvider');
+        throw new Error(
+            'useDatabase must be used within Engine Context Provider',
+        );
     }
 
     return context;

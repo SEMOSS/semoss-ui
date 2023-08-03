@@ -7,4 +7,4 @@ const AlertNameSpace = Object.assign(_Alert, {
 
 export type { AlertProps, AlertTitleProps };
 
-export { AlertNameSpace as Alert };
+export { AlertNameSpace as Alert, AlertTitle };

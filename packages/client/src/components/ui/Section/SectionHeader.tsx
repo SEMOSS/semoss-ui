@@ -4,12 +4,14 @@ import { styled, Typography } from '@semoss/ui';
 const StyledSectionHeader = styled('div')(({ theme }) => ({
     display: 'flex',
     alignItems: 'center',
+    justifyContent: 'space-between',
+    width: '100%',
     marginBottom: theme.spacing(2),
     gap: theme.spacing(1),
 }));
 
 const StyledSectionTitle = styled(Typography)(() => ({
-    textTransform: 'uppercase',
+    // textTransform: 'uppercase',
 }));
 
 export interface SectionHeaderProps extends ComponentPropsWithRef<'div'> {
@@ -25,9 +27,7 @@ const _SectionHeader = (
 
     return (
         <StyledSectionHeader ref={ref} {...otherProps}>
-            <StyledSectionTitle variant={'subtitle2'}>
-                {children}
-            </StyledSectionTitle>
+            <StyledSectionTitle variant={'h6'}>{children}</StyledSectionTitle>
             {actions}
         </StyledSectionHeader>
     );

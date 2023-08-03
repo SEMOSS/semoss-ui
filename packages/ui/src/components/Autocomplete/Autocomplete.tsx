@@ -28,7 +28,6 @@ export interface AutocompleteProps<
         | "componentsProps"
         | "disablePortal"
         | "forcePopupIcon"
-        | "getLimitTagsText"
         | "ListboxComponent"
         | "ListboxProps"
         | "openText"

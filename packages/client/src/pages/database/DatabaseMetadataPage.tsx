@@ -1,5 +1,6 @@
 import React, { useMemo, useState } from 'react';
 import { observer } from 'mobx-react-lite';
+import { usePixel, useRootStore } from '@/hooks';
 import {
     styled as styledOld,
     Table as TableOld,
@@ -7,7 +8,16 @@ import {
     Icon,
 } from '@semoss/components';
 import { MenuItem } from '@semoss/ui/src/components/Menu/MenuItem';
-import { styled, Chip, Select, Stack, Typography, Table } from '@semoss/ui';
+import {
+    Button,
+    styled,
+    Chip,
+    Select,
+    Stack,
+    Typography,
+    Table,
+} from '@semoss/ui';
+import { ArrowCircleDown } from '@mui/icons-material';
 import { mdiPencil } from '@mdi/js';
 
 import { theme } from '@/theme';
@@ -77,6 +87,8 @@ const StyledTableDescription = styledOld('div', {
 
 export const DatabaseMetadataPage = observer(() => {
     const { id } = useDatabase();
+
+    const { monolithStore } = useRootStore();
 
     // track the selected node
     const [selectedNode, setSelectedNode] =
@@ -236,10 +248,36 @@ export const DatabaseMetadataPage = observer(() => {
             ? getDatabaseMetamodel.data.logicalNames[selectedNode.id]
             : [];
 
+    /**
+     * @name printMeta
+     * @desc export DB pixel
+     */
+    const printMeta = () => {
+        const pixel = `META|DatabaseMetadataToPdf(database=["${id}"] );`;
+        monolithStore.runQuery(pixel).then((response) => {
+            const output = response.pixelReturn[0].output,
+                insightID = response.insightID;
+
+            monolithStore.download(insightID, output);
+        });
+    };
+
     return (
         <StyledPage>
             <Section>
-                <Section.Header>Metamodel</Section.Header>
+                <Section.Header
+                    actions={
+                        <Button
+                            startIcon={<ArrowCircleDown />}
+                            variant="outlined"
+                            onClick={() => printMeta()}
+                        >
+                            Print Metadata
+                        </Button>
+                    }
+                >
+                    Metamodel
+                </Section.Header>
                 <Stack spacing={2}>
                     {/* <StyledSelect
                         value={selectedNode || ''}

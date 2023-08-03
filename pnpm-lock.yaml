@@ -20,6 +20,7 @@ importers:
       '@emotion/styled': ^11.11.0
       '@mdi/js': ^6.9.96
       '@mdi/react': ^1.6.1
+      '@monaco-editor/react': ^4.5.1
       '@mui/icons-material': ^5.11.16
       '@mui/material': ^5.13.5
       '@semoss/components': ^1.0.0-alpha.34
@@ -66,6 +67,7 @@ importers:
       '@emotion/styled': 11.11.0_6bbff2e9948d82d0217f957d5cd73f52
       '@mdi/js': 6.9.96
       '@mdi/react': 1.6.1
+      '@monaco-editor/react': 4.5.1_react-dom@17.0.2+react@17.0.2
       '@mui/icons-material': 5.11.16_f3f7def2e79b95d4aef8dcef8c5bbfad
       '@mui/material': 5.13.5_0f89c15a51af73d3b4458d543b306f24
       '@semoss/components': 1.0.0-alpha.36_39c6e6c1bc384053f6bd1c822564c0e1
@@ -3531,6 +3533,26 @@ packages:
       '@types/react': 18.2.14
       react: 17.0.2
     dev: true
+
+  /@monaco-editor/loader/1.3.3:
+    resolution: {integrity: sha512-6KKF4CTzcJiS8BJwtxtfyYt9shBiEv32ateQ9T4UVogwn4HM/uPo9iJd2Dmbkpz8CM6Y0PDUpjnZzCwC+eYo2Q==}
+    peerDependencies:
+      monaco-editor: '>= 0.21.0 < 1'
+    dependencies:
+      state-local: 1.0.7
+    dev: false
+
+  /@monaco-editor/react/4.5.1_react-dom@17.0.2+react@17.0.2:
+    resolution: {integrity: sha512-NNDFdP+2HojtNhCkRfE6/D6ro6pBNihaOzMbGK84lNWzRu+CfBjwzGt4jmnqimLuqp5yE5viHS2vi+QOAnD5FQ==}
+    peerDependencies:
+      monaco-editor: '>= 0.25.0 < 1'
+      react: ^16.8.0 || ^17.0.0 || ^18.0.0
+      react-dom: ^16.8.0 || ^17.0.0 || ^18.0.0
+    dependencies:
+      '@monaco-editor/loader': 1.3.3
+      react: 17.0.2
+      react-dom: 17.0.2_react@17.0.2
+    dev: false
 
   /@mui/base/5.0.0-beta.4_39c6e6c1bc384053f6bd1c822564c0e1:
     resolution: {integrity: sha512-ejhtqYJpjDgHGEljjMBQWZ22yEK0OzIXNa7toJmmXsP4TT3W7xVy8bTJ0TniPDf+JNjrsgfgiFTDGdlEhV1E+g==}
@@ -16638,6 +16660,10 @@ packages:
   /stackframe/1.3.4:
     resolution: {integrity: sha512-oeVtt7eWQS+Na6F//S4kJ2K2VbRlS9D43mAlMyVpVWovy9o+jfgH8O9agzANzaiLjclA0oYzUXEM4PurhSUChw==}
     dev: true
+
+  /state-local/1.0.7:
+    resolution: {integrity: sha512-HTEHMNieakEnoe33shBYcZ7NX83ACUjCu8c40iOGEZsngj9zRnkqS9j1pqQPXwobB0ZcVTk27REb7COQ0UR59w==}
+    dev: false
 
   /statuses/1.5.0:
     resolution: {integrity: sha512-OpZ3zP+jT1PI7I8nemJX4AKmAX070ZkYPVWV/AaKTJl+tXCTGyVdC1a4SL8RUQYEwk/f34ZX8UTykN68FwrqAA==}
