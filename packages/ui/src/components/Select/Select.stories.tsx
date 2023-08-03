@@ -56,9 +56,9 @@ const SelectComponent = (args) => {
 
     return (
         <Stack spacing={2}>
-            <div sx={{}}>
-                <div sx={{ width: "70%" }}>Hey</div>
-                <div sx={{ width: "10%" }}>
+            <div style={{}}>
+                <div style={{ width: "70%" }}>Hey</div>
+                <div style={{ width: "10%" }}>
                     <Select
                         {...args}
                         sx={{ width: "100%" }}
@@ -76,7 +76,7 @@ const SelectComponent = (args) => {
                     </Select>
                 </div>
 
-                <div sx={{ width: "20%" }}>Hello</div>
+                <div style={{ width: "20%" }}>Hello</div>
             </div>
             <Box>Value: {selected}</Box>
         </Stack>

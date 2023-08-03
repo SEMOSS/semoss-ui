@@ -73,6 +73,7 @@ const StyledSearchbar = styled(Search)({
 });
 
 const StyledSort = styled(Select)({
+    width: '10%',
     // display: 'flex',
     // width: '220px',
     // flexDirection: 'column',

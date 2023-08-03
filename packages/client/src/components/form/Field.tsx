@@ -1,3 +1,4 @@
+import React, { useState } from 'react';
 import { Controller, Control, FieldValues, Path } from 'react-hook-form';
 import {
     Form,
@@ -28,6 +29,12 @@ import {
     DatepickerProps,
     FileDropzoneProps,
 } from '@semoss/components';
+
+import {
+    TextField,
+    Select as MuiSelect,
+    Switch as MuiSwitch,
+} from '@semoss/ui';
 
 // WORK ON SWITCHING TYPES TO THIS FORMAT
 // type GenericField<C, P> = { components: C } & Omit<P, "onChange">;
@@ -117,6 +124,8 @@ interface FieldProps<V extends FieldValues> {
     layout?: FormFieldProps['layout'];
     container?: unknown;
     onChange?: (V) => void;
+    sx?: any;
+    helperText?: React.ReactNode | string;
 }
 
 const StyledRequired = styled('span', {
@@ -145,6 +154,7 @@ export const Field = <V extends FieldValues>(
         container,
     } = props;
 
+    const [selected, setSelected] = useState('');
     const returnLabel = (label: string) => {
         return rules['required'] ? (
             <>
@@ -154,7 +164,6 @@ export const Field = <V extends FieldValues>(
             <>{label}:</>
         );
     };
-
     if (options.component === 'input') {
         return (
             <Controller
@@ -165,21 +174,21 @@ export const Field = <V extends FieldValues>(
                     const hasError = fieldState.error;
                     return (
                         <Form.Field
-                            label={label ? returnLabel(label) : null}
                             error={hasError ? error : null}
                             description={description}
                             layout={layout}
+                            style={{ padding: '8px' }}
                         >
-                            <Input
-                                // {...options}
-                                id={options.id}
-                                size={options.size ? options.size : 'md'}
+                            <TextField
                                 placeholder={options.placeholder}
-                                autoComplete={options.autoComplete}
-                                disabled={disabled ? disabled : false}
-                                valid={!hasError}
                                 value={field.value ? field.value : ''}
-                                onChange={(value) => field.onChange(value)}
+                                onChange={(value) => {
+                                    field.onChange(value);
+                                }}
+                                id={options.id}
+                                disabled={disabled}
+                                error={!!hasError}
+                                label={label ? label : null}
                             />
                         </Form.Field>
                     );
@@ -230,7 +239,6 @@ export const Field = <V extends FieldValues>(
                 rules={rules}
                 render={({ field, fieldState }) => {
                     const hasError = fieldState.error;
-                    // console.log(field);
                     return (
                         <Form.Field
                             label={label ? returnLabel(label) : null}
@@ -265,28 +273,29 @@ export const Field = <V extends FieldValues>(
 
                     return (
                         <Form.Field
-                            label={label ? returnLabel(label) : null}
                             error={hasError ? error : null}
                             description={description}
                             layout={layout}
+                            style={{ padding: '8px', width: '60%' }}
                         >
-                            <Select
+                            <MuiSelect
                                 id={options.id}
-                                size={options.size ? options.size : 'md'}
+                                selectProps={{ multiple: true }}
                                 disabled={disabled}
+                                label={label ? label : null}
                                 placeholder={options.placeholder}
-                                options={options.options}
-                                valid={!hasError}
-                                value={field.value ? field.value : ''}
+                                sx={{ width: '75%' }}
                                 defaultValue={field.value ? field.value : ''}
                                 onChange={(value) => field.onChange(value)}
-
-                                // container={options.ref}
-                                // getSearch?: (search: string, option: O) => boolean;
-                                // getKey?: (option: O) => string;
-                                // getDisplay?: (option: O) => ReactNode;
-                                // inputProps={rules}
-                            />
+                            >
+                                {options.options.map((option) => {
+                                    return (
+                                        <MuiSelect.Item value={option}>
+                                            {option}
+                                        </MuiSelect.Item>
+                                    );
+                                })}
+                            </MuiSelect>
                         </Form.Field>
                     );
                 }}
@@ -340,7 +349,6 @@ export const Field = <V extends FieldValues>(
                 rules={rules}
                 render={({ field, fieldState }) => {
                     const hasError = fieldState.error;
-
                     return (
                         <Form.Field
                             label={label ? returnLabel(label) : null}
@@ -348,17 +356,14 @@ export const Field = <V extends FieldValues>(
                             description={description}
                             layout={layout}
                         >
-                            <Switch
+                            <MuiSwitch
                                 id={options.id ? options.id : null}
                                 disabled={disabled}
+                                color="primary"
                                 valid={!hasError}
-                                value={field.value ? field.value : false}
-                                defaultValue={field.value ? field.value : false}
+                                checked={field.value}
                                 onChange={(value) => field.onChange(value)}
-                                // inputProps={rules}
-                            >
-                                {options.children}
-                            </Switch>
+                            />
                         </Form.Field>
                     );
                 }}
@@ -388,7 +393,6 @@ export const Field = <V extends FieldValues>(
                                 value={field.value ? field.value : false}
                                 defaultValue={field.value ? field.value : false}
                                 onChange={(value) => field.onChange(value)}
-                                // inputProps={rules}
                             >
                                 {options.children}
                             </Checkbox>

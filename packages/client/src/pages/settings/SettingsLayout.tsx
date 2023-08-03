@@ -65,8 +65,6 @@ export const SettingsLayout = () => {
         return null;
     }
 
-    console.log(state, 'state');
-    console.log(matchedRoute, 'matched');
     return (
         <SettingsContext.Provider
             value={{
