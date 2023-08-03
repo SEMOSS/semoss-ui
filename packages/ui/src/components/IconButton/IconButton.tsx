@@ -56,6 +56,7 @@ export interface IconButtonProps
      * The system prop that allows defining system overrides as well as additional CSS styles.
      */
     sx?: SxProps;
+    title?: string;
 }
 
 export const IconButton = (props: IconButtonProps) => {

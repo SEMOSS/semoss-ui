@@ -80,6 +80,7 @@ export interface ButtonProps
      * @default 'text'
      */
     variant?: "text" | "outlined" | "contained";
+    title?: string;
 }
 
 export const Button = (props: ButtonProps) => {
