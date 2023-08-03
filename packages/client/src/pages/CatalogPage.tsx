@@ -537,62 +537,73 @@ export const CatalogPage = observer((): JSX.Element => {
     return (
         <Page
             header={
-                <StyledStack
-                    direction="row"
-                    alignItems={'center'}
-                    justifyContent={'space-between'}
-                    spacing={4}
-                >
-                    <Stack direction="row" alignItems={'center'} spacing={2}>
-                        <Typography variant={'h4'}>
-                            {catalogType === 'Database'
-                                ? 'Data'
-                                : catalogType === 'Storage'
-                                ? 'Storage'
-                                : 'Model'}{' '}
-                            Catalog
-                        </Typography>
-                        <Search
-                            size={'small'}
-                            label={'Search'}
-                            onChange={(e) => {
-                                setSearch(e.target.value);
-                            }}
-                        />
-                    </Stack>
-                    <Stack direction="row" alignItems={'center'} spacing={3}>
-                        <Button
-                            size={'lg'}
-                            variant={'contained'}
-                            onClick={() => {
-                                navigate('/import');
-                            }}
+                <Stack>
+                    <div style={{ height: '16px' }}></div>
+                    <StyledStack
+                        direction="row"
+                        alignItems={'center'}
+                        justifyContent={'space-between'}
+                        spacing={4}
+                    >
+                        <Stack
+                            direction="row"
+                            alignItems={'center'}
+                            spacing={2}
                         >
-                            Add {catalogType}
-                        </Button>
+                            <Typography variant={'h4'}>
+                                {catalogType === 'Database'
+                                    ? 'Data'
+                                    : catalogType === 'Storage'
+                                    ? 'Storage'
+                                    : 'Model'}{' '}
+                                Catalog
+                            </Typography>
+                            <Search
+                                size={'small'}
+                                label={'Search'}
+                                onChange={(e) => {
+                                    setSearch(e.target.value);
+                                }}
+                            />
+                        </Stack>
+                        <Stack
+                            direction="row"
+                            alignItems={'center'}
+                            spacing={3}
+                        >
+                            <Button
+                                size={'lg'}
+                                variant={'contained'}
+                                onClick={() => {
+                                    navigate('/import');
+                                }}
+                            >
+                                Add {catalogType}
+                            </Button>
 
-                        <ToggleButtonGroup
-                            size={'small'}
-                            value={view}
-                            color="primary"
-                        >
-                            <ToggleButton
+                            <ToggleButtonGroup
+                                size={'small'}
+                                value={view}
                                 color="primary"
-                                onClick={(e, v) => setView('tile')}
-                                value={'tile'}
                             >
-                                <SpaceDashboardOutlined />
-                            </ToggleButton>
-                            <ToggleButton
-                                color="primary"
-                                onClick={(e, v) => setView('list')}
-                                value={'list'}
-                            >
-                                <FormatListBulletedOutlined />
-                            </ToggleButton>
-                        </ToggleButtonGroup>
-                    </Stack>
-                </StyledStack>
+                                <ToggleButton
+                                    color="primary"
+                                    onClick={(e, v) => setView('tile')}
+                                    value={'tile'}
+                                >
+                                    <SpaceDashboardOutlined />
+                                </ToggleButton>
+                                <ToggleButton
+                                    color="primary"
+                                    onClick={(e, v) => setView('list')}
+                                    value={'list'}
+                                >
+                                    <FormatListBulletedOutlined />
+                                </ToggleButton>
+                            </ToggleButtonGroup>
+                        </Stack>
+                    </StyledStack>
+                </Stack>
             }
         >
             <StyledContainer
