@@ -21,6 +21,7 @@ import defaultDbImage from '../../assets/img/placeholder.png';
 
 import { Page, LoadingScreen } from '@/components/ui';
 import { useRootStore, useDatabase, usePixel } from '@/hooks';
+import { types } from 'util';
 
 const StyledInfo = styled('div')(({ theme }) => ({
     display: 'flex',
@@ -207,7 +208,13 @@ export const EngineShell = (props: EngineShellProps) => {
             header={
                 <Stack>
                     <Breadcrumbs>
-                        <StyledLink to="/catalog">Data Catalog</StyledLink>
+                        <StyledLink to={`/catalog?type=${type}`}>
+                            {type === 'database'
+                                ? 'Data'
+                                : type.charAt(0).toUpperCase() +
+                                  type.slice(1)}{' '}
+                            Catalog
+                        </StyledLink>
                         <StyledLink to={`/${type}/${id}`}>
                             {formatName(data.database_name)}
                         </StyledLink>
@@ -220,7 +227,8 @@ export const EngineShell = (props: EngineShellProps) => {
                         <Typography variant="h4">
                             {type === 'database'
                                 ? 'Data'
-                                : type.charAt(1).toUpperCase()}{' '}
+                                : type.charAt(0).toUpperCase() +
+                                  type.slice(1)}{' '}
                             Catalog Overview
                         </Typography>
                         <Stack direction="row">
