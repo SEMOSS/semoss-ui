@@ -1,7 +1,4 @@
 import { EngineLayout } from './EngineLayout';
-// import { EngineIndexPage } from './EngineIndexPage';
+import { EngineIndexPage } from './EngineIndexPage';
 
-export {
-    EngineLayout,
-    // EngineIndexPage
-};
+export { EngineLayout, EngineIndexPage };

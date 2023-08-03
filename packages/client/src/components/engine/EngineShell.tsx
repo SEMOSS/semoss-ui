@@ -15,6 +15,7 @@ import {
     EditOutlined,
     SimCardDownload,
 } from '@mui/icons-material';
+import { formatName } from '@/utils';
 import { EditDatabaseDetails } from '@/components/database';
 import defaultDbImage from '../../assets/img/placeholder.png';
 
@@ -208,9 +209,7 @@ export const EngineShell = (props: EngineShellProps) => {
                     <Breadcrumbs>
                         <StyledLink to="/catalog">Data Catalog</StyledLink>
                         <StyledLink to={`/${type}/${id}`}>
-                            {type === 'database'
-                                ? data.database_name
-                                : data.database_name}
+                            {formatName(data.database_name)}
                         </StyledLink>
                     </Breadcrumbs>
                     <Stack
@@ -244,7 +243,6 @@ export const EngineShell = (props: EngineShellProps) => {
                                                 // reload if successfully submitted
                                                 if (success) {
                                                     refresh();
-                                                    // dbMetaRefresh();
                                                 }
 
                                                 setEdit(false);
@@ -268,9 +266,7 @@ export const EngineShell = (props: EngineShellProps) => {
             <StyledInfo>
                 <StyledInfoLeft>
                     <Typography variant={'h6'} fontWeight={'medium'}>
-                        {type === 'database'
-                            ? metaVals.database_name
-                            : `${type} name`}
+                        {formatName(data.database_name)}
                     </Typography>
                     <StyledInfoDescription variant={'subtitle1'}>
                         {metaVals.description}
@@ -291,18 +287,21 @@ export const EngineShell = (props: EngineShellProps) => {
                 </StyledInfoLeft>
                 <StyledInfoRight>
                     <StyledDatabaseImage
-                        src={defaultDbImage}
-                        // src={`${process.env.MODULE}/api/app-${id}/appImage/download`}
+                        // src={defaultDbImage}
+                        src={`${process.env.MODULE}/api/app-${id}/appImage/download`}
                     />
                     <Stack alignItems={'flex-end'} spacing={1} marginBottom={2}>
                         <Typography variant={'body2'}>
                             Published by: J. Smith
                         </Typography>
                         <Typography variant={'body2'}>
-                            Published: 01/23/2023
+                            Published: {data.database_date_created}
                         </Typography>
                         <Typography variant={'body2'}>
-                            Updated {data.last_updated}
+                            Updated:{' '}
+                            {data.last_updated
+                                ? data.last_updated
+                                : '12/24/1996'}
                         </Typography>
                     </Stack>
                 </StyledInfoRight>

@@ -15,14 +15,13 @@ import { CatalogPage } from './CatalogPage';
 import { ImportStorage } from './storage';
 
 import {
-    DatabaseIndexPage,
     DatabaseMetadataPage,
     DatabaseSettingsPage,
     DatabaseReplaceDataPage,
     DatabaseQueryDataPage,
 } from './database';
 
-import { EngineLayout } from './engine';
+import { EngineLayout, EngineIndexPage } from './engine';
 
 import { SettingsRouter } from './settings';
 import { AppRouter } from './app';
@@ -49,9 +48,15 @@ export const Router = observer(() => {
                         </Route>
                     </Route>
 
+                    <Route path="model" element={<Outlet />}>
+                        <Route path=":id" element={<EngineLayout />}>
+                            <Route index element={<EngineIndexPage />} />
+                        </Route>
+                    </Route>
+
                     <Route path="database" element={<Outlet />}>
                         <Route path=":id" element={<EngineLayout />}>
-                            <Route index element={<DatabaseIndexPage />} />
+                            <Route index element={<EngineIndexPage />} />
                             <Route
                                 path="metadata"
                                 element={<DatabaseMetadataPage />}

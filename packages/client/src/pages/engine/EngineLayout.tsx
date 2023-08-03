@@ -113,6 +113,8 @@ export const EngineLayout = () => {
             return {};
         }
 
+        // Storage and Model currently not sending back Tag or Tags
+
         return metaKeys.reduce((prev, curr) => {
             // tag and domain either come in as a string or a string[]
             // format these as string[] for autocomplete if comes in as string

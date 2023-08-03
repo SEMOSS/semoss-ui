@@ -1,0 +1,24 @@
+{
+  "0 debug pnpm:scope": {
+    "selected": 1,
+    "workspacePrefix": "C:\\workspace\\apache-tomcat-9.0.76\\webapps\\semoss-ui"
+  },
+  "1 debug pnpm:update-check": {
+    "currentVersion": "6.10.3",
+    "latestVersion": "8.6.11"
+  },
+  "2 error pnpm": {
+    "errno": 1,
+    "code": "ELIFECYCLE",
+    "pkgid": "semoss@",
+    "stage": "dev:ui-client",
+    "script": "pnpm run --filter=@semoss/ui --filter=@semoss/client --stream --parallel dev",
+    "pkgname": "semoss",
+    "err": {
+      "name": "Error",
+      "message": "semoss@ dev:ui-client: `pnpm run --filter=@semoss/ui --filter=@semoss/client --stream --parallel dev`\nExit status 1",
+      "code": "ELIFECYCLE",
+      "stack": "Error: semoss@ dev:ui-client: `pnpm run --filter=@semoss/ui --filter=@semoss/client --stream --parallel dev`\nExit status 1\n    at EventEmitter.<anonymous> (C:\\Users\\johbaxter\\AppData\\Roaming\\nvm\\v18.16.0\\node_modules\\pnpm\\dist\\pnpm.cjs:104671:20)\n    at EventEmitter.emit (node:events:513:28)\n    at ChildProcess.<anonymous> (C:\\Users\\johbaxter\\AppData\\Roaming\\nvm\\v18.16.0\\node_modules\\pnpm\\dist\\pnpm.cjs:92977:18)\n    at ChildProcess.emit (node:events:513:28)\n    at maybeClose (node:internal/child_process:1091:16)\n    at ChildProcess._handle.onexit (node:internal/child_process:302:5)"
+    }
+  }
+}

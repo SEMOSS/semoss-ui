@@ -520,7 +520,7 @@ export const DatabaseTileCard = (props: DatabaseCardProps) => {
         name,
         id,
         description,
-        image = defaultDBImage,
+        image = defaultDbImage,
         tag,
         isGlobal,
         isFavorite,
@@ -539,8 +539,8 @@ export const DatabaseTileCard = (props: DatabaseCardProps) => {
         <StyledTileCard onClick={() => onClick(id)}>
             {/* Use Card.Media instead, uses img tag */}
             <StyledCardImage
-                src={defaultDbImage}
-                // src={`${process.env.MODULE}/api/app-${id}/appImage/download`}
+                // src={image}
+                src={`${process.env.MODULE}/api/app-${id}/appImage/download`}
                 sx={{ height: '118px' }}
             />
             <Card.Header
@@ -573,7 +573,7 @@ export const DatabaseTileCard = (props: DatabaseCardProps) => {
             />
             <Card.Content>
                 <StyledCardDescription variant={'body2'}>
-                    {description ? description : 'N description available'}
+                    {description ? description : 'No description available'}
                 </StyledCardDescription>
                 <StyledChipDiv>
                     {tag !== undefined &&
