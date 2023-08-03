@@ -66,10 +66,10 @@ export class WorkspaceStore {
      */
     get appList() {
         return Object.values(this._store.apps).sort((a, b) => {
-            if (a.display.name < b.display.name) {
+            if (a.options.name < b.options.name) {
                 return -1;
             }
-            if (a.display.name > b.display.name) {
+            if (a.options.name > b.options.name) {
                 return 1;
             }
             return 0;
@@ -82,15 +82,13 @@ export class WorkspaceStore {
     /**
      * Open a new insight
      *
-     * @param type - type of app to open
+     * @param url - url of the app
      * @param options - options to associate with the app
-     * @param display - display information for the app
      * @param config - configuration to load with the app
      */
     async openNewApp(
-        type: string,
-        options: Partial<WorkspaceApp['env']> = {},
-        display: Partial<WorkspaceApp['display']> = {},
+        url: string,
+        options: Partial<WorkspaceApp['options']> = {},
         config: Record<string, unknown> = {},
     ): Promise<WorkspaceApp> {
         // get the response
@@ -120,11 +118,10 @@ export class WorkspaceStore {
         const app = new WorkspaceApp(
             this._root,
             output.insightData.insightID,
-            type,
-            options,
+            url,
             {
                 name: `App ${Object.keys(this._store.apps).length + 1}`,
-                ...display,
+                ...options,
             },
         );
 

@@ -2,60 +2,28 @@ import { useEffect, useRef, useState } from 'react';
 
 import { runPixel } from '@/api';
 
-import { AppComponent, AppConfig } from '../app.types';
+import {
+    IframeMessage,
+    IframeStartMessage,
+    IframeEndMessage,
+} from '../app.types';
 
-/**
- * All of the Iframe Messages
- */
-type IframeMessage = IframeStartMessage | IframeEndMessage;
+interface AppRendererProps {
+    /** Id of the app to render */
+    id: string;
 
-/**
- * Start message sent from the child iframe to execute a pixel
- */
-interface IframeStartMessage {
-    message: 'semoss-run-pixel--start';
-    data: {
-        key: string;
-        insightId: string;
-        pixel: string;
-    };
+    /** Url of the app to render */
+    url: string;
 }
 
 /**
- * End message sent to the child iframe from executing a pixel
+ * Render an app based on an id
  */
-interface IframeEndMessage {
-    message: 'semoss-run-pixel--end';
-    data: {
-        key: string;
-        insightId: string;
-        response: {
-            insightID: string;
-            errors: unknown;
-            pixelReturn: {
-                isMeta: boolean;
-                operationType: string[];
-                output: unknown;
-                pixelExpression: string;
-                pixelId: string;
-            }[];
-        };
-    };
-}
+export const AppRenderer = (props: AppRendererProps) => {
+    const { id, url } = props;
 
-interface CustomAppConfig extends AppConfig<'custom'> {
-    env: {
-        /** url to load the app */
-        url: string;
-    };
-}
-
-/**
- * Load a portal app into the view
- */
-export const CustomApp: AppComponent<CustomAppConfig> = ({ id, env }) => {
     // track the iframe
-    const iframeRef = useRef<HTMLIFrameElement>();
+    const iframeRef = useRef<HTMLIFrameElement>(null);
     const [src, setSrc] = useState('');
 
     useEffect(() => {
@@ -65,8 +33,8 @@ export const CustomApp: AppComponent<CustomAppConfig> = ({ id, env }) => {
         });
 
         // set the src
-        setSrc(`${env.url}/?${searchParams.toString()}`);
-    }, [env.url, id]);
+        setSrc(`${url}/?${searchParams.toString()}`);
+    }, [url, id]);
 
     // listen to messages on the parent
     useEffect(() => {
@@ -161,9 +129,4 @@ export const CustomApp: AppComponent<CustomAppConfig> = ({ id, env }) => {
             }}
         />
     );
-};
-
-CustomApp.type = 'custom';
-CustomApp.env = {
-    url: '../../sdk/example/',
 };

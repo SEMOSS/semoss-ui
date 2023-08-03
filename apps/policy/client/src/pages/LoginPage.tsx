@@ -1,22 +1,20 @@
 import { useState } from 'react';
-import { observer } from 'mobx-react-lite';
 import { Navigate, useLocation, Location } from 'react-router-dom';
 import { useForm, Controller } from 'react-hook-form';
-
 import {
     styled,
     Alert,
     Button,
     Stack,
-    Snackbar,
     LinearProgress,
     TextField,
     Typography,
     Paper,
     Divider,
+    Snackbar,
 } from '@semoss/ui';
+import { useInsight } from '@semoss/sdk';
 
-import { useRootStore } from '@/hooks';
 import MS from '@/assets/img/ms.png';
 
 const StyledContainer = styled('div')(({ theme }) => ({
@@ -59,8 +57,8 @@ const StyledActionText = styled('span')(() => ({
 /**
  * LoginPage
  */
-export const LoginPage = observer(() => {
-    const { configStore } = useRootStore();
+export const LoginPage = () => {
+    const { system, actions, isAuthorized } = useInsight();
 
     const [snackbar, setSnackbar] = useState<{
         open: boolean;
@@ -83,6 +81,9 @@ export const LoginPage = observer(() => {
 
     const location = useLocation();
 
+    // get the path the user is coming from
+    const path = (location.state as { from: Location })?.from?.pathname || '/';
+
     /**
      * Allow the user to login
      */
@@ -102,8 +103,12 @@ export const LoginPage = observer(() => {
                 return;
             }
 
-            configStore
-                .login(data.USERNAME, data.PASSWORD)
+            actions
+                .login({
+                    type: 'native',
+                    username: data.USERNAME,
+                    password: data.PASSWORD,
+                })
                 .then(() => {
                     // turn of loading
                     setIsLoading(false);
@@ -144,14 +149,14 @@ export const LoginPage = observer(() => {
         // turn on loading
         setIsLoading(true);
 
-        await configStore
-            .oauth(provider)
+        await actions
+            .login({
+                type: 'oauth',
+                provider: provider,
+            })
             .then(() => {
                 // turn off loading
                 setIsLoading(false);
-
-                // noop
-                // (handled  by the configStore)
 
                 setSnackbar({
                     open: true,
@@ -173,16 +178,13 @@ export const LoginPage = observer(() => {
             });
     };
 
-    // get the path the user is coming from
-    const path = (location.state as { from: Location })?.from?.pathname || '/';
-
-    // navigate if already logged in
-    if (configStore.store.status === 'SUCCESS') {
+    // if security is not enabled or we are logged in, skip
+    if (isAuthorized) {
         return <Navigate to={path} replace />;
     }
 
     // get the proviers
-    const providers = [...configStore.store.config.providers, 'ms'];
+    const providers = [...system.config.providers, 'ms'];
 
     return (
         <>
@@ -210,7 +212,7 @@ export const LoginPage = observer(() => {
                             <Typography variant="h5">Login</Typography>
                             {error && <Alert color="error">{error}</Alert>}
                             {providers.indexOf('native') > -1 && (
-                                <>
+                                <form>
                                     <Stack spacing={2}>
                                         <Controller
                                             name={'USERNAME'}
@@ -221,6 +223,7 @@ export const LoginPage = observer(() => {
                                                     <TextField
                                                         label="Username"
                                                         variant="outlined"
+                                                        autoComplete="username"
                                                         fullWidth
                                                         value={
                                                             field.value
@@ -246,6 +249,7 @@ export const LoginPage = observer(() => {
                                                         label="Password"
                                                         variant="outlined"
                                                         type="password"
+                                                        autoComplete="current-password"
                                                         fullWidth
                                                         value={
                                                             field.value
@@ -269,7 +273,7 @@ export const LoginPage = observer(() => {
                                             SIGN IN
                                         </Button>
                                     </Stack>
-                                </>
+                                </form>
                             )}
                             {providers.indexOf('native') > -1 &&
                                 providers.indexOf('ms') > -1 && (
@@ -298,4 +302,4 @@ export const LoginPage = observer(() => {
             </Stack>
         </>
     );
-});
+};

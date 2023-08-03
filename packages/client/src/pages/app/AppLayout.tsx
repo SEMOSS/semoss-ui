@@ -117,7 +117,7 @@ export const AppLayout = observer(() => {
                             <Chip
                                 key={a.id}
                                 variant="filled"
-                                label={a.display.name}
+                                label={a.options.name}
                                 clickable={true}
                                 color="primary"
                                 onClick={() => selectApp(a.id)}

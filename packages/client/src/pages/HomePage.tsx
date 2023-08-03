@@ -15,9 +15,9 @@ import { OpenInBrowser } from '@mui/icons-material';
 import { Page } from '@/components/ui';
 import { useRootStore } from '@/hooks';
 
-type MarketplaceAppTypes = 'question' | 'custom';
+type MarketplaceAppTypes = 'policy' | 'custom';
 
-type MarketplaceApp = QuestionMarketplaceApp | CustomMarketplaceApp;
+type MarketplaceApp = PolicyMarketplaceApp | CustomMarketplaceApp;
 
 interface AbstractMarketplaceApp {
     /** Name of the app */
@@ -35,18 +35,18 @@ interface AbstractMarketplaceApp {
     /** Type of the app */
     type: MarketplaceAppTypes;
 
-    /** Environment information associated with the loaded app */
-    options: Record<string, unknown>;
+    /** Url of the associated app */
+    url: string;
 
-    /** Config loaded into the app */
+    /** Environment information loaded into the app */
     config: Record<string, unknown>;
 }
 
-interface QuestionMarketplaceApp extends AbstractMarketplaceApp {
-    type: 'question';
+interface PolicyMarketplaceApp extends AbstractMarketplaceApp {
+    type: 'policy';
     config: {
         /**
-         * Question to ask against the document
+         * Document to ask the question against
          */
         document: string;
     };
@@ -54,15 +54,9 @@ interface QuestionMarketplaceApp extends AbstractMarketplaceApp {
 
 interface CustomMarketplaceApp extends AbstractMarketplaceApp {
     type: 'custom';
-    options: {
-        /**
-         * Url to load the app from
-         */
-        url: string;
-    };
     config: {
         /**
-         * Any other key
+         * Any key
          */
         [key: string]: unknown;
     };
@@ -76,9 +70,7 @@ const APPS: MarketplaceApp[] = [
         logo: '',
         tags: ['Tag 1', 'Tag 2', 'Tag 3', 'Tag 4'],
         type: 'custom',
-        options: {
-            url: `../../sdk/example/`,
-        },
+        url: `../../../apps/policy/client/dist/`,
         config: {
             color: 'red',
         },
@@ -90,9 +82,7 @@ const APPS: MarketplaceApp[] = [
         logo: '',
         tags: ['Tag 1', 'Tag 2', 'Tag 3', 'Tag 4'],
         type: 'custom',
-        options: {
-            url: `../../sdk/example/`,
-        },
+        url: `../../../apps/policy/client/dist/`,
         config: {
             color: 'blue',
         },
@@ -104,9 +94,7 @@ const APPS: MarketplaceApp[] = [
         logo: '',
         tags: ['Tag 1', 'Tag 2', 'Tag 3', 'Tag 4'],
         type: 'custom',
-        options: {
-            url: `../../sdk/example/`,
-        },
+        url: `../../../apps/policy/client/dist/`,
         config: {
             color: 'green',
         },
@@ -117,8 +105,8 @@ const APPS: MarketplaceApp[] = [
             'Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.',
         logo: '',
         tags: ['Tag 1', 'Tag 2', 'Tag 3', 'Tag 4'],
-        type: 'question',
-        options: {},
+        type: 'policy',
+        url: `../../../apps/policy/client/dist/`,
         config: {
             document: `..`,
         },
@@ -177,8 +165,7 @@ export const HomePage = observer((): JSX.Element => {
     const openNewApp = async (a: MarketplaceApp) => {
         // open the app
         const app = await workspaceStore.openNewApp(
-            a.type,
-            a.options,
+            a.url,
             {
                 name: a.name,
             },

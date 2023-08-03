@@ -1,3 +1,2 @@
 export * from './app.types';
-
-export * from './CustomApp';
+export * from './AppRenderer';

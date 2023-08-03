@@ -1,2 +1,2 @@
 export { WorkspaceStore } from './workspace.store';
-export { WorkspaceApp, WorkspaceAppStoreInterface } from './workspace.app';
+export { WorkspaceApp } from './workspace.app';

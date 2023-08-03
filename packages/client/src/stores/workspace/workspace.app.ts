@@ -6,14 +6,11 @@ interface WorkspaceAppStoreInterface {
     /** ID of the App */
     id: string;
 
-    /** Type of the app */
-    type: string;
+    /** Url of the app */
+    url: string;
 
-    /** Environment variables associated with the app */
-    env: Record<string, unknown>;
-
-    /** Display information associated with the loaded app */
-    display: {
+    /** Options associated with the loaded app */
+    options: {
         /** Name of the app */
         name: string;
     };
@@ -23,9 +20,8 @@ export class WorkspaceApp {
     private _root: RootStore;
     private _store: WorkspaceAppStoreInterface = {
         id: '',
-        type: '',
-        env: {},
-        display: {
+        url: '',
+        options: {
             name: '',
         },
     };
@@ -33,22 +29,18 @@ export class WorkspaceApp {
     constructor(
         root: RootStore,
         id: string,
-        type: string,
-        options: Partial<WorkspaceAppStoreInterface['env']>,
-        display: Partial<WorkspaceAppStoreInterface['display']>,
+        url: string,
+        options: Partial<WorkspaceAppStoreInterface['options']>,
     ) {
         // register the rootStore
         this._root = root;
 
-        // set the id and type
+        // set the id and url
         this._store.id = id;
-        this._store.type = type;
+        this._store.url = url;
 
         // update the options
-        this.updateEnv(options);
-
-        // update the display
-        this.updateDisplay(display);
+        this.updateOptions(options);
 
         // make it observale
         makeAutoObservable(this);
@@ -58,56 +50,37 @@ export class WorkspaceApp {
     // Getters
     // *********************************************************
     /**
-     * Get selected app id
+     * Get app id
      */
     get id() {
         return this._store.id;
     }
 
     /**
-     * Get the type of the app
+     * Get app url
      */
-    get type() {
-        return this._store.type;
+    get url() {
+        return this._store.url;
     }
 
     /**
-     * Get the environment information associated with the app
+     * Get the options information associated with the app
      */
-    get env() {
-        return this._store.env;
+    get options() {
+        return this._store.options;
     }
 
     /**
-     * Get the display information associated with the app
+     * Update the options associated with the app
+     * @param options - options for the app
      */
-    get display() {
-        return this._store.display;
-    }
-
-    /**
-     * Update env information associated with the app
-     * @param env - env information to update on the app
-     */
-    private updateEnv(env: Partial<WorkspaceAppStoreInterface['env']>) {
-        // merge the env in
-        this._store.env = {
-            ...this._store.env,
-            ...env,
-        };
-    }
-
-    /**
-     * Update display information associated with the app
-     * @param display - display information to update on the app
-     */
-    private updateDisplay(
-        display: Partial<WorkspaceAppStoreInterface['display']>,
+    private updateOptions(
+        options: Partial<WorkspaceAppStoreInterface['options']>,
     ) {
-        // merge the display in
-        this._store.display = {
-            ...this._store.display,
-            ...display,
+        // merge the options in
+        this._store.options = {
+            ...this._store.options,
+            ...options,
         };
     }
 }
