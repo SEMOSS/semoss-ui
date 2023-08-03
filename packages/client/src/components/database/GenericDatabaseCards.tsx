@@ -394,8 +394,8 @@ export const DatabaseLandscapeCard = (props: DatabaseCardProps) => {
         <StyledLandscapeCard onClick={() => onClick(id)}>
             <StyledLandscapeCardHeader>
                 <StyledLandscapeCardImg
-                    // src={`${process.env.MODULE}/api/app-${id}/appImage/download`}
-                    src={defaultDbImage}
+                    src={`${process.env.MODULE}/api/app-${id}/appImage/download`}
+                    // src={defaultDbImage}
                 />
                 <StyledLandscapeCardHeaderDiv>
                     <StyledLandscapeCardTitleDiv>

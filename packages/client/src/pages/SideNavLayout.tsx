@@ -168,7 +168,7 @@ export const SideNavLayout = observer(() => {
                     </Icon>
                 </StyledSidebarItem>
                 <Stack flex={1}>&nbsp;</Stack>
-                <StyledSidebarItem to={'a'}>
+                <StyledSidebarItem to={'settings'}>
                     <Icon>
                         <Settings />
                     </Icon>
