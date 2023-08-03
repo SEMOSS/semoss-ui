@@ -134,7 +134,8 @@ function HistoryRow(props) {
                     <Chip
                         label={row.success ? 'Success' : 'Failed'}
                         avatar={null}
-                        color={row.success ? 'success' : 'error'}
+                        variant="filled"
+                        variantColor={row.success ? 'green' : 'pink'}
                     />
                 </Table.Cell>
             </Table.Row>
@@ -254,63 +255,7 @@ export function JobsPage() {
                     <Checkbox
                         value={allChecked}
                         onChange={(e) => {
-                            const checked = e.target.checked;
-                            setAllChecked(checked);
-                            const currentPageJobs = filterJobs(jobs).slice(
-                                jobsStartIndex,
-                                jobsEndIndex,
-                            );
-                            if (checked) {
-                                // add all these jobs to resume jobs
-                                console.log(
-                                    currentPageJobs.filter(
-                                        (j) => j.NEXT_FIRE_TIME === 'INACTIVE',
-                                    ),
-                                );
-                                console.log(
-                                    currentPageJobs.filter(
-                                        (j) => j.NEXT_FIRE_TIME !== 'INACTIVE',
-                                    ),
-                                );
-                                setJobsToResume(
-                                    currentPageJobs.filter(
-                                        (j) => j.NEXT_FIRE_TIME === 'INACTIVE',
-                                    ),
-                                );
-                                // add all these jobs to pause jobs
-                                setJobsToPause(
-                                    currentPageJobs.filter(
-                                        (j) => j.NEXT_FIRE_TIME !== 'INACTIVE',
-                                    ),
-                                );
-                            } else {
-                                // remove all these jobs to resume jobs
-                                const removeFromResume = currentPageJobs.filter(
-                                    (j) => j.NEXT_FIRE_TIME === 'INACTIVE',
-                                );
-                                setJobsToResume((prev) =>
-                                    prev.filter(
-                                        (p) =>
-                                            !removeFromResume.some(
-                                                (e) => e.jobId !== p.jobId,
-                                            ),
-                                    ),
-                                );
-
-                                // remove all these jobs to pause jobs
-                                const removeFromPause = currentPageJobs.filter(
-                                    (j) => j.NEXT_FIRE_TIME !== 'INACTIVE',
-                                );
-
-                                setJobsToPause((prev) =>
-                                    prev.filter(
-                                        (p) =>
-                                            !removeFromPause.some(
-                                                (e) => e.jobId !== p.jobId,
-                                            ),
-                                    ),
-                                );
-                            }
+                            setAllChecked(e.target.checked);
                         }}
                     />
                 );
@@ -1533,6 +1478,61 @@ export function JobsPage() {
     };
 
     useEffect(() => {
+        const currentPageJobs = filterJobs(jobs).slice(
+            jobsStartIndex,
+            jobsEndIndex,
+        );
+        if (allChecked) {
+            // add all these jobs to resume jobs
+            console.log('is this gonna work??');
+            console.log(currentPageJobs);
+            console.log(
+                // to resume
+                currentPageJobs.filter((j) => j.NEXT_FIRE_TIME === 'INACTIVE'),
+            );
+            console.log(
+                // to pause
+                currentPageJobs.filter((j) => j.NEXT_FIRE_TIME !== 'INACTIVE'),
+            );
+            setJobsToResume(
+                currentPageJobs.filter((j) => j.NEXT_FIRE_TIME === 'INACTIVE'),
+            );
+            // add all these jobs to pause jobs
+            setJobsToPause(
+                currentPageJobs.filter((j) => j.NEXT_FIRE_TIME !== 'INACTIVE'),
+            );
+        } else {
+            // remove all these jobs to resume jobs
+            const removeFromResume = currentPageJobs.filter(
+                (j) => j.NEXT_FIRE_TIME === 'INACTIVE',
+            );
+            setJobsToResume((prev) =>
+                prev.filter(
+                    (p) => !removeFromResume.some((e) => e.jobId !== p.jobId),
+                ),
+            );
+
+            // remove all these jobs to pause jobs
+            const removeFromPause = currentPageJobs.filter(
+                (j) => j.NEXT_FIRE_TIME !== 'INACTIVE',
+            );
+
+            setJobsToPause((prev) =>
+                prev.filter(
+                    (p) => !removeFromPause.some((e) => e.jobId !== p.jobId),
+                ),
+            );
+        }
+        // if (allChecked) {
+        //     console.log('trying useefect approach. checked');
+        //     console.log(filterJobs(jobs));
+        // } else {
+        //     console.log('trying useefect approach. unchecked');
+        //     console.log(filterJobs(jobs));
+        // }
+    }, [allChecked, setAllChecked]);
+
+    useEffect(() => {
         // initial render to get all jobs
         getJobs(true, selectedTags);
     }, []);
@@ -1795,7 +1795,7 @@ export function JobsPage() {
         }
     }, [jobTypeTemplate]);
     return (
-        <div>
+        <>
             <Grid container spacing={3}>
                 <Grid item>
                     <Card>
@@ -1922,6 +1922,23 @@ export function JobsPage() {
                                         );
                                     }}
                                 />
+                                <Checkbox
+                                    label="Select All"
+                                    checked={jobColumns.every(
+                                        (col) => col.showColumn,
+                                    )}
+                                    onChange={(e) => {
+                                        setJobColumns(
+                                            jobColumns.map((col) => {
+                                                return {
+                                                    ...col,
+                                                    showColumn:
+                                                        e.target.checked,
+                                                };
+                                            }),
+                                        );
+                                    }}
+                                />
                                 {/* checklist of column names here */}
                                 {jobColumns.map((col, i) => {
                                     return (
@@ -2040,8 +2057,10 @@ export function JobsPage() {
                 }}
                 square={true}
             >
-                <Accordion.Trigger sx={{ justifyContent: 'space-between' }}>
-                    History
+                <Accordion.Trigger
+                    sx={{ display: 'flex', justifyContent: 'space-between' }}
+                >
+                    <div>History</div>
                     {historyExpanded ? (
                         <KeyboardArrowUp />
                     ) : (
@@ -2170,6 +2189,6 @@ export function JobsPage() {
                     </Modal.Actions>
                 </Modal.Content>
             </Modal>
-        </div>
+        </>
     );
 }
