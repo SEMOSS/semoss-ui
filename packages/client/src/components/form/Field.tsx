@@ -1,20 +1,15 @@
 import { Controller, Control, FieldValues, Path } from 'react-hook-form';
 import {
-    Form,
-    Input,
-    Textarea,
+    TextField,
+    TextArea,
     Select,
-    Typeahead,
     Switch,
     Checkbox,
-    Checklist,
     Radio,
-    Datepicker,
     FileDropzone,
-    FormFieldProps,
-    theme,
     styled,
-} from '@semoss/components';
+    Autocomplete,
+} from '@semoss/ui';
 
 import {
     InputProps,
@@ -27,6 +22,7 @@ import {
     RadioProps,
     DatepickerProps,
     FileDropzoneProps,
+    Form,
 } from '@semoss/components';
 
 // WORK ON SWITCHING TYPES TO THIS FORMAT
@@ -119,8 +115,8 @@ interface FieldProps<V extends FieldValues> {
     onChange?: (V) => void;
 }
 
-const StyledRequired = styled('span', {
-    color: theme.colors['error-1'],
+const StyledRequired = styled('span')({
+    color: 'red',
 });
 
 const validateBoolean = (value: boolean) => typeof value === 'boolean';
@@ -170,14 +166,13 @@ export const Field = <V extends FieldValues>(
                             description={description}
                             layout={layout}
                         >
-                            <Input
+                            <TextField
                                 // {...options}
                                 id={options.id}
-                                size={options.size ? options.size : 'md'}
+                                fullWidth={true}
                                 placeholder={options.placeholder}
                                 autoComplete={options.autoComplete}
                                 disabled={disabled ? disabled : false}
-                                valid={!hasError}
                                 value={field.value ? field.value : ''}
                                 onChange={(value) => field.onChange(value)}
                             />
@@ -202,13 +197,12 @@ export const Field = <V extends FieldValues>(
                             description={description}
                             layout={layout}
                         >
-                            <Input
+                            <TextField
                                 type={'number'}
                                 id={options.id}
-                                size={options.size ? options.size : 'md'}
+                                fullWidth={true}
                                 placeholder={options.placeholder}
                                 disabled={disabled ? disabled : false}
-                                valid={!hasError}
                                 value={field.value ? field.value : ''}
                                 onChange={(value) => field.onChange(value)}
                                 autoComplete={
@@ -238,16 +232,14 @@ export const Field = <V extends FieldValues>(
                             description={description}
                             layout={layout}
                         >
-                            <Textarea
+                            <TextArea
                                 id={options.id}
-                                size={options.size ? options.size : 'md'}
+                                fullWidth={true}
                                 disabled={disabled}
                                 placeholder={options.placeholder}
-                                valid={!hasError}
                                 value={field.value ? field.value : ''}
                                 defaultValue={field.value ? field.value : ''}
                                 onChange={(value) => field.onChange(value)}
-                                // textareaProps={rules}
                             />
                         </Form.Field>
                     );
@@ -272,20 +264,12 @@ export const Field = <V extends FieldValues>(
                         >
                             <Select
                                 id={options.id}
-                                size={options.size ? options.size : 'md'}
+                                fullWidth={true}
                                 disabled={disabled}
                                 placeholder={options.placeholder}
-                                options={options.options}
-                                valid={!hasError}
                                 value={field.value ? field.value : ''}
                                 defaultValue={field.value ? field.value : ''}
                                 onChange={(value) => field.onChange(value)}
-
-                                // container={options.ref}
-                                // getSearch?: (search: string, option: O) => boolean;
-                                // getKey?: (option: O) => string;
-                                // getDisplay?: (option: O) => ReactNode;
-                                // inputProps={rules}
                             />
                         </Form.Field>
                     );
@@ -309,22 +293,15 @@ export const Field = <V extends FieldValues>(
                             description={description}
                             layout={layout}
                         >
-                            <Typeahead
+                            <Autocomplete
                                 id={options.id}
-                                size={options.size ? options.size : 'md'}
+                                fullWidth={true}
                                 disabled={disabled}
                                 placeholder={options.placeholder}
                                 options={options.options}
-                                valid={!hasError}
-                                value={field.value ? field.value : ''}
-                                defaultValue={field.value ? field.value : ''}
+                                value={field.value ? field.value : []}
+                                defaultValue={field.value ? field.value : []}
                                 onChange={(value) => field.onChange(value)}
-
-                                // container={options.ref}
-                                // getSearch?: (search: string, option: O) => boolean;
-                                // getKey?: (option: O) => string;
-                                // getDisplay?: (option: O) => ReactNode;
-                                // inputProps={rules}
                             />
                         </Form.Field>
                     );

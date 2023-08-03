@@ -6,6 +6,9 @@ export interface BoxProps {
     /** children to be rendered */
     children?: ReactNode;
 
+    //** onClick function */
+    onClick?: () => void;
+
     /** custom style object */
     sx?: SxProps;
 }
