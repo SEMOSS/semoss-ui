@@ -23,7 +23,8 @@ import {
     LockRounded,
 } from '@mui/icons-material';
 
-import defaultDBImage from '../../assets/img/placeholder.png';
+import defaultDbImage from '../../assets/img/placeholder.png';
+// import defaultDBImage from '../../assets/img/placeholder.png';
 import { formatName } from '@/utils';
 
 const StyledLandscapeCard = styled(Card)({
@@ -393,8 +394,8 @@ export const DatabaseLandscapeCard = (props: DatabaseCardProps) => {
         <StyledLandscapeCard onClick={() => onClick(id)}>
             <StyledLandscapeCardHeader>
                 <StyledLandscapeCardImg
-                    src={`${process.env.MODULE}/api/app-${id}/appImage/download`}
-                    // src={image}
+                    // src={`${process.env.MODULE}/api/app-${id}/appImage/download`}
+                    src={defaultDbImage}
                 />
                 <StyledLandscapeCardHeaderDiv>
                     <StyledLandscapeCardTitleDiv>
@@ -538,7 +539,8 @@ export const DatabaseTileCard = (props: DatabaseCardProps) => {
         <StyledTileCard onClick={() => onClick(id)}>
             {/* Use Card.Media instead, uses img tag */}
             <StyledCardImage
-                src={`${process.env.MODULE}/api/app-${id}/appImage/download`}
+                src={defaultDbImage}
+                // src={`${process.env.MODULE}/api/app-${id}/appImage/download`}
                 sx={{ height: '118px' }}
             />
             <Card.Header
@@ -549,7 +551,7 @@ export const DatabaseTileCard = (props: DatabaseCardProps) => {
                             <StyledPersonIcon />
                         </StyledAvatar>
                         <StyledPublishedByLabel variant={'caption'}>
-                            Publishes by: {owner}
+                            Published by: {owner}
                         </StyledPublishedByLabel>
                     </StyledPublishedByContainer>
                 }
@@ -653,26 +655,26 @@ export interface PlainDatabaseCardProps {
 }
 
 export const PlainDatabaseCard = (props) => {
-    const { id, name, image = defaultDBImage, onClick } = props;
+    const { id, name, image = defaultDbImage, onClick } = props;
     return (
         <StyledPlainTileCard onClick={onClick}>
             <StyledCardImage
-                // src={image}
-                src={`${process.env.MODULE}/api/app-${id}/appImage/download`}
+                src={image}
+                // src={`${process.env.MODULE}/api/app-${id}/appImage/download`}
                 sx={{ height: '118px' }}
             />
-            <StyledTileCardContent>
-                <StyledCardRows>
+            <StyledTileCardContent sx={{ marginTop: '8px' }}>
+                {/* <StyledCardRows>
                     <StyledCardRowsDiv>
                         <StyledCardContainer>
-                            <StyledCardHeader>
-                                <StyledDbName variant={'body1'}>
-                                    {formatName(name)}
-                                </StyledDbName>
-                            </StyledCardHeader>
+                            <StyledCardHeader> */}
+                <StyledDbName variant={'body1'}>
+                    {formatName(name)}
+                </StyledDbName>
+                {/* </StyledCardHeader>
                         </StyledCardContainer>
                     </StyledCardRowsDiv>
-                </StyledCardRows>
+                </StyledCardRows> */}
             </StyledTileCardContent>
         </StyledPlainTileCard>
     );

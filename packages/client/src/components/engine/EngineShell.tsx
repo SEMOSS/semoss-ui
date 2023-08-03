@@ -16,6 +16,7 @@ import {
     SimCardDownload,
 } from '@mui/icons-material';
 import { EditDatabaseDetails } from '@/components/database';
+import defaultDbImage from '../../assets/img/placeholder.png';
 
 import { Page, LoadingScreen } from '@/components/ui';
 import { useRootStore, useDatabase, usePixel } from '@/hooks';
@@ -42,11 +43,6 @@ const StyledInfoRight = styled('div')(({ theme }) => ({
 }));
 
 const StyledInfoDescription = styled(Typography)(() => ({
-    // display: 'flex',
-    // width: '699px',
-    // height: '174px',
-    // flexDirection: 'column',
-    // alignItems: 'flex-start',
     maxWidth: '50%',
     textOverflow: 'ellipsis',
 }));
@@ -79,19 +75,19 @@ const StyledDatabaseImage = styled('img')({
     borderRadius: '8.862px',
 });
 
-interface DatabaseShellProps {
+interface EngineShellProps {
     /** Children to wrap in the RootStore */
     children: React.ReactNode;
 }
 
 /**
- * Wrap the Database routes and provide styling/functionality
+ * Wrap the Database, Storage, Model routes
  */
-export const DatabaseShell = (props: DatabaseShellProps) => {
+export const EngineShell = (props: EngineShellProps) => {
     const { children } = props;
 
     // get the database information
-    const { id, role, metaVals, refresh } = useDatabase();
+    const { type, id, role, metaVals, refresh } = useDatabase();
 
     // Service for Axios calls
     const { monolithStore } = useRootStore();
@@ -110,22 +106,18 @@ export const DatabaseShell = (props: DatabaseShellProps) => {
         { total: number; userVote: number } | undefined
     >();
 
-    // get the database info
-    const { status, data } = usePixel<{
-        database_name: string;
-        description: string;
-        last_updated: string;
-    }>(
-        `GetDatabaseMetadata(database=["${id}"], metaKeys=["database_name", "description"]); `,
+    // get the engine info
+    const { status, data } = usePixel(
+        `GetEngineMetadata(engine=["${id}"], metaKeys=[]); `,
     );
 
-    const {
-        status: voteStatus,
-        data: voteData,
-        refresh: voteRefresh,
-    } = usePixel<{ total: number; userVote: number }>(
-        `GetUserDatabaseVotes(database = "${id}");`,
-    );
+    // const {
+    //     status: voteStatus,
+    //     data: voteData,
+    //     refresh: voteRefresh,
+    // } = usePixel<{ total: number; userVote: number }>(
+    //     `GetUserDatabaseVotes(database = "${id}");`,
+    // );
 
     // const {
     //     status: usabilityStatus,
@@ -133,14 +125,14 @@ export const DatabaseShell = (props: DatabaseShellProps) => {
     //     refresh: usabilityRefresh,
     // } = usePixel<number>(`UsabilityScore(database = '${id}');`);
 
-    useEffect(() => {
-        if (voteStatus !== 'SUCCESS') {
-            return;
-        }
+    // useEffect(() => {
+    //     if (voteStatus !== 'SUCCESS') {
+    //         return;
+    //     }
 
-        // Set total votes and my vote status
-        setVotes(voteData);
-    }, [voteStatus, voteData]);
+    //     // Set total votes and my vote status
+    //     setVotes(voteData);
+    // }, [voteStatus, voteData]);
 
     /**
      * @name voteDatabase
@@ -181,20 +173,6 @@ export const DatabaseShell = (props: DatabaseShellProps) => {
     };
 
     /**
-     * @name printMeta
-     * @desc export DB pixel
-     */
-    const printMeta = () => {
-        const pixel = `META|DatabaseMetadataToPdf(database=["${id}"] );`;
-        monolithStore.runQuery(pixel).then((response) => {
-            const output = response.pixelReturn[0].output,
-                insightID = response.insightID;
-
-            monolithStore.download(insightID, output);
-        });
-    };
-
-    /**
      * @name exportDB
      * @desc export DB pixel
      */
@@ -214,10 +192,12 @@ export const DatabaseShell = (props: DatabaseShellProps) => {
         return <LoadingScreen.Trigger description="Opening Database" />;
     }
 
-    // show a loading screen when it is pending
-    if (voteStatus !== 'SUCCESS') {
-        return <LoadingScreen.Trigger description="Getting Social Stats" />;
-    }
+    console.log(data);
+
+    // // show a loading screen when it is pending
+    // if (voteStatus !== 'SUCCESS') {
+    //     return <LoadingScreen.Trigger description="Getting Social Stats" />;
+    // }
 
     console.log('metavals', metaVals);
 
@@ -227,8 +207,10 @@ export const DatabaseShell = (props: DatabaseShellProps) => {
                 <Stack>
                     <Breadcrumbs>
                         <StyledLink to="/catalog">Data Catalog</StyledLink>
-                        <StyledLink to={`/database/${id}`}>
-                            {data.database_name}
+                        <StyledLink to={`/${type}/${id}`}>
+                            {type === 'database'
+                                ? data.database_name
+                                : data.database_name}
                         </StyledLink>
                     </Breadcrumbs>
                     <Stack
@@ -237,16 +219,12 @@ export const DatabaseShell = (props: DatabaseShellProps) => {
                         width={'100%'}
                     >
                         <Typography variant="h4">
-                            Data Catalog Overview
+                            {type === 'database'
+                                ? 'Data'
+                                : type.charAt(1).toUpperCase()}{' '}
+                            Catalog Overview
                         </Typography>
                         <Stack direction="row">
-                            <Button
-                                startIcon={<ArrowCircleDown />}
-                                variant="outlined"
-                                onClick={() => printMeta()}
-                            >
-                                Print Metadata
-                            </Button>
                             {role === 'OWNER' && (
                                 <Button
                                     startIcon={<SimCardDownload />}
@@ -290,7 +268,9 @@ export const DatabaseShell = (props: DatabaseShellProps) => {
             <StyledInfo>
                 <StyledInfoLeft>
                     <Typography variant={'h6'} fontWeight={'medium'}>
-                        {data.database_name}
+                        {type === 'database'
+                            ? metaVals.database_name
+                            : `${type} name`}
                     </Typography>
                     <StyledInfoDescription variant={'subtitle1'}>
                         {metaVals.description}
@@ -311,7 +291,8 @@ export const DatabaseShell = (props: DatabaseShellProps) => {
                 </StyledInfoLeft>
                 <StyledInfoRight>
                     <StyledDatabaseImage
-                        src={`${process.env.MODULE}/api/app-${id}/appImage/download`}
+                        src={defaultDbImage}
+                        // src={`${process.env.MODULE}/api/app-${id}/appImage/download`}
                     />
                     <Stack alignItems={'flex-end'} spacing={1} marginBottom={2}>
                         <Typography variant={'body2'}>

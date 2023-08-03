@@ -442,7 +442,7 @@ export const Permissions = (props: PermissionsProps) => {
 };
 
 const StyledAlert = MuiStyled(Alert)(({ theme }) => ({
-    width: '468px',
+    width: '380px',
     height: theme.spacing(13),
     backgroundColor: theme.palette.background.paper,
 }));

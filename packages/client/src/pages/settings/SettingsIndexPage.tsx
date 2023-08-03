@@ -1,17 +1,18 @@
 import { useState, useEffect } from 'react';
 import {
-    styled,
-    Grid,
     Card,
-    Typography,
+    Grid,
+    IconButton,
+    MenuItem,
     Select,
     Search,
-    MenuItem,
+    styled,
+    Typography,
 } from '@semoss/ui';
 
 import { Icon } from '@semoss/components';
 
-import { Search as SearchIcon, AccessTime } from '@mui/icons-material';
+import { Search as SearchIcon, MoreVert } from '@mui/icons-material';
 
 import { useNavigate } from 'react-router-dom';
 import { useSettings } from '@/hooks';
@@ -38,14 +39,16 @@ const StyledContainer = styled('div')(({ theme }) => ({
     gap: theme.spacing(3),
 }));
 
-const StyledCard = styled(Card)(({ theme }) => ({
-    overflow: 'hidden',
-    height: theme.spacing(20),
+const StyledCard = styled(Card)(({ theme }) => ({}));
+
+const StyledCardHeader = styled(Card.Header)(({ theme }) => ({
+    height: theme.spacing(7.75),
+    margin: '0px 0px 0px 0px',
 }));
 
 const StyledCardContent = styled(Card.Content)(({ theme }) => ({
-    overflow: 'hidden',
-    textOverflow: 'ellipsis',
+    height: theme.spacing(5),
+    margin: '0px 0px 0px 0px',
 }));
 
 const StyledSearchbarContainer = styled('div')(({ theme }) => ({
@@ -127,6 +130,7 @@ export const SettingsIndexPage = () => {
             <StyledSearchbarContainer>
                 <Search
                     label={'Search'}
+                    size={'small'}
                     onChange={(e) => {
                         setSearch(e.target.value);
                     }}
@@ -137,6 +141,7 @@ export const SettingsIndexPage = () => {
                     sx={{ width: '100%' }}
                 />
                 <StyledSort
+                    size={'small'}
                     label={'Sort'}
                     value={sort}
                     onChange={(e) => setSort(e.target.value)}
@@ -150,26 +155,32 @@ export const SettingsIndexPage = () => {
                     return (
                         <Grid item key={i} sm={12} md={6} lg={4} xl={3}>
                             <StyledCard onClick={() => navigate(c.path)}>
-                                <Card.Header
+                                <StyledCardHeader
+                                    // sx={{ height: '62px' }}
                                     title={c.title}
-                                    titleTypographyProps={{ variant: 'h5' }}
+                                    titleTypographyProps={{ variant: 'body1' }}
                                     avatar={IconMapper[c.title]}
                                 />
-                                <StyledCardContent sx={{ marginTop: -2 }}>
-                                    <Typography variant="caption">
+                                <StyledCardContent>
+                                    <Typography variant="body2">
                                         {c.description}
                                     </Typography>
                                 </StyledCardContent>
                                 {/* disabled for now */}
-                                {/* <Card.Actions>
+                                <Card.Actions>
                                     <CardActionsLeft>
-                                        <AccessTime fontSize="small" />
+                                        {' '}
+                                        {/* <AccessTime fontSize="small" />
                                         <Typography variant="caption">
                                             7/19/2023 10:00AM
-                                        </Typography>
+                                        </Typography> */}
                                     </CardActionsLeft>
-                                    <CardActionsRight>tbd</CardActionsRight>
-                                </Card.Actions> */}
+                                    <CardActionsRight>
+                                        <IconButton disabled={true}>
+                                            <MoreVert />
+                                        </IconButton>
+                                    </CardActionsRight>
+                                </Card.Actions>
                             </StyledCard>
                         </Grid>
                     );
