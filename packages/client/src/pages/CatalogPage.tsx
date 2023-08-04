@@ -97,6 +97,24 @@ const StyledContent = styled('div')(({ theme }) => ({
     flex: '1',
 }));
 
+const StyledChip = styled(Chip, {
+    shouldForwardProp: (prop) => prop !== 'selected',
+})<{
+    /** Track if the page header is stuck */
+    selected: boolean;
+}>(({ theme, selected }) => ({
+    color: selected
+        ? theme.palette.semossBlue['900']
+        : theme.palette.semossBlue['900'],
+    backgroundColor: selected
+        ? theme.palette.semossBlue['100']
+        : theme.palette.semossBlue['50'],
+
+    '&:hover': {
+        color: theme.palette.semossBlue['50'],
+    },
+}));
+
 const initialState = {
     favoritedDbs: [],
     databases: [],
@@ -707,27 +725,31 @@ export const CatalogPage = observer((): JSX.Element => {
                         <Collapse in={filterByVisibility}>
                             {catalogType.toUpperCase() === 'DATABASE' && (
                                 <StyledChipList>
-                                    <Chip
+                                    <StyledChip
                                         label={'My Databases'}
-                                        variant="filled"
-                                        variantColor={
-                                            mode === 'My Databases'
-                                                ? 'primary'
-                                                : 'lcprimary'
-                                        }
+                                        selected={mode === 'My Databases'}
+                                        // variant="filled"
+                                        // variantColor={
+                                        //     mode === 'My Databases'
+                                        //         ? 'primary'
+                                        //         : 'lcprimary'
+                                        // }
                                         onClick={() => setMode('My Databases')}
-                                    ></Chip>
-                                    <Chip
+                                    ></StyledChip>
+                                    <StyledChip
                                         label={'Discoverable Databases'}
-                                        variantColor={
+                                        selected={
                                             mode === 'Discoverable Databases'
-                                                ? 'primary'
-                                                : 'lcprimary'
                                         }
+                                        // variantColor={
+                                        //     mode === 'Discoverable Databases'
+                                        //         ? 'primary'
+                                        //         : 'lcprimary'
+                                        // }
                                         onClick={() => {
                                             setMode('Discoverable Databases');
                                         }}
-                                    ></Chip>
+                                    ></StyledChip>
                                 </StyledChipList>
                             )}
 
@@ -744,7 +766,7 @@ export const CatalogPage = observer((): JSX.Element => {
                                                 primary={
                                                     <Typography
                                                         variant={'body1'}
-                                                        sx={{ fontWeight: 600 }}
+                                                        sx={{ fontWeight: 500 }}
                                                     >
                                                         {formatDBName(
                                                             entries[0],
