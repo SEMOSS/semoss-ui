@@ -71,13 +71,7 @@ const StyledChipList = styled('div')(({ theme }) => ({
     gap: theme.spacing(2),
 }));
 
-const StyledFilter = styled('div')(({ theme }) => ({
-    // borderBottom: `2px solid ${theme.palette.divider}`,
-    // '&:last-child': {
-    //     borderBottom: 'none', // Remove the border-bottom for the last child
-    //     boxShadow: 'none', // Remove the box-shadow for the last child
-    // },
-}));
+const StyledFilter = styled('div')(({ theme }) => ({}));
 
 const StyledNestedFilterList = styled(List)(({ theme }) => ({
     width: '100%',
@@ -87,7 +81,7 @@ const StyledNestedFilterList = styled(List)(({ theme }) => ({
 const StyledAvatarCount = styled(Avatar)(({ theme }) => ({
     width: '32px',
     height: '32px',
-    color: theme.palette.grey['100'],
+    color: theme.palette.text.primary,
 }));
 
 const StyledContent = styled('div')(({ theme }) => ({
@@ -100,7 +94,7 @@ const StyledContent = styled('div')(({ theme }) => ({
 const StyledChip = styled(Chip, {
     shouldForwardProp: (prop) => prop !== 'selected',
 })<{
-    /** Track if the page header is stuck */
+    /** Track if the chip is selected */
     selected: boolean;
 }>(({ theme, selected }) => ({
     color: selected
@@ -134,7 +128,7 @@ const reducer = (state, action) => {
 
 /**
  * Catalog landing Page
- * Landing page to view the available datasets and search through it
+ * Landing page to view the available engines
  */
 export const CatalogPage = observer((): JSX.Element => {
     const { configStore, monolithStore } = useRootStore();
@@ -873,10 +867,6 @@ export const CatalogPage = observer((): JSX.Element => {
                                                                             variant={
                                                                                 'rounded'
                                                                             }
-                                                                            sx={{
-                                                                                height: '32px',
-                                                                                width: '32px',
-                                                                            }}
                                                                         >
                                                                             {
                                                                                 filterOption.count

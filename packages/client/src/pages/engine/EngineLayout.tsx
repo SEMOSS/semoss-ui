@@ -132,7 +132,7 @@ export const EngineLayout = () => {
     }, [engineMetaStatus, engineMetaData, JSON.stringify(metaKeys)]);
 
     // get the user's role
-    const getUserAppPermission = useAPI(['getUserAppPermission', id]);
+    const getUserEnginePermission = useAPI(['getUserEnginePermission', id]);
 
     const tabMenu = [
         {
@@ -177,19 +177,19 @@ export const EngineLayout = () => {
     }, [resolvedPath, location]);
 
     // if the engine isn't found, navigate to the Home Page
-    if (!id || getUserAppPermission.status === 'ERROR') {
+    if (!id || getUserEnginePermission.status === 'ERROR') {
         return <Navigate to={`/catalog?${engineType}`} replace />;
     }
 
     // show a loading screen when it is pending
-    if (getUserAppPermission.status !== 'SUCCESS') {
+    if (getUserEnginePermission.status !== 'SUCCESS') {
         return <LoadingScreen.Trigger description="Checking Access" />;
     }
 
     const engineContextType: EngineContextType = {
         type: engineType,
         id: id,
-        role: getUserAppPermission.data.permission,
+        role: getUserEnginePermission.data.permission,
         refresh: engineMetaRefresh,
         metaVals: values, // Needed so edit button can be in header
     };

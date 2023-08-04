@@ -9,6 +9,7 @@ const StyledPage = styled('div')(({ theme }) => ({
     overflowY: 'auto',
     backgroundColor: theme.palette.background.paper,
 
+    paddingBottom: theme.spacing(5),
     display: 'flex',
     flexDirection: 'column',
     gap: theme.spacing(2),
@@ -32,7 +33,7 @@ const StyledPageHeader = styled('div', {
 }));
 
 const StyledContainer = styled(Container)(({ theme }) => ({
-    width: '1271px',
+    // width: '1271px',
 }));
 
 export interface PageProps {
@@ -76,12 +77,12 @@ export const Page = (props: PageProps): JSX.Element => {
                     ref={(node) => setHeaderElement(node)}
                     stuck={stuck}
                 >
-                    <StyledContainer maxWidth={false} sx={sx}>
+                    <Container maxWidth={'xl'} sx={sx}>
                         {header}
-                    </StyledContainer>
+                    </Container>
                 </StyledPageHeader>
             )}
-            <StyledContainer maxWidth={false}>{children}</StyledContainer>
+            <Container maxWidth={'xl'}>{children}</Container>
             {/* <div>{children}</div> */}
         </StyledPage>
     );

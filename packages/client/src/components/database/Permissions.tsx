@@ -235,10 +235,10 @@ const mapMonolithFunction = (
         insightDenyUserRequest: 'denyInsightUserAccessRequest',
 
         // Members Table
-        databaseGetNonCredUsers: 'getAppUsersNoCredentials',
-        databaseAddMember: 'addDatabaseUserPermissions',
-        databaseRemoveUserPermissions: 'removeDatabaseUserPermissions',
-        databaseUpdatePermissions: 'editDatabaseUserPermissions',
+        databaseGetNonCredUsers: 'getEngineUsersNoCredentials',
+        databaseAddMember: 'addEngineUserPermissions',
+        databaseUpdatePermissions: 'editEngineUserPermissions',
+        databaseRemoveUserPermissions: 'removeEngineUserPermissions',
 
         projectGetNonCredUsers: 'getProjectUsersNoCredentials',
         projectAddMember: 'addProjectUserPermissions',
@@ -442,7 +442,7 @@ export const Permissions = (props: PermissionsProps) => {
 };
 
 const StyledAlert = MuiStyled(Alert)(({ theme }) => ({
-    width: '380px',
+    width: '468px',
     height: theme.spacing(13),
     backgroundColor: theme.palette.background.paper,
 }));
@@ -1223,9 +1223,12 @@ export const MembersTable = (props) => {
     const verifiedMembers = watch('MEMBERS');
 
     // apiString for getMembers useAPI Hook
-    const getMembersString =
+    const getMembersString:
+        | 'getEngineUsers'
+        | 'getProjectUsers'
+        | 'getInsightUsers' =
         type === 'database'
-            ? 'getDatabaseUsers'
+            ? 'getEngineUsers'
             : type === 'project'
             ? 'getProjectUsers'
             : type === 'insight' && 'getInsightUsers';

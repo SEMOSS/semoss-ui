@@ -39,7 +39,11 @@ const StyledContainer = styled('div')(({ theme }) => ({
     gap: theme.spacing(3),
 }));
 
-const StyledCard = styled(Card)(({ theme }) => ({}));
+const StyledCard = styled(Card)(({ theme }) => ({
+    '&:hover': {
+        cursor: 'pointer',
+    },
+}));
 
 const StyledCardHeader = styled(Card.Header)(({ theme }) => ({
     height: theme.spacing(7.75),
@@ -151,7 +155,6 @@ export const SettingsIndexPage = () => {
                         <Grid item key={i} sm={12} md={6} lg={4} xl={3}>
                             <StyledCard onClick={() => navigate(c.path)}>
                                 <StyledCardHeader
-                                    // sx={{ height: '62px' }}
                                     title={c.title}
                                     titleTypographyProps={{ variant: 'body1' }}
                                     avatar={IconMapper[c.title]}

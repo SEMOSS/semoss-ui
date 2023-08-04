@@ -92,7 +92,7 @@ export const EngineShell = (props: EngineShellProps) => {
     const { type, id, role, metaVals, refresh } = useDatabase();
 
     // Service for Axios calls
-    const { monolithStore } = useRootStore();
+    const { monolithStore, configStore } = useRootStore();
 
     // notification service
     const notification = useNotification();
@@ -195,12 +195,6 @@ export const EngineShell = (props: EngineShellProps) => {
     }
 
     console.log(data);
-
-    // // show a loading screen when it is pending
-    // if (voteStatus !== 'SUCCESS') {
-    //     return <LoadingScreen.Trigger description="Getting Social Stats" />;
-    // }
-
     console.log('metavals', metaVals);
 
     return (
@@ -232,6 +226,16 @@ export const EngineShell = (props: EngineShellProps) => {
                             Catalog Overview
                         </Typography>
                         <Stack direction="row">
+                            {configStore.store.security &&
+                                data.database_discoverable && (
+                                    <Button
+                                        startIcon={<SimCardDownload />}
+                                        variant="outlined"
+                                        onClick={() => console.log('here')}
+                                    >
+                                        Request Access
+                                    </Button>
+                                )}
                             {role === 'OWNER' && (
                                 <Button
                                     startIcon={<SimCardDownload />}
