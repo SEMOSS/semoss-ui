@@ -20,7 +20,7 @@ const UploadData = () => {
 };
 
 export const CSVForm = () => {
-    const { control, watch } = useForm();
+    const { control, watch, reset } = useForm();
 
     return (
         <Form>
@@ -374,7 +374,13 @@ export const SQLLiteForm = () => {
 };
 
 export const H2Form = () => {
-    const { control, watch } = useForm();
+    const { control, watch, reset } = useForm();
+
+    React.useEffect(() => {
+        reset({
+            PORT: '8082',
+        });
+    }, []);
 
     return (
         <Form>
@@ -792,7 +798,11 @@ export const AsterForm = () => {
 };
 
 export const AthenaForm = () => {
-    const { control, watch } = useForm();
+    const { control, watch, reset } = useForm();
+
+    React.useEffect(() => {
+        reset({ SCHEMA: 'default' });
+    }, []);
 
     return (
         <Form>
@@ -997,7 +1007,15 @@ export const AthenaForm = () => {
 };
 
 export const BigQueryForm = () => {
-    const { control, watch } = useForm();
+    const { control, watch, reset } = useForm();
+
+    React.useEffect(() => {
+        reset({
+            HOST_NAME: 'https://www.googleapis.com/bigquery/v2',
+            PORT: '443',
+            OAUTH_TYPE: '0',
+        });
+    }, []);
 
     return (
         <Form>
@@ -1162,7 +1180,13 @@ export const BigQueryForm = () => {
 };
 
 export const CassandraForm = () => {
-    const { control, watch } = useForm();
+    const { control, watch, reset } = useForm();
+
+    React.useEffect(() => {
+        reset({
+            PORT: '9042',
+        });
+    }, []);
 
     return (
         <Form>
@@ -1367,7 +1391,7 @@ export const CassandraForm = () => {
 };
 
 export const ClickhouseForm = () => {
-    const { control, watch } = useForm();
+    const { control, watch, reset } = useForm();
 
     return (
         <Form>
@@ -1585,7 +1609,14 @@ export const ClickhouseForm = () => {
 };
 
 export const DatabricksForm = () => {
-    const { control, watch } = useForm();
+    const { control, watch, reset } = useForm();
+
+    React.useEffect(() => {
+        reset({
+            PORT: '443',
+            UID: 'token',
+        });
+    }, []);
 
     return (
         <Form>
@@ -1816,7 +1847,7 @@ export const DatabricksForm = () => {
 };
 
 export const DataStaxForm = () => {
-    const { control, watch } = useForm();
+    const { control, watch, reset } = useForm();
 
     return (
         <Form>
@@ -1929,7 +1960,13 @@ export const DataStaxForm = () => {
 };
 
 export const DB2Form = () => {
-    const { control, watch } = useForm();
+    const { control, watch, reset } = useForm();
+
+    React.useEffect(() => {
+        reset({
+            PORT: '446',
+        });
+    }, []);
 
     return (
         <Form>
@@ -2134,7 +2171,13 @@ export const DB2Form = () => {
 };
 
 export const DerbyForm = () => {
-    const { control, watch } = useForm();
+    const { control, watch, reset } = useForm();
+
+    React.useEffect(() => {
+        reset({
+            PORT: '1527',
+        });
+    }, []);
 
     return (
         <Form>
@@ -2339,7 +2382,14 @@ export const DerbyForm = () => {
 };
 
 export const ElasticSearchForm = () => {
-    const { control, watch } = useForm();
+    const { control, watch, reset } = useForm();
+
+    React.useEffect(() => {
+        reset({
+            PORT: '9200',
+            HTTP_TYPE: 'https',
+        });
+    }, []);
 
     return (
         <Form>
@@ -2478,7 +2528,13 @@ export const ElasticSearchForm = () => {
 };
 
 export const HiveForm = () => {
-    const { control, watch } = useForm();
+    const { control, watch, reset } = useForm();
+
+    React.useEffect(() => {
+        reset({
+            PORT: '1000',
+        });
+    }, []);
 
     return (
         <Form>
@@ -2683,7 +2739,13 @@ export const HiveForm = () => {
 };
 
 export const ImpalaForm = () => {
-    const { control, watch } = useForm();
+    const { control, watch, reset } = useForm();
+
+    React.useEffect(() => {
+        reset({
+            PORT: '21050',
+        });
+    }, []);
 
     return (
         <Form>
@@ -2888,7 +2950,13 @@ export const ImpalaForm = () => {
 };
 
 export const MariaDBForm = () => {
-    const { control, watch } = useForm();
+    const { control, watch, reset } = useForm();
+
+    React.useEffect(() => {
+        reset({
+            PORT: '3306',
+        });
+    }, []);
 
     return (
         <Form>
@@ -3093,7 +3161,13 @@ export const MariaDBForm = () => {
 };
 
 export const MySQLForm = () => {
-    const { control, watch } = useForm();
+    const { control, watch, reset } = useForm();
+
+    React.useEffect(() => {
+        reset({
+            PORT: '3306',
+        });
+    }, []);
 
     return (
         <Form>
@@ -3298,7 +3372,14 @@ export const MySQLForm = () => {
 };
 
 export const OpenSearchForm = () => {
-    const { control, watch } = useForm();
+    const { control, watch, reset } = useForm();
+
+    React.useEffect(() => {
+        reset({
+            PORT: '9200',
+            HTTP_TYPE: 'https',
+        });
+    }, []);
 
     return (
         <Form>
@@ -3437,7 +3518,13 @@ export const OpenSearchForm = () => {
 };
 
 export const OracleForm = () => {
-    const { control, watch } = useForm();
+    const { control, watch, reset } = useForm();
+
+    React.useEffect(() => {
+        reset({
+            SID_SERVICE: '1521',
+        });
+    }, []);
 
     return (
         <Form>
@@ -3642,7 +3729,13 @@ export const OracleForm = () => {
 };
 
 export const PhoenixForm = () => {
-    const { control, watch } = useForm();
+    const { control, watch, reset } = useForm();
+
+    React.useEffect(() => {
+        reset({
+            PORT: '8765',
+        });
+    }, []);
 
     return (
         <Form>
@@ -3847,7 +3940,13 @@ export const PhoenixForm = () => {
 };
 
 export const PostgresForm = () => {
-    const { control, watch } = useForm();
+    const { control, watch, reset } = useForm();
+
+    React.useEffect(() => {
+        reset({
+            PORT: '5432',
+        });
+    }, []);
 
     return (
         <Form>
@@ -4052,7 +4151,13 @@ export const PostgresForm = () => {
 };
 
 export const RedshiftForm = () => {
-    const { control, watch } = useForm();
+    const { control, watch, reset } = useForm();
+
+    React.useEffect(() => {
+        reset({
+            PORT: '5439',
+        });
+    }, []);
 
     return (
         <Form>
@@ -4270,7 +4375,13 @@ export const RedshiftForm = () => {
 };
 
 export const SAPHanaForm = () => {
-    const { control, watch } = useForm();
+    const { control, watch, reset } = useForm();
+
+    React.useEffect(() => {
+        reset({
+            PORT: '30015',
+        });
+    }, []);
 
     return (
         <Form>
@@ -4475,7 +4586,15 @@ export const SAPHanaForm = () => {
 };
 
 export const SemossForm = () => {
-    const { control, watch } = useForm();
+    const { control, watch, reset } = useForm();
+
+    React.useEffect(() => {
+        reset({
+            PROTOCOL: 'https',
+            PORT: '443',
+            ENDPOINT: 'Monolith',
+        });
+    }, []);
 
     return (
         <Form>
@@ -4732,7 +4851,14 @@ export const SemossForm = () => {
 };
 
 export const SnowflakeForm = () => {
-    const { control, watch } = useForm();
+    const { control, watch, reset } = useForm();
+
+    React.useEffect(() => {
+        reset({
+            PORT: '443',
+            ROLE: 'PUBLIC',
+        });
+    }, []);
 
     return (
         <Form>
@@ -4976,7 +5102,14 @@ export const SnowflakeForm = () => {
 };
 
 export const SQLServerForm = () => {
-    const { control, watch } = useForm();
+    const { control, watch, reset } = useForm();
+
+    React.useEffect(() => {
+        reset({
+            PORT: '1433',
+            SCHEMA: 'dbo',
+        });
+    }, []);
 
     return (
         <Form>
@@ -5194,7 +5327,7 @@ export const SQLServerForm = () => {
 };
 
 export const SQLiteForm = () => {
-    const { control, watch } = useForm();
+    const { control, watch, reset } = useForm();
 
     return (
         <Form>
@@ -5386,7 +5519,7 @@ export const SQLiteForm = () => {
 };
 
 export const TeradataForm = () => {
-    const { control, watch } = useForm();
+    const { control, watch, reset } = useForm();
 
     return (
         <Form>
@@ -5578,7 +5711,13 @@ export const TeradataForm = () => {
 };
 
 export const TibcoForm = () => {
-    const { control, watch } = useForm();
+    const { control, watch, reset } = useForm();
+
+    React.useEffect(() => {
+        reset({
+            PORT: '1443',
+        });
+    }, []);
 
     return (
         <Form>
@@ -5783,7 +5922,7 @@ export const TibcoForm = () => {
 };
 
 export const TrinoForm = () => {
-    const { control, watch } = useForm();
+    const { control, watch, reset } = useForm();
 
     return (
         <Form>

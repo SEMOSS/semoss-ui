@@ -1,23 +1,7 @@
 import React from 'react';
-import Stepper from '@mui/material/Stepper';
-import Step from '@mui/material/Step';
-import StepLabel from '@mui/material/StepLabel';
-import StepContent from '@mui/material/StepContent';
-import Paper from '@mui/material/Paper';
 import { Page } from '@/components/ui/';
 import { Form } from '@semoss/components';
-import {
-    styled,
-    Typography,
-    Box,
-    Button,
-    Stack,
-    Divider,
-    Menu,
-    FileDropzone,
-    Card,
-    Grid,
-} from '@semoss/ui';
+import { styled, Typography, Box, FileDropzone, Grid } from '@semoss/ui';
 import { useForm } from 'react-hook-form';
 import { Field } from './../../components/form';
 import { FORM_ROUTES } from './forms/';
@@ -35,12 +19,6 @@ const StyledBox = styled(Box)({
     marginTop: '48px',
 });
 
-const steps = [
-    { label: 'Select a starting point', description: '' },
-    { label: 'Import file or connect to external database', description: '' },
-    { label: 'Enter or upload database information', description: '' },
-];
-
 const UploadData = () => {
     const [selectedValues, setSelectedValues] = React.useState(null);
 
@@ -55,47 +33,54 @@ const UploadData = () => {
 };
 
 const stepsOne = [
-    'Drag and Drop or Connect to an External Database',
+    'Drag and Drop Data',
+    'Connect to an External Database',
     'Copy Database',
     'Upload Database',
-    'Build Database',
+    // 'Build Database',
 ];
 
-const stepsTwo = [
-    'Aster',
-    'Athena',
-    'BigQuery',
-    'Cassandra',
-    'Clickhouse',
-    'CSV',
-    'DATABRICKS',
-    'DataStax',
-    'DB2',
-    'Derby',
-    'Elastic Search',
-    'Excel',
-    'H2',
-    'Hive',
-    'Impala',
-    'MariaDB',
-    'MySQL',
-    'Neo4J',
-    'Open Search',
-    'Oracle',
-    'Phoenix',
-    'Postgres',
-    'Redshift',
-    'SAP Hana',
-    'SEMOSS',
-    'Snowflake',
-    'SQL Server',
-    'SQLITE',
-    'Teradata',
-    'Tibco',
-    'Tinker',
-    'Trino',
-    'TSV',
-];
+const stepsTwo = {
+    ['Drag and Drop Data']: [
+        'CSV',
+        'Excel',
+        'TSV',
+        'SQLite',
+        'H2',
+        'Neo4J',
+        'Tinker',
+    ],
+    ['Connect to an External Database']: [
+        'Aster',
+        'Athena',
+        'BigQuery',
+        'Cassandra',
+        'Clickhouse',
+        'DATABRICKS',
+        'DataStax',
+        'DB2',
+        'Derby',
+        'Elastic Search',
+        'H2',
+        'Hive',
+        'Impala',
+        'MariaDB',
+        'MySQL',
+        'Open Search',
+        'Oracle',
+        'Phoenix',
+        'Postgres',
+        'Redshift',
+        'SAP Hana',
+        'SEMOSS',
+        'Snowflake',
+        'SQL Server',
+        'SQLITE',
+        'Teradata',
+        'Tibco',
+        'Trino',
+    ],
+};
 
 export const DatabaseImport = () => {
     const [activeStep, setActiveStep] = React.useState(0);
@@ -106,7 +91,7 @@ export const DatabaseImport = () => {
         return React.createElement(form.component);
     };
 
-    console.log(activeStep, stepTwo);
+    console.log(activeStep, stepOne);
 
     return (
         <>
@@ -140,7 +125,7 @@ export const DatabaseImport = () => {
                                     }}
                                     sx={{
                                         width: '350px',
-                                        height: '350px',
+                                        height: '250px',
                                         display: 'flex',
                                         justifyContent: 'center',
                                         alignItems: 'center',
@@ -155,50 +140,76 @@ export const DatabaseImport = () => {
                             </Grid>
                         ))}
                     </Grid>
+                    <Box
+                        sx={{
+                            display: 'flex',
+                            flexDirection: 'row',
+                            width: '100%',
+                        }}
+                    >
+                        <StyledBox>Hi</StyledBox>
+                        <StyledBox>Hi</StyledBox>
+                    </Box>
                 </Box>
                 {(activeStep === 1 || activeStep === 2) && (
                     <StyledBox>
                         {activeStep === 1 && !stepTwo && (
                             <Grid container rowSpacing={2}>
-                                {stepsTwo.map((val, idx) => {
-                                    return (
-                                        <Grid
-                                            item
-                                            key={idx}
-                                            xs={1}
-                                            lg={1}
-                                            md={1}
-                                            xl={1}
-                                        >
-                                            <Box
-                                                onClick={() => {
-                                                    setStepTwo(val);
-                                                    if (
-                                                        val ===
-                                                            'Copy Database' ||
-                                                        val ===
-                                                            'Upload Database'
-                                                    ) {
-                                                        setActiveStep(2);
-                                                    } else {
-                                                        setActiveStep(1);
-                                                    }
-                                                }}
-                                                sx={{
-                                                    height: '100px',
-                                                    width: '100px',
-                                                    display: 'flex',
-                                                    justifyContent: 'center',
-                                                    alignItems: 'center',
-                                                    border: '1px solid rgba(0,0,0,0.1)',
-                                                    padding: '24px',
-                                                    fontSize: '12px',
-                                                }}
-                                            >
-                                                <Box>{val}</Box>
-                                            </Box>
-                                        </Grid>
-                                    );
+                                {Object.keys(stepsTwo).map((val, idx) => {
+                                    if (val === stepOne) {
+                                        return stepsTwo[val].map(
+                                            (value, index) => {
+                                                console.log(value);
+                                                return (
+                                                    <Grid
+                                                        item
+                                                        key={index}
+                                                        xs={1}
+                                                        lg={1}
+                                                        md={1}
+                                                        xl={1}
+                                                    >
+                                                        <Box
+                                                            onClick={() => {
+                                                                setStepTwo(
+                                                                    value,
+                                                                );
+                                                                if (
+                                                                    value ===
+                                                                        'Copy Database' ||
+                                                                    value ===
+                                                                        'Upload Database'
+                                                                ) {
+                                                                    setActiveStep(
+                                                                        2,
+                                                                    );
+                                                                } else {
+                                                                    setActiveStep(
+                                                                        1,
+                                                                    );
+                                                                }
+                                                            }}
+                                                            sx={{
+                                                                height: '100px',
+                                                                width: '100px',
+                                                                display: 'flex',
+                                                                justifyContent:
+                                                                    'center',
+                                                                alignItems:
+                                                                    'center',
+                                                                border: '1px solid rgba(0,0,0,0.1)',
+                                                                padding: '24px',
+                                                                fontSize:
+                                                                    '12px',
+                                                            }}
+                                                        >
+                                                            <Box>{value}</Box>
+                                                        </Box>
+                                                    </Grid>
+                                                );
+                                            },
+                                        );
+                                    }
                                 })}
                             </Grid>
                         )}
