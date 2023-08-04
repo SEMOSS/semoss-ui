@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const URL = 'http://localhost:3000/MonolithDev';
+const URL = '/MonolithDev';
 
 /**
  * Get the System's configuration information

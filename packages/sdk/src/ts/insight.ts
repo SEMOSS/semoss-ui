@@ -104,7 +104,8 @@ export class Insight {
                 !this._store.system.config.security ||
                 Object.keys(this._store.system.config.logins).length > 0
             ) {
-                await this.initializeApp();
+                // initialize the app
+                await this.initializeApp(id);
 
                 // track that the user is authorized
                 this._store.isAuthorized = true;
@@ -197,12 +198,11 @@ export class Insight {
     private initializeApp = async (id?: string): Promise<void> => {
         const { insightId, errors, pixelReturn } = await runPixel<
             [Record<string, unknown>]
-        >(`GetAppConfig()`, id || 'new');
+        >(`GetAppConfig()`, id);
 
         // log errors if it exists
         if (errors.length) {
-            const errorMessage = errors.join(',');
-            throw new Error(errorMessage);
+            throw new Error(errors[0]);
         }
 
         // set the insight ID
@@ -227,8 +227,7 @@ export class Insight {
 
         // log errors if it exists
         if (errors.length) {
-            const errorMessage = errors.join(',');
-            throw new Error(errorMessage);
+            throw new Error(errors[0]);
         }
 
         // set the insight ID
@@ -301,8 +300,7 @@ export class Insight {
                 // success
                 return loggedIn;
             } catch (error) {
-                // throw the error
-                throw Error(error);
+                this.processActionError(error);
             }
         },
 

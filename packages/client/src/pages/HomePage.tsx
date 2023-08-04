@@ -45,10 +45,10 @@ interface AbstractMarketplaceApp {
 interface PolicyMarketplaceApp extends AbstractMarketplaceApp {
     type: 'policy';
     config: {
-        /**
-         * Document to ask the question against
-         */
-        document: string;
+        theme: {
+            name: string;
+            border: string;
+        };
     };
 }
 
@@ -64,43 +64,7 @@ interface CustomMarketplaceApp extends AbstractMarketplaceApp {
 
 const APPS: MarketplaceApp[] = [
     {
-        name: 'Red Application',
-        description:
-            'Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.',
-        logo: '',
-        tags: ['Tag 1', 'Tag 2', 'Tag 3', 'Tag 4'],
-        type: 'custom',
-        url: `../../../apps/policy/client/dist/`,
-        config: {
-            color: 'red',
-        },
-    },
-    {
-        name: 'Blue Application',
-        description:
-            'Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.',
-        logo: '',
-        tags: ['Tag 1', 'Tag 2', 'Tag 3', 'Tag 4'],
-        type: 'custom',
-        url: `../../../apps/policy/client/dist/`,
-        config: {
-            color: 'blue',
-        },
-    },
-    {
-        name: 'Green Application',
-        description:
-            'Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.',
-        logo: '',
-        tags: ['Tag 1', 'Tag 2', 'Tag 3', 'Tag 4'],
-        type: 'custom',
-        url: `../../../apps/policy/client/dist/`,
-        config: {
-            color: 'green',
-        },
-    },
-    {
-        name: 'Ask a Question',
+        name: 'Policy Bot 1',
         description:
             'Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.',
         logo: '',
@@ -108,7 +72,25 @@ const APPS: MarketplaceApp[] = [
         type: 'policy',
         url: `../../../apps/policy/client/dist/`,
         config: {
-            document: `..`,
+            theme: {
+                name: 'Policy Bot 1',
+                border: '5px solid green',
+            },
+        },
+    },
+    {
+        name: 'Policy Bot 2',
+        description:
+            'Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.',
+        logo: '',
+        tags: ['Tag 1', 'Tag 2', 'Tag 3', 'Tag 4'],
+        type: 'policy',
+        url: `../../../apps/policy/client/dist/`,
+        config: {
+            theme: {
+                name: 'Policy Bot 2',
+                border: '5px solid blue',
+            },
         },
     },
 ];
