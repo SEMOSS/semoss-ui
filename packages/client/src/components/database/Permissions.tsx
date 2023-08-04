@@ -224,7 +224,7 @@ const mapMonolithFunction = (
     key: string,
 ) => {
     const API_MAP = {
-        // key: Monolith Store Function Name
+        // key: monolith.store Function Name
         // Pending Members Table
         databaseApproveUserRequest: 'approveDatabaseUserAccessRequest',
         projectApproveUserRequest: 'approveProjectUserAccessRequest',
@@ -251,8 +251,8 @@ const mapMonolithFunction = (
         insightUpdatePermissions: 'editInsightUserPermissions',
 
         // Properties
-        databaseSetGlobal: 'setDatabaseGlobal',
-        databaseSetVisible: 'setDatabaseVisiblity',
+        databaseSetGlobal: 'setEngineGlobal',
+        databaseSetVisible: 'setEngineVisiblity',
 
         projectSetGlobal: 'setProjectGlobal',
         projectSetVisible: 'setProjectVisiblity',

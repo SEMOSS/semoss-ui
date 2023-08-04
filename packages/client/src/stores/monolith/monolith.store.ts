@@ -494,6 +494,72 @@ export class MonolithStore {
         return response;
     }
 
+    /**
+     * @name setEngineGlobal
+     * @param admin
+     * @param appId
+     * @param global
+     */
+    async setEngineGlobal(admin: boolean, engineId: string, global: boolean) {
+        let url = `${BACKEND}/api/auth/`,
+            postData = '';
+
+        // if (admin) {
+        //     url += 'admin/';
+        // }
+
+        // change to database
+        url += 'engine/setEngineGlobal';
+
+        postData += 'engineId=' + encodeURIComponent(engineId);
+        postData += '&public=' + encodeURIComponent(global);
+
+        const response = await axios
+            .post<{ success: boolean }>(url, postData, {
+                headers: {
+                    'content-type': 'application/x-www-form-urlencoded',
+                },
+            })
+            .catch((error) => {
+                throw Error(error);
+            });
+
+        return response;
+    }
+
+    /**
+     * @name setEngineVisiblity
+     * @param admin
+     * @param appId
+     * @param visible
+     */
+    async setEngineVisiblity(
+        admin: boolean,
+        engineId: string,
+        visible: boolean,
+    ) {
+        let url = `${BACKEND}/api/auth/`,
+            postData = '';
+
+        // if (admin) {
+        //     url += 'admin/';
+        // }
+
+        // change to database
+        url += 'engine/setEngineVisibility';
+
+        postData += 'engineId=' + encodeURIComponent(engineId);
+        postData += '&visibility=' + encodeURIComponent(visible);
+
+        const response = await axios.post<{ success: boolean }>(url, postData, {
+            headers: {
+                'content-type': 'application/x-www-form-urlencoded',
+            },
+        });
+
+        return response;
+    }
+
     // ----------------------------------------------------------------------
     // Database Level
     // ----------------------------------------------------------------------
@@ -633,39 +699,6 @@ export class MonolithStore {
     }
 
     /**
-     * @name setDatabaseGlobal
-     * @param admin
-     * @param appId
-     * @param global
-     */
-    async setDatabaseGlobal(admin: boolean, appId: string, global: boolean) {
-        let url = `${BACKEND}/api/auth/`,
-            postData = '';
-
-        if (admin) {
-            url += 'admin/';
-        }
-
-        // change to database
-        url += 'app/setAppGlobal';
-
-        postData += 'appId=' + encodeURIComponent(appId);
-        postData += '&public=' + encodeURIComponent(global);
-
-        const response = await axios
-            .post<{ success: boolean }>(url, postData, {
-                headers: {
-                    'content-type': 'application/x-www-form-urlencoded',
-                },
-            })
-            .catch((error) => {
-                throw Error(error);
-            });
-
-        return response;
-    }
-
-    /**
      * @name setDatabaseDiscoverable
      * @param admin
      * @param appId
@@ -698,35 +731,6 @@ export class MonolithStore {
             .catch((error) => {
                 throw Error(error);
             });
-
-        return response;
-    }
-
-    /**
-     * @name setDatabaseVisiblity
-     * @param admin
-     * @param appId
-     * @param visible
-     */
-    async setDatabaseVisiblity(admin, appId, visible) {
-        let url = `${BACKEND}/api/auth/`,
-            postData = '';
-
-        // if (admin) {
-        //     url += 'admin/';
-        // }
-
-        // change to database
-        url += 'app/setAppVisibility';
-
-        postData += 'appId=' + encodeURIComponent(appId);
-        postData += '&visibility=' + encodeURIComponent(visible);
-
-        const response = await axios.post<{ success: boolean }>(url, postData, {
-            headers: {
-                'content-type': 'application/x-www-form-urlencoded',
-            },
-        });
 
         return response;
     }
