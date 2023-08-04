@@ -46,6 +46,10 @@ export const Router = observer(() => {
                         <Route path=":id" element={<EngineLayout />}>
                             <Route index element={<EngineIndexPage />} />
                             <Route
+                                path="metadata"
+                                element={<DatabaseMetadataPage />}
+                            />
+                            <Route
                                 path="settings"
                                 element={<DatabaseSettingsPage />}
                             />
@@ -55,6 +59,10 @@ export const Router = observer(() => {
                     <Route path="model" element={<Outlet />}>
                         <Route path=":id" element={<EngineLayout />}>
                             <Route index element={<EngineIndexPage />} />
+                            <Route
+                                path="metadata"
+                                element={<DatabaseMetadataPage />}
+                            />
                             <Route
                                 path="settings"
                                 element={<DatabaseSettingsPage />}
