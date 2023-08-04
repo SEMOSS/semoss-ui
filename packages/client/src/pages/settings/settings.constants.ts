@@ -100,17 +100,17 @@ export const SETTINGS_ROUTES: {
         title: 'Jobs',
         path: 'jobs',
         description: 'Search by job name or filter using job tags',
-        icon: mdiClock,
+        icon: mdiTabletCellphone,
         history: ['settings/'],
     },
-    {
-        // TODO remove this route - using it now to look at old jobs page.
-        title: 'Old Jobs',
-        path: 'jobs-old',
-        description: 'old jobs page using @semoss/components library',
-        icon: mdiClock,
-        history: ['settings/'],
-    },
+    // {
+    //     // TODO remove this route - using it now to look at old jobs page.
+    //     title: 'Old Jobs',
+    //     path: 'jobs-old',
+    //     description: 'old jobs page using @semoss/components library',
+    //     icon: mdiClock,
+    //     history: ['settings/'],
+    // },
     // {
     //     title: 'Admin Query',
     //     path: 'admin-query',

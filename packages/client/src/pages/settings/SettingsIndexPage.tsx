@@ -98,6 +98,7 @@ const IconMapper = {
     'Teams Permissions': <GroupRounded />,
     'My Profile': <PersonRounded />,
     Theming: <PaintRounded />,
+    Jobs: <Construction />,
 };
 
 export const SettingsIndexPage = () => {
@@ -128,7 +129,7 @@ export const SettingsIndexPage = () => {
         <StyledContainer>
             <StyledSearchbarContainer>
                 <Search
-                    label={'Searching'}
+                    label={'Search'}
                     size={'small'}
                     onChange={(e) => {
                         setSearch(e.target.value);
