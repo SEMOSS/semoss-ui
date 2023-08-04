@@ -222,7 +222,10 @@ export const AppSettings = (props) => {
         }
 
         // Set Details for Portal
-        setPortalDetails(getPortalDetails.data);
+        setPortalDetails({
+            ...getPortalDetails.data,
+            // hasPortal: true
+        });
 
         // Get the portal reactors if we have a portal
         // if (getPortalDetails.data.isPublished) {

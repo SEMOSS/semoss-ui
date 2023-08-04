@@ -259,9 +259,12 @@ export const SocialPropertiesPage = () => {
                             }}
                             placeholder="Search . . ."
                         />
-                        {authentication.map((value) => {
+                        {authentication.map((value, i) => {
                             return (
-                                <Accordion.Content sx={{ fontSize: '14px' }}>
+                                <Accordion.Content
+                                    key={i}
+                                    sx={{ fontSize: '14px' }}
+                                >
                                     <Button
                                         sx={{ textTransform: 'none' }}
                                         color="inherit"
@@ -483,7 +486,7 @@ const SocialProperty = (props) => {
 
             {fields.map((f, i) => {
                 return (
-                    <StyledPropContainer>
+                    <StyledPropContainer key={i}>
                         <StyledKeyValue>
                             <TextField
                                 label="key"

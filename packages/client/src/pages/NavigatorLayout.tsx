@@ -111,7 +111,7 @@ const StyledContent = styled('div')(() => ({
 /**
  * Wrap the routes with a side navigation
  */
-export const SideNavLayout = observer(() => {
+export const NavigatorLayout = observer(() => {
     return (
         <>
             <StyledHeader>
@@ -168,7 +168,7 @@ export const SideNavLayout = observer(() => {
                     </Icon>
                 </StyledSidebarItem>
                 <Stack flex={1}>&nbsp;</Stack>
-                <StyledSidebarItem to={'a'}>
+                <StyledSidebarItem to={'settings'}>
                     <Icon>
                         <Settings />
                     </Icon>

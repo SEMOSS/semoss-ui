@@ -15,7 +15,7 @@ export interface SwitchProps {
     /**
      * The icon to display when the component is checked.
      */
-    checkedIcon: ReactNode;
+    checkedIcon?: ReactNode;
     /**
      * The color of the component.
      * It supports both default and custom theme colors, which can be added as shown in the
@@ -50,7 +50,7 @@ export interface SwitchProps {
     focusRipple?: boolean;
 
     // Callback fired when the state is changed.
-    onChange?: () => void;
+    onChange?: (value: any) => void;
 
     // If true, the input element is required.
     required?: boolean;
@@ -66,6 +66,7 @@ export interface SwitchProps {
      */
     value?: boolean;
     sx?: SxProps;
+    title?: string;
 }
 
 export const Switch = (props: SwitchProps) => {

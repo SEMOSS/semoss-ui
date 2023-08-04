@@ -1,17 +1,18 @@
 import { useState, useEffect } from 'react';
 import {
-    styled,
-    Grid,
     Card,
-    Typography,
+    Grid,
+    IconButton,
+    MenuItem,
     Select,
     Search,
-    MenuItem,
+    styled,
+    Typography,
 } from '@semoss/ui';
 
 import { Icon } from '@semoss/components';
 
-import { Search as SearchIcon, AccessTime } from '@mui/icons-material';
+import { Search as SearchIcon, MoreVert } from '@mui/icons-material';
 
 import { useNavigate } from 'react-router-dom';
 import { useSettings } from '@/hooks';
@@ -39,13 +40,19 @@ const StyledContainer = styled('div')(({ theme }) => ({
 }));
 
 const StyledCard = styled(Card)(({ theme }) => ({
-    overflow: 'hidden',
-    height: theme.spacing(20),
+    '&:hover': {
+        cursor: 'pointer',
+    },
+}));
+
+const StyledCardHeader = styled(Card.Header)(({ theme }) => ({
+    height: theme.spacing(7.75),
+    margin: '0px 0px 0px 0px',
 }));
 
 const StyledCardContent = styled(Card.Content)(({ theme }) => ({
-    overflow: 'hidden',
-    textOverflow: 'ellipsis',
+    height: theme.spacing(5),
+    margin: '0px 0px 0px 0px',
 }));
 
 const StyledSearchbarContainer = styled('div')(({ theme }) => ({
@@ -56,12 +63,7 @@ const StyledSearchbarContainer = styled('div')(({ theme }) => ({
 }));
 
 const StyledSort = styled(Select)(({ theme }) => ({
-    display: 'flex',
-    width: theme.spacing(28),
-    flexDirection: 'column',
-    alignItems: 'flex-start',
-    gap: '3px',
-    flexShrink: '0',
+    width: '20%',
 }));
 
 const StyledIcon = styled(Icon)({
@@ -126,7 +128,8 @@ export const SettingsIndexPage = () => {
         <StyledContainer>
             <StyledSearchbarContainer>
                 <Search
-                    label={'Search'}
+                    label={'Searching'}
+                    size={'small'}
                     onChange={(e) => {
                         setSearch(e.target.value);
                     }}
@@ -134,9 +137,10 @@ export const SettingsIndexPage = () => {
                     InputProps={{
                         startAdornment: <SearchIcon />,
                     }}
-                    sx={{ width: '100%' }}
+                    sx={{ width: '80%' }}
                 />
                 <StyledSort
+                    size={'small'}
                     label={'Sort'}
                     value={sort}
                     onChange={(e) => setSort(e.target.value)}
@@ -150,26 +154,31 @@ export const SettingsIndexPage = () => {
                     return (
                         <Grid item key={i} sm={12} md={6} lg={4} xl={3}>
                             <StyledCard onClick={() => navigate(c.path)}>
-                                <Card.Header
+                                <StyledCardHeader
                                     title={c.title}
-                                    titleTypographyProps={{ variant: 'h5' }}
+                                    titleTypographyProps={{ variant: 'body1' }}
                                     avatar={IconMapper[c.title]}
                                 />
-                                <StyledCardContent sx={{ marginTop: -2 }}>
-                                    <Typography variant="caption">
+                                <StyledCardContent>
+                                    <Typography variant="body2">
                                         {c.description}
                                     </Typography>
                                 </StyledCardContent>
                                 {/* disabled for now */}
-                                {/* <Card.Actions>
+                                <Card.Actions>
                                     <CardActionsLeft>
-                                        <AccessTime fontSize="small" />
+                                        {' '}
+                                        {/* <AccessTime fontSize="small" />
                                         <Typography variant="caption">
                                             7/19/2023 10:00AM
-                                        </Typography>
+                                        </Typography> */}
                                     </CardActionsLeft>
-                                    <CardActionsRight>tbd</CardActionsRight>
-                                </Card.Actions> */}
+                                    <CardActionsRight>
+                                        <IconButton disabled={true}>
+                                            <MoreVert />
+                                        </IconButton>
+                                    </CardActionsRight>
+                                </Card.Actions>
                             </StyledCard>
                         </Grid>
                     );

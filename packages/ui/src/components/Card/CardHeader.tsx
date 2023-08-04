@@ -1,6 +1,5 @@
 import {
     CardHeader,
-    CardHeaderProps,
     TypographyProps,
     TitleTypographyComponent,
 } from "@mui/material";

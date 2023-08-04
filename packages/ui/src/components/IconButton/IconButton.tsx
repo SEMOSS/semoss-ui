@@ -1,7 +1,8 @@
-import MuiIconButton from "@mui/material/IconButton";
+import { IconButton as MuiIconButton } from "@mui/material";
 import { SxProps } from "@mui/system";
 
-export interface IconButtonProps {
+export interface IconButtonProps
+    extends React.ButtonHTMLAttributes<HTMLButtonElement> {
     /**
      * The icon to display.
      */
@@ -55,6 +56,7 @@ export interface IconButtonProps {
      * The system prop that allows defining system overrides as well as additional CSS styles.
      */
     sx?: SxProps;
+    title?: string;
 }
 
 export const IconButton = (props: IconButtonProps) => {

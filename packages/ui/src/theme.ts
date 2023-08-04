@@ -287,6 +287,19 @@ export const lightTheme: CustomThemeOptions = {
         },
     },
     components: {
+        MuiAlertTitle: {
+            styleOverrides: {
+                root: ({ theme }) => ({
+                    // color: "rgba(0, 0, 0, 0.87)",
+                    /* Components/Alert Title */
+                    fontSize: "16px",
+                    fontStyle: "normal",
+                    fontWeight: "500",
+                    lineHeight: "150%",
+                    letterSpacing: "0.15px",
+                }),
+            },
+        },
         MuiContainer: {
             styleOverrides: {
                 maxWidthSm: {

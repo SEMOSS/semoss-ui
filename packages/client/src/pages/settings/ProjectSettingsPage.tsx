@@ -42,12 +42,7 @@ const StyledSearchbar = styled(Search)({
 });
 
 const StyledSort = styled(Select)({
-    display: 'flex',
-    width: '220px',
-    flexDirection: 'column',
-    alignItems: 'flex-start',
-    gap: '3px',
-    flexShrink: '0',
+    width: '20%',
 });
 
 const initialState = {
@@ -77,7 +72,6 @@ export const ProjectSettingsPage = () => {
     const { configStore, monolithStore } = useRootStore();
     const { adminMode } = useSettings();
     const navigate = useNavigate();
-
     const [state, dispatch] = useReducer(reducer, initialState);
     const { projects } = state;
 
@@ -168,7 +162,7 @@ export const ProjectSettingsPage = () => {
                     ref={searchbarRef}
                     sx={{ width: '80%' }}
                 />
-                <Select
+                <StyledSort
                     size={'small'}
                     value={sort}
                     onChange={(e) => setSort(e.target.value)}
@@ -178,7 +172,7 @@ export const ProjectSettingsPage = () => {
                     <MenuItem value="Views">Views</MenuItem>
                     <MenuItem value="Trending">Trending</MenuItem>
                     <MenuItem value="Upvotes">Upvotes</MenuItem>
-                </Select>
+                </StyledSort>
 
                 <ToggleButtonGroup size={'small'} value={view}>
                     <ToggleButton onClick={(e, v) => setView(v)} value={'tile'}>

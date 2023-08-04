@@ -2,7 +2,7 @@ import axios from 'axios';
 import { makeAutoObservable } from 'mobx';
 
 import { Role } from '@/types';
-import { RootStore } from '@/stores/';
+import { RootStore } from '@/stores';
 
 const BACKEND = `${process.env.ENDPOINT}${process.env.MODULE}`;
 
@@ -274,18 +274,20 @@ export class MonolithStore {
         return response.data;
     }
 
+    // ----------------------------------------------------------------------
+    // Engine
+    // ----------------------------------------------------------------------
     /**
-     * @name getUserAppPermission
-     * @desc Get a user's role for a database
-     * @param id - id of app
-
+     * @name getUserEnginePermission
+     * @desc Get a user's role for the engine
+     * @param id - id of engine (db, storage, model)
      */
-    async getUserAppPermission(id: string) {
+    async getUserEnginePermission(id: string) {
         const response = await axios
             .get<{ permission: Role }>(
-                `${BACKEND}/api/auth/app/getUserAppPermission`,
+                `${BACKEND}/api/auth/engine/getUserEnginePermission`,
                 {
-                    params: { appId: id },
+                    params: { engineId: id },
                 },
             )
             .catch((error) => {
@@ -298,6 +300,198 @@ export class MonolithStore {
         }
 
         return response.data;
+    }
+
+    /**
+     * @name getDatabaseUsers
+     * @param admin
+     * @param appId
+     * @returns MemberInterface[]
+     */
+    async getEngineUsers(
+        admin: boolean,
+        databaseId: string,
+        user: string,
+        permission: string,
+        offset?: number,
+        limit?: number,
+        projectId?,
+    ) {
+        let url = `${BACKEND}/api/auth/`;
+
+        // if (admin) {
+        //     url += 'admin/';
+        // }
+
+        url += 'engine/getEngineUsers';
+
+        // get the response
+        const response = await axios
+            .get<{
+                members: {
+                    id: string;
+                    name: string;
+                    permission: string;
+                }[];
+                totalMembers: number;
+            }>(url, {
+                params: {
+                    engineId: databaseId,
+                    userId: user,
+                    permission: permission,
+                    offset: offset,
+                    limit: limit,
+                },
+            })
+            .catch((error) => {
+                throw Error(error);
+            });
+
+        // there was no response, that is an error
+        if (!response) {
+            throw Error('No Response to get users associated with app');
+        }
+
+        return response.data;
+    }
+
+    /**
+     * @name getEngineUsersNoCredentials
+     * @param admin
+     * @param appId
+     * @returns
+     */
+    async getEngineUsersNoCredentials(admin: boolean, appId: string) {
+        let url = `${BACKEND}/api/auth/`;
+
+        // Currently no admin ENDPOINT;
+        // if (admin) {
+        //     url += 'admin/';
+        // }
+
+        url += 'engine/getEngineUsersNoCredentials';
+
+        // get the response
+        const response = await axios
+            .get(url, {
+                params: { engineId: appId },
+            })
+            .catch((error) => {
+                throw Error(error);
+            });
+
+        // there was no response, that is an error
+        if (!response) {
+            throw Error('No Response to get non credentialed users');
+        }
+
+        return response.data;
+    }
+
+    /**
+     * @name addEngineUserPermissions
+     * @param admin
+     * @param appId
+     * @param users
+     * @returns
+     */
+    async addEngineUserPermissions(
+        admin: boolean,
+        appId: string,
+        users: any[],
+    ) {
+        let url = `${BACKEND}/api/auth/`,
+            postData = '';
+
+        // No Admin endpoint currently
+        // if (admin) {
+        //     url += 'admin/';
+        // }
+
+        url += 'engine/addEngineUserPermissions';
+
+        postData += 'engineId=' + encodeURIComponent(appId);
+        postData +=
+            '&userpermissions=' + encodeURIComponent(JSON.stringify(users));
+
+        const response = await axios.post<{ success: boolean }>(url, postData, {
+            headers: {
+                'content-type': 'application/x-www-form-urlencoded',
+            },
+        });
+
+        return response;
+
+        // figure out whether we want to do .catch here
+    }
+
+    /**
+     * @name editEngineUserPermissions
+     * @param admin
+     * @param appId
+     * @param users
+     * @returns
+     */
+    async editEngineUserPermissions(
+        admin: boolean,
+        appId: string,
+        users: any[],
+    ) {
+        let url = `${BACKEND}/api/auth/`,
+            postData = '';
+
+        // if (admin) {
+        //     url += 'admin/';
+        // }
+
+        url += 'engine/editEngineUserPermissions';
+
+        postData += 'engineId=' + encodeURIComponent(appId);
+        postData +=
+            '&userpermissions=' + encodeURIComponent(JSON.stringify(users));
+
+        const response = await axios.post<{ success: boolean }>(url, postData, {
+            headers: {
+                'content-type': 'application/x-www-form-urlencoded',
+            },
+        });
+
+        return response;
+
+        // figure out whether we want to do .catch here
+    }
+
+    /**
+     * @name removeEngineUserPermissions
+     * @param admin
+     * @param appId
+     * @param users
+     * @returns
+     */
+    async removeEngineUserPermissions(
+        admin: boolean,
+        appId: string,
+        users: any[],
+    ) {
+        let url = `${BACKEND}/api/auth/`,
+            postData = '';
+
+        // if (admin) {
+        //     url += 'admin/';
+        // }
+
+        url += 'engine/removeEngineUserPermissions';
+
+        postData += 'engineId=' + encodeURIComponent(appId);
+        postData += '&ids=' + encodeURIComponent(JSON.stringify(users));
+
+        const response = await axios.post<{ success: boolean }>(url, postData, {
+            headers: {
+                'content-type': 'application/x-www-form-urlencoded',
+            },
+        });
+
+        return response;
     }
 
     // ----------------------------------------------------------------------
@@ -340,92 +534,6 @@ export class MonolithStore {
     }
 
     // ----- Users Start -----
-    /**
-     * @name getDatabaseUsers
-     * @param admin
-     * @param appId
-     * @returns MemberInterface[]
-     */
-    async getDatabaseUsers(
-        admin: boolean,
-        databaseId: string,
-        user: string,
-        permission: string,
-        offset?: any,
-        limit?: any,
-        projectId?,
-    ) {
-        let url = `${BACKEND}/api/auth/`;
-
-        if (admin) {
-            url += 'admin/';
-        }
-
-        url += 'database/getDatabaseUsers';
-
-        // get the response
-        const response = await axios
-            .get<{
-                members: {
-                    id: string;
-                    name: string;
-                    permission: string;
-                }[];
-                totalMembers: number;
-            }>(url, {
-                params: {
-                    databaseId: databaseId,
-                    userId: user,
-                    permission: permission,
-                    offset: offset,
-                    limit: limit,
-                },
-            })
-            .catch((error) => {
-                throw Error(error);
-            });
-
-        // there was no response, that is an error
-        if (!response) {
-            throw Error('No Response to get users associated with app');
-        }
-
-        return response.data;
-    }
-
-    /**
-     * Eventually needs to change to database for consistency
-     * @name getAppUsersNoCredentials
-     * @param admin
-     * @param appId
-     * @returns
-     */
-    async getAppUsersNoCredentials(admin: boolean, appId: string) {
-        let url = `${BACKEND}/api/auth/`;
-
-        if (admin) {
-            url += 'admin/';
-        }
-
-        // change to /database
-        url += 'app/getAppUsersNoCredentials';
-
-        // get the response
-        const response = await axios
-            .get(url, {
-                params: { appId: appId },
-            })
-            .catch((error) => {
-                throw Error(error);
-            });
-
-        // there was no response, that is an error
-        if (!response) {
-            throw Error('No Response to get non credentialed users');
-        }
-
-        return response.data;
-    }
 
     /**
      * @name approveDatabaseUserAccessRequest
@@ -495,110 +603,6 @@ export class MonolithStore {
         // figure out whether we want to do .catch here
     }
 
-    /**
-     * @name addDatabaseUserPermissions
-     * @param admin
-     * @param appId
-     * @param users
-     * @returns
-     */
-    async addDatabaseUserPermissions(
-        admin: boolean,
-        appId: string,
-        users: any[],
-    ) {
-        let url = `${BACKEND}/api/auth/`,
-            postData = '';
-
-        if (admin) {
-            url += 'admin/';
-        }
-        url += 'database/addDatabaseUserPermissions';
-
-        postData += 'databaseId=' + encodeURIComponent(appId);
-        postData +=
-            '&userpermissions=' + encodeURIComponent(JSON.stringify(users));
-
-        const response = await axios.post<{ success: boolean }>(url, postData, {
-            headers: {
-                'content-type': 'application/x-www-form-urlencoded',
-            },
-        });
-
-        return response;
-
-        // figure out whether we want to do .catch here
-    }
-
-    /**
-     * @name removeDatabaseUserPermissions
-     * @param admin
-     * @param appId
-     * @param users
-     * @returns
-     */
-    async removeDatabaseUserPermissions(
-        admin: boolean,
-        appId: string,
-        users: any[],
-    ) {
-        let url = `${BACKEND}/api/auth/`,
-            postData = '';
-
-        if (admin) {
-            url += 'admin/';
-        }
-        url += 'database/removeDatabaseUserPermissions';
-
-        postData += 'databaseId=' + encodeURIComponent(appId);
-        postData += '&ids=' + encodeURIComponent(JSON.stringify(users));
-
-        const response = await axios.post<{ success: boolean }>(url, postData, {
-            headers: {
-                'content-type': 'application/x-www-form-urlencoded',
-            },
-        });
-
-        return response;
-
-        // figure out whether we want to do .catch here
-    }
-
-    /**
-     * @name editDatabaseUserPermissions
-     * @param admin
-     * @param appId
-     * @param users
-     * @returns
-     */
-    async editDatabaseUserPermissions(
-        admin: boolean,
-        appId: string,
-        users: any[],
-    ) {
-        let url = `${BACKEND}/api/auth/`,
-            postData = '';
-
-        if (admin) {
-            url += 'admin/';
-        }
-        url += 'database/editDatabaseUserPermissions';
-
-        postData += 'databaseId=' + encodeURIComponent(appId);
-        postData +=
-            '&userpermissions=' + encodeURIComponent(JSON.stringify(users));
-
-        const response = await axios.post<{ success: boolean }>(url, postData, {
-            headers: {
-                'content-type': 'application/x-www-form-urlencoded',
-            },
-        });
-
-        return response;
-
-        // figure out whether we want to do .catch here
-    }
-
     // ----- Users End -----
     // ----- Properties Start -----
 
@@ -609,9 +613,9 @@ export class MonolithStore {
      * @returns
      */
     async updateDatabaseSmssProperties(databaseId: string, smssProps: string) {
-        let url = `${BACKEND}/api/app-${databaseId}/updateSmssFile`,
-            postData = '';
+        const url = `${BACKEND}/api/app-${databaseId}/updateSmssFile`;
 
+        let postData = '';
         postData += 'databaseId=' + encodeURIComponent(databaseId);
         postData += '&smss=' + encodeURIComponent(smssProps);
 

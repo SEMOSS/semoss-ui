@@ -93,6 +93,12 @@ const DATABASE_OPTIONS = [
     'UserTrackingDatabase',
 ];
 
+interface TypeDbQuery {
+    SELECTED_DATABASE: string;
+    QUERY: string;
+    ROWS: number;
+}
+
 export const AdminQueryPage = () => {
     const { monolithStore } = useRootStore();
     const notification = useNotification();
@@ -150,7 +156,7 @@ export const AdminQueryPage = () => {
      * @name submitQuery
      * @desc make runQuery API call based on submitted fields
      */
-    const submitQuery = handleSubmit((data) => {
+    const submitQuery = handleSubmit((data: TypeDbQuery) => {
         let pixelString = `META | AdminDatabase("${data.SELECTED_DATABASE}") | Query("<encode>${data.QUERY}</encode>")`;
 
         if (showRowsField) {

@@ -1,13 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNotification } from '@semoss/components';
-import {
-    Modal,
-    Button,
-    Stack,
-    TextField,
-    TextArea,
-    Autocomplete,
-} from '@semoss/ui';
+import { Modal, Button, Stack, TextField, Autocomplete } from '@semoss/ui';
 import { useForm, Controller } from 'react-hook-form';
 import { observer } from 'mobx-react-lite';
 
@@ -108,12 +101,14 @@ export const EditDatabaseDetails = observer(
          * @desc approve, deny, delete selected members/users
          * @param data - form data
          */
-        const onSubmit = handleSubmit((data) => {
+        const onSubmit = handleSubmit((data: object) => {
             // copy over the defined keys
             const meta = {};
-            for (const key in data) {
-                if (data[key] !== undefined) {
-                    meta[key] = data[key];
+            if (data) {
+                for (const key in data) {
+                    if (data[key] !== undefined) {
+                        meta[key] = data[key];
+                    }
                 }
             }
 
@@ -128,7 +123,7 @@ export const EditDatabaseDetails = observer(
 
             monolithStore
                 .runQuery(
-                    `SetDatabaseMetadata(database=["${id}"], meta=[${JSON.stringify(
+                    `SetEngineMetadata(engine=["${id}"], meta=[${JSON.stringify(
                         meta,
                     )}], jsonCleanup=[true])`,
                 )

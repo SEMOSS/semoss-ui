@@ -1,4 +1,4 @@
-import { DatabaseContextType, DatabaseContext } from './DatabaseContext';
+import { EngineContextType, EngineContext } from './EngineContext';
 import { MetamodelContextType, MetamodelContext } from './MetamodelContext';
 import { SettingsContextType, SettingsContext } from './SettingsContext';
 import { RootStoreContextType, RootStoreContext } from './RootStoreContext';
@@ -8,14 +8,14 @@ import {
 } from './ImportStorageContext';
 
 export type {
-    DatabaseContextType,
+    EngineContextType,
     ImportStorageContextType,
     MetamodelContextType,
     RootStoreContextType,
     SettingsContextType,
 };
 export {
-    DatabaseContext,
+    EngineContext,
     ImportStorageContext,
     MetamodelContext,
     SettingsContext,
