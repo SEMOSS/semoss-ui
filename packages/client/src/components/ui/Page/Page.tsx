@@ -8,6 +8,11 @@ const StyledPage = styled('div')(({ theme }) => ({
     overflowX: 'hidden',
     overflowY: 'auto',
     backgroundColor: theme.palette.background.paper,
+
+    paddingBottom: theme.spacing(5),
+    display: 'flex',
+    flexDirection: 'column',
+    gap: theme.spacing(2),
 }));
 
 const StyledPageHeader = styled('div', {
@@ -19,16 +24,16 @@ const StyledPageHeader = styled('div', {
     position: 'sticky',
     top: '-1px',
     paddingTop: theme.spacing(5),
-    paddingBottom: theme.spacing(5),
+    paddingBottom: theme.spacing(1),
     // Checkout user permissions, and the stacked avatars
     zIndex: 10,
     borderBottom: stuck ? `solid ${theme.palette.divider}` : 'none',
-    // borderBottomWidth: '1px',
-    // borderBottomStyle: 'solid',
-    // borderBottomColor: theme.palette.divider,
-    marginBottom: theme.spacing(2),
     // Set this in Theme
     backgroundColor: theme.palette.background.paper,
+}));
+
+const StyledContainer = styled(Container)(({ theme }) => ({
+    // width: '1271px',
 }));
 
 export interface PageProps {
@@ -37,6 +42,7 @@ export interface PageProps {
 
     /** Content to include in the main section of the page */
     children: React.ReactNode;
+
     sx?: SxProps;
 }
 
@@ -72,12 +78,13 @@ export const Page = (props: PageProps): JSX.Element => {
                     ref={(node) => setHeaderElement(node)}
                     stuck={stuck}
                 >
-                    <Container maxWidth="xl" sx={sx}>
+                    <Container maxWidth={'xl'} sx={sx}>
                         {header}
                     </Container>
                 </StyledPageHeader>
             )}
-            <Container maxWidth="xl">{children}</Container>
+            <Container maxWidth={'xl'}>{children}</Container>
+            {/* <div>{children}</div> */}
         </StyledPage>
     );
 };

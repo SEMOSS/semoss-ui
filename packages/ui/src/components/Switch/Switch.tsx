@@ -50,7 +50,7 @@ export interface SwitchProps {
     focusRipple?: boolean;
 
     // Callback fired when the state is changed.
-    onChange?: () => void;
+    onChange?: (value: any) => void;
 
     // If true, the input element is required.
     required?: boolean;

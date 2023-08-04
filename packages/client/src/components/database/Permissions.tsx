@@ -64,7 +64,7 @@ const StyledContent = MuiStyled('div')(({ theme }) => ({
     width: '100%',
     flexDirection: 'column',
     alignItems: 'flex-start',
-    gap: theme.space['05'],
+    gap: theme.spacing(2),
     flexShrink: '0',
 }));
 
@@ -235,10 +235,10 @@ const mapMonolithFunction = (
         insightDenyUserRequest: 'denyInsightUserAccessRequest',
 
         // Members Table
-        databaseGetNonCredUsers: 'getAppUsersNoCredentials',
-        databaseAddMember: 'addDatabaseUserPermissions',
-        databaseRemoveUserPermissions: 'removeDatabaseUserPermissions',
-        databaseUpdatePermissions: 'editDatabaseUserPermissions',
+        databaseGetNonCredUsers: 'getEngineUsersNoCredentials',
+        databaseAddMember: 'addEngineUserPermissions',
+        databaseUpdatePermissions: 'editEngineUserPermissions',
+        databaseRemoveUserPermissions: 'removeEngineUserPermissions',
 
         projectGetNonCredUsers: 'getProjectUsersNoCredentials',
         projectAddMember: 'addProjectUserPermissions',
@@ -1145,7 +1145,9 @@ export const PendingMembersTable = (props) => {
                     <StyledNoMembersContainer>
                         <StyledTableTitleContainer>
                             <StyledTableTitleDiv>
-                                <Typography variant={'h6'}>{name}</Typography>
+                                <Typography variant={'h6'}>
+                                    Pending Requests
+                                </Typography>
                             </StyledTableTitleDiv>
                         </StyledTableTitleContainer>
                         <StyledNoMembersDiv>
@@ -1221,9 +1223,12 @@ export const MembersTable = (props) => {
     const verifiedMembers = watch('MEMBERS');
 
     // apiString for getMembers useAPI Hook
-    const getMembersString =
+    const getMembersString:
+        | 'getEngineUsers'
+        | 'getProjectUsers'
+        | 'getInsightUsers' =
         type === 'database'
-            ? 'getDatabaseUsers'
+            ? 'getEngineUsers'
             : type === 'project'
             ? 'getProjectUsers'
             : type === 'insight' && 'getInsightUsers';

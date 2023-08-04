@@ -9,6 +9,12 @@ import { SEMOSS } from '@/assets/img/SEMOSS';
 
 import { usePixel } from '@/hooks';
 
+const StyledCard = styled(Card)(({ theme }) => ({
+    borderRadius: '12px',
+    background: theme.palette.background.paper,
+    boxShadow: `0px 4px 4px 0px rgba(0, 0, 0, 0.04)`,
+}));
+
 const StyledCardImageContainer = styled('div')(({ theme }) => ({
     display: 'flex',
     justifyContent: 'center',
@@ -55,7 +61,7 @@ export const DatabaseStatistics = (props: DatabaseStatisticsProps) => {
     return (
         <Grid container spacing={3}>
             <Grid item sm={12} md={6} lg={4} xl={3}>
-                <Card>
+                <StyledCard>
                     <StyledCardContent>
                         <StyledCardImageContainer>
                             <Icon color="primary">
@@ -68,10 +74,10 @@ export const DatabaseStatistics = (props: DatabaseStatisticsProps) => {
                             <Typography variant="caption">100</Typography>
                         </StyledCardDetailsContainer>
                     </StyledCardContent>
-                </Card>
+                </StyledCard>
             </Grid>
             <Grid item sm={12} md={6} lg={4} xl={3}>
-                <Card>
+                <StyledCard>
                     <StyledCardContent>
                         <StyledCardImageContainer>
                             <Icon color="primary">
@@ -84,10 +90,10 @@ export const DatabaseStatistics = (props: DatabaseStatisticsProps) => {
                             <Typography variant="caption">100</Typography>
                         </StyledCardDetailsContainer>
                     </StyledCardContent>
-                </Card>
+                </StyledCard>
             </Grid>
             <Grid item sm={12} md={6} lg={4} xl={3}>
-                <Card>
+                <StyledCard>
                     <StyledCardContent>
                         <StyledCardImageContainer>
                             <Icon color="primary">
@@ -100,10 +106,10 @@ export const DatabaseStatistics = (props: DatabaseStatisticsProps) => {
                             <Typography variant="caption">100</Typography>
                         </StyledCardDetailsContainer>
                     </StyledCardContent>
-                </Card>
+                </StyledCard>
             </Grid>
             <Grid item sm={12} md={6} lg={4} xl={3}>
-                <Card>
+                <StyledCard>
                     <StyledCardContent>
                         <StyledCardImageContainer>
                             <Icon color="primary">
@@ -118,7 +124,7 @@ export const DatabaseStatistics = (props: DatabaseStatisticsProps) => {
                             </Typography>
                         </StyledCardDetailsContainer>
                     </StyledCardContent>
-                </Card>
+                </StyledCard>
             </Grid>
         </Grid>
     );

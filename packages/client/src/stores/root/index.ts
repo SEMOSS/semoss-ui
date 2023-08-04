@@ -1,3 +1,1 @@
-import { RootStore } from './RootStore';
-
-export { RootStore };
+export { RootStore } from './root.store';

@@ -63,7 +63,7 @@ export const lightTheme: CustomThemeOptions = {
             dark: "#1260DD",
         },
         secondary: {
-            main: "#D9D9D9", // rgba(0, 0, 0, 0.6)
+            main: "rgba(0, 0, 0, 0.6)",
             light: "#F2F2F2",
             dark: "#B5B5B5",
         },
@@ -160,6 +160,25 @@ export const lightTheme: CustomThemeOptions = {
         borderRadiusCircle: 64,
         borderRadiusChip: 64,
     },
+    // space: {
+    //     auto: "auto",
+    //     full: "100%",
+    //     none: "0px",
+    //     "01": "2px",
+    //     "02": "4px",
+    //     "03": "8px",
+    //     "04": "12px",
+    //     "05": "16px",
+    //     "06": "24px",
+    //     "07": "32px",
+    //     "08": "40px",
+    //     "09": "48px",
+    //     "10": "64px",
+    //     "11": "80px",
+    //     "12": "96px",
+    //     "13": "160px",
+    // },
+    spacing: 8,
     typography: {
         fontFamily: '"Inter", sans-serif',
         body1: {
@@ -267,53 +286,76 @@ export const lightTheme: CustomThemeOptions = {
             textTransform: "none",
         },
     },
-    space: {
-        auto: "auto",
-        full: "100%",
-        none: "0px",
-        "01": "2px",
-        "02": "4px",
-        "03": "8px",
-        "04": "12px",
-        "05": "16px",
-        "06": "24px",
-        "07": "32px",
-        "08": "40px",
-        "09": "48px",
-        "10": "64px",
-        "11": "80px",
-        "12": "96px",
-        "13": "160px",
+    components: {
+        MuiAlertTitle: {
+            styleOverrides: {
+                root: ({ theme }) => ({
+                    // color: "rgba(0, 0, 0, 0.87)",
+                    /* Components/Alert Title */
+                    fontSize: "16px",
+                    fontStyle: "normal",
+                    fontWeight: "500",
+                    lineHeight: "150%",
+                    letterSpacing: "0.15px",
+                }),
+            },
+        },
+        MuiContainer: {
+            styleOverrides: {
+                maxWidthSm: {
+                    maxWidth: 200,
+                },
+                maxWidthMd: {
+                    maxWidth: 320,
+                },
+                maxWidthLg: {
+                    maxWidth: 500,
+                },
+                maxWidthXl: {
+                    maxWidth: 1271,
+                },
+            },
+        },
+        // https://www.figma.com/file/kZwcxDBSMJbOcFaCin2xbd/MUI-Core-v5.4.0-(Revised)?node-id=454%3A101831&mode=dev
+        MuiCard: {
+            styleOverrides: {
+                root: ({ theme }) => ({
+                    display: "flex",
+                    flexDirection: "column",
+                    boxShadow:
+                        "0px 5px 22px 0px rgba(0, 0, 0, 0.04), 0px 4px 4px 0.5px rgba(0, 0, 0, 0.03)",
+                }),
+            },
+        },
+        MuiCardHeader: {
+            styleOverrides: {
+                root: ({ theme }) => ({
+                    width: "100%",
+                    margin: "16px 0px 16px 0px",
+                    padding: "0px 16px 0px 16px",
+                }),
+                content: ({ theme }) => ({
+                    display: "flex",
+                    flexDirection: "column",
+                    gap: theme.spacing(1),
+                }),
+                action: ({ theme }) => ({}),
+            },
+        },
+        MuiCardContent: {
+            styleOverrides: {
+                root: ({ theme }) => ({
+                    width: "100%",
+                    display: "flex",
+                    flexDirection: "column",
+                    gap: theme.spacing(1),
+                    margin: "0px 0px 16px 0px",
+                    padding: "0px 16px 0px 16px",
+                }),
+            },
+        },
     },
-    spacing: 8,
 };
-
-// const StyledComponent = styled('div')(({theme}) => {
-//     marginLeft: theme.spacing(5) // 40px
-// }))
-
-// spacing: [
-//     "auto", // 0
-//     "100%", // 1
-//     "0px", // 2
-//     "2px", // 3
-//     "4px", // 4
-//     "8px", // 5
-//     "12px", // 6
-//     "16px", // 7
-//     "24px", // 8
-//     "32px", // 9
-//     "40px", // 10
-//     "48px", // 11
-//     "64px", // 12
-//     "80px", // 13
-//     "96px", // 14
-//     "160px", // 15
-// ],
-
-// const StyledComponent = styled('div')(({theme}) => {
-//     marginLeft: theme.spacing(5) // 8px
-// }))
 
 export const darkTheme: CustomThemeOptions = {
     palette: {

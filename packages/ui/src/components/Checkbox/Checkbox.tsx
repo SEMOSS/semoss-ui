@@ -102,7 +102,6 @@ export interface CheckboxProps {
 
 export const Checkbox = (props: CheckboxProps) => {
     const { checkboxProps } = props;
-
     return (
         <FormControlLabel
             {...props}
