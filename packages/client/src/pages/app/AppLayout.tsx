@@ -1,8 +1,9 @@
 import { observer } from 'mobx-react-lite';
-import { Outlet, Link } from 'react-router-dom';
-import { styled, Stack, Icon } from '@semoss/ui';
+import { Outlet, Link, useNavigate } from 'react-router-dom';
+import { styled, Stack, Icon, Chip } from '@semoss/ui';
 
 import { AccountCircle } from '@mui/icons-material';
+import { useRootStore } from '@/hooks';
 
 const NAV_HEIGHT = '48px';
 const NAV_ICON_WIDTH = '56px';
@@ -20,6 +21,7 @@ const StyledHeader = styled('div')(({ theme }) => ({
     overflow: 'hidden',
     color: 'rgba(235, 238, 254, 1)',
     backgroundColor: theme.palette.common.black,
+    zIndex: 10,
 }));
 
 const StyledHeaderLogo = styled(Link)(({ theme }) => ({
@@ -57,8 +59,8 @@ const StyledHeaderLogout = styled('div')(({ theme }) => ({
 }));
 
 const StyledContent = styled('div')(() => ({
+    position: 'relative',
     paddingTop: NAV_HEIGHT,
-    paddingLeft: NAV_ICON_WIDTH,
     height: '100%',
     width: '100%',
 }));
@@ -67,6 +69,16 @@ const StyledContent = styled('div')(() => ({
  * Layout for the app
  */
 export const AppLayout = observer(() => {
+    const { workspaceStore } = useRootStore();
+
+    /**
+     * Select an app
+     */
+    const selectApp = (id: string) => {
+        // open the app
+        workspaceStore.selectApp(id);
+    };
+
     return (
         <>
             <StyledHeader>
@@ -93,7 +105,26 @@ export const AppLayout = observer(() => {
                     </svg>
                     SEMOSS
                 </StyledHeaderLogo>
-                <Stack flex={1}>&nbsp;</Stack>
+                <Stack
+                    flex={1}
+                    direction={'row'}
+                    alignItems={'center'}
+                    gap={1}
+                    flexWrap={'wrap'}
+                >
+                    {workspaceStore.appList.map((a) => {
+                        return (
+                            <Chip
+                                key={a.id}
+                                variant="filled"
+                                label={a.options.name}
+                                clickable={true}
+                                color="primary"
+                                onClick={() => selectApp(a.id)}
+                            />
+                        );
+                    })}
+                </Stack>
                 <StyledHeaderLogout>
                     <Icon>
                         <AccountCircle />

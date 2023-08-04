@@ -7,7 +7,7 @@ import { LoadingScreen } from '@/components/ui';
 import { TempPage } from './TempPage';
 
 import { AuthenticatedLayout } from './AuthenticatedLayout';
-import { SideNavLayout } from './SideNavLayout';
+import { NavigatorLayout } from './NavigatorLayout';
 
 import { LoginPage } from './LoginPage';
 import { HomePage } from './HomePage';
@@ -37,7 +37,8 @@ export const Router = observer(() => {
     return (
         <Routes>
             <Route path="/" element={<AuthenticatedLayout />}>
-                <Route path="*" element={<SideNavLayout />}>
+                <Route path="app/*" element={<AppRouter />} />
+                <Route path="*" element={<NavigatorLayout />}>
                     <Route index element={<HomePage />} />
                     <Route path="catalog" element={<CatalogPage />} />
                     <Route path="import" element={<ImportStorage />} />
@@ -103,7 +104,6 @@ export const Router = observer(() => {
                     </Route>
                     <Route path="settings/*" element={<SettingsRouter />} />
                 </Route>
-                <Route path="app/*" element={<AppRouter />} />
                 <Route path="*" element={<Navigate to="/" replace />} />
             </Route>
             <Route path="/login" element={<LoginPage />}></Route>

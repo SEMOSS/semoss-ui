@@ -111,7 +111,7 @@ const StyledContent = styled('div')(() => ({
 /**
  * Wrap the routes with a side navigation
  */
-export const SideNavLayout = observer(() => {
+export const NavigatorLayout = observer(() => {
     return (
         <>
             <StyledHeader>

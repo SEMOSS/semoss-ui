@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useNotification } from '@semoss/components';
 
 import { useRootStore } from './useRootStore';
-import { MonolithStore } from '@/stores/monolith';
+import { MonolithStore } from '@/stores';
 
 interface APIState<A extends keyof MonolithStore> {
     /** Status of the api call */
