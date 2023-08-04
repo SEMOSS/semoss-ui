@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from "@storybook/react";
 import { MoreVert, Person, AccessTime, StarBorder } from "@mui/icons-material";
-import { IconButton, Icon, Chip, Avatar } from "../../";
+import { IconButton, Icon, Chip, Avatar, Typography } from "../../";
 import { Card } from "./";
 import img from "./placeholder.png";
 
@@ -19,38 +19,37 @@ type Story = StoryObj<typeof Card>;
 
 export const Primary: Story = {
     render: () => (
-        <Card sx={{ width: "35%", height: "480px" }}>
+        <Card sx={{ width: "35%" }}>
             <Card.Media image={img} sx={{ height: "250px" }} />
             <Card.Header
                 title="AHLTA MILESTONES"
+                // titleTypographyProps={{variant:'h1' }}
                 subheader={
-                    <>
-                        <div
-                            style={{
-                                display: "flex",
-                                gap: 10,
-                                marginTop: "12px",
-                            }}
+                    <div
+                        style={{
+                            display: "flex",
+                            gap: 10,
+                            marginTop: "12px",
+                        }}
+                    >
+                        <Avatar
+                            aria-label="avatar"
+                            sx={{ width: "24px", height: "24px" }}
                         >
-                            <Avatar
-                                aria-label="avatar"
-                                sx={{ width: "24px", height: "24px" }}
-                            >
-                                <Icon>
-                                    <Person />
-                                </Icon>
-                            </Avatar>
-                            <span
-                                style={{
-                                    opacity: 0.7,
-                                    fontSize: "12px",
-                                    marginTop: 4,
-                                }}
-                            >
-                                Published by: j.smith
-                            </span>
-                        </div>
-                    </>
+                            <Icon>
+                                <Person />
+                            </Icon>
+                        </Avatar>
+                        <span
+                        // style={{
+                        //     opacity: 0.7,
+                        //     fontSize: "12px",
+                        //     marginTop: 4,
+                        // }}
+                        >
+                            Publishes by: j.smith
+                        </span>
+                    </div>
                 }
                 action={
                     <IconButton aria-label="settings">
@@ -58,17 +57,22 @@ export const Primary: Story = {
                     </IconButton>
                 }
             />
-            <Card.Content sx={{ marginTop: -2 }}>
-                <div>Card Content</div>
-                <Chip
-                    label="Chip"
-                    variant="outlined"
-                    sx={{ marginTop: 1 }}
-                    size="small"
-                    clickable={true}
-                />
+            <Card.Content>
+                <div>s PageMaker includ</div>
+                <div style={{ width: "20px" }}>
+                    <Chip
+                        label="Chip"
+                        variant="outlined"
+                        sx={{ marginTop: 1 }}
+                        size="small"
+                        clickable={true}
+                    />
+                </div>
             </Card.Content>
             <Card.Actions>
+                <Typography sx={{ color: "red" }} variant="caption">
+                    Hey
+                </Typography>
                 <div
                     style={{
                         display: "flex",

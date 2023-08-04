@@ -1,6 +1,7 @@
 import { useEffect, useState, useReducer } from 'react';
 import { observer } from 'mobx-react-lite';
 import {
+    AlertTitle,
     Avatar,
     Chip,
     Collapse,
@@ -536,51 +537,81 @@ export const CatalogPage = observer((): JSX.Element => {
     return (
         <Page
             header={
-                <StyledStack
-                    direction="row"
-                    alignItems={'center'}
-                    justifyContent={'space-between'}
-                    spacing={4}
-                >
-                    <Stack direction="row" alignItems={'center'} spacing={2}>
-                        <Typography variant={'h4'}>Catalog</Typography>
-                        <Search
-                            size={'small'}
-                            label={'Search'}
-                            onChange={(e) => {
-                                setSearch(e.target.value);
-                            }}
-                        />
-                    </Stack>
-                    <Stack direction="row" alignItems={'center'} spacing={3}>
-                        <Button variant={'contained'}>Add {catalogType}</Button>
-
-                        <ToggleButtonGroup
-                            size={'small'}
-                            value={view}
-                            color="primary"
+                <Stack>
+                    <div style={{ height: '16px' }}></div>
+                    <StyledStack
+                        direction="row"
+                        alignItems={'center'}
+                        justifyContent={'space-between'}
+                        spacing={4}
+                    >
+                        <Stack
+                            direction="row"
+                            alignItems={'center'}
+                            spacing={2}
                         >
-                            <ToggleButton
-                                color="primary"
-                                onClick={(e, v) => setView('tile')}
-                                value={'tile'}
+                            <Typography variant={'h4'}>
+                                {catalogType === 'Database'
+                                    ? 'Data'
+                                    : catalogType === 'Storage'
+                                    ? 'Storage'
+                                    : 'Model'}{' '}
+                                Catalog
+                            </Typography>
+                            <Search
+                                size={'small'}
+                                label={'Search'}
+                                onChange={(e) => {
+                                    setSearch(e.target.value);
+                                }}
+                            />
+                        </Stack>
+                        <Stack
+                            direction="row"
+                            alignItems={'center'}
+                            spacing={3}
+                        >
+                            <Button
+                                size={'lg'}
+                                variant={'contained'}
+                                onClick={() => {
+                                    navigate('/import');
+                                }}
                             >
-                                <SpaceDashboardOutlined />
-                            </ToggleButton>
-                            <ToggleButton
+                                Add {catalogType}
+                            </Button>
+
+                            <ToggleButtonGroup
+                                size={'small'}
+                                value={view}
                                 color="primary"
-                                onClick={(e, v) => setView('list')}
-                                value={'list'}
                             >
-                                <FormatListBulletedOutlined />
-                            </ToggleButton>
-                        </ToggleButtonGroup>
-                    </Stack>
-                </StyledStack>
+                                <ToggleButton
+                                    color="primary"
+                                    onClick={(e, v) => setView('tile')}
+                                    value={'tile'}
+                                >
+                                    <SpaceDashboardOutlined />
+                                </ToggleButton>
+                                <ToggleButton
+                                    color="primary"
+                                    onClick={(e, v) => setView('list')}
+                                    value={'list'}
+                                >
+                                    <FormatListBulletedOutlined />
+                                </ToggleButton>
+                            </ToggleButtonGroup>
+                        </Stack>
+                    </StyledStack>
+                </Stack>
             }
         >
-            <StyledContainer>
-                <StyledFitler>
+            <StyledContainer
+            // sx={{ border: 'solid red' }}
+            >
+                <StyledFitler
+                // style={{ border: 'solid green' }}
+                >
                     {/* <StyledFilterList dense={true}>
                         <List.Item>
                             <List.ItemButton
@@ -663,7 +694,14 @@ export const CatalogPage = observer((): JSX.Element => {
                                 </List.ItemButton>
                             }
                         >
-                            <List.ItemText primary={'Filter By'} />
+                            <List.ItemText
+                                disableTypography
+                                primary={
+                                    <Typography variant="body1">
+                                        Filter By
+                                    </Typography>
+                                }
+                            />
                         </List.Item>
 
                         <Collapse in={filterByVisibility}>
@@ -671,19 +709,20 @@ export const CatalogPage = observer((): JSX.Element => {
                                 <StyledChipList>
                                     <Chip
                                         label={'My Databases'}
-                                        color={
+                                        variant="filled"
+                                        variantColor={
                                             mode === 'My Databases'
                                                 ? 'primary'
-                                                : 'default'
+                                                : 'lcprimary'
                                         }
                                         onClick={() => setMode('My Databases')}
                                     ></Chip>
                                     <Chip
                                         label={'Discoverable Databases'}
-                                        color={
+                                        variantColor={
                                             mode === 'Discoverable Databases'
                                                 ? 'primary'
-                                                : 'default'
+                                                : 'lcprimary'
                                         }
                                         onClick={() => {
                                             setMode('Discoverable Databases');
@@ -693,15 +732,25 @@ export const CatalogPage = observer((): JSX.Element => {
                             )}
 
                             {Object.entries(filterOptions).map((entries, i) => {
+                                const totalFilters =
+                                    Object.entries(filterOptions).length;
                                 const list = entries[1];
                                 let shownListItems = 0; // for show more functionality
                                 return (
                                     <StyledFilter key={i}>
                                         <List.Item>
                                             <List.ItemText
-                                                primary={formatDBName(
-                                                    entries[0],
-                                                )}
+                                                disableTypography
+                                                primary={
+                                                    <Typography
+                                                        variant={'body1'}
+                                                        sx={{ fontWeight: 600 }}
+                                                    >
+                                                        {formatDBName(
+                                                            entries[0],
+                                                        )}
+                                                    </Typography>
+                                                }
                                             />
                                         </List.Item>
                                         <List.Item>
@@ -754,24 +803,17 @@ export const CatalogPage = observer((): JSX.Element => {
                                                         shownListItems += 1;
                                                         return (
                                                             <List.Item
+                                                                disableGutters
                                                                 key={i}
-                                                                secondaryAction={
-                                                                    <StyledAvatarCount
-                                                                        variant={
-                                                                            'rounded'
-                                                                        }
-                                                                        sx={{
-                                                                            height: '32px',
-                                                                            width: '32px',
-                                                                        }}
-                                                                    >
-                                                                        {
-                                                                            filterOption.count
-                                                                        }
-                                                                    </StyledAvatarCount>
-                                                                }
                                                             >
                                                                 <List.ItemButton
+                                                                    disableGutters
+                                                                    sx={{
+                                                                        paddingLeft:
+                                                                            '16px',
+                                                                        paddingRight:
+                                                                            '16px',
+                                                                    }}
                                                                     selected={
                                                                         filterVisibility[
                                                                             entries[0]
@@ -786,52 +828,92 @@ export const CatalogPage = observer((): JSX.Element => {
                                                                         );
                                                                     }}
                                                                 >
-                                                                    <List.ItemText
-                                                                        primary={
-                                                                            filterOption.value
-                                                                        }
-                                                                    />
+                                                                    <div
+                                                                        style={{
+                                                                            width: '100%',
+                                                                            display:
+                                                                                'flex',
+                                                                            justifyContent:
+                                                                                'space-between',
+                                                                        }}
+                                                                    >
+                                                                        <List.ItemText
+                                                                            disableTypography
+                                                                            primary={
+                                                                                <Typography variant="body1">
+                                                                                    {
+                                                                                        filterOption.value
+                                                                                    }
+                                                                                </Typography>
+                                                                            }
+                                                                        />
+                                                                        <StyledAvatarCount
+                                                                            variant={
+                                                                                'rounded'
+                                                                            }
+                                                                            sx={{
+                                                                                height: '32px',
+                                                                                width: '32px',
+                                                                            }}
+                                                                        >
+                                                                            {
+                                                                                filterOption.count
+                                                                            }
+                                                                        </StyledAvatarCount>
+                                                                    </div>
                                                                 </List.ItemButton>
                                                             </List.Item>
                                                         );
                                                     }
                                                 }
                                             })}
-                                            <List.Item>
-                                                <Button
-                                                    onClick={() => {
-                                                        const visibleFilters = {
-                                                            ...filterVisibility,
-                                                        };
-                                                        visibleFilters[
+                                            {shownListItems > 4 && (
+                                                <List.Item>
+                                                    <Button
+                                                        onClick={() => {
+                                                            const visibleFilters =
+                                                                {
+                                                                    ...filterVisibility,
+                                                                };
+                                                            visibleFilters[
+                                                                entries[0]
+                                                            ] = {
+                                                                open: !visibleFilters[
+                                                                    entries[0]
+                                                                ].open,
+                                                                value: visibleFilters[
+                                                                    entries[0]
+                                                                ].value,
+                                                                search: visibleFilters[
+                                                                    entries[0]
+                                                                ].search,
+                                                            };
+                                                            setFilterVisibility(
+                                                                visibleFilters,
+                                                            );
+                                                        }}
+                                                    >
+                                                        Show{' '}
+                                                        {filterVisibility[
                                                             entries[0]
-                                                        ] = {
-                                                            open: !visibleFilters[
-                                                                entries[0]
-                                                            ].open,
-                                                            value: visibleFilters[
-                                                                entries[0]
-                                                            ].value,
-                                                            search: visibleFilters[
-                                                                entries[0]
-                                                            ].search,
-                                                        };
-
-                                                        setFilterVisibility(
-                                                            visibleFilters,
-                                                        );
-                                                    }}
-                                                >
-                                                    Show{' '}
-                                                    {filterVisibility[
-                                                        entries[0]
-                                                    ].open
-                                                        ? 'Less'
-                                                        : 'More'}
-                                                </Button>
-                                            </List.Item>
+                                                        ].open
+                                                            ? 'Less'
+                                                            : 'More'}
+                                                    </Button>
+                                                </List.Item>
+                                            )}
                                         </StyledNestedFilterList>
-                                        {/* <Divider /> */}
+                                        {i + 1 !== totalFilters && (
+                                            <div
+                                                style={{
+                                                    width: '100%',
+                                                    paddingLeft: '16px',
+                                                    paddingRight: '16px',
+                                                }}
+                                            >
+                                                <Divider></Divider>
+                                            </div>
+                                        )}
                                     </StyledFilter>
                                 );
                             })}
@@ -839,14 +921,16 @@ export const CatalogPage = observer((): JSX.Element => {
                     </StyledFilterList>
                 </StyledFitler>
 
-                <StyledContent>
+                <StyledContent
+                // style={{ border: 'solid yellow' }}
+                >
                     {databases.length ? (
                         <Grid container spacing={3}>
                             {databases.map((db) => {
                                 return (
                                     <Grid
-                                        key={db.database_id}
                                         item
+                                        key={db.database_id}
                                         sm={view === 'list' ? 12 : 12}
                                         md={view === 'list' ? 12 : 6}
                                         lg={view === 'list' ? 12 : 4}
@@ -870,7 +954,9 @@ export const CatalogPage = observer((): JSX.Element => {
                                                 )}
                                                 onClick={() => {
                                                     navigate(
-                                                        `/database/${db.app_id}`,
+                                                        `/${catalogType.toLowerCase()}/${
+                                                            db.app_id
+                                                        }`,
                                                     );
                                                 }}
                                                 favorite={() => {
@@ -904,7 +990,9 @@ export const CatalogPage = observer((): JSX.Element => {
                                                 }}
                                                 onClick={() => {
                                                     navigate(
-                                                        `/database/${db.app_id}`,
+                                                        `/${catalogType.toLowerCase()}/${
+                                                            db.app_id
+                                                        }`,
                                                     );
                                                 }}
                                                 global={() => {

@@ -72,12 +72,12 @@ const StyledCardDetailsContainer = styled('div')(({ theme }) => ({
     gap: theme.spacing(0.5),
 }));
 
-export const DatabaseIndexPage = observer(() => {
-    const { id, metaVals } = useDatabase();
+export const EngineIndexPage = observer(() => {
+    const { type, id, metaVals } = useDatabase();
     const { configStore } = useRootStore();
 
     // filter metakeys to the ones we want
-    const databaseMetaKeys = configStore.store.config.databaseMetaKeys.filter(
+    const engineMetaKeys = configStore.store.config.databaseMetaKeys.filter(
         (k) => {
             return (
                 k.metakey !== 'description' &&
@@ -87,40 +87,19 @@ export const DatabaseIndexPage = observer(() => {
         },
     );
 
-    console.log('METAVALS', metaVals);
-
     return (
         <StyledPage>
-            {metaVals.markdown && (
-                <Section>
-                    <Section.Header>
-                        <Typography variant={'h6'}>Details</Typography>
-                    </Section.Header>
+            <Section>
+                <Section.Header>
+                    <Typography variant={'h6'}>Details</Typography>
+                </Section.Header>
+                {metaVals.markdown ? (
                     <Markdown content={metaVals.markdown} />
-                </Section>
-            )}
-
-            {metaVals.tags && (
-                <Section>
-                    <Section.Header>
-                        <Typography variant={'h6'}>Tags</Typography>
-                    </Section.Header>
-                    <Stack direction={'row'} spacing={1} flexWrap={'wrap'}>
-                        {meta.tags.map((tag) => {
-                            return (
-                                <Chip
-                                    key={tag}
-                                    label={tag}
-                                    color={'primary'}
-                                    variant={'outlined'}
-                                    size={'small'}
-                                ></Chip>
-                            );
-                        })}
-                    </Stack>
-                </Section>
-            )}
-            {databaseMetaKeys.map((k) => {
+                ) : (
+                    <div> No Markdown available</div>
+                )}
+            </Section>
+            {engineMetaKeys.map((k) => {
                 if (
                     metaVals[k.metakey] === undefined ||
                     !Array.isArray(metaVals[k.metakey])
@@ -161,18 +140,22 @@ export const DatabaseIndexPage = observer(() => {
                     </Section>
                 );
             })}
-            <Section>
-                <Section.Header>
-                    <Typography variant={'h6'}>Statistics</Typography>
-                </Section.Header>
-                <DatabaseStatistics id={id} />
-            </Section>
-            <Section>
-                <Section.Header>
-                    <Typography variant={'h6'}>Similar</Typography>
-                </Section.Header>
-                <SimilarDatabases id={id} />
-            </Section>
+            {type === 'database' && (
+                <Section>
+                    <Section.Header>
+                        <Typography variant={'h6'}>Statistics</Typography>
+                    </Section.Header>
+                    <DatabaseStatistics id={id} />
+                </Section>
+            )}
+            {type === 'database' && (
+                <Section>
+                    <Section.Header>
+                        <Typography variant={'h6'}>Similar</Typography>
+                    </Section.Header>
+                    <SimilarDatabases id={id} />
+                </Section>
+            )}
         </StyledPage>
     );
 });

@@ -12,13 +12,10 @@ import {
 import { styled, Stack, ToggleTabsGroup } from '@semoss/ui';
 import { usePixel, useAPI, useRootStore } from '@/hooks';
 
-import {
-    DatabaseContext,
-    DatabaseContextType,
-} from '@/contexts/DatabaseContext';
+import { EngineContext, EngineContextType } from '@/contexts/EngineContext';
 
 import { LoadingScreen } from '@/components/ui';
-import { DatabaseShell } from '@/components/database';
+import { EngineShell } from '@/components/engine';
 
 const StyledTab = styled(Link, {
     shouldForwardProp: (prop) => prop !== 'selected',
@@ -45,10 +42,6 @@ const StyledTab = styled(Link, {
 const StyledDocument = styled('div')(({ theme }) => ({
     width: '100%',
     padding: theme.spacing(2),
-    // borderWidth: '1px',
-    // borderStyle: 'solid',
-    // borderColor: theme.palette.divider,
-    // borderRadius: theme.shape.borderRadius,
     backgroundColor: theme.palette.background.default,
 }));
 
@@ -59,21 +52,30 @@ const StyledToggleTabsGroup = styled(ToggleTabsGroup)(({ theme }) => ({
 const StyledDiv = styled('div')(({ theme }) => ({
     width: '100%',
     borderRadius: '12px 12px 0px 0px',
-    // backgroundColor: 'rgba(0, 0, 0, 0.38)',
 }));
 
 /**
- * Wrap the database routes and add additional funcitonality
+ * Wrap the engine routes and add additional funcitonality
  */
-export const DatabaseLayout = () => {
+export const EngineLayout = () => {
     const { id } = useParams();
     const { configStore } = useRootStore();
     const resolvedPath = useResolvedPath('');
     const location = useLocation();
     const navigate = useNavigate();
 
+    let engineType: 'database' | 'storage' | 'model' = 'database';
+
+    if (location.pathname.includes('database')) {
+        engineType = 'database';
+    } else if (location.pathname.includes('storage')) {
+        engineType = 'storage';
+    } else {
+        engineType = 'model';
+    }
+
     // filter metakeys to the ones we want
-    const databaseMetaKeys = configStore.store.config.databaseMetaKeys.filter(
+    const engineMetaKeys = configStore.store.config.databaseMetaKeys.filter(
         (k) => {
             return (
                 k.metakey !== 'description' &&
@@ -88,44 +90,46 @@ export const DatabaseLayout = () => {
         'markdown',
         'description',
         // 'tags',  // Comes in as 'tag' either a string or string[]
-        ...databaseMetaKeys.map((k) => k.metakey),
+        ...engineMetaKeys.map((k) => k.metakey),
     ];
 
     // get the metadata
     const {
-        status: dbMetaStatus,
-        data: dbMetaData,
-        refresh: dbMetaRefresh,
+        status: engineMetaStatus,
+        data: engineMetaData,
+        refresh: engineMetaRefresh,
     } = usePixel<{
         markdown?: string;
         tags?: string[];
     }>(
-        `GetDatabaseMetadata(database=["${id}"], metaKeys=${JSON.stringify([
+        `GetEngineMetadata(engine=["${id}"], metaKeys=${JSON.stringify([
             metaKeys,
         ])}); `,
     );
 
     // convert the data into an object
     const values = useMemo(() => {
-        if (dbMetaStatus !== 'SUCCESS') {
+        if (engineMetaStatus !== 'SUCCESS') {
             return {};
         }
+
+        // Storage and Model currently not sending back Tag or Tags
 
         return metaKeys.reduce((prev, curr) => {
             // tag and domain either come in as a string or a string[]
             // format these as string[] for autocomplete if comes in as string
             if (curr === 'domain' || curr === 'tag') {
-                if (typeof dbMetaData[curr] === 'string') {
-                    prev[curr] = [dbMetaData[curr]];
+                if (typeof engineMetaData[curr] === 'string') {
+                    prev[curr] = [engineMetaData[curr]];
                 } else {
-                    prev[curr] = dbMetaData[curr];
+                    prev[curr] = engineMetaData[curr];
                 }
             } else {
-                prev[curr] = dbMetaData[curr];
+                prev[curr] = engineMetaData[curr];
             }
             return prev;
         }, {});
-    }, [dbMetaStatus, dbMetaData, JSON.stringify(metaKeys)]);
+    }, [engineMetaStatus, engineMetaData, JSON.stringify(metaKeys)]);
 
     // get the user's role
     const getUserAppPermission = useAPI(['getUserAppPermission', id]);
@@ -146,11 +150,11 @@ export const DatabaseLayout = () => {
             path: '/settings',
             show: false,
         },
-        {
-            label: 'Data',
-            path: '/data',
-            show: false,
-        },
+        // {
+        //     label: 'Data',
+        //     path: '/data',
+        //     show: false,
+        // },
     ];
 
     /**
@@ -172,9 +176,9 @@ export const DatabaseLayout = () => {
         return val;
     }, [resolvedPath, location]);
 
-    // if the database isn't found, navigate to the Home Page
+    // if the engine isn't found, navigate to the Home Page
     if (!id || getUserAppPermission.status === 'ERROR') {
-        return <Navigate to="/catalog" replace />;
+        return <Navigate to={`/catalog?${engineType}`} replace />;
     }
 
     // show a loading screen when it is pending
@@ -182,24 +186,25 @@ export const DatabaseLayout = () => {
         return <LoadingScreen.Trigger description="Checking Access" />;
     }
 
-    const databaseContextType: DatabaseContextType = {
+    const engineContextType: EngineContextType = {
+        type: engineType,
         id: id,
         role: getUserAppPermission.data.permission,
-        refresh: dbMetaRefresh,
-        metaVals: values, // Put this here so edit can be in header
+        refresh: engineMetaRefresh,
+        metaVals: values, // Needed so edit button can be in header
     };
 
     if (
-        databaseContextType.role === 'EDITOR' ||
-        databaseContextType.role === 'OWNER'
+        engineContextType.role === 'EDITOR' ||
+        engineContextType.role === 'OWNER'
     ) {
         tabMenu[2].show = true;
-        tabMenu[3].show = true;
+        // tabMenu[3].show = true;
     }
 
     return (
-        <DatabaseContext.Provider value={databaseContextType}>
-            <DatabaseShell>
+        <EngineContext.Provider value={engineContextType}>
+            <EngineShell>
                 <StyledDiv>
                     <StyledToggleTabsGroup
                         boxSx={{
@@ -224,39 +229,10 @@ export const DatabaseLayout = () => {
                         })}
                     </StyledToggleTabsGroup>
                 </StyledDiv>
-                {/* <Stack direction={'row'} alignItems={'center'}>
-                    <StyledTab to="" selected={isActive('')}>
-                        Home
-                    </StyledTab>
-                    <StyledTab to="metadata" selected={isActive('metadata')}>
-                        Metadata
-                    </StyledTab>
-                    {(databaseContextType.role === 'EDITOR' ||
-                        databaseContextType.role === 'OWNER') && (
-                        <StyledTab
-                            to="settings"
-                            selected={isActive('settings')}
-                        >
-                            Settings
-                        </StyledTab>
-                    )}
-                    {(databaseContextType.role === 'EDITOR' ||
-                        databaseContextType.role === 'OWNER') && (
-                        <StyledTab to="replace" selected={isActive('replace')}>
-                            Replace Data
-                        </StyledTab>
-                    )}
-                    {(databaseContextType.role === 'EDITOR' ||
-                        databaseContextType.role === 'OWNER') && (
-                        <StyledTab to="query" selected={isActive('query')}>
-                            Query Data
-                        </StyledTab>
-                    )}
-                </Stack> */}
                 <StyledDocument>
                     <Outlet />
                 </StyledDocument>
-            </DatabaseShell>
-        </DatabaseContext.Provider>
+            </EngineShell>
+        </EngineContext.Provider>
     );
 };

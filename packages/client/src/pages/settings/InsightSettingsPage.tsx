@@ -56,8 +56,16 @@ const StyledSearchbarContainer = styled('div')(({ theme }) => ({
     display: 'flex',
     width: '100%',
     alignItems: 'flex-start',
-    gap: theme.spacing(3),
+    gap: '24px',
 }));
+
+const StyledSearchbar = styled(Search)({
+    width: '80%',
+});
+
+const StyledSort = styled(Select)({
+    width: '10%',
+});
 
 const StyledMenuItem = styled(Select.Item)({
     width: '220px',

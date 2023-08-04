@@ -75,12 +75,7 @@ const StyledSearchbar = styled(Search)({
 });
 
 const StyledSort = styled(Select)({
-    // display: 'flex',
-    // width: '220px',
-    // flexDirection: 'column',
-    // alignItems: 'flex-start',
-    // gap: '3px',
-    // flexShrink: '0',
+    width: '10%',
 });
 
 const StyledMenuItem = styled(Select.Item)({

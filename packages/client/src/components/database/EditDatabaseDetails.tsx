@@ -128,7 +128,7 @@ export const EditDatabaseDetails = observer(
 
             monolithStore
                 .runQuery(
-                    `SetDatabaseMetadata(database=["${id}"], meta=[${JSON.stringify(
+                    `SetEngineMetadata(engine=["${id}"], meta=[${JSON.stringify(
                         meta,
                     )}], jsonCleanup=[true])`,
                 )

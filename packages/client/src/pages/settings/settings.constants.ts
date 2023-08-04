@@ -37,8 +37,7 @@ export const SETTINGS_ROUTES: {
     {
         title: 'Database Settings',
         path: 'database',
-        description:
-            'Select a database to update permissions including requests to access the database, adding ad-hoc members, updating member access, and setting database visibility options.',
+        description: 'View and edit settings for databases',
         icon: mdiDatabase,
         history: ['database'],
     },

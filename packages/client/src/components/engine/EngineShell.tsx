@@ -3,6 +3,7 @@ import { useNotification } from '@semoss/components';
 import {
     Breadcrumbs,
     Button,
+    Chip,
     LinearProgress,
     styled,
     Stack,
@@ -14,10 +15,13 @@ import {
     EditOutlined,
     SimCardDownload,
 } from '@mui/icons-material';
+import { formatName } from '@/utils';
 import { EditDatabaseDetails } from '@/components/database';
+import defaultDbImage from '../../assets/img/placeholder.png';
 
 import { Page, LoadingScreen } from '@/components/ui';
 import { useRootStore, useDatabase, usePixel } from '@/hooks';
+import { types } from 'util';
 
 const StyledInfo = styled('div')(({ theme }) => ({
     display: 'flex',
@@ -45,6 +49,12 @@ const StyledInfoDescription = styled(Typography)(() => ({
     textOverflow: 'ellipsis',
 }));
 
+const StyledChipContainer = styled('div')(({ theme }) => ({
+    display: 'flex',
+    alignItems: 'flex-start',
+    gap: theme.spacing(1),
+}));
+
 const StyledInfoFooter = styled(Typography)(() => ({
     textTransform: 'uppercase',
     textOverflow: 'ellipsis',
@@ -67,25 +77,19 @@ const StyledDatabaseImage = styled('img')({
     borderRadius: '8.862px',
 });
 
-const StyledEditorHolder = styled('div')(() => ({
-    position: 'absolute',
-    top: '0',
-    right: '0',
-}));
-
-interface DatabaseShellProps {
+interface EngineShellProps {
     /** Children to wrap in the RootStore */
     children: React.ReactNode;
 }
 
 /**
- * Wrap the Database routes and provide styling/functionality
+ * Wrap the Database, Storage, Model routes
  */
-export const DatabaseShell = (props: DatabaseShellProps) => {
+export const EngineShell = (props: EngineShellProps) => {
     const { children } = props;
 
     // get the database information
-    const { id, role, metaVals, refresh } = useDatabase();
+    const { type, id, role, metaVals, refresh } = useDatabase();
 
     // Service for Axios calls
     const { monolithStore } = useRootStore();
@@ -104,22 +108,18 @@ export const DatabaseShell = (props: DatabaseShellProps) => {
         { total: number; userVote: number } | undefined
     >();
 
-    // get the database info
-    const { status, data } = usePixel<{
-        database_name: string;
-        description: string;
-        last_updated: string;
-    }>(
-        `GetDatabaseMetadata(database=["${id}"], metaKeys=["database_name", "description"]); `,
+    // get the engine info
+    const { status, data } = usePixel(
+        `GetEngineMetadata(engine=["${id}"], metaKeys=[]); `,
     );
 
-    const {
-        status: voteStatus,
-        data: voteData,
-        refresh: voteRefresh,
-    } = usePixel<{ total: number; userVote: number }>(
-        `GetUserDatabaseVotes(database = "${id}");`,
-    );
+    // const {
+    //     status: voteStatus,
+    //     data: voteData,
+    //     refresh: voteRefresh,
+    // } = usePixel<{ total: number; userVote: number }>(
+    //     `GetUserDatabaseVotes(database = "${id}");`,
+    // );
 
     // const {
     //     status: usabilityStatus,
@@ -127,14 +127,14 @@ export const DatabaseShell = (props: DatabaseShellProps) => {
     //     refresh: usabilityRefresh,
     // } = usePixel<number>(`UsabilityScore(database = '${id}');`);
 
-    useEffect(() => {
-        if (voteStatus !== 'SUCCESS') {
-            return;
-        }
+    // useEffect(() => {
+    //     if (voteStatus !== 'SUCCESS') {
+    //         return;
+    //     }
 
-        // Set total votes and my vote status
-        setVotes(voteData);
-    }, [voteStatus, voteData]);
+    //     // Set total votes and my vote status
+    //     setVotes(voteData);
+    // }, [voteStatus, voteData]);
 
     /**
      * @name voteDatabase
@@ -175,20 +175,6 @@ export const DatabaseShell = (props: DatabaseShellProps) => {
     };
 
     /**
-     * @name printMeta
-     * @desc export DB pixel
-     */
-    const printMeta = () => {
-        const pixel = `META|DatabaseMetadataToPdf(database=["${id}"] );`;
-        monolithStore.runQuery(pixel).then((response) => {
-            const output = response.pixelReturn[0].output,
-                insightID = response.insightID;
-
-            monolithStore.download(insightID, output);
-        });
-    };
-
-    /**
      * @name exportDB
      * @desc export DB pixel
      */
@@ -208,19 +194,29 @@ export const DatabaseShell = (props: DatabaseShellProps) => {
         return <LoadingScreen.Trigger description="Opening Database" />;
     }
 
-    // show a loading screen when it is pending
-    if (voteStatus !== 'SUCCESS') {
-        return <LoadingScreen.Trigger description="Getting Social Stats" />;
-    }
+    console.log(data);
+
+    // // show a loading screen when it is pending
+    // if (voteStatus !== 'SUCCESS') {
+    //     return <LoadingScreen.Trigger description="Getting Social Stats" />;
+    // }
+
+    console.log('metavals', metaVals);
 
     return (
         <Page
             header={
                 <Stack>
                     <Breadcrumbs>
-                        <StyledLink to="/catalog">Data Catalog</StyledLink>
-                        <StyledLink to={`/database/${id}`}>
-                            {data.database_name}
+                        <StyledLink to={`/catalog?type=${type}`}>
+                            {type === 'database'
+                                ? 'Data'
+                                : type.charAt(0).toUpperCase() +
+                                  type.slice(1)}{' '}
+                            Catalog
+                        </StyledLink>
+                        <StyledLink to={`/${type}/${id}`}>
+                            {formatName(data.database_name)}
                         </StyledLink>
                     </Breadcrumbs>
                     <Stack
@@ -229,16 +225,13 @@ export const DatabaseShell = (props: DatabaseShellProps) => {
                         width={'100%'}
                     >
                         <Typography variant="h4">
-                            Data Catalog Overview
+                            {type === 'database'
+                                ? 'Data'
+                                : type.charAt(0).toUpperCase() +
+                                  type.slice(1)}{' '}
+                            Catalog Overview
                         </Typography>
                         <Stack direction="row">
-                            <Button
-                                startIcon={<ArrowCircleDown />}
-                                variant="outlined"
-                                onClick={() => printMeta()}
-                            >
-                                Print Metadata
-                            </Button>
                             {role === 'OWNER' && (
                                 <Button
                                     startIcon={<SimCardDownload />}
@@ -258,7 +251,6 @@ export const DatabaseShell = (props: DatabaseShellProps) => {
                                                 // reload if successfully submitted
                                                 if (success) {
                                                     refresh();
-                                                    // dbMetaRefresh();
                                                 }
 
                                                 setEdit(false);
@@ -282,26 +274,42 @@ export const DatabaseShell = (props: DatabaseShellProps) => {
             <StyledInfo>
                 <StyledInfoLeft>
                     <Typography variant={'h6'} fontWeight={'medium'}>
-                        {data.database_name}
+                        {formatName(data.database_name)}
                     </Typography>
                     <StyledInfoDescription variant={'subtitle1'}>
                         {metaVals.description}
                     </StyledInfoDescription>
 
-                    <StyledInfoFooter variant={'caption'}>
-                        Updated {data.last_updated}
-                    </StyledInfoFooter>
+                    <StyledChipContainer>
+                        {metaVals.tag &&
+                            metaVals.tag.map((tag, i) => {
+                                return (
+                                    <Chip
+                                        key={i}
+                                        variant={'outlined'}
+                                        label={tag}
+                                    />
+                                );
+                            })}
+                    </StyledChipContainer>
                 </StyledInfoLeft>
                 <StyledInfoRight>
                     <StyledDatabaseImage
+                        // src={defaultDbImage}
                         src={`${process.env.MODULE}/api/app-${id}/appImage/download`}
                     />
                     <Stack alignItems={'flex-end'} spacing={1} marginBottom={2}>
                         <Typography variant={'body2'}>
-                            Published by: J. Smiths
+                            Published by: J. Smith
                         </Typography>
                         <Typography variant={'body2'}>
-                            Published: 01/23/2023
+                            Published: {data.database_date_created}
+                        </Typography>
+                        <Typography variant={'body2'}>
+                            Updated:{' '}
+                            {data.last_updated
+                                ? data.last_updated
+                                : '12/24/1996'}
                         </Typography>
                     </Stack>
                 </StyledInfoRight>

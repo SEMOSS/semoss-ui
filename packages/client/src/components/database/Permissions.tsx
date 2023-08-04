@@ -64,7 +64,7 @@ const StyledContent = MuiStyled('div')(({ theme }) => ({
     width: '100%',
     flexDirection: 'column',
     alignItems: 'flex-start',
-    gap: theme.space['05'],
+    gap: theme.spacing(2),
     flexShrink: '0',
 }));
 
@@ -442,7 +442,7 @@ export const Permissions = (props: PermissionsProps) => {
 };
 
 const StyledAlert = MuiStyled(Alert)(({ theme }) => ({
-    width: '468px',
+    width: '380px',
     height: theme.spacing(13),
     backgroundColor: theme.palette.background.paper,
 }));

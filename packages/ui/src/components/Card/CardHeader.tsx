@@ -5,6 +5,7 @@ import {
     TitleTypographyComponent,
 } from "@mui/material";
 import { SxProps } from "@mui/system";
+import { styled } from "../../";
 
 export interface _CardHeaderProps {
     /**
@@ -44,5 +45,12 @@ export interface _CardHeaderProps {
 
 export const _CardHeader = (props: _CardHeaderProps) => {
     const { sx } = props;
-    return <CardHeader sx={sx} {...props} />;
+    return (
+        <CardHeader
+            sx={sx}
+            subheaderTypographyProps={{ variant: "caption" }}
+            titleTypographyProps={{ variant: "body1" }}
+            {...props}
+        />
+    );
 };
