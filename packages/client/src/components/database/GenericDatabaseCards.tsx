@@ -311,9 +311,6 @@ interface DatabaseCardProps {
     /** Description of the Database */
     description: string;
 
-    /** Image of the Database */
-    image?: string;
-
     /** Tag of the Database */
     tag?: string[] | string;
 
@@ -344,7 +341,6 @@ export const DatabaseLandscapeCard = (props: DatabaseCardProps) => {
         name,
         id,
         description,
-        image = defaultDBImage,
         tag,
         isGlobal,
         isFavorite,
@@ -368,9 +364,7 @@ export const DatabaseLandscapeCard = (props: DatabaseCardProps) => {
                 />
                 <StyledLandscapeCardHeaderDiv>
                     <StyledLandscapeCardTitleDiv>
-                        <Typography variant={'body1'}>
-                            {formatName(name)}
-                        </Typography>
+                        <Typography variant={'body1'}>{name}</Typography>
                         <IconButton
                             size={'small'}
                             title={
@@ -466,6 +460,7 @@ export const DatabaseLandscapeCard = (props: DatabaseCardProps) => {
                     </StyledViewsTrendingDiv>
                 </StyledLeftActions>
                 <StyledLockButton
+                    disabled={!global}
                     title={
                         isGlobal
                             ? `Make ${name} private`
@@ -489,7 +484,6 @@ export const DatabaseTileCard = (props: DatabaseCardProps) => {
         name,
         id,
         description,
-        image = defaultDbImage,
         tag,
         isGlobal,
         isFavorite,
@@ -513,7 +507,7 @@ export const DatabaseTileCard = (props: DatabaseCardProps) => {
                 sx={{ height: '118px' }}
             />
             <Card.Header
-                title={formatName(name)}
+                title={name}
                 subheader={
                     <StyledPublishedByContainer>
                         <StyledAvatar>
@@ -602,6 +596,7 @@ export const DatabaseTileCard = (props: DatabaseCardProps) => {
                             ? `Make ${name} private`
                             : `Make ${name} public`
                     }
+                    disabled={!global}
                     onClick={(e) => {
                         e.stopPropagation();
                         global(isGlobal);
@@ -617,8 +612,6 @@ export const DatabaseTileCard = (props: DatabaseCardProps) => {
 export interface PlainDatabaseCardProps {
     /** Name of the Database */
     name: string;
-    /** Image of the Database */
-    image?: string;
 
     onClick: () => void;
 }
@@ -628,22 +621,11 @@ export const PlainDatabaseCard = (props) => {
     return (
         <StyledPlainTileCard onClick={onClick}>
             <StyledCardImage
-                // src={image}
                 src={`${process.env.MODULE}/api/app-${id}/appImage/download`}
                 sx={{ height: '118px' }}
             />
             <StyledTileCardContent sx={{ marginTop: '8px' }}>
-                {/* <StyledCardRows>
-                    <StyledCardRowsDiv>
-                        <StyledCardContainer>
-                            <StyledCardHeader> */}
-                <StyledDbName variant={'body1'}>
-                    {formatName(name)}
-                </StyledDbName>
-                {/* </StyledCardHeader>
-                        </StyledCardContainer>
-                    </StyledCardRowsDiv>
-                </StyledCardRows> */}
+                <StyledDbName variant={'body1'}>{name}</StyledDbName>
             </StyledTileCardContent>
         </StyledPlainTileCard>
     );

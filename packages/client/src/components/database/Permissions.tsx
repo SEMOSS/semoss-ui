@@ -29,6 +29,7 @@ import {
     Chip,
     Icon as MuiIcon,
     Link,
+    Search,
     Stack,
     ToggleButton,
 } from '@semoss/ui';
@@ -143,9 +144,9 @@ const StyledTableTitleMemberCount = MuiStyled('div')({
 
 const StyledSearchButtonContainer = MuiStyled('div')({
     display: 'flex',
-    padding: '5px 8px',
+    // padding: '5px 8px',
     alignItems: 'center',
-    gap: '10px',
+    // gap: '10px',
 });
 
 const StyledFilterButtonContainer = MuiStyled('div')({
@@ -442,7 +443,7 @@ const StyledAlert = MuiStyled(Alert)(({ theme }) => ({
 }));
 
 interface WorkflowAccessProps {
-    type: 'database' | 'project' | 'insight';
+    type: 'database' | 'project' | 'insight' | 'storage' | 'model';
     id: string;
     projectId: string;
     onDelete: () => void;
@@ -461,10 +462,12 @@ export const WorkflowAccess = (props: WorkflowAccessProps) => {
 
     const getWorkflowInfoString =
         type === 'database'
-            ? `DatabaseInfo(database='${id}');`
+            ? `EngineInfo(engine='${id}');`
             : type === 'project'
             ? `ProjectInfo(project='${id}')`
-            : type === 'insight' && `1+1`;
+            : type === 'insight'
+            ? '1+1'
+            : `EngineInfo(engine='${id}')`;
 
     const workflowInfo = usePixel<{
         database_global: boolean;
@@ -483,29 +486,29 @@ export const WorkflowAccess = (props: WorkflowAccessProps) => {
 
     const deleteWorkflow = () => {
         let pixelString = '';
-        if (type === 'database') {
+
+        if (type === 'database' || type === 'model' || type === 'storage') {
             pixelString = `DeleteEngine(engineId=['${id}']);`;
         } else {
             pixelString = `DeleteProject(project=['${id}']);`;
         }
 
         monolithStore.runQuery(pixelString).then((response) => {
-            const type = response.pixelReturn[0].operationType;
+            const operationType = response.pixelReturn[0].operationType;
             const output = response.pixelReturn[0].output;
-            if (type.indexOf('ERROR') === -1) {
+            if (operationType.indexOf('ERROR') === -1) {
                 notification.add({
                     color: 'success',
                     content: `Successfully deleted ${type}`,
                 });
 
-                // go back to settings
+                // go back to page before
                 onDelete();
             } else {
                 notification.add({
                     color: 'error',
                     content: output,
                 });
-                // setDeleteWorkflowModal(false);
             }
         });
     };
@@ -514,7 +517,14 @@ export const WorkflowAccess = (props: WorkflowAccessProps) => {
      * @name changeDiscoverable
      */
     const changeDiscoverable = () => {
-        monolithStore[mapMonolithFunction(type, 'SetVisible')](
+        const functionType =
+            type === 'database' || type === 'model' || type === 'storage'
+                ? 'database'
+                : type === 'project'
+                ? 'project'
+                : 'insight';
+
+        monolithStore[mapMonolithFunction(functionType, 'SetVisible')](
             admin,
             id,
             !discoverable,
@@ -538,7 +548,14 @@ export const WorkflowAccess = (props: WorkflowAccessProps) => {
      * @name changeGlobal
      */
     const changeGlobal = () => {
-        monolithStore[mapMonolithFunction(type, 'SetGlobal')](
+        const functionType =
+            type === 'database' || type === 'model' || type === 'storage'
+                ? 'database'
+                : type === 'project'
+                ? 'project'
+                : 'insight';
+
+        monolithStore[mapMonolithFunction(functionType, 'SetGlobal')](
             admin,
             id,
             !global,
@@ -613,7 +630,7 @@ export const WorkflowAccess = (props: WorkflowAccessProps) => {
                         {discoverable ? 'Discoverable' : 'Non-Discoverable'}
                     </Alert.Title>
                     Users {discoverable ? 'can' : 'cannot'} request access to
-                    this database if private
+                    this {type} if private
                 </StyledAlert>
             </Grid>
             <Grid item>
@@ -633,8 +650,8 @@ export const WorkflowAccess = (props: WorkflowAccessProps) => {
                         </Button>
                     }
                 >
-                    <Alert.Title>Delete Database</Alert.Title>
-                    Remove database from catalog
+                    <Alert.Title>Delete {type}</Alert.Title>
+                    Remove {type} from catalog
                 </StyledAlert>
                 <Modal open={deleteModal}>
                     <Modal.Title>Are you sure?</Modal.Title>
@@ -684,7 +701,7 @@ export const PendingMembersTable = (props) => {
 
     const getPendingUsersString =
         type === 'database'
-            ? `GetDatabaseUserAccessRequest(database='${id}');`
+            ? `GetEngineUserAccessRequest(engine='${id}');`
             : type === 'project'
             ? `GetProjectUserAccessRequest(project='${id}')`
             : type === 'insight' &&
@@ -1195,6 +1212,7 @@ export const MembersTable = (props) => {
     const notification = useNotification();
 
     /** Member Table State */
+    const [totalMembers, setTotalMembers] = useState<number>(0);
     const [membersCount, setMembersCount] = useState<number>(0);
     const [filteredMembersCount, setFilteredMembersCount] = useState<number>(0);
     const [membersPage, setMembersPage] = useState<number>(1);
@@ -1214,6 +1232,7 @@ export const MembersTable = (props) => {
         useState([]);
     const [addMemberRole, setAddMemberRole] = useState<Role>('');
 
+    const memberSearchRef = useRef(undefined);
     const didMount = useRef<boolean>(false);
 
     const { control, watch, setValue } = useForm<{
@@ -1288,6 +1307,7 @@ export const MembersTable = (props) => {
         // Needed for total pages on pagination
         setFilteredMembersCount(getMembers.data['totalMembers']);
 
+        memberSearchRef.current?.focus();
         return () => {
             console.log('Cleaning members table');
             setValue('MEMBERS', []);
@@ -1516,7 +1536,7 @@ export const MembersTable = (props) => {
     return (
         <StyledMemberContent>
             <StyledMemberInnerContent>
-                {verifiedMembers.length ? (
+                {membersCount > 0 ? (
                     <StyledTableContainer>
                         <StyledTableTitleContainer>
                             <StyledTableTitleDiv>
@@ -1524,18 +1544,21 @@ export const MembersTable = (props) => {
                             </StyledTableTitleDiv>
 
                             <StyledTableTitleMemberContainer>
-                                <StyledAvatarGroupContainer>
-                                    <AvatarGroup
-                                        spacing={'small'}
-                                        variant={'circular'}
-                                        max={4}
-                                        total={filteredMembersCount}
-                                    >
-                                        {Avatars.map((el) => {
-                                            return el;
-                                        })}
-                                    </AvatarGroup>
-                                </StyledAvatarGroupContainer>
+                                {Avatars.length > 0 ? (
+                                    <StyledAvatarGroupContainer>
+                                        <AvatarGroup
+                                            // sx={{ border: 'solid green' }}
+                                            spacing={'small'}
+                                            variant={'circular'}
+                                            max={4}
+                                            total={filteredMembersCount}
+                                        >
+                                            {Avatars.map((el) => {
+                                                return el;
+                                            })}
+                                        </AvatarGroup>
+                                    </StyledAvatarGroupContainer>
+                                ) : null}
                                 <StyledTableTitleMemberCountContainer>
                                     <StyledTableTitleMemberCount>
                                         <Typography variant={'body1'}>
@@ -1545,17 +1568,26 @@ export const MembersTable = (props) => {
                                 </StyledTableTitleMemberCountContainer>
                             </StyledTableTitleMemberContainer>
 
-                            <StyledSearchButtonContainer>
-                                <IconButton>
-                                    <SearchOutlined></SearchOutlined>
-                                </IconButton>
-                            </StyledSearchButtonContainer>
-
-                            <StyledFilterButtonContainer>
+                            {/* <StyledFilterButtonContainer>
                                 <IconButton>
                                     <FilterAltRounded></FilterAltRounded>
                                 </IconButton>
-                            </StyledFilterButtonContainer>
+                            </StyledFilterButtonContainer> */}
+
+                            <StyledSearchButtonContainer>
+                                <Search
+                                    ref={memberSearchRef}
+                                    placeholder={'Search members'}
+                                    size={'small'}
+                                    value={searchFilter}
+                                    onChange={(e) => {
+                                        setValue(
+                                            'SEARCH_FILTER',
+                                            e.target.value,
+                                        );
+                                    }}
+                                />
+                            </StyledSearchButtonContainer>
 
                             <StyledDeleteSelectedContainer>
                                 {selectedMembers.length > 0 && (

@@ -220,7 +220,7 @@ export const DatabaseSettingsPage = () => {
     const favoriteDb = (db) => {
         const favorite = !isFavorited(db.database_id);
         monolithStore
-            .setDatabaseFavorite(db.database_id, favorite)
+            .setEngineFavorite(db.database_id, favorite)
             .then((response) => {
                 if (!favorite) {
                     const newFavorites = favoritedDbs;
@@ -311,7 +311,7 @@ export const DatabaseSettingsPage = () => {
      */
     const setDbGlobal = (db) => {
         monolithStore
-            .setDatabaseGlobal(adminMode, db.database_id, !db.database_global)
+            .setEngineGlobal(adminMode, db.database_id, !db.database_global)
             .then((response) => {
                 if (response.data.success) {
                     const newDatabases = [];
