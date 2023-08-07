@@ -29,6 +29,7 @@ import {
     Chip,
     Icon as MuiIcon,
     Link,
+    Search,
     Stack,
     ToggleButton,
 } from '@semoss/ui';
@@ -143,9 +144,9 @@ const StyledTableTitleMemberCount = MuiStyled('div')({
 
 const StyledSearchButtonContainer = MuiStyled('div')({
     display: 'flex',
-    padding: '5px 8px',
+    // padding: '5px 8px',
     alignItems: 'center',
-    gap: '10px',
+    // gap: '10px',
 });
 
 const StyledFilterButtonContainer = MuiStyled('div')({
@@ -1211,6 +1212,7 @@ export const MembersTable = (props) => {
     const notification = useNotification();
 
     /** Member Table State */
+    const [totalMembers, setTotalMembers] = useState<number>(0);
     const [membersCount, setMembersCount] = useState<number>(0);
     const [filteredMembersCount, setFilteredMembersCount] = useState<number>(0);
     const [membersPage, setMembersPage] = useState<number>(1);
@@ -1230,6 +1232,7 @@ export const MembersTable = (props) => {
         useState([]);
     const [addMemberRole, setAddMemberRole] = useState<Role>('');
 
+    const memberSearchRef = useRef(undefined);
     const didMount = useRef<boolean>(false);
 
     const { control, watch, setValue } = useForm<{
@@ -1304,6 +1307,7 @@ export const MembersTable = (props) => {
         // Needed for total pages on pagination
         setFilteredMembersCount(getMembers.data['totalMembers']);
 
+        memberSearchRef.current?.focus();
         return () => {
             console.log('Cleaning members table');
             setValue('MEMBERS', []);
@@ -1532,7 +1536,7 @@ export const MembersTable = (props) => {
     return (
         <StyledMemberContent>
             <StyledMemberInnerContent>
-                {verifiedMembers.length ? (
+                {membersCount > 0 ? (
                     <StyledTableContainer>
                         <StyledTableTitleContainer>
                             <StyledTableTitleDiv>
@@ -1540,18 +1544,21 @@ export const MembersTable = (props) => {
                             </StyledTableTitleDiv>
 
                             <StyledTableTitleMemberContainer>
-                                <StyledAvatarGroupContainer>
-                                    <AvatarGroup
-                                        spacing={'small'}
-                                        variant={'circular'}
-                                        max={4}
-                                        total={filteredMembersCount}
-                                    >
-                                        {Avatars.map((el) => {
-                                            return el;
-                                        })}
-                                    </AvatarGroup>
-                                </StyledAvatarGroupContainer>
+                                {Avatars.length > 0 ? (
+                                    <StyledAvatarGroupContainer>
+                                        <AvatarGroup
+                                            // sx={{ border: 'solid green' }}
+                                            spacing={'small'}
+                                            variant={'circular'}
+                                            max={4}
+                                            total={filteredMembersCount}
+                                        >
+                                            {Avatars.map((el) => {
+                                                return el;
+                                            })}
+                                        </AvatarGroup>
+                                    </StyledAvatarGroupContainer>
+                                ) : null}
                                 <StyledTableTitleMemberCountContainer>
                                     <StyledTableTitleMemberCount>
                                         <Typography variant={'body1'}>
@@ -1561,17 +1568,26 @@ export const MembersTable = (props) => {
                                 </StyledTableTitleMemberCountContainer>
                             </StyledTableTitleMemberContainer>
 
-                            <StyledSearchButtonContainer>
-                                <IconButton>
-                                    <SearchOutlined></SearchOutlined>
-                                </IconButton>
-                            </StyledSearchButtonContainer>
-
-                            <StyledFilterButtonContainer>
+                            {/* <StyledFilterButtonContainer>
                                 <IconButton>
                                     <FilterAltRounded></FilterAltRounded>
                                 </IconButton>
-                            </StyledFilterButtonContainer>
+                            </StyledFilterButtonContainer> */}
+
+                            <StyledSearchButtonContainer>
+                                <Search
+                                    ref={memberSearchRef}
+                                    placeholder={'Search members'}
+                                    size={'small'}
+                                    value={searchFilter}
+                                    onChange={(e) => {
+                                        setValue(
+                                            'SEARCH_FILTER',
+                                            e.target.value,
+                                        );
+                                    }}
+                                />
+                            </StyledSearchButtonContainer>
 
                             <StyledDeleteSelectedContainer>
                                 {selectedMembers.length > 0 && (
