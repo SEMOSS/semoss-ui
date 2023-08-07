@@ -119,8 +119,6 @@ export const AppLayout = observer(() => {
                                 variant="filled"
                                 label={a.options.name}
                                 clickable={true}
-                                color="primary"
-                                onClick={() => selectApp(a.id)}
                             />
                         );
                     })}
