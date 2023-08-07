@@ -1,6 +1,5 @@
-import { Link as MuiLink } from "@mui/material";
-import { SxProps } from "@mui/system";
 import React from "react";
+import { Link as MuiLink, SxProps } from "@mui/material";
 
 export interface LinkProps {
     /**

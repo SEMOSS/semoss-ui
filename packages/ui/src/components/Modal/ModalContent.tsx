@@ -1,5 +1,4 @@
-import { DialogContent as MuiModalContent } from "@mui/material";
-import { SxProps } from "@mui/system";
+import { DialogContent as MuiModalContent, SxProps } from "@mui/material";
 
 export interface ModalContentProps {
     /**

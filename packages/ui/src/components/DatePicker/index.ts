@@ -1,5 +1,5 @@
-import { DatePicker, _DatePickerProps } from "./DatePicker";
+import { DatePicker, DatePickerProps } from "./DatePicker";
 
-export type { _DatePickerProps };
+export type { DatePickerProps };
 
 export { DatePicker };

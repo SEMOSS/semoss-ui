@@ -20,7 +20,7 @@ export interface CardContentProps extends ComponentPropsWithRef<'div'> {
     stretch?: boolean;
 }
 
-export const _CardContent = (
+const _CardContent = (
     props: CardContentProps,
     ref: ForwardedRef<HTMLDivElement>,
 ): JSX.Element => {

@@ -25,7 +25,7 @@ export interface ImageProps
     objectPosition?: StitchesCSS['objectPosition'];
 }
 
-export const _Image = (
+const _Image = (
     props: ImageProps,
     ref: ForwardedRef<HTMLDivElement>,
 ): JSX.Element => {

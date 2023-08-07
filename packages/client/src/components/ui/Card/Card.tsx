@@ -16,7 +16,7 @@ const StyledCard = styled('div', {
 
 export type CardProps = ComponentPropsWithRef<'div'>;
 
-export const _Card = (
+const _Card = (
     props: CardProps,
     ref: ForwardedRef<HTMLDivElement>,
 ): JSX.Element => {

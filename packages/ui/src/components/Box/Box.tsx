@@ -1,6 +1,5 @@
 import { ReactNode } from "react";
-import MuiBox from "@mui/material/Box";
-import { SxProps } from "@mui/system";
+import { Box as MuiBox, SxProps } from "@mui/material";
 
 export interface BoxProps {
     /** children to be rendered */

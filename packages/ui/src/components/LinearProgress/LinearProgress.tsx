@@ -1,5 +1,4 @@
-import MuiLinearProgress from "@mui/material/LinearProgress";
-import { SxProps } from "@mui/system";
+import { LinearProgress as MuiLinearProgress, SxProps } from "@mui/material";
 
 export interface LinearProgressProps {
     /**

@@ -13,7 +13,7 @@ const StyledCardFooter = styled('div', {
 
 export type CardFooterProps = ComponentPropsWithRef<'div'>;
 
-export const _CardFooter = (
+const _CardFooter = (
     props: CardFooterProps,
     ref: ForwardedRef<HTMLDivElement>,
 ): JSX.Element => {

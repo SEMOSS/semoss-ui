@@ -12,7 +12,7 @@ const StyledCardHeader = styled('div', {
 
 export type CardHeaderProps = ComponentPropsWithRef<'div'>;
 
-export const _CardHeader = (
+const _CardHeader = (
     props: CardHeaderProps,
     ref: ForwardedRef<HTMLDivElement>,
 ): JSX.Element => {

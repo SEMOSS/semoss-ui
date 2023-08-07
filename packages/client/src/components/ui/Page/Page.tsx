@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from 'react';
 import { styled, Container } from '@semoss/ui';
-import { SxProps } from '@mui/system';
 
 const StyledPage = styled('div')(({ theme }) => ({
     height: '100%',
@@ -42,12 +41,10 @@ export interface PageProps {
 
     /** Content to include in the main section of the page */
     children: React.ReactNode;
-
-    sx?: SxProps;
 }
 
 export const Page = (props: PageProps): JSX.Element => {
-    const { header, children, sx } = props;
+    const { header, children } = props;
 
     const [stuck, setStuck] = useState(false);
     const [headerElement, setHeaderElement] = useState(null);
@@ -78,9 +75,7 @@ export const Page = (props: PageProps): JSX.Element => {
                     ref={(node) => setHeaderElement(node)}
                     stuck={stuck}
                 >
-                    <Container maxWidth={'xl'} sx={sx}>
-                        {header}
-                    </Container>
+                    <Container maxWidth={'xl'}>{header}</Container>
                 </StyledPageHeader>
             )}
             <Container maxWidth={'xl'}>{children}</Container>

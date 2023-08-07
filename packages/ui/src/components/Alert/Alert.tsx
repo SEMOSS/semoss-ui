@@ -1,6 +1,5 @@
 import { ReactNode } from "react";
-import MuiAlert from "@mui/material/Alert";
-import { SxProps } from "@mui/system";
+import { Alert as MuiAlert, SxProps } from "@mui/material";
 
 export type AlertColor = "success" | "info" | "warning" | "error";
 

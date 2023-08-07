@@ -1,5 +1,4 @@
-import { Tabs as MuiTabs } from "@mui/material";
-import { SxProps } from "@mui/system";
+import { Tabs as MuiTabs, SxProps } from "@mui/material";
 
 export interface TabsProps<V> {
     /**

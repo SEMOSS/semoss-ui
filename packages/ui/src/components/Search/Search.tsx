@@ -1,6 +1,7 @@
-import React, { useRef } from "react";
+import { useRef } from "react";
 import { CloseOutlined, SearchOutlined } from "@mui/icons-material";
-import { Button, TextField, TextFieldProps } from "../../";
+import { Button } from "../Button";
+import { TextField, TextFieldProps } from "../TextField";
 
 export type SearchFieldProps = TextFieldProps & {
     /**

@@ -1,5 +1,4 @@
-import { Button as MuiButton } from "@mui/material";
-import { SxProps } from "@mui/system";
+import { Button as MuiButton, SxProps } from "@mui/material";
 
 export interface ButtonProps
     extends React.ButtonHTMLAttributes<HTMLButtonElement> {

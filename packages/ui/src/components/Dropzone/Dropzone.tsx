@@ -3,21 +3,20 @@ import {
     useDropzone,
     DropzoneOptions as MuiDropzoneOptions,
 } from "react-dropzone";
-import { SxProps } from "@mui/system";
+import { SxProps } from "@mui/material";
 import { FileUploadOutlined } from "@mui/icons-material";
-import {
-    Avatar,
-    Container,
-    IconButton,
-    Link,
-    TextField,
-    Typography,
-} from "../../";
+import { Avatar } from "../Avatar";
+import { Container } from "../Container";
+import { IconButton } from "../IconButton";
+import { Link } from "../Link";
+import { TextField } from "../TextField";
+import { Typography } from "../Typography";
 
 export interface DropzoneAreaProps extends MuiDropzoneOptions {
     /** custom style object */
     sx?: SxProps;
 }
+
 interface GetInputPropsOptionsRef {
     ref?: React.RefObject<HTMLInputElement>;
 }

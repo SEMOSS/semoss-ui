@@ -1,5 +1,4 @@
-import MuiTypography from "@mui/material/Typography";
-import { SxProps } from "@mui/system";
+import { Typography as MuiTypography, SxProps } from "@mui/material";
 
 export interface TypographyProps {
     /** custom style object */

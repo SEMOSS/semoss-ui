@@ -1,6 +1,5 @@
 import { ReactNode } from "react";
-import MuiAvatarGroup from "@mui/material/AvatarGroup";
-import { SxProps } from "@mui/system";
+import { AvatarGroup as MuiAvatarGroup, SxProps } from "@mui/material";
 
 export interface AvatarGroupProps {
     //** avatar children to be rendered */

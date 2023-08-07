@@ -1,5 +1,4 @@
-import MuiSkeleton from "@mui/material/Skeleton";
-import { SxProps } from "@mui/system";
+import { Skeleton as MuiSkeleton, SxProps } from "@mui/material";
 
 export interface SkeletonProps {
     /**
