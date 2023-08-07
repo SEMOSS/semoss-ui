@@ -28,7 +28,7 @@ const StyledContainer = styled('div')(() => ({
 export const history = createHashHistory();
 
 export const Router = () => {
-    const { isInitialized, error, system } = useInsight();
+    const { isInitialized, error } = useInsight();
 
     const [state, setState] = useState({
         action: history.action,

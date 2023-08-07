@@ -1,10 +1,4 @@
-import {
-    createContext,
-    useState,
-    useEffect,
-    useMemo,
-    useCallback,
-} from 'react';
+import { createContext, useState, useEffect, useMemo } from 'react';
 import { unstable_batchedUpdates } from 'react-dom';
 
 import { Insight } from '..';
@@ -16,29 +10,30 @@ export const InsightContext = createContext<{
     isInitialized: Insight['isInitialized'];
     isAuthorized: Insight['isAuthorized'];
     error: Insight['error'];
-    app: Insight['app'];
     system: Insight['system'];
     actions: Insight['actions'];
 }>(undefined);
 
 interface InsightProviderProps {
+    /** Id of the app */
+    appId: string;
     /** Content to render with the insight */
     children: React.ReactNode;
 }
 
 export const InsightProvider = (props: InsightProviderProps) => {
-    const { children } = props;
+    const { appId, children } = props;
 
-    // track if it is initialized
-    const insight: Insight = useMemo(() => {
-        return new Insight();
-    }, []);
+    // create the new insight on load
+    const insight = useMemo(() => {
+        return new Insight(appId);
+    }, [appId]);
+
     const [isInitialized, setIsInitialized] =
         useState<Insight['isInitialized']>(false);
     const [isAuthorized, setIsAuthorized] =
         useState<Insight['isAuthorized']>(false);
     const [error, setError] = useState<Insight['error']>(null);
-    const [app, setApp] = useState<Insight['app']>(null);
     const [system, setSystem] = useState<Insight['system']>(null);
 
     /**
@@ -61,7 +56,6 @@ export const InsightProvider = (props: InsightProviderProps) => {
             setIsInitialized(insight.isInitialized);
             setIsAuthorized(insight.isAuthorized);
             setError(insight.error);
-            setApp(insight.app);
             setSystem(insight.system);
         });
     };
@@ -95,14 +89,17 @@ export const InsightProvider = (props: InsightProviderProps) => {
         return actions as Insight['actions'];
     }, [insight.actions]);
 
-    // load the insight
+    // initialize the insight / destroy
     useEffect(() => {
+        // initialize it
         initializeInsight();
 
         return () => {
+            console.log('destroying');
+            // destroy it
             destroyInsight();
         };
-    }, []);
+    }, [insight]);
 
     return (
         <InsightContext.Provider
@@ -110,7 +107,6 @@ export const InsightProvider = (props: InsightProviderProps) => {
                 isInitialized: isInitialized,
                 isAuthorized: isAuthorized,
                 error: error,
-                app: app,
                 system: system,
                 actions: wrappedActions,
             }}

@@ -27,7 +27,7 @@ const StyledPaper = styled(Paper)(({ theme }) => ({
 }));
 
 export const PolicyPage = () => {
-    const { app, actions } = useInsight();
+    const { actions } = useInsight();
 
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState('');
@@ -136,36 +136,12 @@ export const PolicyPage = () => {
             });
     }, []);
 
-    // get the theme
-    let theme = {
-        border: '',
-        name: 'SEMOSS',
-    };
-
-    if (
-        app &&
-        app.config &&
-        app.config.theme &&
-        typeof app.config.theme === 'object'
-    ) {
-        theme = {
-            ...theme,
-            ...app.config.theme,
-        };
-    }
     return (
         <Stack alignItems={'center'} justifyContent={'center'}>
             <StyledContainer>
-                <StyledPaper
-                    variant={'elevation'}
-                    elevation={2}
-                    square
-                    sx={{
-                        border: theme.border,
-                    }}
-                >
+                <StyledPaper variant={'elevation'} elevation={2} square>
                     <Stack spacing={2}>
-                        <Typography variant="h5">{theme.name}</Typography>
+                        <Typography variant="h5">Policy Bot</Typography>
                         <Typography variant="body1">
                             Assists case-workers in answering complex policy,
                             operational procedure, and system questions. This

@@ -3,11 +3,11 @@ import { makeAutoObservable } from 'mobx';
 import { RootStore } from '@/stores';
 
 interface WorkspaceAppStoreInterface {
-    /** ID of the App */
-    id: string;
+    /** Id of the app */
+    appId: string;
 
-    /** Url of the app */
-    url: string;
+    /** ID of the App */
+    insightId: string;
 
     /** Options associated with the loaded app */
     options: {
@@ -19,8 +19,8 @@ interface WorkspaceAppStoreInterface {
 export class WorkspaceApp {
     private _root: RootStore;
     private _store: WorkspaceAppStoreInterface = {
-        id: '',
-        url: '',
+        appId: '',
+        insightId: '',
         options: {
             name: '',
         },
@@ -28,16 +28,16 @@ export class WorkspaceApp {
 
     constructor(
         root: RootStore,
-        id: string,
-        url: string,
+        appId: string,
+        insightId: string,
         options: Partial<WorkspaceAppStoreInterface['options']>,
     ) {
         // register the rootStore
         this._root = root;
 
-        // set the id and url
-        this._store.id = id;
-        this._store.url = url;
+        // set the ids
+        this._store.appId = appId;
+        this._store.insightId = insightId;
 
         // update the options
         this.updateOptions(options);
@@ -53,14 +53,14 @@ export class WorkspaceApp {
      * Get app id
      */
     get id() {
-        return this._store.id;
+        return this._store.insightId;
     }
 
     /**
      * Get app url
      */
     get url() {
-        return this._store.url;
+        return this._store.appId;
     }
 
     /**
