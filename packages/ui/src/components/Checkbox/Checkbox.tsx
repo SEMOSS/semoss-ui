@@ -101,10 +101,11 @@ export interface CheckboxProps {
 }
 
 export const Checkbox = (props: CheckboxProps) => {
-    const { checkboxProps } = props;
+    const { checkboxProps, label = "" } = props;
     return (
         <FormControlLabel
             {...props}
+            label={label}
             control={<MuiCheckbox {...checkboxProps} />}
         />
     );

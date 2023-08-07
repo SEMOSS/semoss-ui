@@ -1,8 +1,4 @@
-import {
-    CardHeader,
-    TypographyProps,
-    TitleTypographyComponent,
-} from "@mui/material";
+import { CardHeader, TypographyProps } from "@mui/material";
 import { SxProps } from "@mui/system";
 import { styled } from "../../";
 
@@ -36,10 +32,7 @@ export interface _CardHeaderProps {
      * These props will be forwarded to the title
      * (as long as disableTypography is not `true`).
      */
-    titleTypographyProps?: TypographyProps<
-        TitleTypographyComponent,
-        { component?: TitleTypographyComponent }
-    >;
+    titleTypographyProps?: TypographyProps;
 }
 
 export const _CardHeader = (props: _CardHeaderProps) => {

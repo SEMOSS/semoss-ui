@@ -1,4 +1,4 @@
-import { Grid as MuiGrid, GridProps } from "@mui/material";
+import { Grid as MuiGrid } from "@mui/material";
 import { SxProps } from "@mui/system";
 
 export type GridSize = "auto" | number;
