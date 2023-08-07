@@ -82,14 +82,13 @@ export class WorkspaceStore {
     /**
      * Open a new insight
      *
-     * @param url - url of the app
+     * @param appId - id of the app
      * @param options - options to associate with the app
      * @param config - configuration to load with the app
      */
     async openNewApp(
-        url: string,
+        appId: string,
         options: Partial<WorkspaceApp['options']> = {},
-        config: Record<string, unknown> = {},
     ): Promise<WorkspaceApp> {
         // get the response
         const response = await this.run<
@@ -100,11 +99,7 @@ export class WorkspaceStore {
                     };
                 },
             ]
-        >(
-            `OpenEmptyInsight(recipe=["<sEncode>SetAppConfig(${JSON.stringify(
-                config,
-            )});</sEncode>"])`,
-        );
+        >(`OpenEmptyInsight(recipe=["<sEncode>SetAppConfig();</sEncode>"])`);
 
         // ignore if no response
         if (!response) {
@@ -117,8 +112,8 @@ export class WorkspaceStore {
         // create a new app
         const app = new WorkspaceApp(
             this._root,
+            appId,
             output.insightData.insightID,
-            url,
             {
                 name: `App ${Object.keys(this._store.apps).length + 1}`,
                 ...options,

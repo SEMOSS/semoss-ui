@@ -15,11 +15,7 @@ import { OpenInBrowser } from '@mui/icons-material';
 import { Page } from '@/components/ui';
 import { useRootStore } from '@/hooks';
 
-type MarketplaceAppTypes = 'policy' | 'custom';
-
-type MarketplaceApp = PolicyMarketplaceApp | CustomMarketplaceApp;
-
-interface AbstractMarketplaceApp {
+type MarketplaceApp = {
     /** Name of the app */
     name: string;
 
@@ -32,66 +28,18 @@ interface AbstractMarketplaceApp {
     /** Tags associated with the app */
     tags: string[];
 
-    /** Type of the app */
-    type: MarketplaceAppTypes;
-
-    /** Url of the associated app */
-    url: string;
-
-    /** Environment information loaded into the app */
-    config: Record<string, unknown>;
-}
-
-interface PolicyMarketplaceApp extends AbstractMarketplaceApp {
-    type: 'policy';
-    config: {
-        theme: {
-            name: string;
-            border: string;
-        };
-    };
-}
-
-interface CustomMarketplaceApp extends AbstractMarketplaceApp {
-    type: 'custom';
-    config: {
-        /**
-         * Any key
-         */
-        [key: string]: unknown;
-    };
-}
+    /** Id of the associated app */
+    appId: string;
+};
 
 const APPS: MarketplaceApp[] = [
     {
-        name: 'Policy Bot 1',
+        name: 'Policy Bot',
         description:
             'Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.',
         logo: '',
         tags: ['Tag 1', 'Tag 2', 'Tag 3', 'Tag 4'],
-        type: 'policy',
-        url: `../../../apps/policy/client/dist/`,
-        config: {
-            theme: {
-                name: 'Policy Bot 1',
-                border: '5px solid green',
-            },
-        },
-    },
-    {
-        name: 'Policy Bot 2',
-        description:
-            'Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.',
-        logo: '',
-        tags: ['Tag 1', 'Tag 2', 'Tag 3', 'Tag 4'],
-        type: 'policy',
-        url: `../../../apps/policy/client/dist/`,
-        config: {
-            theme: {
-                name: 'Policy Bot 2',
-                border: '5px solid blue',
-            },
-        },
+        appId: `../../../apps/policy/client/dist/`,
     },
 ];
 
@@ -146,13 +94,9 @@ export const HomePage = observer((): JSX.Element => {
      */
     const openNewApp = async (a: MarketplaceApp) => {
         // open the app
-        const app = await workspaceStore.openNewApp(
-            a.url,
-            {
-                name: a.name,
-            },
-            a.config,
-        );
+        const app = await workspaceStore.openNewApp(a.appId, {
+            name: a.name,
+        });
 
         // navigate to it
         if (app) {

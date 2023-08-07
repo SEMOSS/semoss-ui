@@ -2,6 +2,12 @@ import axios from 'axios';
 import { getSystemConfig, login, logout, oauth, runPixel } from './api';
 
 interface InsightStoreInterface {
+    /** Id of the app */
+    appId: string;
+
+    /** insightId of the app */
+    insightId: string;
+
     /** Track if initialized */
     isInitialized: boolean;
 
@@ -10,15 +16,6 @@ interface InsightStoreInterface {
 
     /** Error if in the error state */
     error: Error | null;
-
-    /** App information */
-    app: {
-        /** InsightId of the app */
-        insightId: string;
-
-        /** Configuration information of the app */
-        config: Record<string, unknown>;
-    } | null;
 
     /** System Information */
     system: {
@@ -34,12 +31,26 @@ interface InsightStoreInterface {
 
 export class Insight {
     private _store: InsightStoreInterface = {
+        appId: '',
+        insightId: '',
         isInitialized: true,
         isAuthorized: false,
         error: null,
-        app: null,
         system: null,
     };
+
+    /**
+     * Id of the app
+     * @param appId - id of app
+     */
+    constructor(appId: string) {
+        if (!appId) {
+            throw new Error(`AppId is required`);
+        }
+
+        // set the appId
+        this._store.appId = appId;
+    }
 
     /** Getters */
     /**
@@ -64,13 +75,6 @@ export class Insight {
     }
 
     /**
-     * App information
-     */
-    get app() {
-        return this._store.app;
-    }
-
-    /**
      * System information
      */
     get system() {
@@ -85,11 +89,10 @@ export class Insight {
      */
     initialize = async (insightId?: string): Promise<void> => {
         // try to set the insightID from the url if it is there
-        let id = insightId;
         try {
-            if (!id) {
+            if (!insightId) {
                 const urlParams = new URLSearchParams(window.location.search);
-                id = urlParams.get('semoss-insight-id');
+                insightId = urlParams.get('semoss-insight-id');
             }
         } catch (e) {
             console.error(e);
@@ -105,7 +108,7 @@ export class Insight {
                 Object.keys(this._store.system.config.logins).length > 0
             ) {
                 // initialize the app
-                await this.initializeApp(id);
+                await this.initializeApp(insightId);
 
                 // track that the user is authorized
                 this._store.isAuthorized = true;
@@ -196,33 +199,9 @@ export class Insight {
      * @param id? - id to initialize the app with
      */
     private initializeApp = async (id?: string): Promise<void> => {
-        const { insightId, errors, pixelReturn } = await runPixel<
-            [Record<string, unknown>]
-        >(`GetAppConfig()`, id);
-
-        // log errors if it exists
-        if (errors.length) {
-            throw new Error(errors[0]);
-        }
-
-        // set the insight ID
-        this._store.app = {
-            insightId: insightId,
-            config: pixelReturn[0].output,
-        };
-    };
-
-    /**
-     * Destroy the app
-     */
-    private destroyApp = async (): Promise<void> => {
-        if (!this._store.app.insightId) {
-            return;
-        }
-
-        const { errors } = await runPixel<[Record<string, unknown>]>(
-            `DropInsight()`,
-            this._store.app.insightId,
+        const { insightId, errors } = await runPixel<[Record<string, unknown>]>(
+            `SetContext("${this._store.appId}")`,
+            id || 'new',
         );
 
         // log errors if it exists
@@ -231,7 +210,29 @@ export class Insight {
         }
 
         // set the insight ID
-        this._store.app = null;
+        this._store.insightId = insightId;
+    };
+
+    /**
+     * Destroy the app
+     */
+    private destroyApp = async (): Promise<void> => {
+        if (!this._store.insightId) {
+            return;
+        }
+
+        const { errors } = await runPixel<[Record<string, unknown>]>(
+            `DropInsight()`,
+            this._store.insightId,
+        );
+
+        // log errors if it exists
+        if (errors.length) {
+            throw new Error(errors[0]);
+        }
+
+        // set the insight ID
+        this._store.insightId = '';
     };
 
     /**
@@ -328,7 +329,7 @@ export class Insight {
             try {
                 const response = await runPixel<O>(
                     pixel,
-                    this._store.app.insightId,
+                    this._store.insightId,
                 );
                 if (!response) {
                     return;
@@ -353,52 +354,6 @@ export class Insight {
 
                 // success
                 return response;
-            } catch (error) {
-                this.processActionError(error);
-            }
-        },
-
-        /**
-         * Set the config
-         * @param {object} config
-         */
-        setConfig: async (config: Record<string, unknown>) => {
-            try {
-                const { errors, pixelReturn } = await this.actions.run<
-                    [Record<string, unknown>]
-                >(`SetAppConfig(${JSON.stringify(config)})`);
-
-                // log errors if it exists
-                if (errors.length) {
-                    const errorMessage = errors.join(',');
-                    throw new Error(errorMessage);
-                }
-
-                // update the config
-                this._store.app.config = pixelReturn[0].output;
-            } catch (error) {
-                this.processActionError(error);
-            }
-        },
-
-        /**
-         * Get the config
-         */
-        getConfig: async () => {
-            try {
-                const { errors, pixelReturn } = await this.actions.run<
-                    [Record<string, unknown>]
-                >(`GetAppConfig()`);
-
-                // log errors if it exists
-                if (errors.length) {
-                    const errorMessage = errors.join(',');
-                    throw new Error(errorMessage);
-                    return;
-                }
-
-                // set it
-                this._store.app.config = pixelReturn[0].output;
             } catch (error) {
                 this.processActionError(error);
             }
