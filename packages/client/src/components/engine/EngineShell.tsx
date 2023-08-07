@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import { useNotification } from '@semoss/components';
 import {
     Breadcrumbs,
     Button,
@@ -9,19 +8,24 @@ import {
     Stack,
     Typography,
 } from '@semoss/ui';
-import { Link } from 'react-router-dom';
+
+import { useNotification } from '@semoss/components';
+import { useRootStore, useDatabase, usePixel } from '@/hooks';
+
+import { EditDatabaseDetails } from '@/components/database';
+import { Page, LoadingScreen } from '@/components/ui';
+import { RequestAccess } from './';
 import {
+    Add,
     ArrowCircleDown,
     EditOutlined,
     SimCardDownload,
 } from '@mui/icons-material';
 import { formatName } from '@/utils';
-import { EditDatabaseDetails } from '@/components/database';
-import defaultDbImage from '../../assets/img/placeholder.png';
+import { Link } from 'react-router-dom';
 
-import { Page, LoadingScreen } from '@/components/ui';
-import { useRootStore, useDatabase, usePixel } from '@/hooks';
 import { types } from 'util';
+import defaultDbImage from '../../assets/img/placeholder.png';
 
 const StyledInfo = styled('div')(({ theme }) => ({
     display: 'flex',
@@ -94,85 +98,17 @@ export const EngineShell = (props: EngineShellProps) => {
     // Service for Axios calls
     const { monolithStore, configStore } = useRootStore();
 
-    // notification service
-    const notification = useNotification();
-
     // set if it can edit
     const canEdit = role === 'OWNER' || role === 'EDITOR';
 
     // track the edit state
     const [edit, setEdit] = useState(false);
-
-    // mutible votes object
-    const [votes, setVotes] = useState<
-        { total: number; userVote: number } | undefined
-    >();
+    const [requestAccess, setRequestAccess] = useState(false);
 
     // get the engine info
     const { status, data } = usePixel(
         `GetEngineMetadata(engine=["${id}"], metaKeys=[]); `,
     );
-
-    // const {
-    //     status: voteStatus,
-    //     data: voteData,
-    //     refresh: voteRefresh,
-    // } = usePixel<{ total: number; userVote: number }>(
-    //     `GetUserDatabaseVotes(database = "${id}");`,
-    // );
-
-    // const {
-    //     status: usabilityStatus,
-    //     data: usabilityData,
-    //     refresh: usabilityRefresh,
-    // } = usePixel<number>(`UsabilityScore(database = '${id}');`);
-
-    // useEffect(() => {
-    //     if (voteStatus !== 'SUCCESS') {
-    //         return;
-    //     }
-
-    //     // Set total votes and my vote status
-    //     setVotes(voteData);
-    // }, [voteStatus, voteData]);
-
-    /**
-     * @name voteDatabase
-     * @desc
-     */
-    const voteDatabase = async (upVote: boolean) => {
-        let pixelString = '';
-
-        if (upVote) {
-            pixelString += `VoteDatabase(database="${id}", vote=1)`;
-        } else {
-            pixelString += `UnvoteDatabase(database="${id}")`;
-        }
-
-        monolithStore.runQuery(pixelString).then((response) => {
-            const type = response.pixelReturn[0].operationType;
-            const pixelResponse = response.pixelReturn[0].output;
-
-            if (type.indexOf('ERROR') === -1) {
-                notification.add({
-                    content: `Successfully ${
-                        upVote ? 'liked' : 'unliked'
-                    } database`,
-                    color: 'success',
-                });
-                setVotes(
-                    upVote
-                        ? { total: (votes.total += 1), userVote: 1 }
-                        : { total: (votes.total -= 1), userVote: 0 },
-                );
-            } else {
-                notification.add({
-                    content: 'Error voting',
-                    color: 'error',
-                });
-            }
-        });
-    };
 
     /**
      * @name exportDB
@@ -193,9 +129,6 @@ export const EngineShell = (props: EngineShellProps) => {
     if (status !== 'SUCCESS') {
         return <LoadingScreen.Trigger description="Opening Database" />;
     }
-
-    console.log(data);
-    console.log('metavals', metaVals);
 
     return (
         <Page
@@ -228,13 +161,26 @@ export const EngineShell = (props: EngineShellProps) => {
                         <Stack direction="row">
                             {configStore.store.security &&
                                 data.database_discoverable && (
-                                    <Button
-                                        startIcon={<SimCardDownload />}
-                                        variant="outlined"
-                                        onClick={() => console.log('here')}
-                                    >
-                                        Request Access
-                                    </Button>
+                                    <>
+                                        {requestAccess && (
+                                            <RequestAccess
+                                                id={id}
+                                                open={requestAccess}
+                                                onClose={(success) => {
+                                                    setRequestAccess(false);
+                                                }}
+                                            />
+                                        )}
+                                        <Button
+                                            startIcon={<Add />}
+                                            variant="outlined"
+                                            onClick={() =>
+                                                setRequestAccess(true)
+                                            }
+                                        >
+                                            Request Access
+                                        </Button>
+                                    </>
                                 )}
                             {role === 'OWNER' && (
                                 <Button

@@ -194,12 +194,6 @@ const StyledCard = MuiStyled(MuiCard)({
 });
 
 const StyledIcon = MuiStyled(MuiIcon)(({ theme }) => ({
-    // width: '20px',
-    // height: '20px',
-    // mt: '6px',
-    // marginRight: '12px',
-    // fontSize: '12px',
-    // fontWeight: 'bold',
     color: 'rgba(0, 0, 0, .5)',
 }));
 
@@ -458,9 +452,10 @@ export const WorkflowAccess = (props: WorkflowAccessProps) => {
     const { type, id, projectId, onDelete } = props;
 
     const { monolithStore, configStore } = useRootStore();
-    const admin = configStore.store.user.admin;
     const notification = useNotification();
+    const admin = configStore.store.user.admin;
 
+    const [deleteModal, setDeleteModal] = useState(false);
     const [discoverable, setDiscoverable] = useState(false);
     const [global, setGlobal] = useState(false);
 
@@ -489,7 +484,7 @@ export const WorkflowAccess = (props: WorkflowAccessProps) => {
     const deleteWorkflow = () => {
         let pixelString = '';
         if (type === 'database') {
-            pixelString = `DeleteDatabase(database=['${id}']);`;
+            pixelString = `DeleteEngine(engineId=['${id}']);`;
         } else {
             pixelString = `DeleteProject(project=['${id}']);`;
         }
@@ -629,7 +624,11 @@ export const WorkflowAccess = (props: WorkflowAccessProps) => {
                         </StyledIcon>
                     }
                     action={
-                        <Button variant="contained" color="error">
+                        <Button
+                            variant="contained"
+                            color="error"
+                            onClick={() => setDeleteModal(true)}
+                        >
                             Delete
                         </Button>
                     }
@@ -637,6 +636,25 @@ export const WorkflowAccess = (props: WorkflowAccessProps) => {
                     <Alert.Title>Delete Database</Alert.Title>
                     Remove database from catalog
                 </StyledAlert>
+                <Modal open={deleteModal}>
+                    <Modal.Title>Are you sure?</Modal.Title>
+                    <Modal.Content>
+                        This action is irreversable. This will permanentely
+                        delete this {type}.
+                    </Modal.Content>
+                    <Modal.Actions>
+                        <Button onClick={() => setDeleteModal(false)}>
+                            Cancel
+                        </Button>
+                        <Button
+                            color={'error'}
+                            variant={'contained'}
+                            onClick={() => deleteWorkflow()}
+                        >
+                            Delete
+                        </Button>
+                    </Modal.Actions>
+                </Modal>
             </Grid>
         </Grid>
     );

@@ -545,11 +545,10 @@ export class MonolithStore {
         //     url += 'admin/';
         // }
 
-        // change to database
-        url += 'engine/setEngineVisibility';
+        url += 'engine/setEngineDiscoverable';
 
         postData += 'engineId=' + encodeURIComponent(engineId);
-        postData += '&visibility=' + encodeURIComponent(visible);
+        postData += '&discoverable=' + encodeURIComponent(visible);
 
         const response = await axios.post<{ success: boolean }>(url, postData, {
             headers: {
