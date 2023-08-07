@@ -2,14 +2,7 @@ import React from 'react';
 import { useForm } from 'react-hook-form';
 import { Field } from '../../../../components/form';
 import { Form } from '@semoss/components';
-
-type ImportFormComponent = React.FunctionComponent<{
-    name: string;
-}> & {
-    name2: string;
-
-    logo: string;
-};
+import { ImportFormComponent } from './formTypes';
 
 export const SnowflakeForm: ImportFormComponent = () => {
     const { control, reset } = useForm();

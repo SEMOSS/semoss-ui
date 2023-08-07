@@ -3,6 +3,7 @@ import { useForm } from 'react-hook-form';
 import { Field } from '../../../../components/form';
 import { Form } from '@semoss/components';
 import { FileDropzone } from '@semoss/ui';
+import { ImportFormComponent } from './formTypes';
 
 const UploadData = () => {
     const [selectedValues, setSelectedValues] = React.useState(null);
@@ -15,14 +16,6 @@ const UploadData = () => {
             }}
         />
     );
-};
-
-type ImportFormComponent = React.FunctionComponent<{
-    name: string;
-}> & {
-    name2: string;
-
-    logo: string;
 };
 
 export const H2Form: ImportFormComponent = () => {
