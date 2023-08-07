@@ -94,7 +94,7 @@ export const LoginPage = observer(() => {
     const login = handleSubmit(
         async (data: TypeUserLogin): Promise<TypeUserLogin> => {
             // turn on loading
-            setLoading(true);
+            setIsLoading(true);
 
             if (!data.USERNAME || !data.PASSWORD) {
                 setError('Username and Password is Required');
@@ -104,17 +104,14 @@ export const LoginPage = observer(() => {
             await configStore
                 .login(data.USERNAME, data.PASSWORD)
                 .then(() => {
-                    // turn off loading
-                    setLoading(false);
-
                     // noop
-                    // (handled  by the configStore)
                 })
                 .catch((error) => {
-                    // turn off loading
-                    setLoading(false);
-
                     setError(error.message);
+                })
+                .finally(() => {
+                    // turn off loading
+                    setIsLoading(false);
                 });
         },
     );
