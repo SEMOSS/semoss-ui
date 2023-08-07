@@ -250,16 +250,20 @@ export const EngineShell = (props: EngineShellProps) => {
                     />
                     <Stack alignItems={'flex-end'} spacing={1} marginBottom={2}>
                         <Typography variant={'body2'}>
-                            Published by: J. Smith
+                            Published by:{' '}
+                            {data.database_created_by
+                                ? data.database_created_by
+                                : 'N/A'}
                         </Typography>
                         <Typography variant={'body2'}>
-                            Published: {data.database_date_created}
+                            Published:{' '}
+                            {data.database_date_created
+                                ? data.database_date_created
+                                : 'N/A'}
                         </Typography>
                         <Typography variant={'body2'}>
                             Updated:{' '}
-                            {data.last_updated
-                                ? data.last_updated
-                                : '12/24/1996'}
+                            {data.last_updated ? data.last_updated : 'N/A'}
                         </Typography>
                     </Stack>
                 </StyledInfoRight>
