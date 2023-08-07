@@ -319,9 +319,9 @@ export class MonolithStore {
     ) {
         let url = `${BACKEND}/api/auth/`;
 
-        // if (admin) {
-        //     url += 'admin/';
-        // }
+        if (admin) {
+            url += 'admin/';
+        }
 
         url += 'engine/getEngineUsers';
 
@@ -365,9 +365,9 @@ export class MonolithStore {
         let url = `${BACKEND}/api/auth/`;
 
         // Currently no admin ENDPOINT;
-        // if (admin) {
-        //     url += 'admin/';
-        // }
+        if (admin) {
+            url += 'admin/';
+        }
 
         url += 'engine/getEngineUsersNoCredentials';
 
@@ -404,9 +404,9 @@ export class MonolithStore {
             postData = '';
 
         // No Admin endpoint currently
-        // if (admin) {
-        //     url += 'admin/';
-        // }
+        if (admin) {
+            url += 'admin/';
+        }
 
         url += 'engine/addEngineUserPermissions';
 
@@ -440,9 +440,9 @@ export class MonolithStore {
         let url = `${BACKEND}/api/auth/`,
             postData = '';
 
-        // if (admin) {
-        //     url += 'admin/';
-        // }
+        if (admin) {
+            url += 'admin/';
+        }
 
         url += 'engine/editEngineUserPermissions';
 
@@ -476,9 +476,9 @@ export class MonolithStore {
         let url = `${BACKEND}/api/auth/`,
             postData = '';
 
-        // if (admin) {
-        //     url += 'admin/';
-        // }
+        if (admin) {
+            url += 'admin/';
+        }
 
         url += 'engine/removeEngineUserPermissions';
 
@@ -504,9 +504,9 @@ export class MonolithStore {
         let url = `${BACKEND}/api/auth/`,
             postData = '';
 
-        // if (admin) {
-        //     url += 'admin/';
-        // }
+        if (admin) {
+            url += 'admin/';
+        }
 
         // change to database
         url += 'engine/setEngineGlobal';
@@ -541,14 +541,31 @@ export class MonolithStore {
         let url = `${BACKEND}/api/auth/`,
             postData = '';
 
-        // if (admin) {
-        //     url += 'admin/';
-        // }
+        if (admin) {
+            url += 'admin/';
+        }
 
         url += 'engine/setEngineDiscoverable';
 
         postData += 'engineId=' + encodeURIComponent(engineId);
         postData += '&discoverable=' + encodeURIComponent(visible);
+
+        const response = await axios.post<{ success: boolean }>(url, postData, {
+            headers: {
+                'content-type': 'application/x-www-form-urlencoded',
+            },
+        });
+
+        return response;
+    }
+
+    async setEngineFavorite(engineId: string, favorite: boolean) {
+        let url = `${BACKEND}/api/auth/`,
+            postData = '';
+
+        url += 'engine/setEngineFavorite';
+        postData += 'engineId=' + encodeURIComponent(engineId);
+        postData += '&isFavorite=' + encodeURIComponent(favorite);
 
         const response = await axios.post<{ success: boolean }>(url, postData, {
             headers: {
@@ -730,23 +747,6 @@ export class MonolithStore {
             .catch((error) => {
                 throw Error(error);
             });
-
-        return response;
-    }
-
-    async setDatabaseFavorite(dbId: string, favorite: boolean) {
-        let url = `${BACKEND}/api/auth/`,
-            postData = '';
-
-        url += 'database/setDatabaseFavorite';
-        postData += 'databaseId=' + encodeURIComponent(dbId);
-        postData += '&isFavorite=' + encodeURIComponent(favorite);
-
-        const response = await axios.post<{ success: boolean }>(url, postData, {
-            headers: {
-                'content-type': 'application/x-www-form-urlencoded',
-            },
-        });
 
         return response;
     }

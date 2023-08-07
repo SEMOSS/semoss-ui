@@ -1,6 +1,5 @@
 import React, { useMemo, useState } from 'react';
 import { observer } from 'mobx-react-lite';
-import { usePixel, useRootStore } from '@/hooks';
 import {
     styled as styledOld,
     Table as TableOld,
@@ -21,7 +20,7 @@ import { ArrowCircleDown } from '@mui/icons-material';
 import { mdiPencil } from '@mdi/js';
 
 import { theme } from '@/theme';
-import { usePixel, useDatabase } from '@/hooks';
+import { usePixel, useDatabase, useRootStore } from '@/hooks';
 import { Section } from '@/components/ui';
 import { Metamodel, MetamodelNode } from '@/components/metamodel';
 

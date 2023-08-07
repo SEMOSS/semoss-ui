@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useRootStore } from '@/hooks';
-
+import { useNotification } from '@semoss/components';
 import {
     Avatar,
     Box,
@@ -46,17 +46,24 @@ type Role = 'Author' | 'Editor' | 'Read-Only' | '' | null;
 
 export const RequestAccess = (props: RequestAccessProps) => {
     const { id, open, onClose } = props;
-    const { monolithStore, configStore } = useRootStore();
+    const { monolithStore } = useRootStore();
+    const notification = useNotification();
 
     const [requestAccessRole, setRequestAccessRole] = useState<Role>('');
 
     const requestAccess = () => {
-        const pixel = `META | RequestEngine(engineId=['${id}'], permission=['${permissionMapper[requestAccessRole]}'])`;
+        const pixel = `META | RequestEngine(engine=['${id}'], permission=['${permissionMapper[requestAccessRole]}'])`;
 
         monolithStore.runQuery(pixel).then((response) => {
             const type = response.pixelReturn[0].operationType;
             const output = response.pixelReturn[0].output;
-            debugger;
+
+            if (type.indexOf('ERROR') > -1) {
+                notification.add({
+                    color: 'error',
+                    content: output,
+                });
+            }
 
             // close it and succesfully message
             onClose(true);
@@ -202,6 +209,7 @@ export const RequestAccess = (props: RequestAccessProps) => {
             </Modal.Content>
             <Modal.Actions>
                 <Button
+                    variant={'outlined'}
                     onClick={() => {
                         onClose(false);
                     }}
@@ -209,6 +217,7 @@ export const RequestAccess = (props: RequestAccessProps) => {
                     Cancel
                 </Button>
                 <Button
+                    variant={'contained'}
                     disabled={!requestAccessRole}
                     onClick={() => {
                         requestAccess();

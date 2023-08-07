@@ -178,7 +178,7 @@ export const EngineLayout = () => {
 
     // if the engine isn't found, navigate to the Home Page
     if (!id || getUserEnginePermission.status === 'ERROR') {
-        return <Navigate to={`/catalog?${engineType}`} replace />;
+        return <Navigate to={`/catalog?type=${engineType}`} replace />;
     }
 
     // show a loading screen when it is pending

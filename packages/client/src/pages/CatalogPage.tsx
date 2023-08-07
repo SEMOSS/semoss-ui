@@ -350,7 +350,7 @@ export const CatalogPage = observer((): JSX.Element => {
      */
     const setGlobal = (db) => {
         monolithStore
-            .setDatabaseGlobal(
+            .setEngineGlobal(
                 configStore.store.user.admin,
                 db.database_id,
                 !db.database_global,
@@ -388,7 +388,7 @@ export const CatalogPage = observer((): JSX.Element => {
     const favoriteDb = (db) => {
         const favorite = !isFavorited(db.database_id);
         monolithStore
-            .setDatabaseFavorite(db.database_id, favorite)
+            .setEngineFavorite(db.database_id, favorite)
             .then((response) => {
                 if (!favorite) {
                     const newFavorites = favoritedDbs;
@@ -933,9 +933,7 @@ export const CatalogPage = observer((): JSX.Element => {
                     </StyledFilterList>
                 </StyledFitler>
 
-                <StyledContent
-                // style={{ border: 'solid yellow' }}
-                >
+                <StyledContent>
                     {databases.length ? (
                         <Grid container spacing={3}>
                             {databases.map((db) => {
@@ -950,9 +948,10 @@ export const CatalogPage = observer((): JSX.Element => {
                                     >
                                         {view === 'list' ? (
                                             <DatabaseLandscapeCard
-                                                name={formatDBName(db.app_name)}
-                                                id={db.app_id}
-                                                image={defaultDBImage}
+                                                name={formatDBName(
+                                                    db.database_name,
+                                                )}
+                                                id={db.database_id}
                                                 tag={db.tag}
                                                 owner={db.database_created_by}
                                                 description={db.description}
@@ -967,25 +966,30 @@ export const CatalogPage = observer((): JSX.Element => {
                                                 onClick={() => {
                                                     navigate(
                                                         `/${catalogType.toLowerCase()}/${
-                                                            db.app_id
+                                                            db.database_id
                                                         }`,
                                                     );
                                                 }}
                                                 favorite={() => {
                                                     favoriteDb(db);
-                                                }}
-                                                global={() => {
-                                                    setGlobal(db);
                                                 }}
                                                 upvote={(val) => {
                                                     upvoteDb(db);
                                                 }}
+                                                global={
+                                                    db.user_permission === 1
+                                                        ? () => {
+                                                              setGlobal(db);
+                                                          }
+                                                        : null
+                                                }
                                             />
                                         ) : (
                                             <DatabaseTileCard
-                                                name={formatDBName(db.app_name)}
-                                                id={db.app_id}
-                                                image={defaultDBImage}
+                                                name={formatDBName(
+                                                    db.database_name,
+                                                )}
+                                                id={db.database_id}
                                                 tag={db.tag}
                                                 owner={db.database_created_by}
                                                 description={db.description}
@@ -1003,13 +1007,17 @@ export const CatalogPage = observer((): JSX.Element => {
                                                 onClick={() => {
                                                     navigate(
                                                         `/${catalogType.toLowerCase()}/${
-                                                            db.app_id
+                                                            db.database_id
                                                         }`,
                                                     );
                                                 }}
-                                                global={() => {
-                                                    setGlobal(db);
-                                                }}
+                                                global={
+                                                    db.user_permission === 1
+                                                        ? () => {
+                                                              setGlobal(db);
+                                                          }
+                                                        : null
+                                                }
                                                 upvote={(val) => {
                                                     upvoteDb(db);
                                                 }}
