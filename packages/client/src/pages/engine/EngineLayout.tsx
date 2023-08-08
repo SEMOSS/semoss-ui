@@ -9,7 +9,7 @@ import {
     matchPath,
     useNavigate,
 } from 'react-router-dom';
-import { styled, Stack, ToggleTabsGroup } from '@semoss/ui';
+import { styled, ToggleTabsGroup } from '@semoss/ui';
 import { usePixel, useAPI, useRootStore } from '@/hooks';
 
 import { EngineContext, EngineContextType } from '@/contexts/EngineContext';

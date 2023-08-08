@@ -48,13 +48,14 @@ const StyledToggleGroup = styled(Tabs)(({ theme }) => ({
 }));
 
 export const ToggleTabsGroup = (props: ToggleTabsProps) => {
-    const { sx, boxSx } = props;
+    const { sx, boxSx, ...otherProps } = props;
+    console.log(otherProps);
     return (
         <StyledBox sx={boxSx}>
             <StyledToggleGroup
                 TabIndicatorProps={{ style: { display: "none" } }}
                 sx={sx}
-                {...props}
+                {...otherProps}
             />
         </StyledBox>
     );

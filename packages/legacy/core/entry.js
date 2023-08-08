@@ -298,7 +298,7 @@ angular.module('app', [
 ]);
 
 import { react2angular } from 'react2angular';
-import { Moose } from '@client/exports';
+import { Moose } from '@/react/';
 
 angular
     .module('react', [])
