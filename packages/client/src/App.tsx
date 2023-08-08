@@ -41,7 +41,7 @@ export const App = () => {
                 <Notification>
                     <OldTheme reset={false} theme={theme}>
                         <OldNotification>
-                            <LoadingScreen delay={300}>
+                            <LoadingScreen>
                                 <HashRouter>
                                     <Router />
                                 </HashRouter>

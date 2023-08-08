@@ -29,7 +29,7 @@ export const Router = observer(() => {
 
     // don't load anything if it is pending
     if (configStore.store.status === 'INITIALIZING') {
-        return <LoadingScreen.Trigger />;
+        return <LoadingScreen.Trigger message={'Initializing'} />;
     }
 
     return (
