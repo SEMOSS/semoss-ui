@@ -158,7 +158,7 @@ const StyledLeftActions = styled('div')({
 const StyledViewsTrendingDiv = styled('div')({
     display: 'flex',
     justifyContent: 'center',
-    alignItems: 'flex-start',
+    alignItems: 'center',
     gap: '4px',
 });
 
@@ -347,8 +347,8 @@ export const DatabaseLandscapeCard = (props: DatabaseCardProps) => {
         isUpvoted,
         owner = 'N/A',
         votes = '0',
-        views = 'N/A',
-        trending = 'N/A',
+        // views = 'N/A',
+        // trending = 'N/A',
         onClick,
         favorite,
         upvote,
@@ -441,12 +441,17 @@ export const DatabaseLandscapeCard = (props: DatabaseCardProps) => {
                                 e.stopPropagation();
                                 upvote(isUpvoted);
                             }}
+                            aria-label={
+                                isUpvoted
+                                    ? `Downvote ${name}`
+                                    : `Upvote ${name}`
+                            }
                         >
                             {isUpvoted ? <ArrowDropDown /> : <ArrowDropUp />}
                         </ButtonGroup.Item>
                         <UnstyledVoteCount>{votes}</UnstyledVoteCount>
                     </ButtonGroup>
-                    <StyledViewsTrendingDiv>
+                    {/* <StyledViewsTrendingDiv>
                         <StyledEyeIcon />
                         <StyledStatisticCaption variant="caption">
                             {views}
@@ -457,7 +462,7 @@ export const DatabaseLandscapeCard = (props: DatabaseCardProps) => {
                         <StyledStatisticCaption variant="caption">
                             {trending}
                         </StyledStatisticCaption>
-                    </StyledViewsTrendingDiv>
+                    </StyledViewsTrendingDiv> */}
                 </StyledLeftActions>
                 <StyledLockButton
                     disabled={!global}
@@ -471,6 +476,11 @@ export const DatabaseLandscapeCard = (props: DatabaseCardProps) => {
 
                         global(isGlobal);
                     }}
+                    aria-label={
+                        isGlobal
+                            ? `Make ${name} private`
+                            : `Make ${name} public`
+                    }
                 >
                     {isGlobal ? <LockOpenRounded /> : <LockRounded />}
                 </StyledLockButton>
@@ -490,8 +500,8 @@ export const DatabaseTileCard = (props: DatabaseCardProps) => {
         isUpvoted,
         owner = 'N/A',
         votes = '0',
-        views = 'N/A',
-        trending = 'N/A',
+        // views = 'N/A',
+        // trending = 'N/A',
         onClick,
         favorite,
         upvote,
@@ -502,7 +512,6 @@ export const DatabaseTileCard = (props: DatabaseCardProps) => {
         <StyledTileCard onClick={() => onClick(id)}>
             {/* Use Card.Media instead, uses img tag */}
             <StyledCardImage
-                // src={image}
                 src={`${process.env.MODULE}/api/app-${id}/appImage/download`}
                 sx={{ height: '118px' }}
             />
@@ -529,6 +538,11 @@ export const DatabaseTileCard = (props: DatabaseCardProps) => {
                             e.stopPropagation();
                             favorite(isFavorite);
                         }}
+                        aria-label={
+                            isFavorite
+                                ? `Unfavorite ${name}`
+                                : `Favorite ${name}`
+                        }
                     >
                         {isFavorite ? <Star /> : <StarOutlineOutlined />}
                     </IconButton>
@@ -572,12 +586,17 @@ export const DatabaseTileCard = (props: DatabaseCardProps) => {
                                 e.stopPropagation();
                                 upvote(isUpvoted);
                             }}
+                            aria-label={
+                                isUpvoted
+                                    ? `Downvote ${name}`
+                                    : `Upvote ${name}`
+                            }
                         >
                             {isUpvoted ? <ArrowDropDown /> : <ArrowDropUp />}
                         </ButtonGroup.Item>
                         <UnstyledVoteCount>{votes}</UnstyledVoteCount>
                     </StyledButtonGroup>
-                    <StyledViewsTrendingDiv>
+                    {/* <StyledViewsTrendingDiv>
                         <StyledEyeIcon />
                         <StyledStatisticCaption variant="caption">
                             {views}
@@ -588,7 +607,7 @@ export const DatabaseTileCard = (props: DatabaseCardProps) => {
                         <StyledStatisticCaption variant="caption">
                             {trending}
                         </StyledStatisticCaption>
-                    </StyledViewsTrendingDiv>
+                    </StyledViewsTrendingDiv> */}
                 </StyledLeftActions>
                 <StyledLockButton
                     title={
@@ -601,6 +620,11 @@ export const DatabaseTileCard = (props: DatabaseCardProps) => {
                         e.stopPropagation();
                         global(isGlobal);
                     }}
+                    aria-label={
+                        isGlobal
+                            ? `Make ${name} private`
+                            : `Make ${name} public`
+                    }
                 >
                     {isGlobal ? <LockOpenRounded /> : <LockRounded />}
                 </StyledLockButton>
