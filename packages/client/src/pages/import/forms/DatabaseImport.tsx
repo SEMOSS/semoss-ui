@@ -16,7 +16,33 @@ const StyledBox = styled(Box)({
     boxShadow: '0px 5px 22px 0px rgba(0, 0, 0, 0.06)',
     width: '100%',
     padding: '24px 16px 16px 16px',
-    marginTop: '48px',
+    marginBottom: '32px',
+});
+
+const StyledStepBox = styled(Box)({
+    width: '350px',
+    height: '250px',
+    display: 'flex',
+    justifyContent: 'center',
+    alignItems: 'center',
+    border: '1px solid rgba(0,0,0,0.1)',
+    padding: '24px',
+    boxShadow: '16px 21px 15px -3px rgba(0,0,0,0.1)',
+});
+
+const StyledFormTypeBox = styled(Box)({
+    display: 'flex',
+    justifyContent: 'center',
+    alignItems: 'center',
+    border: '1px solid rgba(0,0,0,0.1)',
+    padding: '24px',
+    boxShadow: '10px 10px 10px -3px rgba(0,0,0,0.1)',
+});
+
+const StyledCategoryTitle = styled(Box)({
+    fontSize: '16px',
+    fontWeight: 'bold',
+    padding: '16px',
 });
 
 const UploadData = () => {
@@ -33,11 +59,10 @@ const UploadData = () => {
 };
 
 const stepsOne = [
-    'Drag and Drop Data',
-    'Connect to an External Database',
+    'Drag and Drop Data or Connect to an External Database',
     'Copy Database',
     'Upload Database',
-    // 'Build Database',
+    'Build Database',
 ];
 
 const stepsTwo = {
@@ -106,112 +131,116 @@ export const DatabaseImport = () => {
                 }
             >
                 <Box sx={{ width: '100%' }}>
-                    <Grid container columns={12}>
-                        {stepsOne.map((val, idx) => (
-                            <Grid item key={idx} xs={3} lg={3} md={3} xl={3}>
-                                <Box
-                                    onClick={() => {
-                                        setStepOne(val);
-                                        if (
-                                            val === 'Copy Database' ||
-                                            val === 'Upload Database'
-                                        ) {
-                                            setActiveStep(2);
-                                            setStepTwo('');
-                                        } else {
-                                            setActiveStep(1);
-                                            setStepTwo('');
-                                        }
-                                    }}
-                                    sx={{
-                                        width: '350px',
-                                        height: '250px',
-                                        display: 'flex',
-                                        justifyContent: 'center',
-                                        alignItems: 'center',
-                                        border: '1px solid rgba(0,0,0,0.1)',
-                                        padding: '24px',
-                                        boxShadow:
-                                            '16px 21px 15px -3px rgba(0,0,0,0.1)',
-                                    }}
+                    {activeStep === 0 && (
+                        <Grid container columns={12}>
+                            {stepsOne.map((val, idx) => (
+                                <Grid
+                                    item
+                                    key={idx}
+                                    xs={3}
+                                    lg={3}
+                                    md={3}
+                                    xl={3}
                                 >
-                                    <Box>{val}</Box>
-                                </Box>
-                            </Grid>
-                        ))}
-                    </Grid>
-                    <Box
-                        sx={{
-                            display: 'flex',
-                            flexDirection: 'row',
-                            width: '100%',
-                        }}
-                    >
-                        <StyledBox>Hi</StyledBox>
-                        <StyledBox>Hi</StyledBox>
-                    </Box>
+                                    <StyledStepBox
+                                        onClick={() => {
+                                            setStepOne(val);
+                                            if (
+                                                val === 'Copy Database' ||
+                                                val === 'Upload Database'
+                                            ) {
+                                                setActiveStep(2);
+                                                setStepTwo('');
+                                            } else {
+                                                setActiveStep(1);
+                                                setStepTwo('');
+                                            }
+                                        }}
+                                    >
+                                        <Box>{val}</Box>
+                                    </StyledStepBox>
+                                </Grid>
+                            ))}
+                        </Grid>
+                    )}
                 </Box>
                 {(activeStep === 1 || activeStep === 2) && (
                     <StyledBox>
                         {activeStep === 1 && !stepTwo && (
-                            <Grid container rowSpacing={2}>
-                                {Object.keys(stepsTwo).map((val, idx) => {
-                                    if (val === stepOne) {
-                                        return stepsTwo[val].map(
-                                            (value, index) => {
-                                                console.log(value);
+                            <Box>
+                                <StyledCategoryTitle>
+                                    File Uploads
+                                </StyledCategoryTitle>
+                                <Box>
+                                    <Grid
+                                        container
+                                        columns={6}
+                                        columnGap={2}
+                                        rowGap={2}
+                                    >
+                                        {stepsTwo['Drag and Drop Data'].map(
+                                            (stage, idx) => {
                                                 return (
                                                     <Grid
+                                                        key={idx}
                                                         item
-                                                        key={index}
-                                                        xs={1}
                                                         lg={1}
                                                         md={1}
+                                                        xs={1}
                                                         xl={1}
+                                                        sm={1}
                                                     >
-                                                        <Box
-                                                            onClick={() => {
+                                                        <StyledFormTypeBox
+                                                            onClick={() =>
                                                                 setStepTwo(
-                                                                    value,
-                                                                );
-                                                                if (
-                                                                    value ===
-                                                                        'Copy Database' ||
-                                                                    value ===
-                                                                        'Upload Database'
-                                                                ) {
-                                                                    setActiveStep(
-                                                                        2,
-                                                                    );
-                                                                } else {
-                                                                    setActiveStep(
-                                                                        1,
-                                                                    );
-                                                                }
-                                                            }}
-                                                            sx={{
-                                                                height: '100px',
-                                                                width: '100px',
-                                                                display: 'flex',
-                                                                justifyContent:
-                                                                    'center',
-                                                                alignItems:
-                                                                    'center',
-                                                                border: '1px solid rgba(0,0,0,0.1)',
-                                                                padding: '24px',
-                                                                fontSize:
-                                                                    '12px',
-                                                            }}
+                                                                    stage,
+                                                                )
+                                                            }
                                                         >
-                                                            <Box>{value}</Box>
-                                                        </Box>
+                                                            {stage}
+                                                        </StyledFormTypeBox>
                                                     </Grid>
                                                 );
                                             },
-                                        );
-                                    }
-                                })}
-                            </Grid>
+                                        )}
+                                    </Grid>
+                                </Box>
+                                <StyledCategoryTitle>
+                                    Connections
+                                </StyledCategoryTitle>
+                                <Box>
+                                    <Grid
+                                        container
+                                        columns={6}
+                                        columnGap={2}
+                                        rowGap={2}
+                                    >
+                                        {stepsTwo[
+                                            'Connect to an External Database'
+                                        ].map((stage, idx) => {
+                                            return (
+                                                <Grid
+                                                    key={idx}
+                                                    item
+                                                    lg={1}
+                                                    md={1}
+                                                    xs={1}
+                                                    xl={1}
+                                                    sm={1}
+                                                >
+                                                    <StyledFormTypeBox
+                                                        onClick={() =>
+                                                            setStepTwo(stage)
+                                                        }
+                                                    >
+                                                        {stage}
+                                                    </StyledFormTypeBox>
+                                                </Grid>
+                                            );
+                                        })}
+                                    </Grid>
+                                </Box>
+                            </Box>
                         )}
                         {activeStep === 1 &&
                             stepTwo &&

@@ -16,7 +16,7 @@ import { Icon } from "../Icon";
 import { FileDisplay } from "./FileDisplay";
 
 const StyledContainer = styled("div")({
-    height: "100%",
+    height: "50%",
     width: "100%",
     padding: "1rem",
 });

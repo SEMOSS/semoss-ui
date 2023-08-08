@@ -31,6 +31,7 @@ import {
 
 import {
     TextField,
+    TextFieldProps,
     Select as MuiSelect,
     Switch as MuiSwitch,
     styled,
@@ -41,7 +42,7 @@ import {
 // type FieldInput = GenericField<"input", InputProps<string>>;
 
 type FieldInput = { component: 'input' } & Omit<
-    InputProps<string>,
+    TextFieldProps,
     'onChange' | 'value' | 'defaultValue'
 >;
 
@@ -189,6 +190,7 @@ export const Field = <V extends FieldValues>(
                                 disabled={disabled}
                                 error={!!hasError}
                                 label={label ? label : null}
+                                fullWidth={true}
                             />
                         </Form.Field>
                     );
