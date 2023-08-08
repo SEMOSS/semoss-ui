@@ -1,75 +1,18 @@
-import React, { useState, useMemo } from 'react';
-import {
-    Button,
-    Card,
-    Chip,
-    Grid,
-    Icon,
-    Stack,
-    styled,
-    Typography,
-} from '@semoss/ui';
-
-import {
-    EditOutlined,
-    Star,
-    DownloadForOffline,
-    RemoveRedEyeOutlined,
-} from '@mui/icons-material';
-import { SEMOSS } from '@/assets/img/SEMOSS';
+import { Chip, Stack, styled, Typography } from '@semoss/ui';
 
 import { formatName } from '@/utils';
 
-import { Link } from 'react-router-dom';
 import { observer } from 'mobx-react-lite';
 
-import { Section, LoadingScreen } from '@/components/ui';
+import { Section } from '@/components/ui';
 import { Markdown } from '@/components/common';
-import { DatabaseCard, EditDatabaseDetails } from '@/components/database';
-import { usePixel, useDatabase, useRootStore } from '@/hooks';
-import { theme } from '@semoss/components';
+import { useDatabase, useRootStore } from '@/hooks';
 import { SimilarDatabases } from '@/components/database/SimilarDatabases';
 import { DatabaseStatistics } from '@/components/database/DatabaseStatistics';
 
 const StyledPage = styled('div')(() => ({
     position: 'relative',
     zIndex: '0',
-}));
-
-const StyledEditorHolder = styled('div')(() => ({
-    position: 'absolute',
-    top: '0',
-    right: '0',
-}));
-
-const StyledLink = styled(Link)(() => ({
-    display: 'inline-block',
-}));
-
-const StyledCardImageContainer = styled('div')(({ theme }) => ({
-    display: 'flex',
-    justifyContent: 'center',
-    alignItems: 'center',
-    width: theme.spacing(7.5),
-    height: theme.spacing(7.5),
-    borderRadius: theme.spacing(0.75),
-    backgroundColor: theme.palette.semossBlue['50'],
-}));
-
-const StyledCardContent = styled('div')(({ theme }) => ({
-    gap: '10px',
-    display: 'flex',
-    alignItems: 'center',
-    alignSelf: 'stretch',
-    padding: theme.spacing(2),
-}));
-
-const StyledCardDetailsContainer = styled('div')(({ theme }) => ({
-    display: 'flex',
-    flex: '1 0 0',
-    flexDirection: 'column',
-    alignItems: 'flex-start',
-    gap: theme.spacing(0.5),
 }));
 
 export const EngineIndexPage = observer(() => {

@@ -1,7 +1,8 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { useRootStore } from '@/hooks';
-import { useNotification } from '@semoss/components';
 import {
+    styled,
+    useNotification,
     Avatar,
     Box,
     Button,
@@ -10,8 +11,6 @@ import {
     Modal,
     RadioGroup,
     Stack,
-    Typography,
-    styled,
 } from '@semoss/ui';
 import { EditRounded, RemoveRedEyeRounded } from '@mui/icons-material';
 
@@ -61,7 +60,7 @@ export const RequestAccess = (props: RequestAccessProps) => {
             if (type.indexOf('ERROR') > -1) {
                 notification.add({
                     color: 'error',
-                    content: output,
+                    message: output,
                 });
             }
 

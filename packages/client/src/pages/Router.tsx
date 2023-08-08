@@ -4,8 +4,6 @@ import { observer } from 'mobx-react-lite';
 import { useRootStore } from '@/hooks/';
 import { LoadingScreen } from '@/components/ui';
 
-import { TempPage } from './TempPage';
-
 import { AuthenticatedLayout } from './AuthenticatedLayout';
 import { NavigatorLayout } from './NavigatorLayout';
 
@@ -78,12 +76,7 @@ export const Router = observer(() => {
                                 path="metadata"
                                 element={<DatabaseMetadataPage />}
                             />
-                            <Route
-                                path="insights"
-                                element={
-                                    <TempPage title={'Database Insights'} />
-                                }
-                            />
+                            <Route path="insights" element={<>TODO</>} />
                             <Route
                                 path="settings"
                                 element={<DatabaseSettingsPage />}

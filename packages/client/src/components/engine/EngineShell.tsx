@@ -1,31 +1,21 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import {
+    styled,
     Breadcrumbs,
     Button,
     Chip,
-    LinearProgress,
-    styled,
     Stack,
     Typography,
 } from '@semoss/ui';
 
-import { useNotification } from '@semoss/components';
 import { useRootStore, useDatabase, usePixel } from '@/hooks';
 
 import { EditDatabaseDetails } from '@/components/database';
 import { Page, LoadingScreen } from '@/components/ui';
 import { RequestAccess } from './';
-import {
-    Add,
-    ArrowCircleDown,
-    EditOutlined,
-    SimCardDownload,
-} from '@mui/icons-material';
+import { Add, EditOutlined, SimCardDownload } from '@mui/icons-material';
 import { formatName } from '@/utils';
 import { Link } from 'react-router-dom';
-
-import { types } from 'util';
-import defaultDbImage from '../../assets/img/placeholder.png';
 
 const StyledInfo = styled('div')(({ theme }) => ({
     display: 'flex',
@@ -57,16 +47,6 @@ const StyledChipContainer = styled('div')(({ theme }) => ({
     display: 'flex',
     alignItems: 'flex-start',
     gap: theme.spacing(1),
-}));
-
-const StyledInfoFooter = styled(Typography)(() => ({
-    textTransform: 'uppercase',
-    textOverflow: 'ellipsis',
-}));
-
-const StyledUsabilityProgress = styled(LinearProgress)(({ theme }) => ({
-    flex: 1,
-    width: theme.spacing(1),
 }));
 
 const StyledLink = styled(Link)(({ theme }) => ({

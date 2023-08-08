@@ -1,8 +1,6 @@
-import { useEffect, useState } from 'react';
-import { useNotification } from '@semoss/components';
-import { Button, Paper, TextArea, Typography } from '@semoss/ui';
-import { styled } from '@semoss/ui';
-import Editor, { useMonaco } from '@monaco-editor/react';
+import { useState } from 'react';
+import { styled, useNotification, Button, Paper, Typography } from '@semoss/ui';
+import Editor from '@monaco-editor/react';
 import { useRootStore } from '@/hooks';
 
 interface UpdateSMSSProps {
@@ -45,12 +43,12 @@ export const UpdateSMSS = (props: UpdateSMSSProps) => {
             if (data.success) {
                 notification.add({
                     color: 'success',
-                    content: 'Successfully updated SMSS Properties',
+                    message: 'Successfully updated SMSS Properties',
                 });
             } else {
                 notification.add({
                     color: 'error',
-                    content: 'Unsuccessfully updated SMSS Properties',
+                    message: 'Unsuccessfully updated SMSS Properties',
                 });
             }
         });

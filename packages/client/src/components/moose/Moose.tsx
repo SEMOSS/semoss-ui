@@ -4,7 +4,7 @@ import { MooseContent } from './MooseContent';
 
 import { createTheme } from '@semoss/components';
 
-const t = createTheme({});
+const theme = createTheme({});
 
 const StyledButton = styled('button', {
     transition: 'all .2s ease-in-out',
@@ -48,7 +48,7 @@ export const Moose = (props): JSX.Element => {
 
     return (
         <>
-            <Theme theme={t}>
+            <Theme theme={theme}>
                 <Popover>
                     <Popover.Trigger>
                         <StyledButton>

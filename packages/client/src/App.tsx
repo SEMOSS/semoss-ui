@@ -1,7 +1,10 @@
 import axios from 'axios';
 import { HashRouter } from 'react-router-dom';
-import { Theme, Notification } from '@semoss/components';
-import { ThemeProvider } from '@semoss/ui';
+import {
+    Theme as OldTheme,
+    Notification as OldNotification,
+} from '@semoss/components';
+import { ThemeProvider, Notification } from '@semoss/ui';
 
 import { theme } from './theme';
 import { RootStore } from '@/stores';
@@ -35,15 +38,17 @@ export const App = () => {
     return (
         <RootStoreContext.Provider value={_store}>
             <ThemeProvider reset={true}>
-                <Theme reset={false} theme={theme}>
-                    <Notification>
-                        <LoadingScreen delay={300}>
-                            <HashRouter>
-                                <Router />
-                            </HashRouter>
-                        </LoadingScreen>
-                    </Notification>
-                </Theme>
+                <Notification>
+                    <OldTheme reset={false} theme={theme}>
+                        <OldNotification>
+                            <LoadingScreen delay={300}>
+                                <HashRouter>
+                                    <Router />
+                                </HashRouter>
+                            </LoadingScreen>
+                        </OldNotification>
+                    </OldTheme>
+                </Notification>
             </ThemeProvider>
         </RootStoreContext.Provider>
     );

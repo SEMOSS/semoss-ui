@@ -23,7 +23,6 @@ import { TeamsPermissionsPage } from './TeamsPermissionsPage';
 import { MyProfilePage } from './MyProfilePage';
 import { ThemePage } from './ThemePage';
 import { JobsPage } from '../jobs/JobsPage';
-import { JobsPageOld } from '../jobs/JobsPageOld';
 
 // map each route to a component
 const SETTINGS_COMPONETS = {
@@ -45,7 +44,6 @@ const SETTINGS_COMPONETS = {
     'teams-permissions': TeamsPermissionsPage,
     'my-profile': MyProfilePage,
     jobs: JobsPage,
-    'jobs-old': JobsPageOld, // TODO delete later
     theme: ThemePage,
 };
 

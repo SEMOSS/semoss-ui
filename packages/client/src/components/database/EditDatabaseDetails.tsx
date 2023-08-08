@@ -1,6 +1,12 @@
 import { useState, useEffect } from 'react';
-import { useNotification } from '@semoss/components';
-import { Modal, Button, Stack, TextField, Autocomplete } from '@semoss/ui';
+import {
+    Modal,
+    Button,
+    Stack,
+    TextField,
+    Autocomplete,
+    useNotification,
+} from '@semoss/ui';
 import { useForm, Controller } from 'react-hook-form';
 import { observer } from 'mobx-react-lite';
 
@@ -115,7 +121,7 @@ export const EditDatabaseDetails = observer(
             if (Object.keys(meta).length === 0) {
                 notification.add({
                     color: 'warning',
-                    content: 'Nothing to Save',
+                    message: 'Nothing to Save',
                 });
 
                 return;
@@ -135,7 +141,7 @@ export const EditDatabaseDetails = observer(
                     if (operationType.indexOf('ERROR') > -1) {
                         notification.add({
                             color: 'error',
-                            content: output,
+                            message: output,
                         });
 
                         return;
@@ -143,7 +149,7 @@ export const EditDatabaseDetails = observer(
 
                     notification.add({
                         color: 'success',
-                        content: additionalOutput[0].output,
+                        message: additionalOutput[0].output,
                     });
 
                     // close it and succesfully message
@@ -152,7 +158,7 @@ export const EditDatabaseDetails = observer(
                 .catch((error) => {
                     notification.add({
                         color: 'error',
-                        content: error.message,
+                        message: error.message,
                     });
                 });
         });

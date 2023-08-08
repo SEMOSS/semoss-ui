@@ -6,13 +6,6 @@ import React, {
     SyntheticEvent,
 } from 'react';
 import { useForm } from 'react-hook-form';
-import {
-    Table,
-    Form,
-    useNotification,
-    styled as styledOld,
-    theme,
-} from '@semoss/components';
 
 import { useAPI, useRootStore } from '@/hooks';
 import { LoadingScreen } from '@/components/ui';
@@ -25,6 +18,7 @@ import {
     TextField,
     ToggleTabsGroup,
     Typography,
+    useNotification,
 } from '@semoss/ui';
 import Editor from '@monaco-editor/react';
 import google from '../../assets/img/google.png';
@@ -106,7 +100,7 @@ const StyledButton = styled(Button)({
     fontWeight: 'bold',
 });
 
-const StyledForm = styled(Form)(({ theme }) => ({
+const StyledForm = styled('form')(({ theme }) => ({
     marginLeft: theme.spacing(8),
     width: '100%',
 }));
@@ -434,7 +428,7 @@ const SocialProperty = (props) => {
             .then((response) => {
                 notification.add({
                     color: 'success',
-                    content: `Succesfully modified ${fieldName} properties`,
+                    message: `Succesfully modified ${fieldName} properties`,
                 });
 
                 const valueCopy = [];

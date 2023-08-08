@@ -19,7 +19,6 @@ import FilterAltIcon from '@mui/icons-material/FilterAlt';
 import MenuIcon from '@mui/icons-material/Menu';
 import AddIcon from '@mui/icons-material/Add';
 //import Icon from '@mdi/react';
-import { useNotification } from '@semoss/components';
 import {
     Button,
     Checkbox,
@@ -42,6 +41,7 @@ import {
     Card,
     Popover,
     IconButton,
+    useNotification,
 } from '@semoss/ui';
 import { SyntheticEvent, useEffect, useRef, useState } from 'react';
 import { useForm } from 'react-hook-form';
@@ -600,7 +600,7 @@ export function JobsPage() {
                 if (!job.recipeParameters) {
                     notification.add({
                         color: 'warning',
-                        content:
+                        message:
                             'Please fill in all parameter fields before continuing.',
                     });
                     // we don't want to continue any further processing, so return
@@ -645,13 +645,13 @@ export function JobsPage() {
                 if (type.indexOf('ERROR') > -1) {
                     notification.add({
                         color: 'error',
-                        content:
+                        message:
                             'Something went wrong. Job could not be edited.',
                     });
                 } else {
                     notification.add({
                         color: 'success',
-                        content: 'Job was successfully edited.',
+                        message: 'Job was successfully edited.',
                     });
                     getJobs(true, []);
                 }
@@ -667,7 +667,7 @@ export function JobsPage() {
             ) {
                 notification.add({
                     color: 'error',
-                    content: 'Job name must be unique',
+                    message: 'Job name must be unique',
                 });
                 return;
             }
@@ -689,14 +689,14 @@ export function JobsPage() {
                 if (type.indexOf('ERROR') > -1) {
                     notification.add({
                         color: 'error',
-                        content:
+                        message:
                             'Something went wrong. Job could not be scheduled.',
                     });
                     return;
                 } else {
                     notification.add({
                         color: 'success',
-                        content: 'Job was successfully scheduled.',
+                        message: 'Job was successfully scheduled.',
                     });
                     getJobs(true, []);
                 }
@@ -964,7 +964,7 @@ export function JobsPage() {
             if (type.indexOf('ERROR') > -1) {
                 notification.add({
                     color: 'error',
-                    content: 'Placeholder Data could not be retrieved.',
+                    message: 'Placeholder Data could not be retrieved.',
                 });
             } else {
                 setPlaceholderData(response.pixelReturn[0].output);
@@ -979,7 +979,7 @@ export function JobsPage() {
             if (type.indexOf('ERROR') > -1) {
                 notification.add({
                     color: 'error',
-                    content: `Something went wrong. Insights for project ID ${projectId} could not be retrieved.`,
+                    message: `Something went wrong. Insights for project ID ${projectId} could not be retrieved.`,
                 });
             } else {
                 const insights = response.pixelReturn[0].output;
@@ -1006,7 +1006,7 @@ export function JobsPage() {
             if (type.indexOf('ERROR') > -1) {
                 notification.add({
                     color: 'error',
-                    content:
+                    message:
                         'Something went wrong. Jobs could not be retrieved.',
                 });
             } else {
@@ -1123,7 +1123,7 @@ export function JobsPage() {
             if (type.indexOf('ERROR') > -1) {
                 notification.add({
                     color: 'error',
-                    content:
+                    message:
                         'Something went wrong. Job history could not be retrieved.',
                 });
             } else {
@@ -1236,7 +1236,7 @@ export function JobsPage() {
             if (type.indexOf('ERROR') === -1) {
                 notification.add({
                     color: 'success',
-                    content: `Successfully deleted ${type}`,
+                    message: `Successfully deleted ${type}`,
                 });
                 setShowDeleteModal(false);
                 setSelectedJob(null);
@@ -1245,7 +1245,7 @@ export function JobsPage() {
             } else {
                 notification.add({
                     color: 'error',
-                    content: output,
+                    message: output,
                 });
             }
         });
@@ -1262,12 +1262,12 @@ export function JobsPage() {
             if (type.indexOf('ERROR') === -1) {
                 notification.add({
                     color: 'success',
-                    content: `Job was executed`,
+                    message: `Job was executed`,
                 });
             } else {
                 notification.add({
                     color: 'error',
-                    content: output,
+                    message: output,
                 });
                 getHistory(selectedTags);
             }
@@ -1332,7 +1332,7 @@ export function JobsPage() {
             } else {
                 notification.add({
                     color: 'error',
-                    content: response.pixelReturn[0].output,
+                    message: response.pixelReturn[0].output,
                 });
             }
         });
@@ -1352,7 +1352,7 @@ export function JobsPage() {
             if (type.indexOf('ERROR') === -1) {
                 notification.add({
                     color: 'success',
-                    content: `Jobs are resumed`,
+                    message: `Jobs are resumed`,
                 });
                 getJobs(false, []);
                 setJobsToResume([]);
@@ -1361,7 +1361,7 @@ export function JobsPage() {
             } else {
                 notification.add({
                     color: 'error',
-                    content: output,
+                    message: output,
                 });
             }
         });
@@ -1379,7 +1379,7 @@ export function JobsPage() {
             if (type.indexOf('ERROR') === -1) {
                 notification.add({
                     color: 'success',
-                    content: `Jobs are paused`,
+                    message: `Jobs are paused`,
                 });
                 getJobs(false, []);
                 setJobsToPause([]);
@@ -1388,7 +1388,7 @@ export function JobsPage() {
             } else {
                 notification.add({
                     color: 'error',
-                    content: output,
+                    message: output,
                 });
             }
         });
@@ -1437,7 +1437,7 @@ export function JobsPage() {
             if (type.indexOf('ERROR') > -1) {
                 notification.add({
                     color: 'error',
-                    content:
+                    message:
                         'Something went wrong. Could not retrieve target app tables.',
                 });
             } else {
@@ -1456,7 +1456,7 @@ export function JobsPage() {
             if (type.indexOf('ERROR') > -1) {
                 notification.add({
                     color: 'error',
-                    content:
+                    message:
                         'Something went wrong. Could not retrieve templates.',
                 });
             } else {

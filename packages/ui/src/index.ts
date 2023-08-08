@@ -29,6 +29,7 @@ export * from "./components/Link";
 export * from "./components/List";
 export * from "./components/Menu";
 export * from "./components/Modal";
+export * from "./components/Notification";
 export * from "./components/Pagination";
 export * from "./components/Paper";
 export * from "./components/PhoneNumberPicker";

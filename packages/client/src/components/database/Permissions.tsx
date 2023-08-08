@@ -1,21 +1,13 @@
 import { useEffect, useMemo, useState, useRef, SyntheticEvent } from 'react';
-import { Navigate, useResolvedPath, useNavigate } from 'react-router-dom';
+import { Navigate, useResolvedPath } from 'react-router-dom';
 import { useForm, useFieldArray } from 'react-hook-form';
-
-import { useRootStore, useSettings, usePixel, useAPI } from '@/hooks';
-
-import { useNotification } from '@semoss/components';
-
-import { AppSettings } from '../project';
-
 import {
+    styled,
     Alert,
-    ButtonGroup,
     Button,
     Grid,
-    Checkbox as MuiCheckbox,
-    Table as MuiTable,
-    styled as MuiStyled,
+    Checkbox,
+    Table,
     IconButton,
     ToggleTabsGroup,
     AvatarGroup,
@@ -24,22 +16,20 @@ import {
     RadioGroup,
     Typography,
     Autocomplete,
-    Card as MuiCard,
+    Card,
     Box,
     Chip,
-    Icon as MuiIcon,
+    Icon,
     Link,
     Search,
     Stack,
-    ToggleButton,
+    Switch,
+    useNotification,
 } from '@semoss/ui';
-
 import {
     Check,
     Close,
     Delete,
-    FilterAltRounded,
-    SearchOutlined,
     EditRounded,
     RemoveRedEyeRounded,
     ClearRounded,
@@ -47,8 +37,10 @@ import {
     VisibilityOffRounded,
 } from '@mui/icons-material';
 
+import { useRootStore, usePixel, useAPI } from '@/hooks';
 import { LoadingScreen } from '@/components/ui';
-import { Switch } from '@semoss/ui';
+
+import { AppSettings } from '../project';
 
 const colors = [
     '#22A4FF',
@@ -60,7 +52,7 @@ const colors = [
     '#4CAF50',
 ];
 
-const StyledContent = MuiStyled('div')(({ theme }) => ({
+const StyledContent = styled('div')(({ theme }) => ({
     display: 'flex',
     width: '100%',
     flexDirection: 'column',
@@ -69,7 +61,7 @@ const StyledContent = MuiStyled('div')(({ theme }) => ({
     flexShrink: '0',
 }));
 
-const StyledMemberContent = MuiStyled('div')({
+const StyledMemberContent = styled('div')({
     display: 'flex',
     width: '100%',
     flexDirection: 'column',
@@ -78,7 +70,7 @@ const StyledMemberContent = MuiStyled('div')({
     flexShrink: '0',
 });
 
-const StyledMemberInnerContent = MuiStyled('div')({
+const StyledMemberInnerContent = styled('div')({
     display: 'flex',
     flexDirection: 'column',
     alignItems: 'flex-start',
@@ -86,36 +78,36 @@ const StyledMemberInnerContent = MuiStyled('div')({
     alignSelf: 'stretch',
 });
 
-const StyledTableContainer = MuiStyled(MuiTable.Container)({
+const StyledTableContainer = styled(Table.Container)({
     borderRadius: '12px',
     // background: #FFF;
     /* Devias Drop Shadow */
     boxShadow: '0px 5px 22px 0px rgba(0, 0, 0, 0.06)',
 });
 
-const StyledMemberTable = MuiStyled(MuiTable)({});
+const StyledMemberTable = styled(Table)({});
 
-const StyledTableTitleContainer = MuiStyled('div')({
+const StyledTableTitleContainer = styled('div')({
     display: 'flex',
     alignItems: 'center',
     alignSelf: 'stretch',
     boxShadow: '0px -1px 0px 0px rgba(0, 0, 0, 0.12) inset',
 });
 
-const StyledTableTitleDiv = MuiStyled('div')({
+const StyledTableTitleDiv = styled('div')({
     display: 'flex',
     padding: '12px 24px 12px 16px',
     alignItems: 'center',
     gap: '10px',
 });
 
-const StyledTableTitleMemberContainer = MuiStyled('div')({
+const StyledTableTitleMemberContainer = styled('div')({
     display: 'flex',
     alignItems: 'flex-start',
     flex: '1 0 0',
 });
 
-const StyledAvatarGroupContainer = MuiStyled('div')({
+const StyledAvatarGroupContainer = styled('div')({
     display: 'flex',
     width: '130px',
     height: '56px',
@@ -126,7 +118,7 @@ const StyledAvatarGroupContainer = MuiStyled('div')({
     gap: '10px',
 });
 
-const StyledTableTitleMemberCountContainer = MuiStyled('div')({
+const StyledTableTitleMemberCountContainer = styled('div')({
     display: 'flex',
     height: '56px',
     padding: '6px 16px 6px 8px',
@@ -136,27 +128,27 @@ const StyledTableTitleMemberCountContainer = MuiStyled('div')({
     gap: '10px',
 });
 
-const StyledTableTitleMemberCount = MuiStyled('div')({
+const StyledTableTitleMemberCount = styled('div')({
     display: 'flex',
     flexDirection: 'column',
     alignItems: 'flex-start',
 });
 
-const StyledSearchButtonContainer = MuiStyled('div')({
+const StyledSearchButtonContainer = styled('div')({
     display: 'flex',
     // padding: '5px 8px',
     alignItems: 'center',
     // gap: '10px',
 });
 
-const StyledFilterButtonContainer = MuiStyled('div')({
+const StyledFilterButtonContainer = styled('div')({
     display: 'flex',
     padding: '5px 8px',
     alignItems: 'center',
     gap: '10px',
 });
 
-const StyledDeleteSelectedContainer = MuiStyled('div')({
+const StyledDeleteSelectedContainer = styled('div')({
     display: 'flex',
     padding: '10px 8px 10px 16px',
     flexDirection: 'column',
@@ -165,7 +157,7 @@ const StyledDeleteSelectedContainer = MuiStyled('div')({
     gap: '10px',
 });
 
-const StyledAddMemberContainer = MuiStyled('div')({
+const StyledAddMemberContainer = styled('div')({
     display: 'flex',
     padding: '10px 24px 10px 8px',
     flexDirection: 'column',
@@ -174,13 +166,13 @@ const StyledAddMemberContainer = MuiStyled('div')({
     gap: '10px',
 });
 
-const StyledNoMembersContainer = MuiStyled('div')({
+const StyledNoMembersContainer = styled('div')({
     width: '100%',
     borderRadius: '12px',
     boxShadow: '0px 5px 22px 0px rgba(0, 0, 0, 0.06)',
 });
 
-const StyledNoMembersDiv = MuiStyled('div')({
+const StyledNoMembersDiv = styled('div')({
     width: '100%',
     height: '503px',
     display: 'flex',
@@ -190,11 +182,11 @@ const StyledNoMembersDiv = MuiStyled('div')({
     alignItems: 'center',
 });
 
-const StyledCard = MuiStyled(MuiCard)({
+const StyledCard = styled(Card)({
     borderRadius: '12px',
 });
 
-const StyledIcon = MuiStyled(MuiIcon)(({ theme }) => ({
+const StyledIcon = styled(Icon)(({ theme }) => ({
     color: 'rgba(0, 0, 0, .5)',
 }));
 
@@ -436,7 +428,7 @@ export const Permissions = (props: PermissionsProps) => {
     );
 };
 
-const StyledAlert = MuiStyled(Alert)(({ theme }) => ({
+const StyledAlert = styled(Alert)(({ theme }) => ({
     width: '468px',
     height: theme.spacing(13),
     backgroundColor: theme.palette.background.paper,
@@ -499,7 +491,7 @@ export const WorkflowAccess = (props: WorkflowAccessProps) => {
             if (operationType.indexOf('ERROR') === -1) {
                 notification.add({
                     color: 'success',
-                    content: `Successfully deleted ${type}`,
+                    message: `Successfully deleted ${type}`,
                 });
 
                 // go back to page before
@@ -507,7 +499,7 @@ export const WorkflowAccess = (props: WorkflowAccessProps) => {
             } else {
                 notification.add({
                     color: 'error',
-                    content: output,
+                    message: output,
                 });
             }
         });
@@ -535,12 +527,12 @@ export const WorkflowAccess = (props: WorkflowAccessProps) => {
 
                     notification.add({
                         color: 'success',
-                        content: 'Succesfully editted visibility.',
+                        message: 'Succesfully editted visibility.',
                     });
                 }
             })
             .catch((error) => {
-                notification.add({ color: 'error', content: error });
+                notification.add({ color: 'error', message: error });
             });
     };
 
@@ -567,12 +559,12 @@ export const WorkflowAccess = (props: WorkflowAccessProps) => {
 
                     notification.add({
                         color: 'success',
-                        content: 'Succesfully editted global property.',
+                        message: 'Succesfully editted global property.',
                     });
                 }
             })
             .catch((error) => {
-                notification.add({ color: 'error', content: error });
+                notification.add({ color: 'error', message: error });
             });
     };
 
@@ -824,13 +816,13 @@ export const PendingMembersTable = (props) => {
 
                 notification.add({
                     color: 'success',
-                    content: 'Succesfully approved user permissions',
+                    message: 'Succesfully approved user permissions',
                 });
             })
             .catch((error) => {
                 notification.add({
                     color: 'error',
-                    content: error,
+                    message: error,
                 });
             });
     };
@@ -896,14 +888,14 @@ export const PendingMembersTable = (props) => {
 
                 notification.add({
                     color: 'success',
-                    content: 'Succesfully denied user permissions',
+                    message: 'Succesfully denied user permissions',
                 });
             })
             .catch((error) => {
                 // show err to user
                 notification.add({
                     color: 'error',
-                    content: error,
+                    message: error,
                 });
             });
     };
@@ -1015,10 +1007,10 @@ export const PendingMembersTable = (props) => {
                             )}
                         </StyledTableTitleContainer>
                         <StyledMemberTable>
-                            <MuiTable.Head>
-                                <MuiTable.Row>
-                                    <MuiTable.Cell>
-                                        <MuiCheckbox
+                            <Table.Head>
+                                <Table.Row>
+                                    <Table.Cell>
+                                        <Checkbox
                                             checked={
                                                 selectedPending.length ===
                                                     pendingMembers.length &&
@@ -1037,14 +1029,14 @@ export const PendingMembersTable = (props) => {
                                                 }
                                             }}
                                         />
-                                    </MuiTable.Cell>
-                                    <MuiTable.Cell>Name</MuiTable.Cell>
-                                    <MuiTable.Cell>Permission</MuiTable.Cell>
-                                    <MuiTable.Cell>Request Date</MuiTable.Cell>
-                                    <MuiTable.Cell>Actions</MuiTable.Cell>
-                                </MuiTable.Row>
-                            </MuiTable.Head>
-                            <MuiTable.Body>
+                                    </Table.Cell>
+                                    <Table.Cell>Name</Table.Cell>
+                                    <Table.Cell>Permission</Table.Cell>
+                                    <Table.Cell>Request Date</Table.Cell>
+                                    <Table.Cell>Actions</Table.Cell>
+                                </Table.Row>
+                            </Table.Head>
+                            <Table.Body>
                                 {pendingMembers.map((x, i) => {
                                     const user = pendingMembers[i];
 
@@ -1062,9 +1054,9 @@ export const PendingMembersTable = (props) => {
                                     }
                                     if (user) {
                                         return (
-                                            <MuiTable.Row key={i}>
-                                                <MuiTable.Cell>
-                                                    <MuiCheckbox
+                                            <Table.Row key={i}>
+                                                <Table.Cell>
+                                                    <Checkbox
                                                         checked={isSelected}
                                                         onChange={() => {
                                                             if (isSelected) {
@@ -1097,14 +1089,14 @@ export const PendingMembersTable = (props) => {
                                                             }
                                                         }}
                                                     />
-                                                </MuiTable.Cell>
-                                                <MuiTable.Cell
+                                                </Table.Cell>
+                                                <Table.Cell
                                                     component="td"
                                                     scope="row"
                                                 >
                                                     {user.REQUEST_USERID}
-                                                </MuiTable.Cell>
-                                                <MuiTable.Cell>
+                                                </Table.Cell>
+                                                <Table.Cell>
                                                     <RadioGroup
                                                         row
                                                         value={user.PERMISSION}
@@ -1129,11 +1121,11 @@ export const PendingMembersTable = (props) => {
                                                             label="Read-Only"
                                                         />
                                                     </RadioGroup>
-                                                </MuiTable.Cell>
-                                                <MuiTable.Cell>
+                                                </Table.Cell>
+                                                <Table.Cell>
                                                     {user.REQUEST_TIMESTAMP}
-                                                </MuiTable.Cell>
-                                                <MuiTable.Cell>
+                                                </Table.Cell>
+                                                <Table.Cell>
                                                     <IconButton
                                                         onClick={() => {
                                                             approvePendingMembers(
@@ -1156,24 +1148,24 @@ export const PendingMembersTable = (props) => {
                                                     >
                                                         <Close />
                                                     </IconButton>
-                                                </MuiTable.Cell>
-                                            </MuiTable.Row>
+                                                </Table.Cell>
+                                            </Table.Row>
                                         );
                                     } else {
                                         return (
-                                            <MuiTable.Row
+                                            <Table.Row
                                                 key={i + 'No data available'}
                                             >
-                                                <MuiTable.Cell></MuiTable.Cell>
-                                                <MuiTable.Cell></MuiTable.Cell>
-                                                <MuiTable.Cell></MuiTable.Cell>
-                                                <MuiTable.Cell></MuiTable.Cell>
-                                                <MuiTable.Cell></MuiTable.Cell>
-                                            </MuiTable.Row>
+                                                <Table.Cell></Table.Cell>
+                                                <Table.Cell></Table.Cell>
+                                                <Table.Cell></Table.Cell>
+                                                <Table.Cell></Table.Cell>
+                                                <Table.Cell></Table.Cell>
+                                            </Table.Row>
                                         );
                                     }
                                 })}
-                            </MuiTable.Body>
+                            </Table.Body>
                         </StyledMemberTable>
                     </StyledTableContainer>
                 ) : (
@@ -1197,7 +1189,7 @@ export const PendingMembersTable = (props) => {
     );
 };
 
-const StyledModalContentText = MuiStyled(Modal.ContentText)({
+const StyledModalContentText = styled(Modal.ContentText)({
     display: 'flex',
     flexDirection: 'column',
     gap: '.5rem',
@@ -1268,7 +1260,7 @@ export const MembersTable = (props) => {
             ? 'getEngineUsers'
             : type === 'project'
             ? 'getProjectUsers'
-            : type === 'insight' && 'getInsightUsers';
+            : 'getInsightUsers';
 
     const getMembers = useAPI([
         getMembersString,
@@ -1336,13 +1328,13 @@ export const MembersTable = (props) => {
             .then((resp) => {
                 notification.add({
                     color: 'success',
-                    content: 'Updated member permssions',
+                    message: 'Updated member permssions',
                 });
             })
             .catch((err) => {
                 notification.add({
                     color: 'error',
-                    content: err,
+                    message: err,
                 });
                 getMembers.refresh();
             });
@@ -1405,7 +1397,7 @@ export const MembersTable = (props) => {
 
                 notification.add({
                     color: 'success',
-                    content: `Successfully removed ${
+                    message: `Successfully removed ${
                         userArr.length > 1 ? 'members' : 'member'
                     } from ${type}`,
                 });
@@ -1415,7 +1407,7 @@ export const MembersTable = (props) => {
             .catch((error) => {
                 notification.add({
                     color: 'error',
-                    content: error,
+                    message: error,
                 });
 
                 setDeleteMembersModal(false);
@@ -1483,7 +1475,7 @@ export const MembersTable = (props) => {
 
                 notification.add({
                     color: 'success',
-                    content: 'Successfully added member permissions',
+                    message: 'Successfully added member permissions',
                 });
             })
             .catch((error) => {
@@ -1493,7 +1485,7 @@ export const MembersTable = (props) => {
 
                 notification.add({
                     color: 'error',
-                    content: error,
+                    message: error,
                 });
             });
     };
@@ -1614,10 +1606,10 @@ export const MembersTable = (props) => {
                             </StyledAddMemberContainer>
                         </StyledTableTitleContainer>
                         <StyledMemberTable>
-                            <MuiTable.Head>
-                                <MuiTable.Row>
-                                    <MuiTable.Cell>
-                                        <MuiCheckbox
+                            <Table.Head>
+                                <Table.Row>
+                                    <Table.Cell>
+                                        <Checkbox
                                             checked={
                                                 selectedMembers.length ===
                                                     verifiedMembers.length &&
@@ -1636,16 +1628,14 @@ export const MembersTable = (props) => {
                                                 }
                                             }}
                                         />
-                                    </MuiTable.Cell>
-                                    <MuiTable.Cell>Name</MuiTable.Cell>
-                                    <MuiTable.Cell>Permission</MuiTable.Cell>
-                                    <MuiTable.Cell>
-                                        Permission Date
-                                    </MuiTable.Cell>
-                                    <MuiTable.Cell>Action</MuiTable.Cell>
-                                </MuiTable.Row>
-                            </MuiTable.Head>
-                            <MuiTable.Body>
+                                    </Table.Cell>
+                                    <Table.Cell>Name</Table.Cell>
+                                    <Table.Cell>Permission</Table.Cell>
+                                    <Table.Cell>Permission Date</Table.Cell>
+                                    <Table.Cell>Action</Table.Cell>
+                                </Table.Row>
+                            </Table.Head>
+                            <Table.Body>
                                 {verifiedMembers.map((x, i) => {
                                     const user = verifiedMembers[i];
 
@@ -1660,9 +1650,9 @@ export const MembersTable = (props) => {
                                     }
                                     if (user) {
                                         return (
-                                            <MuiTable.Row key={user.name + i}>
-                                                <MuiTable.Cell>
-                                                    <MuiCheckbox
+                                            <Table.Row key={user.name + i}>
+                                                <Table.Cell>
+                                                    <Checkbox
                                                         checked={isSelected}
                                                         onChange={() => {
                                                             if (isSelected) {
@@ -1692,14 +1682,14 @@ export const MembersTable = (props) => {
                                                             }
                                                         }}
                                                     />
-                                                </MuiTable.Cell>
-                                                <MuiTable.Cell
+                                                </Table.Cell>
+                                                <Table.Cell
                                                     component="td"
                                                     scope="row"
                                                 >
                                                     {user.id}: {user.name}
-                                                </MuiTable.Cell>
-                                                <MuiTable.Cell>
+                                                </Table.Cell>
+                                                <Table.Cell>
                                                     <RadioGroup
                                                         row
                                                         defaultValue={
@@ -1733,11 +1723,11 @@ export const MembersTable = (props) => {
                                                             label="Read-Only"
                                                         />
                                                     </RadioGroup>
-                                                </MuiTable.Cell>
-                                                <MuiTable.Cell>
+                                                </Table.Cell>
+                                                <Table.Cell>
                                                     Not Available
-                                                </MuiTable.Cell>
-                                                <MuiTable.Cell>
+                                                </Table.Cell>
+                                                <Table.Cell>
                                                     <IconButton
                                                         onClick={() => {
                                                             // set user
@@ -1752,27 +1742,27 @@ export const MembersTable = (props) => {
                                                     >
                                                         <Delete></Delete>
                                                     </IconButton>
-                                                </MuiTable.Cell>
-                                            </MuiTable.Row>
+                                                </Table.Cell>
+                                            </Table.Row>
                                         );
                                     } else {
                                         return (
-                                            <MuiTable.Row
+                                            <Table.Row
                                                 key={i + 'No data available'}
                                             >
-                                                <MuiTable.Cell></MuiTable.Cell>
-                                                <MuiTable.Cell></MuiTable.Cell>
-                                                <MuiTable.Cell></MuiTable.Cell>
-                                                <MuiTable.Cell></MuiTable.Cell>
-                                                <MuiTable.Cell></MuiTable.Cell>
-                                            </MuiTable.Row>
+                                                <Table.Cell></Table.Cell>
+                                                <Table.Cell></Table.Cell>
+                                                <Table.Cell></Table.Cell>
+                                                <Table.Cell></Table.Cell>
+                                                <Table.Cell></Table.Cell>
+                                            </Table.Row>
                                         );
                                     }
                                 })}
-                            </MuiTable.Body>
-                            <MuiTable.Footer>
-                                <MuiTable.Row>
-                                    <MuiTable.Pagination
+                            </Table.Body>
+                            <Table.Footer>
+                                <Table.Row>
+                                    <Table.Pagination
                                         rowsPerPageOptions={
                                             paginationOptions.membersPageCounts
                                         }
@@ -1784,8 +1774,8 @@ export const MembersTable = (props) => {
                                         rowsPerPage={5}
                                         count={filteredMembersCount}
                                     />
-                                </MuiTable.Row>
-                            </MuiTable.Footer>
+                                </Table.Row>
+                            </Table.Footer>
                         </StyledMemberTable>
                     </StyledTableContainer>
                 ) : (
@@ -1952,7 +1942,7 @@ export const MembersTable = (props) => {
                                                 </Avatar>
                                             </Box>
                                         </Box>
-                                        <MuiCard.Header
+                                        <Card.Header
                                             title={
                                                 <Typography variant="h5">
                                                     {user.name}
@@ -2047,7 +2037,7 @@ export const MembersTable = (props) => {
                             >
                                 <Stack spacing={1}>
                                     <StyledCard>
-                                        <MuiCard.Header
+                                        <Card.Header
                                             title={
                                                 <Box
                                                     sx={{
@@ -2092,7 +2082,7 @@ export const MembersTable = (props) => {
                                         />
                                     </StyledCard>
                                     <StyledCard>
-                                        <MuiCard.Header
+                                        <Card.Header
                                             title={
                                                 <Box
                                                     sx={{
@@ -2100,7 +2090,7 @@ export const MembersTable = (props) => {
                                                         fontSize: '16px',
                                                     }}
                                                 >
-                                                    <MuiIcon
+                                                    <Icon
                                                         sx={{
                                                             width: '20px',
                                                             height: '20px',
@@ -2112,7 +2102,7 @@ export const MembersTable = (props) => {
                                                         }}
                                                     >
                                                         <EditRounded />
-                                                    </MuiIcon>
+                                                    </Icon>
                                                     Editor
                                                 </Box>
                                             }
@@ -2136,7 +2126,7 @@ export const MembersTable = (props) => {
                                         />
                                     </StyledCard>
                                     <StyledCard>
-                                        <MuiCard.Header
+                                        <Card.Header
                                             title={
                                                 <Box
                                                     sx={{
@@ -2144,7 +2134,7 @@ export const MembersTable = (props) => {
                                                         fontSize: '16px',
                                                     }}
                                                 >
-                                                    <MuiIcon
+                                                    <Icon
                                                         sx={{
                                                             width: '20px',
                                                             height: '20px',
@@ -2156,7 +2146,7 @@ export const MembersTable = (props) => {
                                                         }}
                                                     >
                                                         <RemoveRedEyeRounded />
-                                                    </MuiIcon>
+                                                    </Icon>
                                                     Read-Only
                                                 </Box>
                                             }

@@ -10,13 +10,10 @@ import {
     Typography,
 } from '@semoss/ui';
 
-import { Icon } from '@semoss/components';
-
 import { Search as SearchIcon, MoreVert } from '@mui/icons-material';
 
 import { useNavigate } from 'react-router-dom';
 import { useSettings } from '@/hooks';
-import { LoadingScreen } from '@/components/ui';
 
 import { SEMOSS } from '@/assets/img/SEMOSS';
 import { DatabaseLayers } from '@/assets/img/DatabaseLayers';
@@ -65,10 +62,6 @@ const StyledSearchbarContainer = styled('div')(({ theme }) => ({
 const StyledSort = styled(Select)(({ theme }) => ({
     width: '20%',
 }));
-
-const StyledIcon = styled(Icon)({
-    fontSize: '30px',
-});
 
 const CardActionsLeft = styled('div')({
     display: 'flex',
