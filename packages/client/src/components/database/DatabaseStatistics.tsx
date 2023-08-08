@@ -1,6 +1,7 @@
 import { Card, Grid, Icon, styled, Typography } from '@semoss/ui';
 
 import {
+    AutoGraph,
     Star,
     DownloadForOffline,
     RemoveRedEyeOutlined,
@@ -97,7 +98,8 @@ export const DatabaseStatistics = (props: DatabaseStatisticsProps) => {
                     <StyledCardContent>
                         <StyledCardImageContainer>
                             <Icon color="primary">
-                                <SEMOSS width={36} height={40} />
+                                <AutoGraph />
+                                {/* <SEMOSS width={36} height={40} /> */}
                             </Icon>
                         </StyledCardImageContainer>
 

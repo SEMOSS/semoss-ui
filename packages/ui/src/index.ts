@@ -16,7 +16,7 @@ export * from "./components/Checkbox";
 export * from "./components/Chip";
 export * from "./components/CircularProgress";
 export * from "./components/Collapse";
-export * from "./components/Colorpicker";
+// export * from "./components/Colorpicker";
 export * from "./components/Container";
 export * from "./components/Divider";
 export * from "./components/FormControl";

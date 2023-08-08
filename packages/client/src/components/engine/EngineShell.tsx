@@ -95,7 +95,7 @@ export const EngineShell = (props: EngineShellProps) => {
      * @desc export DB pixel
      */
     const exportDB = () => {
-        const pixel = `META|ExportDatabase(database=["${id}"] );`;
+        const pixel = `META | ExportEngine(engine=["${id}"] );`;
 
         monolithStore.runQuery(pixel).then((response) => {
             const output = response.pixelReturn[0].output,
@@ -107,7 +107,7 @@ export const EngineShell = (props: EngineShellProps) => {
 
     // show a loading screen when it is pending
     if (status !== 'SUCCESS') {
-        return <LoadingScreen.Trigger description="Opening Database" />;
+        return <LoadingScreen.Trigger description="Opening Engine" />;
     }
 
     return (

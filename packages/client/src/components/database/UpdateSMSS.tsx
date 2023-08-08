@@ -1,7 +1,7 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { styled, useNotification, Button, Paper, Typography } from '@semoss/ui';
 import Editor from '@monaco-editor/react';
-import { useRootStore } from '@/hooks';
+import { useRootStore, usePixel } from '@/hooks';
 
 interface UpdateSMSSProps {
     id: string;
@@ -32,6 +32,22 @@ export const UpdateSMSS = (props: UpdateSMSSProps) => {
 
     const [initialValue, setInitialValue] = useState('');
     const [value, setValue] = useState('');
+
+    const smssDetails = usePixel(`GetDatabaseSMSS(database=['${id}'])`);
+
+    useEffect(() => {
+        if (smssDetails.status !== 'SUCCESS') {
+            return;
+        }
+        let stringToDisplay = '';
+
+        Object.entries(smssDetails.data).forEach((val) => {
+            stringToDisplay += `${val[0]} ${val[1]}\n`;
+        });
+
+        setInitialValue(stringToDisplay);
+        setValue(stringToDisplay);
+    }, [smssDetails.status, smssDetails.data]);
 
     /**
      * @name updateSMSSProperties

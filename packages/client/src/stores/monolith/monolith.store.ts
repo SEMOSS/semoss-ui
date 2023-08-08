@@ -352,6 +352,11 @@ export class MonolithStore {
             throw Error('No Response to get users associated with app');
         }
 
+        console.warn(
+            'Project Id is not a necessary param, optional due to the similarity of usage for getInsightUsers',
+            projectId,
+        );
+
         return response.data;
     }
 
@@ -806,9 +811,9 @@ export class MonolithStore {
         projectId: string,
         user: string,
         permission: string,
-        offset?: any,
-        limit?: any,
-        id?,
+        offset?: number,
+        limit?: number,
+        id?: string,
     ) {
         let url = `${BACKEND}/api/auth/`;
 
@@ -1165,9 +1170,9 @@ export class MonolithStore {
         id: string,
         user: string,
         permission: string,
-        offset?: any,
-        limit?: any,
-        projectid?,
+        offset?: number,
+        limit?: number,
+        projectid?: string,
     ) {
         // /api/auth/insight/getInsightUsers?
         // insightId=feb4c485-0aa8-4ff6-b355-e894dc74589a&projectId=2e2534db-fffa-4054-b9e9-dbf44183ab3b
