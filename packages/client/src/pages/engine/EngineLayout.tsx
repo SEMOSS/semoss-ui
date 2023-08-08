@@ -143,7 +143,7 @@ export const EngineLayout = () => {
         {
             label: 'Metadata',
             path: '/metadata',
-            show: true,
+            show: engineType === 'database' ? true : false,
         },
         {
             label: 'Settings',

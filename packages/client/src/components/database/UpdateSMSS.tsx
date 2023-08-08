@@ -99,30 +99,3 @@ export const UpdateSMSS = (props: UpdateSMSSProps) => {
         </StyledContainer>
     );
 };
-
-// Find out how to edit styles of monaco editor
-// const monaco = useMonaco();
-
-// useEffect(() => {
-//     if(monaco) {
-//         setEditorTheme(monaco)
-//     }
-// }, [monaco])
-
-//   const setEditorTheme = (monaco: any) => {
-//     monaco.editor.setTheme('onedark', {
-//       base: 'vs-dark',
-//       inherit: true,
-//       rules: [
-//         {
-//           token: 'comment',
-//           foreground: '#5d7988',
-//           fontStyle: 'italic'
-//         },
-//         { token: 'constant', foreground: '#e06c75' }
-//       ],
-//       colors: {
-//         'editor.background': '#21252b'
-//       }
-//     });
-//   }

@@ -572,7 +572,7 @@ export const CatalogPage = observer((): JSX.Element => {
                             </Typography>
                             <Search
                                 size={'small'}
-                                label={'Search'}
+                                label={`Search ${catalogType}`}
                                 onChange={(e) => {
                                     setSearch(e.target.value);
                                 }}
@@ -589,6 +589,7 @@ export const CatalogPage = observer((): JSX.Element => {
                                 onClick={() => {
                                     navigate('/import');
                                 }}
+                                aria-label={`Navigate to import ${catalogType}`}
                             >
                                 Add {catalogType}
                             </Button>
@@ -602,6 +603,7 @@ export const CatalogPage = observer((): JSX.Element => {
                                     color="primary"
                                     onClick={(e, v) => setView('tile')}
                                     value={'tile'}
+                                    aria-label={'Tile View'}
                                 >
                                     <SpaceDashboardOutlined />
                                 </ToggleButton>
@@ -609,6 +611,7 @@ export const CatalogPage = observer((): JSX.Element => {
                                     color="primary"
                                     onClick={(e, v) => setView('list')}
                                     value={'list'}
+                                    aria-label={'List View'}
                                 >
                                     <FormatListBulletedOutlined />
                                 </ToggleButton>
@@ -771,8 +774,13 @@ export const CatalogPage = observer((): JSX.Element => {
                                         </List.Item>
                                         <List.Item>
                                             <TextField
-                                                label={'Search'}
+                                                label={`Search ${formatDBName(
+                                                    entries[0],
+                                                )}`}
                                                 size={'small'}
+                                                aria-label={`Search ${formatDBName(
+                                                    entries[0],
+                                                )}`}
                                                 sx={{
                                                     width: '100%',
                                                 }}
@@ -843,6 +851,15 @@ export const CatalogPage = observer((): JSX.Element => {
                                                                             filterOption,
                                                                         );
                                                                     }}
+                                                                    aria-label={
+                                                                        filterVisibility[
+                                                                            entries[0]
+                                                                        ].value.indexOf(
+                                                                            filterOption.value,
+                                                                        ) > -1
+                                                                            ? `Unfilter ${filterOption.value}`
+                                                                            : `Filter ${filterOption.value}`
+                                                                    }
                                                                 >
                                                                     <div
                                                                         style={{
