@@ -1,10 +1,11 @@
 import React from 'react';
 import { Page } from '@/components/ui/';
-import { Form } from '@semoss/components';
-import { styled, Typography, Box, FileDropzone, Grid } from '@semoss/ui';
-import { useForm } from 'react-hook-form';
-import { Field } from '../../../components/form';
+import { styled, Typography, Box, Grid, IconButton } from '@semoss/ui';
 import { FORM_ROUTES } from './forms';
+import { stepsOne, stepsTwo } from './formSteps.constants';
+import { UploadData } from './UploadData';
+import { CopyDatabaseForm } from './CopyDatabaseForm';
+import { ArrowBackRounded } from '@mui/icons-material/';
 
 const StyledStack = styled('div')(({ theme }) => ({
     display: 'flex',
@@ -45,68 +46,6 @@ const StyledCategoryTitle = styled(Box)({
     padding: '16px',
 });
 
-const UploadData = () => {
-    const [selectedValues, setSelectedValues] = React.useState(null);
-
-    return (
-        <FileDropzone
-            value={selectedValues}
-            onChange={(newValues) => {
-                setSelectedValues(newValues);
-            }}
-        />
-    );
-};
-
-const stepsOne = [
-    'Drag and Drop Data or Connect to an External Database',
-    'Copy Database',
-    'Upload Database',
-    'Build Database',
-];
-
-const stepsTwo = {
-    ['Drag and Drop Data']: [
-        'CSV',
-        'Excel',
-        'TSV',
-        'SQLite',
-        'H2',
-        'Neo4J',
-        'Tinker',
-    ],
-    ['Connect to an External Database']: [
-        'Aster',
-        'Athena',
-        'BigQuery',
-        'Cassandra',
-        'Clickhouse',
-        'DATABRICKS',
-        'DataStax',
-        'DB2',
-        'Derby',
-        'Elastic Search',
-        'H2',
-        'Hive',
-        'Impala',
-        'MariaDB',
-        'MySQL',
-        'Open Search',
-        'Oracle',
-        'Phoenix',
-        'Postgres',
-        'Redshift',
-        'SAP Hana',
-        'SEMOSS',
-        'Snowflake',
-        'SQL Server',
-        'SQLITE',
-        'Teradata',
-        'Tibco',
-        'Trino',
-    ],
-};
-
 export const DatabaseImport = () => {
     const [activeStep, setActiveStep] = React.useState(0);
     const [stepOne, setStepOne] = React.useState('');
@@ -114,6 +53,18 @@ export const DatabaseImport = () => {
 
     const getForm = (form) => {
         return React.createElement(form.component);
+    };
+
+    const handleNavigate = () => {
+        if (activeStep === 1) {
+            setActiveStep(0);
+            setStepOne('');
+        }
+        if (activeStep === 2) {
+            setActiveStep(1);
+            setStepTwo('');
+            setStepOne('');
+        }
     };
 
     console.log(activeStep, stepOne);
@@ -127,6 +78,14 @@ export const DatabaseImport = () => {
                         <Typography variant="body1">
                             Add/import new database
                         </Typography>
+                        {activeStep !== 0 && (
+                            <Box>
+                                <IconButton onClick={handleNavigate}>
+                                    <ArrowBackRounded />
+                                </IconButton>
+                                Back
+                            </Box>
+                        )}
                     </StyledStack>
                 }
             >
@@ -259,40 +218,5 @@ export const DatabaseImport = () => {
                 )}
             </Page>
         </>
-    );
-};
-
-const CopyDatabaseForm = () => {
-    const { control, watch } = useForm();
-
-    return (
-        <Form>
-            <Field
-                name="DATABASE_NAME"
-                label="Database Name"
-                control={control}
-                rules={{
-                    required: true,
-                }}
-                options={{
-                    component: 'input',
-                }}
-                description=""
-                layout="vertical"
-            />
-            <Field
-                name="DATABASE_LOCATION"
-                label="Database Location"
-                control={control}
-                rules={{
-                    required: false,
-                }}
-                options={{
-                    component: 'input',
-                }}
-                description=""
-                layout="vertical"
-            />
-        </Form>
     );
 };
