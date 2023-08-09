@@ -1,7 +1,7 @@
 import React from 'react';
-import { useForm } from 'react-hook-form';
-import { Field } from '../../../../components/form';
+import { useForm, Controller } from 'react-hook-form';
 import { Form } from '@semoss/components';
+import { Button, TextField, Stack } from '@semoss/ui';
 import { ImportFormComponent } from './formTypes';
 
 export const AthenaForm: ImportFormComponent = () => {
@@ -13,202 +13,264 @@ export const AthenaForm: ImportFormComponent = () => {
 
     return (
         <Form>
-            <Field
-                name="DATABASE_NAME"
-                label="Enter Database Name"
-                control={control}
-                rules={{
-                    required: true,
-                }}
-                options={{
-                    component: 'input',
-                }}
-                description=""
-                layout="vertical"
-            />
-            <Field
-                name="DATABASE_DESCRIPTION"
-                label="Database Description"
-                control={control}
-                rules={{
-                    required: false,
-                }}
-                options={{
-                    component: 'input',
-                }}
-                description=""
-                layout="vertical"
-            />
-            <Field
-                name="DATABASE_TAGS"
-                label="Enter Database Tags"
-                control={control}
-                rules={{
-                    required: false,
-                }}
-                options={{
-                    component: 'input',
-                }}
-                description=""
-                layout="vertical"
-            />
-            <Field
-                name="REGION"
-                label="Region"
-                control={control}
-                rules={{
-                    required: true,
-                }}
-                options={{
-                    component: 'input',
-                }}
-                description=""
-                layout="vertical"
-            />
-            <Field
-                name="ACCESS_KEY"
-                label="Access Key"
-                control={control}
-                rules={{
-                    required: true,
-                }}
-                options={{
-                    component: 'input',
-                }}
-                description=""
-                layout="vertical"
-            />
-            <Field
-                name="SECRET_KEY"
-                label="Secret Key"
-                control={control}
-                rules={{
-                    required: true,
-                }}
-                options={{
-                    component: 'input',
-                }}
-                description=""
-                layout="vertical"
-            />
-            <Field
-                name="OUTPUT"
-                label="Output"
-                control={control}
-                rules={{
-                    required: true,
-                }}
-                options={{
-                    component: 'input',
-                }}
-                description=""
-                layout="vertical"
-            />
-            <Field
-                name="SCHEMA"
-                label="Schema"
-                control={control}
-                rules={{
-                    required: false,
-                }}
-                options={{
-                    component: 'input',
-                }}
-                description=""
-                layout="vertical"
-            />
-            <Field
-                name="ADDITIONAL PARAMETERS"
-                label="Enter Additional Paramaters"
-                control={control}
-                rules={{
-                    required: false,
-                }}
-                options={{
-                    component: 'input',
-                }}
-                description=""
-                layout="vertical"
-            />
-            <Field
-                name="JDBC_URL"
-                label="Enter Custom JSBC Url"
-                control={control}
-                rules={{
-                    required: false,
-                }}
-                options={{
-                    component: 'input',
-                }}
-                description=""
-                layout="vertical"
-            />
-            ADVANCED SETTINGS
-            <Field
-                name="FETCH_SIZE"
-                label="Fetch Size"
-                control={control}
-                rules={{
-                    required: false,
-                }}
-                options={{
-                    component: 'input',
-                }}
-                description=""
-                layout="vertical"
-            />
-            <Field
-                name="CONNECTION_TIMEOUT"
-                label="Connection Query Timeout"
-                control={control}
-                rules={{
-                    required: false,
-                }}
-                options={{
-                    component: 'input',
-                }}
-                description=""
-                layout="vertical"
-            />
-            <Field
-                name="CONNECTION_POOLING"
-                label="Use Connection Pooling"
-                control={control}
-                rules={{
-                    required: false,
-                }}
-                options={{
-                    component: 'checkbox',
-                }}
-                description=""
-                layout="vertical"
-            />
-            <Field
-                name="POOL_MIN_SIZE"
-                label="Pool Minimum Size"
-                control={control}
-                rules={{
-                    required: false,
-                }}
-                options={{
-                    component: 'input',
-                }}
-                description=""
-                layout="vertical"
-            />
-            <Field
-                name="POOL_MAX_SIZE"
-                label="Pool Maximum Size"
-                control={control}
-                rules={{
-                    required: false,
-                }}
-                options={{
-                    component: 'input',
-                }}
-                description=""
-                layout="vertical"
-            />
+            <Stack rowGap={2}>
+                <Controller
+                    name={'DATABASE_NAME'}
+                    control={control}
+                    rules={{ required: true }}
+                    render={({ field, fieldState }) => {
+                        const hasError = fieldState.error;
+                        return (
+                            <TextField
+                                fullWidth
+                                required
+                                label="Name"
+                                value={field.value ? field.value : ''}
+                                onChange={(value) => field.onChange(value)}
+                            ></TextField>
+                        );
+                    }}
+                />
+                <Controller
+                    name={'DATABASE_DESCRIPTION'}
+                    control={control}
+                    rules={{ required: false }}
+                    render={({ field, fieldState }) => {
+                        const hasError = fieldState.error;
+                        return (
+                            <TextField
+                                fullWidth
+                                required
+                                label="Database Description"
+                                value={field.value ? field.value : ''}
+                                onChange={(value) => field.onChange(value)}
+                            ></TextField>
+                        );
+                    }}
+                />
+                <Controller
+                    name={'DATABASE_TAGS'}
+                    control={control}
+                    rules={{ required: false }}
+                    render={({ field, fieldState }) => {
+                        const hasError = fieldState.error;
+                        return (
+                            <TextField
+                                fullWidth
+                                required
+                                label="Database Tags"
+                                value={field.value ? field.value : ''}
+                                onChange={(value) => field.onChange(value)}
+                            ></TextField>
+                        );
+                    }}
+                />
+                <Controller
+                    name={'REGION'}
+                    control={control}
+                    rules={{ required: true }}
+                    render={({ field, fieldState }) => {
+                        const hasError = fieldState.error;
+                        return (
+                            <TextField
+                                fullWidth
+                                required
+                                label="Region"
+                                value={field.value ? field.value : ''}
+                                onChange={(value) => field.onChange(value)}
+                            ></TextField>
+                        );
+                    }}
+                />
+                <Controller
+                    name={'ACCESS_KEY'}
+                    control={control}
+                    rules={{ required: true }}
+                    render={({ field, fieldState }) => {
+                        const hasError = fieldState.error;
+                        return (
+                            <TextField
+                                fullWidth
+                                required
+                                label="Access Key"
+                                value={field.value ? field.value : ''}
+                                onChange={(value) => field.onChange(value)}
+                            ></TextField>
+                        );
+                    }}
+                />
+                <Controller
+                    name={'SECRET_KEY'}
+                    control={control}
+                    rules={{ required: true }}
+                    render={({ field, fieldState }) => {
+                        const hasError = fieldState.error;
+                        return (
+                            <TextField
+                                fullWidth
+                                required
+                                label="Secret Key"
+                                value={field.value ? field.value : ''}
+                                onChange={(value) => field.onChange(value)}
+                            ></TextField>
+                        );
+                    }}
+                />
+                <Controller
+                    name={'OUTPUT'}
+                    control={control}
+                    rules={{ required: true }}
+                    render={({ field, fieldState }) => {
+                        const hasError = fieldState.error;
+                        return (
+                            <TextField
+                                fullWidth
+                                required
+                                label="Output"
+                                value={field.value ? field.value : ''}
+                                onChange={(value) => field.onChange(value)}
+                            ></TextField>
+                        );
+                    }}
+                />
+                <Controller
+                    name={'SCHEMA'}
+                    control={control}
+                    rules={{ required: false }}
+                    render={({ field, fieldState }) => {
+                        const hasError = fieldState.error;
+                        return (
+                            <TextField
+                                fullWidth
+                                required
+                                label="Schema"
+                                value={field.value ? field.value : ''}
+                                onChange={(value) => field.onChange(value)}
+                            ></TextField>
+                        );
+                    }}
+                />
+                <Controller
+                    name={'ADDITIONAL_PARAMETERS'}
+                    control={control}
+                    rules={{ required: false }}
+                    render={({ field, fieldState }) => {
+                        const hasError = fieldState.error;
+                        return (
+                            <TextField
+                                fullWidth
+                                required
+                                label="Additional Parameters"
+                                value={field.value ? field.value : ''}
+                                onChange={(value) => field.onChange(value)}
+                            ></TextField>
+                        );
+                    }}
+                />
+                <Controller
+                    name={'JDBC_URL'}
+                    control={control}
+                    rules={{ required: false }}
+                    render={({ field, fieldState }) => {
+                        const hasError = fieldState.error;
+                        return (
+                            <TextField
+                                fullWidth
+                                required
+                                label="JDBC Url"
+                                value={field.value ? field.value : ''}
+                                onChange={(value) => field.onChange(value)}
+                            ></TextField>
+                        );
+                    }}
+                />
+                ADVANCED SETTINGS
+                <Controller
+                    name={'FETCH_SIZE'}
+                    control={control}
+                    rules={{ required: false }}
+                    render={({ field, fieldState }) => {
+                        const hasError = fieldState.error;
+                        return (
+                            <TextField
+                                fullWidth
+                                required
+                                label="Fetch Size"
+                                value={field.value ? field.value : ''}
+                                onChange={(value) => field.onChange(value)}
+                            ></TextField>
+                        );
+                    }}
+                />
+                <Controller
+                    name={'CONNECTION_TIMEOUT'}
+                    control={control}
+                    rules={{ required: false }}
+                    render={({ field, fieldState }) => {
+                        const hasError = fieldState.error;
+                        return (
+                            <TextField
+                                fullWidth
+                                required
+                                label="Connection Timeout"
+                                value={field.value ? field.value : ''}
+                                onChange={(value) => field.onChange(value)}
+                            ></TextField>
+                        );
+                    }}
+                />
+                <Controller
+                    name={'CONNECTION_POOLING'}
+                    control={control}
+                    rules={{ required: false }}
+                    render={({ field, fieldState }) => {
+                        const hasError = fieldState.error;
+                        return (
+                            <TextField
+                                fullWidth
+                                required
+                                label="Connection Pooling"
+                                value={field.value ? field.value : ''}
+                                onChange={(value) => field.onChange(value)}
+                            ></TextField>
+                        );
+                    }}
+                />
+                <Controller
+                    name={'POOL_MIN_SIZE'}
+                    control={control}
+                    rules={{ required: false }}
+                    render={({ field, fieldState }) => {
+                        const hasError = fieldState.error;
+                        return (
+                            <TextField
+                                fullWidth
+                                required
+                                label="Pool Minimum Size"
+                                value={field.value ? field.value : ''}
+                                onChange={(value) => field.onChange(value)}
+                            ></TextField>
+                        );
+                    }}
+                />
+                <Controller
+                    name={'POOL_MAX_SIZE'}
+                    control={control}
+                    rules={{ required: false }}
+                    render={({ field, fieldState }) => {
+                        const hasError = fieldState.error;
+                        return (
+                            <TextField
+                                fullWidth
+                                required
+                                label="Pool Maximum Size"
+                                value={field.value ? field.value : ''}
+                                onChange={(value) => field.onChange(value)}
+                            ></TextField>
+                        );
+                    }}
+                />
+            </Stack>
         </Form>
     );
 };

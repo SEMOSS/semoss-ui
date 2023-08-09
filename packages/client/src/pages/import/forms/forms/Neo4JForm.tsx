@@ -1,7 +1,7 @@
 import React from 'react';
-import { useForm } from 'react-hook-form';
-import { Field } from '../../../../components/form';
+import { useForm, Controller } from 'react-hook-form';
 import { Form } from '@semoss/components';
+import { Button, TextField, Stack } from '@semoss/ui';
 import { ImportFormComponent } from './formTypes';
 
 export const Neo4JForm: ImportFormComponent = () => {
@@ -9,58 +9,76 @@ export const Neo4JForm: ImportFormComponent = () => {
 
     return (
         <Form>
-            <Field
-                name="DATABASE_NAME"
-                label="Enter Database Name"
-                control={control}
-                rules={{
-                    required: true,
-                }}
-                options={{
-                    component: 'input',
-                }}
-                description=""
-                layout="vertical"
-            />
-            <Field
-                name="DATABASE_DESCRIPTION"
-                label="Database Description"
-                control={control}
-                rules={{
-                    required: false,
-                }}
-                options={{
-                    component: 'input',
-                }}
-                description=""
-                layout="vertical"
-            />
-            <Field
-                name="DATABASE_TAGS"
-                label="Enter Database Tags"
-                control={control}
-                rules={{
-                    required: false,
-                }}
-                options={{
-                    component: 'input',
-                }}
-                description=""
-                layout="vertical"
-            />
-            <Field
-                name="PATH"
-                label="Enter Path"
-                control={control}
-                rules={{
-                    required: true,
-                }}
-                options={{
-                    component: 'input',
-                }}
-                description=""
-                layout="vertical"
-            />
+            <Stack rowGap={2}>
+                <Controller
+                    name={'DATABASE_NAME'}
+                    control={control}
+                    rules={{ required: true }}
+                    render={({ field, fieldState }) => {
+                        const hasError = fieldState.error;
+                        return (
+                            <TextField
+                                fullWidth
+                                required
+                                label="Database Name"
+                                value={field.value ? field.value : ''}
+                                onChange={(value) => field.onChange(value)}
+                            ></TextField>
+                        );
+                    }}
+                />
+                <Controller
+                    name={'DATABASE_DESCRIPTION'}
+                    control={control}
+                    rules={{ required: true }}
+                    render={({ field, fieldState }) => {
+                        const hasError = fieldState.error;
+                        return (
+                            <TextField
+                                fullWidth
+                                required
+                                label="Database Description"
+                                value={field.value ? field.value : ''}
+                                onChange={(value) => field.onChange(value)}
+                            ></TextField>
+                        );
+                    }}
+                />
+                <Controller
+                    name={'DATABASE_TAGS'}
+                    control={control}
+                    rules={{ required: true }}
+                    render={({ field, fieldState }) => {
+                        const hasError = fieldState.error;
+                        return (
+                            <TextField
+                                fullWidth
+                                required
+                                label="Database Tags"
+                                value={field.value ? field.value : ''}
+                                onChange={(value) => field.onChange(value)}
+                            ></TextField>
+                        );
+                    }}
+                />
+                <Controller
+                    name={'PATH'}
+                    control={control}
+                    rules={{ required: true }}
+                    render={({ field, fieldState }) => {
+                        const hasError = fieldState.error;
+                        return (
+                            <TextField
+                                fullWidth
+                                required
+                                label="Path"
+                                value={field.value ? field.value : ''}
+                                onChange={(value) => field.onChange(value)}
+                            ></TextField>
+                        );
+                    }}
+                />
+            </Stack>
         </Form>
     );
 };

@@ -51,8 +51,12 @@ export const DatabaseImport = () => {
     const [stepOne, setStepOne] = React.useState('');
     const [stepTwo, setStepTwo] = React.useState('');
 
+    const formSubmit = (values) => {
+        console.log(values);
+    };
+
     const getForm = (form) => {
-        return React.createElement(form.component);
+        return React.createElement(form.component, { submitFunc: formSubmit });
     };
 
     const handleNavigate = () => {
