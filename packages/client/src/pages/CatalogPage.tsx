@@ -1,4 +1,4 @@
-import { useEffect, useState, useReducer } from 'react';
+import { useEffect, useState, useReducer, useRef } from 'react';
 import { observer } from 'mobx-react-lite';
 import {
     AlertTitle,
@@ -176,6 +176,16 @@ export const CatalogPage = observer((): JSX.Element => {
     const [state, dispatch] = useReducer(reducer, initialState);
     const { favoritedDbs, databases } = state;
 
+    const [offset, setOffset] = useState(0);
+    const [canCollect, setCanCollect] = useState(true);
+    const canCollectRef = useRef(true);
+    canCollectRef.current = canCollect;
+    const limit = 6;
+
+    const offsetRef = useRef(0);
+    offsetRef.current = offset;
+    let scrollEle, scrollTimeout, currentScroll, previousScroll;
+
     // save the search string
     const [search, setSearch] = useState<string>('');
 
@@ -278,7 +288,7 @@ export const CatalogPage = observer((): JSX.Element => {
             metaKeysDescription,
         )} , metaFilters = [ ${JSON.stringify(
             metaFilters,
-        )} ] , filterWord=["${search}"], userT = [true], engineTypes=['${catalogType.toUpperCase()}']) ;`,
+        )} ] , filterWord=["${search}"], userT = [true], engineTypes=['${catalogType.toUpperCase()}'], offset=[${offset}], limit=[${limit}]) ;`,
     );
 
     const getCatalogFilters = usePixel<
@@ -475,15 +485,58 @@ export const CatalogPage = observer((): JSX.Element => {
         });
     };
 
+    const scrollAll = () => {
+        currentScroll = scrollEle.scrollTop + scrollEle.offsetHeight;
+        if (
+            currentScroll > scrollEle.scrollHeight * 0.75 &&
+            currentScroll > previousScroll
+        ) {
+            if (scrollTimeout) {
+                clearTimeout(scrollTimeout);
+            }
+
+            scrollTimeout = setTimeout(() => {
+                if (!canCollectRef.current) {
+                    return;
+                }
+
+                setOffset(offsetRef.current + limit);
+            }, 500);
+        }
+
+        previousScroll = currentScroll;
+    };
+
     /**
-     * @desc catalog filters
+     * @desc anytime we change catalogType clean up engines
+     */
+    useEffect(() => {
+        dispatch({
+            type: 'field',
+            field: 'databases',
+            value: [],
+        });
+        setCanCollect(true);
+        setOffset(0);
+    }, [catalogType]);
+
+    /**
+     * @desc Set Databases
      */
     useEffect(() => {
         if (getDatabases.status !== 'SUCCESS') {
             return;
         }
 
-        const mutateListWithVotes = [];
+        if (getDatabases.data.length < limit) {
+            setCanCollect(false);
+        } else {
+            if (!canCollectRef.current) {
+                setCanCollect(true);
+            }
+        }
+
+        const mutateListWithVotes = databases;
 
         getDatabases.data.forEach((db, i) => {
             mutateListWithVotes.push({
@@ -502,7 +555,7 @@ export const CatalogPage = observer((): JSX.Element => {
     }, [getDatabases.status, getDatabases.data]);
 
     /**
-     * @desc catalog filters
+     * @desc Catalog filters
      */
     useEffect(() => {
         if (getCatalogFilters.status !== 'SUCCESS') {
@@ -526,6 +579,9 @@ export const CatalogPage = observer((): JSX.Element => {
         setFilterOptions(updated);
     }, [getCatalogFilters.status, getCatalogFilters.data]);
 
+    /**
+     * @desc Sets Favorited Engines
+     */
     useEffect(() => {
         if (getFavoritedDatabases.status !== 'SUCCESS') {
             return;
@@ -537,6 +593,18 @@ export const CatalogPage = observer((): JSX.Element => {
             value: getFavoritedDatabases.data,
         });
     }, [getFavoritedDatabases.status, getFavoritedDatabases.data]);
+
+    /**
+     * @desc infinite scroll
+     */
+    useEffect(() => {
+        scrollEle = document.querySelector('#home__content');
+
+        scrollEle.addEventListener('scroll', scrollAll);
+        return () => {
+            scrollEle.removeEventListener('scroll', scrollAll);
+        };
+    }, [scrollEle]);
 
     // finish loading the page
     if (
@@ -574,6 +642,14 @@ export const CatalogPage = observer((): JSX.Element => {
                                 size={'small'}
                                 label={`Search ${catalogType}`}
                                 onChange={(e) => {
+                                    // Reset databases and reset offset
+                                    dispatch({
+                                        type: 'field',
+                                        field: 'databases',
+                                        value: [],
+                                    });
+                                    setOffset(0);
+
                                     setSearch(e.target.value);
                                 }}
                             />
@@ -725,25 +801,30 @@ export const CatalogPage = observer((): JSX.Element => {
                                     <StyledChip
                                         label={'My Databases'}
                                         selected={mode === 'My Databases'}
-                                        // variant="filled"
-                                        // variantColor={
-                                        //     mode === 'My Databases'
-                                        //         ? 'primary'
-                                        //         : 'lcprimary'
-                                        // }
-                                        onClick={() => setMode('My Databases')}
+                                        onClick={() => {
+                                            // Reset databases and reset offset
+                                            dispatch({
+                                                type: 'field',
+                                                field: 'databases',
+                                                value: [],
+                                            });
+                                            setOffset(0);
+                                            setMode('My Databases');
+                                        }}
                                     ></StyledChip>
                                     <StyledChip
                                         label={'Discoverable Databases'}
                                         selected={
                                             mode === 'Discoverable Databases'
                                         }
-                                        // variantColor={
-                                        //     mode === 'Discoverable Databases'
-                                        //         ? 'primary'
-                                        //         : 'lcprimary'
-                                        // }
                                         onClick={() => {
+                                            // Reset databases and reset offset
+                                            dispatch({
+                                                type: 'field',
+                                                field: 'databases',
+                                                value: [],
+                                            });
+                                            setOffset(0);
                                             setMode('Discoverable Databases');
                                         }}
                                     ></StyledChip>
@@ -855,6 +936,18 @@ export const CatalogPage = observer((): JSX.Element => {
                                                                         ) > -1
                                                                     }
                                                                     onClick={() => {
+                                                                        // Reset databases and reset offset
+                                                                        dispatch(
+                                                                            {
+                                                                                type: 'field',
+                                                                                field: 'databases',
+                                                                                value: [],
+                                                                            },
+                                                                        );
+                                                                        setOffset(
+                                                                            0,
+                                                                        );
+
                                                                         setSelectedFilters(
                                                                             entries[0],
                                                                             filterOption,
