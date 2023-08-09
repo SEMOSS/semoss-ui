@@ -1,15 +1,13 @@
-import { useMemo, useState } from 'react';
+import { useState } from 'react';
 import { observer } from 'mobx-react-lite';
 import { useNavigate } from 'react-router-dom';
 import {
     Button,
     styled,
     Stack,
-    TextField,
     Typography,
     Grid,
     Search,
-    Modal,
     Card,
     IconButton,
 } from '@semoss/ui';
@@ -17,35 +15,30 @@ import { OpenInBrowser } from '@mui/icons-material';
 
 import { Page } from '@/components/ui';
 import { AddApp } from '@/components/app';
-import { useRootStore } from '@/hooks';
+import { useRootStore, usePixel } from '@/hooks';
 
 type MarketplaceApp = {
-    /** Name of the app */
-    name: string;
-
-    /** Description describing the app */
-    description: string;
-
-    /** Logo describing the app */
-    logo: string;
-
-    /** Tags associated with the app */
-    tags: string[];
-
-    /** Id of the associated app */
-    appId: string;
+    project_id: string;
+    project_name: string;
+    project_type: string;
+    project_cost: string;
+    project_global: string;
+    project_catalog_name: string;
+    project_created_by: string;
+    project_created_by_type: string;
+    project_date_created: string;
+    project_has_portal?: boolean;
+    project_portal_name?: string;
+    project_portal_published_date?: string;
+    project_published_user?: string;
+    project_published_user_type?: string;
+    project_reactors_compiled_date?: string;
+    project_reactors_compiled_user?: string;
+    project_reactors_compiled_user_type?: string;
+    project_favorite?: string;
+    user_permission?: string;
+    group_permission?: string;
 };
-
-const APPS: MarketplaceApp[] = [
-    {
-        name: 'Policy Bot',
-        description:
-            'Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.',
-        logo: '',
-        tags: ['Tag 1', 'Tag 2', 'Tag 3', 'Tag 4'],
-        appId: `../../../apps/policy/client/dist/`,
-    },
-];
 
 const StyledContainer = styled('div')(({ theme }) => ({
     display: 'flex',
@@ -71,26 +64,38 @@ const StyledFilterSearch = styled(Search)(({ theme }) => ({
  * Library page that allows a user to see all the currently installed apps
  */
 export const HomePage = observer((): JSX.Element => {
-    const { workspaceStore } = useRootStore();
-
-    // navigation
+    const { workspaceStore, configStore } = useRootStore();
     const navigate = useNavigate();
+
     const [search, setSearch] = useState('');
     const [addAppModal, setAddAppModal] = useState<boolean>(false);
 
-    const searchedApps = useMemo(() => {
-        if (!search) {
-            return APPS;
-        }
+    // get a list of the keys
+    const projectMetaKeys = configStore.store.config.projectMetaKeys.filter(
+        (k) => {
+            return (
+                k.display_options === 'single-checklist' ||
+                k.display_options === 'multi-checklist' ||
+                k.display_options === 'single-select' ||
+                k.display_options === 'multi-select' ||
+                k.display_options === 'single-typeahead' ||
+                k.display_options === 'multi-typeahead' ||
+                k.display_options === 'textarea'
+            );
+        },
+    );
 
-        const cleaned = search.toLowerCase();
+    // get metakeys to the ones we want
+    const metaKeys = projectMetaKeys.map((k) => {
+        return k.metakey;
+    });
 
-        return APPS.filter(
-            (a) =>
-                a.name.toLowerCase().indexOf(cleaned) > -1 ||
-                a.description.toLowerCase().indexOf(cleaned) > -1,
-        );
-    }, [search]);
+    // get the projects
+    const myApps = usePixel<MarketplaceApp[]>(
+        `MyProjects(metaKeys = ${JSON.stringify(
+            metaKeys,
+        )}, filterWord=["${search}"], onlyPortals=[true]);`,
+    );
 
     /**
      * Open a new app
@@ -99,8 +104,8 @@ export const HomePage = observer((): JSX.Element => {
      */
     const openNewApp = async (a: MarketplaceApp) => {
         // open the app
-        const app = await workspaceStore.openNewApp(a.appId, {
-            name: a.name,
+        const app = await workspaceStore.openNewApp(a.project_id, {
+            name: a.project_name,
         });
 
         // navigate to it
@@ -141,12 +146,17 @@ export const HomePage = observer((): JSX.Element => {
                         size="small"
                     />
                 </StyledFitler>
-                {searchedApps.length ? (
+                {myApps.status === 'SUCCESS' && myApps.data.length > 0 ? (
                     <Grid container spacing={3}>
-                        {searchedApps.map((app, appIdx) => {
+                        {myApps.data.map((app) => {
+                            // ignore ones wihtout a portal
+                            if (!app.project_has_portal) {
+                                return null;
+                            }
+
                             return (
                                 <Grid
-                                    key={appIdx}
+                                    key={app.project_id}
                                     item
                                     sm={12}
                                     md={6}
@@ -154,10 +164,8 @@ export const HomePage = observer((): JSX.Element => {
                                     xl={4}
                                 >
                                     <Card>
-                                        <Card.Header title={app.name} />
-                                        <Card.Content>
-                                            {app.description}
-                                        </Card.Content>
+                                        <Card.Header title={app.project_name} />
+                                        <Card.Content>&nbsp;</Card.Content>
                                         <Card.Actions>
                                             <IconButton
                                                 aria-label="Open App"
