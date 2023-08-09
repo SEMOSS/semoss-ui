@@ -11,6 +11,7 @@ import {
     Modal,
     Card,
     IconButton,
+    FileDropzone,
 } from '@semoss/ui';
 import { Controller, useFieldArray, useForm } from 'react-hook-form';
 import { useRootStore } from '@/hooks';
@@ -29,8 +30,23 @@ export const AddApp = (props) => {
             APP_NAME: '',
             APP_DESCRIPTION: '',
             TAGS: [],
+            PROJECT_UPLOAD: null,
         },
     });
+
+    /**
+     * @name unzipFile
+     * @param upload
+     * @param path
+     */
+    function unzipFile(upload: any, path: string, projectId) {
+        const pixel = `UnzipFile(filePath=["${`${path}${upload[0].fileName}`}"], space=["${projectId}"])`;
+
+        monolithStore.runQuery(pixel).then((response) => {
+            console.log(response);
+            // debugger
+        });
+    }
 
     const onSubmit = async (data) => {
         const projectMeta = {
@@ -47,7 +63,24 @@ export const AddApp = (props) => {
         monolithStore.runQuery(pixel).then((response) => {
             const output = response.pixelReturn[0].output,
                 insightID = response.insightID;
-            debugger;
+
+            const path = 'version/assets/';
+
+            monolithStore
+                .uploadFile(
+                    data.PROJECT_UPLOAD,
+                    insightID,
+                    output.project_id,
+                    path,
+                )
+                .then(
+                    async function (upload) {
+                        await unzipFile(upload, path, output.project_id);
+                    },
+                    function (error) {
+                        console.error(error);
+                    },
+                );
         });
     };
 
@@ -114,6 +147,24 @@ export const AddApp = (props) => {
                                     value={(field.value as string[]) || []}
                                     onChange={(event, newValue) => {
                                         field.onChange(newValue);
+                                    }}
+                                />
+                            );
+                        }}
+                    />
+
+                    <Controller
+                        name={'PROJECT_UPLOAD'}
+                        control={control}
+                        rules={{}}
+                        render={({ field, fieldState }) => {
+                            const hasError = fieldState.error;
+
+                            return (
+                                <FileDropzone
+                                    value={field.value}
+                                    onChange={(newValues) => {
+                                        field.onChange(newValues);
                                     }}
                                 />
                             );
