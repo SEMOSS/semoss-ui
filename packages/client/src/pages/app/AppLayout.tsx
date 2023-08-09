@@ -115,11 +115,11 @@ export const AppLayout = observer(() => {
                     {workspaceStore.appList.map((a) => {
                         return (
                             <Chip
-                                key={a.id}
+                                key={a.insightId}
                                 variant="filled"
                                 label={a.options.name}
                                 clickable={true}
-                                onClick={() => selectApp(a.id)}
+                                onClick={() => selectApp(a.insightId)}
                             />
                         );
                     })}

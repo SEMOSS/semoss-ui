@@ -123,7 +123,7 @@ export class WorkspaceStore {
         // select it loading
         runInAction(() => {
             // store it
-            this._store.apps[app.id] = app;
+            this._store.apps[app.insightId] = app;
 
             // select it
             this._store.selectedApp = app;
@@ -157,13 +157,13 @@ export class WorkspaceStore {
             // deselect it
             if (
                 this._store.selectedApp &&
-                this._store.selectedApp.id === app.id
+                this._store.selectedApp.insightId === app.insightId
             ) {
                 this._store.selectedApp = null;
             }
 
             // destroy it
-            await runPixel(app.id, `DropInsight();`);
+            await runPixel(app.insightId, `DropInsight();`);
         } catch (e) {
             console.error(e);
         } finally {
@@ -180,7 +180,10 @@ export class WorkspaceStore {
      */
     selectApp(id: string) {
         // set the app if it is different
-        if (!this._store.selectedApp || this._store.selectedApp.id !== id) {
+        if (
+            !this._store.selectedApp ||
+            this._store.selectedApp.insightId !== id
+        ) {
             this._store.selectedApp = this._store.apps[id] || null;
         }
 
