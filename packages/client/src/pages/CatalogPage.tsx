@@ -79,8 +79,9 @@ const StyledNestedFilterList = styled(List)(({ theme }) => ({
 }));
 
 const StyledAvatarCount = styled(Avatar)(({ theme }) => ({
-    width: '32px',
-    height: '32px',
+    width: theme.spacing(4),
+    height: theme.spacing(4),
+    fontSize: theme.spacing(1.75),
     color: theme.palette.text.primary,
 }));
 
@@ -436,10 +437,10 @@ export const CatalogPage = observer((): JSX.Element => {
     const upvoteDb = (db) => {
         let pixelString = '';
 
-        if (!db.hasVoted) {
-            pixelString += `VoteDatabase(database="${db.database_id}", vote=1)`;
+        if (!db.hasUpvoted) {
+            pixelString += `VoteEngine(engine="${db.database_id}", vote=1)`;
         } else {
-            pixelString += `UnvoteDatabase(database="${db.database_id}")`;
+            pixelString += `UnvoteEngine(engine="${db.database_id}")`;
         }
 
         monolithStore.runQuery(pixelString).then((response) => {
@@ -452,10 +453,10 @@ export const CatalogPage = observer((): JSX.Element => {
                 databases.forEach((database) => {
                     if (database.database_id === db.database_id) {
                         const newCopy = database;
-                        newCopy.upvotes = !db.hasVoted
+                        newCopy.upvotes = !db.hasUpvoted
                             ? newCopy.upvotes + 1
                             : newCopy.upvotes - 1;
-                        newCopy.hasVoted = !db.hasVoted ? true : false;
+                        newCopy.hasUpvoted = !db.hasUpvoted ? true : false;
 
                         newDatabases.push(newCopy);
                     } else {
@@ -488,7 +489,6 @@ export const CatalogPage = observer((): JSX.Element => {
             mutateListWithVotes.push({
                 ...db,
                 upvotes: db.upvotes ? db.upvotes : 0,
-                hasVoted: false,
                 views: 'N/A',
                 trending: 'N/A',
             });
@@ -763,7 +763,16 @@ export const CatalogPage = observer((): JSX.Element => {
                                                 primary={
                                                     <Typography
                                                         variant={'body1'}
-                                                        sx={{ fontWeight: 500 }}
+                                                        sx={{
+                                                            alignSelf:
+                                                                'stretch',
+                                                            fontWeight: 500,
+                                                            fontSize: '16px',
+                                                            fontStyle: 'normal',
+                                                            lineHeight: '150%',
+                                                            letterSpacing:
+                                                                '0.15px',
+                                                        }}
                                                     >
                                                         {formatDBName(
                                                             entries[0],
@@ -976,7 +985,7 @@ export const CatalogPage = observer((): JSX.Element => {
                                                 views={db.views}
                                                 trending={db.trending}
                                                 isGlobal={db.database_global}
-                                                isUpvoted={db.hasVoted}
+                                                isUpvoted={db.hasUpvoted}
                                                 isFavorite={isFavorited(
                                                     db.database_id,
                                                 )}
@@ -1014,7 +1023,7 @@ export const CatalogPage = observer((): JSX.Element => {
                                                 views={db.views}
                                                 trending={db.trending}
                                                 isGlobal={db.database_global}
-                                                isUpvoted={db.hasVoted}
+                                                isUpvoted={db.hasUpvoted}
                                                 isFavorite={isFavorited(
                                                     db.database_id,
                                                 )}
