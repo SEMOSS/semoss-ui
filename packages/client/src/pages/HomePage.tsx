@@ -2,17 +2,21 @@ import { useMemo, useState } from 'react';
 import { observer } from 'mobx-react-lite';
 import { useNavigate } from 'react-router-dom';
 import {
+    Button,
     styled,
     Stack,
+    TextField,
     Typography,
     Grid,
     Search,
+    Modal,
     Card,
     IconButton,
 } from '@semoss/ui';
 import { OpenInBrowser } from '@mui/icons-material';
 
 import { Page } from '@/components/ui';
+import { AddApp } from '@/components/app';
 import { useRootStore } from '@/hooks';
 
 type MarketplaceApp = {
@@ -72,6 +76,7 @@ export const HomePage = observer((): JSX.Element => {
     // navigation
     const navigate = useNavigate();
     const [search, setSearch] = useState('');
+    const [addAppModal, setAddAppModal] = useState<boolean>(false);
 
     const searchedApps = useMemo(() => {
         if (!search) {
@@ -114,6 +119,14 @@ export const HomePage = observer((): JSX.Element => {
                     spacing={4}
                 >
                     <Typography variant={'h4'}>App Library</Typography>
+                    <Button
+                        variant={'contained'}
+                        onClick={() => {
+                            setAddAppModal(true);
+                        }}
+                    >
+                        Add
+                    </Button>
                 </Stack>
             }
         >
@@ -160,6 +173,7 @@ export const HomePage = observer((): JSX.Element => {
                     </Grid>
                 ) : null}
             </StyledContainer>
+            <AddApp open={addAppModal} />
         </Page>
     );
 });
