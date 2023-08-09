@@ -139,9 +139,9 @@ export const DatabaseSettingsPage = () => {
     });
 
     const getFavoritedDatabases = usePixel(`
-    MyDatabases(metaKeys = ${JSON.stringify(
+    MyEngines(metaKeys = ${JSON.stringify(
         metaKeys,
-    )}, filterWord=["${search}"], onlyFavorites=[true]);
+    )}, filterWord=["${search}"], onlyFavorites=[true], engineTypes=['DATABASE']);
     `);
 
     useEffect(() => {
@@ -178,9 +178,9 @@ export const DatabaseSettingsPage = () => {
             user_permission: number;
         }[]
     >(`
-        MyDatabases(metaKeys = ${JSON.stringify(
+        MyEngines(metaKeys = ${JSON.stringify(
             metaKeys,
-        )}, filterWord=["${search}"], userT=[true]);
+        )}, filterWord=["${search}"], userT=[true], engineTypes=['DATABASE']);
     `);
 
     /**
@@ -197,7 +197,7 @@ export const DatabaseSettingsPage = () => {
             mutateListWithVotes.push({
                 ...db,
                 upvotes: db.upvotes ? db.upvotes : 0,
-                hasVoted: false,
+                // hasUpvoted: false,
                 views: 'N/A',
                 trending: 'N/A',
             });
@@ -267,10 +267,10 @@ export const DatabaseSettingsPage = () => {
     const upvoteDb = (db) => {
         let pixelString = '';
 
-        if (!db.hasVoted) {
-            pixelString += `VoteDatabase(database="${db.database_id}", vote=1)`;
+        if (!db.hasUpvoted) {
+            pixelString += `VoteEngine(engine="${db.database_id}", vote=1)`;
         } else {
-            pixelString += `UnvoteDatabase(database="${db.database_id}")`;
+            pixelString += `UnvoteEngine(engine="${db.database_id}")`;
         }
 
         monolithStore.runQuery(pixelString).then((response) => {
@@ -283,10 +283,10 @@ export const DatabaseSettingsPage = () => {
                 databases.forEach((database) => {
                     if (database.database_id === db.database_id) {
                         const newCopy = database;
-                        newCopy.upvotes = !db.hasVoted
+                        newCopy.upvotes = !db.hasUpvoted
                             ? newCopy.upvotes + 1
                             : newCopy.upvotes - 1;
-                        newCopy.hasVoted = !db.hasVoted ? true : false;
+                        newCopy.hasUpvoted = !db.hasUpvoted ? true : false;
 
                         newDatabases.push(newCopy);
                     } else {
@@ -396,7 +396,7 @@ export const DatabaseSettingsPage = () => {
                                           views={db.views}
                                           trending={db.trending}
                                           isGlobal={db.database_global}
-                                          isUpvoted={db.hasVoted}
+                                          isUpvoted={db.hasUpvoted}
                                           isFavorite={isFavorited(
                                               db.database_id,
                                           )}
@@ -436,7 +436,7 @@ export const DatabaseSettingsPage = () => {
                                           isFavorite={isFavorited(
                                               db.database_id,
                                           )}
-                                          isUpvoted={db.hasVoted}
+                                          isUpvoted={db.hasUpvoted}
                                           favorite={() => {
                                               favoriteDb(db);
                                           }}

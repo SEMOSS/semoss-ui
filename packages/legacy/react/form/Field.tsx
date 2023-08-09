@@ -1,4 +1,3 @@
-import React, { useState } from 'react';
 import { Controller, Control, FieldValues, Path } from 'react-hook-form';
 import {
     Form,
@@ -28,12 +27,6 @@ import {
     DatepickerProps,
     FileDropzoneProps,
 } from '@semoss/components';
-
-import {
-    TextField,
-    Select as MuiSelect,
-    Switch as MuiSwitch,
-} from '@semoss/ui';
 
 // WORK ON SWITCHING TYPES TO THIS FORMAT
 // type GenericField<C, P> = { components: C } & Omit<P, "onChange">;
@@ -78,16 +71,20 @@ type FieldChecklist = { component: 'checklist' } & Omit<
     ChecklistProps<string, true>,
     'onChange' | 'value' | 'defaultValue'
 >;
-
 type FieldRadio = {
     component: 'radio';
     options: {
         display: string;
-        // TODO: boolean option for value has been removed since it is not accepted as a type by the SEMOSS Radio Component. Will need to update the Radio component before adding this as an option for the value prop.
-        // value: string | boolean;
-        value: string;
+        value: string | boolean;
     }[];
-    orientation?: 'vertical' | 'horizontal';
+} & Omit<RadioProps, 'onChange' | 'value' | 'defaultValue'>;
+
+type FieldRadio2 = {
+    component: 'radio2';
+    options: {
+        display: string;
+        value: string | boolean;
+    }[];
 } & Omit<RadioProps, 'onChange' | 'value' | 'defaultValue'>;
 
 type FieldFileDropzone = { component: 'file-dropzone' } & Omit<
@@ -103,7 +100,7 @@ type FieldDatepicker = { component: 'datepicker' } & Omit<
 interface FieldProps<V extends FieldValues> {
     name: Path<V>;
     control: Control<V>;
-    rules: unknown;
+    rules: Record<string,unknown>;
     options:
         | FieldInput
         | FieldNumberpicker
@@ -113,6 +110,7 @@ interface FieldProps<V extends FieldValues> {
         | FieldCheckbox
         | FieldChecklist
         | FieldRadio
+        | FieldRadio2
         | FieldDatepicker
         | FieldFileDropzone
         | FieldTypeahead;
@@ -121,10 +119,6 @@ interface FieldProps<V extends FieldValues> {
     error?: string;
     disabled?: boolean;
     layout?: FormFieldProps['layout'];
-    container?: unknown;
-    onChange?: (V) => void;
-    sx?: any;
-    helperText?: React.ReactNode | string;
 }
 
 const StyledRequired = styled('span')({
@@ -142,7 +136,7 @@ export const Field = <V extends FieldValues>(
     const {
         name,
         control,
-        rules,
+        rules = {},
         options,
         description,
         // optional
@@ -150,10 +144,8 @@ export const Field = <V extends FieldValues>(
         error,
         disabled,
         layout,
-        container,
     } = props;
 
-    const [selected, setSelected] = useState('');
     const returnLabel = (label: string) => {
         return rules['required'] ? (
             <>
@@ -163,6 +155,7 @@ export const Field = <V extends FieldValues>(
             <>{label}:</>
         );
     };
+
     if (options.component === 'input') {
         return (
             <Controller
@@ -173,21 +166,23 @@ export const Field = <V extends FieldValues>(
                     const hasError = fieldState.error;
                     return (
                         <Form.Field
+                            label={label ? returnLabel(label) : null}
                             error={hasError ? error : null}
                             description={description}
                             layout={layout}
-                            style={{ padding: '8px' }}
                         >
-                            <TextField
-                                placeholder={options.placeholder}
-                                value={field.value ? field.value : ''}
-                                onChange={(value) => {
-                                    field.onChange(value);
-                                }}
+                            <Input
+                                // {...options}
                                 id={options.id}
-                                disabled={disabled}
-                                error={!!hasError}
-                                label={label ? label : null}
+                                size={options.size ? options.size : 'md'}
+                                placeholder={options.placeholder}
+                                autoComplete={options.autoComplete}
+                                type={options.type}
+                                disabled={disabled ? disabled : false}
+                                valid={!hasError}
+                                value={field.value ? field.value : ''}
+                                onChange={(value) => field.onChange(value)}
+                                inputProps={options.inputProps}
                             />
                         </Form.Field>
                     );
@@ -221,8 +216,6 @@ export const Field = <V extends FieldValues>(
                                 onChange={(value) => field.onChange(value)}
                                 autoComplete={
                                     options.autoComplete
-                                        ? options.autoComplete
-                                        : null
                                 }
                             />
                         </Form.Field>
@@ -238,6 +231,7 @@ export const Field = <V extends FieldValues>(
                 rules={rules}
                 render={({ field, fieldState }) => {
                     const hasError = fieldState.error;
+
                     return (
                         <Form.Field
                             label={label ? returnLabel(label) : null}
@@ -254,7 +248,7 @@ export const Field = <V extends FieldValues>(
                                 value={field.value ? field.value : ''}
                                 defaultValue={field.value ? field.value : ''}
                                 onChange={(value) => field.onChange(value)}
-                                // textareaProps={rules}
+                                textareaProps={options.textareaProps}
                             />
                         </Form.Field>
                     );
@@ -272,33 +266,33 @@ export const Field = <V extends FieldValues>(
 
                     return (
                         <Form.Field
+                            label={label ? returnLabel(label) : null}
                             error={hasError ? error : null}
                             description={description}
                             layout={layout}
-                            style={{ padding: '8px', width: '60%' }}
                         >
-                            <MuiSelect
+                            <Select
                                 id={options.id}
-                                selectProps={{ multiple: true }}
+                                size={options.size ? options.size : 'md'}
                                 disabled={disabled}
-                                label={label ? label : null}
                                 placeholder={options.placeholder}
-                                sx={{ width: '75%' }}
+                                options={options.options}
+                                valid={!hasError}
+                                value={field.value ? field.value : ''}
                                 defaultValue={field.value ? field.value : ''}
                                 onChange={(value) => field.onChange(value)}
-                            >
-                                {options.options.map((option, i) => {
-                                    return (
-                                        <MuiSelect.Item value={option} key={i}>
-                                            {option}
-                                        </MuiSelect.Item>
-                                    );
-                                })}
-                            </MuiSelect>
+
+                                // container={options.ref}
+                                // getSearch?: (search: string, option: O) => boolean;
+                                // getKey?: (option: O) => string;
+                                // getDisplay?: (option: O) => ReactNode;
+                                // inputProps={rules}
+                            />
                         </Form.Field>
                     );
                 }}
             />
+            // {/* </MarginedField> */}
         );
     } else if (options.component === 'typeahead') {
         return (
@@ -347,6 +341,7 @@ export const Field = <V extends FieldValues>(
                 rules={rules}
                 render={({ field, fieldState }) => {
                     const hasError = fieldState.error;
+
                     return (
                         <Form.Field
                             label={label ? returnLabel(label) : null}
@@ -354,14 +349,17 @@ export const Field = <V extends FieldValues>(
                             description={description}
                             layout={layout}
                         >
-                            <MuiSwitch
-                                id={options.id ? options.id : null}
+                            <Switch
+                                id={options.id}
                                 disabled={disabled}
-                                color="primary"
                                 valid={!hasError}
-                                checked={field.value}
+                                value={field.value ? field.value : false}
+                                defaultValue={field.value ? field.value : false}
                                 onChange={(value) => field.onChange(value)}
-                            />
+                                // inputProps={rules}
+                            >
+                                {options.children}
+                            </Switch>
                         </Form.Field>
                     );
                 }}
@@ -384,13 +382,14 @@ export const Field = <V extends FieldValues>(
                             layout={layout}
                         >
                             <Checkbox
-                                id={options.id ? options.id : null}
+                                id={options.id}
                                 indeterminate={options.indeterminate}
                                 disabled={disabled}
                                 valid={!hasError}
                                 value={field.value ? field.value : false}
                                 defaultValue={field.value ? field.value : false}
                                 onChange={(value) => field.onChange(value)}
+                                // inputProps={rules}
                             >
                                 {options.children}
                             </Checkbox>
@@ -436,6 +435,71 @@ export const Field = <V extends FieldValues>(
             <Controller
                 name={name}
                 control={control}
+                rules={
+                    rules['required'] === true
+                        ? {
+                              validate: validateBoolean,
+                          }
+                        : rules
+                }
+                render={({ field, fieldState }) => {
+                    const hasError = fieldState.error;
+
+                    return (
+                        <Form.Field
+                            label={label ? returnLabel(label) : null}
+                            error={hasError ? error : null}
+                            description={description}
+                            layout={layout}
+                            labelProps={{
+                                style: {
+                                    overflow: 'visible',
+                                },
+                            }}
+                        >
+                            <Radio
+                                orientation={options.orientation}
+                                defaultValue={field.value ? field.value : ''}
+                                value={
+                                    typeof field.value !== 'undefined' &&
+                                    field.value !== null &&
+                                    field.value !== ''
+                                        ? options.options.find(
+                                              (opt) =>
+                                                  opt.value === field.value,
+                                          )?.display
+                                        : ''
+                                }
+                                onChange={(value) => {
+                                    field.onChange(
+                                        options.options.find(
+                                            (opt) => opt.display === value,
+                                        )?.value,
+                                    );
+                                }}
+                            >
+                                {options.options.map((opt, i) => {
+                                    return (
+                                        <Radio.Item
+                                            key={i}
+                                            value={opt.display}
+                                            disabled={disabled}
+                                        >
+                                            {opt.display}
+                                        </Radio.Item>
+                                    );
+                                })}
+                            </Radio>
+                        </Form.Field>
+                    );
+                }}
+            />
+        );
+    } else if (options.component === 'radio2') {
+        return (
+            <Controller
+                name={name}
+                control={control}
                 rules={rules}
                 render={({ field, fieldState }) => {
                     const hasError = fieldState.error;
@@ -446,13 +510,15 @@ export const Field = <V extends FieldValues>(
                             error={hasError ? error : null}
                             description={description}
                             layout={layout}
+                            labelProps={{
+                                style: {
+                                    overflow: 'visible',
+                                },
+                            }}
                         >
                             <Radio
-                                orientation={
-                                    options.orientation
-                                        ? options.orientation
-                                        : 'horizontal'
-                                }
+                                orientation={options.orientation}
+                                defaultValue={field.value ? field.value : ''}
                                 value={
                                     typeof field.value !== 'undefined' &&
                                     field.value !== null &&
@@ -460,17 +526,22 @@ export const Field = <V extends FieldValues>(
                                         ? options.options.find(
                                               (opt) =>
                                                   opt.value === field.value,
-                                          ).display
+                                          )?.display
                                         : ''
                                 }
-                                defaultValue={field.value ? field.value : ''}
-                                onChange={(value) => field.onChange(value)}
+                                onChange={(value) => {
+                                    field.onChange(
+                                        options.options.find(
+                                            (opt) => opt.display === value,
+                                        )?.value,
+                                    );
+                                }}
                             >
                                 {options.options.map((opt, i) => {
                                     return (
                                         <Radio.Item
                                             key={i}
-                                            value={opt.value}
+                                            value={opt.display}
                                             disabled={disabled}
                                         >
                                             {opt.display}
@@ -500,7 +571,6 @@ export const Field = <V extends FieldValues>(
                             layout={layout}
                         >
                             <Datepicker
-                                id={options.id ? options.id : null}
                                 placeholder={options.placeholder}
                                 format={options.format}
                                 disabled={disabled}
@@ -557,4 +627,6 @@ export const Field = <V extends FieldValues>(
             />
         );
     }
+
+    return <></>;
 };

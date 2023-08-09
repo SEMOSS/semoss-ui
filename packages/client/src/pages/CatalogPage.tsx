@@ -1,4 +1,4 @@
-import { useEffect, useState, useReducer } from 'react';
+import { useEffect, useState, useReducer, useRef } from 'react';
 import { observer } from 'mobx-react-lite';
 import {
     AlertTitle,
@@ -79,8 +79,9 @@ const StyledNestedFilterList = styled(List)(({ theme }) => ({
 }));
 
 const StyledAvatarCount = styled(Avatar)(({ theme }) => ({
-    width: '32px',
-    height: '32px',
+    width: theme.spacing(4),
+    height: theme.spacing(4),
+    fontSize: theme.spacing(1.75),
     color: theme.palette.text.primary,
 }));
 
@@ -174,6 +175,16 @@ export const CatalogPage = observer((): JSX.Element => {
 
     const [state, dispatch] = useReducer(reducer, initialState);
     const { favoritedDbs, databases } = state;
+
+    const [offset, setOffset] = useState(0);
+    const [canCollect, setCanCollect] = useState(true);
+    const canCollectRef = useRef(true);
+    canCollectRef.current = canCollect;
+    const limit = 6;
+
+    const offsetRef = useRef(0);
+    offsetRef.current = offset;
+    let scrollEle, scrollTimeout, currentScroll, previousScroll;
 
     // save the search string
     const [search, setSearch] = useState<string>('');
@@ -277,7 +288,7 @@ export const CatalogPage = observer((): JSX.Element => {
             metaKeysDescription,
         )} , metaFilters = [ ${JSON.stringify(
             metaFilters,
-        )} ] , filterWord=["${search}"], userT = [true], engineTypes=['${catalogType.toUpperCase()}']) ;`,
+        )} ] , filterWord=["${search}"], userT = [true], engineTypes=['${catalogType.toUpperCase()}'], offset=[${offset}], limit=[${limit}]) ;`,
     );
 
     const getCatalogFilters = usePixel<
@@ -436,10 +447,10 @@ export const CatalogPage = observer((): JSX.Element => {
     const upvoteDb = (db) => {
         let pixelString = '';
 
-        if (!db.hasVoted) {
-            pixelString += `VoteDatabase(database="${db.database_id}", vote=1)`;
+        if (!db.hasUpvoted) {
+            pixelString += `VoteEngine(engine="${db.database_id}", vote=1)`;
         } else {
-            pixelString += `UnvoteDatabase(database="${db.database_id}")`;
+            pixelString += `UnvoteEngine(engine="${db.database_id}")`;
         }
 
         monolithStore.runQuery(pixelString).then((response) => {
@@ -452,10 +463,10 @@ export const CatalogPage = observer((): JSX.Element => {
                 databases.forEach((database) => {
                     if (database.database_id === db.database_id) {
                         const newCopy = database;
-                        newCopy.upvotes = !db.hasVoted
+                        newCopy.upvotes = !db.hasUpvoted
                             ? newCopy.upvotes + 1
                             : newCopy.upvotes - 1;
-                        newCopy.hasVoted = !db.hasVoted ? true : false;
+                        newCopy.hasUpvoted = !db.hasUpvoted ? true : false;
 
                         newDatabases.push(newCopy);
                     } else {
@@ -474,21 +485,63 @@ export const CatalogPage = observer((): JSX.Element => {
         });
     };
 
+    const scrollAll = () => {
+        currentScroll = scrollEle.scrollTop + scrollEle.offsetHeight;
+        if (
+            currentScroll > scrollEle.scrollHeight * 0.75 &&
+            currentScroll > previousScroll
+        ) {
+            if (scrollTimeout) {
+                clearTimeout(scrollTimeout);
+            }
+
+            scrollTimeout = setTimeout(() => {
+                if (!canCollectRef.current) {
+                    return;
+                }
+
+                setOffset(offsetRef.current + limit);
+            }, 500);
+        }
+
+        previousScroll = currentScroll;
+    };
+
     /**
-     * @desc catalog filters
+     * @desc anytime we change catalogType clean up engines
+     */
+    useEffect(() => {
+        dispatch({
+            type: 'field',
+            field: 'databases',
+            value: [],
+        });
+        setCanCollect(true);
+        setOffset(0);
+    }, [catalogType]);
+
+    /**
+     * @desc Set Databases
      */
     useEffect(() => {
         if (getDatabases.status !== 'SUCCESS') {
             return;
         }
 
-        const mutateListWithVotes = [];
+        if (getDatabases.data.length < limit) {
+            setCanCollect(false);
+        } else {
+            if (!canCollectRef.current) {
+                setCanCollect(true);
+            }
+        }
+
+        const mutateListWithVotes = databases;
 
         getDatabases.data.forEach((db, i) => {
             mutateListWithVotes.push({
                 ...db,
                 upvotes: db.upvotes ? db.upvotes : 0,
-                hasVoted: false,
                 views: 'N/A',
                 trending: 'N/A',
             });
@@ -502,7 +555,7 @@ export const CatalogPage = observer((): JSX.Element => {
     }, [getDatabases.status, getDatabases.data]);
 
     /**
-     * @desc catalog filters
+     * @desc Catalog filters
      */
     useEffect(() => {
         if (getCatalogFilters.status !== 'SUCCESS') {
@@ -526,6 +579,9 @@ export const CatalogPage = observer((): JSX.Element => {
         setFilterOptions(updated);
     }, [getCatalogFilters.status, getCatalogFilters.data]);
 
+    /**
+     * @desc Sets Favorited Engines
+     */
     useEffect(() => {
         if (getFavoritedDatabases.status !== 'SUCCESS') {
             return;
@@ -537,6 +593,18 @@ export const CatalogPage = observer((): JSX.Element => {
             value: getFavoritedDatabases.data,
         });
     }, [getFavoritedDatabases.status, getFavoritedDatabases.data]);
+
+    /**
+     * @desc infinite scroll
+     */
+    useEffect(() => {
+        scrollEle = document.querySelector('#home__content');
+
+        scrollEle.addEventListener('scroll', scrollAll);
+        return () => {
+            scrollEle.removeEventListener('scroll', scrollAll);
+        };
+    }, [scrollEle]);
 
     // finish loading the page
     if (
@@ -574,6 +642,14 @@ export const CatalogPage = observer((): JSX.Element => {
                                 size={'small'}
                                 label={`Search ${catalogType}`}
                                 onChange={(e) => {
+                                    // Reset databases and reset offset
+                                    dispatch({
+                                        type: 'field',
+                                        field: 'databases',
+                                        value: [],
+                                    });
+                                    setOffset(0);
+
                                     setSearch(e.target.value);
                                 }}
                             />
@@ -725,25 +801,30 @@ export const CatalogPage = observer((): JSX.Element => {
                                     <StyledChip
                                         label={'My Databases'}
                                         selected={mode === 'My Databases'}
-                                        // variant="filled"
-                                        // variantColor={
-                                        //     mode === 'My Databases'
-                                        //         ? 'primary'
-                                        //         : 'lcprimary'
-                                        // }
-                                        onClick={() => setMode('My Databases')}
+                                        onClick={() => {
+                                            // Reset databases and reset offset
+                                            dispatch({
+                                                type: 'field',
+                                                field: 'databases',
+                                                value: [],
+                                            });
+                                            setOffset(0);
+                                            setMode('My Databases');
+                                        }}
                                     ></StyledChip>
                                     <StyledChip
                                         label={'Discoverable Databases'}
                                         selected={
                                             mode === 'Discoverable Databases'
                                         }
-                                        // variantColor={
-                                        //     mode === 'Discoverable Databases'
-                                        //         ? 'primary'
-                                        //         : 'lcprimary'
-                                        // }
                                         onClick={() => {
+                                            // Reset databases and reset offset
+                                            dispatch({
+                                                type: 'field',
+                                                field: 'databases',
+                                                value: [],
+                                            });
+                                            setOffset(0);
                                             setMode('Discoverable Databases');
                                         }}
                                     ></StyledChip>
@@ -763,7 +844,16 @@ export const CatalogPage = observer((): JSX.Element => {
                                                 primary={
                                                     <Typography
                                                         variant={'body1'}
-                                                        sx={{ fontWeight: 500 }}
+                                                        sx={{
+                                                            alignSelf:
+                                                                'stretch',
+                                                            fontWeight: 500,
+                                                            fontSize: '16px',
+                                                            fontStyle: 'normal',
+                                                            lineHeight: '150%',
+                                                            letterSpacing:
+                                                                '0.15px',
+                                                        }}
                                                     >
                                                         {formatDBName(
                                                             entries[0],
@@ -846,6 +936,18 @@ export const CatalogPage = observer((): JSX.Element => {
                                                                         ) > -1
                                                                     }
                                                                     onClick={() => {
+                                                                        // Reset databases and reset offset
+                                                                        dispatch(
+                                                                            {
+                                                                                type: 'field',
+                                                                                field: 'databases',
+                                                                                value: [],
+                                                                            },
+                                                                        );
+                                                                        setOffset(
+                                                                            0,
+                                                                        );
+
                                                                         setSelectedFilters(
                                                                             entries[0],
                                                                             filterOption,
@@ -976,7 +1078,7 @@ export const CatalogPage = observer((): JSX.Element => {
                                                 views={db.views}
                                                 trending={db.trending}
                                                 isGlobal={db.database_global}
-                                                isUpvoted={db.hasVoted}
+                                                isUpvoted={db.hasUpvoted}
                                                 isFavorite={isFavorited(
                                                     db.database_id,
                                                 )}
@@ -1014,7 +1116,7 @@ export const CatalogPage = observer((): JSX.Element => {
                                                 views={db.views}
                                                 trending={db.trending}
                                                 isGlobal={db.database_global}
-                                                isUpvoted={db.hasVoted}
+                                                isUpvoted={db.hasUpvoted}
                                                 isFavorite={isFavorited(
                                                     db.database_id,
                                                 )}

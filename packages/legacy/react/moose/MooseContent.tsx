@@ -16,8 +16,15 @@ import {
 
 import { useForm } from 'react-hook-form';
 import { Field } from '../form';
-import { PixelCommand } from '../../types';
 import { Resizable } from 're-resizable';
+
+interface PixelCommand {
+    type: string;
+    components: any[];
+    terminal?: boolean;
+    meta?: boolean;
+}
+
 // ----------------------------------------------
 // Icons ----------------------------------------
 // ----------------------------------------------

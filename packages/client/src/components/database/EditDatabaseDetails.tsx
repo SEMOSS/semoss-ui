@@ -269,8 +269,6 @@ export const EditDatabaseDetails = observer(
                                         name={metakey}
                                         control={control}
                                         render={({ field }) => {
-                                            console.log(filterOptions[metakey]);
-                                            console.log('value', field.value);
                                             return (
                                                 <Autocomplete<string, true>
                                                     freeSolo={true}
