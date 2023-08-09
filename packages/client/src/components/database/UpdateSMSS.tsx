@@ -32,21 +32,22 @@ export const UpdateSMSS = (props: UpdateSMSSProps) => {
 
     const [initialValue, setInitialValue] = useState('');
     const [value, setValue] = useState('');
+    const [readOnly, setReadOnly] = useState(true);
 
-    const smssDetails = usePixel(`GetDatabaseSMSS(database=['${id}'])`);
+    const smssDetails = usePixel<string>(`GetDatabaseSMSS(database=['${id}'])`);
 
     useEffect(() => {
         if (smssDetails.status !== 'SUCCESS') {
             return;
         }
-        let stringToDisplay = '';
+        // let stringToDisplay = '';
 
-        Object.entries(smssDetails.data).forEach((val) => {
-            stringToDisplay += `${val[0]} ${val[1]}\n`;
-        });
+        // Object.entries(smssDetails.data).forEach((val) => {
+        //     stringToDisplay += `${val[0]} ${val[1]}\n`;
+        // });
 
-        setInitialValue(stringToDisplay);
-        setValue(stringToDisplay);
+        setInitialValue(smssDetails.data);
+        setValue(smssDetails.data);
     }, [smssDetails.status, smssDetails.data]);
 
     /**
@@ -57,6 +58,8 @@ export const UpdateSMSS = (props: UpdateSMSSProps) => {
         monolithStore.updateDatabaseSmssProperties(id, value).then((resp) => {
             const { data } = resp;
             if (data.success) {
+                setReadOnly(true);
+                setInitialValue(value);
                 notification.add({
                     color: 'success',
                     message: 'Successfully updated SMSS Properties',
@@ -74,20 +77,30 @@ export const UpdateSMSS = (props: UpdateSMSSProps) => {
         <StyledContainer>
             <StyledTopDiv>
                 <Typography variant={'h6'}>SMSS Properties</Typography>
-                <Button
-                    variant={'contained'}
-                    size={'small'}
-                    disabled={initialValue === value}
-                    onClick={() => {
-                        updateSMSSProperties();
-                    }}
-                >
-                    Update SMSS
-                </Button>
+                {readOnly ? (
+                    <Button
+                        variant="contained"
+                        onClick={() => setReadOnly(false)}
+                    >
+                        Edit
+                    </Button>
+                ) : (
+                    <Button
+                        variant={'contained'}
+                        size={'small'}
+                        disabled={initialValue === value}
+                        onClick={() => {
+                            updateSMSSProperties();
+                        }}
+                    >
+                        Update SMSS
+                    </Button>
+                )}
             </StyledTopDiv>
             <StyledPaper elevation={1}>
                 <Editor
                     defaultValue={''}
+                    options={{ readOnly: readOnly }}
                     value={value}
                     language={'plaintext'}
                     onChange={(newValue, e) => {
