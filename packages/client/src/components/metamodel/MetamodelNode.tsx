@@ -7,7 +7,7 @@ import { TableBar, ViewColumn } from '@mui/icons-material';
 import { useMetamodel } from '@/hooks';
 
 const StyledNode = styled('div', {
-    shouldForwardProp: (prop) => prop !== 'stuck',
+    shouldForwardProp: (prop) => prop !== 'isSelected',
 })<{
     /** Track if the node is isSelected */
     isSelected: boolean;
@@ -24,7 +24,7 @@ const StyledHandle = styled(Handle)(() => ({
 }));
 
 const StyledRow = styled('div', {
-    shouldForwardProp: (prop) => prop !== 'stuck',
+    shouldForwardProp: (prop) => prop !== 'isHeader',
 })<{
     /** Track if the node is isHeader */
     isHeader: boolean;

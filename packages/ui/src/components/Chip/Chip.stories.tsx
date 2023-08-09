@@ -11,14 +11,14 @@ const meta: Meta<typeof Chip> = {
         variant: "outlined",
         clickable: true,
         disabled: false,
-        variantColor: "green",
+        color: "green",
     },
     argTypes: {
         variant: {
             options: ["outlined", "filled"],
             control: { type: "radio" },
         },
-        variantColor: {
+        color: {
             options: [
                 "default",
                 "primary",
@@ -45,20 +45,20 @@ export const Outlined: Story = {
     render: (args) => (
         <>
             <Chip label="Chip" {...args} />
-            <Chip label="Chip" variantColor="indigo" variant="outlined" />
-            <Chip label="Chip" variantColor="indigo" variant="filled" />
-            <Chip label="Chip" variantColor="turqoise" variant="filled" />
-            <Chip label="Chip" variantColor="turqoise" variant="outlined" />
-            <Chip label="Chip" variantColor="green" variant="filled" />
-            <Chip label="Chip" variantColor="green" variant="outlined" />
-            <Chip label="Chip" variantColor="purple" variant="filled" />
-            <Chip label="Chip" variantColor="lcpurple" variant="outlined" />
-            <Chip label="Chip" variantColor="primary" variant="outlined" />
-            <Chip label="Chip" variantColor="primary" variant="filled" />
-            <Chip label="Chip" variantColor="pink" variant="filled" />
-            <Chip label="Chip" variantColor="pink" variant="outlined" />
-            <Chip label="Chip" variantColor="lcpink" variant="outlined" />
-            <Chip label="Chip" variantColor="lcpink" variant="filled" />
+            <Chip label="Chip" color="indigo" variant="outlined" />
+            <Chip label="Chip" color="indigo" variant="filled" />
+            <Chip label="Chip" color="turqoise" variant="filled" />
+            <Chip label="Chip" color="turqoise" variant="outlined" />
+            <Chip label="Chip" color="green" variant="filled" />
+            <Chip label="Chip" color="green" variant="outlined" />
+            <Chip label="Chip" color="purple" variant="filled" />
+            <Chip label="Chip" color="lcpurple" variant="outlined" />
+            <Chip label="Chip" color="primary" variant="outlined" />
+            <Chip label="Chip" color="primary" variant="filled" />
+            <Chip label="Chip" color="pink" variant="filled" />
+            <Chip label="Chip" color="pink" variant="outlined" />
+            <Chip label="Chip" color="lcpink" variant="outlined" />
+            <Chip label="Chip" color="lcpink" variant="filled" />
         </>
     ),
 };
