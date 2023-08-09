@@ -1,3 +1,4 @@
-import { RootStore } from './root';
-
-export { RootStore };
+export * from './config';
+export * from './monolith';
+export * from './root';
+export * from './workspace';

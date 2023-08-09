@@ -31,10 +31,8 @@ import {
 
 import {
     TextField,
-    TextFieldProps,
     Select as MuiSelect,
     Switch as MuiSwitch,
-    styled,
 } from '@semoss/ui';
 
 // WORK ON SWITCHING TYPES TO THIS FORMAT
@@ -190,7 +188,6 @@ export const Field = <V extends FieldValues>(
                                 disabled={disabled}
                                 error={!!hasError}
                                 label={label ? label : null}
-                                fullWidth={true}
                             />
                         </Form.Field>
                     );
@@ -282,7 +279,7 @@ export const Field = <V extends FieldValues>(
                         >
                             <MuiSelect
                                 id={options.id}
-                                SelectProps={{ multiple: true }}
+                                selectProps={{ multiple: true }}
                                 disabled={disabled}
                                 label={label ? label : null}
                                 placeholder={options.placeholder}
@@ -290,12 +287,9 @@ export const Field = <V extends FieldValues>(
                                 defaultValue={field.value ? field.value : ''}
                                 onChange={(value) => field.onChange(value)}
                             >
-                                {options.options.map((option, idx) => {
+                                {options.options.map((option, i) => {
                                     return (
-                                        <MuiSelect.Item
-                                            key={idx}
-                                            value={option}
-                                        >
+                                        <MuiSelect.Item value={option} key={i}>
                                             {option}
                                         </MuiSelect.Item>
                                     );
@@ -305,7 +299,6 @@ export const Field = <V extends FieldValues>(
                     );
                 }}
             />
-            // {/* </MarginedField> */}
         );
     } else if (options.component === 'typeahead') {
         return (

@@ -1,18 +1,15 @@
 import React, { useCallback, useState } from 'react';
-import { Loading } from '@semoss/components';
+import { Backdrop, CircularProgress, Typography, Stack } from '@semoss/ui';
 
 import { LoadingScreenContext } from './LoadingScreenContext';
 
 export interface LoadingScreenProps {
     /** Content to overlay the Loading Screen on */
     children: React.ReactNode;
-
-    /** Delay of the loading screen */
-    delay?: number;
 }
 
 export const LoadingScreen = (props: LoadingScreenProps): JSX.Element => {
-    const { children, delay } = props;
+    const { children } = props;
 
     // when the count is > 0 it is loading
     const [count, setCount] = useState(0);
@@ -68,12 +65,27 @@ export const LoadingScreen = (props: LoadingScreenProps): JSX.Element => {
                 set: set,
             }}
         >
-            <Loading
+            <Backdrop
+                open={loading}
+                sx={{ background: 'rgba(255, 255, 255, 0.5)' }}
+            >
+                <Stack
+                    direction={'column'}
+                    alignItems={'center'}
+                    justifyContent={'center'}
+                    spacing={1}
+                >
+                    <CircularProgress />
+                    <Typography variant="body2">{message}</Typography>
+                    <Typography variant="caption">{description}</Typography>
+                </Stack>
+            </Backdrop>
+            {/* <Loading
                 open={loading}
                 message={message}
                 description={description}
                 delay={delay}
-            />
+            /> */}
             {children}
         </LoadingScreenContext.Provider>
     );

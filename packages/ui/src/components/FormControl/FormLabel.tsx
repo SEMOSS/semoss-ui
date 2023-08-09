@@ -1,5 +1,4 @@
-import MuiFormLabel from "@mui/material/FormLabel";
-import { SxProps } from "@mui/system";
+import { FormLabel as MuiFormLabel, SxProps } from "@mui/material";
 
 export interface FormLabelProps {
     /**

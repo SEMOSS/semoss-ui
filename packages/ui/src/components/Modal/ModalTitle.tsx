@@ -1,5 +1,4 @@
-import { DialogTitle as MuiModalTitle } from "@mui/material";
-import { SxProps } from "@mui/system";
+import { DialogTitle as MuiModalTitle, SxProps } from "@mui/material";
 
 export interface ModalTitleProps {
     /**

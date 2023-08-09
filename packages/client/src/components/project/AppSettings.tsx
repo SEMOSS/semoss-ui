@@ -1,5 +1,7 @@
 import { useEffect, useState } from 'react';
 import {
+    styled,
+    useNotification,
     Avatar,
     Button,
     Switch,
@@ -7,7 +9,6 @@ import {
     Typography,
     Divider,
     TextField,
-    styled,
 } from '@semoss/ui';
 
 import {
@@ -17,8 +18,6 @@ import {
     PublishedWithChanges,
     InsertLink,
 } from '@mui/icons-material';
-
-import { useNotification } from '@semoss/components';
 
 import { usePixel, useRootStore } from '@/hooks';
 import { LoadingScreen } from '@/components/ui';
@@ -171,80 +170,120 @@ interface User {
 
 export const AppSettings = (props) => {
     const { id } = props;
-    const { monolithStore } = useRootStore();
+    const { monolithStore, configStore } = useRootStore();
     const notification = useNotification();
+
+    const admin = configStore.store.user.admin;
 
     //states on initial load
     const [portalLink, setPortalLink] = useState<string>('');
     const [reactors, setReactors] = useState([]);
-    const [user, setUser] = useState<User>({});
+    const [user, setUser] = useState<User>({
+        id: '',
+        name: '',
+        date: '',
+        time: '',
+    });
     const [enablePublish, setEnablePublish] = useState(false);
 
-    const getProjectReactors = usePixel<string[]>(
-        `GetProjectAvailableReactors(project=['${id}']);`,
-    );
+    const [portalReactors, setPortalReactors] = useState<{
+        reactors: string[];
+        lastCompiled?: string;
+        compiledBy?: string;
+    }>({
+        lastCompiled: '',
+        reactors: [],
+        compiledBy: '',
+    });
 
-    const getPortalLink = usePixel(
-        //pixel fetch link --> dummy pixel
-        `GetProjectAvailableReactors(project=['${id}']);`,
-    );
+    const [portalDetails, setPortalDetails] = useState<{
+        url: string;
+        isPublished: boolean;
+        hasPortal?: boolean;
+        lastCompiled?: string;
+        compiledBy?: string;
+    }>({
+        url: '',
+        isPublished: false,
+        hasPortal: false,
+        lastCompiled: '12/25/2022',
+        compiledBy: 'J.Smith',
+    });
 
-    const getLastCompiledPerson = usePixel(
-        //pixel fetch user info --> dummy pixel
-        `GetProjectAvailableReactors(project=['${id}']);`,
-    );
+    const getPortalDetails = usePixel<{
+        url: string;
+        isPublished: boolean;
+        hasPortal?: boolean;
+        lastCompiled?: string;
+        compiledBy?: string;
+    }>(`
+        GetProjectPortalDetails('${id}');
+    `);
 
     useEffect(() => {
-        if (
-            getProjectReactors.status !== 'SUCCESS' ||
-            !getProjectReactors.data
-        ) {
+        if (getPortalDetails.status !== 'SUCCESS') {
             return;
         }
 
-        if (getPortalLink.status !== 'SUCCESS') {
-            setPortalLink('https://amedeloitte.sharepoint.com/:p:/s/123456');
-        }
-
-        if (getLastCompiledPerson.status !== 'SUCCESS') {
-            setUser({
-                id: 'test',
-                name: 'Rose Memis',
-                date: '7/18/2023',
-                time: '10:00AM',
-            });
-        }
-    }, [getProjectReactors.status, getProjectReactors.data]);
-
-    useEffect(() => {
-        if (getPortalLink.status !== 'SUCCESS' || !getPortalLink.data) {
-            return;
-        }
-
-        setPortalLink('https://amedeloitte.sharepoint.com/:p:/s/123456');
-    }, [getPortalLink.status, getPortalLink.data]);
-
-    useEffect(() => {
-        if (
-            getLastCompiledPerson.status !== 'SUCCESS' ||
-            !getLastCompiledPerson.data
-        ) {
-            return;
-        }
-
-        setUser({
-            id: 'test',
-            name: 'Rose Memis',
-            date: '7/18/2023',
-            time: '10:00AM',
+        // Set Details for Portal
+        setPortalDetails({
+            ...getPortalDetails.data,
+            // hasPortal: true
         });
-    }, [getLastCompiledPerson.status, getLastCompiledPerson.data]);
+
+        // Get the portal reactors if we have a portal
+        // if (getPortalDetails.data.isPublished) {
+        getPortalReactors();
+        // }
+    }, [getPortalDetails.status, getPortalDetails.data]);
 
     /** LOADING */
-    if (getProjectReactors.status !== 'SUCCESS') {
-        return <LoadingScreen.Trigger description="Getting members" />;
+    if (getPortalDetails.status !== 'SUCCESS') {
+        return (
+            <LoadingScreen.Trigger description="Getting project portal details" />
+        );
     }
 
+    /**
+     * @name getPortalReactors
+     */
+    const getPortalReactors = () => {
+        const pixelString = `GetProjectAvailableReactors(project=['${id}']);`;
+
+        monolithStore
+            .runQuery(pixelString)
+            .then((response) => {
+                let output = undefined;
+                let type = undefined;
+
+                output = response.pixelReturn[0].output;
+                type = response.pixelReturn[0].operationType[0];
+
+                if (type.indexOf('ERROR') > -1) {
+                    notification.add({
+                        color: 'error',
+                        message: output,
+                    });
+
+                    return;
+                }
+
+                setPortalReactors({
+                    ...portalReactors,
+                    reactors: output,
+                });
+            })
+            .catch((error) => {
+                notification.add({
+                    color: 'error',
+                    message: error,
+                });
+            });
+    };
+
+    /**
+     * @name recompileReactors
+     */
     const recompileReactors = () => {
         const pixelString = `ReloadInsightClasses('${id}');`;
 
@@ -260,7 +299,7 @@ export const AppSettings = (props) => {
                 if (type.indexOf('ERROR') > -1) {
                     notification.add({
                         color: 'error',
-                        content: output,
+                        message: output,
                     });
 
                     return;
@@ -268,17 +307,21 @@ export const AppSettings = (props) => {
 
                 notification.add({
                     color: 'success',
-                    content: 'Successfully recompiled',
+                    message: 'Successfully recompiled',
                 });
             })
             .catch((error) => {
                 notification.add({
                     color: 'error',
-                    content: error,
+                    message: error,
                 });
             });
     };
 
+    /**
+     * @name publish
+     * @desc Publishes Portal
+     */
     const publish = () => {
         const pixelString = `PublishProject('${id}');`;
 
@@ -294,50 +337,57 @@ export const AppSettings = (props) => {
                 if (type.indexOf('ERROR') > -1) {
                     notification.add({
                         color: 'error',
-                        content: output,
+                        message: output,
                     });
 
                     return;
                 }
 
+                setPortalDetails({
+                    ...portalDetails,
+                    url: output,
+                });
+
                 notification.add({
                     color: 'success',
-                    content: 'Successfully published',
+                    message: 'Successfully published',
                 });
             })
             .catch((error) => {
                 notification.add({
                     color: 'error',
-                    content: error,
+                    message: error,
                 });
             });
     };
 
-    //enable publishing pixel on toggle
+    /**
+     * @name enablePublishing
+     */
     const enablePublishing = () => {
-        const pixelString = `GetProjectPortalDetails('${id}');`;
-
-        monolithStore.runQuery(pixelString).then((response) => {
-            let output = undefined;
-            let type = undefined;
-
-            output = response.pixelReturn[0].output;
-            type = response.pixelReturn[0].operationType[0];
-
-            if (type.indexOf('ERROR') > -1) {
-                setEnablePublish(false);
+        monolithStore
+            .setProjectPortal(admin, id, !portalDetails.hasPortal)
+            .then((resp) => {
+                if (resp.data) {
+                    setPortalDetails({
+                        ...portalDetails,
+                        hasPortal: !portalDetails.hasPortal,
+                    });
+                } else {
+                    notification.add({
+                        color: 'error',
+                        message: `Unsuccessfully ${
+                            !portalDetails.hasPortal ? 'disabled' : 'enabled'
+                        } portal`,
+                    });
+                }
+            })
+            .catch((error) => {
                 notification.add({
                     color: 'error',
-                    content: output,
+                    message: error,
                 });
-                return;
-            }
-
-            notification.add({
-                color: 'success',
-                content: 'Successfully enabled publishing',
             });
-        });
     };
 
     return (
@@ -346,30 +396,29 @@ export const AppSettings = (props) => {
                 <StyledCardDiv>
                     <StyledCardLeft>
                         <StyledListItemHeader>
-                            <Typography variant="h6">Portal</Typography>
+                            <Typography variant="h6">Portals</Typography>
                         </StyledListItemHeader>
 
                         <StyledLeftActionContainer>
-                            <StyledLeftActionDiv>
-                                <StyledActionDivLeft>
+                            {portalDetails.lastCompiled && (
+                                <StyledLeftActionDiv>
+                                    <StyledActionDivLeft>
+                                        <Typography variant="body2">
+                                            Last compiled by:
+                                        </Typography>
+                                    </StyledActionDivLeft>
+                                    <Avatar>
+                                        <StyledPersonIcon />
+                                    </Avatar>
                                     <Typography variant="body2">
-                                        Last compiled by:
+                                        {portalDetails.compiledBy}
                                     </Typography>
-                                </StyledActionDivLeft>
-                                <Avatar>
-                                    <StyledPersonIcon />
-                                </Avatar>
-                                <Typography variant="body2">
-                                    {user.name}
-                                </Typography>
-                                <Typography variant="body2">
-                                    {user.time}
-                                </Typography>
-                                <Typography variant="body2">on</Typography>
-                                <Typography variant="body2">
-                                    {user.date}
-                                </Typography>
-                            </StyledLeftActionDiv>
+                                    <Typography variant="body2">on</Typography>
+                                    <Typography variant="body2">
+                                        {portalDetails.lastCompiled}
+                                    </Typography>
+                                </StyledLeftActionDiv>
+                            )}
                         </StyledLeftActionContainer>
                     </StyledCardLeft>
 
@@ -388,67 +437,71 @@ export const AppSettings = (props) => {
                                 </Typography>
 
                                 <StyledRightSwitch
-                                    checked={enablePublish}
-                                    value={enablePublish}
+                                    checked={portalDetails.hasPortal}
+                                    value={portalDetails.hasPortal}
                                     onChange={() => {
-                                        setEnablePublish(!enablePublish);
-                                        if (!enablePublish) enablePublishing();
+                                        enablePublishing();
                                     }}
                                 ></StyledRightSwitch>
                             </StyledSubRow>
                         </StyledSubColumn>
 
-                        {enablePublish && (
-                            <>
-                                <Divider />
+                        <>
+                            <Divider />
 
-                                <StyledSubColumn>
-                                    <StyledSubRow>
-                                        <StyledRefreshIcon />
-                                        <Typography variant="subtitle1">
-                                            Publish Portal
-                                        </Typography>
-                                    </StyledSubRow>
+                            <StyledSubColumn>
+                                <StyledSubRow>
+                                    <StyledRefreshIcon />
+                                    <Typography variant="subtitle1">
+                                        Publish Portal
+                                    </Typography>
+                                </StyledSubRow>
 
-                                    <StyledSubRow>
-                                        <Typography variant="body2">
-                                            Publish the portal to generate a
-                                            shareable link.
-                                        </Typography>
+                                <StyledSubRow>
+                                    <Typography variant="body2">
+                                        Publish the portal to generate a
+                                        shareable link.
+                                    </Typography>
 
-                                        <StyledRightButton
-                                            variant="outlined"
-                                            onClick={() => {
-                                                publish();
-                                            }}
-                                        >
-                                            <StyledPublishedIcon />
-                                            Publish
-                                        </StyledRightButton>
-                                    </StyledSubRow>
+                                    <StyledRightButton
+                                        disabled={!portalDetails.hasPortal}
+                                        variant="outlined"
+                                        onClick={() => {
+                                            publish();
+                                        }}
+                                    >
+                                        <StyledPublishedIcon />
+                                        Publish
+                                    </StyledRightButton>
+                                </StyledSubRow>
 
-                                    <StyledSubRow>
-                                        <TextField
-                                            focused={false}
-                                            label={'Link'}
-                                            variant={'outlined'}
-                                            defaultValue={portalLink}
-                                            sx={{ width: '100%' }}
-                                            InputProps={{
-                                                startAdornment: <InsertLink />,
-                                            }}
-                                        >
-                                            {portalLink}
-                                        </TextField>
-                                    </StyledSubRow>
-                                </StyledSubColumn>
-                            </>
-                        )}
+                                <StyledSubRow>
+                                    <TextField
+                                        focused={false}
+                                        label={'Link'}
+                                        variant={'outlined'}
+                                        value={
+                                            portalDetails.hasPortal
+                                                ? portalDetails.url
+                                                : ''
+                                        }
+                                        sx={{ width: '100%' }}
+                                        InputProps={{
+                                            startAdornment: <InsertLink />,
+                                        }}
+                                    >
+                                        {portalDetails.hasPortal
+                                            ? portalDetails.url
+                                            : ''}
+                                    </TextField>
+                                </StyledSubRow>
+                            </StyledSubColumn>
+                        </>
                     </StyledCardRight>
                 </StyledCardDiv>
             </StyledTopCardContainer>
 
-            {enablePublish && (
+            {portalReactors.reactors.length ? (
                 <StyledCardContainer>
                     <StyledCardDiv>
                         <StyledCardLeft>
@@ -467,50 +520,56 @@ export const AppSettings = (props) => {
                             >
                                 Recompile
                             </Button>
-                            <StyledLeftActionContainer>
-                                <StyledLeftActionDiv>
-                                    <StyledActionDivLeft>
+                            {portalReactors.lastCompiled && (
+                                <StyledLeftActionContainer>
+                                    <StyledLeftActionDiv>
+                                        <StyledActionDivLeft>
+                                            <Typography variant="body2">
+                                                Last compiled by:
+                                            </Typography>
+                                        </StyledActionDivLeft>
+                                        <Avatar>
+                                            <StyledPersonIcon />
+                                        </Avatar>
                                         <Typography variant="body2">
-                                            Last compiled by:
+                                            {portalReactors.compiledBy}
                                         </Typography>
-                                    </StyledActionDivLeft>
-                                    <Avatar>
-                                        <StyledPersonIcon />
-                                    </Avatar>
-                                    <Typography variant="body2">
-                                        {user.name}
-                                    </Typography>
-                                    <Typography variant="body2">
+                                        {/* <Typography variant="body2">
                                         {user.time}
-                                    </Typography>
-                                    <Typography variant="body2">on</Typography>
-                                    <Typography variant="body2">
-                                        {user.date}
-                                    </Typography>
-                                </StyledLeftActionDiv>{' '}
-                            </StyledLeftActionContainer>
+                                    </Typography> */}
+                                        <Typography variant="body2">
+                                            on
+                                        </Typography>
+                                        <Typography variant="body2">
+                                            {portalReactors.lastCompiled}
+                                        </Typography>
+                                    </StyledLeftActionDiv>{' '}
+                                </StyledLeftActionContainer>
+                            )}
                         </StyledCardLeft>
                         <StyledCardRight>
                             <StyledTable>
                                 <Table.Body>
-                                    {reactors.map((reactor, i) => {
-                                        return (
-                                            <Table.Row key={reactor + i}>
-                                                <Table.Cell>
-                                                    {reactor}
-                                                </Table.Cell>
-                                                <Table.Cell align="right">
-                                                    <Java />
-                                                </Table.Cell>
-                                            </Table.Row>
-                                        );
-                                    })}
+                                    {portalReactors.reactors.map(
+                                        (reactor, i) => {
+                                            return (
+                                                <Table.Row key={reactor + i}>
+                                                    <Table.Cell>
+                                                        {reactor}
+                                                    </Table.Cell>
+                                                    <Table.Cell align="right">
+                                                        <Java />
+                                                    </Table.Cell>
+                                                </Table.Row>
+                                            );
+                                        },
+                                    )}
                                 </Table.Body>
                             </StyledTable>
                         </StyledCardRight>
                     </StyledCardDiv>
                 </StyledCardContainer>
-            )}
+            ) : null}
         </StyledAppSettings>
     );
 };

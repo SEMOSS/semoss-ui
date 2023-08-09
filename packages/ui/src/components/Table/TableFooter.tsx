@@ -1,5 +1,4 @@
-import { TableFooter as MuiTableFooter } from "@mui/material";
-import { SxProps } from "@mui/system";
+import { TableFooter as MuiTableFooter, SxProps } from "@mui/material";
 
 export interface TableFooterProps {
     /**

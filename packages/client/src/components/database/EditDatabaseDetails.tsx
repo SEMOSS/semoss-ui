@@ -1,12 +1,11 @@
 import { useState, useEffect } from 'react';
-import { useNotification } from '@semoss/components';
 import {
     Modal,
     Button,
     Stack,
     TextField,
-    TextArea,
     Autocomplete,
+    useNotification,
 } from '@semoss/ui';
 import { useForm, Controller } from 'react-hook-form';
 import { observer } from 'mobx-react-lite';
@@ -108,19 +107,21 @@ export const EditDatabaseDetails = observer(
          * @desc approve, deny, delete selected members/users
          * @param data - form data
          */
-        const onSubmit = handleSubmit((data) => {
+        const onSubmit = handleSubmit((data: object) => {
             // copy over the defined keys
             const meta = {};
-            for (const key in data) {
-                if (data[key] !== undefined) {
-                    meta[key] = data[key];
+            if (data) {
+                for (const key in data) {
+                    if (data[key] !== undefined) {
+                        meta[key] = data[key];
+                    }
                 }
             }
 
             if (Object.keys(meta).length === 0) {
                 notification.add({
                     color: 'warning',
-                    content: 'Nothing to Save',
+                    message: 'Nothing to Save',
                 });
 
                 return;
@@ -128,18 +129,19 @@ export const EditDatabaseDetails = observer(
 
             monolithStore
                 .runQuery(
-                    `SetDatabaseMetadata(database=["${id}"], meta=[${JSON.stringify(
+                    `SetEngineMetadata(engine=["${id}"], meta=[${JSON.stringify(
                         meta,
                     )}], jsonCleanup=[true])`,
                 )
                 .then((response) => {
-                    const { output, operationType } = response.pixelReturn[0];
+                    const { output, additionalOutput, operationType } =
+                        response.pixelReturn[0];
 
                     // track the errors
                     if (operationType.indexOf('ERROR') > -1) {
                         notification.add({
                             color: 'error',
-                            content: output,
+                            message: output,
                         });
 
                         return;
@@ -147,7 +149,7 @@ export const EditDatabaseDetails = observer(
 
                     notification.add({
                         color: 'success',
-                        content: output,
+                        message: additionalOutput[0].output,
                     });
 
                     // close it and succesfully message
@@ -156,7 +158,7 @@ export const EditDatabaseDetails = observer(
                 .catch((error) => {
                     notification.add({
                         color: 'error',
-                        content: error.message,
+                        message: error.message,
                     });
                 });
         });

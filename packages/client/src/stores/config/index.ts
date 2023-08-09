@@ -1,3 +1,1 @@
-import { ConfigStore } from './ConfigStore';
-
-export { ConfigStore };
+export { ConfigStore } from './config.store';

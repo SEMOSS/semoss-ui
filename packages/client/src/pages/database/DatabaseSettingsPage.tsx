@@ -19,13 +19,16 @@ const StyledContainer = styled('div')(({ theme }) => ({
 }));
 
 export const DatabaseSettingsPage = () => {
-    const { id } = useDatabase();
+    const { id, type, role } = useDatabase();
     const navigate = useNavigate();
+
+    console.log('debug', type);
+    console.log('debug', role);
 
     return (
         <StyledContainer>
             <WorkflowAccess
-                type={'database'}
+                type={type}
                 id={id}
                 projectId={undefined}
                 onDelete={() => {

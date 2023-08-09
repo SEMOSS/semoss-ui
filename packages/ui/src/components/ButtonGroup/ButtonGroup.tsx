@@ -52,6 +52,7 @@ export interface ButtonGroupProps {
      * @default 'outlined'
      */
     variant?: "text" | "outlined" | "contained";
+    title?: string;
 }
 
 export const ButtonGroup = (props: ButtonGroupProps) => {

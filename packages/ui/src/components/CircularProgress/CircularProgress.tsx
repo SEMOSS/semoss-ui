@@ -1,5 +1,7 @@
-import MuiCircularProgress from "@mui/material/CircularProgress";
-import { SxProps } from "@mui/system";
+import {
+    CircularProgress as MuiCircularProgress,
+    SxProps,
+} from "@mui/material";
 
 export interface CircularProgressProps {
     /**

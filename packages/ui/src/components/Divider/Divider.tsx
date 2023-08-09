@@ -1,5 +1,4 @@
-import MuiDivider from "@mui/material/Divider";
-import { SxProps } from "@mui/system";
+import { Divider as MuiDivider, SxProps } from "@mui/material";
 
 export interface DividerProps {
     /**

@@ -1,10 +1,8 @@
 import {
     Avatar,
     ButtonGroup,
-    Button,
     Card,
     Chip,
-    Icon,
     IconButton,
     Typography,
     styled,
@@ -14,7 +12,6 @@ import {
     Person,
     Visibility,
     ShowChart,
-    FolderOpen,
     Star,
     StarOutlineOutlined,
     ArrowDropDown,
@@ -23,7 +20,8 @@ import {
     LockRounded,
 } from '@mui/icons-material';
 
-import defaultDBImage from '../../assets/img/placeholder.png';
+import defaultDbImage from '../../assets/img/placeholder.png';
+// import defaultDBImage from '../../assets/img/placeholder.png';
 import { formatName } from '@/utils';
 
 const StyledLandscapeCard = styled(Card)({
@@ -117,7 +115,6 @@ const StyledLandscapeCardDescription = styled(Typography)({
     maxHeight: '60px',
     overflow: 'hidden',
     whiteSpace: 'pre-wrap',
-    overflow: 'hidden',
     textOverflow: 'ellipsis',
 });
 
@@ -161,9 +158,16 @@ const StyledLeftActions = styled('div')({
 const StyledViewsTrendingDiv = styled('div')({
     display: 'flex',
     justifyContent: 'center',
-    alignItems: 'flex-start',
+    alignItems: 'center',
     gap: '4px',
 });
+
+const StyledButtonGroup = styled(ButtonGroup)({
+    // borderRadius: '8px',
+    // border: '1px solid rgba(0, 0, 0, 0.23)'
+});
+
+const StyledButtonGroupItem = styled(ButtonGroup.Item)({});
 
 const StyledEyeIcon = styled(Visibility)({
     display: 'flex',
@@ -187,15 +191,6 @@ const StyledLockButton = styled(IconButton)({
 });
 
 const StyledTileCard = styled(Card)({
-    display: 'flex',
-    padding: '0px 0px 8px 0px',
-    flexDirection: 'column',
-    alignItems: 'flex-start',
-    // width: '226px',
-    gap: '16px',
-    boxShadow:
-        '0px 5px 22px 0px rgba(0, 0, 0, 0.04), 0px 4px 4px 0.5px rgba(0, 0, 0, 0.03)',
-
     '&:hover': {
         cursor: 'pointer',
     },
@@ -243,6 +238,12 @@ const StyledCardImage = styled('img')({
     alignItems: 'flex-start',
     gap: '10px',
     alignSelf: 'stretch',
+
+    overflowClipMargin: 'content-box',
+    overflow: 'clip',
+    objectFit: 'cover',
+    width: '100%',
+    // aspectRatio: '1/1'
 });
 
 const StyledCardHeader = styled('div')({
@@ -260,39 +261,12 @@ const StyledDbName = styled(Typography)({
     alignSelf: 'stretch',
 });
 
-const StyledCardCategory = styled('div')({
-    display: 'flex',
-    justifyContent: 'center',
-    alignItems: 'center',
-    gap: '4px',
-    alignSelf: 'stretch',
-});
-
-const StyledCategoryIcon = styled(FolderOpen)({
-    display: 'flex',
-    alignItems: 'flex-start',
-});
-
-const StyledCategoryLabel = styled(Typography)({
-    display: 'flex',
-    flexDirection: 'column',
-    alignItems: 'flex-start',
-    flex: '1 0 0',
-});
-
 const StyledPublishedByContainer = styled('div')({
     display: 'flex',
     justifyContent: 'center',
     alignItems: 'center',
     gap: '4px',
     alignSelf: 'stretch',
-});
-
-const StyledCardDescriptionContainer = styled('div')({
-    height: '60px',
-    width: '100%',
-    overflow: 'hidden',
-    // border: 'solid yellow',
 });
 
 const StyledCardDescription = styled(Typography)({
@@ -314,6 +288,16 @@ const StyledChipDiv = styled('div')({
     minHeight: '32px',
 });
 
+const StyledStatisticCaption = styled(Typography)(({ theme }) => ({
+    color: theme.palette.secondary.main,
+}));
+
+const UnstyledVoteCount = styled(ButtonGroup.Item)(({ theme }) => ({
+    '&:hover': {
+        backgroundColor: 'transparent',
+    },
+}));
+
 interface DatabaseCardProps {
     /** Name of the Database */
     name: string;
@@ -326,9 +310,6 @@ interface DatabaseCardProps {
 
     /** Description of the Database */
     description: string;
-
-    /** Image of the Database */
-    image?: string;
 
     /** Tag of the Database */
     tag?: string[] | string;
@@ -360,15 +341,14 @@ export const DatabaseLandscapeCard = (props: DatabaseCardProps) => {
         name,
         id,
         description,
-        image = defaultDBImage,
         tag,
         isGlobal,
         isFavorite,
         isUpvoted,
         owner = 'N/A',
         votes = '0',
-        views = 'N/A',
-        trending = 'N/A',
+        // views = 'N/A',
+        // trending = 'N/A',
         onClick,
         favorite,
         upvote,
@@ -378,12 +358,13 @@ export const DatabaseLandscapeCard = (props: DatabaseCardProps) => {
     return (
         <StyledLandscapeCard onClick={() => onClick(id)}>
             <StyledLandscapeCardHeader>
-                <StyledLandscapeCardImg src={image} />
+                <StyledLandscapeCardImg
+                    src={`${process.env.MODULE}/api/app-${id}/appImage/download`}
+                    // src={defaultDbImage}
+                />
                 <StyledLandscapeCardHeaderDiv>
                     <StyledLandscapeCardTitleDiv>
-                        <Typography variant={'body1'}>
-                            {formatName(name)}
-                        </Typography>
+                        <Typography variant={'body1'}>{name}</Typography>
                         <IconButton
                             size={'small'}
                             title={
@@ -449,7 +430,7 @@ export const DatabaseLandscapeCard = (props: DatabaseCardProps) => {
             </StyledLandscapeCardDescriptionContainer>
             <StyledTileCardActions>
                 <StyledLeftActions>
-                    <ButtonGroup size="sm" color="secondary">
+                    <ButtonGroup size="small" color="secondary">
                         <ButtonGroup.Item
                             title={
                                 isUpvoted
@@ -460,27 +441,31 @@ export const DatabaseLandscapeCard = (props: DatabaseCardProps) => {
                                 e.stopPropagation();
                                 upvote(isUpvoted);
                             }}
+                            aria-label={
+                                isUpvoted
+                                    ? `Downvote ${name}`
+                                    : `Upvote ${name}`
+                            }
                         >
                             {isUpvoted ? <ArrowDropDown /> : <ArrowDropUp />}
                         </ButtonGroup.Item>
-                        <ButtonGroup.Item disabled={true}>
-                            {votes}
-                        </ButtonGroup.Item>
+                        <UnstyledVoteCount>{votes}</UnstyledVoteCount>
                     </ButtonGroup>
-                    <StyledViewsTrendingDiv>
+                    {/* <StyledViewsTrendingDiv>
                         <StyledEyeIcon />
-                        <Typography color="secondary" variant="caption">
+                        <StyledStatisticCaption variant="caption">
                             {views}
-                        </Typography>
+                        </StyledStatisticCaption>
                     </StyledViewsTrendingDiv>
                     <StyledViewsTrendingDiv>
                         <StyledTrendingIcon />
-                        <Typography color="secondary" variant="caption">
+                        <StyledStatisticCaption variant="caption">
                             {trending}
-                        </Typography>
-                    </StyledViewsTrendingDiv>
+                        </StyledStatisticCaption>
+                    </StyledViewsTrendingDiv> */}
                 </StyledLeftActions>
                 <StyledLockButton
+                    disabled={!global}
                     title={
                         isGlobal
                             ? `Make ${name} private`
@@ -491,6 +476,11 @@ export const DatabaseLandscapeCard = (props: DatabaseCardProps) => {
 
                         global(isGlobal);
                     }}
+                    aria-label={
+                        isGlobal
+                            ? `Make ${name} private`
+                            : `Make ${name} public`
+                    }
                 >
                     {isGlobal ? <LockOpenRounded /> : <LockRounded />}
                 </StyledLockButton>
@@ -504,15 +494,14 @@ export const DatabaseTileCard = (props: DatabaseCardProps) => {
         name,
         id,
         description,
-        image = defaultDBImage,
         tag,
         isGlobal,
         isFavorite,
         isUpvoted,
         owner = 'N/A',
         votes = '0',
-        views = 'N/A',
-        trending = 'N/A',
+        // views = 'N/A',
+        // trending = 'N/A',
         onClick,
         favorite,
         upvote,
@@ -522,93 +511,71 @@ export const DatabaseTileCard = (props: DatabaseCardProps) => {
     return (
         <StyledTileCard onClick={() => onClick(id)}>
             {/* Use Card.Media instead, uses img tag */}
-            <StyledCardImage src={image} sx={{ height: '118px' }} />
-            <StyledTileCardContent>
-                <StyledCardRows>
-                    <StyledCardRowsDiv>
-                        <StyledCardContainer>
-                            <StyledCardHeader>
-                                <StyledDbName variant={'body1'}>
-                                    {formatName(name)}
-                                </StyledDbName>
-                                <IconButton
-                                    title={
-                                        isFavorite
-                                            ? `Unfavorite ${name}`
-                                            : `Favorite ${name}`
-                                    }
-                                    onClick={(e) => {
-                                        e.stopPropagation();
-                                        favorite(isFavorite);
-                                    }}
-                                >
-                                    {isFavorite ? (
-                                        <Star />
-                                    ) : (
-                                        <StarOutlineOutlined />
-                                    )}
-                                </IconButton>
-                            </StyledCardHeader>
-
-                            {/* <StyledCardCategory>
-                                <Icon color="disabled">
-                                    <StyledCategoryIcon />
-                                </Icon>
-                                <StyledCategoryLabel
-                                    color={'secondary'}
-                                    variant={'caption'}
-                                >
-                                    Category
-                                </StyledCategoryLabel>
-                            </StyledCardCategory> */}
-
-                            <StyledPublishedByContainer>
-                                <StyledAvatar>
-                                    <StyledPersonIcon />
-                                </StyledAvatar>
-                                <StyledPublishedByLabel
-                                    color={'secondary'}
-                                    variant={'caption'}
-                                >
-                                    Published by: {owner}
-                                </StyledPublishedByLabel>
-                            </StyledPublishedByContainer>
-
-                            {/* <StyledCardDescriptionContainer> */}
-                            <StyledCardDescription variant={'body2'}>
-                                {description
-                                    ? description
-                                    : 'No description available'}
-                            </StyledCardDescription>
-                            {/* </StyledCardDescriptionContainer> */}
-
-                            <StyledChipDiv>
-                                {tag !== undefined &&
-                                    (typeof tag === 'object' ? (
-                                        tag.map((t, i) => {
-                                            return (
-                                                <Chip
-                                                    key={id + i}
-                                                    variant={'outlined'}
-                                                    label={t}
-                                                />
-                                            );
-                                        })
-                                    ) : (
-                                        <Chip
-                                            key={id + tag}
-                                            variant={'outlined'}
-                                            label={tag}
-                                        />
-                                    ))}
-                            </StyledChipDiv>
-                        </StyledCardContainer>
-                    </StyledCardRowsDiv>
-                </StyledCardRows>
-            </StyledTileCardContent>
-            <StyledTileCardActions>
+            <StyledCardImage
+                src={`${process.env.MODULE}/api/app-${id}/appImage/download`}
+                sx={{ height: '118px' }}
+            />
+            <Card.Header
+                title={name}
+                subheader={
+                    <StyledPublishedByContainer>
+                        <StyledAvatar>
+                            <StyledPersonIcon />
+                        </StyledAvatar>
+                        <StyledPublishedByLabel variant={'caption'}>
+                            Published by: {owner}
+                        </StyledPublishedByLabel>
+                    </StyledPublishedByContainer>
+                }
+                action={
+                    <IconButton
+                        title={
+                            isFavorite
+                                ? `Unfavorite ${name}`
+                                : `Favorite ${name}`
+                        }
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            favorite(isFavorite);
+                        }}
+                        aria-label={
+                            isFavorite
+                                ? `Unfavorite ${name}`
+                                : `Favorite ${name}`
+                        }
+                    >
+                        {isFavorite ? <Star /> : <StarOutlineOutlined />}
+                    </IconButton>
+                }
+            />
+            <Card.Content>
+                <StyledCardDescription variant={'body2'}>
+                    {description ? description : 'No description available'}
+                </StyledCardDescription>
+                <StyledChipDiv>
+                    {tag !== undefined &&
+                        (typeof tag === 'object' ? (
+                            tag.map((t, i) => {
+                                return (
+                                    <Chip
+                                        key={id + i}
+                                        variant={'outlined'}
+                                        label={t}
+                                    />
+                                );
+                            })
+                        ) : (
+                            <Chip
+                                key={id + tag}
+                                variant={'outlined'}
+                                label={tag}
+                            />
+                        ))}
+                </StyledChipDiv>
+            </Card.Content>
+            <Card.Actions>
                 <StyledLeftActions>
-                    <ButtonGroup size="sm" color="secondary">
+                    <StyledButtonGroup size="small" color="secondary">
                         <ButtonGroup.Item
                             title={
                                 isUpvoted
@@ -619,25 +586,28 @@ export const DatabaseTileCard = (props: DatabaseCardProps) => {
                                 e.stopPropagation();
                                 upvote(isUpvoted);
                             }}
+                            aria-label={
+                                isUpvoted
+                                    ? `Downvote ${name}`
+                                    : `Upvote ${name}`
+                            }
                         >
                             {isUpvoted ? <ArrowDropDown /> : <ArrowDropUp />}
                         </ButtonGroup.Item>
-                        <ButtonGroup.Item disabled={true}>
-                            {votes}
-                        </ButtonGroup.Item>
-                    </ButtonGroup>
-                    <StyledViewsTrendingDiv>
+                        <UnstyledVoteCount>{votes}</UnstyledVoteCount>
+                    </StyledButtonGroup>
+                    {/* <StyledViewsTrendingDiv>
                         <StyledEyeIcon />
-                        <Typography color="secondary" variant="caption">
+                        <StyledStatisticCaption variant="caption">
                             {views}
-                        </Typography>
+                        </StyledStatisticCaption>
                     </StyledViewsTrendingDiv>
                     <StyledViewsTrendingDiv>
                         <StyledTrendingIcon />
-                        <Typography color="secondary" variant="caption">
+                        <StyledStatisticCaption variant="caption">
                             {trending}
-                        </Typography>
-                    </StyledViewsTrendingDiv>
+                        </StyledStatisticCaption>
+                    </StyledViewsTrendingDiv> */}
                 </StyledLeftActions>
                 <StyledLockButton
                     title={
@@ -645,14 +615,20 @@ export const DatabaseTileCard = (props: DatabaseCardProps) => {
                             ? `Make ${name} private`
                             : `Make ${name} public`
                     }
+                    disabled={!global}
                     onClick={(e) => {
                         e.stopPropagation();
                         global(isGlobal);
                     }}
+                    aria-label={
+                        isGlobal
+                            ? `Make ${name} private`
+                            : `Make ${name} public`
+                    }
                 >
                     {isGlobal ? <LockOpenRounded /> : <LockRounded />}
                 </StyledLockButton>
-            </StyledTileCardActions>
+            </Card.Actions>
         </StyledTileCard>
     );
 };
@@ -660,29 +636,20 @@ export const DatabaseTileCard = (props: DatabaseCardProps) => {
 export interface PlainDatabaseCardProps {
     /** Name of the Database */
     name: string;
-    /** Image of the Database */
-    image?: string;
 
     onClick: () => void;
 }
 
 export const PlainDatabaseCard = (props) => {
-    const { name, image = defaultDBImage, onClick } = props;
+    const { id, name, image = defaultDbImage, onClick } = props;
     return (
         <StyledPlainTileCard onClick={onClick}>
-            <StyledCardImage src={image} sx={{ height: '118px' }} />
-            <StyledTileCardContent>
-                <StyledCardRows>
-                    <StyledCardRowsDiv>
-                        <StyledCardContainer>
-                            <StyledCardHeader>
-                                <StyledDbName variant={'body1'}>
-                                    {formatName(name)}
-                                </StyledDbName>
-                            </StyledCardHeader>
-                        </StyledCardContainer>
-                    </StyledCardRowsDiv>
-                </StyledCardRows>
+            <StyledCardImage
+                src={`${process.env.MODULE}/api/app-${id}/appImage/download`}
+                sx={{ height: '118px' }}
+            />
+            <StyledTileCardContent sx={{ marginTop: '8px' }}>
+                <StyledDbName variant={'body1'}>{name}</StyledDbName>
             </StyledTileCardContent>
         </StyledPlainTileCard>
     );

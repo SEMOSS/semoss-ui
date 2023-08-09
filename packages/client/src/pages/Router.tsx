@@ -4,23 +4,24 @@ import { observer } from 'mobx-react-lite';
 import { useRootStore } from '@/hooks/';
 import { LoadingScreen } from '@/components/ui';
 
-import { TempPage } from './TempPage';
-
 import { AuthenticatedLayout } from './AuthenticatedLayout';
-import { SideNavLayout } from './SideNavLayout';
+import { NavigatorLayout } from './NavigatorLayout';
 
 import { LoginPage } from './LoginPage';
 import { HomePage } from './HomePage';
 import { CatalogPage } from './CatalogPage';
+import { ImportStorage } from './storage';
+
 import {
-    DatabaseLayout,
-    DatabaseIndexPage,
     DatabaseMetadataPage,
     DatabaseSettingsPage,
     DatabaseReplaceDataPage,
     DatabaseQueryDataPage,
     DatabaseImport,
 } from './database';
+
+import { EngineLayout, EngineIndexPage } from './engine';
+
 import { SettingsRouter } from './settings';
 import { AppRouter } from './app';
 
@@ -29,36 +30,58 @@ export const Router = observer(() => {
 
     // don't load anything if it is pending
     if (configStore.store.status === 'INITIALIZING') {
-        return <LoadingScreen.Trigger />;
+        return <LoadingScreen.Trigger message={'Initializing'} />;
     }
 
     return (
         <Routes>
             <Route path="/" element={<AuthenticatedLayout />}>
-                <Route path="*" element={<SideNavLayout />}>
+                <Route path="app/*" element={<AppRouter />} />
+                <Route path="*" element={<NavigatorLayout />}>
                     <Route index element={<HomePage />} />
                     <Route
                         path="import-database"
                         element={<DatabaseImport />}
                     />
                     <Route path="catalog" element={<CatalogPage />} />
-                    <Route
-                        path="import"
-                        element={<TempPage title={'Import'} />}
-                    />
-                    <Route path="database" element={<Outlet />}>
-                        <Route path=":id" element={<DatabaseLayout />}>
-                            <Route index element={<DatabaseIndexPage />} />
+                    <Route path="import" element={<ImportStorage />} />
+
+                    <Route path="storage" element={<Outlet />}>
+                        <Route path=":id" element={<EngineLayout />}>
+                            <Route index element={<EngineIndexPage />} />
                             <Route
                                 path="metadata"
                                 element={<DatabaseMetadataPage />}
                             />
                             <Route
-                                path="insights"
-                                element={
-                                    <TempPage title={'Database Insights'} />
-                                }
+                                path="settings"
+                                element={<DatabaseSettingsPage />}
                             />
+                        </Route>
+                    </Route>
+
+                    <Route path="model" element={<Outlet />}>
+                        <Route path=":id" element={<EngineLayout />}>
+                            <Route index element={<EngineIndexPage />} />
+                            <Route
+                                path="metadata"
+                                element={<DatabaseMetadataPage />}
+                            />
+                            <Route
+                                path="settings"
+                                element={<DatabaseSettingsPage />}
+                            />
+                        </Route>
+                    </Route>
+
+                    <Route path="database" element={<Outlet />}>
+                        <Route path=":id" element={<EngineLayout />}>
+                            <Route index element={<EngineIndexPage />} />
+                            <Route
+                                path="metadata"
+                                element={<DatabaseMetadataPage />}
+                            />
+                            <Route path="insights" element={<>TODO</>} />
                             <Route
                                 path="settings"
                                 element={<DatabaseSettingsPage />}
@@ -79,7 +102,6 @@ export const Router = observer(() => {
                     </Route>
                     <Route path="settings/*" element={<SettingsRouter />} />
                 </Route>
-                <Route path="app/*" element={<AppRouter />} />
                 <Route path="*" element={<Navigate to="/" replace />} />
             </Route>
             <Route path="/login" element={<LoginPage />}></Route>

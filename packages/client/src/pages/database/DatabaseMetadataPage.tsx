@@ -6,14 +6,21 @@ import {
     Scroll as ScrollOld,
     Icon,
 } from '@semoss/components';
-import { MenuItem } from '@semoss/ui/src/components/Menu/MenuItem';
-import { styled, Chip, Select, Stack, Typography, Table } from '@semoss/ui';
+import {
+    Button,
+    styled,
+    Chip,
+    Select,
+    Stack,
+    Typography,
+    Table,
+} from '@semoss/ui';
+import { ArrowCircleDown } from '@mui/icons-material';
 import { mdiPencil } from '@mdi/js';
 
-import { theme } from '@/theme';
-import { usePixel, useDatabase } from '@/hooks';
+import { usePixel, useDatabase, useRootStore } from '@/hooks';
 import { Section } from '@/components/ui';
-import { Metamodel, MetamodelNode } from '@/components/metamodel';
+import { Metamodel } from '@/components/metamodel';
 
 const StyledPage = styled('div')(() => ({
     position: 'relative',
@@ -38,45 +45,47 @@ const StyledTableContainer = styled(Table.Container)(() => ({
 }));
 
 const StyledTableScroll = styledOld(ScrollOld, {
-    height: '250px',
-    width: '100%',
-    borderColor: theme.colors['grey-4'],
-    borderWidth: theme.borderWidths.default,
-    borderStyle: 'solid',
-    borderRadius: theme.radii.default,
+    // height: '250px',
+    // width: '100%',
+    // borderColor: theme.colors['grey-4'],
+    // borderWidth: theme.borderWidths.default,
+    // borderStyle: 'solid',
+    // borderRadius: theme.radii.default,
 });
 
 const StyledTableCell = styledOld(TableOld.Cell, {
-    variants: {
-        type: {
-            icon: {
-                width: theme.space['8'],
-            },
-            name: {
-                width: theme.space['40'],
-                whiteSpace: 'nowrap',
-                overflow: 'hidden',
-                textOverflow: 'ellipsis',
-            },
-            description: {
-                fontSize: theme.fontSizes.sm,
-                width: theme.space['80'],
-                overflow: 'hidden',
-            },
-        },
-    },
+    // variants: {
+    //     type: {
+    //         icon: {
+    //             width: theme.space['8'],
+    //         },
+    //         name: {
+    //             width: theme.space['40'],
+    //             whiteSpace: 'nowrap',
+    //             overflow: 'hidden',
+    //             textOverflow: 'ellipsis',
+    //         },
+    //         description: {
+    //             fontSize: theme.fontSizes.sm,
+    //             width: theme.space['80'],
+    //             overflow: 'hidden',
+    //         },
+    //     },
+    // },
 });
 
 const StyledTableDescription = styledOld('div', {
-    fontSize: theme.fontSizes.sm,
-    display: '-webkit-box',
-    overflow: 'hidden',
-    '-webkit-box-orient': 'vertical',
-    '-webkit-line-clamp': 3,
+    // fontSize: theme.fontSizes.sm,
+    // display: '-webkit-box',
+    // overflow: 'hidden',
+    // '-webkit-box-orient': 'vertical',
+    // '-webkit-line-clamp': 3,
 });
 
 export const DatabaseMetadataPage = observer(() => {
     const { id } = useDatabase();
+
+    const { monolithStore } = useRootStore();
 
     // track the selected node
     const [selectedNode, setSelectedNode] =
@@ -236,10 +245,36 @@ export const DatabaseMetadataPage = observer(() => {
             ? getDatabaseMetamodel.data.logicalNames[selectedNode.id]
             : [];
 
+    /**
+     * @name printMeta
+     * @desc export DB pixel
+     */
+    const printMeta = () => {
+        const pixel = `META|DatabaseMetadataToPdf(database=["${id}"] );`;
+        monolithStore.runQuery(pixel).then((response) => {
+            const output = response.pixelReturn[0].output,
+                insightID = response.insightID;
+
+            monolithStore.download(insightID, output);
+        });
+    };
+
     return (
         <StyledPage>
             <Section>
-                <Section.Header>Metamodel</Section.Header>
+                <Section.Header
+                    actions={
+                        <Button
+                            startIcon={<ArrowCircleDown />}
+                            variant="outlined"
+                            onClick={() => printMeta()}
+                        >
+                            Print Metadata
+                        </Button>
+                    }
+                >
+                    Metamodel
+                </Section.Header>
                 <Stack spacing={2}>
                     {/* <StyledSelect
                         value={selectedNode || ''}

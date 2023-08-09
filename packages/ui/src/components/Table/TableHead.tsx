@@ -1,6 +1,5 @@
 import { ReactNode } from "react";
-import MuiTableHead from "@mui/material/TableHead";
-import { SxProps } from "@mui/system";
+import { TableHead as MuiTableHead, SxProps } from "@mui/material";
 
 export interface TableHeadProps {
     /** children to be rendered */

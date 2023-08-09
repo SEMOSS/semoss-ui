@@ -1,6 +1,5 @@
 import { ReactNode } from "react";
-import MuiSwitch from "@mui/material/Switch";
-import { SxProps } from "@mui/system";
+import { Switch as MuiSwitch, SxProps } from "@mui/material";
 
 export interface SwitchProps {
     /**
@@ -10,12 +9,15 @@ export interface SwitchProps {
      */
     centerRipple?: boolean;
 
-    // If true, the component is checked.
+    /**
+     * True if the component is checked
+     */
     checked?: boolean;
+
     /**
      * The icon to display when the component is checked.
      */
-    checkedIcon: ReactNode;
+    checkedIcon?: ReactNode;
     /**
      * The color of the component.
      * It supports both default and custom theme colors, which can be added as shown in the
@@ -50,7 +52,7 @@ export interface SwitchProps {
     focusRipple?: boolean;
 
     // Callback fired when the state is changed.
-    onChange?: () => void;
+    onChange?: (value: unknown) => void;
 
     // If true, the input element is required.
     required?: boolean;
@@ -66,6 +68,7 @@ export interface SwitchProps {
      */
     value?: boolean;
     sx?: SxProps;
+    title?: string;
 }
 
 export const Switch = (props: SwitchProps) => {

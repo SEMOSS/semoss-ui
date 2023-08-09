@@ -1,12 +1,10 @@
 import {
-    CardHeader,
-    CardHeaderProps,
+    CardHeader as MuiCardHeader,
     TypographyProps,
-    TitleTypographyComponent,
+    SxProps,
 } from "@mui/material";
-import { SxProps } from "@mui/system";
 
-export interface _CardHeaderProps {
+export interface CardHeaderProps {
     /**
      * The action to display in the card header.
      */
@@ -36,13 +34,17 @@ export interface _CardHeaderProps {
      * These props will be forwarded to the title
      * (as long as disableTypography is not `true`).
      */
-    titleTypographyProps?: TypographyProps<
-        TitleTypographyComponent,
-        { component?: TitleTypographyComponent }
-    >;
+    titleTypographyProps?: TypographyProps;
 }
 
-export const _CardHeader = (props: _CardHeaderProps) => {
+export const CardHeader = (props: CardHeaderProps) => {
     const { sx } = props;
-    return <CardHeader sx={sx} {...props} />;
+    return (
+        <MuiCardHeader
+            sx={sx}
+            subheaderTypographyProps={{ variant: "caption" }}
+            titleTypographyProps={{ variant: "body1" }}
+            {...props}
+        />
+    );
 };

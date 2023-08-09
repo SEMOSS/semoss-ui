@@ -1,5 +1,7 @@
-import { SxProps } from "@mui/system";
-import MuiAccordionSummary from "@mui/material/AccordionSummary";
+import {
+    AccordionSummary as MuiAccordionSummary,
+    SxProps,
+} from "@mui/material";
 
 export type AccordionSummaryProps = {
     /**

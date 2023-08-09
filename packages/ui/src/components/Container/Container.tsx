@@ -1,8 +1,7 @@
 import { ReactNode } from "react";
-import MuiContainer from "@mui/material/Container";
-import { SxProps, Breakpoint } from "@mui/system";
+import { Container as MuiContainer, SxProps, Breakpoint } from "@mui/material";
 
-export interface _ContainerProps {
+export interface ContainerProps {
     //** children to be rendered */
     children?: ReactNode;
 
@@ -34,7 +33,7 @@ export interface _ContainerProps {
      */
     sx?: SxProps;
 }
-export const Container = (props: _ContainerProps) => {
+export const Container = (props: ContainerProps) => {
     const { children, sx } = props;
     return (
         <MuiContainer sx={sx} {...props}>

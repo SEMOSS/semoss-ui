@@ -1,5 +1,4 @@
-import MuiTypography from "@mui/material/Typography";
-import { SxProps } from "@mui/system";
+import { Typography as MuiTypography, SxProps } from "@mui/material";
 
 export interface TypographyProps {
     /** custom style object */
@@ -33,6 +32,15 @@ export interface TypographyProps {
         | "button"
         | "overline";
     sx?: SxProps;
+    fontWeight?: "light" | "regular" | "medium" | "500" | "bold";
+    color?:
+        | "inherit"
+        | "primary"
+        | "secondary"
+        | "success"
+        | "error"
+        | "info"
+        | "warning";
 }
 
 export const Typography = (props: TypographyProps) => {

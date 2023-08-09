@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
-import { useNotification } from '@semoss/components';
+import { useNotification } from '@semoss/ui';
 
 import { useRootStore } from './useRootStore';
 
@@ -115,7 +115,7 @@ export function usePixel<D>(
 
                     notification.add({
                         color: 'error',
-                        content: error,
+                        message: error,
                     });
 
                     setState({
@@ -140,7 +140,7 @@ export function usePixel<D>(
 
                 notification.add({
                     color: 'error',
-                    content: error.message,
+                    message: error.message,
                 });
 
                 setState({

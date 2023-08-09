@@ -1,8 +1,7 @@
 import { ReactNode } from "react";
-import CardContent from "@mui/material/CardContent";
-import { SxProps } from "@mui/system";
+import { CardContent as MuiCardContent, SxProps } from "@mui/material";
 
-export interface _CardContentProps {
+export interface CardContentProps {
     /** children to be rendered */
     children: ReactNode;
 
@@ -10,11 +9,11 @@ export interface _CardContentProps {
     sx?: SxProps;
 }
 
-export const _CardContent = (props: _CardContentProps) => {
+export const CardContent = (props: CardContentProps) => {
     const { children, sx } = props;
     return (
-        <CardContent sx={sx} {...props}>
+        <MuiCardContent sx={sx} {...props}>
             {children}
-        </CardContent>
+        </MuiCardContent>
     );
 };

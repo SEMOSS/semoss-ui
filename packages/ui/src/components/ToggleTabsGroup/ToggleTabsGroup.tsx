@@ -1,11 +1,9 @@
 import React, { ReactNode } from "react";
+import { styled, Theme, SxProps } from "@mui/material";
 import { Tabs, TabsProps } from "../Tabs";
 import { Box } from "../Box";
-import { styled } from "@mui/material";
-import { Theme } from "@mui/material/styles";
-import { SxProps } from "@mui/system";
 
-export interface ToggleTabsProps extends TabsProps<any> {
+export interface ToggleTabsProps extends TabsProps<string | number> {
     // * Props applied to the tab indicator element.
     children?: ReactNode;
 

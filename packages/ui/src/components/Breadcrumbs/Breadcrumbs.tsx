@@ -1,7 +1,9 @@
 import { ReactNode } from "react";
-import { Breadcrumbs as MuiBreadcrumbs } from "@mui/material";
-import { SxProps } from "@mui/system";
-import { BreadcrumbsProps as MuiBreadcrumbsProps } from "@mui/material";
+import {
+    Breadcrumbs as MuiBreadcrumbs,
+    BreadcrumbsProps as MuiBreadcrumbsProps,
+    SxProps,
+} from "@mui/material";
 
 export interface BreadcrumbsProps extends MuiBreadcrumbsProps {
     /** children to be rendered */

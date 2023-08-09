@@ -1,63 +1,55 @@
 import React from 'react';
 import { NodeProps, Handle, Position } from 'react-flow-renderer';
-import { styled, Icon } from '@semoss/components';
-import { mdiTableLarge, mdiPencil } from '@mdi/js';
 
-import { theme } from '@/theme';
+import { styled, Icon } from '@semoss/ui';
+import { TableBar, ViewColumn } from '@mui/icons-material';
+
 import { useMetamodel } from '@/hooks';
 
 const StyledNode = styled('div', {
-    backgroundColor: theme.colors.base,
-    borderColor: theme.colors['grey-4'],
-    borderWidth: theme.borderWidths.default,
-    borderRadius: theme.radii.default,
-    color: theme.colors['grey-1'],
-    minWidth: theme.space['32'],
-    maxWidth: theme.space['64'],
-    variants: {
-        selected: {
-            true: {
-                borderWidth: '2px',
-                borderColor: theme.colors['primary-1'],
-            },
-        },
-    },
-});
+    shouldForwardProp: (prop) => prop !== 'stuck',
+})<{
+    /** Track if the node is isSelected */
+    isSelected: boolean;
+}>(({ theme, isSelected }) => ({
+    borderColor: isSelected
+        ? theme.palette.primary.main
+        : theme.palette.divider,
+    borderStyle: 'solid',
+    borderWidth: '1px',
+}));
 
-const StyledHandle = styled(Handle, {
+const StyledHandle = styled(Handle)(() => ({
     display: 'none',
-});
+}));
 
 const StyledRow = styled('div', {
+    shouldForwardProp: (prop) => prop !== 'stuck',
+})<{
+    /** Track if the node is isHeader */
+    isHeader: boolean;
+}>(({ isHeader }) => ({
     display: 'flex',
     alignItems: 'center',
-    height: theme.space['8'],
+    height: '32ps',
     width: '100%',
-    paddingLeft: theme.space['2'],
-    paddingRight: theme.space['2'],
-    gap: theme.space['2'],
-    variants: {
-        header: {
-            true: {
-                backgroundColor: theme.colors['grey-5'],
-                fontWeight: theme.fontWeights.semibold,
-            },
-        },
-    },
-});
+    paddingLeft: '4px',
+    paddingRight: '4px',
+    gap: '4px',
+    fontWeight: isHeader ? 'bold' : 'normal',
+}));
 
-const StyledIcon = styled(Icon, {
+const StyledIcon = styled(Icon)(() => ({
     flexShrink: '0',
-    fontSize: theme.fontSizes.sm,
-    color: theme.colors['grey-2'],
-});
+    fontSize: '.750rem',
+}));
 
-const StyledTitle = styled('div', {
-    fontSize: theme.fontSizes.sm,
+const StyledTitle = styled('div')(() => ({
+    fontSize: '.875rem',
     whiteSpace: 'nowrap',
     overflow: 'hidden',
     textOverflow: 'ellipsis',
-});
+}));
 
 type MetamodelNodeProps = NodeProps<{
     /** Name of the node */
@@ -81,19 +73,23 @@ const _MetamodelNode = (props: MetamodelNodeProps) => {
 
     return (
         <StyledNode
-            selected={selectedNodeId === id}
+            isSelected={selectedNodeId === id}
             onClick={() => {
                 onSelectNodeId(id);
             }}
         >
             <StyledHandle type="target" position={Position.Left} />
-            <StyledRow header={true}>
-                <StyledIcon path={mdiTableLarge}></StyledIcon>
+            <StyledRow isHeader={true}>
+                <StyledIcon>
+                    <TableBar />
+                </StyledIcon>
                 <StyledTitle>{data.name}</StyledTitle>
             </StyledRow>
             {data.properties.map((p) => (
-                <StyledRow key={p.id}>
-                    <StyledIcon path={mdiPencil}></StyledIcon>
+                <StyledRow isHeader={false} key={p.id}>
+                    <StyledIcon>
+                        <ViewColumn />
+                    </StyledIcon>
                     <StyledTitle>{p.name}</StyledTitle>
                 </StyledRow>
             ))}

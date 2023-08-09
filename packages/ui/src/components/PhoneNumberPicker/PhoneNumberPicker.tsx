@@ -19,6 +19,7 @@ export type PhoneNumberPickerProps = {
 
     //** set the regions */
     regions?: [string] | string;
+    value?: string;
 };
 
 export const PhoneNumberPicker = (props: PhoneNumberPickerProps) => {

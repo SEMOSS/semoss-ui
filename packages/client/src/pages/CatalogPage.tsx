@@ -1,6 +1,7 @@
 import { useEffect, useState, useReducer } from 'react';
 import { observer } from 'mobx-react-lite';
 import {
+    AlertTitle,
     Avatar,
     Chip,
     Collapse,
@@ -34,6 +35,7 @@ import { DatabaseLandscapeCard, DatabaseTileCard } from '@/components/database';
 import { usePixel, useRootStore } from '@/hooks';
 import { Page } from '@/components/ui';
 
+import { formatName } from '@/utils';
 import { Database } from '@/assets/img/Database';
 
 const StyledStack = styled(Stack)(({ theme }) => ({
@@ -69,13 +71,7 @@ const StyledChipList = styled('div')(({ theme }) => ({
     gap: theme.spacing(2),
 }));
 
-const StyledFilter = styled('div')(({ theme }) => ({
-    // borderBottom: `2px solid ${theme.palette.divider}`,
-    // '&:last-child': {
-    //     borderBottom: 'none', // Remove the border-bottom for the last child
-    //     boxShadow: 'none', // Remove the box-shadow for the last child
-    // },
-}));
+const StyledFilter = styled('div')(({ theme }) => ({}));
 
 const StyledNestedFilterList = styled(List)(({ theme }) => ({
     width: '100%',
@@ -85,7 +81,7 @@ const StyledNestedFilterList = styled(List)(({ theme }) => ({
 const StyledAvatarCount = styled(Avatar)(({ theme }) => ({
     width: '32px',
     height: '32px',
-    color: theme.palette.grey['100'],
+    color: theme.palette.text.primary,
 }));
 
 const StyledContent = styled('div')(({ theme }) => ({
@@ -93,6 +89,24 @@ const StyledContent = styled('div')(({ theme }) => ({
     flexDirection: 'column',
     height: '100%',
     flex: '1',
+}));
+
+const StyledChip = styled(Chip, {
+    shouldForwardProp: (prop) => prop !== 'selected',
+})<{
+    /** Track if the chip is selected */
+    selected: boolean;
+}>(({ theme, selected }) => ({
+    color: selected
+        ? theme.palette.semossBlue['900']
+        : theme.palette.semossBlue['900'],
+    backgroundColor: selected
+        ? theme.palette.semossBlue['100']
+        : theme.palette.semossBlue['50'],
+
+    '&:hover': {
+        color: theme.palette.semossBlue['50'],
+    },
 }));
 
 const initialState = {
@@ -114,7 +128,7 @@ const reducer = (state, action) => {
 
 /**
  * Catalog landing Page
- * Landing page to view the available datasets and search through it
+ * Landing page to view the available engines
  */
 export const CatalogPage = observer((): JSX.Element => {
     const { configStore, monolithStore } = useRootStore();
@@ -126,16 +140,16 @@ export const CatalogPage = observer((): JSX.Element => {
 
     switch (catalogParams) {
         case '':
-            catalogType = 'DATABASE';
+            catalogType = 'Database';
             break;
         case '?type=database':
-            catalogType = 'DATABASE';
+            catalogType = 'Database';
             break;
         case '?type=model':
-            catalogType = 'MODEL';
+            catalogType = 'Model';
             break;
         case '?type=storage':
-            catalogType = 'STORAGE';
+            catalogType = 'Storage';
             break;
     }
 
@@ -235,7 +249,7 @@ export const CatalogPage = observer((): JSX.Element => {
     const getFavoritedDatabases = usePixel(`
         ${dbPixelPrefix}(metaKeys = ${JSON.stringify(
         metaKeysDescription,
-    )}, filterWord=["${search}"], onlyFavorites=[true], engineTypes=['${catalogType}']);
+    )}, filterWord=["${search}"], onlyFavorites=[true], engineTypes=['${catalogType.toUpperCase()}']);
     `);
 
     const getDatabases = usePixel<
@@ -263,15 +277,8 @@ export const CatalogPage = observer((): JSX.Element => {
             metaKeysDescription,
         )} , metaFilters = [ ${JSON.stringify(
             metaFilters,
-        )} ] , filterWord=["${search}"], userT = [true], engineTypes=['${catalogType}']) ;`,
+        )} ] , filterWord=["${search}"], userT = [true], engineTypes=['${catalogType.toUpperCase()}']) ;`,
     );
-
-    const catalogFilterPrefix =
-        catalogType === 'DATABASE'
-            ? 'GetDatabaseMetaValues'
-            : catalogType === 'MODEL'
-            ? 'GetModelMetaValues'
-            : 'GetStorageMetaValues';
 
     const getCatalogFilters = usePixel<
         {
@@ -281,7 +288,7 @@ export const CatalogPage = observer((): JSX.Element => {
         }[]
     >(
         metaKeys.length > 0
-            ? `${catalogFilterPrefix}( metaKeys = ${JSON.stringify(
+            ? `GetEngineMetaValues( engineTypes=['${catalogType.toUpperCase()}'], metaKeys = ${JSON.stringify(
                   metaKeys,
               )} ) ;`
             : '',
@@ -343,7 +350,7 @@ export const CatalogPage = observer((): JSX.Element => {
      */
     const setGlobal = (db) => {
         monolithStore
-            .setDatabaseGlobal(
+            .setEngineGlobal(
                 configStore.store.user.admin,
                 db.database_id,
                 !db.database_global,
@@ -381,7 +388,7 @@ export const CatalogPage = observer((): JSX.Element => {
     const favoriteDb = (db) => {
         const favorite = !isFavorited(db.database_id);
         monolithStore
-            .setDatabaseFavorite(db.database_id, favorite)
+            .setEngineFavorite(db.database_id, favorite)
             .then((response) => {
                 if (!favorite) {
                     const newFavorites = favoritedDbs;
@@ -542,56 +549,84 @@ export const CatalogPage = observer((): JSX.Element => {
     return (
         <Page
             header={
-                <StyledStack
-                    direction="row"
-                    alignItems={'center'}
-                    justifyContent={'space-between'}
-                    spacing={4}
-                >
-                    <Stack direction="row" alignItems={'center'} spacing={2}>
-                        <Typography variant={'h4'}>Catalog</Typography>
-                        <Search
-                            size={'small'}
-                            label={'Search'}
-                            onChange={(e) => {
-                                setSearch(e.target.value);
-                            }}
-                        />
-                    </Stack>
-                    <Stack direction="row" alignItems={'center'} spacing={3}>
-                        <Button
-                            variant={'contained'}
-                            onClick={() => navigate(`/import-database`)}
+                <Stack>
+                    <div style={{ height: '16px' }}></div>
+                    <StyledStack
+                        direction="row"
+                        alignItems={'center'}
+                        justifyContent={'space-between'}
+                        spacing={4}
+                    >
+                        <Stack
+                            direction="row"
+                            alignItems={'center'}
+                            spacing={2}
                         >
-                            Add Database
-                        </Button>
+                            <Typography variant={'h4'}>
+                                {catalogType === 'Database'
+                                    ? 'Data'
+                                    : catalogType === 'Storage'
+                                    ? 'Storage'
+                                    : 'Model'}{' '}
+                                Catalog
+                            </Typography>
+                            <Search
+                                size={'small'}
+                                label={`Search ${catalogType}`}
+                                onChange={(e) => {
+                                    setSearch(e.target.value);
+                                }}
+                            />
+                        </Stack>
+                        <Stack
+                            direction="row"
+                            alignItems={'center'}
+                            spacing={3}
+                        >
+                            <Button
+                                size={'lg'}
+                                variant={'contained'}
+                                onClick={() => {
+                                    navigate('/import');
+                                }}
+                                aria-label={`Navigate to import ${catalogType}`}
+                            >
+                                Add {catalogType}
+                            </Button>
 
-                        <ToggleButtonGroup
-                            size={'small'}
-                            value={view}
-                            color="primary"
-                        >
-                            <ToggleButton
+                            <ToggleButtonGroup
+                                size={'small'}
+                                value={view}
                                 color="primary"
-                                onClick={(e, v) => setView('tile')}
-                                value={'tile'}
                             >
-                                <SpaceDashboardOutlined />
-                            </ToggleButton>
-                            <ToggleButton
-                                color="primary"
-                                onClick={(e, v) => setView('list')}
-                                value={'list'}
-                            >
-                                <FormatListBulletedOutlined />
-                            </ToggleButton>
-                        </ToggleButtonGroup>
-                    </Stack>
-                </StyledStack>
+                                <ToggleButton
+                                    color="primary"
+                                    onClick={(e, v) => setView('tile')}
+                                    value={'tile'}
+                                    aria-label={'Tile View'}
+                                >
+                                    <SpaceDashboardOutlined />
+                                </ToggleButton>
+                                <ToggleButton
+                                    color="primary"
+                                    onClick={(e, v) => setView('list')}
+                                    value={'list'}
+                                    aria-label={'List View'}
+                                >
+                                    <FormatListBulletedOutlined />
+                                </ToggleButton>
+                            </ToggleButtonGroup>
+                        </Stack>
+                    </StyledStack>
+                </Stack>
             }
         >
-            <StyledContainer>
-                <StyledFitler>
+            <StyledContainer
+            // sx={{ border: 'solid red' }}
+            >
+                <StyledFitler
+                // style={{ border: 'solid green' }}
+                >
                     {/* <StyledFilterList dense={true}>
                         <List.Item>
                             <List.ItemButton
@@ -674,51 +709,78 @@ export const CatalogPage = observer((): JSX.Element => {
                                 </List.ItemButton>
                             }
                         >
-                            <List.ItemText primary={'Filter By'} />
+                            <List.ItemText
+                                disableTypography
+                                primary={
+                                    <Typography variant="body1">
+                                        Filter By
+                                    </Typography>
+                                }
+                            />
                         </List.Item>
 
                         <Collapse in={filterByVisibility}>
-                            {catalogType === 'DATABASE' && (
+                            {catalogType.toUpperCase() === 'DATABASE' && (
                                 <StyledChipList>
-                                    <Chip
+                                    <StyledChip
                                         label={'My Databases'}
-                                        color={
-                                            mode === 'My Databases'
-                                                ? 'primary'
-                                                : 'default'
-                                        }
+                                        selected={mode === 'My Databases'}
+                                        // variant="filled"
+                                        // variantColor={
+                                        //     mode === 'My Databases'
+                                        //         ? 'primary'
+                                        //         : 'lcprimary'
+                                        // }
                                         onClick={() => setMode('My Databases')}
-                                    ></Chip>
-                                    <Chip
+                                    ></StyledChip>
+                                    <StyledChip
                                         label={'Discoverable Databases'}
-                                        color={
+                                        selected={
                                             mode === 'Discoverable Databases'
-                                                ? 'primary'
-                                                : 'default'
                                         }
+                                        // variantColor={
+                                        //     mode === 'Discoverable Databases'
+                                        //         ? 'primary'
+                                        //         : 'lcprimary'
+                                        // }
                                         onClick={() => {
                                             setMode('Discoverable Databases');
                                         }}
-                                    ></Chip>
+                                    ></StyledChip>
                                 </StyledChipList>
                             )}
 
                             {Object.entries(filterOptions).map((entries, i) => {
+                                const totalFilters =
+                                    Object.entries(filterOptions).length;
                                 const list = entries[1];
                                 let shownListItems = 0; // for show more functionality
                                 return (
                                     <StyledFilter key={i}>
                                         <List.Item>
                                             <List.ItemText
-                                                primary={formatDBName(
-                                                    entries[0],
-                                                )}
+                                                disableTypography
+                                                primary={
+                                                    <Typography
+                                                        variant={'body1'}
+                                                        sx={{ fontWeight: 500 }}
+                                                    >
+                                                        {formatDBName(
+                                                            entries[0],
+                                                        )}
+                                                    </Typography>
+                                                }
                                             />
                                         </List.Item>
                                         <List.Item>
                                             <TextField
-                                                label={'Search'}
+                                                label={`Search ${formatDBName(
+                                                    entries[0],
+                                                )}`}
                                                 size={'small'}
+                                                aria-label={`Search ${formatDBName(
+                                                    entries[0],
+                                                )}`}
                                                 sx={{
                                                     width: '100%',
                                                 }}
@@ -765,24 +827,17 @@ export const CatalogPage = observer((): JSX.Element => {
                                                         shownListItems += 1;
                                                         return (
                                                             <List.Item
+                                                                disableGutters
                                                                 key={i}
-                                                                secondaryAction={
-                                                                    <StyledAvatarCount
-                                                                        variant={
-                                                                            'rounded'
-                                                                        }
-                                                                        sx={{
-                                                                            height: '32px',
-                                                                            width: '32px',
-                                                                        }}
-                                                                    >
-                                                                        {
-                                                                            filterOption.count
-                                                                        }
-                                                                    </StyledAvatarCount>
-                                                                }
                                                             >
                                                                 <List.ItemButton
+                                                                    disableGutters
+                                                                    sx={{
+                                                                        paddingLeft:
+                                                                            '16px',
+                                                                        paddingRight:
+                                                                            '16px',
+                                                                    }}
                                                                     selected={
                                                                         filterVisibility[
                                                                             entries[0]
@@ -796,53 +851,98 @@ export const CatalogPage = observer((): JSX.Element => {
                                                                             filterOption,
                                                                         );
                                                                     }}
+                                                                    aria-label={
+                                                                        filterVisibility[
+                                                                            entries[0]
+                                                                        ].value.indexOf(
+                                                                            filterOption.value,
+                                                                        ) > -1
+                                                                            ? `Unfilter ${filterOption.value}`
+                                                                            : `Filter ${filterOption.value}`
+                                                                    }
                                                                 >
-                                                                    <List.ItemText
-                                                                        primary={
-                                                                            filterOption.value
-                                                                        }
-                                                                    />
+                                                                    <div
+                                                                        style={{
+                                                                            width: '100%',
+                                                                            display:
+                                                                                'flex',
+                                                                            justifyContent:
+                                                                                'space-between',
+                                                                        }}
+                                                                    >
+                                                                        <List.ItemText
+                                                                            disableTypography
+                                                                            primary={
+                                                                                <Typography variant="body1">
+                                                                                    {
+                                                                                        filterOption.value
+                                                                                    }
+                                                                                </Typography>
+                                                                            }
+                                                                        />
+                                                                        <StyledAvatarCount
+                                                                            variant={
+                                                                                'rounded'
+                                                                            }
+                                                                        >
+                                                                            {
+                                                                                filterOption.count
+                                                                            }
+                                                                        </StyledAvatarCount>
+                                                                    </div>
                                                                 </List.ItemButton>
                                                             </List.Item>
                                                         );
                                                     }
                                                 }
                                             })}
-                                            <List.Item>
-                                                <Button
-                                                    onClick={() => {
-                                                        const visibleFilters = {
-                                                            ...filterVisibility,
-                                                        };
-                                                        visibleFilters[
+                                            {shownListItems > 4 && (
+                                                <List.Item>
+                                                    <Button
+                                                        onClick={() => {
+                                                            const visibleFilters =
+                                                                {
+                                                                    ...filterVisibility,
+                                                                };
+                                                            visibleFilters[
+                                                                entries[0]
+                                                            ] = {
+                                                                open: !visibleFilters[
+                                                                    entries[0]
+                                                                ].open,
+                                                                value: visibleFilters[
+                                                                    entries[0]
+                                                                ].value,
+                                                                search: visibleFilters[
+                                                                    entries[0]
+                                                                ].search,
+                                                            };
+                                                            setFilterVisibility(
+                                                                visibleFilters,
+                                                            );
+                                                        }}
+                                                    >
+                                                        Show{' '}
+                                                        {filterVisibility[
                                                             entries[0]
-                                                        ] = {
-                                                            open: !visibleFilters[
-                                                                entries[0]
-                                                            ].open,
-                                                            value: visibleFilters[
-                                                                entries[0]
-                                                            ].value,
-                                                            search: visibleFilters[
-                                                                entries[0]
-                                                            ].search,
-                                                        };
-
-                                                        setFilterVisibility(
-                                                            visibleFilters,
-                                                        );
-                                                    }}
-                                                >
-                                                    Show{' '}
-                                                    {filterVisibility[
-                                                        entries[0]
-                                                    ].open
-                                                        ? 'Less'
-                                                        : 'More'}
-                                                </Button>
-                                            </List.Item>
+                                                        ].open
+                                                            ? 'Less'
+                                                            : 'More'}
+                                                    </Button>
+                                                </List.Item>
+                                            )}
                                         </StyledNestedFilterList>
-                                        {/* <Divider /> */}
+                                        {i + 1 !== totalFilters && (
+                                            <div
+                                                style={{
+                                                    width: '100%',
+                                                    paddingLeft: '16px',
+                                                    paddingRight: '16px',
+                                                }}
+                                            >
+                                                <Divider></Divider>
+                                            </div>
+                                        )}
                                     </StyledFilter>
                                 );
                             })}
@@ -856,8 +956,8 @@ export const CatalogPage = observer((): JSX.Element => {
                             {databases.map((db) => {
                                 return (
                                     <Grid
-                                        key={db.database_id}
                                         item
+                                        key={db.database_id}
                                         sm={view === 'list' ? 12 : 12}
                                         md={view === 'list' ? 12 : 6}
                                         lg={view === 'list' ? 12 : 4}
@@ -865,9 +965,10 @@ export const CatalogPage = observer((): JSX.Element => {
                                     >
                                         {view === 'list' ? (
                                             <DatabaseLandscapeCard
-                                                name={formatDBName(db.app_name)}
-                                                id={db.app_id}
-                                                image={defaultDBImage}
+                                                name={formatDBName(
+                                                    db.database_name,
+                                                )}
+                                                id={db.database_id}
                                                 tag={db.tag}
                                                 owner={db.database_created_by}
                                                 description={db.description}
@@ -881,24 +982,31 @@ export const CatalogPage = observer((): JSX.Element => {
                                                 )}
                                                 onClick={() => {
                                                     navigate(
-                                                        `/database/${db.app_id}`,
+                                                        `/${catalogType.toLowerCase()}/${
+                                                            db.database_id
+                                                        }`,
                                                     );
                                                 }}
                                                 favorite={() => {
                                                     favoriteDb(db);
-                                                }}
-                                                global={() => {
-                                                    setGlobal(db);
                                                 }}
                                                 upvote={(val) => {
                                                     upvoteDb(db);
                                                 }}
+                                                global={
+                                                    db.user_permission === 1
+                                                        ? () => {
+                                                              setGlobal(db);
+                                                          }
+                                                        : null
+                                                }
                                             />
                                         ) : (
                                             <DatabaseTileCard
-                                                name={formatDBName(db.app_name)}
-                                                id={db.app_id}
-                                                image={defaultDBImage}
+                                                name={formatDBName(
+                                                    db.database_name,
+                                                )}
+                                                id={db.database_id}
                                                 tag={db.tag}
                                                 owner={db.database_created_by}
                                                 description={db.description}
@@ -915,12 +1023,18 @@ export const CatalogPage = observer((): JSX.Element => {
                                                 }}
                                                 onClick={() => {
                                                     navigate(
-                                                        `/database/${db.app_id}`,
+                                                        `/${catalogType.toLowerCase()}/${
+                                                            db.database_id
+                                                        }`,
                                                     );
                                                 }}
-                                                global={() => {
-                                                    setGlobal(db);
-                                                }}
+                                                global={
+                                                    db.user_permission === 1
+                                                        ? () => {
+                                                              setGlobal(db);
+                                                          }
+                                                        : null
+                                                }
                                                 upvote={(val) => {
                                                     upvoteDb(db);
                                                 }}

@@ -1,7 +1,8 @@
-import MuiInputAdornment from "@mui/material/InputAdornment";
-import { SxProps } from "@mui/system";
-
-import { InputAdornmentProps as MuiInputAdornmentProps } from "@mui/material";
+import {
+    InputAdornment as MuiInputAdornment,
+    InputAdornmentProps as MuiInputAdornmentProps,
+    SxProps,
+} from "@mui/material";
 
 export interface InputAdornmentProps extends MuiInputAdornmentProps {
     /** custom style object */

@@ -1,6 +1,5 @@
 import { ReactNode } from "react";
-import MuiBackdrop from "@mui/material/Backdrop";
-import { SxProps } from "@mui/system";
+import { Backdrop as MuiBackdrop, SxProps } from "@mui/material";
 
 export interface BackdropProps {
     /** children to be rendered */

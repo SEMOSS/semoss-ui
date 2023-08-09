@@ -3,7 +3,7 @@ import { useRootStore, usePixel } from '@/hooks';
 import { useSettings } from '@/hooks/useSettings';
 import { useNavigate } from 'react-router-dom';
 import { LoadingScreen } from '@/components/ui';
-import { MonolithStore } from '@/stores/monolith';
+import { MonolithStore } from '@/stores';
 
 import {
     Grid,
@@ -75,16 +75,11 @@ const StyledSearchbar = styled(Search)({
 });
 
 const StyledSort = styled(Select)({
-    // display: 'flex',
-    // width: '220px',
-    // flexDirection: 'column',
-    // alignItems: 'flex-start',
-    // gap: '3px',
-    // flexShrink: '0',
+    width: '20%',
 });
 
 const StyledMenuItem = styled(Select.Item)({
-    width: '220px',
+    width: '100%',
     gap: '3px',
     flexShrink: '0',
 });
@@ -225,7 +220,7 @@ export const DatabaseSettingsPage = () => {
     const favoriteDb = (db) => {
         const favorite = !isFavorited(db.database_id);
         monolithStore
-            .setDatabaseFavorite(db.database_id, favorite)
+            .setEngineFavorite(db.database_id, favorite)
             .then((response) => {
                 if (!favorite) {
                     const newFavorites = favoritedDbs;
@@ -316,7 +311,7 @@ export const DatabaseSettingsPage = () => {
      */
     const setDbGlobal = (db) => {
         monolithStore
-            .setDatabaseGlobal(adminMode, db.database_id, !db.database_global)
+            .setEngineGlobal(adminMode, db.database_id, !db.database_global)
             .then((response) => {
                 if (response.data.success) {
                     const newDatabases = [];
@@ -361,13 +356,11 @@ export const DatabaseSettingsPage = () => {
                     value={sort}
                     onChange={(e) => setSort(e.target.value)}
                 >
-                    <StyledMenuItem value="Name">Name</StyledMenuItem>
-                    <StyledMenuItem value="Date Created">
-                        Date Created
-                    </StyledMenuItem>
-                    <StyledMenuItem value="Views">Views</StyledMenuItem>
-                    <StyledMenuItem value="Trending">Trending</StyledMenuItem>
-                    <StyledMenuItem value="Upvotes">Upvotes</StyledMenuItem>
+                    <MenuItem value="Name">Name</MenuItem>
+                    <MenuItem value="Date Created">Date Created</MenuItem>
+                    <MenuItem value="Views">Views</MenuItem>
+                    <MenuItem value="Trending">Trending</MenuItem>
+                    <MenuItem value="Upvotes">Upvotes</MenuItem>
                 </StyledSort>
 
                 <ToggleButtonGroup size={'small'} value={view}>

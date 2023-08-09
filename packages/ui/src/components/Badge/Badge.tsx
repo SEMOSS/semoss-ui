@@ -1,5 +1,4 @@
-import MuiBadge from "@mui/material/Badge";
-import { SxProps } from "@mui/system";
+import { Badge as MuiBadge, SxProps } from "@mui/material";
 
 export interface BadgeOrigin {
     vertical: "top" | "bottom";

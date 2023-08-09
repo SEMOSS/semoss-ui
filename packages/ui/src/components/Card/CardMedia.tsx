@@ -1,8 +1,7 @@
 import { ReactNode } from "react";
-import CardMedia from "@mui/material/CardMedia";
-import { SxProps } from "@mui/system";
+import { CardMedia as MuiCardMedia, SxProps } from "@mui/material";
 
-export interface _CardMediaProps {
+export interface CardMediaProps {
     /**
      * The content of the component.
      */
@@ -28,11 +27,11 @@ export interface _CardMediaProps {
     sx?: SxProps;
 }
 
-export const _CardMedia = (props: _CardMediaProps) => {
+export const CardMedia = (props: CardMediaProps) => {
     const { sx, children } = props;
     return (
-        <CardMedia sx={sx} {...props}>
+        <MuiCardMedia sx={sx} {...props}>
             {children}
-        </CardMedia>
+        </MuiCardMedia>
     );
 };

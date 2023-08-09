@@ -1,7 +1,8 @@
-import MuiTextField from "@mui/material/TextField";
-import { SxProps } from "@mui/system";
-
-import { TextFieldProps as MuiTextFieldProps } from "@mui/material";
+import {
+    TextField as MuiTextField,
+    TextFieldProps as MuiTextFieldProps,
+    SxProps,
+} from "@mui/material";
 
 export type TextFieldProps = MuiTextFieldProps & {
     /** custom style object */

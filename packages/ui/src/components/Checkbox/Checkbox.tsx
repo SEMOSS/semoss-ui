@@ -1,6 +1,6 @@
-import { Checkbox as MuiCheckbox } from "@mui/material";
-import { SxProps } from "@mui/system";
-import { FormControlLabel } from "../../";
+import { Checkbox as MuiCheckbox, SxProps } from "@mui/material";
+
+import { FormControlLabel } from "../FormControl";
 
 export interface CheckboxProps {
     /**
@@ -101,11 +101,11 @@ export interface CheckboxProps {
 }
 
 export const Checkbox = (props: CheckboxProps) => {
-    const { checkboxProps } = props;
-
+    const { checkboxProps, label = "" } = props;
     return (
         <FormControlLabel
             {...props}
+            label={label}
             control={<MuiCheckbox {...checkboxProps} />}
         />
     );
