@@ -30,13 +30,12 @@ export const DataStaxForm: ImportFormComponent = () => {
                 <Controller
                     name={'DATABASE_DESCRIPTION'}
                     control={control}
-                    rules={{ required: true }}
+                    rules={{ required: false }}
                     render={({ field, fieldState }) => {
                         const hasError = fieldState.error;
                         return (
                             <TextField
                                 fullWidth
-                                required
                                 label="Database Description"
                                 value={field.value ? field.value : ''}
                                 onChange={(value) => field.onChange(value)}
@@ -47,13 +46,12 @@ export const DataStaxForm: ImportFormComponent = () => {
                 <Controller
                     name={'DATABASE_TAGS'}
                     control={control}
-                    rules={{ required: true }}
+                    rules={{ required: false }}
                     render={({ field, fieldState }) => {
                         const hasError = fieldState.error;
                         return (
                             <TextField
                                 fullWidth
-                                required
                                 label="Database Tags"
                                 value={field.value ? field.value : ''}
                                 onChange={(value) => field.onChange(value)}
@@ -69,8 +67,8 @@ export const DataStaxForm: ImportFormComponent = () => {
                         const hasError = fieldState.error;
                         return (
                             <TextField
-                                fullWidth
                                 required
+                                fullWidth
                                 label="Host Name"
                                 value={field.value ? field.value : ''}
                                 onChange={(value) => field.onChange(value)}
@@ -86,8 +84,8 @@ export const DataStaxForm: ImportFormComponent = () => {
                         const hasError = fieldState.error;
                         return (
                             <TextField
-                                fullWidth
                                 required
+                                fullWidth
                                 label="Port"
                                 value={field.value ? field.value : ''}
                                 onChange={(value) => field.onChange(value)}
@@ -103,9 +101,9 @@ export const DataStaxForm: ImportFormComponent = () => {
                         const hasError = fieldState.error;
                         return (
                             <TextField
-                                fullWidth
                                 required
-                                label="Graph"
+                                fullWidth
+                                label="Enter Graph"
                                 value={field.value ? field.value : ''}
                                 onChange={(value) => field.onChange(value)}
                             ></TextField>
@@ -115,13 +113,12 @@ export const DataStaxForm: ImportFormComponent = () => {
                 <Controller
                     name={'USERNAME'}
                     control={control}
-                    rules={{ required: true }}
+                    rules={{ required: false }}
                     render={({ field, fieldState }) => {
                         const hasError = fieldState.error;
                         return (
                             <TextField
                                 fullWidth
-                                required
                                 label="Username"
                                 value={field.value ? field.value : ''}
                                 onChange={(value) => field.onChange(value)}
@@ -132,13 +129,12 @@ export const DataStaxForm: ImportFormComponent = () => {
                 <Controller
                     name={'PASSWORD'}
                     control={control}
-                    rules={{ required: true }}
+                    rules={{ required: false }}
                     render={({ field, fieldState }) => {
                         const hasError = fieldState.error;
                         return (
                             <TextField
                                 fullWidth
-                                required
                                 label="Password"
                                 value={field.value ? field.value : ''}
                                 onChange={(value) => field.onChange(value)}

@@ -32,8 +32,8 @@ export const H2Form: ImportFormComponent = () => {
                         const hasError = fieldState.error;
                         return (
                             <TextField
-                                fullWidth
                                 required
+                                fullWidth
                                 label="Database Name"
                                 value={field.value ? field.value : ''}
                                 onChange={(value) => field.onChange(value)}
@@ -44,13 +44,12 @@ export const H2Form: ImportFormComponent = () => {
                 <Controller
                     name={'DATABASE_DESCRIPTION'}
                     control={control}
-                    rules={{ required: true }}
+                    rules={{ required: false }}
                     render={({ field, fieldState }) => {
                         const hasError = fieldState.error;
                         return (
                             <TextField
                                 fullWidth
-                                required
                                 label="Database Description"
                                 value={field.value ? field.value : ''}
                                 onChange={(value) => field.onChange(value)}
@@ -61,13 +60,12 @@ export const H2Form: ImportFormComponent = () => {
                 <Controller
                     name={'DATABASE_TAGS'}
                     control={control}
-                    rules={{ required: true }}
+                    rules={{ required: false }}
                     render={({ field, fieldState }) => {
                         const hasError = fieldState.error;
                         return (
                             <TextField
                                 fullWidth
-                                required
                                 label="Database Tags"
                                 value={field.value ? field.value : ''}
                                 onChange={(value) => field.onChange(value)}
@@ -79,13 +77,12 @@ export const H2Form: ImportFormComponent = () => {
                 <Controller
                     name={'SCHEMA'}
                     control={control}
-                    rules={{ required: true }}
+                    rules={{ required: false }}
                     render={({ field, fieldState }) => {
                         const hasError = fieldState.error;
                         return (
                             <TextField
                                 fullWidth
-                                required
                                 label="Schema"
                                 value={field.value ? field.value : ''}
                                 onChange={(value) => field.onChange(value)}
@@ -96,13 +93,12 @@ export const H2Form: ImportFormComponent = () => {
                 <Controller
                     name={'USERNAME'}
                     control={control}
-                    rules={{ required: true }}
+                    rules={{ required: false }}
                     render={({ field, fieldState }) => {
                         const hasError = fieldState.error;
                         return (
                             <TextField
                                 fullWidth
-                                required
                                 label="Username"
                                 value={field.value ? field.value : ''}
                                 onChange={(value) => field.onChange(value)}
@@ -113,13 +109,12 @@ export const H2Form: ImportFormComponent = () => {
                 <Controller
                     name={'PASSWORD'}
                     control={control}
-                    rules={{ required: true }}
+                    rules={{ required: false }}
                     render={({ field, fieldState }) => {
                         const hasError = fieldState.error;
                         return (
                             <TextField
                                 fullWidth
-                                required
                                 label="Password"
                                 value={field.value ? field.value : ''}
                                 onChange={(value) => field.onChange(value)}
@@ -130,13 +125,12 @@ export const H2Form: ImportFormComponent = () => {
                 <Controller
                     name={'Parameters'}
                     control={control}
-                    rules={{ required: true }}
+                    rules={{ required: false }}
                     render={({ field, fieldState }) => {
                         const hasError = fieldState.error;
                         return (
                             <TextField
                                 fullWidth
-                                required
                                 label="Enter Additional Parameters"
                                 value={field.value ? field.value : ''}
                                 onChange={(value) => field.onChange(value)}

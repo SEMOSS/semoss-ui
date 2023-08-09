@@ -40,7 +40,6 @@ export const AthenaForm: ImportFormComponent = () => {
                         return (
                             <TextField
                                 fullWidth
-                                required
                                 label="Database Description"
                                 value={field.value ? field.value : ''}
                                 onChange={(value) => field.onChange(value)}
@@ -57,7 +56,6 @@ export const AthenaForm: ImportFormComponent = () => {
                         return (
                             <TextField
                                 fullWidth
-                                required
                                 label="Database Tags"
                                 value={field.value ? field.value : ''}
                                 onChange={(value) => field.onChange(value)}
@@ -142,7 +140,6 @@ export const AthenaForm: ImportFormComponent = () => {
                         return (
                             <TextField
                                 fullWidth
-                                required
                                 label="Schema"
                                 value={field.value ? field.value : ''}
                                 onChange={(value) => field.onChange(value)}
@@ -159,7 +156,6 @@ export const AthenaForm: ImportFormComponent = () => {
                         return (
                             <TextField
                                 fullWidth
-                                required
                                 label="Additional Parameters"
                                 value={field.value ? field.value : ''}
                                 onChange={(value) => field.onChange(value)}
@@ -176,7 +172,6 @@ export const AthenaForm: ImportFormComponent = () => {
                         return (
                             <TextField
                                 fullWidth
-                                required
                                 label="JDBC Url"
                                 value={field.value ? field.value : ''}
                                 onChange={(value) => field.onChange(value)}
@@ -194,7 +189,6 @@ export const AthenaForm: ImportFormComponent = () => {
                         return (
                             <TextField
                                 fullWidth
-                                required
                                 label="Fetch Size"
                                 value={field.value ? field.value : ''}
                                 onChange={(value) => field.onChange(value)}
@@ -211,7 +205,6 @@ export const AthenaForm: ImportFormComponent = () => {
                         return (
                             <TextField
                                 fullWidth
-                                required
                                 label="Connection Timeout"
                                 value={field.value ? field.value : ''}
                                 onChange={(value) => field.onChange(value)}
@@ -228,7 +221,6 @@ export const AthenaForm: ImportFormComponent = () => {
                         return (
                             <TextField
                                 fullWidth
-                                required
                                 label="Connection Pooling"
                                 value={field.value ? field.value : ''}
                                 onChange={(value) => field.onChange(value)}
@@ -245,7 +237,6 @@ export const AthenaForm: ImportFormComponent = () => {
                         return (
                             <TextField
                                 fullWidth
-                                required
                                 label="Pool Minimum Size"
                                 value={field.value ? field.value : ''}
                                 onChange={(value) => field.onChange(value)}
@@ -262,7 +253,6 @@ export const AthenaForm: ImportFormComponent = () => {
                         return (
                             <TextField
                                 fullWidth
-                                required
                                 label="Pool Maximum Size"
                                 value={field.value ? field.value : ''}
                                 onChange={(value) => field.onChange(value)}

@@ -28,13 +28,12 @@ export const CopyDatabaseForm = () => {
                 <Controller
                     name={'DATABASE_LOCATION'}
                     control={control}
-                    rules={{ required: true }}
+                    rules={{ required: false }}
                     render={({ field, fieldState }) => {
                         const hasError = fieldState.error;
                         return (
                             <TextField
                                 fullWidth
-                                required
                                 label="Database LOCATION"
                                 value={field.value ? field.value : ''}
                                 onChange={(value) => field.onChange(value)}

@@ -21,7 +21,7 @@ export const BigQueryForm: ImportFormComponent = () => {
                 <Controller
                     name={'DATABASE_NAME'}
                     control={control}
-                    rules={{ required: true }}
+                    rules={{ required: false }}
                     render={({ field, fieldState }) => {
                         const hasError = fieldState.error;
                         return (
@@ -38,7 +38,7 @@ export const BigQueryForm: ImportFormComponent = () => {
                 <Controller
                     name={'DATABASE_DESCRIPTION'}
                     control={control}
-                    rules={{ required: true }}
+                    rules={{ required: false }}
                     render={({ field, fieldState }) => {
                         const hasError = fieldState.error;
                         return (
@@ -54,13 +54,12 @@ export const BigQueryForm: ImportFormComponent = () => {
                 <Controller
                     name={'DATABASE_TAGS'}
                     control={control}
-                    rules={{ required: true }}
+                    rules={{ required: false }}
                     render={({ field, fieldState }) => {
                         const hasError = fieldState.error;
                         return (
                             <TextField
                                 fullWidth
-                                required
                                 label="Database Tags"
                                 value={field.value ? field.value : ''}
                                 onChange={(value) => field.onChange(value)}
@@ -88,13 +87,12 @@ export const BigQueryForm: ImportFormComponent = () => {
                 <Controller
                     name={'PORT'}
                     control={control}
-                    rules={{ required: true }}
+                    rules={{ required: false }}
                     render={({ field, fieldState }) => {
                         const hasError = fieldState.error;
                         return (
                             <TextField
                                 fullWidth
-                                required
                                 label="Port"
                                 value={field.value ? field.value : ''}
                                 onChange={(value) => field.onChange(value)}
@@ -156,13 +154,12 @@ export const BigQueryForm: ImportFormComponent = () => {
                 <Controller
                     name={'OAUTH_SERVICE_ACCOUNT'}
                     control={control}
-                    rules={{ required: true }}
+                    rules={{ required: false }}
                     render={({ field, fieldState }) => {
                         const hasError = fieldState.error;
                         return (
                             <TextField
                                 fullWidth
-                                required
                                 label="OAuth Service Account"
                                 value={field.value ? field.value : ''}
                                 onChange={(value) => field.onChange(value)}
@@ -173,13 +170,12 @@ export const BigQueryForm: ImportFormComponent = () => {
                 <Controller
                     name={'OAUTH_SERVICE_ACCOUNT_KEY'}
                     control={control}
-                    rules={{ required: true }}
+                    rules={{ required: false }}
                     render={({ field, fieldState }) => {
                         const hasError = fieldState.error;
                         return (
                             <TextField
                                 fullWidth
-                                required
                                 label="OAuth Service Account Key"
                                 value={field.value ? field.value : ''}
                                 onChange={(value) => field.onChange(value)}
@@ -190,13 +186,12 @@ export const BigQueryForm: ImportFormComponent = () => {
                 <Controller
                     name={'ADDITIONAL_PARAMETERS'}
                     control={control}
-                    rules={{ required: true }}
+                    rules={{ required: false }}
                     render={({ field, fieldState }) => {
                         const hasError = fieldState.error;
                         return (
                             <TextField
                                 fullWidth
-                                required
                                 label="Additional Parameters"
                                 value={field.value ? field.value : ''}
                                 onChange={(value) => field.onChange(value)}
@@ -207,13 +202,12 @@ export const BigQueryForm: ImportFormComponent = () => {
                 <Controller
                     name={'JDBC_URL'}
                     control={control}
-                    rules={{ required: true }}
+                    rules={{ required: false }}
                     render={({ field, fieldState }) => {
                         const hasError = fieldState.error;
                         return (
                             <TextField
                                 fullWidth
-                                required
                                 label="JDBC Url"
                                 value={field.value ? field.value : ''}
                                 onChange={(value) => field.onChange(value)}

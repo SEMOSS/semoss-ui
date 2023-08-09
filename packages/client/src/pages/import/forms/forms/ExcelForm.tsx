@@ -32,8 +32,8 @@ export const ExcelForm: ImportFormComponent = () => {
                         const hasError = fieldState.error;
                         return (
                             <TextField
-                                fullWidth
                                 required
+                                fullWidth
                                 label="Database Name"
                                 value={field.value ? field.value : ''}
                                 onChange={(value) => field.onChange(value)}
@@ -44,13 +44,12 @@ export const ExcelForm: ImportFormComponent = () => {
                 <Controller
                     name={'DATABASE_DESCRIPTION'}
                     control={control}
-                    rules={{ required: true }}
+                    rules={{ required: false }}
                     render={({ field, fieldState }) => {
                         const hasError = fieldState.error;
                         return (
                             <TextField
                                 fullWidth
-                                required
                                 label="Database Description"
                                 value={field.value ? field.value : ''}
                                 onChange={(value) => field.onChange(value)}
@@ -61,13 +60,12 @@ export const ExcelForm: ImportFormComponent = () => {
                 <Controller
                     name={'DATABASE_TAGS'}
                     control={control}
-                    rules={{ required: true }}
+                    rules={{ required: false }}
                     render={({ field, fieldState }) => {
                         const hasError = fieldState.error;
                         return (
                             <TextField
                                 fullWidth
-                                required
                                 label="Database Tags"
                                 value={field.value ? field.value : ''}
                                 onChange={(value) => field.onChange(value)}
@@ -79,13 +77,12 @@ export const ExcelForm: ImportFormComponent = () => {
                 <Controller
                     name={'DATBASE_TYPE'}
                     control={control}
-                    rules={{ required: true }}
+                    rules={{ required: false }}
                     render={({ field, fieldState }) => {
                         const hasError = fieldState.error;
                         return (
                             <TextField
                                 fullWidth
-                                required
                                 label="Database Type"
                                 value={field.value ? field.value : ''}
                                 onChange={(value) => field.onChange(value)}
@@ -96,13 +93,12 @@ export const ExcelForm: ImportFormComponent = () => {
                 <Controller
                     name={'METAMODEL_TYPE'}
                     control={control}
-                    rules={{ required: true }}
+                    rules={{ required: false }}
                     render={({ field, fieldState }) => {
                         const hasError = fieldState.error;
                         return (
                             <TextField
                                 fullWidth
-                                required
                                 label="Metamodel Type"
                                 value={field.value ? field.value : ''}
                                 onChange={(value) => field.onChange(value)}
