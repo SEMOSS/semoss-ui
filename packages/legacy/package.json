@@ -61,6 +61,7 @@
         "react-dom": "^17.0.2",
         "react-hook-form": "^7.43.9",
         "react2angular": "^4.0.6",
+        "re-resizable": "^6.9.9",
         "satellizer": "0.15.5"
     },
     "devDependencies": {
@@ -76,6 +77,7 @@
         "@types/angular": "^1.6.56",
         "@types/d3": "^5.7.2",
         "@types/react": "^17.0.48",
+        "@types/react-dom": "17.0.20",
         "@typescript-eslint/eslint-plugin": "^5.11.0",
         "@typescript-eslint/parser": "^5.11.0",
         "babel-loader": "9.1.2",

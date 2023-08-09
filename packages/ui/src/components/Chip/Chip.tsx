@@ -16,13 +16,28 @@ export interface ChipProps {
      */
     clickable?: boolean;
 
-    // /**
-    //  * The color of the component.
-    //  * It supports both default and custom theme colors, which can be added as shown in the
-    //  * [palette customization guide](https://mui.com/material-ui/customization/palette/#adding-new-colors).
-    //  * @default 'default'
-    //  */
-    // color?: "green";
+    /**
+     * Callback fired when the chip is clicked
+     */
+    onClick?: (e: React.MouseEvent<HTMLDivElement>) => void;
+
+    /**
+     * The color of the component.
+     * @default 'default'
+     */
+    color?:
+        | "default"
+        | "primary"
+        | "green"
+        | "pink"
+        | "purple"
+        | "indigo"
+        | "turqoise"
+        | "lcgreen"
+        | "lcpink"
+        | "lcpurple"
+        | "lcindigo"
+        | "lcprimary";
 
     /**
      * If `true`, the component is disabled.
@@ -62,24 +77,15 @@ export interface ChipProps {
      * @default 'filled'
      */
     variant?: "filled" | "outlined";
-
-    variantColor?:
-        | "default"
-        | "primary"
-        | "green"
-        | "pink"
-        | "purple"
-        | "indigo"
-        | "turqoise"
-        | "lcgreen"
-        | "lcpink"
-        | "lcpurple"
-        | "lcindigo"
-        | "lcprimary";
 }
 
 export const Chip = (props: ChipProps) => {
-    const { variantColor = "default", variant = "filled" } = props;
+    const {
+        color = "default",
+        variant = "filled",
+        sx = {},
+        ...otherProps
+    } = props;
 
     const styledChips = {
         default: {
@@ -178,5 +184,14 @@ export const Chip = (props: ChipProps) => {
         },
     };
 
-    return <MuiChip {...props} sx={styledChips[variantColor]} />;
+    return (
+        <MuiChip
+            sx={{
+                ...styledChips[color],
+                ...sx,
+            }}
+            variant={variant}
+            {...otherProps}
+        />
+    );
 };
