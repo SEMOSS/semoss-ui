@@ -581,6 +581,70 @@ export class MonolithStore {
         return response;
     }
 
+    /**
+     * @name approveEngineUserAccessRequest
+     * @param admin
+     * @param engineId
+     * @param requests
+     * @returns
+     */
+    async approveEngineUserAccessRequest(
+        admin: boolean,
+        engineId: string,
+        requests: any[],
+    ) {
+        let url = `${BACKEND}/api/auth/`,
+            postData = '';
+
+        if (admin) {
+            url += 'admin/';
+        }
+        url += 'engine/approveEngineUserAccessRequest';
+
+        postData += 'engineId=' + encodeURIComponent(engineId);
+        postData += '&requests=' + encodeURIComponent(JSON.stringify(requests));
+
+        const response = await axios.post<{ success: boolean }>(url, postData, {
+            headers: {
+                'content-type': 'application/x-www-form-urlencoded',
+            },
+        });
+
+        return response;
+    }
+
+    /**
+     * @name denyEngineUserAccessRequest
+     * @param admin
+     * @param appId
+     * @param userIds
+     * @returns
+     */
+    async denyEngineUserAccessRequest(
+        admin: boolean,
+        engineId: string,
+        userIds: string[],
+    ) {
+        let url = `${BACKEND}/api/auth/`,
+            postData = '';
+
+        if (admin) {
+            url += 'admin/';
+        }
+        url += 'engine/denyEngineUserAccessRequest';
+
+        postData += 'engineId=' + encodeURIComponent(engineId);
+        postData +=
+            '&requestIds=' + encodeURIComponent(JSON.stringify(userIds));
+
+        const response = await axios.post<{ success: boolean }>(url, postData, {
+            headers: {
+                'content-type': 'application/x-www-form-urlencoded',
+            },
+        });
+        return response;
+    }
+
     // ----------------------------------------------------------------------
     // Database Level
     // ----------------------------------------------------------------------
@@ -621,74 +685,6 @@ export class MonolithStore {
     }
 
     // ----- Users Start -----
-
-    /**
-     * @name approveDatabaseUserAccessRequest
-     * @param admin
-     * @param appId
-     * @param requests
-     * @returns
-     */
-    async approveDatabaseUserAccessRequest(
-        admin: boolean,
-        appId: string,
-        requests: any[],
-    ) {
-        let url = `${BACKEND}/api/auth/`,
-            postData = '';
-
-        if (admin) {
-            url += 'admin/';
-        }
-        url += 'database/approveDatabaseUserAccessRequest';
-
-        postData += 'databaseId=' + encodeURIComponent(appId);
-        postData += '&requests=' + encodeURIComponent(JSON.stringify(requests));
-
-        const response = await axios.post<{ success: boolean }>(url, postData, {
-            headers: {
-                'content-type': 'application/x-www-form-urlencoded',
-            },
-        });
-
-        return response;
-
-        // figure out whether we want to do .catch here
-    }
-
-    /**
-     * @name denyDatabaseUserAccessRequest
-     * @param admin
-     * @param appId
-     * @param userIds
-     * @returns
-     */
-    async denyDatabaseUserAccessRequest(
-        admin: boolean,
-        appId: string,
-        userIds: string[],
-    ) {
-        let url = `${BACKEND}/api/auth/`,
-            postData = '';
-
-        if (admin) {
-            url += 'admin/';
-        }
-        url += 'database/denyDatabaseUserAccessRequest';
-
-        postData += 'databaseId=' + encodeURIComponent(appId);
-        postData +=
-            '&requestIds=' + encodeURIComponent(JSON.stringify(userIds));
-
-        const response = await axios.post<{ success: boolean }>(url, postData, {
-            headers: {
-                'content-type': 'application/x-www-form-urlencoded',
-            },
-        });
-        return response;
-
-        // figure out whether we want to do .catch here
-    }
 
     // ----- Users End -----
     // ----- Properties Start -----

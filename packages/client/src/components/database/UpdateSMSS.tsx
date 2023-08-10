@@ -34,7 +34,7 @@ export const UpdateSMSS = (props: UpdateSMSSProps) => {
     const [value, setValue] = useState('');
     const [readOnly, setReadOnly] = useState(true);
 
-    const smssDetails = usePixel<string>(`GetDatabaseSMSS(database=['${id}'])`);
+    const smssDetails = usePixel<string>(`GetEngineSMSS(engine=['${id}'])`);
 
     useEffect(() => {
         if (smssDetails.status !== 'SUCCESS') {
@@ -80,9 +80,10 @@ export const UpdateSMSS = (props: UpdateSMSSProps) => {
                 {readOnly ? (
                     <Button
                         variant="contained"
+                        size={'small'}
                         onClick={() => setReadOnly(false)}
                     >
-                        Edit
+                        Edit SMSS
                     </Button>
                 ) : (
                     <Button

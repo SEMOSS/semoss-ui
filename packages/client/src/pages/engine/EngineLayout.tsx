@@ -138,23 +138,7 @@ export const EngineLayout = () => {
         {
             label: 'Overview',
             path: '',
-            show: true,
         },
-        {
-            label: 'Metadata',
-            path: '/metadata',
-            show: engineType === 'database' ? true : false,
-        },
-        {
-            label: 'Settings',
-            path: '/settings',
-            show: false,
-        },
-        // {
-        //     label: 'Data',
-        //     path: '/data',
-        //     show: false,
-        // },
     ];
 
     /**
@@ -194,12 +178,20 @@ export const EngineLayout = () => {
         metaVals: values, // Needed so edit button can be in header
     };
 
+    if (engineType === 'database') {
+        tabMenu.push({
+            label: 'Metadata',
+            path: '/metadata',
+        });
+    }
     if (
         engineContextType.role === 'EDITOR' ||
         engineContextType.role === 'OWNER'
     ) {
-        tabMenu[2].show = true;
-        // tabMenu[3].show = true;
+        tabMenu.push({
+            label: 'Settings',
+            path: '/settings',
+        });
     }
 
     return (
@@ -218,14 +210,12 @@ export const EngineLayout = () => {
                         }}
                     >
                         {tabMenu.map((obj, i) => {
-                            if (obj.show) {
-                                return (
-                                    <ToggleTabsGroup.Item
-                                        key={i}
-                                        label={obj.label}
-                                    ></ToggleTabsGroup.Item>
-                                );
-                            }
+                            return (
+                                <ToggleTabsGroup.Item
+                                    key={i}
+                                    label={obj.label}
+                                ></ToggleTabsGroup.Item>
+                            );
                         })}
                     </StyledToggleTabsGroup>
                 </StyledDiv>

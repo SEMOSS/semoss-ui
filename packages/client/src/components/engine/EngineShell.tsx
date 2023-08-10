@@ -132,11 +132,8 @@ export const EngineShell = (props: EngineShellProps) => {
                         width={'100%'}
                     >
                         <Typography variant="h4">
-                            {type === 'database'
-                                ? 'Data'
-                                : type.charAt(0).toUpperCase() +
-                                  type.slice(1)}{' '}
-                            Catalog Overview
+                            {type.charAt(0).toUpperCase() + type.slice(1)}{' '}
+                            Overview
                         </Typography>
                         <Stack direction="row">
                             {configStore.store.security &&
