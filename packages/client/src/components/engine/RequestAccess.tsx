@@ -64,6 +64,10 @@ export const RequestAccess = (props: RequestAccessProps) => {
                 });
             }
 
+            notification.add({
+                color: 'success',
+                message: output,
+            });
             // close it and succesfully message
             onClose(true);
         });
