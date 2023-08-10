@@ -6,6 +6,8 @@ import { stepsOne, stepsTwo } from './formSteps.constants';
 import { UploadData } from './UploadData';
 import { CopyDatabaseForm } from './CopyDatabaseForm';
 import { StorageForm } from './StorageForm';
+import { ModelForm } from './ModelForm';
+
 import { ArrowBackRounded } from '@mui/icons-material/';
 
 const StyledStack = styled('div')(({ theme }) => ({
@@ -112,7 +114,8 @@ export const DatabaseImport = () => {
                                             if (
                                                 val === 'Copy Database' ||
                                                 val === 'Upload Database' ||
-                                                val === 'Add Storage'
+                                                val === 'Add Storage' ||
+                                                val === 'Add Model'
                                             ) {
                                                 setActiveStep(2);
                                                 setStepTwo('');
@@ -222,6 +225,9 @@ export const DatabaseImport = () => {
                         )}
                         {activeStep === 2 && stepOne === 'Add Storage' && (
                             <StorageForm />
+                        )}
+                        {activeStep === 2 && stepOne === 'Add Model' && (
+                            <ModelForm />
                         )}
                     </StyledBox>
                 )}
