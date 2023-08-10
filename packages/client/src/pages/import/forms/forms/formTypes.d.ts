@@ -1,6 +1,6 @@
 export type ImportFormComponent = React.FunctionComponent<{
     name: string;
-    submitFunc?: (val) => void;
+    submitFunc?: (form) => void;
 }> & {
     name2: string;
 

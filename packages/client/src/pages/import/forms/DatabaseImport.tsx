@@ -6,6 +6,7 @@ import { stepsOne, stepsTwo } from './formSteps.constants';
 import { UploadData } from './UploadData';
 import { CopyDatabaseForm } from './CopyDatabaseForm';
 import { StorageForm } from './StorageForm';
+import { useRootStore } from '@/hooks';
 import { ArrowBackRounded } from '@mui/icons-material/';
 
 const StyledStack = styled('div')(({ theme }) => ({
@@ -52,8 +53,18 @@ export const DatabaseImport = () => {
     const [stepOne, setStepOne] = React.useState('');
     const [stepTwo, setStepTwo] = React.useState('');
 
+    const { configStore, monolithStore } = useRootStore();
+
+    const insightId = configStore.store.insightID;
+
     const formSubmit = (values) => {
-        console.log(values);
+        monolithStore
+            .uploadFile(values.FILE, insightId)
+            .then((res: { fileName: string; fileLocation: string }[]) => {
+                monolithStore.runQuery(
+                    `PredictDataTypes(filePath=["${res[0].fileLocation}"], delimiter=["${values.DELIMETER}"], rowCount=[false])`,
+                );
+            });
     };
 
     const getForm = (form) => {
@@ -140,8 +151,8 @@ export const DatabaseImport = () => {
                                     <Grid
                                         container
                                         columns={6}
-                                        columnGap={2}
-                                        rowGap={2}
+                                        columnSpacing={2}
+                                        rowSpacing={2}
                                     >
                                         {stepsTwo['Drag and Drop Data'].map(
                                             (stage, idx) => {
@@ -177,8 +188,8 @@ export const DatabaseImport = () => {
                                     <Grid
                                         container
                                         columns={6}
-                                        columnGap={2}
-                                        rowGap={2}
+                                        columnSpacing={2}
+                                        rowSpacing={2}
                                     >
                                         {stepsTwo[
                                             'Connect to an External Database'
