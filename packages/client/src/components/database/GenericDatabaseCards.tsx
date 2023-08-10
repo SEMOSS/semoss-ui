@@ -20,6 +20,7 @@ import {
     LockRounded,
 } from '@mui/icons-material';
 
+import { MODULE } from '@/constants';
 import defaultDbImage from '../../assets/img/placeholder.png';
 // import defaultDBImage from '../../assets/img/placeholder.png';
 import { formatName } from '@/utils';
@@ -359,7 +360,7 @@ export const DatabaseLandscapeCard = (props: DatabaseCardProps) => {
         <StyledLandscapeCard onClick={() => onClick(id)}>
             <StyledLandscapeCardHeader>
                 <StyledLandscapeCardImg
-                    src={`${process.env.MODULE}/api/app-${id}/appImage/download`}
+                    src={`${MODULE}/api/app-${id}/appImage/download`}
                     // src={defaultDbImage}
                 />
                 <StyledLandscapeCardHeaderDiv>
@@ -512,7 +513,7 @@ export const DatabaseTileCard = (props: DatabaseCardProps) => {
         <StyledTileCard onClick={() => onClick(id)}>
             {/* Use Card.Media instead, uses img tag */}
             <StyledCardImage
-                src={`${process.env.MODULE}/api/app-${id}/appImage/download`}
+                src={`${MODULE}/api/app-${id}/appImage/download`}
                 sx={{ height: '118px' }}
             />
             <Card.Header
@@ -645,7 +646,7 @@ export const PlainDatabaseCard = (props) => {
     return (
         <StyledPlainTileCard onClick={onClick}>
             <StyledCardImage
-                src={`${process.env.MODULE}/api/app-${id}/appImage/download`}
+                src={`${MODULE}/api/app-${id}/appImage/download`}
                 sx={{ height: '118px' }}
             />
             <StyledTileCardContent sx={{ marginTop: '8px' }}>

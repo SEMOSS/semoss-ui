@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 
+import { MODULE } from '@/constants';
 import { runPixel } from '@/api';
 
 import {
@@ -34,9 +35,7 @@ export const AppRenderer = (props: AppRendererProps) => {
 
         // set the src
         setSrc(
-            `${
-                process.env.MODULE
-            }/public_home/${appId}/portals/?${searchParams.toString()}`,
+            `${MODULE}/public_home/${appId}/portals/?${searchParams.toString()}`,
         );
     }, [appId, insightId]);
 
