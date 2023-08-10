@@ -1,7 +1,6 @@
 import { useEffect, useState, useReducer, useRef } from 'react';
 import { observer } from 'mobx-react-lite';
 import {
-    AlertTitle,
     Avatar,
     Chip,
     Collapse,
@@ -18,29 +17,17 @@ import {
     TextField,
 } from '@semoss/ui';
 import {
-    DataObjectOutlined,
     ExpandLess,
     ExpandMore,
     FormatListBulletedOutlined,
-    Inventory2Outlined,
-    MenuBookOutlined,
-    People,
     SpaceDashboardOutlined,
 } from '@mui/icons-material';
 
 import { useNavigate, useLocation } from 'react-router-dom';
 
-import defaultDBImage from '@/assets/img/placeholder.png';
 import { DatabaseLandscapeCard, DatabaseTileCard } from '@/components/database';
 import { usePixel, useRootStore } from '@/hooks';
 import { Page } from '@/components/ui';
-
-import { formatName } from '@/utils';
-import { Database } from '@/assets/img/Database';
-
-const StyledStack = styled(Stack)(({ theme }) => ({
-    // paddingTop: theme.spacing(1)
-}));
 
 const StyledContainer = styled('div')(({ theme }) => ({
     display: 'flex',
@@ -97,18 +84,23 @@ const StyledChip = styled(Chip, {
 })<{
     /** Track if the chip is selected */
     selected: boolean;
-}>(({ theme, selected }) => ({
-    color: selected
-        ? theme.palette.semossBlue['900']
-        : theme.palette.semossBlue['900'],
-    backgroundColor: selected
-        ? theme.palette.semossBlue['100']
-        : theme.palette.semossBlue['50'],
+}>(({ theme, selected }) => {
+    // TODO: Fix typing
+    const palette = theme.palette as unknown as {
+        semossBlue: Record<string, string>;
+    };
 
-    '&:hover': {
-        color: theme.palette.semossBlue['50'],
-    },
-}));
+    return {
+        color: selected ? palette.semossBlue['900'] : palette.semossBlue['900'],
+        backgroundColor: selected
+            ? palette.semossBlue['100']
+            : palette.semossBlue['50'],
+
+        '&:hover': {
+            color: palette.semossBlue['50'],
+        },
+    };
+});
 
 const initialState = {
     favoritedDbs: [],
@@ -619,7 +611,7 @@ export const CatalogPage = observer((): JSX.Element => {
             header={
                 <Stack>
                     <div style={{ height: '16px' }}></div>
-                    <StyledStack
+                    <Stack
                         direction="row"
                         alignItems={'center'}
                         justifyContent={'space-between'}
@@ -660,7 +652,7 @@ export const CatalogPage = observer((): JSX.Element => {
                             spacing={3}
                         >
                             <Button
-                                size={'lg'}
+                                size={'large'}
                                 variant={'contained'}
                                 onClick={() => {
                                     navigate('/import');
@@ -693,7 +685,7 @@ export const CatalogPage = observer((): JSX.Element => {
                                 </ToggleButton>
                             </ToggleButtonGroup>
                         </Stack>
-                    </StyledStack>
+                    </Stack>
                 </Stack>
             }
         >

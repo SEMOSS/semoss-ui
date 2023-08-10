@@ -1,50 +1,27 @@
-import { Field } from '@/components/form';
-import { useAPI, useRootStore, useSettings } from '@/hooks';
-import {
-    mdiArrowDownDropCircle,
-    mdiCalendarMonth,
-    mdiClockOutline,
-    mdiFilter,
-    mdiPause,
-    mdiPlay,
-    mdiPlayCircleOutline,
-    mdiPlus,
-    mdiSquareEditOutline,
-    mdiTrashCanOutline,
-} from '@mdi/js';
-import PlayArrowIcon from '@mui/icons-material/PlayArrow';
-import EditIcon from '@mui/icons-material/Edit';
-import DeleteIcon from '@mui/icons-material/Delete';
-import FilterAltIcon from '@mui/icons-material/FilterAlt';
-import MenuIcon from '@mui/icons-material/Menu';
-import AddIcon from '@mui/icons-material/Add';
-//import Icon from '@mdi/react';
+import { SyntheticEvent, useEffect, useState } from 'react';
+import { useForm } from 'react-hook-form';
+import { PlayArrow, Edit, Delete, Menu, Add } from '@mui/icons-material';
 import {
     Button,
     Checkbox,
     Modal,
-    Select,
     styled,
     Table,
     Tabs,
     Box,
     Icon,
-    Tab,
     Accordion,
     Search,
-    ToggleTabsGroup,
     Collapse,
-    Typography,
     Chip,
-    Menu,
     Grid,
     Card,
     Popover,
     IconButton,
     useNotification,
 } from '@semoss/ui';
-import { SyntheticEvent, useEffect, useRef, useState } from 'react';
-import { useForm } from 'react-hook-form';
+
+import { useAPI, useRootStore, useSettings } from '@/hooks';
 import {
     buildBackupDatabaseQuery,
     buildETLQuery,
@@ -54,10 +31,8 @@ import {
     convertTimetoDate,
     convertTimeToFrequencyString,
     convertTimeToLastRunString,
-    convertTimeToNextRunString,
     daysOfWeek,
     frequencyOpts,
-    getDaysOfMonth,
     monthsOfYear,
 } from './JobsFunctions';
 import { JobData, Job, Insight } from './JobsFunctions';
@@ -68,8 +43,6 @@ import {
     Error,
     KeyboardArrowDown,
     KeyboardArrowUp,
-    MenuBookSharp,
-    SearchRounded,
 } from '@mui/icons-material';
 
 const StyledPopover = styled(Popover)(() => ({
@@ -135,7 +108,7 @@ function HistoryRow(props) {
                         label={row.success ? 'Success' : 'Failed'}
                         avatar={null}
                         variant="filled"
-                        variantColor={row.success ? 'green' : 'pink'}
+                        color={row.success ? 'green' : 'pink'}
                     />
                 </Table.Cell>
             </Table.Row>
@@ -254,8 +227,8 @@ export function JobsPage() {
                 return (
                     <Checkbox
                         value={allChecked}
-                        onChange={(e) => {
-                            setAllChecked(e.target.checked);
+                        onChange={(e, checked) => {
+                            setAllChecked(checked);
                         }}
                     />
                 );
@@ -271,8 +244,7 @@ export function JobsPage() {
                                 ) ||
                                 jobsToPause.some((x) => x.jobId === job.jobId)
                             }
-                            onChange={(e) => {
-                                const checked = e.target.checked;
+                            onChange={(e, checked) => {
                                 if (checked) {
                                     job.NEXT_FIRE_TIME === 'INACTIVE'
                                         ? setJobsToResume((prev) => [
@@ -310,9 +282,10 @@ export function JobsPage() {
                     <Button
                         color="inherit"
                         variant="text"
-                        children="Name"
                         endIcon={<ArrowDownward />}
-                    />
+                    >
+                        Name
+                    </Button>
                 );
             },
             showColumn: true,
@@ -363,8 +336,8 @@ export function JobsPage() {
             renderData: (job) => {
                 return (
                     job.jobTags &&
-                    job.jobTags.split(',').map((tag) => {
-                        return <Chip label={tag} avatar={null} />;
+                    job.jobTags.split(',').map((tag, idx) => {
+                        return <Chip key={idx} label={tag} avatar={null} />;
                     })
                 );
             },
@@ -441,7 +414,7 @@ export function JobsPage() {
                                 executeJob(job.jobId, job.jobGroup);
                             }}
                         >
-                            <PlayArrowIcon />
+                            <PlayArrow />
                         </IconButton>
                         <IconButton
                             color="primary"
@@ -451,8 +424,9 @@ export function JobsPage() {
                                 setShowJobModal(true);
                             }}
                             disabled
-                            children={<EditIcon />}
-                        />
+                        >
+                            <Edit />
+                        </IconButton>
                         <IconButton
                             color="primary"
                             size="medium"
@@ -460,8 +434,9 @@ export function JobsPage() {
                                 setSelectedJob(job);
                                 setShowDeleteModal(true);
                             }}
-                            children={<DeleteIcon />}
-                        />
+                        >
+                            <Delete />
+                        </IconButton>
                     </>
                 );
             },
@@ -566,351 +541,351 @@ export function JobsPage() {
         return query;
     };
 
-    const scheduleJob = handleSubmit((data) => {
-        const job = { ...data };
+    // const scheduleJob = handleSubmit((data) => {
+    //     const job = { ...data };
 
-        const editingJob = selectedJob !== null;
+    //     const editingJob = selectedJob !== null;
 
-        // change frequency tag to respective object for backend
-        job.frequency = frequencyOpts.find((f) => f.human === job.frequency);
+    //     // change frequency tag to respective object for backend
+    //     job.frequency = frequencyOpts.find((f) => f.human === job.frequency);
 
-        if (job.selectedApp.length > 0) {
-            job.selectedApp = projectsList.find(
-                (p) => p.project_name === job.selectedApp,
-            ).project_id;
-        }
+    //     if (job.selectedApp.length > 0) {
+    //         job.selectedApp = projectsList.find(
+    //             (p) => p.project_name === job.selectedApp,
+    //         ).project_id;
+    //     }
 
-        if (!job.customCron) {
-            job.cronExpression = convertTimeToCron(job);
-        }
+    //     if (!job.customCron) {
+    //         job.cronExpression = convertTimeToCron(job);
+    //     }
 
-        if (job.jobTags && !Array.isArray(job.jobTags)) {
-            job.jobTags = job.jobTags.split(',');
-        }
+    //     if (job.jobTags && !Array.isArray(job.jobTags)) {
+    //         job.jobTags = job.jobTags.split(',');
+    //     }
 
-        if (job?.jobType !== 'Custom Job') {
-            job.recipe = jobTypeTemplate['templatePixelQuery'];
-            // if run insight and there is a paramjson, we will build the param pixel
-            if (
-                job.jobType === 'Run Insight' &&
-                jobTypeTemplate['paramJson']?.length > 0
-            ) {
-                job.recipeParameters = buildInsightParamsRecipe(job);
-                // if there is json but no pixel is generated, we have a problem. probably no value selected, so alert them.
-                if (!job.recipeParameters) {
-                    notification.add({
-                        color: 'warning',
-                        message:
-                            'Please fill in all parameter fields before continuing.',
-                    });
-                    // we don't want to continue any further processing, so return
-                    return;
-                }
-            } else {
-                // normal insight--no params
-                job.recipeParameters = '';
-            }
-        }
+    //     if (job?.jobType !== 'Custom Job') {
+    //         job.recipe = jobTypeTemplate['templatePixelQuery'];
+    //         // if run insight and there is a paramjson, we will build the param pixel
+    //         if (
+    //             job.jobType === 'Run Insight' &&
+    //             jobTypeTemplate['paramJson']?.length > 0
+    //         ) {
+    //             job.recipeParameters = buildInsightParamsRecipe(job);
+    //             // if there is json but no pixel is generated, we have a problem. probably no value selected, so alert them.
+    //             if (!job.recipeParameters) {
+    //                 notification.add({
+    //                     color: 'warning',
+    //                     message:
+    //                         'Please fill in all parameter fields before continuing.',
+    //                 });
+    //                 // we don't want to continue any further processing, so return
+    //                 return;
+    //             }
+    //         } else {
+    //             // normal insight--no params
+    //             job.recipeParameters = '';
+    //         }
+    //     }
 
-        // manually add export
-        if (job.openExport) {
-            job.recipe = addExportToRecipe(job, job.recipe);
-        }
+    //     // manually add export
+    //     if (job.openExport) {
+    //         job.recipe = addExportToRecipe(job, job.recipe);
+    //     }
 
-        job.jobGroup = jobTypeTemplate['app'];
-        job.jobTypeTemplate = jobTypeTemplate;
-        job.placeholderData = placeholderData;
+    //     job.jobGroup = jobTypeTemplate['app'];
+    //     job.jobTypeTemplate = jobTypeTemplate;
+    //     job.placeholderData = placeholderData;
 
-        if (editingJob) {
-            job.curJobId = selectedJob.jobId;
-            job.curJobName = selectedJob.jobName;
-            job.curJobGroup = selectedJob.jobGroup;
-            job.curJobTags = selectedJob.jobTags;
+    //     if (editingJob) {
+    //         job.curJobId = selectedJob.jobId;
+    //         job.curJobName = selectedJob.jobName;
+    //         job.curJobGroup = selectedJob.jobGroup;
+    //         job.curJobTags = selectedJob.jobTags;
 
-            const pixel = buildEditJobPixel(
-                selectedJob.jobId,
-                job.jobName,
-                job.jobGroup,
-                job.cronExpression,
-                job.recipe,
-                job.recipeParameters,
-                job.jobTags,
-                job.onLoad,
-                JSON.stringify(job).replace(/"/g, '\\"'),
-                selectedJob.jobName,
-                selectedJob.jobGroup,
-            );
-            monolithStore.runQuery(pixel).then((response) => {
-                const type = response.pixelReturn[0].operationType[0];
-                if (type.indexOf('ERROR') > -1) {
-                    notification.add({
-                        color: 'error',
-                        message:
-                            'Something went wrong. Job could not be edited.',
-                    });
-                } else {
-                    notification.add({
-                        color: 'success',
-                        message: 'Job was successfully edited.',
-                    });
-                    getJobs(true, []);
-                }
-            });
-        } else {
-            // if this jobname already exists, notify user and exit out of function
-            if (
-                jobs.some(
-                    (j) =>
-                        j.jobName?.toLowerCase().trim() ===
-                        job.jobName?.toLowerCase().trim(),
-                )
-            ) {
-                notification.add({
-                    color: 'error',
-                    message: 'Job name must be unique',
-                });
-                return;
-            }
-            // running the query
-            const pixel = buildScheduleJobPixel(
-                job.jobName,
-                job.jobGroup,
-                job.cronExpression,
-                job.recipe,
-                job.recipeParameters,
-                job.jobTags,
-                job.onLoad,
-                JSON.stringify(job).replace(/"/g, '\\"'),
-            );
+    //         const pixel = buildEditJobPixel(
+    //             selectedJob.jobId,
+    //             job.jobName,
+    //             job.jobGroup,
+    //             job.cronExpression,
+    //             job.recipe,
+    //             job.recipeParameters,
+    //             job.jobTags,
+    //             job.onLoad,
+    //             JSON.stringify(job).replace(/"/g, '\\"'),
+    //             selectedJob.jobName,
+    //             selectedJob.jobGroup,
+    //         );
+    //         monolithStore.runQuery(pixel).then((response) => {
+    //             const type = response.pixelReturn[0].operationType[0];
+    //             if (type.indexOf('ERROR') > -1) {
+    //                 notification.add({
+    //                     color: 'error',
+    //                     message:
+    //                         'Something went wrong. Job could not be edited.',
+    //                 });
+    //             } else {
+    //                 notification.add({
+    //                     color: 'success',
+    //                     message: 'Job was successfully edited.',
+    //                 });
+    //                 getJobs(true, []);
+    //             }
+    //         });
+    //     } else {
+    //         // if this jobname already exists, notify user and exit out of function
+    //         if (
+    //             jobs.some(
+    //                 (j) =>
+    //                     j.jobName?.toLowerCase().trim() ===
+    //                     job.jobName?.toLowerCase().trim(),
+    //             )
+    //         ) {
+    //             notification.add({
+    //                 color: 'error',
+    //                 message: 'Job name must be unique',
+    //             });
+    //             return;
+    //         }
+    //         // running the query
+    //         const pixel = buildScheduleJobPixel(
+    //             job.jobName,
+    //             job.jobGroup,
+    //             job.cronExpression,
+    //             job.recipe,
+    //             job.recipeParameters,
+    //             job.jobTags,
+    //             job.onLoad,
+    //             JSON.stringify(job).replace(/"/g, '\\"'),
+    //         );
 
-            // run the job
-            monolithStore.runQuery(pixel).then((response) => {
-                const type = response.pixelReturn[0].operationType[0];
-                if (type.indexOf('ERROR') > -1) {
-                    notification.add({
-                        color: 'error',
-                        message:
-                            'Something went wrong. Job could not be scheduled.',
-                    });
-                    return;
-                } else {
-                    notification.add({
-                        color: 'success',
-                        message: 'Job was successfully scheduled.',
-                    });
-                    getJobs(true, []);
-                }
-            });
-        }
-        // TODO create a reset function???
-        setSelectedTags([]);
-        reset({
-            jobType: 'Custom Job',
-            ...jobDefaultValues,
-            ...customJobDefaultValues,
-        });
-        setSelectedJob(null);
-        setPlaceholderData([]);
-        setJobTypeTemplate({});
-    });
+    //         // run the job
+    //         monolithStore.runQuery(pixel).then((response) => {
+    //             const type = response.pixelReturn[0].operationType[0];
+    //             if (type.indexOf('ERROR') > -1) {
+    //                 notification.add({
+    //                     color: 'error',
+    //                     message:
+    //                         'Something went wrong. Job could not be scheduled.',
+    //                 });
+    //                 return;
+    //             } else {
+    //                 notification.add({
+    //                     color: 'success',
+    //                     message: 'Job was successfully scheduled.',
+    //                 });
+    //                 getJobs(true, []);
+    //             }
+    //         });
+    //     }
+    //     // TODO create a reset function???
+    //     setSelectedTags([]);
+    //     reset({
+    //         jobType: 'Custom Job',
+    //         ...jobDefaultValues,
+    //         ...customJobDefaultValues,
+    //     });
+    //     setSelectedJob(null);
+    //     setPlaceholderData([]);
+    //     setJobTypeTemplate({});
+    // });
 
-    const buildInsightParamsRecipe = (job) => {
-        const params = {};
-        let queryIdx;
-        let queryLen;
-        let paramIdx;
-        let paramLen;
-        const json = job.jobTypeTemplate.paramJson;
-        let pixel = '';
+    // const buildInsightParamsRecipe = (job) => {
+    //     const params = {};
+    //     let queryIdx;
+    //     let queryLen;
+    //     let paramIdx;
+    //     let paramLen;
+    //     const json = job.jobTypeTemplate.paramJson;
+    //     let pixel = '';
 
-        for (
-            queryIdx = 0, queryLen = json.length;
-            queryIdx < queryLen;
-            queryIdx++
-        ) {
-            for (
-                paramIdx = 0, paramLen = json[queryIdx].params.length;
-                paramIdx < paramLen;
-                paramIdx++
-            ) {
-                if (
-                    json[queryIdx].params[paramIdx].required &&
-                    ((typeof json[queryIdx].params[paramIdx].model
-                        .defaultValue === 'number' &&
-                        isNaN(
-                            json[queryIdx].params[paramIdx].model.defaultValue,
-                        )) ||
-                        (typeof json[queryIdx].params[paramIdx].model
-                            .defaultValue === 'string' &&
-                            !json[queryIdx].params[paramIdx].model
-                                .defaultValue) ||
-                        (Array.isArray(
-                            json[queryIdx].params[paramIdx].model.defaultValue,
-                        ) &&
-                            json[queryIdx].params[paramIdx].model.defaultValue
-                                .length === 0 &&
-                            !json[queryIdx].params[paramIdx].selectAll) ||
-                        typeof json[queryIdx].params[paramIdx].model
-                            .defaultValue === 'undefined' ||
-                        json[queryIdx].params[paramIdx].model.defaultValue ===
-                            null)
-                ) {
-                    // can't build a proper param pixel so will return empty string
-                    return '';
-                } else if (
-                    json[queryIdx].params[paramIdx].model.defaultValue ||
-                    json[queryIdx].params[paramIdx].model.defaultValue === 0
-                ) {
-                    params[json[queryIdx].params[paramIdx].paramName] =
-                        json[queryIdx].params[paramIdx].model.defaultValue;
-                }
-            }
-        }
+    //     for (
+    //         queryIdx = 0, queryLen = json.length;
+    //         queryIdx < queryLen;
+    //         queryIdx++
+    //     ) {
+    //         for (
+    //             paramIdx = 0, paramLen = json[queryIdx].params.length;
+    //             paramIdx < paramLen;
+    //             paramIdx++
+    //         ) {
+    //             if (
+    //                 json[queryIdx].params[paramIdx].required &&
+    //                 ((typeof json[queryIdx].params[paramIdx].model
+    //                     .defaultValue === 'number' &&
+    //                     isNaN(
+    //                         json[queryIdx].params[paramIdx].model.defaultValue,
+    //                     )) ||
+    //                     (typeof json[queryIdx].params[paramIdx].model
+    //                         .defaultValue === 'string' &&
+    //                         !json[queryIdx].params[paramIdx].model
+    //                             .defaultValue) ||
+    //                     (Array.isArray(
+    //                         json[queryIdx].params[paramIdx].model.defaultValue,
+    //                     ) &&
+    //                         json[queryIdx].params[paramIdx].model.defaultValue
+    //                             .length === 0 &&
+    //                         !json[queryIdx].params[paramIdx].selectAll) ||
+    //                     typeof json[queryIdx].params[paramIdx].model
+    //                         .defaultValue === 'undefined' ||
+    //                     json[queryIdx].params[paramIdx].model.defaultValue ===
+    //                         null)
+    //             ) {
+    //                 // can't build a proper param pixel so will return empty string
+    //                 return '';
+    //             } else if (
+    //                 json[queryIdx].params[paramIdx].model.defaultValue ||
+    //                 json[queryIdx].params[paramIdx].model.defaultValue === 0
+    //             ) {
+    //                 params[json[queryIdx].params[paramIdx].paramName] =
+    //                     json[queryIdx].params[paramIdx].model.defaultValue;
+    //             }
+    //         }
+    //     }
 
-        jobTypeTemplate['insightParameters'] = params;
+    //     jobTypeTemplate['insightParameters'] = params;
 
-        // use params to build pixel
+    //     // use params to build pixel
 
-        if (Object.keys(params).length > 0) {
-            pixel += 'SetOpenInsightParamValue({';
-            for (const key in params) {
-                if (params.hasOwnProperty(key)) {
-                    pixel += '"' + key + '": ';
-                    pixel += JSON.stringify(params[key]);
-                    pixel += ', ';
-                }
-            }
-            // Remove last comma space (, )
-            pixel = pixel.slice(0, -2);
-            pixel += '})';
-        }
+    //     if (Object.keys(params).length > 0) {
+    //         pixel += 'SetOpenInsightParamValue({';
+    //         for (const key in params) {
+    //             if (params.hasOwnProperty(key)) {
+    //                 pixel += '"' + key + '": ';
+    //                 pixel += JSON.stringify(params[key]);
+    //                 pixel += ', ';
+    //             }
+    //         }
+    //         // Remove last comma space (, )
+    //         pixel = pixel.slice(0, -2);
+    //         pixel += '})';
+    //     }
 
-        return pixel;
-    };
+    //     return pixel;
+    // };
 
-    const addExportToRecipe = (job: Job, recipe: string) => {
-        if (!recipe) {
-            return '';
-        }
+    // const addExportToRecipe = (job: Job, recipe: string) => {
+    //     if (!recipe) {
+    //         return '';
+    //     }
 
-        // TODO: get rid of this and build the full pixel on submit (instead of doing string manipulation)
-        let updated = recipe;
+    //     // TODO: get rid of this and build the full pixel on submit (instead of doing string manipulation)
+    //     let updated = recipe;
 
-        // build the pixel to export
-        const exportPixel = buildExportPixel(
-            job.fileName,
-            job.filePath,
-            job.exportTemplate,
-            job.exportAudit,
-            placeholderData,
-            [],
-            job.selectedApp,
-        );
+    //     // build the pixel to export
+    //     const exportPixel = buildExportPixel(
+    //         job.fileName,
+    //         job.filePath,
+    //         job.exportTemplate,
+    //         job.exportAudit,
+    //         placeholderData,
+    //         [],
+    //         job.selectedApp,
+    //     );
 
-        if (job.jobType === 'Run Insight') {
-            // open it
-            updated = updated.slice(0, -2);
+    //     if (job.jobType === 'Run Insight') {
+    //         // open it
+    //         updated = updated.slice(0, -2);
 
-            // add the additional pixels
-            updated += ", additionalPixels=['" + exportPixel + "']";
+    //         // add the additional pixels
+    //         updated += ", additionalPixels=['" + exportPixel + "']";
 
-            // close it
-            updated += ');';
-        } else {
-            // add to the end
-            updated += exportPixel;
-        }
+    //         // close it
+    //         updated += ');';
+    //     } else {
+    //         // add to the end
+    //         updated += exportPixel;
+    //     }
 
-        return updated;
-    };
+    //     return updated;
+    // };
 
-    const buildExportPixel = (
-        fileName: string,
-        filePath: string,
-        exportTemplate: string,
-        exportAudit: boolean,
-        templateData: any[],
-        panelOrderIds: any[],
-        appId: string,
-    ) => {
-        let pixel = '';
+    // const buildExportPixel = (
+    //     fileName: string,
+    //     filePath: string,
+    //     exportTemplate: string,
+    //     exportAudit: boolean,
+    //     templateData: any[],
+    //     panelOrderIds: any[],
+    //     appId: string,
+    // ) => {
+    //     let pixel = '';
 
-        const pixelValues = {};
-        let keys = [];
-        if (fileName.length > 0) {
-            pixelValues['fileName'] = fileName;
-        }
-        if (filePath.length > 0) {
-            pixelValues['filePath'] = filePath;
-        }
-        if (exportTemplate?.length > 0) {
-            pixelValues['export_template'] = exportTemplate;
-            pixelValues['placeHolderData'] = templateData;
-            pixelValues['project'] = appId;
-        }
-        pixelValues['exportAudit'] = `${exportAudit}`;
+    //     const pixelValues = {};
+    //     let keys = [];
+    //     if (fileName.length > 0) {
+    //         pixelValues['fileName'] = fileName;
+    //     }
+    //     if (filePath.length > 0) {
+    //         pixelValues['filePath'] = filePath;
+    //     }
+    //     if (exportTemplate?.length > 0) {
+    //         pixelValues['export_template'] = exportTemplate;
+    //         pixelValues['placeHolderData'] = templateData;
+    //         pixelValues['project'] = appId;
+    //     }
+    //     pixelValues['exportAudit'] = `${exportAudit}`;
 
-        if (panelOrderIds?.length > 0) {
-            pixelValues['panelOrderIds'] = panelOrderIds;
-        }
-        keys = Object.keys(pixelValues);
+    //     if (panelOrderIds?.length > 0) {
+    //         pixelValues['panelOrderIds'] = panelOrderIds;
+    //     }
+    //     keys = Object.keys(pixelValues);
 
-        pixel += 'ExportToExcel(';
+    //     pixel += 'ExportToExcel(';
 
-        for (let keyIdx = 0; keyIdx < keys.length; keyIdx++) {
-            if (keyIdx !== 0) {
-                // Add a comma before each query parameter except the first one
-                pixel += ', ';
-            }
-            pixel += `${keys[keyIdx]}=[${JSON.stringify(
-                pixelValues[keys[keyIdx]],
-            )}]`;
-        }
-        pixel += ')';
+    //     for (let keyIdx = 0; keyIdx < keys.length; keyIdx++) {
+    //         if (keyIdx !== 0) {
+    //             // Add a comma before each query parameter except the first one
+    //             pixel += ', ';
+    //         }
+    //         pixel += `${keys[keyIdx]}=[${JSON.stringify(
+    //             pixelValues[keys[keyIdx]],
+    //         )}]`;
+    //     }
+    //     pixel += ')';
 
-        return pixel;
-    };
+    //     return pixel;
+    // };
 
-    const buildScheduleJobPixel = (
-        jobName: string,
-        jobGroup: string,
-        cronExpression: string,
-        recipe: string,
-        recipeParameters: string,
-        jobTags: string[],
-        onLoad: boolean, // boolean or string?
-        uiState: string,
-    ) => {
-        let query = '';
+    // const buildScheduleJobPixel = (
+    //     jobName: string,
+    //     jobGroup: string,
+    //     cronExpression: string,
+    //     recipe: string,
+    //     recipeParameters: string,
+    //     jobTags: string[],
+    //     onLoad: boolean, // boolean or string?
+    //     uiState: string,
+    // ) => {
+    //     let query = '';
 
-        query += 'ScheduleJob(';
-        query += 'jobName=["' + jobName + '"], ';
-        query += 'jobGroup=["' + jobGroup + '"], ';
-        query += 'cronExpression=["' + cronExpression + '"], ';
-        query += 'recipe=["<encode>' + recipe + '</encode>"], ';
-        if (recipeParameters) {
-            query +=
-                'recipeParameters=["<encode>' +
-                recipeParameters +
-                '</encode>"], ';
-        }
+    //     query += 'ScheduleJob(';
+    //     query += 'jobName=["' + jobName + '"], ';
+    //     query += 'jobGroup=["' + jobGroup + '"], ';
+    //     query += 'cronExpression=["' + cronExpression + '"], ';
+    //     query += 'recipe=["<encode>' + recipe + '</encode>"], ';
+    //     if (recipeParameters) {
+    //         query +=
+    //             'recipeParameters=["<encode>' +
+    //             recipeParameters +
+    //             '</encode>"], ';
+    //     }
 
-        if (jobTags && jobTags.length > 0) {
-            query += 'jobTags=["';
-            for (let i = 0; i < jobTags.length; i++) {
-                if (i === jobTags.length - 1) {
-                    query += jobTags[i] + '"], ';
-                } else {
-                    query += jobTags[i] + '", "';
-                }
-            }
-        }
-        query += 'uiState=["' + uiState + '"], ';
-        query += 'triggerOnLoad=[' + onLoad + '], triggerNow=[false]';
-        query += ')';
+    //     if (jobTags && jobTags.length > 0) {
+    //         query += 'jobTags=["';
+    //         for (let i = 0; i < jobTags.length; i++) {
+    //             if (i === jobTags.length - 1) {
+    //                 query += jobTags[i] + '"], ';
+    //             } else {
+    //                 query += jobTags[i] + '", "';
+    //             }
+    //         }
+    //     }
+    //     query += 'uiState=["' + uiState + '"], ';
+    //     query += 'triggerOnLoad=[' + onLoad + '], triggerNow=[false]';
+    //     query += ')';
 
-        return query;
-    };
+    //     return query;
+    // };
 
     const jobName = watch('jobName');
     const jobType = watch('jobType');
@@ -1017,9 +992,11 @@ export function JobsPage() {
                 const allJobs = [];
                 const allTags = [];
                 for (const jobId in jobs as any) {
-                    if (jobs.hasOwnProperty(jobId)) {
+                    if (Object.hasOwnProperty.call(jobs, jobId)) {
                         const job = jobs[jobId];
-                        if (job.hasOwnProperty('uiState')) {
+                        if (
+                            Object.prototype.hasOwnProperty.call(job, 'uiState')
+                        ) {
                             // Parse the job back from the stringified version
                             const jobJson = JSON.parse(
                                 job.uiState.replace(/\\"/g, "'"),
@@ -1028,16 +1005,22 @@ export function JobsPage() {
                             // Also, need to decode the recipe again
                             // jobJson.recipe = decodeURIComponent(jobJson.recipe);
                             jobJson.checked = false;
-                            job.hasOwnProperty('PREV_FIRE_TIME')
+                            Object.prototype.hasOwnProperty.call(
+                                job,
+                                'PREV_FIRE_TIME',
+                            )
                                 ? (jobJson.PREV_FIRE_TIME = job.PREV_FIRE_TIME)
                                 : (jobJson.PREV_FIRE_TIME = '');
-                            job.hasOwnProperty('NEXT_FIRE_TIME')
+                            Object.prototype.hasOwnProperty.call(
+                                job,
+                                'NEXT_FIRE_TIME',
+                            )
                                 ? (jobJson.NEXT_FIRE_TIME = job.NEXT_FIRE_TIME)
                                 : (jobJson.NEXT_FIRE_TIME = '');
-                            job.hasOwnProperty('USER_ID')
+                            Object.prototype.hasOwnProperty.call(job, 'USER_ID')
                                 ? (jobJson.USER_ID = job.USER_ID)
                                 : (jobJson.USER_ID = '');
-                            job.hasOwnProperty('jobId')
+                            Object.prototype.hasOwnProperty.call(job, 'jobId')
                                 ? (jobJson.jobId = job.jobId)
                                 : (jobJson.jobId = '');
 
@@ -1067,7 +1050,10 @@ export function JobsPage() {
 
                             jobJson.jobTags = '';
                             if (
-                                job.hasOwnProperty('jobTags') &&
+                                Object.prototype.hasOwnProperty.call(
+                                    job,
+                                    'jobTags',
+                                ) &&
                                 job.jobTags.length > 0
                             ) {
                                 jobJson.jobTags = job.jobTags;
@@ -1152,23 +1138,35 @@ export function JobsPage() {
                         null
                     ) {
                         const job = {
-                            jobId: headers.hasOwnProperty('JOB_ID')
+                            jobId: Object.prototype.hasOwnProperty.call(
+                                headers,
+                                'JOB_ID',
+                            )
                                 ? output['data'].values[valueIdx][
                                       headers['JOB_ID']
                                   ]
                                 : '',
-                            jobName: headers.hasOwnProperty('JOB_NAME')
+                            jobName: Object.prototype.hasOwnProperty.call(
+                                headers,
+                                'JOB_NAME',
+                            )
                                 ? output['data'].values[valueIdx][
                                       headers['JOB_NAME']
                                   ]
                                 : '',
-                            jobGroup: headers.hasOwnProperty('JOB_GROUP')
+                            jobGroup: Object.prototype.hasOwnProperty.call(
+                                headers,
+                                'JOB_GROUP',
+                            )
                                 ? output['data'].values[valueIdx][
                                       headers['JOB_GROUP']
                                   ]
                                 : '',
                             execStart:
-                                headers.hasOwnProperty('EXECUTION_START') &&
+                                Object.prototype.hasOwnProperty.call(
+                                    headers,
+                                    'EXECUTION_START',
+                                ) &&
                                 output['data'].values[valueIdx][
                                     headers['EXECUTION_START']
                                 ]
@@ -1178,12 +1176,18 @@ export function JobsPage() {
                                           ],
                                       )
                                     : '',
-                            execEnd: headers.hasOwnProperty('EXECUTION_END')
+                            execEnd: Object.prototype.hasOwnProperty.call(
+                                headers,
+                                'EXECUTION_END',
+                            )
                                 ? output['data'].values[valueIdx][
                                       headers['EXECUTION_END']
                                   ]
                                 : '',
-                            execDelta: headers.hasOwnProperty('EXECUTION_DELTA')
+                            execDelta: Object.prototype.hasOwnProperty.call(
+                                headers,
+                                'EXECUTION_DELTA',
+                            )
                                 ? convertDeltaToRuntimeString(
                                       output['data'].values[valueIdx][
                                           headers['EXECUTION_DELTA']
@@ -1191,31 +1195,42 @@ export function JobsPage() {
                                   )
                                 : '',
                             // Success will have 2 types of values True means passed and False means failed.
-                            success: headers.hasOwnProperty('SUCCESS')
+                            success: Object.prototype.hasOwnProperty.call(
+                                headers,
+                                'SUCCESS',
+                            )
                                 ? output['data'].values[valueIdx][
                                       headers['SUCCESS']
                                   ]
                                 : '',
-                            // appName: headers.hasOwnProperty('APP_NAME') ? output['data'].values[valueIdx][headers.APP_NAME] : '',
-                            jobTags: headers.hasOwnProperty('JOB_TAG')
+                            // appName: Object.prototype.hasOwnProperty.call(headers, 'APP_NAME') ? output['data'].values[valueIdx][headers.APP_NAME] : '',
+                            jobTags: Object.prototype.hasOwnProperty.call(
+                                headers,
+                                'JOB_TAG',
+                            )
                                 ? output['data'].values[valueIdx][
                                       headers['JOB_TAG']
                                   ]
                                 : '',
                             // capture the latest record based on the IS_LATEST field stored
-                            isLatest: headers.hasOwnProperty('IS_LATEST')
+                            isLatest: Object.prototype.hasOwnProperty.call(
+                                headers,
+                                'IS_LATEST',
+                            )
                                 ? output['data'].values[valueIdx][
                                       headers['IS_LATEST']
                                   ]
                                 : false,
                             //capture scheduler output
-                            schedulerOutput: headers.hasOwnProperty(
-                                'SCHEDULER_OUTPUT',
-                            )
-                                ? output['data'].values[valueIdx][
-                                      headers['SCHEDULER_OUTPUT']
-                                  ]
-                                : 'No Output.',
+                            schedulerOutput:
+                                Object.prototype.hasOwnProperty.call(
+                                    headers,
+                                    'SCHEDULER_OUTPUT',
+                                )
+                                    ? output['data'].values[valueIdx][
+                                          headers['SCHEDULER_OUTPUT']
+                                      ]
+                                    : 'No Output.',
                         };
 
                         historyData.push(job);
@@ -1681,40 +1696,33 @@ export function JobsPage() {
 
     useEffect(() => {
         if (!selectedJob) {
-            switch (jobType) {
-                case 'Custom Job':
-                    // job template doesnt need to be updated
-                    break;
-                case 'Backup Database':
-                    setJobTypeTemplate({
-                        app: databaseList[0].app_id,
-                        templatePixelQuery: buildBackupDatabaseQuery(
-                            databaseList[0].app_id,
-                        ),
-                    });
-                    break;
-                case 'Sync Database':
-                    let syncAppQuery = 'SyncApp(';
+            if (jobType === 'Custom Job') {
+                // noop;
+            } else if (jobType === 'Backup Database') {
+                setJobTypeTemplate({
+                    app: databaseList[0].app_id,
+                    templatePixelQuery: buildBackupDatabaseQuery(
+                        databaseList[0].app_id,
+                    ),
+                });
+            } else if (jobType === 'Sync Database') {
+                let syncAppQuery = 'SyncApp(';
 
-                    syncAppQuery +=
-                        "app=['" + projectsList[0].project_id + "'], ";
-                    syncAppQuery += "repository=[''], ";
-                    syncAppQuery += "username=[''], ";
-                    syncAppQuery += "password=[''], ";
-                    syncAppQuery += "dual=['true'], ";
-                    syncAppQuery += "syncDatabase=['true']);";
-                    setJobTypeTemplate({
-                        app: projectsList[0].project_id,
-                        dual: true,
-                        syncDatabase: true,
-                        repository: '',
-                        username: '',
-                        password: '',
-                        templatePixelQuery: syncAppQuery,
-                    });
-                    break;
-                default:
-                    break;
+                syncAppQuery += "app=['" + projectsList[0].project_id + "'], ";
+                syncAppQuery += "repository=[''], ";
+                syncAppQuery += "username=[''], ";
+                syncAppQuery += "password=[''], ";
+                syncAppQuery += "dual=['true'], ";
+                syncAppQuery += "syncDatabase=['true']);";
+                setJobTypeTemplate({
+                    app: projectsList[0].project_id,
+                    dual: true,
+                    syncDatabase: true,
+                    repository: '',
+                    username: '',
+                    password: '',
+                    templatePixelQuery: syncAppQuery,
+                });
             }
         }
     }, [jobType]);
@@ -1800,7 +1808,9 @@ export function JobsPage() {
                 <Grid item>
                     <Card>
                         <Card.Content>
-                            <Icon children={<AvTimer />} />
+                            <Icon>
+                                <AvTimer />
+                            </Icon>
                             <Card.Header
                                 title="Active Jobs"
                                 subheader={
@@ -1817,7 +1827,9 @@ export function JobsPage() {
                 <Grid item>
                     <Card>
                         <Card.Content>
-                            <Icon children={<DarkMode />} />
+                            <Icon>
+                                <DarkMode />
+                            </Icon>{' '}
                             <Card.Header
                                 title="Inactive Jobs"
                                 subheader={
@@ -1834,7 +1846,9 @@ export function JobsPage() {
                 <Grid item>
                     <Card>
                         <Card.Content>
-                            <Icon children={<Error />} />
+                            <Icon>
+                                <Error />
+                            </Icon>
                             <Card.Header
                                 title="Failed Jobs"
                                 subheader={
@@ -1890,7 +1904,7 @@ export function JobsPage() {
                                 }}
                             >
                                 <Icon>
-                                    <MenuIcon />
+                                    <Menu />
                                 </Icon>
                                 Columns
                             </Button>
@@ -1927,13 +1941,12 @@ export function JobsPage() {
                                     checked={jobColumns.every(
                                         (col) => col.showColumn,
                                     )}
-                                    onChange={(e) => {
+                                    onChange={(e, checked) => {
                                         setJobColumns(
                                             jobColumns.map((col) => {
                                                 return {
                                                     ...col,
-                                                    showColumn:
-                                                        e.target.checked,
+                                                    showColumn: checked,
                                                 };
                                             }),
                                         );
@@ -1950,9 +1963,7 @@ export function JobsPage() {
                                                 key={i}
                                                 label={col.columnType}
                                                 checked={col.showColumn}
-                                                onChange={(e) => {
-                                                    const checked =
-                                                        e.target.checked;
+                                                onChange={(e, checked) => {
                                                     // find obejct matching col.columnType and switch col.showColumn
                                                     const n = [];
                                                     jobColumns.forEach((jc) => {
@@ -1978,11 +1989,9 @@ export function JobsPage() {
                             </StyledPopover>
                         </Table.Cell>
                         <Table.Cell align="right">
-                            <Button
-                                variant="contained"
-                                startIcon={<AddIcon />}
-                                children={'Add New'}
-                            ></Button>
+                            <Button variant="contained" startIcon={<Add />}>
+                                Add New
+                            </Button>
                         </Table.Cell>
                     </Table.Row>
                 </Table.Head>
@@ -2041,7 +2050,7 @@ export function JobsPage() {
                             page={jobsPage}
                             rowsPerPage={jobsRowsPerPage}
                             onRowsPerPageChange={(e) => {
-                                setJobsRowsPerPage(e.target.value);
+                                setJobsRowsPerPage(Number(e.target.value));
                             }}
                             count={filterJobs(jobs).length}
                         />
@@ -2089,9 +2098,10 @@ export function JobsPage() {
                                         <Button
                                             color="inherit"
                                             variant="text"
-                                            children="Run Date"
                                             endIcon={<ArrowDownward />}
-                                        />
+                                        >
+                                            Run Date
+                                        </Button>
                                     </Table.Cell>
                                     <Table.Cell align="left">Time</Table.Cell>
                                     <Table.Cell align="left">Status</Table.Cell>
@@ -2116,7 +2126,12 @@ export function JobsPage() {
                                             historyEndIndex,
                                         )
                                         .map((history, i) => {
-                                            return <HistoryRow row={history} />;
+                                            return (
+                                                <HistoryRow
+                                                    key={i}
+                                                    row={history}
+                                                />
+                                            );
                                         })
                                 )}
                             </Table.Body>
@@ -2131,7 +2146,7 @@ export function JobsPage() {
                                         rowsPerPage={historyRowsPerPage}
                                         onRowsPerPageChange={(e) => {
                                             setHistoryRowsPerPage(
-                                                e.target.value,
+                                                Number(e.target.value),
                                             );
                                         }}
                                         count={filterHistory(history).length}

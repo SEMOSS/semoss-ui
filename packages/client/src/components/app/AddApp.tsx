@@ -139,7 +139,7 @@ export const AddApp = (props) => {
                             const hasError = fieldState.error;
 
                             return (
-                                <Autocomplete
+                                <Autocomplete<string, true, false, true>
                                     freeSolo={true}
                                     multiple={true}
                                     label={'Tags'}

@@ -18,10 +18,12 @@ export const SimilarDatabases = (props: SimilarDatabasesProps) => {
     const { id } = props;
     const navigate = useNavigate();
 
-    const { status, data, refresh } = usePixel<{
-        database_name: string;
-        database_id: string;
-    }>(`SimilarCatalog(database=["${id}"])`);
+    const { status, data, refresh } = usePixel<
+        {
+            database_name: string;
+            database_id: string;
+        }[]
+    >(`SimilarCatalog(database=["${id}"])`);
 
     if (status === 'SUCCESS' && data.length) {
         return (

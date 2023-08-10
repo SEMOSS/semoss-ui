@@ -86,9 +86,13 @@ export const EngineShell = (props: EngineShellProps) => {
     const [requestAccess, setRequestAccess] = useState(false);
 
     // get the engine info
-    const { status, data } = usePixel(
-        `GetEngineMetadata(engine=["${id}"], metaKeys=[]); `,
-    );
+    const { status, data } = usePixel<{
+        database_name: string;
+        database_discoverable: boolean;
+        database_created_by?: string;
+        database_date_created?: string;
+        last_updated?: string;
+    }>(`GetEngineMetadata(engine=["${id}"], metaKeys=[]); `);
 
     /**
      * @name exportDB

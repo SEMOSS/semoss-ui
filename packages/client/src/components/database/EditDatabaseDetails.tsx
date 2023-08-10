@@ -270,7 +270,12 @@ export const EditDatabaseDetails = observer(
                                         control={control}
                                         render={({ field }) => {
                                             return (
-                                                <Autocomplete<string, true>
+                                                <Autocomplete<
+                                                    string,
+                                                    true,
+                                                    false,
+                                                    true
+                                                >
                                                     freeSolo={true}
                                                     multiple={true}
                                                     label={label}
