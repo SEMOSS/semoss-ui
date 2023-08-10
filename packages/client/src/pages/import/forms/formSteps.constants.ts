@@ -3,6 +3,8 @@ export const stepsOne = [
     'Copy Database',
     'Upload Database',
     'Build Database',
+    'Add Storage',
+    'Add Model',
 ];
 
 export const stepsTwo = {

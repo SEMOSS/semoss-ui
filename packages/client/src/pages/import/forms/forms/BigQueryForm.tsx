@@ -1,7 +1,6 @@
 import React from 'react';
 import { useForm, Controller } from 'react-hook-form';
 import { Button, TextField, Stack } from '@semoss/ui';
-import { Form } from '@semoss/components';
 import { ImportFormComponent } from './formTypes';
 
 export const BigQueryForm: ImportFormComponent = () => {
@@ -16,7 +15,7 @@ export const BigQueryForm: ImportFormComponent = () => {
     }, []);
 
     return (
-        <Form>
+        <form>
             <Stack rowGap={2}>
                 <Controller
                     name={'DATABASE_NAME'}
@@ -216,7 +215,7 @@ export const BigQueryForm: ImportFormComponent = () => {
                     }}
                 />
             </Stack>
-        </Form>
+        </form>
     );
 };
 

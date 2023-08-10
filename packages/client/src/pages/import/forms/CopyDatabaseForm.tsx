@@ -1,12 +1,11 @@
 import { useForm, Controller } from 'react-hook-form';
-import { Form } from '@semoss/components';
 import { Button, TextField, Stack } from '@semoss/ui';
 
 export const CopyDatabaseForm = () => {
     const { control } = useForm();
 
     return (
-        <Form>
+        <form>
             <Stack rowGap={2}>
                 <Controller
                     name={'DATABASE_NAME'}
@@ -42,6 +41,6 @@ export const CopyDatabaseForm = () => {
                     }}
                 />
             </Stack>
-        </Form>
+        </form>
     );
 };

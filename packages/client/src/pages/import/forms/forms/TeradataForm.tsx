@@ -1,6 +1,5 @@
 import React from 'react';
 import { useForm, Controller } from 'react-hook-form';
-import { Form } from '@semoss/components';
 import { Button, TextField, Stack } from '@semoss/ui';
 import { ImportFormComponent } from './formTypes';
 
@@ -8,7 +7,7 @@ export const TeradataForm: ImportFormComponent = () => {
     const { control } = useForm();
 
     return (
-        <Form>
+        <form>
             <Stack rowGap={2}>
                 <Controller
                     name={'DATABASE_NAME'}
@@ -239,7 +238,7 @@ export const TeradataForm: ImportFormComponent = () => {
                     }}
                 />
             </Stack>
-        </Form>
+        </form>
     );
 };
 

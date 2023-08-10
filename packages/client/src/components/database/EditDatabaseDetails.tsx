@@ -70,11 +70,7 @@ export const EditDatabaseDetails = observer(
                 METAVALUE: string;
                 count: number;
             }[]
-        >(
-            `META | GetDatabaseMetaValues ( metaKeys = ${JSON.stringify(
-                metaKeys,
-            )} ) ;`,
-        );
+        >(`META | GetDatabaseMetaValues ( metaKeys = ['tags'] ) ;`);
 
         useEffect(() => {
             if (getDatabaseMetaValues.status !== 'SUCCESS') {
@@ -275,7 +271,6 @@ export const EditDatabaseDetails = observer(
                                                     multiple={true}
                                                     label={label}
                                                     options={
-                                                        // []
                                                         filterOptions[metakey]
                                                             ? filterOptions[
                                                                   metakey

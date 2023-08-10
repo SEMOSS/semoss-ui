@@ -1,6 +1,5 @@
 import React from 'react';
 import { useForm, Controller } from 'react-hook-form';
-import { Form } from '@semoss/components';
 import { Button, TextField, Stack } from '@semoss/ui';
 import { ImportFormComponent } from './formTypes';
 
@@ -16,7 +15,7 @@ export const AsterForm: ImportFormComponent = (props) => {
     };
 
     return (
-        <Form onSubmit={handleSubmit(onSubmit)}>
+        <form onSubmit={handleSubmit(onSubmit)}>
             <Stack rowGap={2}>
                 <Controller
                     name={'DATABASE_NAME'}
@@ -266,7 +265,7 @@ export const AsterForm: ImportFormComponent = (props) => {
                     Submit
                 </Button>
             </Stack>
-        </Form>
+        </form>
     );
 };
 

@@ -1,7 +1,6 @@
 import React from 'react';
 import { useForm, Controller } from 'react-hook-form';
 import { Button, TextField, Stack } from '@semoss/ui';
-import { Form } from '@semoss/components';
 import { ImportFormComponent } from './formTypes';
 
 export const CassandraForm: ImportFormComponent = () => {
@@ -14,7 +13,7 @@ export const CassandraForm: ImportFormComponent = () => {
     }, []);
 
     return (
-        <Form>
+        <form>
             <Stack rowGap={2}>
                 <Controller
                     name={'DATABASE_NAME'}
@@ -261,7 +260,7 @@ export const CassandraForm: ImportFormComponent = () => {
                     }}
                 />
             </Stack>
-        </Form>
+        </form>
     );
 };
 

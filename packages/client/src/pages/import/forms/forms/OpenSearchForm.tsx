@@ -15,7 +15,7 @@ export const OpenSearchForm: ImportFormComponent = () => {
     }, []);
 
     return (
-        <Form>
+        <form>
             <Stack rowGap={2}>
                 <Controller
                     name={'DATABASE_NAME'}
@@ -180,7 +180,7 @@ export const OpenSearchForm: ImportFormComponent = () => {
                     }}
                 />
             </Stack>
-        </Form>
+        </form>
     );
 };
 
