@@ -21,7 +21,7 @@ const StyledKeyValue = styled('div')(({ theme }) => ({
     marginBottom: theme.spacing(2),
 }));
 
-export const StorageForm = () => {
+export const ModelForm = () => {
     const { control, handleSubmit } = useForm({
         defaultValues: {
             SMSS_PROPERTIES: [

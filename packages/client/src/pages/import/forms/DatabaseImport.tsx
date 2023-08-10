@@ -123,7 +123,8 @@ export const DatabaseImport = () => {
                                             if (
                                                 val === 'Copy Database' ||
                                                 val === 'Upload Database' ||
-                                                val === 'Add Storage'
+                                                val === 'Add Storage' ||
+                                                val === 'Add Model'
                                             ) {
                                                 setActiveStep(2);
                                                 setStepTwo('');
@@ -233,6 +234,9 @@ export const DatabaseImport = () => {
                         )}
                         {activeStep === 2 && stepOne === 'Add Storage' && (
                             <StorageForm />
+                        )}
+                        {activeStep === 2 && stepOne === 'Add Model' && (
+                            <ModelForm />
                         )}
                     </StyledBox>
                 )}
