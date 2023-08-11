@@ -73,9 +73,12 @@ export const DatabaseImport = () => {
         monolithStore
             .uploadFile(values.FILE, insightId)
             .then((res: { fileName: string; fileLocation: string }[]) => {
-                monolithStore.runQuery(
-                    `PredictDataTypes(filePath=["${res[0].fileLocation}"], delimiter=["${values.DELIMETER}"], rowCount=[false])`,
-                );
+                const file = res[0].fileLocation;
+                monolithStore
+                    .runQuery(
+                        `PredictMetamodel(filePath=["${file}"], delimiter=["${values.DELIMETER}"], rowCount=[false])`,
+                    )
+                    .then((res) => setPredictDataTypes(res));
             });
     };
 
@@ -91,6 +94,7 @@ export const DatabaseImport = () => {
         if (activeStep === 1) {
             setActiveStep(0);
             setStepOne('');
+            setPredictDataTypes(null);
         }
         if (activeStep === 2) {
             if (stepOne === 'Copy Database' || stepOne === 'Upload Database') {
@@ -99,11 +103,10 @@ export const DatabaseImport = () => {
                 setActiveStep(1);
                 setStepTwo('');
                 setStepOne('');
+                setPredictDataTypes(null);
             }
         }
     };
-
-    console.log(activeStep, stepOne);
 
     return (
         <>

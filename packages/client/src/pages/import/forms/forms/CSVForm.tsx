@@ -1,15 +1,28 @@
 import React from 'react';
 import { useForm, Controller } from 'react-hook-form';
-import { Button, TextField, Stack, FileDropzone } from '@semoss/ui';
+import {
+    Button,
+    TextField,
+    Stack,
+    FileDropzone,
+    Select,
+    Menu,
+    Autocomplete,
+} from '@semoss/ui';
 import { ImportFormComponent } from './formTypes';
 import { DataFormTable } from './../DataFormTable';
+import { mdiNewspaperVariantMultipleOutline } from '@mdi/js';
 
 export const CSVForm: ImportFormComponent = (props) => {
     const { submitFunc, setPredictDataTypes, predictDataTypes } = props;
 
-    const { control, getValues, handleSubmit, reset } = useForm();
+    const { control, getValues, handleSubmit, reset, setValue } = useForm();
 
     const values = getValues();
+
+    const checkKeyDown = (e) => {
+        if (e.key === 'Enter') e.preventDefault();
+    };
 
     const onSubmit = async (data) => {
         submitFunc(data);
@@ -19,10 +32,22 @@ export const CSVForm: ImportFormComponent = (props) => {
         reset({ ...values, DELIMETER: ',' });
     }, []);
 
+    React.useEffect(() => {
+        reset({
+            ...values,
+            DELIMETER: ',',
+            DATABASE_TYPE: 'H2',
+            METAMODEL_TYPE: 'As Suggested Metamodel',
+        });
+    }, [values.FILE]);
+
     return (
         <>
             {!predictDataTypes && (
-                <form onSubmit={handleSubmit(onSubmit)}>
+                <form
+                    onSubmit={handleSubmit(onSubmit)}
+                    onKeyDown={(e) => checkKeyDown(e)}
+                >
                     <Stack rowGap={2}>
                         <Controller
                             name={'DATABASE_NAME'}
@@ -68,14 +93,19 @@ export const CSVForm: ImportFormComponent = (props) => {
                             render={({ field, fieldState }) => {
                                 const hasError = fieldState.error;
                                 return (
-                                    <TextField
+                                    <Autocomplete<string, true, false, true>
                                         fullWidth
+                                        freeSolo
+                                        options={[]}
+                                        multiple
                                         label="Database Tags"
-                                        value={field.value ? field.value : ''}
-                                        onChange={(value) =>
-                                            field.onChange(value)
+                                        value={
+                                            field.value ? [...field.value] : []
                                         }
-                                    ></TextField>
+                                        onChange={(event, newValue) =>
+                                            field.onChange(newValue)
+                                        }
+                                    />
                                 );
                             }}
                         />
@@ -120,14 +150,21 @@ export const CSVForm: ImportFormComponent = (props) => {
                             render={({ field, fieldState }) => {
                                 const hasError = fieldState.error;
                                 return (
-                                    <TextField
+                                    <Select
                                         fullWidth
                                         label="Database Type"
                                         value={field.value ? field.value : ''}
                                         onChange={(value) =>
                                             field.onChange(value)
                                         }
-                                    ></TextField>
+                                    >
+                                        <Menu.Item value={'H2'}>H2</Menu.Item>
+                                        <Menu.Item value={'RDF'}>RDF</Menu.Item>
+                                        <Menu.Item value={'Tinker'}>
+                                            Tinker
+                                        </Menu.Item>
+                                        <Menu.Item value={'R'}>R</Menu.Item>
+                                    </Select>
                                 );
                             }}
                         />
@@ -138,14 +175,29 @@ export const CSVForm: ImportFormComponent = (props) => {
                             render={({ field, fieldState }) => {
                                 const hasError = fieldState.error;
                                 return (
-                                    <TextField
+                                    <Select
                                         fullWidth
                                         label="Metamodel Type"
                                         value={field.value ? field.value : ''}
                                         onChange={(value) =>
                                             field.onChange(value)
                                         }
-                                    ></TextField>
+                                    >
+                                        <Menu.Item value={'As Flat Table'}>
+                                            As Flat Table
+                                        </Menu.Item>
+                                        <Menu.Item
+                                            value={'As Suggested Metamodel'}
+                                        >
+                                            As Suggested Metamodel
+                                        </Menu.Item>
+                                        <Menu.Item value={'From Scratch'}>
+                                            From Scratch
+                                        </Menu.Item>
+                                        <Menu.Item value={'From Prop File'}>
+                                            From Prop File
+                                        </Menu.Item>
+                                    </Select>
                                 );
                             }}
                         />
