@@ -52,6 +52,7 @@ export const DatabaseImport = () => {
     const [activeStep, setActiveStep] = React.useState(0);
     const [stepOne, setStepOne] = React.useState('');
     const [stepTwo, setStepTwo] = React.useState('');
+    const [predictDataTypes, setPredictDataTypes] = React.useState(null);
 
     const { configStore, monolithStore } = useRootStore();
 
@@ -61,14 +62,20 @@ export const DatabaseImport = () => {
         monolithStore
             .uploadFile(values.FILE, insightId)
             .then((res: { fileName: string; fileLocation: string }[]) => {
-                monolithStore.runQuery(
-                    `PredictDataTypes(filePath=["${res[0].fileLocation}"], delimiter=["${values.DELIMETER}"], rowCount=[false])`,
-                );
+                monolithStore
+                    .runQuery(
+                        `PredictDataTypes(filePath=["${res[0].fileLocation}"], delimiter=["${values.DELIMETER}"], rowCount=[false])`,
+                    )
+                    .then((res) => setPredictDataTypes(res));
             });
     };
 
     const getForm = (form) => {
-        return React.createElement(form.component, { submitFunc: formSubmit });
+        return React.createElement(form.component, {
+            submitFunc: formSubmit,
+            setPredictDataTypes: setPredictDataTypes,
+            predictDataTypes: predictDataTypes,
+        });
     };
 
     const handleNavigate = () => {
@@ -77,9 +84,13 @@ export const DatabaseImport = () => {
             setStepOne('');
         }
         if (activeStep === 2) {
-            setActiveStep(1);
-            setStepTwo('');
-            setStepOne('');
+            if (stepOne === 'Copy Database' || stepOne === 'Upload Database') {
+                setActiveStep(0);
+            } else {
+                setActiveStep(1);
+                setStepTwo('');
+                setStepOne('');
+            }
         }
     };
 
