@@ -1,11 +1,20 @@
 import React from 'react';
 import { Page } from '@/components/ui/';
-import { styled, Typography, Box, Grid, IconButton } from '@semoss/ui';
+import {
+    styled,
+    Typography,
+    Box,
+    Grid,
+    IconButton,
+    useNotification,
+} from '@semoss/ui';
+import { useNavigate } from 'react-router-dom';
 import { FORM_ROUTES } from './forms';
 import { stepsOne, stepsTwo } from './formSteps.constants';
 import { UploadData } from './UploadData';
 import { CopyDatabaseForm } from './CopyDatabaseForm';
 import { StorageForm } from './StorageForm';
+import { ModelForm } from './ModelForm';
 import { useRootStore } from '@/hooks';
 import { ArrowBackRounded } from '@mui/icons-material/';
 
@@ -54,17 +63,47 @@ export const DatabaseImport = () => {
     const [stepTwo, setStepTwo] = React.useState('');
 
     const { configStore, monolithStore } = useRootStore();
+    const navigate = useNavigate();
+    const notification = useNotification();
 
     const insightId = configStore.store.insightID;
 
     const formSubmit = (values) => {
-        monolithStore
-            .uploadFile(values.FILE, insightId)
-            .then((res: { fileName: string; fileLocation: string }[]) => {
-                monolithStore.runQuery(
-                    `PredictDataTypes(filePath=["${res[0].fileLocation}"], delimiter=["${values.DELIMETER}"], rowCount=[false])`,
-                );
+        // Will set up context better for us to know what to hit
+        // But for now will go off of stepOne to submit form
+        if (stepOne === 'Add Storage') {
+            const pixel = `CreateStorageEngine(storage=["${
+                values.storage
+            }"], storageDetails=[${JSON.stringify(values.fields)}])`;
+
+            monolithStore.runQuery(pixel).then((response) => {
+                const output = response.pixelReturn[0].output,
+                    operationType = response.pixelReturn[0].operationType;
+
+                if (operationType.indexOf('ERROR') > -1) {
+                    notification.add({
+                        color: 'error',
+                        message: output,
+                    });
+                    return;
+                }
+
+                notification.add({
+                    color: 'success',
+                    message: `Successfully created storage`,
+                });
+
+                navigate(`/storage/${output.database_id}`);
             });
+        } else {
+            monolithStore
+                .uploadFile(values.FILE, insightId)
+                .then((res: { fileName: string; fileLocation: string }[]) => {
+                    monolithStore.runQuery(
+                        `PredictDataTypes(filePath=["${res[0].fileLocation}"], delimiter=["${values.DELIMETER}"], rowCount=[false])`,
+                    );
+                });
+        }
     };
 
     const getForm = (form) => {
@@ -233,7 +272,9 @@ export const DatabaseImport = () => {
                             <CopyDatabaseForm />
                         )}
                         {activeStep === 2 && stepOne === 'Add Storage' && (
-                            <StorageForm />
+                            <StorageForm
+                                submitFunc={(values) => formSubmit(values)}
+                            />
                         )}
                         {activeStep === 2 && stepOne === 'Add Model' && (
                             <ModelForm />
