@@ -1439,8 +1439,8 @@ export class MonolithStore {
     async uploadFile(
         files: File[],
         insightId: string | null,
-        projectId: string | null,
-        path: string | null,
+        projectId?: string | null,
+        path?: string | null,
     ) {
         let param = '';
         if (insightId || projectId || path) {

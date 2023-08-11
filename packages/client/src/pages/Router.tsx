@@ -10,14 +10,13 @@ import { NavigatorLayout } from './NavigatorLayout';
 import { LoginPage } from './LoginPage';
 import { HomePage } from './HomePage';
 import { CatalogPage } from './CatalogPage';
-import { ImportStorage } from './storage';
 
 import {
     DatabaseMetadataPage,
     DatabaseSettingsPage,
     DatabaseReplaceDataPage,
     DatabaseQueryDataPage,
-    // DatabaseImport,
+    DatabaseImport,
 } from './database';
 
 import { EngineLayout, EngineIndexPage } from './engine';
@@ -43,8 +42,9 @@ export const Router = observer(() => {
                         path="import-database"
                         element={<DatabaseImport />}
                     /> */}
+                    <Route path="import" element={<DatabaseImport />} />
+
                     <Route path="catalog" element={<CatalogPage />} />
-                    <Route path="import" element={<ImportStorage />} />
 
                     <Route path="storage" element={<Outlet />}>
                         <Route path=":id" element={<EngineLayout />}>

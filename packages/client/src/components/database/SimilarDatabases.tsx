@@ -35,7 +35,6 @@ export const SimilarDatabases = (props: SimilarDatabasesProps) => {
                                 id={db.database_id}
                                 name={db.database_name}
                                 onClick={() => {
-                                    console.log('navigating');
                                     navigate(`/database/${db.database_id}`);
                                 }}
                             />
