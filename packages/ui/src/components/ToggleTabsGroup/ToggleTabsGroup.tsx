@@ -1,11 +1,9 @@
 import React, { ReactNode } from "react";
+import { styled, Theme, SxProps } from "@mui/material";
 import { Tabs, TabsProps } from "../Tabs";
 import { Box } from "../Box";
-import { styled } from "@mui/material";
-import { Theme } from "@mui/material/styles";
-import { SxProps } from "@mui/system";
 
-export interface ToggleTabsProps extends TabsProps<any> {
+export interface ToggleTabsProps extends TabsProps<string | number> {
     // * Props applied to the tab indicator element.
     children?: ReactNode;
 
@@ -50,13 +48,14 @@ const StyledToggleGroup = styled(Tabs)(({ theme }) => ({
 }));
 
 export const ToggleTabsGroup = (props: ToggleTabsProps) => {
-    const { sx, boxSx } = props;
+    const { sx, boxSx, ...otherProps } = props;
+    console.log(otherProps);
     return (
         <StyledBox sx={boxSx}>
             <StyledToggleGroup
                 TabIndicatorProps={{ style: { display: "none" } }}
                 sx={sx}
-                {...props}
+                {...otherProps}
             />
         </StyledBox>
     );

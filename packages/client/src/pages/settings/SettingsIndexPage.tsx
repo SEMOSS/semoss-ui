@@ -10,13 +10,10 @@ import {
     Typography,
 } from '@semoss/ui';
 
-import { Icon } from '@semoss/components';
-
 import { Search as SearchIcon, MoreVert } from '@mui/icons-material';
 
 import { useNavigate } from 'react-router-dom';
 import { useSettings } from '@/hooks';
-import { LoadingScreen } from '@/components/ui';
 
 import { SEMOSS } from '@/assets/img/SEMOSS';
 import { DatabaseLayers } from '@/assets/img/DatabaseLayers';
@@ -39,7 +36,11 @@ const StyledContainer = styled('div')(({ theme }) => ({
     gap: theme.spacing(3),
 }));
 
-const StyledCard = styled(Card)(({ theme }) => ({}));
+const StyledCard = styled(Card)(({ theme }) => ({
+    '&:hover': {
+        cursor: 'pointer',
+    },
+}));
 
 const StyledCardHeader = styled(Card.Header)(({ theme }) => ({
     height: theme.spacing(7.75),
@@ -61,10 +62,6 @@ const StyledSearchbarContainer = styled('div')(({ theme }) => ({
 const StyledSort = styled(Select)(({ theme }) => ({
     width: '20%',
 }));
-
-const StyledIcon = styled(Icon)({
-    fontSize: '30px',
-});
 
 const CardActionsLeft = styled('div')({
     display: 'flex',
@@ -94,6 +91,7 @@ const IconMapper = {
     'Teams Permissions': <GroupRounded />,
     'My Profile': <PersonRounded />,
     Theming: <PaintRounded />,
+    Jobs: <Construction />,
 };
 
 export const SettingsIndexPage = () => {
@@ -124,7 +122,7 @@ export const SettingsIndexPage = () => {
         <StyledContainer>
             <StyledSearchbarContainer>
                 <Search
-                    label={'Searching'}
+                    label={'Search'}
                     size={'small'}
                     onChange={(e) => {
                         setSearch(e.target.value);
@@ -151,7 +149,6 @@ export const SettingsIndexPage = () => {
                         <Grid item key={i} sm={12} md={6} lg={4} xl={3}>
                             <StyledCard onClick={() => navigate(c.path)}>
                                 <StyledCardHeader
-                                    // sx={{ height: '62px' }}
                                     title={c.title}
                                     titleTypographyProps={{ variant: 'body1' }}
                                     avatar={IconMapper[c.title]}

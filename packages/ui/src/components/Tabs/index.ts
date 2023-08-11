@@ -1,7 +1,7 @@
-import { Tabs as _Tabs, TabsProps } from "./Tabs";
+import { Tabs, TabsProps } from "./Tabs";
 import { Tab, TabProps } from "./Tab";
 
-const TabsNameSpace = Object.assign(_Tabs, {
+const TabsNameSpace = Object.assign(Tabs, {
     Item: Tab,
 });
 

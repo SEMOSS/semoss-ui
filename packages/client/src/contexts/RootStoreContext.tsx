@@ -1,6 +1,6 @@
 import { createContext } from 'react';
 
-import { RootStore } from '@/stores/';
+import { RootStore } from '@/stores';
 
 /**
  * Value

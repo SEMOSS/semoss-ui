@@ -1,17 +1,7 @@
-import { useEffect } from 'react';
+import { Card, Grid, Icon, styled, Typography } from '@semoss/ui';
 
 import {
-    Button,
-    Card,
-    Chip,
-    Grid,
-    Icon,
-    Stack,
-    styled,
-    Typography,
-} from '@semoss/ui';
-
-import {
+    AutoGraph,
     Star,
     DownloadForOffline,
     RemoveRedEyeOutlined,
@@ -26,15 +16,22 @@ const StyledCard = styled(Card)(({ theme }) => ({
     boxShadow: `0px 4px 4px 0px rgba(0, 0, 0, 0.04)`,
 }));
 
-const StyledCardImageContainer = styled('div')(({ theme }) => ({
-    display: 'flex',
-    justifyContent: 'center',
-    alignItems: 'center',
-    width: theme.spacing(7.5),
-    height: theme.spacing(7.5),
-    borderRadius: theme.spacing(0.75),
-    backgroundColor: theme.palette.semossBlue['50'],
-}));
+const StyledCardImageContainer = styled('div')(({ theme }) => {
+    // TODO: Fix typing
+    const palette = theme.palette as unknown as {
+        semossBlue: Record<string, string>;
+    };
+
+    return {
+        display: 'flex',
+        justifyContent: 'center',
+        alignItems: 'center',
+        width: theme.spacing(7.5),
+        height: theme.spacing(7.5),
+        borderRadius: theme.spacing(0.75),
+        backgroundColor: palette.semossBlue['50'],
+    };
+});
 
 const StyledCardContent = styled('div')(({ theme }) => ({
     gap: '10px',
@@ -108,7 +105,8 @@ export const DatabaseStatistics = (props: DatabaseStatisticsProps) => {
                     <StyledCardContent>
                         <StyledCardImageContainer>
                             <Icon color="primary">
-                                <SEMOSS width={36} height={40} />
+                                <AutoGraph />
+                                {/* <SEMOSS width={36} height={40} /> */}
                             </Icon>
                         </StyledCardImageContainer>
 

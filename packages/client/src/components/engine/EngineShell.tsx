@@ -1,27 +1,21 @@
-import React, { useState, useEffect } from 'react';
-import { useNotification } from '@semoss/components';
+import React, { useState } from 'react';
 import {
+    styled,
     Breadcrumbs,
     Button,
     Chip,
-    LinearProgress,
-    styled,
     Stack,
     Typography,
 } from '@semoss/ui';
-import { Link } from 'react-router-dom';
-import {
-    ArrowCircleDown,
-    EditOutlined,
-    SimCardDownload,
-} from '@mui/icons-material';
-import { formatName } from '@/utils';
-import { EditDatabaseDetails } from '@/components/database';
-import defaultDbImage from '../../assets/img/placeholder.png';
 
-import { Page, LoadingScreen } from '@/components/ui';
 import { useRootStore, useDatabase, usePixel } from '@/hooks';
-import { types } from 'util';
+
+import { EditDatabaseDetails } from '@/components/database';
+import { Page, LoadingScreen } from '@/components/ui';
+import { RequestAccess } from './';
+import { Add, EditOutlined, SimCardDownload } from '@mui/icons-material';
+import { formatName } from '@/utils';
+import { Link } from 'react-router-dom';
 
 const StyledInfo = styled('div')(({ theme }) => ({
     display: 'flex',
@@ -55,16 +49,6 @@ const StyledChipContainer = styled('div')(({ theme }) => ({
     gap: theme.spacing(1),
 }));
 
-const StyledInfoFooter = styled(Typography)(() => ({
-    textTransform: 'uppercase',
-    textOverflow: 'ellipsis',
-}));
-
-const StyledUsabilityProgress = styled(LinearProgress)(({ theme }) => ({
-    flex: 1,
-    width: theme.spacing(1),
-}));
-
 const StyledLink = styled(Link)(({ theme }) => ({
     textDecoration: 'none',
     color: 'inherit',
@@ -92,94 +76,30 @@ export const EngineShell = (props: EngineShellProps) => {
     const { type, id, role, metaVals, refresh } = useDatabase();
 
     // Service for Axios calls
-    const { monolithStore } = useRootStore();
-
-    // notification service
-    const notification = useNotification();
+    const { monolithStore, configStore } = useRootStore();
 
     // set if it can edit
     const canEdit = role === 'OWNER' || role === 'EDITOR';
 
     // track the edit state
     const [edit, setEdit] = useState(false);
-
-    // mutible votes object
-    const [votes, setVotes] = useState<
-        { total: number; userVote: number } | undefined
-    >();
+    const [requestAccess, setRequestAccess] = useState(false);
 
     // get the engine info
-    const { status, data } = usePixel(
-        `GetEngineMetadata(engine=["${id}"], metaKeys=[]); `,
-    );
-
-    // const {
-    //     status: voteStatus,
-    //     data: voteData,
-    //     refresh: voteRefresh,
-    // } = usePixel<{ total: number; userVote: number }>(
-    //     `GetUserDatabaseVotes(database = "${id}");`,
-    // );
-
-    // const {
-    //     status: usabilityStatus,
-    //     data: usabilityData,
-    //     refresh: usabilityRefresh,
-    // } = usePixel<number>(`UsabilityScore(database = '${id}');`);
-
-    // useEffect(() => {
-    //     if (voteStatus !== 'SUCCESS') {
-    //         return;
-    //     }
-
-    //     // Set total votes and my vote status
-    //     setVotes(voteData);
-    // }, [voteStatus, voteData]);
-
-    /**
-     * @name voteDatabase
-     * @desc
-     */
-    const voteDatabase = async (upVote: boolean) => {
-        let pixelString = '';
-
-        if (upVote) {
-            pixelString += `VoteDatabase(database="${id}", vote=1)`;
-        } else {
-            pixelString += `UnvoteDatabase(database="${id}")`;
-        }
-
-        monolithStore.runQuery(pixelString).then((response) => {
-            const type = response.pixelReturn[0].operationType;
-            const pixelResponse = response.pixelReturn[0].output;
-
-            if (type.indexOf('ERROR') === -1) {
-                notification.add({
-                    content: `Successfully ${
-                        upVote ? 'liked' : 'unliked'
-                    } database`,
-                    color: 'success',
-                });
-                setVotes(
-                    upVote
-                        ? { total: (votes.total += 1), userVote: 1 }
-                        : { total: (votes.total -= 1), userVote: 0 },
-                );
-            } else {
-                notification.add({
-                    content: 'Error voting',
-                    color: 'error',
-                });
-            }
-        });
-    };
+    const { status, data } = usePixel<{
+        database_name: string;
+        database_discoverable: boolean;
+        database_created_by?: string;
+        database_date_created?: string;
+        last_updated?: string;
+    }>(`GetEngineMetadata(engine=["${id}"], metaKeys=[]); `);
 
     /**
      * @name exportDB
      * @desc export DB pixel
      */
     const exportDB = () => {
-        const pixel = `META|ExportDatabase(database=["${id}"] );`;
+        const pixel = `META | ExportEngine(engine=["${id}"] );`;
 
         monolithStore.runQuery(pixel).then((response) => {
             const output = response.pixelReturn[0].output,
@@ -191,17 +111,8 @@ export const EngineShell = (props: EngineShellProps) => {
 
     // show a loading screen when it is pending
     if (status !== 'SUCCESS') {
-        return <LoadingScreen.Trigger description="Opening Database" />;
+        return <LoadingScreen.Trigger description="Opening Engine" />;
     }
-
-    console.log(data);
-
-    // // show a loading screen when it is pending
-    // if (voteStatus !== 'SUCCESS') {
-    //     return <LoadingScreen.Trigger description="Getting Social Stats" />;
-    // }
-
-    console.log('metavals', metaVals);
 
     return (
         <Page
@@ -225,13 +136,34 @@ export const EngineShell = (props: EngineShellProps) => {
                         width={'100%'}
                     >
                         <Typography variant="h4">
-                            {type === 'database'
-                                ? 'Data'
-                                : type.charAt(0).toUpperCase() +
-                                  type.slice(1)}{' '}
-                            Catalog Overview
+                            {type.charAt(0).toUpperCase() + type.slice(1)}{' '}
+                            Overview
                         </Typography>
                         <Stack direction="row">
+                            {configStore.store.security &&
+                                data.database_discoverable &&
+                                role !== 'OWNER' && (
+                                    <>
+                                        {requestAccess && (
+                                            <RequestAccess
+                                                id={id}
+                                                open={requestAccess}
+                                                onClose={(success) => {
+                                                    setRequestAccess(false);
+                                                }}
+                                            />
+                                        )}
+                                        <Button
+                                            startIcon={<Add />}
+                                            variant="outlined"
+                                            onClick={() =>
+                                                setRequestAccess(true)
+                                            }
+                                        >
+                                            Request Access
+                                        </Button>
+                                    </>
+                                )}
                             {role === 'OWNER' && (
                                 <Button
                                     startIcon={<SimCardDownload />}
@@ -300,16 +232,20 @@ export const EngineShell = (props: EngineShellProps) => {
                     />
                     <Stack alignItems={'flex-end'} spacing={1} marginBottom={2}>
                         <Typography variant={'body2'}>
-                            Published by: J. Smith
+                            Published by:{' '}
+                            {data.database_created_by
+                                ? data.database_created_by
+                                : 'N/A'}
                         </Typography>
                         <Typography variant={'body2'}>
-                            Published: {data.database_date_created}
+                            Published:{' '}
+                            {data.database_date_created
+                                ? data.database_date_created
+                                : 'N/A'}
                         </Typography>
                         <Typography variant={'body2'}>
                             Updated:{' '}
-                            {data.last_updated
-                                ? data.last_updated
-                                : '12/24/1996'}
+                            {data.last_updated ? data.last_updated : 'N/A'}
                         </Typography>
                     </Stack>
                 </StyledInfoRight>

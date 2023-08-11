@@ -1,7 +1,9 @@
 import { ReactNode } from "react";
-import { Stack as MuiStack } from "@mui/material";
-import { SxProps } from "@mui/system";
-import { StackProps as MuiStackProps } from "@mui/material";
+import {
+    Stack as MuiStack,
+    StackProps as MuiStackProps,
+    SxProps,
+} from "@mui/material";
 
 export interface StackProps extends MuiStackProps {
     /** custom style object */

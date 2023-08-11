@@ -1,5 +1,4 @@
-import MuiFormControl from "@mui/material/FormControl";
-import { SxProps } from "@mui/system";
+import { FormControl as MuiFormControl, SxProps } from "@mui/material";
 
 export interface FormControlProps {
     /**

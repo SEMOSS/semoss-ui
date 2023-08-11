@@ -1,5 +1,5 @@
-import { Container, _ContainerProps } from "./Container";
+import { Container, ContainerProps } from "./Container";
 
-export type { _ContainerProps };
+export type { ContainerProps };
 
 export { Container };

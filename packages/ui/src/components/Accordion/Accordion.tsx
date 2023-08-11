@@ -1,5 +1,4 @@
-import { Accordion as MuiAccordion } from "@mui/material/";
-import { SxProps } from "@mui/system";
+import { Accordion as MuiAccordion, SxProps } from "@mui/material";
 
 export type AccordionProps = {
     /**
@@ -44,6 +43,7 @@ export type AccordionProps = {
      * @param {boolean} expanded The `expanded` state of the accordion.
      */
     onChange?: (event: React.SyntheticEvent, expanded: boolean) => void;
+
     /** custom style object */
     sx?: SxProps;
 };

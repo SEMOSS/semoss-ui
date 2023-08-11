@@ -1,6 +1,5 @@
 import React, { ReactNode } from "react";
-import MuiSnackbar from "@mui/material/Snackbar";
-import { SxProps } from "@mui/system";
+import { Snackbar as MuiSnackbar, SxProps } from "@mui/material";
 
 interface anchorOriginProps {
     horizontal: "center" | "left" | "right";

@@ -64,13 +64,7 @@ const StyledSearchbar = styled(Search)({
 });
 
 const StyledSort = styled(Select)({
-    width: '10%',
-});
-
-const StyledMenuItem = styled(Select.Item)({
-    width: '220px',
-    gap: '3px',
-    flexShrink: '0',
+    width: '20%',
 });
 
 const initialState = {
@@ -155,13 +149,13 @@ export const InsightSettingsPage = () => {
                     // ref={searchbarRef}
                 />
 
-                <Select
+                <StyledSort
                     size={'small'}
                     value={sort}
                     onChange={(e) => setSort(e.target.value)}
                 >
-                    <StyledMenuItem value="name">Name</StyledMenuItem>
-                </Select>
+                    <MenuItem value="name">Name</MenuItem>
+                </StyledSort>
 
                 <ToggleButtonGroup size={'small'} value={view}>
                     <ToggleButton onClick={(e, v) => setView(v)} value={'tile'}>

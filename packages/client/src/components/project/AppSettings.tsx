@@ -1,5 +1,7 @@
 import { useEffect, useState } from 'react';
 import {
+    styled,
+    useNotification,
     Avatar,
     Button,
     Switch,
@@ -7,7 +9,6 @@ import {
     Typography,
     Divider,
     TextField,
-    styled,
 } from '@semoss/ui';
 
 import {
@@ -17,8 +18,6 @@ import {
     PublishedWithChanges,
     InsertLink,
 } from '@mui/icons-material';
-
-import { useNotification } from '@semoss/components';
 
 import { usePixel, useRootStore } from '@/hooks';
 import { LoadingScreen } from '@/components/ui';
@@ -179,7 +178,12 @@ export const AppSettings = (props) => {
     //states on initial load
     const [portalLink, setPortalLink] = useState<string>('');
     const [reactors, setReactors] = useState([]);
-    const [user, setUser] = useState<User>({});
+    const [user, setUser] = useState<User>({
+        id: '',
+        name: '',
+        date: '',
+        time: '',
+    });
     const [enablePublish, setEnablePublish] = useState(false);
 
     const [portalReactors, setPortalReactors] = useState<{
@@ -258,7 +262,7 @@ export const AppSettings = (props) => {
                 if (type.indexOf('ERROR') > -1) {
                     notification.add({
                         color: 'error',
-                        content: output,
+                        message: output,
                     });
 
                     return;
@@ -272,7 +276,7 @@ export const AppSettings = (props) => {
             .catch((error) => {
                 notification.add({
                     color: 'error',
-                    content: error,
+                    message: error,
                 });
             });
     };
@@ -295,7 +299,7 @@ export const AppSettings = (props) => {
                 if (type.indexOf('ERROR') > -1) {
                     notification.add({
                         color: 'error',
-                        content: output,
+                        message: output,
                     });
 
                     return;
@@ -303,13 +307,13 @@ export const AppSettings = (props) => {
 
                 notification.add({
                     color: 'success',
-                    content: 'Successfully recompiled',
+                    message: 'Successfully recompiled',
                 });
             })
             .catch((error) => {
                 notification.add({
                     color: 'error',
-                    content: error,
+                    message: error,
                 });
             });
     };
@@ -333,7 +337,7 @@ export const AppSettings = (props) => {
                 if (type.indexOf('ERROR') > -1) {
                     notification.add({
                         color: 'error',
-                        content: output,
+                        message: output,
                     });
 
                     return;
@@ -346,13 +350,13 @@ export const AppSettings = (props) => {
 
                 notification.add({
                     color: 'success',
-                    content: 'Successfully published',
+                    message: 'Successfully published',
                 });
             })
             .catch((error) => {
                 notification.add({
                     color: 'error',
-                    content: error,
+                    message: error,
                 });
             });
     };
@@ -372,7 +376,7 @@ export const AppSettings = (props) => {
                 } else {
                     notification.add({
                         color: 'error',
-                        content: `Unsuccessfully ${
+                        message: `Unsuccessfully ${
                             !portalDetails.hasPortal ? 'disabled' : 'enabled'
                         } portal`,
                     });
@@ -381,7 +385,7 @@ export const AppSettings = (props) => {
             .catch((error) => {
                 notification.add({
                     color: 'error',
-                    content: error,
+                    message: error,
                 });
             });
     };

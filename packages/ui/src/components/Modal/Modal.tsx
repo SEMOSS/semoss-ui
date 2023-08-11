@@ -1,6 +1,8 @@
-import { Dialog as MuiModal } from "@mui/material";
-import { SxProps } from "@mui/system";
-import { ModalProps as MuiModalProps } from "@mui/material";
+import {
+    Dialog as MuiModal,
+    ModalProps as MuiModalProps,
+    SxProps,
+} from "@mui/material";
 
 export interface ModalProps {
     /**

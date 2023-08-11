@@ -1,5 +1,4 @@
-import MuiSlider from "@mui/material/Slider";
-import { SxProps } from "@mui/system";
+import { Slider as MuiSlider, SxProps } from "@mui/material";
 
 export interface SliderProps {
     /** custom style object */

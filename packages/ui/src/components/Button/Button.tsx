@@ -1,7 +1,7 @@
-import MuiButton from "@mui/material/Button";
-import { SxProps } from "@mui/system";
+import { Button as MuiButton, SxProps } from "@mui/material";
 
-export interface ButtonProps {
+export interface ButtonProps
+    extends React.ButtonHTMLAttributes<HTMLButtonElement> {
     /**
      * The content of the component.
      */
@@ -79,6 +79,7 @@ export interface ButtonProps {
      * @default 'text'
      */
     variant?: "text" | "outlined" | "contained";
+    title?: string;
 }
 
 export const Button = (props: ButtonProps) => {

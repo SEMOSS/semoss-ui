@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from 'react';
 import { styled, Container } from '@semoss/ui';
-import { SxProps } from '@mui/system';
 
 const StyledPage = styled('div')(({ theme }) => ({
     height: '100%',
@@ -9,6 +8,7 @@ const StyledPage = styled('div')(({ theme }) => ({
     overflowY: 'auto',
     backgroundColor: theme.palette.background.paper,
 
+    paddingBottom: theme.spacing(5),
     display: 'flex',
     flexDirection: 'column',
     gap: theme.spacing(2),
@@ -32,7 +32,7 @@ const StyledPageHeader = styled('div', {
 }));
 
 const StyledContainer = styled(Container)(({ theme }) => ({
-    width: '1271px',
+    // width: '1271px',
 }));
 
 export interface PageProps {
@@ -41,11 +41,10 @@ export interface PageProps {
 
     /** Content to include in the main section of the page */
     children: React.ReactNode;
-    sx?: SxProps;
 }
 
 export const Page = (props: PageProps): JSX.Element => {
-    const { header, children, sx } = props;
+    const { header, children } = props;
 
     const [stuck, setStuck] = useState(false);
     const [headerElement, setHeaderElement] = useState(null);
@@ -70,18 +69,16 @@ export const Page = (props: PageProps): JSX.Element => {
     }, [headerElement]);
 
     return (
-        <StyledPage>
+        <StyledPage id="home__content">
             {header && (
                 <StyledPageHeader
                     ref={(node) => setHeaderElement(node)}
                     stuck={stuck}
                 >
-                    <StyledContainer maxWidth={false} sx={sx}>
-                        {header}
-                    </StyledContainer>
+                    <Container maxWidth={'xl'}>{header}</Container>
                 </StyledPageHeader>
             )}
-            <StyledContainer maxWidth={false}>{children}</StyledContainer>
+            <Container maxWidth={'xl'}>{children}</Container>
             {/* <div>{children}</div> */}
         </StyledPage>
     );

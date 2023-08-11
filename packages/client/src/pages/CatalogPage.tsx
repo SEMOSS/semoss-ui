@@ -1,7 +1,6 @@
-import { useEffect, useState, useReducer } from 'react';
+import { useEffect, useState, useReducer, useRef } from 'react';
 import { observer } from 'mobx-react-lite';
 import {
-    AlertTitle,
     Avatar,
     Chip,
     Collapse,
@@ -18,29 +17,17 @@ import {
     TextField,
 } from '@semoss/ui';
 import {
-    DataObjectOutlined,
     ExpandLess,
     ExpandMore,
     FormatListBulletedOutlined,
-    Inventory2Outlined,
-    MenuBookOutlined,
-    People,
     SpaceDashboardOutlined,
 } from '@mui/icons-material';
 
 import { useNavigate, useLocation } from 'react-router-dom';
 
-import defaultDBImage from '@/assets/img/placeholder.png';
 import { DatabaseLandscapeCard, DatabaseTileCard } from '@/components/database';
 import { usePixel, useRootStore } from '@/hooks';
 import { Page } from '@/components/ui';
-
-import { formatName } from '@/utils';
-import { Database } from '@/assets/img/Database';
-
-const StyledStack = styled(Stack)(({ theme }) => ({
-    // paddingTop: theme.spacing(1)
-}));
 
 const StyledContainer = styled('div')(({ theme }) => ({
     display: 'flex',
@@ -71,13 +58,7 @@ const StyledChipList = styled('div')(({ theme }) => ({
     gap: theme.spacing(2),
 }));
 
-const StyledFilter = styled('div')(({ theme }) => ({
-    // borderBottom: `2px solid ${theme.palette.divider}`,
-    // '&:last-child': {
-    //     borderBottom: 'none', // Remove the border-bottom for the last child
-    //     boxShadow: 'none', // Remove the box-shadow for the last child
-    // },
-}));
+const StyledFilter = styled('div')(({ theme }) => ({}));
 
 const StyledNestedFilterList = styled(List)(({ theme }) => ({
     width: '100%',
@@ -85,9 +66,10 @@ const StyledNestedFilterList = styled(List)(({ theme }) => ({
 }));
 
 const StyledAvatarCount = styled(Avatar)(({ theme }) => ({
-    width: '32px',
-    height: '32px',
-    color: theme.palette.grey['100'],
+    width: theme.spacing(4),
+    height: theme.spacing(4),
+    fontSize: theme.spacing(1.75),
+    color: theme.palette.text.primary,
 }));
 
 const StyledContent = styled('div')(({ theme }) => ({
@@ -100,20 +82,25 @@ const StyledContent = styled('div')(({ theme }) => ({
 const StyledChip = styled(Chip, {
     shouldForwardProp: (prop) => prop !== 'selected',
 })<{
-    /** Track if the page header is stuck */
+    /** Track if the chip is selected */
     selected: boolean;
-}>(({ theme, selected }) => ({
-    color: selected
-        ? theme.palette.semossBlue['900']
-        : theme.palette.semossBlue['900'],
-    backgroundColor: selected
-        ? theme.palette.semossBlue['100']
-        : theme.palette.semossBlue['50'],
+}>(({ theme, selected }) => {
+    // TODO: Fix typing
+    const palette = theme.palette as unknown as {
+        semossBlue: Record<string, string>;
+    };
 
-    '&:hover': {
-        color: theme.palette.semossBlue['50'],
-    },
-}));
+    return {
+        color: selected ? palette.semossBlue['900'] : palette.semossBlue['900'],
+        backgroundColor: selected
+            ? palette.semossBlue['100']
+            : palette.semossBlue['50'],
+
+        '&:hover': {
+            color: palette.semossBlue['50'],
+        },
+    };
+});
 
 const initialState = {
     favoritedDbs: [],
@@ -134,7 +121,7 @@ const reducer = (state, action) => {
 
 /**
  * Catalog landing Page
- * Landing page to view the available datasets and search through it
+ * Landing page to view the available engines
  */
 export const CatalogPage = observer((): JSX.Element => {
     const { configStore, monolithStore } = useRootStore();
@@ -180,6 +167,16 @@ export const CatalogPage = observer((): JSX.Element => {
 
     const [state, dispatch] = useReducer(reducer, initialState);
     const { favoritedDbs, databases } = state;
+
+    const [offset, setOffset] = useState(0);
+    const [canCollect, setCanCollect] = useState(true);
+    const canCollectRef = useRef(true);
+    canCollectRef.current = canCollect;
+    const limit = 6;
+
+    const offsetRef = useRef(0);
+    offsetRef.current = offset;
+    let scrollEle, scrollTimeout, currentScroll, previousScroll;
 
     // save the search string
     const [search, setSearch] = useState<string>('');
@@ -283,7 +280,7 @@ export const CatalogPage = observer((): JSX.Element => {
             metaKeysDescription,
         )} , metaFilters = [ ${JSON.stringify(
             metaFilters,
-        )} ] , filterWord=["${search}"], userT = [true], engineTypes=['${catalogType.toUpperCase()}']) ;`,
+        )} ] , filterWord=["${search}"], userT = [true], engineTypes=['${catalogType.toUpperCase()}'], offset=[${offset}], limit=[${limit}]) ;`,
     );
 
     const getCatalogFilters = usePixel<
@@ -356,7 +353,7 @@ export const CatalogPage = observer((): JSX.Element => {
      */
     const setGlobal = (db) => {
         monolithStore
-            .setDatabaseGlobal(
+            .setEngineGlobal(
                 configStore.store.user.admin,
                 db.database_id,
                 !db.database_global,
@@ -394,7 +391,7 @@ export const CatalogPage = observer((): JSX.Element => {
     const favoriteDb = (db) => {
         const favorite = !isFavorited(db.database_id);
         monolithStore
-            .setDatabaseFavorite(db.database_id, favorite)
+            .setEngineFavorite(db.database_id, favorite)
             .then((response) => {
                 if (!favorite) {
                     const newFavorites = favoritedDbs;
@@ -442,10 +439,10 @@ export const CatalogPage = observer((): JSX.Element => {
     const upvoteDb = (db) => {
         let pixelString = '';
 
-        if (!db.hasVoted) {
-            pixelString += `VoteDatabase(database="${db.database_id}", vote=1)`;
+        if (!db.hasUpvoted) {
+            pixelString += `VoteEngine(engine="${db.database_id}", vote=1)`;
         } else {
-            pixelString += `UnvoteDatabase(database="${db.database_id}")`;
+            pixelString += `UnvoteEngine(engine="${db.database_id}")`;
         }
 
         monolithStore.runQuery(pixelString).then((response) => {
@@ -458,10 +455,10 @@ export const CatalogPage = observer((): JSX.Element => {
                 databases.forEach((database) => {
                     if (database.database_id === db.database_id) {
                         const newCopy = database;
-                        newCopy.upvotes = !db.hasVoted
+                        newCopy.upvotes = !db.hasUpvoted
                             ? newCopy.upvotes + 1
                             : newCopy.upvotes - 1;
-                        newCopy.hasVoted = !db.hasVoted ? true : false;
+                        newCopy.hasUpvoted = !db.hasUpvoted ? true : false;
 
                         newDatabases.push(newCopy);
                     } else {
@@ -480,21 +477,63 @@ export const CatalogPage = observer((): JSX.Element => {
         });
     };
 
+    const scrollAll = () => {
+        currentScroll = scrollEle.scrollTop + scrollEle.offsetHeight;
+        if (
+            currentScroll > scrollEle.scrollHeight * 0.75 &&
+            currentScroll > previousScroll
+        ) {
+            if (scrollTimeout) {
+                clearTimeout(scrollTimeout);
+            }
+
+            scrollTimeout = setTimeout(() => {
+                if (!canCollectRef.current) {
+                    return;
+                }
+
+                setOffset(offsetRef.current + limit);
+            }, 500);
+        }
+
+        previousScroll = currentScroll;
+    };
+
     /**
-     * @desc catalog filters
+     * @desc anytime we change catalogType clean up engines
+     */
+    useEffect(() => {
+        dispatch({
+            type: 'field',
+            field: 'databases',
+            value: [],
+        });
+        setCanCollect(true);
+        setOffset(0);
+    }, [catalogType]);
+
+    /**
+     * @desc Set Databases
      */
     useEffect(() => {
         if (getDatabases.status !== 'SUCCESS') {
             return;
         }
 
-        const mutateListWithVotes = [];
+        if (getDatabases.data.length < limit) {
+            setCanCollect(false);
+        } else {
+            if (!canCollectRef.current) {
+                setCanCollect(true);
+            }
+        }
+
+        const mutateListWithVotes = databases;
 
         getDatabases.data.forEach((db, i) => {
             mutateListWithVotes.push({
                 ...db,
                 upvotes: db.upvotes ? db.upvotes : 0,
-                hasVoted: false,
                 views: 'N/A',
                 trending: 'N/A',
             });
@@ -508,7 +547,7 @@ export const CatalogPage = observer((): JSX.Element => {
     }, [getDatabases.status, getDatabases.data]);
 
     /**
-     * @desc catalog filters
+     * @desc Catalog filters
      */
     useEffect(() => {
         if (getCatalogFilters.status !== 'SUCCESS') {
@@ -532,6 +571,9 @@ export const CatalogPage = observer((): JSX.Element => {
         setFilterOptions(updated);
     }, [getCatalogFilters.status, getCatalogFilters.data]);
 
+    /**
+     * @desc Sets Favorited Engines
+     */
     useEffect(() => {
         if (getFavoritedDatabases.status !== 'SUCCESS') {
             return;
@@ -543,6 +585,18 @@ export const CatalogPage = observer((): JSX.Element => {
             value: getFavoritedDatabases.data,
         });
     }, [getFavoritedDatabases.status, getFavoritedDatabases.data]);
+
+    /**
+     * @desc infinite scroll
+     */
+    useEffect(() => {
+        scrollEle = document.querySelector('#home__content');
+
+        scrollEle.addEventListener('scroll', scrollAll);
+        return () => {
+            scrollEle.removeEventListener('scroll', scrollAll);
+        };
+    }, [scrollEle]);
 
     // finish loading the page
     if (
@@ -557,7 +611,7 @@ export const CatalogPage = observer((): JSX.Element => {
             header={
                 <Stack>
                     <div style={{ height: '16px' }}></div>
-                    <StyledStack
+                    <Stack
                         direction="row"
                         alignItems={'center'}
                         justifyContent={'space-between'}
@@ -578,8 +632,16 @@ export const CatalogPage = observer((): JSX.Element => {
                             </Typography>
                             <Search
                                 size={'small'}
-                                label={'Search'}
+                                label={`Search ${catalogType}`}
                                 onChange={(e) => {
+                                    // Reset databases and reset offset
+                                    dispatch({
+                                        type: 'field',
+                                        field: 'databases',
+                                        value: [],
+                                    });
+                                    setOffset(0);
+
                                     setSearch(e.target.value);
                                 }}
                             />
@@ -590,11 +652,12 @@ export const CatalogPage = observer((): JSX.Element => {
                             spacing={3}
                         >
                             <Button
-                                size={'lg'}
+                                size={'large'}
                                 variant={'contained'}
                                 onClick={() => {
                                     navigate('/import');
                                 }}
+                                aria-label={`Navigate to import ${catalogType}`}
                             >
                                 Add {catalogType}
                             </Button>
@@ -608,6 +671,7 @@ export const CatalogPage = observer((): JSX.Element => {
                                     color="primary"
                                     onClick={(e, v) => setView('tile')}
                                     value={'tile'}
+                                    aria-label={'Tile View'}
                                 >
                                     <SpaceDashboardOutlined />
                                 </ToggleButton>
@@ -615,12 +679,13 @@ export const CatalogPage = observer((): JSX.Element => {
                                     color="primary"
                                     onClick={(e, v) => setView('list')}
                                     value={'list'}
+                                    aria-label={'List View'}
                                 >
                                     <FormatListBulletedOutlined />
                                 </ToggleButton>
                             </ToggleButtonGroup>
                         </Stack>
-                    </StyledStack>
+                    </Stack>
                 </Stack>
             }
         >
@@ -728,25 +793,30 @@ export const CatalogPage = observer((): JSX.Element => {
                                     <StyledChip
                                         label={'My Databases'}
                                         selected={mode === 'My Databases'}
-                                        // variant="filled"
-                                        // variantColor={
-                                        //     mode === 'My Databases'
-                                        //         ? 'primary'
-                                        //         : 'lcprimary'
-                                        // }
-                                        onClick={() => setMode('My Databases')}
+                                        onClick={() => {
+                                            // Reset databases and reset offset
+                                            dispatch({
+                                                type: 'field',
+                                                field: 'databases',
+                                                value: [],
+                                            });
+                                            setOffset(0);
+                                            setMode('My Databases');
+                                        }}
                                     ></StyledChip>
                                     <StyledChip
                                         label={'Discoverable Databases'}
                                         selected={
                                             mode === 'Discoverable Databases'
                                         }
-                                        // variantColor={
-                                        //     mode === 'Discoverable Databases'
-                                        //         ? 'primary'
-                                        //         : 'lcprimary'
-                                        // }
                                         onClick={() => {
+                                            // Reset databases and reset offset
+                                            dispatch({
+                                                type: 'field',
+                                                field: 'databases',
+                                                value: [],
+                                            });
+                                            setOffset(0);
                                             setMode('Discoverable Databases');
                                         }}
                                     ></StyledChip>
@@ -766,7 +836,16 @@ export const CatalogPage = observer((): JSX.Element => {
                                                 primary={
                                                     <Typography
                                                         variant={'body1'}
-                                                        sx={{ fontWeight: 500 }}
+                                                        sx={{
+                                                            alignSelf:
+                                                                'stretch',
+                                                            fontWeight: 500,
+                                                            fontSize: '16px',
+                                                            fontStyle: 'normal',
+                                                            lineHeight: '150%',
+                                                            letterSpacing:
+                                                                '0.15px',
+                                                        }}
                                                     >
                                                         {formatDBName(
                                                             entries[0],
@@ -777,8 +856,13 @@ export const CatalogPage = observer((): JSX.Element => {
                                         </List.Item>
                                         <List.Item>
                                             <TextField
-                                                label={'Search'}
+                                                label={`Search ${formatDBName(
+                                                    entries[0],
+                                                )}`}
                                                 size={'small'}
+                                                aria-label={`Search ${formatDBName(
+                                                    entries[0],
+                                                )}`}
                                                 sx={{
                                                     width: '100%',
                                                 }}
@@ -844,11 +928,32 @@ export const CatalogPage = observer((): JSX.Element => {
                                                                         ) > -1
                                                                     }
                                                                     onClick={() => {
+                                                                        // Reset databases and reset offset
+                                                                        dispatch(
+                                                                            {
+                                                                                type: 'field',
+                                                                                field: 'databases',
+                                                                                value: [],
+                                                                            },
+                                                                        );
+                                                                        setOffset(
+                                                                            0,
+                                                                        );
+
                                                                         setSelectedFilters(
                                                                             entries[0],
                                                                             filterOption,
                                                                         );
                                                                     }}
+                                                                    aria-label={
+                                                                        filterVisibility[
+                                                                            entries[0]
+                                                                        ].value.indexOf(
+                                                                            filterOption.value,
+                                                                        ) > -1
+                                                                            ? `Unfilter ${filterOption.value}`
+                                                                            : `Filter ${filterOption.value}`
+                                                                    }
                                                                 >
                                                                     <div
                                                                         style={{
@@ -873,10 +978,6 @@ export const CatalogPage = observer((): JSX.Element => {
                                                                             variant={
                                                                                 'rounded'
                                                                             }
-                                                                            sx={{
-                                                                                height: '32px',
-                                                                                width: '32px',
-                                                                            }}
                                                                         >
                                                                             {
                                                                                 filterOption.count
@@ -943,9 +1044,7 @@ export const CatalogPage = observer((): JSX.Element => {
                     </StyledFilterList>
                 </StyledFitler>
 
-                <StyledContent
-                // style={{ border: 'solid yellow' }}
-                >
+                <StyledContent>
                     {databases.length ? (
                         <Grid container spacing={3}>
                             {databases.map((db) => {
@@ -960,9 +1059,10 @@ export const CatalogPage = observer((): JSX.Element => {
                                     >
                                         {view === 'list' ? (
                                             <DatabaseLandscapeCard
-                                                name={formatDBName(db.app_name)}
-                                                id={db.app_id}
-                                                image={defaultDBImage}
+                                                name={formatDBName(
+                                                    db.database_name,
+                                                )}
+                                                id={db.database_id}
                                                 tag={db.tag}
                                                 owner={db.database_created_by}
                                                 description={db.description}
@@ -970,32 +1070,37 @@ export const CatalogPage = observer((): JSX.Element => {
                                                 views={db.views}
                                                 trending={db.trending}
                                                 isGlobal={db.database_global}
-                                                isUpvoted={db.hasVoted}
+                                                isUpvoted={db.hasUpvoted}
                                                 isFavorite={isFavorited(
                                                     db.database_id,
                                                 )}
                                                 onClick={() => {
                                                     navigate(
                                                         `/${catalogType.toLowerCase()}/${
-                                                            db.app_id
+                                                            db.database_id
                                                         }`,
                                                     );
                                                 }}
                                                 favorite={() => {
                                                     favoriteDb(db);
-                                                }}
-                                                global={() => {
-                                                    setGlobal(db);
                                                 }}
                                                 upvote={(val) => {
                                                     upvoteDb(db);
                                                 }}
+                                                global={
+                                                    db.user_permission === 1
+                                                        ? () => {
+                                                              setGlobal(db);
+                                                          }
+                                                        : null
+                                                }
                                             />
                                         ) : (
                                             <DatabaseTileCard
-                                                name={formatDBName(db.app_name)}
-                                                id={db.app_id}
-                                                image={defaultDBImage}
+                                                name={formatDBName(
+                                                    db.database_name,
+                                                )}
+                                                id={db.database_id}
                                                 tag={db.tag}
                                                 owner={db.database_created_by}
                                                 description={db.description}
@@ -1003,7 +1108,7 @@ export const CatalogPage = observer((): JSX.Element => {
                                                 views={db.views}
                                                 trending={db.trending}
                                                 isGlobal={db.database_global}
-                                                isUpvoted={db.hasVoted}
+                                                isUpvoted={db.hasUpvoted}
                                                 isFavorite={isFavorited(
                                                     db.database_id,
                                                 )}
@@ -1013,13 +1118,17 @@ export const CatalogPage = observer((): JSX.Element => {
                                                 onClick={() => {
                                                     navigate(
                                                         `/${catalogType.toLowerCase()}/${
-                                                            db.app_id
+                                                            db.database_id
                                                         }`,
                                                     );
                                                 }}
-                                                global={() => {
-                                                    setGlobal(db);
-                                                }}
+                                                global={
+                                                    db.user_permission === 1
+                                                        ? () => {
+                                                              setGlobal(db);
+                                                          }
+                                                        : null
+                                                }
                                                 upvote={(val) => {
                                                     upvoteDb(db);
                                                 }}

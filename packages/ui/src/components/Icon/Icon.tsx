@@ -1,5 +1,4 @@
-import MuiIcon from "@mui/material/Icon";
-import { SxProps } from "@mui/system";
+import { Icon as MuiIcon, SxProps } from "@mui/material";
 
 export interface IconProps {
     /**

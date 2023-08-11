@@ -1,5 +1,4 @@
-import MuiInput from "@mui/material/Input";
-import { SxProps } from "@mui/system";
+import { Input as MuiInput, SxProps } from "@mui/material";
 
 export interface InputProps {
     /** custom style object */

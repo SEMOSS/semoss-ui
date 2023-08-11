@@ -2,8 +2,6 @@ import { useEffect, useState, useRef, useReducer } from 'react';
 import { useRootStore, usePixel } from '@/hooks';
 import { useSettings } from '@/hooks/useSettings';
 import { useNavigate } from 'react-router-dom';
-import { LoadingScreen } from '@/components/ui';
-import { MonolithStore } from '@/stores/monolith';
 
 import {
     Grid,
@@ -12,7 +10,6 @@ import {
     MenuItem,
     ToggleButton,
     ToggleButtonGroup,
-    Typography,
     styled,
 } from '@semoss/ui';
 
@@ -21,13 +18,8 @@ import {
     FormatListBulletedOutlined,
 } from '@mui/icons-material';
 
-import {
-    DatabaseLandscapeCard,
-    DatabaseTileCard,
-    Permissions,
-} from '@/components/database';
+import { DatabaseLandscapeCard, DatabaseTileCard } from '@/components/database';
 
-import defaultDBImage from '../../assets/img/placeholder.png';
 import { formatName } from '@/utils';
 
 export interface DBMember {
@@ -75,11 +67,11 @@ const StyledSearchbar = styled(Search)({
 });
 
 const StyledSort = styled(Select)({
-    width: '10%',
+    width: '20%',
 });
 
 const StyledMenuItem = styled(Select.Item)({
-    width: '220px',
+    width: '100%',
     gap: '3px',
     flexShrink: '0',
 });
@@ -139,9 +131,9 @@ export const DatabaseSettingsPage = () => {
     });
 
     const getFavoritedDatabases = usePixel(`
-    MyDatabases(metaKeys = ${JSON.stringify(
+    MyEngines(metaKeys = ${JSON.stringify(
         metaKeys,
-    )}, filterWord=["${search}"], onlyFavorites=[true]);
+    )}, filterWord=["${search}"], onlyFavorites=[true], engineTypes=['DATABASE']);
     `);
 
     useEffect(() => {
@@ -176,11 +168,12 @@ export const DatabaseSettingsPage = () => {
             permission: number;
             tag: string;
             user_permission: number;
+            upvotes?: number;
         }[]
     >(`
-        MyDatabases(metaKeys = ${JSON.stringify(
+        MyEngines(metaKeys = ${JSON.stringify(
             metaKeys,
-        )}, filterWord=["${search}"], userT=[true]);
+        )}, filterWord=["${search}"], userT=[true], engineTypes=['DATABASE']);
     `);
 
     /**
@@ -197,7 +190,7 @@ export const DatabaseSettingsPage = () => {
             mutateListWithVotes.push({
                 ...db,
                 upvotes: db.upvotes ? db.upvotes : 0,
-                hasVoted: false,
+                // hasUpvoted: false,
                 views: 'N/A',
                 trending: 'N/A',
             });
@@ -220,7 +213,7 @@ export const DatabaseSettingsPage = () => {
     const favoriteDb = (db) => {
         const favorite = !isFavorited(db.database_id);
         monolithStore
-            .setDatabaseFavorite(db.database_id, favorite)
+            .setEngineFavorite(db.database_id, favorite)
             .then((response) => {
                 if (!favorite) {
                     const newFavorites = favoritedDbs;
@@ -267,10 +260,10 @@ export const DatabaseSettingsPage = () => {
     const upvoteDb = (db) => {
         let pixelString = '';
 
-        if (!db.hasVoted) {
-            pixelString += `VoteDatabase(database="${db.database_id}", vote=1)`;
+        if (!db.hasUpvoted) {
+            pixelString += `VoteEngine(engine="${db.database_id}", vote=1)`;
         } else {
-            pixelString += `UnvoteDatabase(database="${db.database_id}")`;
+            pixelString += `UnvoteEngine(engine="${db.database_id}")`;
         }
 
         monolithStore.runQuery(pixelString).then((response) => {
@@ -283,10 +276,10 @@ export const DatabaseSettingsPage = () => {
                 databases.forEach((database) => {
                     if (database.database_id === db.database_id) {
                         const newCopy = database;
-                        newCopy.upvotes = !db.hasVoted
+                        newCopy.upvotes = !db.hasUpvoted
                             ? newCopy.upvotes + 1
                             : newCopy.upvotes - 1;
-                        newCopy.hasVoted = !db.hasVoted ? true : false;
+                        newCopy.hasUpvoted = !db.hasUpvoted ? true : false;
 
                         newDatabases.push(newCopy);
                     } else {
@@ -311,7 +304,7 @@ export const DatabaseSettingsPage = () => {
      */
     const setDbGlobal = (db) => {
         monolithStore
-            .setDatabaseGlobal(adminMode, db.database_id, !db.database_global)
+            .setEngineGlobal(adminMode, db.database_id, !db.database_global)
             .then((response) => {
                 if (response.data.success) {
                     const newDatabases = [];
@@ -356,13 +349,11 @@ export const DatabaseSettingsPage = () => {
                     value={sort}
                     onChange={(e) => setSort(e.target.value)}
                 >
-                    <StyledMenuItem value="Name">Name</StyledMenuItem>
-                    <StyledMenuItem value="Date Created">
-                        Date Created
-                    </StyledMenuItem>
-                    <StyledMenuItem value="Views">Views</StyledMenuItem>
-                    <StyledMenuItem value="Trending">Trending</StyledMenuItem>
-                    <StyledMenuItem value="Upvotes">Upvotes</StyledMenuItem>
+                    <MenuItem value="Name">Name</MenuItem>
+                    <MenuItem value="Date Created">Date Created</MenuItem>
+                    <MenuItem value="Views">Views</MenuItem>
+                    <MenuItem value="Trending">Trending</MenuItem>
+                    <MenuItem value="Upvotes">Upvotes</MenuItem>
                 </StyledSort>
 
                 <ToggleButtonGroup size={'small'} value={view}>
@@ -390,7 +381,6 @@ export const DatabaseSettingsPage = () => {
                                       <DatabaseLandscapeCard
                                           name={db.app_name}
                                           id={db.app_id}
-                                          image={defaultDBImage}
                                           tag={db.tag}
                                           owner={db.database_created_by}
                                           description={db.description}
@@ -398,7 +388,7 @@ export const DatabaseSettingsPage = () => {
                                           views={db.views}
                                           trending={db.trending}
                                           isGlobal={db.database_global}
-                                          isUpvoted={db.hasVoted}
+                                          isUpvoted={db.hasUpvoted}
                                           isFavorite={isFavorited(
                                               db.database_id,
                                           )}
@@ -427,7 +417,6 @@ export const DatabaseSettingsPage = () => {
                                       <DatabaseTileCard
                                           name={db.app_name}
                                           id={db.app_id}
-                                          image={defaultDBImage}
                                           tag={db.tag}
                                           owner={db.database_created_by}
                                           description={db.description}
@@ -438,7 +427,7 @@ export const DatabaseSettingsPage = () => {
                                           isFavorite={isFavorited(
                                               db.database_id,
                                           )}
-                                          isUpvoted={db.hasVoted}
+                                          isUpvoted={db.hasUpvoted}
                                           favorite={() => {
                                               favoriteDb(db);
                                           }}

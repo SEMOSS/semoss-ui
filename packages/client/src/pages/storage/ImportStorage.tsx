@@ -83,8 +83,6 @@ export const ImportForm = () => {
             (element) => element.type === storageType,
         );
 
-        debugger;
-
         if (found) return found.fields;
 
         return [];
@@ -94,7 +92,7 @@ export const ImportForm = () => {
         <div>
             {storageFields.map((field, i) => {
                 if (field.type === 'input') {
-                    return <TextField label={field.label}></TextField>;
+                    return <TextField key={i} label={field.label}></TextField>;
                 } else {
                     return <span key={i}>{field.label}</span>;
                 }

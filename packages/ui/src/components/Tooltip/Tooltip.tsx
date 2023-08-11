@@ -1,5 +1,4 @@
-import MuiTooltip from "@mui/material/Tooltip";
-import { SxProps } from "@mui/system";
+import { Tooltip as MuiTooltip, SxProps } from "@mui/material";
 
 export interface TooltipProps {
     /** custom style object */

@@ -1,6 +1,5 @@
 import React from "react";
-import { SxProps } from "@mui/system";
-import { Paper as MuiPaper } from "@mui/material";
+import { Paper as MuiPaper, SxProps } from "@mui/material";
 
 export interface PaperProps {
     /**

@@ -1,6 +1,4 @@
-import MuiPopover from "@mui/material/Popover";
-import { SxProps } from "@mui/system";
-import { ModalProps } from "@mui/material";
+import { Popover as MuiPopover, SxProps, ModalProps } from "@mui/material";
 
 interface PopoverVirtualElement {
     getBoundingClientRect: () => DOMRect;

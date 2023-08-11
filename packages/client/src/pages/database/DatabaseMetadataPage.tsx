@@ -1,29 +1,19 @@
 import React, { useMemo, useState } from 'react';
 import { observer } from 'mobx-react-lite';
-import { usePixel, useRootStore } from '@/hooks';
-import {
-    styled as styledOld,
-    Table as TableOld,
-    Scroll as ScrollOld,
-    Icon,
-} from '@semoss/components';
-import { MenuItem } from '@semoss/ui/src/components/Menu/MenuItem';
 import {
     Button,
     styled,
     Chip,
-    Select,
     Stack,
     Typography,
     Table,
+    Icon,
 } from '@semoss/ui';
-import { ArrowCircleDown } from '@mui/icons-material';
-import { mdiPencil } from '@mdi/js';
+import { ArrowCircleDown, Create } from '@mui/icons-material';
 
-import { theme } from '@/theme';
-import { usePixel, useDatabase } from '@/hooks';
+import { usePixel, useDatabase, useRootStore } from '@/hooks';
 import { Section } from '@/components/ui';
-import { Metamodel, MetamodelNode } from '@/components/metamodel';
+import { Metamodel } from '@/components/metamodel';
 
 const StyledPage = styled('div')(() => ({
     position: 'relative',
@@ -39,51 +29,9 @@ const StyledMetamodelContainer = styled('section')(({ theme }) => ({
     borderRadius: theme.shape.borderRadius,
 }));
 
-const StyledSelect = styled(Select)(() => ({
-    maxWidth: '200px',
-}));
-
 const StyledTableContainer = styled(Table.Container)(() => ({
     height: '396px',
 }));
-
-const StyledTableScroll = styledOld(ScrollOld, {
-    height: '250px',
-    width: '100%',
-    borderColor: theme.colors['grey-4'],
-    borderWidth: theme.borderWidths.default,
-    borderStyle: 'solid',
-    borderRadius: theme.radii.default,
-});
-
-const StyledTableCell = styledOld(TableOld.Cell, {
-    variants: {
-        type: {
-            icon: {
-                width: theme.space['8'],
-            },
-            name: {
-                width: theme.space['40'],
-                whiteSpace: 'nowrap',
-                overflow: 'hidden',
-                textOverflow: 'ellipsis',
-            },
-            description: {
-                fontSize: theme.fontSizes.sm,
-                width: theme.space['80'],
-                overflow: 'hidden',
-            },
-        },
-    },
-});
-
-const StyledTableDescription = styledOld('div', {
-    fontSize: theme.fontSizes.sm,
-    display: '-webkit-box',
-    overflow: 'hidden',
-    '-webkit-box-orient': 'vertical',
-    '-webkit-line-clamp': 3,
-});
 
 export const DatabaseMetadataPage = observer(() => {
     const { id } = useDatabase();
@@ -377,7 +325,9 @@ export const DatabaseMetadataPage = observer(() => {
                                     return (
                                         <Table.Row key={idx}>
                                             <Table.Cell>
-                                                <Icon path={mdiPencil}></Icon>
+                                                <Icon>
+                                                    <Create />
+                                                </Icon>
                                             </Table.Cell>
                                             <Table.Cell>{name}</Table.Cell>
                                             <Table.Cell>
@@ -448,40 +398,40 @@ export const DatabaseMetadataPage = observer(() => {
             {selectedNode && getData.status === 'SUCCESS' && (
                 <Section>
                     <Section.Header>Data</Section.Header>
-                    <StyledTableScroll>
-                        <TableOld sticky={true} border={false} layout="fixed">
-                            <TableOld.Head>
-                                <TableOld.Row>
+                    <StyledTableContainer>
+                        <Table stickyHeader>
+                            <Table.Head>
+                                <Table.Row>
                                     {getData.data.data.headers.map((h) => {
                                         return (
-                                            <TableOld.Cell key={h}>
+                                            <Table.Cell key={h}>
                                                 {String(h).replace(/_/g, ' ')}
-                                            </TableOld.Cell>
+                                            </Table.Cell>
                                         );
                                     })}
-                                </TableOld.Row>
-                            </TableOld.Head>
-                            <TableOld.Body>
+                                </Table.Row>
+                            </Table.Head>
+                            <Table.Body>
                                 {getData.data.data.values.map((v, vIdx) => {
                                     return (
-                                        <TableOld.Row key={vIdx}>
+                                        <Table.Row key={vIdx}>
                                             {getData.data.data.headers.map(
                                                 (h, hIdx) => {
                                                     return (
-                                                        <TableOld.Cell
+                                                        <Table.Cell
                                                             key={`${vIdx}-${hIdx}`}
                                                         >
                                                             {v[hIdx]}
-                                                        </TableOld.Cell>
+                                                        </Table.Cell>
                                                     );
                                                 },
                                             )}
-                                        </TableOld.Row>
+                                        </Table.Row>
                                     );
                                 })}
-                            </TableOld.Body>
-                        </TableOld>
-                    </StyledTableScroll>
+                            </Table.Body>
+                        </Table>
+                    </StyledTableContainer>
                 </Section>
             )}
         </StyledPage>

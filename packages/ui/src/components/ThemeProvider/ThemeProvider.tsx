@@ -1,8 +1,6 @@
 import { useMemo } from "react";
 import {
     createTheme,
-    experimental_extendTheme as extendTheme,
-    ThemeOptions,
     ThemeProvider as MuiThemeProvider,
     CssBaseline,
 } from "@mui/material";

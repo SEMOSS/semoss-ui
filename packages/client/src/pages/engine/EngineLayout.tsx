@@ -1,4 +1,4 @@
-import { SyntheticEvent, useCallback, useState, useMemo } from 'react';
+import { SyntheticEvent, useCallback, useMemo } from 'react';
 import {
     useParams,
     useLocation,
@@ -9,7 +9,7 @@ import {
     matchPath,
     useNavigate,
 } from 'react-router-dom';
-import { styled, Stack, ToggleTabsGroup } from '@semoss/ui';
+import { styled, ToggleTabsGroup } from '@semoss/ui';
 import { usePixel, useAPI, useRootStore } from '@/hooks';
 
 import { EngineContext, EngineContextType } from '@/contexts/EngineContext';
@@ -132,29 +132,13 @@ export const EngineLayout = () => {
     }, [engineMetaStatus, engineMetaData, JSON.stringify(metaKeys)]);
 
     // get the user's role
-    const getUserAppPermission = useAPI(['getUserAppPermission', id]);
+    const getUserEnginePermission = useAPI(['getUserEnginePermission', id]);
 
     const tabMenu = [
         {
             label: 'Overview',
             path: '',
-            show: true,
         },
-        {
-            label: 'Metadata',
-            path: '/metadata',
-            show: true,
-        },
-        {
-            label: 'Settings',
-            path: '/settings',
-            show: false,
-        },
-        // {
-        //     label: 'Data',
-        //     path: '/data',
-        //     show: false,
-        // },
     ];
 
     /**
@@ -177,29 +161,37 @@ export const EngineLayout = () => {
     }, [resolvedPath, location]);
 
     // if the engine isn't found, navigate to the Home Page
-    if (!id || getUserAppPermission.status === 'ERROR') {
-        return <Navigate to={`/catalog?${engineType}`} replace />;
+    if (!id || getUserEnginePermission.status === 'ERROR') {
+        return <Navigate to={`/catalog?type=${engineType}`} replace />;
     }
 
     // show a loading screen when it is pending
-    if (getUserAppPermission.status !== 'SUCCESS') {
+    if (getUserEnginePermission.status !== 'SUCCESS') {
         return <LoadingScreen.Trigger description="Checking Access" />;
     }
 
     const engineContextType: EngineContextType = {
         type: engineType,
         id: id,
-        role: getUserAppPermission.data.permission,
+        role: getUserEnginePermission.data.permission,
         refresh: engineMetaRefresh,
         metaVals: values, // Needed so edit button can be in header
     };
 
+    if (engineType === 'database') {
+        tabMenu.push({
+            label: 'Metadata',
+            path: '/metadata',
+        });
+    }
     if (
         engineContextType.role === 'EDITOR' ||
         engineContextType.role === 'OWNER'
     ) {
-        tabMenu[2].show = true;
-        // tabMenu[3].show = true;
+        tabMenu.push({
+            label: 'Settings',
+            path: '/settings',
+        });
     }
 
     return (
@@ -218,14 +210,12 @@ export const EngineLayout = () => {
                         }}
                     >
                         {tabMenu.map((obj, i) => {
-                            if (obj.show) {
-                                return (
-                                    <ToggleTabsGroup.Item
-                                        key={i}
-                                        label={obj.label}
-                                    ></ToggleTabsGroup.Item>
-                                );
-                            }
+                            return (
+                                <ToggleTabsGroup.Item
+                                    key={i}
+                                    label={obj.label}
+                                ></ToggleTabsGroup.Item>
+                            );
                         })}
                     </StyledToggleTabsGroup>
                 </StyledDiv>

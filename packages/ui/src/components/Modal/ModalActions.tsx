@@ -1,5 +1,4 @@
-import { DialogActions as MuiModalActions } from "@mui/material";
-import { SxProps } from "@mui/system";
+import { DialogActions as MuiModalActions, SxProps } from "@mui/material";
 
 export interface ModalActionsProps {
     /**

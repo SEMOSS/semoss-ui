@@ -1,5 +1,4 @@
-import { TextField as MuiTextfield } from "@mui/material/";
-import { SxProps } from "@mui/system";
+import { TextField as MuiTextfield, SxProps } from "@mui/material";
 
 import {
     TextFieldProps as MuiTextFieldProps,
