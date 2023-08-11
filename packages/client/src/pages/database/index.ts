@@ -11,4 +11,5 @@ export {
     DatabaseQueryDataPage,
     DatabaseReplaceDataPage,
     DatabaseImport,
+    DatabaseModifyPage,
 };
