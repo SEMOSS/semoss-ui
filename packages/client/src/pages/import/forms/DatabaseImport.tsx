@@ -1,11 +1,20 @@
 import React from 'react';
 import { Page } from '@/components/ui/';
-import { styled, Typography, Box, Grid, IconButton } from '@semoss/ui';
+import {
+    styled,
+    Typography,
+    Box,
+    Grid,
+    IconButton,
+    useNotification,
+} from '@semoss/ui';
+import { useNavigate } from 'react-router-dom';
 import { FORM_ROUTES } from './forms';
 import { stepsOne, stepsTwo } from './formSteps.constants';
 import { UploadData } from './UploadData';
 import { CopyDatabaseForm } from './CopyDatabaseForm';
 import { StorageForm } from './StorageForm';
+import { ModelForm } from './ModelForm';
 import { useRootStore } from '@/hooks';
 import { ArrowBackRounded } from '@mui/icons-material/';
 
@@ -55,6 +64,8 @@ export const DatabaseImport = () => {
     const [predictDataTypes, setPredictDataTypes] = React.useState(null);
 
     const { configStore, monolithStore } = useRootStore();
+    const navigate = useNavigate();
+    const notification = useNotification();
 
     const insightId = configStore.store.insightID;
 
@@ -62,11 +73,9 @@ export const DatabaseImport = () => {
         monolithStore
             .uploadFile(values.FILE, insightId)
             .then((res: { fileName: string; fileLocation: string }[]) => {
-                monolithStore
-                    .runQuery(
-                        `PredictDataTypes(filePath=["${res[0].fileLocation}"], delimiter=["${values.DELIMETER}"], rowCount=[false])`,
-                    )
-                    .then((res) => setPredictDataTypes(res));
+                monolithStore.runQuery(
+                    `PredictDataTypes(filePath=["${res[0].fileLocation}"], delimiter=["${values.DELIMETER}"], rowCount=[false])`,
+                );
             });
     };
 
@@ -244,7 +253,9 @@ export const DatabaseImport = () => {
                             <CopyDatabaseForm />
                         )}
                         {activeStep === 2 && stepOne === 'Add Storage' && (
-                            <StorageForm />
+                            <StorageForm
+                                submitFunc={(values) => formSubmit(values)}
+                            />
                         )}
                         {activeStep === 2 && stepOne === 'Add Model' && (
                             <ModelForm />
