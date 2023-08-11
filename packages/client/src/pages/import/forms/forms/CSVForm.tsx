@@ -1,27 +1,25 @@
 import React from 'react';
 import { useForm, Controller } from 'react-hook-form';
-import { Button, TextField, Stack } from '@semoss/ui';
-import { FileDropzone } from '@semoss/ui';
+import { Button, TextField, Stack, FileDropzone } from '@semoss/ui';
 import { ImportFormComponent } from './formTypes';
 
-const UploadData = () => {
-    const [selectedValues, setSelectedValues] = React.useState(null);
+export const CSVForm: ImportFormComponent = (props) => {
+    const { submitFunc } = props;
+
+    const { control, getValues, handleSubmit, reset } = useForm();
+
+    const values = getValues();
+
+    const onSubmit = async (data) => {
+        submitFunc(data);
+    };
+
+    React.useEffect(() => {
+        reset({ ...values, DELIMETER: ',' });
+    }, []);
 
     return (
-        <FileDropzone
-            value={selectedValues}
-            onChange={(newValues) => {
-                setSelectedValues(newValues);
-            }}
-        />
-    );
-};
-
-export const CSVForm: ImportFormComponent = () => {
-    const { control } = useForm();
-
-    return (
-        <form>
+        <form onSubmit={handleSubmit(onSubmit)}>
             <Stack rowGap={2}>
                 <Controller
                     name={'DATABASE_NAME'}
@@ -72,7 +70,20 @@ export const CSVForm: ImportFormComponent = () => {
                         );
                     }}
                 />
-                <UploadData />
+                <Controller
+                    name={'FILE'}
+                    control={control}
+                    rules={{ required: true }}
+                    render={({ field, fieldState }) => {
+                        const hasError = fieldState.error;
+                        return (
+                            <FileDropzone
+                                value={field.value ? field.value : ''}
+                                onChange={(value) => field.onChange(value)}
+                            />
+                        );
+                    }}
+                />
                 <Controller
                     name={'DELIMETER'}
                     control={control}
@@ -121,6 +132,7 @@ export const CSVForm: ImportFormComponent = () => {
                         );
                     }}
                 />
+                <Button type="submit">Submit</Button>
             </Stack>
         </form>
     );
