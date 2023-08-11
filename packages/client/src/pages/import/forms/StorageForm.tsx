@@ -6,6 +6,7 @@ import { Delete } from '@mui/icons-material';
 const StyledFlexEnd = styled('div')(({ theme }) => ({
     display: 'flex',
     justifyContent: 'flex-end',
+    gap: theme.spacing(1),
 }));
 
 const StyledProperty = styled('div')(({ theme }) => ({
@@ -24,6 +25,12 @@ const StyledKeyValue = styled('div')(({ theme }) => ({
 export const StorageForm = () => {
     const { control, handleSubmit } = useForm({
         defaultValues: {
+            NAME: '',
+            STORAGE_NAME: '',
+            S3_REGION: '',
+            S3_ACCESS_KEY: '',
+            S3_SECRET_KEY: '',
+            S3_ENDPOINT: '',
             SMSS_PROPERTIES: [
                 {
                     KEY: '',
@@ -51,25 +58,131 @@ export const StorageForm = () => {
     return (
         <form onSubmit={handleSubmit(onSubmit)}>
             <Stack rowGap={2}>
-                <StyledFlexEnd>
-                    <Button
-                        variant={'contained'}
-                        onClick={() => {
-                            append({
-                                KEY: '',
-                                VALUE: '',
-                            });
+                <StyledKeyValue>
+                    <Controller
+                        name={'NAME'}
+                        control={control}
+                        rules={{ required: true }}
+                        render={({ field, fieldState }) => {
+                            const hasError = fieldState.error;
+                            return (
+                                <TextField
+                                    fullWidth
+                                    required
+                                    label="Name"
+                                    value={field.value ? field.value : ''}
+                                    onChange={(value) => field.onChange(value)}
+                                ></TextField>
+                            );
                         }}
-                    >
-                        Add Property
-                    </Button>
-                </StyledFlexEnd>
+                    />
+                </StyledKeyValue>
+
+                <StyledKeyValue>
+                    <Controller
+                        name={'NAME'}
+                        control={control}
+                        rules={{ required: true }}
+                        render={({ field, fieldState }) => {
+                            const hasError = fieldState.error;
+                            return (
+                                <TextField
+                                    fullWidth
+                                    required
+                                    label="Name"
+                                    value={field.value ? field.value : ''}
+                                    onChange={(value) => field.onChange(value)}
+                                ></TextField>
+                            );
+                        }}
+                    />
+                </StyledKeyValue>
+
+                <StyledKeyValue>
+                    <Controller
+                        name={'STORAGE_NAME'}
+                        control={control}
+                        rules={{ required: true }}
+                        render={({ field, fieldState }) => {
+                            const hasError = fieldState.error;
+                            return (
+                                <TextField
+                                    fullWidth
+                                    required
+                                    label="Storage Name"
+                                    value={field.value ? field.value : ''}
+                                    onChange={(value) => field.onChange(value)}
+                                ></TextField>
+                            );
+                        }}
+                    />
+                </StyledKeyValue>
+
+                <StyledKeyValue>
+                    <Controller
+                        name={'S3_REGION'}
+                        control={control}
+                        rules={{ required: true }}
+                        render={({ field, fieldState }) => {
+                            const hasError = fieldState.error;
+                            return (
+                                <TextField
+                                    fullWidth
+                                    required
+                                    label="S3 Region"
+                                    value={field.value ? field.value : ''}
+                                    onChange={(value) => field.onChange(value)}
+                                ></TextField>
+                            );
+                        }}
+                    />
+                </StyledKeyValue>
+
+                <StyledKeyValue>
+                    <Controller
+                        name={'S3_ACCESS_KEY'}
+                        control={control}
+                        rules={{ required: true }}
+                        render={({ field, fieldState }) => {
+                            const hasError = fieldState.error;
+                            return (
+                                <TextField
+                                    fullWidth
+                                    required
+                                    label="S3 Access Key"
+                                    value={field.value ? field.value : ''}
+                                    onChange={(value) => field.onChange(value)}
+                                ></TextField>
+                            );
+                        }}
+                    />
+                </StyledKeyValue>
+
+                <StyledKeyValue>
+                    <Controller
+                        name={'S3_ENDPOINT'}
+                        control={control}
+                        rules={{ required: true }}
+                        render={({ field, fieldState }) => {
+                            const hasError = fieldState.error;
+                            return (
+                                <TextField
+                                    fullWidth
+                                    required
+                                    label="S3 Endpoint"
+                                    value={field.value ? field.value : ''}
+                                    onChange={(value) => field.onChange(value)}
+                                ></TextField>
+                            );
+                        }}
+                    />
+                </StyledKeyValue>
+
                 {fields.map((property, i) => {
                     return (
                         <StyledProperty key={i}>
                             <StyledFlexEnd>
                                 <IconButton
-                                    disabled={fields.length < 2}
                                     onClick={() => {
                                         remove(i);
                                     }}
@@ -81,7 +194,7 @@ export const StorageForm = () => {
                                 <Controller
                                     name={`SMSS_PROPERTIES.${i}.KEY`}
                                     control={control}
-                                    rules={{ required: true }}
+                                    rules={{}}
                                     render={({ field, fieldState }) => {
                                         const hasError = fieldState.error;
                                         return (
@@ -104,7 +217,7 @@ export const StorageForm = () => {
                                 <Controller
                                     name={`SMSS_PROPERTIES.${i}.VALUE`}
                                     control={control}
-                                    rules={{ required: true }}
+                                    rules={{}}
                                     render={({ field, fieldState }) => {
                                         const hasError = fieldState.error;
                                         return (
@@ -129,6 +242,18 @@ export const StorageForm = () => {
                     );
                 })}
                 <StyledFlexEnd>
+                    <Button
+                        variant={'contained'}
+                        onClick={() => {
+                            append({
+                                KEY: '',
+                                VALUE: '',
+                            });
+                        }}
+                    >
+                        Add Property
+                    </Button>
+
                     <Button type="submit" variant={'contained'}>
                         Add Storage
                     </Button>
