@@ -61,14 +61,15 @@
         "tslib": "^2.5.3"
     },
     "peerDependencies": {
+        "@mui/icons-material": "^5.11.16",
         "react": "^17.0.2",
-        "react-dom": "^17.0.2",
-        "@mui/icons-material": "^5.11.16"
+        "react-dom": "^17.0.2"
     },
     "dependencies": {
         "@babel/core": "^7.22.5",
         "@emotion/react": "^11.11.1",
         "@emotion/styled": "^11.11.0",
+        "@fontsource/inter": "^5.0.8",
         "@fontsource/material-icons": "^5.0.3",
         "@fontsource/roboto": "^5.0.3",
         "@mui/base": "5.0.0-beta.4",
