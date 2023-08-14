@@ -20,7 +20,7 @@ export interface App {
     project_favorite?: string;
     user_permission?: string;
     group_permission?: string;
-    tag?: string[];
+    tag?: string | string[];
 }
 
 /**

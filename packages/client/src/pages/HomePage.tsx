@@ -63,6 +63,17 @@ export const HomePage = observer((): JSX.Element => {
         }
     };
 
+    /**
+     * Close the  app modeal
+     */
+    const closeAppModal = () => {
+        // close the modal
+        setAddAppModal(false);
+
+        // refresh the list
+        myApps.refresh();
+    };
+
     return (
         <Page
             header={
@@ -121,7 +132,7 @@ export const HomePage = observer((): JSX.Element => {
                     </Grid>
                 ) : null}
             </Stack>
-            <AddApp open={addAppModal} onClose={() => setAddAppModal(false)} />
+            <AddApp open={addAppModal} onClose={() => closeAppModal()} />
         </Page>
     );
 });

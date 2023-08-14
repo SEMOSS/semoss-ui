@@ -131,15 +131,19 @@ export const AppTileCard = (props: AppTileCardProps) => {
                         overflow={'auto'}
                     >
                         {app.tag ? (
-                            app.tag.map((t, idx) => {
-                                return (
-                                    <Chip
-                                        key={idx}
-                                        variant={'outlined'}
-                                        label={t}
-                                    />
-                                );
-                            })
+                            typeof app.tag === 'string' ? (
+                                <Chip variant={'outlined'} label={app.tag} />
+                            ) : (
+                                app.tag.map((t, idx) => {
+                                    return (
+                                        <Chip
+                                            key={idx}
+                                            variant={'outlined'}
+                                            label={t}
+                                        />
+                                    );
+                                })
+                            )
                         ) : (
                             <>&nbsp;</>
                         )}
