@@ -26,6 +26,7 @@ import { ConnectModel } from '@/assets/img/ConnectModel';
 import { ConnectDb } from '@/assets/img/ConnectDb';
 import { CopyDb } from '@/assets/img/CopyDb';
 import { UploadDb } from '@/assets/img/UploadDb';
+import { ConnectStorage } from '@/assets/img/ConnectStorage';
 
 const StyledContainer = styled('div')(({ theme }) => ({
     display: 'flex',
@@ -111,7 +112,7 @@ const IconMapper = {
     'Copy Database': <CopyDb />,
     'Upload Database': <UploadDb />,
     'Build Database': <BuildDb />,
-    'Add Storage': <ConnectModel />,
+    'Add Storage': <ConnectStorage />,
     'Add Model': <ConnectModel />,
 };
 

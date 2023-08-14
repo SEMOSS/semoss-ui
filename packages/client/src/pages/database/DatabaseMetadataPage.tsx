@@ -153,6 +153,7 @@ export const DatabaseMetadataPage = observer(() => {
             const data = getDatabaseMetamodel.data;
 
             return data.edges.map((e) => {
+                // debugger
                 return {
                     id: e.relation,
                     type: 'floating',

@@ -95,9 +95,24 @@ export const CSVForm: ImportFormComponent = (props) => {
             });
         }
 
-        debugger;
         return formattedNodes;
     }, [metamodel]);
+
+    const edges = useMemo(() => {
+        const newEdges = [];
+        if (metamodel) {
+            metamodel.relation.forEach((rel) => {
+                newEdges.push({
+                    id: rel.relName,
+                    type: 'floating',
+                    source: rel.fromTable,
+                    target: rel.toTable,
+                });
+            });
+        }
+        return newEdges;
+    }, [metamodel]);
+
     return (
         <>
             {!predictDataTypes && !metamodel && (
@@ -270,7 +285,11 @@ export const CSVForm: ImportFormComponent = (props) => {
             {/* Workflow 2 */}
             {metamodel && (
                 <div style={{ width: '100%', height: '600px' }}>
-                    <Metamodel onSelectNode={null} edges={[]} nodes={nodes} />
+                    <Metamodel
+                        onSelectNode={null}
+                        edges={edges}
+                        nodes={nodes}
+                    />
                 </div>
             )}
         </>
