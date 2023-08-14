@@ -35,7 +35,7 @@ export const AppRenderer = (props: AppRendererProps) => {
 
         // set the src
         setSrc(
-            `${MODULE}/public_home/${appId}/public/?${searchParams.toString()}`,
+            `${MODULE}/public_home/${appId}/portals/?${searchParams.toString()}`,
         );
     }, [appId, insightId]);
 

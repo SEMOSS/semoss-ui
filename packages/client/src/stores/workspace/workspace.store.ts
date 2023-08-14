@@ -99,7 +99,7 @@ export class WorkspaceStore {
                     };
                 },
             ]
-        >(`OpenEmptyInsight(recipe=["<sEncode>SetAppConfig();</sEncode>"])`);
+        >(`OpenEmptyInsight()`);
 
         // ignore if no response
         if (!response) {
