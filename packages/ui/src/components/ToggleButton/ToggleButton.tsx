@@ -61,8 +61,8 @@ export interface ToggleButtonProps<V> {
     sx?: SxProps;
 }
 
-export const ToggleButton = (
-    props: ToggleButtonProps<string | number | boolean>,
+export const ToggleButton = <V extends string | number | boolean>(
+    props: ToggleButtonProps<V>,
 ) => {
     return <MuiToggleButton {...props}>{props.children}</MuiToggleButton>;
 };

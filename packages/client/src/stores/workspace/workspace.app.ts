@@ -50,16 +50,16 @@ export class WorkspaceApp {
     // Getters
     // *********************************************************
     /**
-     * Get app id
+     * Get insight id
      */
-    get id() {
+    get insightId() {
         return this._store.insightId;
     }
 
     /**
-     * Get app url
+     * Get app id
      */
-    get url() {
+    get appId() {
         return this._store.appId;
     }
 

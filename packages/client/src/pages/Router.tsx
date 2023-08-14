@@ -10,7 +10,6 @@ import { NavigatorLayout } from './NavigatorLayout';
 import { LoginPage } from './LoginPage';
 import { HomePage } from './HomePage';
 import { CatalogPage } from './CatalogPage';
-import { ImportStorage } from './storage';
 
 import {
     DatabaseMetadataPage,
@@ -18,6 +17,7 @@ import {
     DatabaseReplaceDataPage,
     DatabaseQueryDataPage,
     DatabaseImport,
+    DatabaseModifyPage,
 } from './database';
 
 import { EngineLayout, EngineIndexPage } from './engine';
@@ -39,10 +39,10 @@ export const Router = observer(() => {
                 <Route path="app/*" element={<AppRouter />} />
                 <Route path="*" element={<NavigatorLayout />}>
                     <Route index element={<HomePage />} />
-                    <Route
+                    {/* <Route
                         path="import-database"
                         element={<DatabaseImport />}
-                    />
+                    /> */}
                     <Route path="import" element={<DatabaseImport />} />
 
                     <Route path="catalog" element={<CatalogPage />} />
@@ -57,6 +57,10 @@ export const Router = observer(() => {
                             <Route
                                 path="settings"
                                 element={<DatabaseSettingsPage />}
+                            />
+                            <Route
+                                path="modify"
+                                element={<DatabaseModifyPage />}
                             />
                         </Route>
                     </Route>

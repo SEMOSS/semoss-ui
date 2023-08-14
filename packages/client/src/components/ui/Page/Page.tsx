@@ -7,8 +7,7 @@ const StyledPage = styled('div')(({ theme }) => ({
     overflowX: 'hidden',
     overflowY: 'auto',
     backgroundColor: theme.palette.background.paper,
-
-    paddingBottom: theme.spacing(5),
+    paddingBottom: theme.spacing(2.5),
     display: 'flex',
     flexDirection: 'column',
     gap: theme.spacing(2),
@@ -29,10 +28,6 @@ const StyledPageHeader = styled('div', {
     borderBottom: stuck ? `solid ${theme.palette.divider}` : 'none',
     // Set this in Theme
     backgroundColor: theme.palette.background.paper,
-}));
-
-const StyledContainer = styled(Container)(({ theme }) => ({
-    // width: '1271px',
 }));
 
 export interface PageProps {
@@ -79,7 +74,6 @@ export const Page = (props: PageProps): JSX.Element => {
                 </StyledPageHeader>
             )}
             <Container maxWidth={'xl'}>{children}</Container>
-            {/* <div>{children}</div> */}
         </StyledPage>
     );
 };

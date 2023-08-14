@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 
+import { MODULE } from '@/constants';
 import { runPixel } from '@/api';
 
 import {
@@ -9,18 +10,18 @@ import {
 } from '../app.types';
 
 interface AppRendererProps {
-    /** Id of the app to render */
-    id: string;
+    /** appId of the app to render */
+    appId: string;
 
-    /** Url of the app to render */
-    url: string;
+    /** InsightID of the app to render */
+    insightId: string;
 }
 
 /**
  * Render an app based on an id
  */
 export const AppRenderer = (props: AppRendererProps) => {
-    const { id, url } = props;
+    const { insightId, appId } = props;
 
     // track the iframe
     const iframeRef = useRef<HTMLIFrameElement>(null);
@@ -29,12 +30,14 @@ export const AppRenderer = (props: AppRendererProps) => {
     useEffect(() => {
         // update the url based on the app id
         const searchParams = new URLSearchParams({
-            'semoss-insight-id': id,
+            'semoss-insight-id': insightId,
         });
 
         // set the src
-        setSrc(`${url}/?${searchParams.toString()}`);
-    }, [url, id]);
+        setSrc(
+            `${MODULE}/public_home/${appId}/portals/?${searchParams.toString()}`,
+        );
+    }, [appId, insightId]);
 
     // listen to messages on the parent
     useEffect(() => {
@@ -94,7 +97,7 @@ export const AppRenderer = (props: AppRendererProps) => {
             if (
                 typeof messageObject !== 'object' ||
                 !messageObject.data ||
-                messageObject.data.insightId !== id
+                messageObject.data.insightId !== insightId
             ) {
                 return;
             }
@@ -111,7 +114,7 @@ export const AppRenderer = (props: AppRendererProps) => {
             // remove the listener
             window.removeEventListener('message', processMessage);
         };
-    }, [id]);
+    }, [insightId]);
 
     if (!src) {
         return null;

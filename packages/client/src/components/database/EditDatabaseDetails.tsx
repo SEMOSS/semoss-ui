@@ -6,12 +6,17 @@ import {
     TextField,
     Autocomplete,
     useNotification,
+    styled,
 } from '@semoss/ui';
 import { useForm, Controller } from 'react-hook-form';
 import { observer } from 'mobx-react-lite';
 
 import { usePixel, useRootStore, useDatabase } from '@/hooks';
 import { MarkdownEditor } from '@/components/common';
+
+const StyledEditorContainer = styled('div')(({ theme }) => ({
+    marginBottom: theme.spacing(1),
+}));
 
 interface EditDatabaseDetailsProps {
     /** Track if the edit is open */
@@ -178,24 +183,27 @@ export const EditDatabaseDetails = observer(
 
                             if (display_options === 'markdown') {
                                 return (
-                                    <Controller
-                                        key={metakey}
-                                        name={metakey}
-                                        control={control}
-                                        render={({ field }) => {
-                                            return (
-                                                <MarkdownEditor
-                                                    value={
-                                                        (field.value as string) ||
-                                                        ''
-                                                    }
-                                                    onChange={(value) =>
-                                                        field.onChange(value)
-                                                    }
-                                                />
-                                            );
-                                        }}
-                                    />
+                                    <StyledEditorContainer key={metakey}>
+                                        <Controller
+                                            name={metakey}
+                                            control={control}
+                                            render={({ field }) => {
+                                                return (
+                                                    <MarkdownEditor
+                                                        value={
+                                                            (field.value as string) ||
+                                                            ''
+                                                        }
+                                                        onChange={(value) =>
+                                                            field.onChange(
+                                                                value,
+                                                            )
+                                                        }
+                                                    />
+                                                );
+                                            }}
+                                        />
+                                    </StyledEditorContainer>
                                 );
                             } else if (display_options === 'textarea') {
                                 return (
@@ -266,7 +274,12 @@ export const EditDatabaseDetails = observer(
                                         control={control}
                                         render={({ field }) => {
                                             return (
-                                                <Autocomplete<string, true>
+                                                <Autocomplete<
+                                                    string,
+                                                    true,
+                                                    false,
+                                                    true
+                                                >
                                                     freeSolo={true}
                                                     multiple={true}
                                                     label={label}

@@ -11,7 +11,6 @@ export const AppRouter = observer(() => {
             <Route path="/" element={<AppLayout />}>
                 <Route index element={<AppPage />} />
                 <Route path="embed/:projectId/:id" element={<AppEmbedPage />} />
-                \
             </Route>
             <Route path="*" element={<Navigate to={`/`} replace />} />
         </Routes>
