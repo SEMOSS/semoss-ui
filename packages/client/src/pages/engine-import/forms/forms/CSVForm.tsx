@@ -12,6 +12,7 @@ import {
 import { ImportFormComponent } from './formTypes';
 import { DataFormTable } from './../DataFormTable';
 import { mdiNewspaperVariantMultipleOutline } from '@mdi/js';
+import { Metamodel } from '@/components/metamodel';
 
 export const CSVForm: ImportFormComponent = (props) => {
     const { submitFunc, metamodel, predictDataTypes } = props;
@@ -41,9 +42,11 @@ export const CSVForm: ImportFormComponent = (props) => {
         });
     }, [values.FILE]);
 
+    metamodel ? console.log(metamodel) : null;
+
     return (
         <>
-            {!predictDataTypes && (
+            {!predictDataTypes && !metamodel && (
                 <form
                     onSubmit={handleSubmit(onSubmit)}
                     onKeyDown={(e) => checkKeyDown(e)}
@@ -208,7 +211,9 @@ export const CSVForm: ImportFormComponent = (props) => {
             {predictDataTypes && (
                 <DataFormTable predictDataTypes={predictDataTypes} />
             )}
-            {metamodel && <DataFormTable predictDataTypes={predictDataTypes} />}
+            {metamodel && (
+                <Metamodel onSelectNode={null} edges={[]} nodes={[]} />
+            )}
         </>
     );
 };

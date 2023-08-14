@@ -36,7 +36,6 @@ export const Metamodel = (props: MetamodelProps) => {
         nodes = [],
         edges = [],
     } = props;
-
     // create the context
     const metamodelContext: MetamodelContextType = {
         selectedNodeId: selectedNode ? selectedNode.id : null,
