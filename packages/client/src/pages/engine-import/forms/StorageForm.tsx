@@ -1,6 +1,6 @@
-import React from 'react';
+import { useEffect } from 'react';
 import { useFieldArray, useForm, Controller } from 'react-hook-form';
-import { Button, Grid, IconButton, TextField, Stack, styled } from '@semoss/ui';
+import { Button, IconButton, TextField, Stack, styled } from '@semoss/ui';
 import { Delete } from '@mui/icons-material';
 
 const StyledFlexEnd = styled('div')(({ theme }) => ({
@@ -23,8 +23,8 @@ const StyledKeyValue = styled('div')(({ theme }) => ({
 }));
 
 export const StorageForm = (props) => {
-    const { submitFunc } = props;
-    const { control, handleSubmit } = useForm({
+    const { submitFunc, storageName } = props;
+    const { control, handleSubmit, setValue } = useForm({
         defaultValues: {
             NAME: '',
             STORAGE_NAME: '',
@@ -40,6 +40,11 @@ export const StorageForm = (props) => {
         control,
         name: 'SMSS_PROPERTIES',
     });
+
+    //set storage name
+    useEffect(() => {
+        setValue('STORAGE_NAME', storageName);
+    }, [props]);
 
     const onSubmit = async (data) => {
         const smssProperties = {};

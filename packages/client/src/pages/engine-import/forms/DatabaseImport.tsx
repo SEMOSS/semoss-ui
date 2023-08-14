@@ -43,7 +43,13 @@ const StyledStepBox = styled(Box)({
 });
 
 const StyledFormTypeBox = styled(Box)({
-    display: 'flex',
+    maxWidth: '350px',
+    maxHeight: '250px',
+    cursor: 'pointer',
+    overflow: 'hidden',
+    textOverflow: 'ellipsis',
+    whiteSpace: 'nowrap',
+    display: 'block',
     justifyContent: 'center',
     alignItems: 'center',
     border: '1px solid rgba(0,0,0,0.1)',
@@ -61,6 +67,7 @@ export const DatabaseImport = () => {
     const [activeStep, setActiveStep] = React.useState(0);
     const [stepOne, setStepOne] = React.useState('');
     const [stepTwo, setStepTwo] = React.useState('');
+    const [storageName, setStorageName] = React.useState('');
     const [predictDataTypes, setPredictDataTypes] = React.useState(null);
 
     const { configStore, monolithStore } = useRootStore();
@@ -191,6 +198,7 @@ export const DatabaseImport = () => {
                                                         sm={1}
                                                     >
                                                         <StyledFormTypeBox
+                                                            title={stage}
                                                             onClick={() =>
                                                                 setStepTwo(
                                                                     stage,
@@ -229,6 +237,7 @@ export const DatabaseImport = () => {
                                                     sm={1}
                                                 >
                                                     <StyledFormTypeBox
+                                                        title={stage}
                                                         onClick={() =>
                                                             setStepTwo(stage)
                                                         }
@@ -240,6 +249,47 @@ export const DatabaseImport = () => {
                                         })}
                                     </Grid>
                                 </Box>
+                                <StyledCategoryTitle>
+                                    Storage
+                                </StyledCategoryTitle>
+                                <Box>
+                                    <Grid
+                                        container
+                                        columns={6}
+                                        columnSpacing={2}
+                                        rowSpacing={2}
+                                    >
+                                        {stepsTwo['Add Storage'].map(
+                                            (stage, idx) => {
+                                                return (
+                                                    <Grid
+                                                        key={idx}
+                                                        item
+                                                        lg={1}
+                                                        md={1}
+                                                        xs={1}
+                                                        xl={1}
+                                                        sm={1}
+                                                    >
+                                                        <StyledFormTypeBox
+                                                            title={stage}
+                                                            onClick={() => {
+                                                                setStepTwo(
+                                                                    'Add Storage',
+                                                                );
+                                                                setStorageName(
+                                                                    stage,
+                                                                );
+                                                            }}
+                                                        >
+                                                            {stage}
+                                                        </StyledFormTypeBox>
+                                                    </Grid>
+                                                );
+                                            },
+                                        )}
+                                    </Grid>
+                                </Box>
                             </Box>
                         )}
                         {activeStep === 1 &&
@@ -249,15 +299,23 @@ export const DatabaseImport = () => {
                                     return getForm(f);
                                 }
                             })}
+
                         {activeStep === 2 && stepOne === 'Upload Database' && (
                             <UploadData />
                         )}
                         {activeStep === 2 && stepOne === 'Copy Database' && (
                             <CopyDatabaseForm />
                         )}
+                        {activeStep === 1 && stepTwo === 'Add Storage' && (
+                            <StorageForm
+                                submitFunc={(values) => formSubmit(values)}
+                                storageName={storageName}
+                            />
+                        )}
                         {activeStep === 2 && stepOne === 'Add Storage' && (
                             <StorageForm
                                 submitFunc={(values) => formSubmit(values)}
+                                storageName={''}
                             />
                         )}
                         {activeStep === 2 && stepOne === 'Add Model' && (
