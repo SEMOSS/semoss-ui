@@ -15,6 +15,7 @@ import {
     Grid,
     List,
     TextField,
+    CustomPaletteOptions,
 } from '@semoss/ui';
 import {
     ExpandLess,
@@ -86,9 +87,7 @@ const StyledChip = styled(Chip, {
     selected: boolean;
 }>(({ theme, selected }) => {
     // TODO: Fix typing
-    const palette = theme.palette as unknown as {
-        semossBlue: Record<string, string>;
-    };
+    const palette = theme.palette as CustomPaletteOptions;
 
     return {
         color: selected ? palette.semossBlue['900'] : palette.semossBlue['900'],
@@ -610,7 +609,7 @@ export const CatalogPage = observer((): JSX.Element => {
         <Page
             header={
                 <Stack>
-                    <div style={{ height: '16px' }}></div>
+                    <div style={{ height: '24px' }}></div>
                     <Stack
                         direction="row"
                         alignItems={'center'}
@@ -669,7 +668,7 @@ export const CatalogPage = observer((): JSX.Element => {
                             >
                                 <ToggleButton
                                     color="primary"
-                                    onClick={(e, v) => setView('tile')}
+                                    onClick={(e, v) => setView(v)}
                                     value={'tile'}
                                     aria-label={'Tile View'}
                                 >
@@ -677,7 +676,7 @@ export const CatalogPage = observer((): JSX.Element => {
                                 </ToggleButton>
                                 <ToggleButton
                                     color="primary"
-                                    onClick={(e, v) => setView('list')}
+                                    onClick={(e, v) => setView(v)}
                                     value={'list'}
                                     aria-label={'List View'}
                                 >

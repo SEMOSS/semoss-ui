@@ -1,19 +1,11 @@
-import React from 'react';
 import {
     Autocomplete,
     Button,
-    styled,
-    Stack,
     TextField,
-    Typography,
-    Grid,
-    Search,
     Modal,
-    Card,
-    IconButton,
     FileDropzone,
 } from '@semoss/ui';
-import { Controller, useFieldArray, useForm } from 'react-hook-form';
+import { Controller, useForm } from 'react-hook-form';
 import { useRootStore } from '@/hooks';
 
 export const AddApp = (props) => {
@@ -21,11 +13,7 @@ export const AddApp = (props) => {
 
     const { monolithStore } = useRootStore();
 
-    const {
-        handleSubmit,
-        control,
-        formState: { errors },
-    } = useForm({
+    const { handleSubmit, control } = useForm({
         defaultValues: {
             APP_NAME: '',
             APP_DESCRIPTION: '',
@@ -34,54 +22,50 @@ export const AddApp = (props) => {
         },
     });
 
-    /**
-     * @name unzipFile
-     * @param upload
-     * @param path
-     */
-    function unzipFile(upload: any, path: string, projectId) {
-        const pixel = `UnzipFile(filePath=["${`${path}${upload[0].fileName}`}"], space=["${projectId}"])`;
-
-        monolithStore.runQuery(pixel).then((response) => {
-            console.log(response);
-            // debugger
-        });
-    }
-
     const onSubmit = async (data) => {
         const projectMeta = {
             description: data.APP_DESCRIPTION,
             tag: data.TAGS,
         };
 
-        const pixel = `META | projectVar = CreateProject("${
-            data.APP_NAME
-        }"); SetProjectMetadata(project=[projectVar], meta=[${JSON.stringify(
-            projectMeta,
-        )}])`;
+        const path = 'version/assets/';
 
-        monolithStore.runQuery(pixel).then((response) => {
+        try {
+            const response = await monolithStore.runQuery(
+                `META | projectVar = CreateProject("${
+                    data.APP_NAME
+                }"); SetProjectMetadata(project=[projectVar], meta=[${JSON.stringify(
+                    projectMeta,
+                )}])`,
+            );
+
             const output = response.pixelReturn[0].output,
                 insightID = response.insightID;
 
-            const path = 'version/assets/';
+            const upload = await monolithStore.uploadFile(
+                data.PROJECT_UPLOAD,
+                insightID,
+                output.project_id,
+                path,
+            );
 
-            monolithStore
-                .uploadFile(
-                    data.PROJECT_UPLOAD,
-                    insightID,
-                    output.project_id,
-                    path,
-                )
-                .then(
-                    async function (upload) {
-                        await unzipFile(upload, path, output.project_id);
-                    },
-                    function (error) {
-                        console.error(error);
-                    },
-                );
-        });
+            await monolithStore.uploadFile(
+                data.PROJECT_UPLOAD,
+                insightID,
+                output.project_id,
+                path,
+            );
+
+            await monolithStore.runQuery(
+                `UnzipFile(filePath=["${`${path}${upload[0].fileName}`}"], space=["${
+                    output.projectId
+                }"])`,
+            );
+        } catch (e) {
+            console.error(e);
+        } finally {
+            onClose();
+        }
     };
 
     return (
@@ -100,9 +84,7 @@ export const AddApp = (props) => {
                         name={'APP_NAME'}
                         control={control}
                         rules={{ required: true }}
-                        render={({ field, fieldState }) => {
-                            const hasError = fieldState.error;
-
+                        render={({ field }) => {
                             return (
                                 <TextField
                                     required
@@ -117,9 +99,7 @@ export const AddApp = (props) => {
                         name={'APP_DESCRIPTION'}
                         control={control}
                         rules={{ required: true }}
-                        render={({ field, fieldState }) => {
-                            const hasError = fieldState.error;
-
+                        render={({ field }) => {
                             return (
                                 <TextField
                                     required
@@ -135,9 +115,7 @@ export const AddApp = (props) => {
                         name={'TAGS'}
                         control={control}
                         rules={{}}
-                        render={({ field, fieldState }) => {
-                            const hasError = fieldState.error;
-
+                        render={({ field }) => {
                             return (
                                 <Autocomplete<string, true, false, true>
                                     freeSolo={true}
@@ -157,9 +135,7 @@ export const AddApp = (props) => {
                         name={'PROJECT_UPLOAD'}
                         control={control}
                         rules={{}}
-                        render={({ field, fieldState }) => {
-                            const hasError = fieldState.error;
-
+                        render={({ field }) => {
                             return (
                                 <FileDropzone
                                     value={field.value}
