@@ -129,6 +129,33 @@ export const DatabaseImport = () => {
     const insightId = configStore.store.insightID;
 
     const formSubmit = (values) => {
+        if (stepOne === 'Add Storage') {
+            const pixel = `CreateStorageEngine(storage=["${
+                values.storage
+            }"], storageDetails=[${JSON.stringify(values.fields)}])`;
+
+            monolithStore.runQuery(pixel).then((response) => {
+                const output = response.pixelReturn[0].output,
+                    operationType = response.pixelReturn[0].operationType;
+
+                if (operationType.indexOf('ERROR') > -1) {
+                    notification.add({
+                        color: 'error',
+                        message: output,
+                    });
+                    return;
+                }
+
+                notification.add({
+                    color: 'success',
+                    message: `Successfully created storage`,
+                });
+
+                navigate(`/storage/${output.database_id}`);
+            });
+            return;
+        }
+
         if (values.METAMODEL_TYPE === 'As Suggested Metamodel') {
             monolithStore
                 .uploadFile(values.FILE, insightId)
