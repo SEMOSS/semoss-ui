@@ -166,7 +166,11 @@ export const DatabaseImport = () => {
                         .runQuery(
                             `PredictMetamodel(filePath=["${file}"], delimiter=["${values.DELIMETER}"], rowCount=[false])`,
                         )
-                        .then((res) => setMetamodel(res));
+                        .then((res) => {
+                            const output = res.pixelReturn[0].output;
+                            // format response to send to Form
+                            setMetamodel(output);
+                        });
                 });
         }
         if (values.METAMODEL_TYPE === 'As Flat Table') {
