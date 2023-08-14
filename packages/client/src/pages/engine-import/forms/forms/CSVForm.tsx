@@ -14,7 +14,7 @@ import { DataFormTable } from './../DataFormTable';
 import { mdiNewspaperVariantMultipleOutline } from '@mdi/js';
 
 export const CSVForm: ImportFormComponent = (props) => {
-    const { submitFunc, setPredictDataTypes, predictDataTypes } = props;
+    const { submitFunc, metamodel, predictDataTypes } = props;
 
     const { control, getValues, handleSubmit, reset, setValue } = useForm();
 
@@ -208,6 +208,7 @@ export const CSVForm: ImportFormComponent = (props) => {
             {predictDataTypes && (
                 <DataFormTable predictDataTypes={predictDataTypes} />
             )}
+            {metamodel && <DataFormTable predictDataTypes={predictDataTypes} />}
         </>
     );
 };

@@ -62,6 +62,7 @@ export const DatabaseImport = () => {
     const [stepOne, setStepOne] = React.useState('');
     const [stepTwo, setStepTwo] = React.useState('');
     const [predictDataTypes, setPredictDataTypes] = React.useState(null);
+    const [metamodel, setMetamodel] = React.useState(null);
 
     const { configStore, monolithStore } = useRootStore();
     const navigate = useNavigate();
@@ -79,7 +80,7 @@ export const DatabaseImport = () => {
                         .runQuery(
                             `PredictMetamodel(filePath=["${file}"], delimiter=["${values.DELIMETER}"], rowCount=[false])`,
                         )
-                        .then((res) => setPredictDataTypes(res));
+                        .then((res) => setMetamodel(res));
                 });
         }
         if (values.METAMODEL_TYPE === 'As Flat Table') {
@@ -99,7 +100,7 @@ export const DatabaseImport = () => {
     const getForm = (form) => {
         return React.createElement(form.component, {
             submitFunc: formSubmit,
-            setPredictDataTypes: setPredictDataTypes,
+            metamodel: metamodel,
             predictDataTypes: predictDataTypes,
         });
     };
