@@ -70,16 +70,30 @@ export const DatabaseImport = () => {
     const insightId = configStore.store.insightID;
 
     const formSubmit = (values) => {
-        monolithStore
-            .uploadFile(values.FILE, insightId)
-            .then((res: { fileName: string; fileLocation: string }[]) => {
-                const file = res[0].fileLocation;
-                monolithStore
-                    .runQuery(
-                        `PredictMetamodel(filePath=["${file}"], delimiter=["${values.DELIMETER}"], rowCount=[false])`,
-                    )
-                    .then((res) => setPredictDataTypes(res));
-            });
+        if (values.METAMODEL_TYPE === 'As Suggested Metamodel') {
+            monolithStore
+                .uploadFile(values.FILE, insightId)
+                .then((res: { fileName: string; fileLocation: string }[]) => {
+                    const file = res[0].fileLocation;
+                    monolithStore
+                        .runQuery(
+                            `PredictMetamodel(filePath=["${file}"], delimiter=["${values.DELIMETER}"], rowCount=[false])`,
+                        )
+                        .then((res) => setPredictDataTypes(res));
+                });
+        }
+        if (values.METAMODEL_TYPE === 'As Flat Table') {
+            monolithStore
+                .uploadFile(values.FILE, insightId)
+                .then((res: { fileName: string; fileLocation: string }[]) => {
+                    const file = res[0].fileLocation;
+                    monolithStore
+                        .runQuery(
+                            `PredictDataTypes(filePath=["${file}"], delimiter=["${values.DELIMETER}"], rowCount=[false])`,
+                        )
+                        .then((res) => setPredictDataTypes(res));
+                });
+        }
     };
 
     const getForm = (form) => {
