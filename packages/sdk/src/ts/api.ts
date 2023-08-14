@@ -28,6 +28,43 @@ export const getSystemConfig = async (): Promise<{
         throw Error('No Config Response');
     }
 
+    if (response.data && response.data.csrf) {
+        let token = response.data['X-CSRF-Token'];
+
+        axios.interceptors.request.use(
+            async (config: any) => {
+                if (config.method === 'post') {
+                    // use the token if it is there
+
+                    if (!token) {
+                        const tokenResponse = await axios.get(
+                            `${URL}/api/config/fetchCsrf`,
+                            {
+                                headers: {
+                                    'Content-Type':
+                                        'application/x-www-form-urlencoded',
+                                    'X-CSRF-Token': 'fetch',
+                                },
+                            },
+                        );
+
+                        // not sure why the proxy server is sending it as lowercase, preserving headers doesn't fix it
+                        token =
+                            tokenResponse.headers['X-CSRF-Token'] ||
+                            tokenResponse.headers['x-csrf-token'];
+                    }
+
+                    config.headers['X-CSRF-Token'] = token;
+                }
+
+                return config;
+            },
+            (error) => {
+                Promise.reject(error);
+            },
+        );
+    }
+
     // save the config data
     return response.data;
 };
@@ -59,6 +96,7 @@ export const runPixel = async <O extends unknown[] | []>(
             output: O[number];
             pixelExpression: string;
             pixelId: string;
+            additionalOutput?: unknown;
         }[];
     }>(`${URL}/api/engine/runPixel`, postData, {
         headers: {
@@ -141,4 +179,100 @@ export const logout = async (): Promise<boolean> => {
     });
 
     return true;
+};
+
+export const uploadFile = async (
+    files: File[],
+    insightId: string | null,
+    projectId: string | null,
+    path: string | null,
+): Promise<
+    {
+        fileName: string;
+        fileLocation: string;
+    }[]
+> => {
+    let param = '';
+
+    path = path || '';
+    if (insightId || projectId || path) {
+        if (insightId) {
+            if (param.length > 0) {
+                param += '&';
+            }
+            param += `insightId=${insightId}`;
+        }
+
+        if (projectId) {
+            if (param.length > 0) {
+                param += '&';
+            }
+            param += `projectId=${projectId}`;
+        }
+
+        if (path) {
+            if (param.length > 0) {
+                param += '&';
+            }
+            param += `path=${path}`;
+        }
+
+        param = `?${param}`;
+    }
+
+    const url = `${URL}/api/uploadFile/baseUpload${param}`,
+        fd: FormData = new FormData();
+
+    if (Array.isArray(files)) {
+        for (let i = 0; i < files.length; i++) {
+            fd.append('file', files[i]);
+        }
+    } else {
+        // pasted data
+        fd.append('file', files);
+    }
+
+    const response = await axios.post<
+        {
+            fileName: string;
+            fileLocation: string;
+        }[]
+    >(url, fd, {
+        headers: {
+            'content-type': 'application/x-www-form-urlencoded',
+        },
+    });
+
+    return response.data;
+};
+
+/**
+ * Download a file by using a unique key
+ *
+ * @param insightID - insightID to download the file
+ * @param fileKey - id for the file to download
+ */
+export const download = async (insightID: string, fileKey: string) => {
+    return new Promise<void>((resolve) => {
+        if (!insightID) {
+            throw Error('No Insight ID provided for download.');
+        }
+        // create the download url
+        const url = `${URL}/api/engine/downloadFile?insightId=${insightID}&fileKey=${encodeURIComponent(
+            fileKey,
+        )}`;
+
+        // fake clicking a link
+        const link: HTMLAnchorElement = document.createElement('a');
+
+        link.href = url;
+        link.target = '_blank';
+        document.body.appendChild(link);
+        link.click();
+
+        document.body.removeChild(link);
+
+        // resolve the promise
+        resolve();
+    });
 };
