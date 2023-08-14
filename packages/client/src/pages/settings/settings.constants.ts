@@ -65,21 +65,21 @@ export const SETTINGS_ROUTES: {
         icon: mdiClipboardTextOutline,
         history: ['project', 'project/<id>'],
     },
-    {
-        title: 'Insight Settings',
-        path: 'insight',
-        description: 'View and edit settings for project insights',
-        icon: mdiTextBoxMultipleOutline,
-        history: ['insight'],
-    },
-    {
-        title: 'Insight Settings',
-        path: 'insight/:id/:projectId',
-        description:
-            'View member permissions, pending requests, and all other viewable settings pertaining to the project',
-        icon: mdiClipboardTextOutline,
-        history: ['insight', 'insight/<id>/<projectId>'],
-    },
+    // {
+    //     title: 'Insight Settings',
+    //     path: 'insight',
+    //     description: 'View and edit settings for project insights',
+    //     icon: mdiTextBoxMultipleOutline,
+    //     history: ['insight'],
+    // },
+    // {
+    //     title: 'Insight Settings',
+    //     path: 'insight/:id/:projectId',
+    //     description:
+    //         'View member permissions, pending requests, and all other viewable settings pertaining to the project',
+    //     icon: mdiClipboardTextOutline,
+    //     history: ['insight', 'insight/<id>/<projectId>'],
+    // },
     {
         title: 'Member Settings',
         path: 'members',
