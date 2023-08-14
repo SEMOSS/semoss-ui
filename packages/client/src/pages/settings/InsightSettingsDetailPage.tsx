@@ -12,7 +12,6 @@ export const InsightSettingsDetailPage = () => {
                 projectid: projectId,
                 name: state ? state.name : 'Name not provided',
                 global: state ? state.global : false,
-                permission: state ? state.permission : 3,
             }}
         ></Permissions>
     );

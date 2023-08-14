@@ -11,21 +11,31 @@ interface SimilarDatabasesProps {
 }
 
 const StyledCardContainer = styled('div')({
-    width: '260px',
+    minWidth: '260px',
+    height: '260px',
 });
 
 export const SimilarDatabases = (props: SimilarDatabasesProps) => {
     const { id } = props;
     const navigate = useNavigate();
 
-    const { status, data, refresh } = usePixel<{
-        database_name: string;
-        database_id: string;
-    }>(`SimilarCatalog(database=["${id}"])`);
+    const { status, data, refresh } = usePixel<
+        {
+            database_name: string;
+            database_id: string;
+        }[]
+    >(`SimilarCatalog(database=["${id}"])`);
 
     if (status === 'SUCCESS' && data.length) {
         return (
-            <Stack direction={'row'} flexWrap={'nowrap'} overflow={'auto'}>
+            <div
+                style={{
+                    width: '100%',
+                    display: 'flex',
+                    gap: '8px',
+                    overflowX: 'auto',
+                }}
+            >
                 {data.map((db, i) => {
                     return (
                         <StyledCardContainer key={i}>
@@ -39,7 +49,7 @@ export const SimilarDatabases = (props: SimilarDatabasesProps) => {
                         </StyledCardContainer>
                     );
                 })}
-            </Stack>
+            </div>
         );
     } else if (status === 'LOADING') {
         return (

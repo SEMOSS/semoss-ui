@@ -10,7 +10,6 @@ import { NavigatorLayout } from './NavigatorLayout';
 import { LoginPage } from './LoginPage';
 import { HomePage } from './HomePage';
 import { CatalogPage } from './CatalogPage';
-import { ImportStorage } from './storage';
 
 import {
     DatabaseMetadataPage,
@@ -39,10 +38,10 @@ export const Router = observer(() => {
                 <Route path="app/*" element={<AppRouter />} />
                 <Route path="*" element={<NavigatorLayout />}>
                     <Route index element={<HomePage />} />
-                    <Route
+                    {/* <Route
                         path="import-database"
                         element={<DatabaseImport />}
-                    />
+                    /> */}
                     <Route path="import" element={<DatabaseImport />} />
 
                     <Route path="catalog" element={<CatalogPage />} />
