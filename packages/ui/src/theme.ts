@@ -1,5 +1,4 @@
 import { ThemeOptions, styled, PaletteOptions } from "@mui/material";
-// import { ShapeOptions } from "@material-ui/core/styles";
 // export specifics from the library
 export { styled };
 export type { ThemeOptions };

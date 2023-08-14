@@ -1,8 +1,8 @@
 export type ImportFormComponent = React.FunctionComponent<{
     name: string;
     submitFunc?: (form) => void;
-    setPredictDataTypes?: (val) => void;
     predictDataTypes?: unknown;
+    metamodel?: unknown;
 }> & {
     name2: string;
 

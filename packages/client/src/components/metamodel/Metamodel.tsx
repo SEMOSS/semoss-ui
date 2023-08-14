@@ -1,6 +1,6 @@
 import { useCallback } from 'react';
 import ReactFlow, { MiniMap, Controls, Node, Edge } from 'react-flow-renderer';
-
+import { Button } from '@semoss/ui';
 import { MetamodelNode } from './MetamodelNode';
 import { FloatingEdge } from './FloatingEdge';
 import { MetamodelContext, MetamodelContextType } from '@/contexts';
@@ -27,6 +27,9 @@ interface MetamodelProps {
     selectedNode?: MetamodelNode | null;
     /** Function that is called when a new node is selected */
     onSelectNode: (selected: MetamodelNode | null) => void;
+
+    /** callback to be sent for updates to metamodel */
+    callback?: (data: any) => void;
 }
 
 export const Metamodel = (props: MetamodelProps) => {
@@ -35,8 +38,10 @@ export const Metamodel = (props: MetamodelProps) => {
         onSelectNode = () => null,
         nodes = [],
         edges = [],
+        callback,
     } = props;
 
+    debugger;
     // create the context
     const metamodelContext: MetamodelContextType = {
         selectedNodeId: selectedNode ? selectedNode.id : null,
@@ -76,6 +81,7 @@ export const Metamodel = (props: MetamodelProps) => {
                 <MiniMap />
                 <Controls showInteractive={false} />
             </ReactFlow>
+            {callback && <Button>Import</Button>}
         </MetamodelContext.Provider>
     );
 };

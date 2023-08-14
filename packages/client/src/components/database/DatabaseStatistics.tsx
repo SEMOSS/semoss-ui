@@ -6,7 +6,6 @@ import {
     DownloadForOffline,
     RemoveRedEyeOutlined,
 } from '@mui/icons-material';
-import { SEMOSS } from '@/assets/img/SEMOSS';
 
 import { usePixel } from '@/hooks';
 
@@ -106,7 +105,6 @@ export const DatabaseStatistics = (props: DatabaseStatisticsProps) => {
                         <StyledCardImageContainer>
                             <Icon color="primary">
                                 <AutoGraph />
-                                {/* <SEMOSS width={36} height={40} /> */}
                             </Icon>
                         </StyledCardImageContainer>
 

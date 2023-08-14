@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { useForm, Controller } from 'react-hook-form';
 import {
     Button,
@@ -12,9 +12,12 @@ import {
 import { ImportFormComponent } from './formTypes';
 import { DataFormTable } from './../DataFormTable';
 import { mdiNewspaperVariantMultipleOutline } from '@mdi/js';
+import { Metamodel } from '@/components/metamodel';
+import { useRootStore } from '@/hooks';
 
 export const CSVForm: ImportFormComponent = (props) => {
-    const { submitFunc, setPredictDataTypes, predictDataTypes } = props;
+    const { submitFunc, metamodel, predictDataTypes } = props;
+    const { monolithStore } = useRootStore();
 
     const { control, getValues, handleSubmit, reset, setValue } = useForm();
 
@@ -41,9 +44,78 @@ export const CSVForm: ImportFormComponent = (props) => {
         });
     }, [values.FILE]);
 
+    const submitMetmodelPixel = async () => {
+        const pixel = '1+1';
+
+        const resp = await monolithStore.runQuery(pixel);
+
+        debugger;
+    };
+    metamodel ? console.log(metamodel) : null;
+
+    const nodes = useMemo(() => {
+        const formattedNodes = [];
+
+        // TO-DO: fix TS errors on metamodel and node
+        if (metamodel) {
+            Object.entries(metamodel.positions).forEach((table, i) => {
+                // table = ['db name', {x: '', y: '' }]
+                const node = {
+                    data: {
+                        name: table[0],
+                        properties: [], // get columns from metamodel.nodeProp
+                    },
+                    id: table[0],
+                    position: { x: table[1].left, y: table[1].top },
+                    type: 'metamodel',
+                };
+
+                // first see if there is a property for the table name in .nodeProp
+                if (metamodel.nodeProp[table[0]]) {
+                    const columnsForTable = metamodel.nodeProp[table[0]];
+
+                    columnsForTable.forEach((col) => {
+                        const foundColumn = metamodel.dataTypes[col];
+
+                        node.data.properties.push({
+                            id: table[0] + '__' + col,
+                            name: col,
+                            type: foundColumn,
+                        });
+                    });
+                } else {
+                    const foundColumn = metamodel.dataTypes[table[0]];
+                    node.data.properties.push({
+                        id: table[0],
+                        name: table[0],
+                        type: foundColumn,
+                    });
+                }
+                formattedNodes.push(node);
+            });
+        }
+
+        return formattedNodes;
+    }, [metamodel]);
+
+    const edges = useMemo(() => {
+        const newEdges = [];
+        if (metamodel) {
+            metamodel.relation.forEach((rel) => {
+                newEdges.push({
+                    id: rel.relName,
+                    type: 'floating',
+                    source: rel.fromTable,
+                    target: rel.toTable,
+                });
+            });
+        }
+        return newEdges;
+    }, [metamodel]);
+
     return (
         <>
-            {!predictDataTypes && (
+            {!predictDataTypes && !metamodel && (
                 <form
                     onSubmit={handleSubmit(onSubmit)}
                     onKeyDown={(e) => checkKeyDown(e)}
@@ -205,8 +277,20 @@ export const CSVForm: ImportFormComponent = (props) => {
                     </Stack>
                 </form>
             )}
+            {/* After the Form Submission */}
+            {/* Workflow 1 */}
             {predictDataTypes && (
                 <DataFormTable predictDataTypes={predictDataTypes} />
+            )}
+            {/* Workflow 2 */}
+            {metamodel && (
+                <div style={{ width: '100%', height: '600px' }}>
+                    <Metamodel
+                        onSelectNode={null}
+                        edges={edges}
+                        nodes={nodes}
+                    />
+                </div>
             )}
         </>
     );
