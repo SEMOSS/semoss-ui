@@ -6,6 +6,7 @@ import {
     Chip,
     Stack,
     Typography,
+    Modal,
 } from '@semoss/ui';
 
 import { MODULE } from '@/constants';
@@ -84,7 +85,10 @@ export const EngineShell = (props: EngineShellProps) => {
 
     // track the edit state
     const [edit, setEdit] = useState(false);
+
     const [requestAccess, setRequestAccess] = useState(false);
+    const [codeModal, setCodeModal] = useState(false);
+    const [codeBlocks, setCodeBlocks] = useState({});
 
     // get the engine info
     const { status, data } = usePixel<{
@@ -108,6 +112,26 @@ export const EngineShell = (props: EngineShellProps) => {
 
             monolithStore.download(insightID, output);
         });
+    };
+
+    const getEngineUsage = async () => {
+        try {
+            const response = await monolithStore.runQuery(
+                `GetEngineUsage(engine=['${id}'])`,
+            );
+
+            const output = response.pixelReturn[0].output;
+            const type = response.pixelReturn[0].operationType;
+
+            if (type.indexOf('ERROR') > -1) {
+                console.error(output);
+            } else {
+                setCodeBlocks(output);
+                setCodeModal(true);
+            }
+        } catch (e) {
+            console.error(e);
+        }
     };
 
     // show a loading screen when it is pending
@@ -141,6 +165,65 @@ export const EngineShell = (props: EngineShellProps) => {
                             Overview
                         </Typography>
                         <Stack direction="row">
+                            <Button
+                                variant={'outlined'}
+                                onClick={() => {
+                                    getEngineUsage();
+                                }}
+                            >
+                                Show in Code
+                            </Button>
+
+                            {codeModal && (
+                                <Modal open={codeModal} maxWidth={'md'}>
+                                    <Modal.Title>Code Usage</Modal.Title>
+                                    <Modal.Content>
+                                        {codeBlocks['pixel'] && (
+                                            <div>
+                                                <Typography variant={'body1'}>
+                                                    Pixel
+                                                </Typography>
+                                                <pre>
+                                                    <code>
+                                                        {codeBlocks['pixel']}
+                                                    </code>
+                                                </pre>
+                                            </div>
+                                        )}
+                                        {codeBlocks['python'] && (
+                                            <div>
+                                                <Typography variant={'body1'}>
+                                                    Python
+                                                </Typography>
+                                                <pre>
+                                                    <code>
+                                                        {codeBlocks['python']}
+                                                    </code>
+                                                </pre>
+                                            </div>
+                                        )}
+                                        {codeBlocks['java'] && (
+                                            <div>
+                                                <Typography variant={'body1'}>
+                                                    Java
+                                                </Typography>
+                                                <pre>
+                                                    <code>
+                                                        {codeBlocks['java']}
+                                                    </code>
+                                                </pre>
+                                            </div>
+                                        )}
+                                    </Modal.Content>
+                                    <Modal.Actions>
+                                        <Button
+                                            onClick={() => setCodeModal(false)}
+                                        >
+                                            Cancel
+                                        </Button>
+                                    </Modal.Actions>
+                                </Modal>
+                            )}
                             {configStore.store.security &&
                                 data.database_discoverable &&
                                 role !== 'OWNER' && (

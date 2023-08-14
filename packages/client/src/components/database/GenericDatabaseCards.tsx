@@ -299,6 +299,20 @@ const UnstyledVoteCount = styled(ButtonGroup.Item)(({ theme }) => ({
     },
 }));
 
+/**
+ * @name formatDBName
+ * @param str
+ * @returns formatted db name
+ */
+const formatDBName = (str: string) => {
+    let i;
+    const frags = str.split('_');
+    for (i = 0; i < frags.length; i++) {
+        frags[i] = frags[i].charAt(0).toUpperCase() + frags[i].slice(1);
+    }
+    return frags.join(' ');
+};
+
 interface DatabaseCardProps {
     /** Name of the Database */
     name: string;
@@ -365,7 +379,9 @@ export const DatabaseLandscapeCard = (props: DatabaseCardProps) => {
                 />
                 <StyledLandscapeCardHeaderDiv>
                     <StyledLandscapeCardTitleDiv>
-                        <Typography variant={'body1'}>{name}</Typography>
+                        <Typography variant={'body1'}>
+                            {formatDBName(name)}
+                        </Typography>
                         <IconButton
                             size={'small'}
                             title={
@@ -517,7 +533,7 @@ export const DatabaseTileCard = (props: DatabaseCardProps) => {
                 sx={{ height: '118px' }}
             />
             <Card.Header
-                title={name}
+                title={formatDBName(name)}
                 subheader={
                     <StyledPublishedByContainer>
                         <StyledAvatar>
@@ -650,7 +666,9 @@ export const PlainDatabaseCard = (props) => {
                 sx={{ height: '118px' }}
             />
             <StyledTileCardContent sx={{ marginTop: '8px' }}>
-                <StyledDbName variant={'body1'}>{name}</StyledDbName>
+                <StyledDbName variant={'body1'}>
+                    {formatDBName(name)}
+                </StyledDbName>
             </StyledTileCardContent>
         </StyledPlainTileCard>
     );
