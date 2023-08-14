@@ -1,7 +1,7 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { observer } from 'mobx-react-lite';
 import { usePixel, useDatabase } from '@/hooks';
-import { theme } from '@/theme';
+
 import {
     styled,
     Select,
@@ -10,7 +10,6 @@ import {
     Icon,
     Pill,
     Form,
-    Select,
     Button,
     Modal,
 } from '@semoss/ui';
@@ -26,7 +25,7 @@ import {
 
 import { mdiPlus } from '@mdi/js';
 
-const StyledMetamodelContainer = styled('div')(() => ({
+const StyledMetamodelContainer = styled('div')(({ theme }) => ({
     height: '55vh',
     width: '100%',
     borderWidth: theme.borderWidths.default,
@@ -39,7 +38,7 @@ const StyledActionBtnContainer = styled('div')(() => ({
     width: '60%',
     marginBottom: '9px',
 }));
-const StyledTypeahead = styled(Select)(() => ({
+const StyledTypeahead = styled(Select)(({ theme }) => ({
     height: '40px',
     width: '50%',
     borderWidth: theme.borderWidths.default,
