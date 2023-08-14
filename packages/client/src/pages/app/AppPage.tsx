@@ -1,4 +1,3 @@
-import { createElement } from 'react';
 import { observer } from 'mobx-react-lite';
 import { Navigate } from 'react-router-dom';
 
@@ -19,8 +18,8 @@ export const AppPage = observer(() => {
     // return the app
     return (
         <AppRenderer
-            id={workspaceStore.selectedApp.id}
-            url={workspaceStore.selectedApp.url}
+            insightId={workspaceStore.selectedApp.insightId}
+            appId={workspaceStore.selectedApp.appId}
         ></AppRenderer>
     );
 });

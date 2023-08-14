@@ -2,9 +2,7 @@ import { useEffect, useState, useRef, useReducer } from 'react';
 
 import { useRootStore, usePixel, useSettings } from '../../hooks';
 import { useNavigate } from 'react-router-dom';
-import { LoadingScreen } from '@/components/ui';
-import { ProjectLandscapeCard, ProjectTileCard } from '@/components/project';
-import { Permissions } from '@/components/database';
+import { ProjectTileCard } from '@/components/project';
 
 import {
     Grid,
@@ -13,7 +11,6 @@ import {
     MenuItem,
     ToggleButton,
     ToggleButtonGroup,
-    Typography,
     styled,
 } from '@semoss/ui';
 
@@ -36,10 +33,6 @@ const StyledSearchbarContainer = styled('div')(({ theme }) => ({
     alignItems: 'flex-start',
     gap: theme.spacing(3),
 }));
-
-const StyledSearchbar = styled(Search)({
-    width: '80%',
-});
 
 const StyledSort = styled(Select)({
     width: '20%',
@@ -175,7 +168,10 @@ export const ProjectSettingsPage = () => {
                 </StyledSort>
 
                 <ToggleButtonGroup size={'small'} value={view}>
-                    <ToggleButton onClick={(e, v) => setView(v)} value={'tile'}>
+                    <ToggleButton<string>
+                        onClick={(e, v) => setView(v)}
+                        value={'tile'}
+                    >
                         <SpaceDashboardOutlined />
                     </ToggleButton>
                     <ToggleButton onClick={(e, v) => setView(v)} value={'list'}>

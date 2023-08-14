@@ -26,7 +26,8 @@ const StyledButton = styled(Button)({
 });
 
 const StyledDropzone = styled("div", {
-    shouldForwardProp: (prop) => prop !== "stuck",
+    shouldForwardProp: (prop) =>
+        prop !== "disabled" && prop !== "valid" && prop !== "dragging",
 })<{
     disabled: boolean;
     valid: boolean;

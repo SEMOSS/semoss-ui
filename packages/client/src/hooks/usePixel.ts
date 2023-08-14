@@ -7,7 +7,7 @@ interface PixelState<D> {
     /** Status of the pixel call */
     status: 'INITIAL' | 'LOADING' | 'SUCCESS' | 'ERROR';
     /** Data returned from the pixel call */
-    data?: any;
+    data?: D;
     /** Error returned from the pixel call */
     error?: Error;
 }

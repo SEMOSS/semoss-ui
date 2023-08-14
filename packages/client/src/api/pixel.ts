@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const BACKEND = `${process.env.ENDPOINT}${process.env.MODULE}`;
+import { MODULE } from '@/constants';
 
 /**
  * Run a pixel string
@@ -34,7 +34,7 @@ export const runPixel = async <O extends unknown[] | []>(
                 pixelExpression: string;
                 pixelId: string;
             }[];
-        }>(`${BACKEND}/api/engine/runPixel`, postData, {
+        }>(`${MODULE}/api/engine/runPixel`, postData, {
             headers: {
                 'content-type': 'application/x-www-form-urlencoded',
             },

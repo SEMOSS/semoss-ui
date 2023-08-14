@@ -2,7 +2,6 @@ import { DatabaseMetadataPage } from './DatabaseMetadataPage';
 import { DatabaseModifyPage } from './DatabaseModifyPage';
 import { DatabaseSettingsPage } from './DatabaseSettingsPage';
 import { DatabaseImport } from '../engine-import/forms/DatabaseImport';
-
 import { DatabaseQueryDataPage } from './DatabaseQueryDataPage';
 import { DatabaseReplaceDataPage } from './DatabaseReplaceDataPage';
 

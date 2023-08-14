@@ -1,5 +1,6 @@
 import { Controller, Control, FieldValues, Path } from 'react-hook-form';
 import {
+    styled,
     Form,
     Input,
     Textarea,
@@ -33,7 +34,7 @@ import {
 // type FieldInput = GenericField<"input", InputProps<string>>;
 
 type FieldInput = { component: 'input' } & Omit<
-    TextFieldProps,
+    InputProps<string>,
     'onChange' | 'value' | 'defaultValue'
 >;
 
@@ -121,7 +122,7 @@ interface FieldProps<V extends FieldValues> {
     layout?: FormFieldProps['layout'];
 }
 
-const StyledRequired = styled('span')({
+const StyledRequired = styled('span', {
     color: theme.colors['error-1'],
 });
 

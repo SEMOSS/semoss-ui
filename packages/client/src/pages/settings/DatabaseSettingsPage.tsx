@@ -2,8 +2,6 @@ import { useEffect, useState, useRef, useReducer } from 'react';
 import { useRootStore, usePixel } from '@/hooks';
 import { useSettings } from '@/hooks/useSettings';
 import { useNavigate } from 'react-router-dom';
-import { LoadingScreen } from '@/components/ui';
-import { MonolithStore } from '@/stores';
 
 import {
     Grid,
@@ -12,7 +10,6 @@ import {
     MenuItem,
     ToggleButton,
     ToggleButtonGroup,
-    Typography,
     styled,
 } from '@semoss/ui';
 
@@ -21,13 +18,8 @@ import {
     FormatListBulletedOutlined,
 } from '@mui/icons-material';
 
-import {
-    DatabaseLandscapeCard,
-    DatabaseTileCard,
-    Permissions,
-} from '@/components/database';
+import { DatabaseLandscapeCard, DatabaseTileCard } from '@/components/database';
 
-import defaultDBImage from '../../assets/img/placeholder.png';
 import { formatName } from '@/utils';
 
 export interface DBMember {
@@ -176,6 +168,7 @@ export const DatabaseSettingsPage = () => {
             permission: number;
             tag: string;
             user_permission: number;
+            upvotes?: number;
         }[]
     >(`
         MyEngines(metaKeys = ${JSON.stringify(
@@ -388,7 +381,6 @@ export const DatabaseSettingsPage = () => {
                                       <DatabaseLandscapeCard
                                           name={db.app_name}
                                           id={db.app_id}
-                                          image={defaultDBImage}
                                           tag={db.tag}
                                           owner={db.database_created_by}
                                           description={db.description}
@@ -425,7 +417,6 @@ export const DatabaseSettingsPage = () => {
                                       <DatabaseTileCard
                                           name={db.app_name}
                                           id={db.app_id}
-                                          image={defaultDBImage}
                                           tag={db.tag}
                                           owner={db.database_created_by}
                                           description={db.description}
