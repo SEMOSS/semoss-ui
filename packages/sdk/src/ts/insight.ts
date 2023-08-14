@@ -1,5 +1,13 @@
 import axios from 'axios';
-import { getSystemConfig, login, logout, oauth, runPixel } from './api';
+import {
+    getSystemConfig,
+    login,
+    logout,
+    oauth,
+    runPixel,
+    uploadFile,
+    download,
+} from './api';
 
 interface InsightStoreInterface {
     /** Id of the app */
@@ -47,7 +55,6 @@ export class Insight {
         if (!appId) {
             throw new Error(`AppId is required`);
         }
-
         // set the appId
         this._store.appId = appId;
     }
@@ -354,6 +361,51 @@ export class Insight {
 
                 // success
                 return response;
+            } catch (error) {
+                this.processActionError(error);
+            }
+        },
+
+        /**
+         * Upload a file
+         *
+         * @param files- file objects to upload
+         * @param project - project to upload file to
+         * @param path - relative path
+         */
+        uploadFile: async (
+            files: File[],
+            insightId: string,
+            projectId: string,
+            path: string | null,
+        ): Promise<
+            {
+                fileName: string;
+                fileLocation: string;
+            }[]
+        > => {
+            try {
+                const response = await uploadFile(
+                    files,
+                    insightId || this._store.insightId,
+                    projectId,
+                    path,
+                );
+                return response;
+            } catch (error) {
+                this.processActionError(error);
+            }
+        },
+
+        /**
+         * Download a file by using a unique key
+         *
+         * @param insightID - insightID to download the file
+         * @param fileKey - id for the file to download
+         */
+        download: async (insightID: string, fileKey: string): Promise<void> => {
+            try {
+                await download(insightID, fileKey);
             } catch (error) {
                 this.processActionError(error);
             }

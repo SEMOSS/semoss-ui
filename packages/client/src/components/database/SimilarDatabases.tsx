@@ -28,7 +28,6 @@ export const SimilarDatabases = (props: SimilarDatabasesProps) => {
 
     if (status === 'SUCCESS' && data.length) {
         return (
-            // <Stack direction={'row'} flexWrap={'nowrap'} overflow={'auto'}>
             <div
                 style={{
                     width: '100%',
@@ -51,7 +50,6 @@ export const SimilarDatabases = (props: SimilarDatabasesProps) => {
                     );
                 })}
             </div>
-            // </Stack>
         );
     } else if (status === 'LOADING') {
         return (

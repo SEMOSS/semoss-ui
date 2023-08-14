@@ -63,6 +63,18 @@ const StyledDatabaseImage = styled('img')({
     borderRadius: '8.862px',
 });
 
+const StyledCodeBlock = styled('pre')(({ theme }) => ({
+    background: theme.palette.grey['100'],
+    borderRadius: theme.shape.borderRadius,
+    padding: theme.spacing(1),
+    margin: '0px',
+}));
+
+const StyledCodeBlockHeader = styled('div')(({ theme }) => ({
+    display: 'flex',
+    justifyContent: 'space-between',
+}));
+
 interface EngineShellProps {
     /** Children to wrap in the RootStore */
     children: React.ReactNode;
@@ -178,42 +190,100 @@ export const EngineShell = (props: EngineShellProps) => {
                                 <Modal open={codeModal} maxWidth={'md'}>
                                     <Modal.Title>Code Usage</Modal.Title>
                                     <Modal.Content>
-                                        {codeBlocks['pixel'] && (
-                                            <div>
-                                                <Typography variant={'body1'}>
-                                                    Pixel
-                                                </Typography>
-                                                <pre>
-                                                    <code>
-                                                        {codeBlocks['pixel']}
-                                                    </code>
-                                                </pre>
-                                            </div>
-                                        )}
-                                        {codeBlocks['python'] && (
-                                            <div>
-                                                <Typography variant={'body1'}>
-                                                    Python
-                                                </Typography>
-                                                <pre>
-                                                    <code>
-                                                        {codeBlocks['python']}
-                                                    </code>
-                                                </pre>
-                                            </div>
-                                        )}
-                                        {codeBlocks['java'] && (
-                                            <div>
-                                                <Typography variant={'body1'}>
-                                                    Java
-                                                </Typography>
-                                                <pre>
-                                                    <code>
-                                                        {codeBlocks['java']}
-                                                    </code>
-                                                </pre>
-                                            </div>
-                                        )}
+                                        <Stack spacing={4}>
+                                            {codeBlocks['pixel'] && (
+                                                <div>
+                                                    <StyledCodeBlockHeader>
+                                                        <Typography
+                                                            variant={'body1'}
+                                                        >
+                                                            Pixel
+                                                        </Typography>
+                                                        <Button
+                                                            size={'small'}
+                                                            onClick={() =>
+                                                                navigator.clipboard.writeText(
+                                                                    codeBlocks[
+                                                                        'pixel'
+                                                                    ],
+                                                                )
+                                                            }
+                                                        >
+                                                            Copy
+                                                        </Button>
+                                                    </StyledCodeBlockHeader>
+                                                    <StyledCodeBlock>
+                                                        <code>
+                                                            {
+                                                                codeBlocks[
+                                                                    'pixel'
+                                                                ]
+                                                            }
+                                                        </code>
+                                                    </StyledCodeBlock>
+                                                </div>
+                                            )}
+                                            {codeBlocks['python'] && (
+                                                <div>
+                                                    <StyledCodeBlockHeader>
+                                                        <Typography
+                                                            variant={'body1'}
+                                                        >
+                                                            Python
+                                                        </Typography>
+                                                        <Button
+                                                            size={'small'}
+                                                            onClick={() =>
+                                                                navigator.clipboard.writeText(
+                                                                    codeBlocks[
+                                                                        'python'
+                                                                    ],
+                                                                )
+                                                            }
+                                                        >
+                                                            Copy
+                                                        </Button>
+                                                    </StyledCodeBlockHeader>
+                                                    <StyledCodeBlock>
+                                                        <code>
+                                                            {
+                                                                codeBlocks[
+                                                                    'python'
+                                                                ]
+                                                            }
+                                                        </code>
+                                                    </StyledCodeBlock>
+                                                </div>
+                                            )}
+                                            {codeBlocks['java'] && (
+                                                <div>
+                                                    <StyledCodeBlockHeader>
+                                                        <Typography
+                                                            variant={'body1'}
+                                                        >
+                                                            Java
+                                                        </Typography>
+                                                        <Button
+                                                            size={'small'}
+                                                            onClick={() =>
+                                                                navigator.clipboard.writeText(
+                                                                    codeBlocks[
+                                                                        'java'
+                                                                    ],
+                                                                )
+                                                            }
+                                                        >
+                                                            Copy
+                                                        </Button>
+                                                    </StyledCodeBlockHeader>
+                                                    <StyledCodeBlock>
+                                                        <code>
+                                                            {codeBlocks['java']}
+                                                        </code>
+                                                    </StyledCodeBlock>
+                                                </div>
+                                            )}
+                                        </Stack>
                                     </Modal.Content>
                                     <Modal.Actions>
                                         <Button
