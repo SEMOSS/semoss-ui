@@ -17,7 +17,6 @@ import {
     DatabaseReplaceDataPage,
     DatabaseQueryDataPage,
     DatabaseImport,
-    DatabaseModifyPage,
 } from './database';
 
 import { EngineLayout, EngineIndexPage } from './engine';
@@ -57,10 +56,6 @@ export const Router = observer(() => {
                             <Route
                                 path="settings"
                                 element={<DatabaseSettingsPage />}
-                            />
-                            <Route
-                                path="modify"
-                                element={<DatabaseModifyPage />}
                             />
                         </Route>
                     </Route>

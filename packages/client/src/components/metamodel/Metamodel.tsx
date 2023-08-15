@@ -41,7 +41,6 @@ export const Metamodel = (props: MetamodelProps) => {
         callback,
     } = props;
 
-    debugger;
     // create the context
     const metamodelContext: MetamodelContextType = {
         selectedNodeId: selectedNode ? selectedNode.id : null,

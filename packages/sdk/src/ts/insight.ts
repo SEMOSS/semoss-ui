@@ -1,11 +1,13 @@
 import axios from 'axios';
+
+import { ENV } from './config';
 import {
     getSystemConfig,
     login,
     logout,
     oauth,
     runPixel,
-    uploadFile,
+    upload,
     download,
 } from './api';
 
@@ -41,23 +43,11 @@ export class Insight {
     private _store: InsightStoreInterface = {
         appId: '',
         insightId: '',
-        isInitialized: true,
+        isInitialized: false,
         isAuthorized: false,
         error: null,
         system: null,
     };
-
-    /**
-     * Id of the app
-     * @param appId - id of app
-     */
-    constructor(appId: string) {
-        if (!appId) {
-            throw new Error(`AppId is required`);
-        }
-        // set the appId
-        this._store.appId = appId;
-    }
 
     /** Getters */
     /**
@@ -92,10 +82,39 @@ export class Insight {
     /**
      * Initialize the insight
      *
-     * insightId - insightId to initialize with
+     * options - options to initialize with
      */
-    initialize = async (insightId?: string): Promise<void> => {
-        // try to set the insightID from the url if it is there
+    initialize = async (): Promise<void> => {
+        // reset it
+        this._store.isInitialized = false;
+
+        let insightId = '';
+
+        // try to set the env from the window
+        try {
+            const env = JSON.parse(
+                document.getElementById('semoss-env').textContent,
+            ) as {
+                APP: string;
+                MODULE: string;
+            };
+
+            if (env) {
+                if (env.APP) {
+                    ENV.APP = env.APP;
+                }
+
+                if (env.MODULE) {
+                    ENV.MODULE = env.MODULE;
+                }
+            }
+        } catch (e) {
+            console.error(e);
+        }
+
+        // if not set from the window, try to grab from the backup
+
+        // try to set the insightId from the url
         try {
             if (!insightId) {
                 const urlParams = new URLSearchParams(window.location.search);
@@ -106,6 +125,15 @@ export class Insight {
         }
 
         try {
+            // validate
+            if (!ENV.MODULE) {
+                throw new Error('module is required');
+            }
+
+            if (!ENV.APP) {
+                throw new Error(`appId is required`);
+            }
+
             // get the system information
             await this.initializeSystem();
 
@@ -207,7 +235,7 @@ export class Insight {
      */
     private initializeApp = async (id?: string): Promise<void> => {
         const { insightId, errors } = await runPixel<[Record<string, unknown>]>(
-            `SetContext("${this._store.appId}")`,
+            `SetContext("${ENV.APP}")`,
             id || 'new',
         );
 
@@ -385,7 +413,7 @@ export class Insight {
             }[]
         > => {
             try {
-                const response = await uploadFile(
+                const response = await upload(
                     files,
                     insightId || this._store.insightId,
                     projectId,

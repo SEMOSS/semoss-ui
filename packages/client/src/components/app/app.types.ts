@@ -1,7 +1,6 @@
 export interface App {
     project_id: string;
     project_name: string;
-    project_description?: string;
     project_type: string;
     project_cost: string;
     project_global: string;
@@ -21,6 +20,7 @@ export interface App {
     user_permission?: string;
     group_permission?: string;
     tag?: string | string[];
+    description?: string;
 }
 
 /**
