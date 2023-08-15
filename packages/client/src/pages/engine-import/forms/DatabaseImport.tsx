@@ -380,7 +380,7 @@ export const DatabaseImport = () => {
                                                         sm={1}
                                                     >
                                                         <StyledFormTypeBox
-                                                            title={stage}
+                                                            // title={stage}
                                                             onClick={() =>
                                                                 setStepTwo(
                                                                     stage,
@@ -417,7 +417,7 @@ export const DatabaseImport = () => {
                                                             sm={1}
                                                         >
                                                             <StyledFormTypeBox
-                                                                title={stage}
+                                                                // title={stage}
                                                                 onClick={() => {
                                                                     setStepTwo(
                                                                         'Add Storage',
