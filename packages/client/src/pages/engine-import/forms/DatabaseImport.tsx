@@ -138,6 +138,7 @@ export const DatabaseImport = () => {
     const insightId = configStore.store.insightID;
 
     const formSubmit = (values) => {
+        /** Storage: START */
         if (stepOne === 'Add Storage') {
             const pixel = `CreateStorageEngine(storage=["${
                 values.storage
@@ -164,7 +165,12 @@ export const DatabaseImport = () => {
             });
             return;
         }
+        /** Storage: END */
 
+        /** Connect to External: START */
+        /** Connect to External: END */
+
+        /** Drag and Drop: START */
         if (values.METAMODEL_TYPE === 'As Suggested Metamodel') {
             monolithStore
                 .uploadFile(values.FILE, insightId)
@@ -193,6 +199,7 @@ export const DatabaseImport = () => {
                         .then((res) => setPredictDataTypes(res));
                 });
         }
+        /** Drag and Drop: END */
     };
 
     const getForm = (form) => {
