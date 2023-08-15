@@ -126,6 +126,8 @@ export const CSVForm: ImportFormComponent = (props) => {
         );
     };
 
+    metamodel ? console.log(metamodel) : null;
+
     return (
         <>
             {!predictDataTypes && !metamodel && (
