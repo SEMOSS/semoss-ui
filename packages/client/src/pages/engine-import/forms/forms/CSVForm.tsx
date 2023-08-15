@@ -19,9 +19,13 @@ export const CSVForm: ImportFormComponent = (props) => {
     const { submitFunc, metamodel, predictDataTypes } = props;
     const { monolithStore } = useRootStore();
 
-    const { control, getValues, handleSubmit, reset, setValue } = useForm();
+    const { control, getValues, handleSubmit, reset, watch } = useForm();
 
     const values = getValues();
+
+    const watchDelimeter = watch('DELIMETER');
+    const watchDatabaseName = watch('DATABASE_NAME');
+    const watchFile = watch('FILE');
 
     const checkKeyDown = (e) => {
         if (e.key === 'Enter') e.preventDefault();
@@ -43,15 +47,6 @@ export const CSVForm: ImportFormComponent = (props) => {
             METAMODEL_TYPE: 'As Suggested Metamodel',
         });
     }, [values.FILE]);
-
-    const submitMetmodelPixel = async () => {
-        const pixel = '1+1';
-
-        const resp = await monolithStore.runQuery(pixel);
-
-        debugger;
-    };
-    metamodel ? console.log(metamodel) : null;
 
     const nodes = useMemo(() => {
         const formattedNodes = [];
@@ -95,9 +90,27 @@ export const CSVForm: ImportFormComponent = (props) => {
             });
         }
 
-        debugger;
         return formattedNodes;
     }, [metamodel]);
+
+    const submitMetmodelPixel = async (edges) => {
+        const dataTypeObject = {};
+
+        nodes.forEach((n) => {
+            dataTypeObject[`${n.data.name}`] = n.data.properties[0].type;
+        });
+
+        const resp = await monolithStore.runQuery(
+            `databaseVar = RdbmsCsvUpload(database=["${watchDatabaseName}"], filePath=["${
+                watchFile.name
+            }"], delimiter=["${watchDelimeter}"], metamodel=[${JSON.stringify(
+                edges,
+            )}], dataTypeMap=[${JSON.stringify(
+                dataTypeObject,
+            )}], newHeaders=[{}], additionalDataTypes=[{}], descriptionMap=[{}], logicalNamesMap=[{}], existing=[false])`,
+        );
+    };
+
     return (
         <>
             {!predictDataTypes && !metamodel && (
@@ -270,7 +283,12 @@ export const CSVForm: ImportFormComponent = (props) => {
             {/* Workflow 2 */}
             {metamodel && (
                 <div style={{ width: '100%', height: '600px' }}>
-                    <Metamodel onSelectNode={null} edges={[]} nodes={nodes} />
+                    <Metamodel
+                        callback={submitMetmodelPixel}
+                        onSelectNode={null}
+                        edges={[]}
+                        nodes={nodes}
+                    />
                 </div>
             )}
         </>

@@ -81,7 +81,9 @@ export const Metamodel = (props: MetamodelProps) => {
                 <MiniMap />
                 <Controls showInteractive={false} />
             </ReactFlow>
-            {callback && <Button>Import</Button>}
+            {callback && (
+                <Button onClick={() => callback(edgeTypes)}>Import</Button>
+            )}
         </MetamodelContext.Provider>
     );
 };
