@@ -1,16 +1,9 @@
 import React from 'react';
 import { Page } from '@/components/ui/';
-import {
-    styled,
-    Typography,
-    Box,
-    Grid,
-    IconButton,
-    useNotification,
-} from '@semoss/ui';
-import { useNavigate } from 'react-router-dom';
+import { styled, Typography, Box, Grid, IconButton } from '@semoss/ui';
+// import { useNavigate } from 'react-router-dom';
 import { FORM_ROUTES } from './forms';
-import { stepsOne, stepsTwo } from './formSteps.constants';
+import { stepsOne, stepsTwo, IconMapper } from './formSteps.constants';
 import { UploadData } from './UploadData';
 import { CopyDatabaseForm } from './CopyDatabaseForm';
 import { StorageForm } from './StorageForm';
@@ -31,6 +24,12 @@ const StyledBox = styled(Box)({
     marginBottom: '32px',
 });
 
+const StyledInnerBox = styled('div')(({ theme }) => ({
+    display: 'flex',
+    alignItems: 'center',
+    gap: theme.spacing(1),
+}));
+
 const StyledStepBox = styled(Box)({
     width: '350px',
     height: '250px',
@@ -42,19 +41,37 @@ const StyledStepBox = styled(Box)({
     boxShadow: '16px 21px 15px -3px rgba(0,0,0,0.1)',
 });
 
-const StyledFormTypeBox = styled(Box)({
-    maxWidth: '350px',
-    maxHeight: '250px',
-    cursor: 'pointer',
+const StyledCardImage = styled('img')({
+    display: 'flex',
+    height: '30px',
+    width: '30px',
+    alignItems: 'flex-start',
+    gap: '10px',
+    alignSelf: 'stretch',
+    overflowClipMargin: 'content-box',
+    overflow: 'clip',
+    objectFit: 'cover',
+    // aspectRatio: '1/1'
+});
+
+const StyledCardText = styled('p')({
     overflow: 'hidden',
     textOverflow: 'ellipsis',
     whiteSpace: 'nowrap',
+    margin: '0',
+});
+
+const StyledFormTypeBox = styled(Box)({
+    maxWidth: '215px',
+    maxHeight: '75px',
+    borderRadius: '12px',
+    cursor: 'pointer',
     display: 'block',
     justifyContent: 'center',
     alignItems: 'center',
     border: '1px solid rgba(0,0,0,0.1)',
-    padding: '24px',
-    boxShadow: '10px 10px 10px -3px rgba(0,0,0,0.1)',
+    padding: '16px 24px',
+    boxShadow: '0px 5px 22px 0px rgba(0,0,0,0.04)',
 });
 
 const StyledCategoryTitle = styled(Box)({
@@ -71,8 +88,8 @@ export const DatabaseImport = () => {
     const [predictDataTypes, setPredictDataTypes] = React.useState(null);
 
     const { configStore, monolithStore } = useRootStore();
-    const navigate = useNavigate();
-    const notification = useNotification();
+    // const navigate = useNavigate();
+    // const notification = useNotification();
 
     const insightId = configStore.store.insightID;
 
@@ -205,7 +222,18 @@ export const DatabaseImport = () => {
                                                                 )
                                                             }
                                                         >
-                                                            {stage}
+                                                            <StyledInnerBox>
+                                                                <StyledCardImage
+                                                                    src={
+                                                                        IconMapper[
+                                                                            stage
+                                                                        ]
+                                                                    }
+                                                                />
+                                                                <StyledCardText>
+                                                                    {stage}
+                                                                </StyledCardText>
+                                                            </StyledInnerBox>
                                                         </StyledFormTypeBox>
                                                     </Grid>
                                                 );
@@ -242,7 +270,18 @@ export const DatabaseImport = () => {
                                                             setStepTwo(stage)
                                                         }
                                                     >
-                                                        {stage}
+                                                        <StyledInnerBox>
+                                                            <StyledCardImage
+                                                                src={
+                                                                    IconMapper[
+                                                                        stage
+                                                                    ]
+                                                                }
+                                                            />
+                                                            <StyledCardText>
+                                                                {stage}
+                                                            </StyledCardText>
+                                                        </StyledInnerBox>
                                                     </StyledFormTypeBox>
                                                 </Grid>
                                             );
@@ -282,7 +321,18 @@ export const DatabaseImport = () => {
                                                                 );
                                                             }}
                                                         >
-                                                            {stage}
+                                                            <StyledInnerBox>
+                                                                <StyledCardImage
+                                                                    src={
+                                                                        IconMapper[
+                                                                            stage
+                                                                        ]
+                                                                    }
+                                                                />
+                                                                <StyledCardText>
+                                                                    {stage}
+                                                                </StyledCardText>
+                                                            </StyledInnerBox>
                                                         </StyledFormTypeBox>
                                                     </Grid>
                                                 );
