@@ -31,7 +31,7 @@ pnpm_build_dev:
         - apt-get update
         - apt-get install -y maven
         # - npm install webpack --save-dev
-        - npm install -g pnpm
+        - npm install -g pnpm@6
         - pnpm install
         - pnpm -v
         - pnpm run build

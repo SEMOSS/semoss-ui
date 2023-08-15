@@ -14,7 +14,10 @@ const StyledTabPanel = styled('div')(({ theme }) => ({
     height: '100%',
     width: '100%',
     overflow: 'auto',
-    // border: `solid ${theme.palette.grey['300']}`
+    borderLeft: `solid ${theme.palette.grey['100']}`,
+    borderRight: `solid ${theme.palette.grey['100']}`,
+    borderTop: `solid ${theme.palette.grey['100']}`,
+    borderRadius: theme.shape.borderRadius,
 }));
 
 const StyledEditor = styled(Editor)(({ theme }) => ({

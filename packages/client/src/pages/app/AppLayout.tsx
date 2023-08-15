@@ -1,8 +1,9 @@
 import { observer } from 'mobx-react-lite';
-import { Outlet, Link, useNavigate } from 'react-router-dom';
+import { Outlet, Link } from 'react-router-dom';
 import { styled, Stack, Icon, Chip } from '@semoss/ui';
-
 import { AccountCircle } from '@mui/icons-material';
+
+import { THEME } from '@/constants';
 import { useRootStore } from '@/hooks';
 
 const NAV_HEIGHT = '48px';
@@ -103,7 +104,8 @@ export const AppLayout = observer(() => {
                             fill="white"
                         />
                     </svg>
-                    SEMOSS
+                    {THEME.logo ? <img src={THEME.logo} /> : null}
+                    {THEME.name}
                 </StyledHeaderLogo>
                 <Stack
                     flex={1}

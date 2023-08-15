@@ -42,12 +42,30 @@ import ONEDRIVE from '@/assets/img/ONEDRIVE.png';
 import AZURE_BLOB from '@/assets/img/AZURE_BLOB.png';
 
 export const stepsOne = [
-    'Drag and Drop Data or Connect to an External Database',
-    'Copy Database',
-    'Upload Database',
-    'Build Database',
-    'Add Storage',
-    'Add Model',
+    {
+        name: 'Connect to Database',
+        description: '',
+    },
+    {
+        name: 'Copy Database',
+        description: '',
+    },
+    {
+        name: 'Upload Database',
+        description: '',
+    },
+    {
+        name: 'Build Database',
+        description: '',
+    },
+    {
+        name: 'Add Storage',
+        description: '',
+    },
+    {
+        name: 'Add Model',
+        description: '',
+    },
 ];
 
 export const stepsTwo = {
