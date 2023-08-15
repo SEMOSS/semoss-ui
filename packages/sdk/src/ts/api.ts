@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const URL = '/MonolithDev';
+import { ENV } from './config';
 
 /**
  * Get the System's configuration information
@@ -18,7 +18,7 @@ export const getSystemConfig = async (): Promise<{
             logins: { [key: string]: unknown };
             loginsAllowed: { [key: string]: boolean };
             [key: string]: unknown;
-        }>(`${URL}/api/config`)
+        }>(`${ENV.MODULE}/api/config`)
         .catch((error) => {
             throw Error(error);
         });
@@ -38,7 +38,7 @@ export const getSystemConfig = async (): Promise<{
 
                     if (!token) {
                         const tokenResponse = await axios.get(
-                            `${URL}/api/config/fetchCsrf`,
+                            `${ENV.MODULE}/api/config/fetchCsrf`,
                             {
                                 headers: {
                                     'Content-Type':
@@ -98,7 +98,7 @@ export const runPixel = async <O extends unknown[] | []>(
             pixelId: string;
             additionalOutput?: unknown;
         }[];
-    }>(`${URL}/api/engine/runPixel`, postData, {
+    }>(`${ENV.MODULE}/api/engine/runPixel`, postData, {
         headers: {
             'content-type': 'application/x-www-form-urlencoded',
         },
@@ -138,7 +138,7 @@ export const login = async (
     postData += '&disableRedirect=true';
 
     await axios
-        .post(`${URL}/api/auth/login`, postData, {
+        .post(`${ENV.MODULE}/api/auth/login`, postData, {
             headers: {
                 'content-type': 'application/x-www-form-urlencoded',
             },
@@ -159,7 +159,7 @@ export const login = async (
 export const oauth = async (provider: string): Promise<boolean> => {
     // try to login via oauth
     await axios
-        .get<true>(`${URL}/api/auth/userinfo/${provider}`)
+        .get<true>(`${ENV.MODULE}/api/auth/userinfo/${provider}`)
         .catch((error) => {
             throw Error(error);
         });
@@ -174,15 +174,25 @@ export const oauth = async (provider: string): Promise<boolean> => {
  */
 export const logout = async (): Promise<boolean> => {
     // try to logout
-    await axios.get<true>(`${URL}/api/auth/logout/all`).catch((error) => {
-        throw Error(error);
-    });
+    await axios
+        .get<true>(`${ENV.MODULE}/api/auth/logout/all`)
+        .catch((error) => {
+            throw Error(error);
+        });
 
     return true;
 };
 
-export const uploadFile = async (
-    files: File[],
+/**
+ * Upload file(s) to the backend
+ * @param files
+ * @param insightId
+ * @param projectId
+ * @param path
+ * @returns
+ */
+export const upload = async (
+    files: File | File[],
     insightId: string | null,
     projectId: string | null,
     path: string | null,
@@ -220,7 +230,7 @@ export const uploadFile = async (
         param = `?${param}`;
     }
 
-    const url = `${URL}/api/uploadFile/baseUpload${param}`,
+    const url = `${ENV.MODULE}/api/uploadFile/baseUpload${param}`,
         fd: FormData = new FormData();
 
     if (Array.isArray(files)) {
@@ -249,16 +259,18 @@ export const uploadFile = async (
 /**
  * Download a file by using a unique key
  *
- * @param insightID - insightID to download the file
+ * @param insightId - insightId to download the file
  * @param fileKey - id for the file to download
  */
-export const download = async (insightID: string, fileKey: string) => {
+export const download = async (insightId: string, fileKey: string) => {
     return new Promise<void>((resolve) => {
-        if (!insightID) {
+        if (!insightId) {
             throw Error('No Insight ID provided for download.');
         }
         // create the download url
-        const url = `${URL}/api/engine/downloadFile?insightId=${insightID}&fileKey=${encodeURIComponent(
+        const url = `${
+            ENV.MODULE
+        }/api/engine/downloadFile?insightId=${insightId}&fileKey=${encodeURIComponent(
             fileKey,
         )}`;
 
