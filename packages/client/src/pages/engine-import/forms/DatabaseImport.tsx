@@ -5,7 +5,6 @@ import {
     Card,
     styled,
     Search,
-    Select,
     Typography,
     Box,
     Grid,
@@ -14,7 +13,7 @@ import {
 } from '@semoss/ui';
 import { useNavigate } from 'react-router-dom';
 import { FORM_ROUTES } from './forms';
-import { stepsOne, stepsTwo, IconMapper } from './formSteps.constants';
+import { stepsOne, stepsTwo, IconDBMapper } from './formSteps.constants';
 import { UploadData } from './UploadData';
 import { CopyDatabaseForm } from './CopyDatabaseForm';
 import { StorageForm } from './StorageForm';
@@ -43,28 +42,19 @@ const StyledSearchbarContainer = styled('div')(({ theme }) => ({
     gap: theme.spacing(3),
 }));
 
-const StyledSort = styled(Select)(({ theme }) => ({
-    width: '20%',
-}));
-
 const StyledStack = styled('div')(({ theme }) => ({
     display: 'flex',
     flexDirection: 'column',
     gap: theme.spacing(1),
 }));
 
-const StyledCard = styled(Card)(({ theme }) => ({
+const StyledCard = styled(Card)(() => ({
     '&:hover': {
         cursor: 'pointer',
     },
 }));
 
-const StyledCardHeader = styled(Card.Header)(({ theme }) => ({
-    height: theme.spacing(7.75),
-    margin: '0px 0px 0px 0px',
-}));
-
-const StyledCardContent = styled(Card.Content)(({ theme }) => ({
+const StyledCardContent = styled(Card.Content)(() => ({
     display: 'flex',
     padding: '16px',
     flexDirection: 'column',
@@ -86,17 +76,6 @@ const StyledInnerBox = styled('div')(({ theme }) => ({
     alignItems: 'center',
     gap: theme.spacing(1),
 }));
-
-const StyledStepBox = styled(Box)({
-    width: '350px',
-    height: '250px',
-    display: 'flex',
-    justifyContent: 'center',
-    alignItems: 'center',
-    border: '1px solid rgba(0,0,0,0.1)',
-    padding: '24px',
-    boxShadow: '16px 21px 15px -3px rgba(0,0,0,0.1)',
-});
 
 const StyledCardImage = styled('img')({
     display: 'flex',
@@ -156,8 +135,8 @@ export const DatabaseImport = () => {
     const [search, setSearch] = React.useState('');
 
     const { configStore, monolithStore } = useRootStore();
-    // const navigate = useNavigate();
-    // const notification = useNotification();
+    const navigate = useNavigate();
+    const notification = useNotification();
 
     const insightId = configStore.store.insightID;
 
@@ -314,13 +293,6 @@ export const DatabaseImport = () => {
                                                 }
                                             }}
                                         >
-                                            {/* <StyledCardHeader
-                                                title={val.name}
-                                                titleTypographyProps={{
-                                                    variant: 'body1',
-                                                }}
-                                                avatar={IconMapper[val.name]}
-                                            /> */}
                                             <StyledCardContent>
                                                 <Avatar
                                                     sx={{
@@ -372,7 +344,18 @@ export const DatabaseImport = () => {
                                                                     )
                                                                 }
                                                             >
-                                                                {stage}
+                                                                <StyledInnerBox>
+                                                                    <StyledCardImage
+                                                                        src={
+                                                                            IconDBMapper[
+                                                                                stage
+                                                                            ]
+                                                                        }
+                                                                    />
+                                                                    <StyledCardText>
+                                                                        {stage}
+                                                                    </StyledCardText>
+                                                                </StyledInnerBox>
                                                             </StyledFormTypeBox>
                                                         </Grid>
                                                     );
@@ -411,7 +394,18 @@ export const DatabaseImport = () => {
                                                                 )
                                                             }
                                                         >
-                                                            {stage}
+                                                            <StyledInnerBox>
+                                                                <StyledCardImage
+                                                                    src={
+                                                                        IconDBMapper[
+                                                                            stage
+                                                                        ]
+                                                                    }
+                                                                />
+                                                                <StyledCardText>
+                                                                    {stage}
+                                                                </StyledCardText>
+                                                            </StyledInnerBox>
                                                         </StyledFormTypeBox>
                                                     </Grid>
                                                 );
@@ -451,7 +445,18 @@ export const DatabaseImport = () => {
                                                                     );
                                                                 }}
                                                             >
-                                                                {stage}
+                                                                <StyledInnerBox>
+                                                                    <StyledCardImage
+                                                                        src={
+                                                                            IconDBMapper[
+                                                                                stage
+                                                                            ]
+                                                                        }
+                                                                    />
+                                                                    <StyledCardText>
+                                                                        {stage}
+                                                                    </StyledCardText>
+                                                                </StyledInnerBox>
                                                             </StyledFormTypeBox>
                                                         </Grid>
                                                     );

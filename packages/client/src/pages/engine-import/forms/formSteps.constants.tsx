@@ -119,7 +119,7 @@ export const stepsTwo = {
     ],
 };
 
-export const IconMapper = {
+export const IconDBMapper = {
     CSV: CSV,
     Excel: EXCEL,
     TSV: TSV,
