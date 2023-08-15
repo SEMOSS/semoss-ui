@@ -137,7 +137,7 @@ export const DatabaseImport = () => {
 
     const insightId = configStore.store.insightID;
 
-    const formSubmit = (values) => {
+    const formSubmit = async (values) => {
         /** Storage: START */
         if (stepOne === 'Add Storage') {
             const pixel = `CreateStorageEngine(storage=["${
@@ -168,6 +168,21 @@ export const DatabaseImport = () => {
         /** Storage: END */
 
         /** Connect to External: START */
+        if (values.type === 'connect') {
+            const pixel = `ExternalJdbcTablesAndViews(conDetails=[
+                ${JSON.stringify(values.conDetails)}
+            ])`;
+
+            debugger;
+
+            const resp = await monolithStore.runQuery(pixel);
+            const output = resp.pixelReturn[0].output,
+                operationType = resp.pixelReturn[0].operationType;
+
+            debugger;
+
+            return;
+        }
         /** Connect to External: END */
 
         /** Drag and Drop: START */
