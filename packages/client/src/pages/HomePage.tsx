@@ -64,14 +64,18 @@ export const HomePage = observer((): JSX.Element => {
     };
 
     /**
-     * Close the  app modeal
+     * Close the add app modeal
+     *
+     * refresh - refresh the data
      */
-    const closeAppModal = () => {
+    const closeAddAppModal = (refresh: boolean) => {
         // close the modal
         setAddAppModal(false);
 
         // refresh the list
-        myApps.refresh();
+        if (refresh) {
+            myApps.refresh();
+        }
     };
 
     return (
@@ -132,7 +136,7 @@ export const HomePage = observer((): JSX.Element => {
                     </Grid>
                 ) : null}
             </Stack>
-            <AddApp open={addAppModal} onClose={() => closeAppModal()} />
+            <AddApp open={addAppModal} onClose={() => closeAddAppModal(true)} />
         </Page>
     );
 });

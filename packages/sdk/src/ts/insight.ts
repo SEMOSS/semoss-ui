@@ -92,18 +92,20 @@ export class Insight {
 
         // try to set the env from the window
         try {
-            const SEMOSS = window['SEMOSS'] as {
+            const env = JSON.parse(
+                document.getElementById('semoss-env').textContent,
+            ) as {
                 APP: string;
                 MODULE: string;
             };
 
-            if (SEMOSS) {
-                if (SEMOSS.APP) {
-                    ENV.APP = SEMOSS.APP;
+            if (env) {
+                if (env.APP) {
+                    ENV.APP = env.APP;
                 }
 
-                if (SEMOSS.MODULE) {
-                    ENV.MODULE = SEMOSS.MODULE;
+                if (env.MODULE) {
+                    ENV.MODULE = env.MODULE;
                 }
             }
         } catch (e) {
