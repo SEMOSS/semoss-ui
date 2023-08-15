@@ -14,6 +14,10 @@ import { useRootStore } from '@/hooks';
 import { Metamodel } from '@/components/metamodel';
 import { useNavigate } from 'react-router-dom';
 
+interface SQLServerForm {
+    submitFunc: () => void;
+    metamodel: any;
+}
 export const SQLServerForm: ImportFormComponent = (props) => {
     const { submitFunc, metamodel } = props;
 
@@ -80,6 +84,7 @@ export const SQLServerForm: ImportFormComponent = (props) => {
     const getMetaWithFilters = async () => {
         const originalFormVals = getValues();
 
+        console.log();
         let pixel = '';
         debugger;
         pixel += `

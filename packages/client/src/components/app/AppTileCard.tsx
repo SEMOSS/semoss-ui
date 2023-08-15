@@ -122,7 +122,7 @@ export const AppTileCard = (props: AppTileCardProps) => {
                         {app.project_name}
                     </StyledName>
                     <StyledDescription variant={'body2'}>
-                        {app.project_description || ''}
+                        {app.description || ''}
                     </StyledDescription>
                     <Stack
                         direction={'row'}

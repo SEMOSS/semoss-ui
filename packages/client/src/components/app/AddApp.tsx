@@ -3,6 +3,7 @@ import {
     Autocomplete,
     Button,
     TextField,
+    TextArea,
     Modal,
     FileDropzone,
     LinearProgress,
@@ -22,7 +23,7 @@ interface AddAppProps {
     open: boolean;
 
     /** Callback that is triggered onClose */
-    onClose: () => void;
+    onClose: (refresh: boolean) => void;
 }
 
 export const AddApp = (props: AddAppProps) => {
@@ -98,7 +99,7 @@ export const AddApp = (props: AddAppProps) => {
             await monolithStore.runQuery(`PublishProject('${projectId}');`);
 
             // close it
-            onClose();
+            onClose(true);
         } catch (e) {
             console.error(e);
         } finally {
@@ -141,13 +142,14 @@ export const AddApp = (props: AddAppProps) => {
                         rules={{ required: true }}
                         render={({ field }) => {
                             return (
-                                <TextField
+                                <TextArea
                                     required
                                     label="Description"
                                     value={field.value ? field.value : ''}
                                     disabled={isLoading}
                                     onChange={(value) => field.onChange(value)}
-                                ></TextField>
+                                    rows={3}
+                                ></TextArea>
                             );
                         }}
                     />
@@ -196,7 +198,7 @@ export const AddApp = (props: AddAppProps) => {
                     <Button
                         type="button"
                         disabled={isLoading}
-                        onClick={() => onClose()}
+                        onClick={() => onClose(false)}
                     >
                         Cancel
                     </Button>
