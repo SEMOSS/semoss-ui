@@ -110,19 +110,31 @@ export const CSVForm: ImportFormComponent = (props) => {
 
     const submitMetmodelPixel = async (edges) => {
         const dataTypeObject = {};
+        const nodePropObject = {};
 
         nodes.forEach((n) => {
             dataTypeObject[`${n.data.name}`] = n.data.properties[0].type;
+            nodePropObject[`${n.data.name}`] = [];
         });
 
         const resp = await monolithStore.runQuery(
             `databaseVar = RdbmsCsvUpload(database=["${watchDatabaseName}"], filePath=["${
                 watchFile.name
-            }"], delimiter=["${watchDelimeter}"], metamodel=[${JSON.stringify(
-                edges,
-            )}], dataTypeMap=[${JSON.stringify(
+            }"], delimiter=["${watchDelimeter}"], metamodel=[{"relation": ${JSON.stringify(
+                metamodel.relation,
+            )}, "nodeProp": ${JSON.stringify(
+                nodePropObject,
+            )}}], dataTypeMap=[${JSON.stringify(
                 dataTypeObject,
             )}], newHeaders=[{}], additionalDataTypes=[{}], descriptionMap=[{}], logicalNamesMap=[{}], existing=[false])`,
+        );
+
+        const output = resp.pixelReturn[0].output;
+
+        const resp2 = await monolithStore.runQuery(
+            `ExtractDatabaseMeta( database=[databaseVar]);SaveOwlPositions(database=[databaseVar], positionMap=[${JSON.stringify(
+                metamodel.positions,
+            )}]);`,
         );
     };
 

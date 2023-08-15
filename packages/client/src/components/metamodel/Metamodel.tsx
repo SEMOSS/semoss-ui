@@ -81,7 +81,7 @@ export const Metamodel = (props: MetamodelProps) => {
                 <Controls showInteractive={false} />
             </ReactFlow>
             {callback && (
-                <Button onClick={() => callback(edgeTypes)}>Import</Button>
+                <Button onClick={() => callback(edges)}>Import</Button>
             )}
         </MetamodelContext.Provider>
     );
