@@ -29,6 +29,7 @@ const StyledHeader = styled('div')(({ theme }) => ({
     overflow: 'hidden',
     color: 'rgba(235, 238, 254, 1)',
     backgroundColor: theme.palette.common.black,
+    zIndex: 10,
 }));
 
 const StyledHeaderLogo = styled(Link)(({ theme }) => ({
@@ -77,6 +78,7 @@ const StyledSidebar = styled('nav')(({ theme }) => ({
     overflow: 'hidden',
     color: 'rgba(235, 238, 254, 1)',
     backgroundColor: theme.palette.common.black,
+    zIndex: 10,
 }));
 
 const StyledSidebarItem = styled(Link)(({ theme }) => ({
