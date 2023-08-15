@@ -137,6 +137,14 @@ export const DatabaseImport = () => {
 
     const insightId = configStore.store.insightID;
 
+    /**
+     *
+     * @param values
+     * @returns
+     * @desc this is doing a number of different things,
+     * We will have to wrap this component in a context, in order to give each
+     * component access to the number of things that are needed
+     */
     const formSubmit = async (values) => {
         /** Storage: START */
         if (stepOne === 'Add Storage') {
@@ -168,19 +176,36 @@ export const DatabaseImport = () => {
         /** Storage: END */
 
         /** Connect to External: START */
+        // I'll be hitting this reactor if dbDriver is in RDBMSTypeEnum on BE
         if (values.type === 'connect') {
             const pixel = `ExternalJdbcTablesAndViews(conDetails=[
                 ${JSON.stringify(values.conDetails)}
             ])`;
-
-            debugger;
+            // let pixel = `ExternalJdbcTablesAndViews(conDetails=[
+            //     ${JSON.stringify({
+            //         dbDriver: 'SQL_SERVER',
+            //         additional: ';encrypt=true;trustServerCertificate=true;',
+            //         hostname: '18.213.113.140',
+            //         port: '1433',
+            //         database: 'semoss_supply',
+            //         schema: 'dbo',
+            //         USERNAME: 'SA',
+            //         PASSWORD: 'semoss@123123',
+            //     })}
+            // ])`;
 
             const resp = await monolithStore.runQuery(pixel);
             const output = resp.pixelReturn[0].output,
                 operationType = resp.pixelReturn[0].operationType;
 
-            debugger;
-
+            if (operationType.indexOf('ERROR') > -1) {
+                notification.add({
+                    color: 'error',
+                    message: output,
+                });
+            } else {
+                setMetamodel(output);
+            }
             return;
         }
         /** Connect to External: END */
@@ -260,7 +285,7 @@ export const DatabaseImport = () => {
                             {stepOne ? stepOne : 'Add Source'}
                         </Typography>
                         <Typography variant="body1">
-                            Add/import new database
+                            {/* Add/import new database */}
                         </Typography>
                     </StyledStack>
                 }
@@ -402,7 +427,7 @@ export const DatabaseImport = () => {
                                                         sm={1}
                                                     >
                                                         <StyledFormTypeBox
-                                                            title={stage}
+                                                            // title={stage}
                                                             onClick={() =>
                                                                 setStepTwo(
                                                                     stage,
@@ -439,7 +464,7 @@ export const DatabaseImport = () => {
                                                             sm={1}
                                                         >
                                                             <StyledFormTypeBox
-                                                                title={stage}
+                                                                // title={stage}
                                                                 onClick={() => {
                                                                     setStepTwo(
                                                                         'Add Storage',
