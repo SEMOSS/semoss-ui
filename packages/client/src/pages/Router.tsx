@@ -19,6 +19,8 @@ import {
     DatabaseImport,
 } from './database';
 
+import { ImportShell } from '@/components/engine';
+
 import { EngineLayout, EngineIndexPage } from './engine';
 
 import { SettingsRouter } from './settings';
@@ -38,11 +40,15 @@ export const Router = observer(() => {
                 <Route path="app/*" element={<AppRouter />} />
                 <Route path="*" element={<NavigatorLayout />}>
                     <Route index element={<HomePage />} />
-                    {/* <Route
-                        path="import-database"
-                        element={<DatabaseImport />}
-                    /> */}
-                    <Route path="import" element={<DatabaseImport />} />
+
+                    <Route
+                        path="import"
+                        element={
+                            <ImportShell>
+                                <DatabaseImport />
+                            </ImportShell>
+                        }
+                    />
 
                     <Route path="catalog" element={<CatalogPage />} />
 

@@ -27,6 +27,7 @@ import { CopyDb } from '@/assets/img/CopyDb';
 import { UploadDb } from '@/assets/img/UploadDb';
 import { ConnectStorage } from '@/assets/img/ConnectStorage';
 
+import { useImport } from '@/hooks';
 const StyledContainer = styled('div')(({ theme }) => ({
     display: 'flex',
     width: 'auto',
@@ -139,6 +140,9 @@ export const DatabaseImport = () => {
     const notification = useNotification();
 
     const insightId = configStore.store.insightID;
+
+    const { steps, addStep, removeStep } = useImport();
+    debugger;
 
     /**
      *
