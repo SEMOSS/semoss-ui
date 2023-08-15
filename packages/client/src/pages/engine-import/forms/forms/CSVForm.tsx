@@ -31,7 +31,6 @@ export const CSVForm: ImportFormComponent = (props) => {
 
     const watchDelimeter = watch('DELIMETER');
     const watchDatabaseName = watch('DATABASE_NAME');
-    const watchDatabaseType = watch('DATABASE_TYPE');
     const watchFile = watch('FILE');
 
     const checkKeyDown = (e) => {
