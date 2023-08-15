@@ -17,11 +17,21 @@ import { useRootStore } from '@/hooks';
 
 export const CSVForm: ImportFormComponent = (props) => {
     const { submitFunc, metamodel, predictDataTypes } = props;
+    const [metamodelTypes, setMetamodelTypes] = React.useState([
+        'As Flat Table',
+        'As Suggested Metamodel',
+        'From Scratch',
+        'From Prop File',
+    ]);
     const { monolithStore } = useRootStore();
 
-    const { control, getValues, handleSubmit, reset, setValue } = useForm();
+    const { control, getValues, handleSubmit, reset, watch } = useForm();
 
     const values = getValues();
+
+    const watchDelimeter = watch('DELIMETER');
+    const watchDatabaseName = watch('DATABASE_NAME');
+    const watchFile = watch('FILE');
 
     const checkKeyDown = (e) => {
         if (e.key === 'Enter') e.preventDefault();
@@ -44,14 +54,32 @@ export const CSVForm: ImportFormComponent = (props) => {
         });
     }, [values.FILE]);
 
-    const submitMetmodelPixel = async () => {
-        const pixel = '1+1';
-
-        const resp = await monolithStore.runQuery(pixel);
-
-        debugger;
-    };
-    metamodel ? console.log(metamodel) : null;
+    React.useEffect(() => {
+        if (values.DATABASE_TYPE === 'H2') {
+            setMetamodelTypes([
+                'As Flat Table',
+                'As Suggested Metamodel',
+                'From Scratch',
+                'From Prop File',
+            ]);
+            reset({ ...values, METAMODEL_TYPE: 'As Suggested Metamodel' });
+        }
+        if (
+            values.DATABASE_TYPE === 'RDF' ||
+            values.DATABASE_TYPE === 'Tinker'
+        ) {
+            setMetamodelTypes([
+                'As Suggested Metamodel',
+                'From Scratch',
+                'From Prop File',
+            ]);
+            reset({ ...values, METAMODEL_TYPE: 'As Suggested Metamodel' });
+        }
+        if (values.DATABASE_TYPE === 'R') {
+            setMetamodelTypes(['As Flat Table']);
+            reset({ ...values, METAMODEL_TYPE: 'As Flat Table' });
+        }
+    }, [values.DATABASE_TYPE]);
 
     const nodes = useMemo(() => {
         const formattedNodes = [];
@@ -112,6 +140,38 @@ export const CSVForm: ImportFormComponent = (props) => {
         }
         return newEdges;
     }, [metamodel]);
+
+    const submitMetmodelPixel = async (edges) => {
+        const dataTypeObject = {};
+        const nodePropObject = {};
+
+        nodes.forEach((n) => {
+            dataTypeObject[`${n.data.name}`] = n.data.properties[0].type;
+            nodePropObject[`${n.data.name}`] = [];
+        });
+
+        const resp = await monolithStore.runQuery(
+            `databaseVar = RdbmsCsvUpload(database=["${watchDatabaseName}"], filePath=["${
+                watchFile.name
+            }"], delimiter=["${watchDelimeter}"], metamodel=[{"relation": ${JSON.stringify(
+                metamodel.relation,
+            )}, "nodeProp": ${JSON.stringify(
+                nodePropObject,
+            )}}], dataTypeMap=[${JSON.stringify(
+                dataTypeObject,
+            )}], newHeaders=[{}], additionalDataTypes=[{}], descriptionMap=[{}], logicalNamesMap=[{}], existing=[false])`,
+        );
+
+        // const output = resp.pixelReturn[0].output;
+
+        // const resp2 = await monolithStore.runQuery(
+        //     `ExtractDatabaseMeta( database=[databaseVar]);SaveOwlPositions(database=[databaseVar], positionMap=[${JSON.stringify(
+        //         metamodel.positions,
+        //     )}]);`,
+        // );
+    };
+
+    metamodel ? console.log(metamodel) : null;
 
     return (
         <>
@@ -255,20 +315,16 @@ export const CSVForm: ImportFormComponent = (props) => {
                                             field.onChange(value)
                                         }
                                     >
-                                        <Menu.Item value={'As Flat Table'}>
-                                            As Flat Table
-                                        </Menu.Item>
-                                        <Menu.Item
-                                            value={'As Suggested Metamodel'}
-                                        >
-                                            As Suggested Metamodel
-                                        </Menu.Item>
-                                        <Menu.Item value={'From Scratch'}>
-                                            From Scratch
-                                        </Menu.Item>
-                                        <Menu.Item value={'From Prop File'}>
-                                            From Prop File
-                                        </Menu.Item>
+                                        {metamodelTypes.map((model, idx) => {
+                                            return (
+                                                <Menu.Item
+                                                    key={idx}
+                                                    value={model}
+                                                >
+                                                    {model}
+                                                </Menu.Item>
+                                            );
+                                        })}
                                     </Select>
                                 );
                             }}
@@ -286,6 +342,7 @@ export const CSVForm: ImportFormComponent = (props) => {
             {metamodel && (
                 <div style={{ width: '100%', height: '600px' }}>
                     <Metamodel
+                        callback={submitMetmodelPixel}
                         onSelectNode={null}
                         edges={edges}
                         nodes={nodes}

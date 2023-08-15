@@ -81,6 +81,7 @@ export const SQLServerForm: ImportFormComponent = (props) => {
         const originalFormVals = getValues();
 
         let pixel = '';
+        debugger;
         pixel += `
         ExternalJdbcSchema(conDetails=[${JSON.stringify({
             dbDriver: originalFormVals.dbDriver,
