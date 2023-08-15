@@ -26,6 +26,7 @@ import { ConnectModel } from '@/assets/img/ConnectModel';
 import { ConnectDb } from '@/assets/img/ConnectDb';
 import { CopyDb } from '@/assets/img/CopyDb';
 import { UploadDb } from '@/assets/img/UploadDb';
+import { ConnectStorage } from '@/assets/img/ConnectStorage';
 
 const StyledContainer = styled('div')(({ theme }) => ({
     display: 'flex',
@@ -92,7 +93,13 @@ const StyledStepBox = styled(Box)({
 });
 
 const StyledFormTypeBox = styled(Box)({
-    display: 'flex',
+    maxWidth: '350px',
+    maxHeight: '250px',
+    cursor: 'pointer',
+    overflow: 'hidden',
+    textOverflow: 'ellipsis',
+    whiteSpace: 'nowrap',
+    display: 'block',
     justifyContent: 'center',
     alignItems: 'center',
     border: '1px solid rgba(0,0,0,0.1)',
@@ -111,7 +118,7 @@ const IconMapper = {
     'Copy Database': <CopyDb />,
     'Upload Database': <UploadDb />,
     'Build Database': <BuildDb />,
-    'Add Storage': <ConnectModel />,
+    'Add Storage': <ConnectStorage />,
     'Add Model': <ConnectModel />,
 };
 
@@ -119,6 +126,7 @@ export const DatabaseImport = () => {
     const [activeStep, setActiveStep] = React.useState(0);
     const [stepOne, setStepOne] = React.useState('');
     const [stepTwo, setStepTwo] = React.useState('');
+    const [storageName, setStorageName] = React.useState('');
     const [predictDataTypes, setPredictDataTypes] = React.useState(null);
     const [metamodel, setMetamodel] = React.useState(null);
     const [search, setSearch] = React.useState('');
@@ -129,7 +137,8 @@ export const DatabaseImport = () => {
 
     const insightId = configStore.store.insightID;
 
-    const formSubmit = (values) => {
+    const formSubmit = async (values) => {
+        /** Storage: START */
         if (stepOne === 'Add Storage') {
             const pixel = `CreateStorageEngine(storage=["${
                 values.storage
@@ -156,7 +165,27 @@ export const DatabaseImport = () => {
             });
             return;
         }
+        /** Storage: END */
 
+        /** Connect to External: START */
+        if (values.type === 'connect') {
+            const pixel = `ExternalJdbcTablesAndViews(conDetails=[
+                ${JSON.stringify(values.conDetails)}
+            ])`;
+
+            debugger;
+
+            const resp = await monolithStore.runQuery(pixel);
+            const output = resp.pixelReturn[0].output,
+                operationType = resp.pixelReturn[0].operationType;
+
+            debugger;
+
+            return;
+        }
+        /** Connect to External: END */
+
+        /** Drag and Drop: START */
         if (values.METAMODEL_TYPE === 'As Suggested Metamodel') {
             monolithStore
                 .uploadFile(values.FILE, insightId)
@@ -185,6 +214,7 @@ export const DatabaseImport = () => {
                         .then((res) => setPredictDataTypes(res));
                 });
         }
+        /** Drag and Drop: END */
     };
 
     const getForm = (form) => {
@@ -372,6 +402,7 @@ export const DatabaseImport = () => {
                                                         sm={1}
                                                     >
                                                         <StyledFormTypeBox
+                                                            title={stage}
                                                             onClick={() =>
                                                                 setStepTwo(
                                                                     stage,
@@ -385,6 +416,47 @@ export const DatabaseImport = () => {
                                             })}
                                         </Grid>
                                     </Box>
+                                    <StyledCategoryTitle>
+                                        Storage
+                                    </StyledCategoryTitle>
+                                    <Box>
+                                        <Grid
+                                            container
+                                            columns={6}
+                                            columnSpacing={2}
+                                            rowSpacing={2}
+                                        >
+                                            {stepsTwo['Add Storage'].map(
+                                                (stage, idx) => {
+                                                    return (
+                                                        <Grid
+                                                            key={idx}
+                                                            item
+                                                            lg={1}
+                                                            md={1}
+                                                            xs={1}
+                                                            xl={1}
+                                                            sm={1}
+                                                        >
+                                                            <StyledFormTypeBox
+                                                                title={stage}
+                                                                onClick={() => {
+                                                                    setStepTwo(
+                                                                        'Add Storage',
+                                                                    );
+                                                                    setStorageName(
+                                                                        stage,
+                                                                    );
+                                                                }}
+                                                            >
+                                                                {stage}
+                                                            </StyledFormTypeBox>
+                                                        </Grid>
+                                                    );
+                                                },
+                                            )}
+                                        </Grid>
+                                    </Box>
                                 </Box>
                             )}
                             {activeStep === 1 &&
@@ -394,15 +466,23 @@ export const DatabaseImport = () => {
                                         return getForm(f);
                                     }
                                 })}
+
                             {activeStep === 2 &&
                                 stepOne === 'Upload Database' && <UploadData />}
                             {activeStep === 2 &&
                                 stepOne === 'Copy Database' && (
                                     <CopyDatabaseForm />
                                 )}
+                            {activeStep === 1 && stepTwo === 'Add Storage' && (
+                                <StorageForm
+                                    submitFunc={(values) => formSubmit(values)}
+                                    storageName={storageName}
+                                />
+                            )}
                             {activeStep === 2 && stepOne === 'Add Storage' && (
                                 <StorageForm
                                     submitFunc={(values) => formSubmit(values)}
+                                    storageName={''}
                                 />
                             )}
                             {activeStep === 2 && stepOne === 'Add Model' && (

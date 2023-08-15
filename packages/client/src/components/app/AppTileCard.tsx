@@ -129,6 +129,7 @@ export const AppTileCard = (props: AppTileCardProps) => {
                         spacing={1.25}
                         flexWrap={'nowrap'}
                         overflow={'auto'}
+                        height={'32px'}
                     >
                         {app.tag ? (
                             typeof app.tag === 'string' ? (

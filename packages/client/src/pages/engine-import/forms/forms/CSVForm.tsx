@@ -93,6 +93,21 @@ export const CSVForm: ImportFormComponent = (props) => {
         return formattedNodes;
     }, [metamodel]);
 
+    const edges = useMemo(() => {
+        const newEdges = [];
+        if (metamodel) {
+            metamodel.relation.forEach((rel) => {
+                newEdges.push({
+                    id: rel.relName,
+                    type: 'floating',
+                    source: rel.fromTable,
+                    target: rel.toTable,
+                });
+            });
+        }
+        return newEdges;
+    }, [metamodel]);
+
     const submitMetmodelPixel = async (edges) => {
         const dataTypeObject = {};
 
@@ -286,7 +301,7 @@ export const CSVForm: ImportFormComponent = (props) => {
                     <Metamodel
                         callback={submitMetmodelPixel}
                         onSelectNode={null}
-                        edges={[]}
+                        edges={edges}
                         nodes={nodes}
                     />
                 </div>
