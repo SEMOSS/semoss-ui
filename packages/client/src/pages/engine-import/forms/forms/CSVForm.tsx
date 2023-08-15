@@ -17,6 +17,12 @@ import { useRootStore } from '@/hooks';
 
 export const CSVForm: ImportFormComponent = (props) => {
     const { submitFunc, metamodel, predictDataTypes } = props;
+    const [metamodelTypes, setMetamodelTypes] = React.useState([
+        'As Flat Table',
+        'As Suggested Metamodel',
+        'From Scratch',
+        'From Prop File',
+    ]);
     const { monolithStore } = useRootStore();
 
     const { control, getValues, handleSubmit, reset, watch } = useForm();
@@ -25,6 +31,7 @@ export const CSVForm: ImportFormComponent = (props) => {
 
     const watchDelimeter = watch('DELIMETER');
     const watchDatabaseName = watch('DATABASE_NAME');
+    const watchDatabaseType = watch('DATABASE_TYPE');
     const watchFile = watch('FILE');
 
     const checkKeyDown = (e) => {
@@ -47,6 +54,33 @@ export const CSVForm: ImportFormComponent = (props) => {
             METAMODEL_TYPE: 'As Suggested Metamodel',
         });
     }, [values.FILE]);
+
+    React.useEffect(() => {
+        if (values.DATABASE_TYPE === 'H2') {
+            setMetamodelTypes([
+                'As Flat Table',
+                'As Suggested Metamodel',
+                'From Scratch',
+                'From Prop File',
+            ]);
+            reset({ ...values, METAMODEL_TYPE: 'As Suggested Metamodel' });
+        }
+        if (
+            values.DATABASE_TYPE === 'RDF' ||
+            values.DATABASE_TYPE === 'Tinker'
+        ) {
+            setMetamodelTypes([
+                'As Suggested Metamodel',
+                'From Scratch',
+                'From Prop File',
+            ]);
+            reset({ ...values, METAMODEL_TYPE: 'As Suggested Metamodel' });
+        }
+        if (values.DATABASE_TYPE === 'R') {
+            setMetamodelTypes(['As Flat Table']);
+            reset({ ...values, METAMODEL_TYPE: 'As Flat Table' });
+        }
+    }, [values.DATABASE_TYPE]);
 
     const nodes = useMemo(() => {
         const formattedNodes = [];
@@ -129,13 +163,13 @@ export const CSVForm: ImportFormComponent = (props) => {
             )}], newHeaders=[{}], additionalDataTypes=[{}], descriptionMap=[{}], logicalNamesMap=[{}], existing=[false])`,
         );
 
-        const output = resp.pixelReturn[0].output;
+        // const output = resp.pixelReturn[0].output;
 
-        const resp2 = await monolithStore.runQuery(
-            `ExtractDatabaseMeta( database=[databaseVar]);SaveOwlPositions(database=[databaseVar], positionMap=[${JSON.stringify(
-                metamodel.positions,
-            )}]);`,
-        );
+        // const resp2 = await monolithStore.runQuery(
+        //     `ExtractDatabaseMeta( database=[databaseVar]);SaveOwlPositions(database=[databaseVar], positionMap=[${JSON.stringify(
+        //         metamodel.positions,
+        //     )}]);`,
+        // );
     };
 
     metamodel ? console.log(metamodel) : null;
@@ -282,20 +316,16 @@ export const CSVForm: ImportFormComponent = (props) => {
                                             field.onChange(value)
                                         }
                                     >
-                                        <Menu.Item value={'As Flat Table'}>
-                                            As Flat Table
-                                        </Menu.Item>
-                                        <Menu.Item
-                                            value={'As Suggested Metamodel'}
-                                        >
-                                            As Suggested Metamodel
-                                        </Menu.Item>
-                                        <Menu.Item value={'From Scratch'}>
-                                            From Scratch
-                                        </Menu.Item>
-                                        <Menu.Item value={'From Prop File'}>
-                                            From Prop File
-                                        </Menu.Item>
+                                        {metamodelTypes.map((model, idx) => {
+                                            return (
+                                                <Menu.Item
+                                                    key={idx}
+                                                    value={model}
+                                                >
+                                                    {model}
+                                                </Menu.Item>
+                                            );
+                                        })}
                                     </Select>
                                 );
                             }}
