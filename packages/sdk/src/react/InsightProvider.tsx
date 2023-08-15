@@ -15,19 +15,17 @@ export const InsightContext = createContext<{
 }>(undefined);
 
 interface InsightProviderProps {
-    /** Id of the app */
-    appId: string;
     /** Content to render with the insight */
     children: React.ReactNode;
 }
 
 export const InsightProvider = (props: InsightProviderProps) => {
-    const { appId, children } = props;
+    const { children } = props;
 
     // create the new insight on load
     const insight = useMemo(() => {
-        return new Insight(appId);
-    }, [appId]);
+        return new Insight();
+    }, []);
 
     const [isInitialized, setIsInitialized] =
         useState<Insight['isInitialized']>(false);
@@ -38,7 +36,6 @@ export const InsightProvider = (props: InsightProviderProps) => {
 
     /**
      * Load an insight with an id
-     * @param id - id to load the insight with
      */
     const initializeInsight = async () => {
         // initialize the insight
@@ -53,10 +50,10 @@ export const InsightProvider = (props: InsightProviderProps) => {
      */
     const syncInsight = async () => {
         unstable_batchedUpdates(() => {
-            setIsInitialized(insight.isInitialized);
-            setIsAuthorized(insight.isAuthorized);
             setError(insight.error);
             setSystem(insight.system);
+            setIsAuthorized(insight.isAuthorized);
+            setIsInitialized(insight.isInitialized);
         });
     };
 
@@ -95,11 +92,10 @@ export const InsightProvider = (props: InsightProviderProps) => {
         initializeInsight();
 
         return () => {
-            console.log('destroying');
             // destroy it
             destroyInsight();
         };
-    }, [insight]);
+    }, []);
 
     return (
         <InsightContext.Provider

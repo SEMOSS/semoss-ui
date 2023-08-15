@@ -80,12 +80,6 @@ export const LoadingScreen = (props: LoadingScreenProps): JSX.Element => {
                     <Typography variant="caption">{description}</Typography>
                 </Stack>
             </Backdrop>
-            {/* <Loading
-                open={loading}
-                message={message}
-                description={description}
-                delay={delay}
-            /> */}
             {children}
         </LoadingScreenContext.Provider>
     );

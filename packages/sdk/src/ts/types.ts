@@ -36,12 +36,3 @@ export interface IframeEndMessage {
         };
     };
 }
-
-export interface PixelReturn<O extends unknown[] | [] = unknown[]> {
-    isMeta: boolean;
-    operationType: string[];
-    output: O[number];
-    pixelExpression: string;
-    pixelId: string;
-}
-[];

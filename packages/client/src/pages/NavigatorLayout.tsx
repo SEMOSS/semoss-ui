@@ -101,10 +101,12 @@ const StyledSidebarDivider = styled(Divider)(() => ({
 }));
 
 const StyledContent = styled('div')(() => ({
+    position: 'absolute',
     paddingTop: NAV_HEIGHT,
     paddingLeft: SIDEBAR_WIDTH,
     height: '100%',
     width: '100%',
+    overflow: 'hidden',
 }));
 
 /**
