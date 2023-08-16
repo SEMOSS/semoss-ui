@@ -9,16 +9,14 @@ import {
     Typography,
     Box,
     Grid,
-    useNotification,
 } from '@semoss/ui';
-import { useNavigate } from 'react-router-dom';
-import { FORM_ROUTES } from './forms';
-import { stepsOne, stepsTwo, IconDBMapper } from './formSteps.constants';
-import { UploadData } from './UploadData';
-import { CopyDatabaseForm } from './CopyDatabaseForm';
-import { StorageForm } from './StorageForm';
-import { ModelForm } from './ModelForm';
-import { useRootStore } from '@/hooks';
+import {
+    stepsOne,
+    stepsTwo,
+    IconDBMapper,
+} from '../engine-import/forms/formSteps.constants';
+import { UploadData } from '../engine-import/forms/UploadData';
+import { CopyDatabaseForm } from '../engine-import/forms/CopyDatabaseForm';
 import { Search as SearchIcon } from '@mui/icons-material/';
 import { BuildDb } from '@/assets/img/BuildDb';
 import { ConnectModel } from '@/assets/img/ConnectModel';
@@ -28,6 +26,7 @@ import { UploadDb } from '@/assets/img/UploadDb';
 import { ConnectStorage } from '@/assets/img/ConnectStorage';
 
 import { useImport } from '@/hooks';
+import { ImportSpecificPage } from './ImportSpecificPage';
 
 const StyledContainer = styled('div')(({ theme }) => ({
     display: 'flex',
@@ -127,145 +126,11 @@ const IconMapper = {
     'Connect to Model': <ConnectModel />,
 };
 
-export const DatabaseImport = () => {
-    const [activeStep, setActiveStep] = React.useState(0);
-    const [stepOne, setStepOne] = React.useState('');
-    const [stepTwo, setStepTwo] = React.useState('');
-    const [storageName, setStorageName] = React.useState('');
-    const [predictDataTypes, setPredictDataTypes] = React.useState(null);
-    const [metamodel, setMetamodel] = React.useState(null);
-
+export const ImportPage = () => {
     const [importSearch, setImportSearch] = React.useState('');
     const [search, setSearch] = React.useState('');
 
-    const { configStore, monolithStore } = useRootStore();
-    const navigate = useNavigate();
-    const notification = useNotification();
-
-    const insightId = configStore.store.insightID;
-
-    const { steps, addStep, removeStep, switchStep } = useImport();
-
-    /**
-     *
-     * @param values
-     * @returns
-     * @desc this is doing a number of different things,
-     * We will have to wrap this component in a context, in order to give each
-     * component access to the number of things that are needed
-     */
-    const formSubmit = async (values) => {
-        /** Storage: START */
-        if (stepOne === 'Add Storage') {
-            const pixel = `CreateStorageEngine(storage=["${
-                values.storage
-            }"], storageDetails=[${JSON.stringify(values.fields)}])`;
-
-            monolithStore.runQuery(pixel).then((response) => {
-                const output = response.pixelReturn[0].output,
-                    operationType = response.pixelReturn[0].operationType;
-
-                if (operationType.indexOf('ERROR') > -1) {
-                    notification.add({
-                        color: 'error',
-                        message: output,
-                    });
-                    return;
-                }
-
-                notification.add({
-                    color: 'success',
-                    message: `Successfully created storage`,
-                });
-
-                navigate(`/storage/${output.database_id}`);
-            });
-            return;
-        }
-        /** Storage: END */
-
-        /** Connect to External: START */
-        // I'll be hitting this reactor if dbDriver is in RDBMSTypeEnum on BE
-        if (values.type === 'connect') {
-            const pixel = `ExternalJdbcTablesAndViews(conDetails=[
-                ${JSON.stringify(values.conDetails)}
-            ])`;
-
-            const resp = await monolithStore.runQuery(pixel);
-            const output = resp.pixelReturn[0].output,
-                operationType = resp.pixelReturn[0].operationType;
-
-            if (operationType.indexOf('ERROR') > -1) {
-                notification.add({
-                    color: 'error',
-                    message: output,
-                });
-            } else {
-                setMetamodel(output);
-            }
-            return;
-        }
-        /** Connect to External: END */
-
-        /** Drag and Drop: START */
-        if (values.METAMODEL_TYPE === 'As Suggested Metamodel') {
-            monolithStore
-                .uploadFile(values.FILE, insightId)
-                .then((res: { fileName: string; fileLocation: string }[]) => {
-                    const file = res[0].fileLocation;
-                    monolithStore
-                        .runQuery(
-                            `PredictMetamodel(filePath=["${file}"], delimiter=["${values.DELIMETER}"], rowCount=[false])`,
-                        )
-                        .then((res) => {
-                            const output = res.pixelReturn[0].output;
-                            // format response to send to Form
-                            setMetamodel(output);
-                        });
-                });
-        }
-        if (values.METAMODEL_TYPE === 'As Flat Table') {
-            monolithStore
-                .uploadFile(values.FILE, insightId)
-                .then((res: { fileName: string; fileLocation: string }[]) => {
-                    const file = res[0].fileLocation;
-                    monolithStore
-                        .runQuery(
-                            `PredictDataTypes(filePath=["${file}"], delimiter=["${values.DELIMETER}"], rowCount=[false])`,
-                        )
-                        .then((res) => setPredictDataTypes(res));
-                });
-        }
-        /** Drag and Drop: END */
-    };
-
-    const getForm = (form) => {
-        return React.createElement(form.component, {
-            submitFunc: formSubmit,
-            metamodel: metamodel,
-            predictDataTypes: predictDataTypes,
-        });
-    };
-
-    const handleNavigate = () => {
-        if (activeStep === 1) {
-            setActiveStep(0);
-            setStepOne('');
-            setPredictDataTypes(null);
-        }
-        if (activeStep === 2) {
-            if (stepOne === 'Copy Database' || stepOne === 'Upload Database') {
-                setActiveStep(0);
-            } else {
-                setActiveStep(1);
-                setStepTwo('');
-                setStepOne('');
-                setPredictDataTypes(null);
-            }
-        }
-    };
-
-    console.log(steps);
+    const { steps, addStep, switchStep } = useImport();
 
     return (
         <>
@@ -876,26 +741,7 @@ export const DatabaseImport = () => {
                         )}
 
                     {/* Step 3 will be the form */}
-                    {steps.length === 2 && (
-                        <StyledBox>
-                            {steps[0].title === 'Add Model' ? (
-                                <ModelForm
-                                // submitFunc={(vals) => formSubmit(vals)}
-                                />
-                            ) : steps[0].title === 'Add Storage' ? (
-                                <StorageForm
-                                    submitFunc={(vals) => formSubmit(vals)}
-                                />
-                            ) : (
-                                // 'Connect to Database'
-                                FORM_ROUTES.map((f) => {
-                                    if (f.name === steps[1].title) {
-                                        return getForm(f);
-                                    }
-                                })
-                            )}
-                        </StyledBox>
-                    )}
+                    {steps.length === 2 && <ImportSpecificPage />}
 
                     {/* Step 4 will be metamodeling or predicting data types */}
                     {steps.length === 3 && <div>Metamodel</div>}

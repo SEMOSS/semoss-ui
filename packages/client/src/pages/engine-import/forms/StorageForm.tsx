@@ -68,6 +68,7 @@ export const StorageForm = (props) => {
         });
 
         const formVals = {
+            type: 'storage',
             storage: data.NAME,
             fields: smssProperties,
         };

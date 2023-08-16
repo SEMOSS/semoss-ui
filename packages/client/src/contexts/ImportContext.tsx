@@ -1,24 +1,65 @@
+import { MonolithStore } from '@/stores';
 import { createContext } from 'react';
 
-interface StepInterface {
+interface ImportStep {
+    /** Title of the step */
     title: string;
+
+    /** Description of the step */
     description: string;
+
+    /** Data assocaited with the step */
     data: unknown;
+
+    /** Component to render in the step */
+    component: React.FunctionComponent;
 }
+
 /**
  * Value
  */
 export type ImportContextType = {
-    steps: StepInterface[];
+    /**
+     * Track if the import is loading
+     */
+    isLoading: boolean;
 
-    /** addStep in import flow */
-    addStep: (stepInfo: unknown) => void;
+    /**
+     * List of the current steps
+     */
+    steps: ImportStep[];
 
-    /** remove step in import flow */
-    removeStep: (id: string) => void;
+    /**
+     * Active step index
+     */
+    activeStepIdx: number;
 
-    /** navigates to step in workflow */
-    switchStep: (index: number) => void;
+    /**
+     * Active step info
+     */
+    activeStep: ImportStep | null;
+
+    /**
+     * Set the loading boolean
+     *
+     * isLoading - toggle the loading true or false
+     */
+    setIsLoading: (isLoading: boolean) => void;
+
+    /**
+     * Update the steps in the flow
+     *
+     * step - step to add
+     * activeStepIdx - new active step
+     */
+    setSteps: (steps: ImportStep[], activeStepIdx: number) => void;
+
+    /**
+     * Update the steps in the flow
+     *
+     * activeStepIdx - new active step
+     */
+    setActiveStep: (index: number) => void;
 };
 
 /**

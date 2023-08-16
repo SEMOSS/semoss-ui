@@ -1,0 +1,149 @@
+import React from 'react';
+import { styled, Box, useNotification } from '@semoss/ui';
+import { useNavigate } from 'react-router-dom';
+import { FORM_ROUTES } from '../engine-import/forms/forms';
+import { StorageForm } from '../engine-import/forms/StorageForm';
+import { ModelForm } from '../engine-import/forms/ModelForm';
+import { useRootStore } from '@/hooks';
+
+import { useImport } from '@/hooks';
+
+const StyledBox = styled(Box)({
+    boxShadow: '0px 5px 22px 0px rgba(0, 0, 0, 0.06)',
+    width: '100%',
+    padding: '16px 16px 16px 16px',
+    marginBottom: '32px',
+});
+
+export const ImportSpecificPage = () => {
+    const [predictDataTypes, setPredictDataTypes] = React.useState(null);
+    const [metamodel, setMetamodel] = React.useState(null);
+
+    const { configStore, monolithStore } = useRootStore();
+    const navigate = useNavigate();
+    const notification = useNotification();
+
+    const insightId = configStore.store.insightID;
+
+    const { steps } = useImport();
+
+    /**
+     *
+     * @param values
+     * @returns
+     * @desc this is doing a number of different things,
+     * We will have to wrap this component in a context, in order to give each
+     * component access to the number of things that are needed
+     */
+    const formSubmit = async (values) => {
+        /** Storage: START */
+        if (values.type === 'storage') {
+            const pixel = `CreateStorageEngine(storage=["${
+                values.storage
+            }"], storageDetails=[${JSON.stringify(values.fields)}])`;
+
+            monolithStore.runQuery(pixel).then((response) => {
+                const output = response.pixelReturn[0].output,
+                    operationType = response.pixelReturn[0].operationType;
+
+                if (operationType.indexOf('ERROR') > -1) {
+                    notification.add({
+                        color: 'error',
+                        message: output,
+                    });
+                    return;
+                }
+
+                notification.add({
+                    color: 'success',
+                    message: `Successfully created storage`,
+                });
+
+                navigate(`/storage/${output.database_id}`);
+            });
+            return;
+        }
+        /** Storage: END */
+
+        /** Connect to External: START */
+        // I'll be hitting this reactor if dbDriver is in RDBMSTypeEnum on BE
+        if (values.type === 'connect') {
+            const pixel = `ExternalJdbcTablesAndViews(conDetails=[
+                ${JSON.stringify(values.conDetails)}
+            ])`;
+
+            const resp = await monolithStore.runQuery(pixel);
+            const output = resp.pixelReturn[0].output,
+                operationType = resp.pixelReturn[0].operationType;
+
+            if (operationType.indexOf('ERROR') > -1) {
+                notification.add({
+                    color: 'error',
+                    message: output,
+                });
+            } else {
+                setMetamodel(output);
+            }
+            return;
+        }
+        /** Connect to External: END */
+
+        /** Drag and Drop: START */
+        if (values.METAMODEL_TYPE === 'As Suggested Metamodel') {
+            monolithStore
+                .uploadFile(values.FILE, insightId)
+                .then((res: { fileName: string; fileLocation: string }[]) => {
+                    const file = res[0].fileLocation;
+                    monolithStore
+                        .runQuery(
+                            `PredictMetamodel(filePath=["${file}"], delimiter=["${values.DELIMETER}"], rowCount=[false])`,
+                        )
+                        .then((res) => {
+                            const output = res.pixelReturn[0].output;
+                            // format response to send to Form
+                            setMetamodel(output);
+                        });
+                });
+        }
+        if (values.METAMODEL_TYPE === 'As Flat Table') {
+            monolithStore
+                .uploadFile(values.FILE, insightId)
+                .then((res: { fileName: string; fileLocation: string }[]) => {
+                    const file = res[0].fileLocation;
+                    monolithStore
+                        .runQuery(
+                            `PredictDataTypes(filePath=["${file}"], delimiter=["${values.DELIMETER}"], rowCount=[false])`,
+                        )
+                        .then((res) => setPredictDataTypes(res));
+                });
+        }
+        /** Drag and Drop: END */
+    };
+
+    const getForm = (form) => {
+        return React.createElement(form.component, {
+            submitFunc: formSubmit,
+            metamodel: metamodel,
+            predictDataTypes: predictDataTypes,
+        });
+    };
+
+    return (
+        <StyledBox>
+            {steps[0].title === 'Add Model' ? (
+                <ModelForm
+                // submitFunc={(vals) => formSubmit(vals)}
+                />
+            ) : steps[0].title === 'Add Storage' ? (
+                <StorageForm submitFunc={(vals) => formSubmit(vals)} />
+            ) : (
+                // 'Connect to Database'
+                FORM_ROUTES.map((f) => {
+                    if (f.name === steps[1].title) {
+                        return getForm(f);
+                    }
+                })
+            )}
+        </StyledBox>
+    );
+};
