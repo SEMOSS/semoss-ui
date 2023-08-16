@@ -40,11 +40,13 @@ import GOOGLE_CLOUD from '@/assets/img/GOOGLE_CLOUD_STORAGE.png';
 import GOOGLE_DRIVE from '@/assets/img/GOOGLE_DRIVE.png';
 import ONEDRIVE from '@/assets/img/ONEDRIVE.png';
 import AZURE_BLOB from '@/assets/img/AZURE_BLOB.png';
+import MINIO from '@/assets/img/MINIO.png';
 
 export const stepsOne = [
     {
         name: 'Connect to Database',
-        description: '',
+        description:
+            "In today's data-driven world, the ability to effortlessly establish connections with various database types is pivotal for unlocking the full potential of your applications and analytical processes. Whether you're a developer, data analyst, or business professional, this page serves as your gateway to understanding the array of database options at your disposal.",
     },
     {
         name: 'Copy Database',
@@ -64,7 +66,8 @@ export const stepsOne = [
     },
     {
         name: 'Add Model',
-        description: '',
+        description:
+            "In an era fueled by information, the seamless interlinking of various databases stands as a cornerstone for unlocking the untapped potential of LLM applications. Whether you're a seasoned AI practitioner, a language aficionado, or an industry visionary, this page serves as your guiding star to grasp the spectrum of database options available within the LLM landscape.",
     },
 ];
 
@@ -116,6 +119,7 @@ export const stepsTwo = {
         'Google Drive',
         'Microsoft Azure Blob Storage',
         'Microsoft OneDrive',
+        'MINIO',
     ],
     ['Commercial Models']: ['Open AI', 'Claude'],
     ['Local Models']: [
@@ -183,4 +187,5 @@ export const IconDBMapper = {
     'Google Drive': GOOGLE_DRIVE,
     'Microsoft Azure Blob Storage': AZURE_BLOB,
     'Microsoft OneDrive': ONEDRIVE,
+    MINIO: MINIO,
 };

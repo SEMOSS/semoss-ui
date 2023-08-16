@@ -2,6 +2,7 @@ import { useEffect } from 'react';
 import { useFieldArray, useForm, Controller } from 'react-hook-form';
 import { Button, IconButton, TextField, Stack, styled } from '@semoss/ui';
 import { Delete } from '@mui/icons-material';
+import { useImport } from '@/hooks';
 
 const StyledFlexEnd = styled('div')(({ theme }) => ({
     display: 'flex',
@@ -36,15 +37,19 @@ export const StorageForm = (props) => {
         },
     });
 
+    // Storage Name in last step
+    const { steps, addStep } = useImport();
+
     const { fields, remove, append } = useFieldArray({
         control,
         name: 'SMSS_PROPERTIES',
     });
 
-    //set storage name
+    // set storage name
     useEffect(() => {
-        setValue('STORAGE_NAME', storageName);
-    }, [props]);
+        const lastStep = steps[steps.length - 1];
+        setValue('STORAGE_NAME', lastStep.title);
+    }, [steps.length]);
 
     const onSubmit = async (data) => {
         const smssProperties = {};
@@ -71,28 +76,7 @@ export const StorageForm = (props) => {
 
     return (
         <form onSubmit={handleSubmit(onSubmit)}>
-            VALLL
             <Stack rowGap={2}>
-                <StyledKeyValue>
-                    <Controller
-                        name={'NAME'}
-                        control={control}
-                        rules={{ required: true }}
-                        render={({ field, fieldState }) => {
-                            const hasError = fieldState.error;
-                            return (
-                                <TextField
-                                    fullWidth
-                                    required
-                                    label="Name"
-                                    value={field.value ? field.value : ''}
-                                    onChange={(value) => field.onChange(value)}
-                                ></TextField>
-                            );
-                        }}
-                    />
-                </StyledKeyValue>
-
                 <StyledKeyValue>
                     <Controller
                         name={'STORAGE_NAME'}
@@ -105,6 +89,26 @@ export const StorageForm = (props) => {
                                     fullWidth
                                     required
                                     label="Storage Name"
+                                    disabled={true}
+                                    value={field.value ? field.value : ''}
+                                    onChange={(value) => field.onChange(value)}
+                                ></TextField>
+                            );
+                        }}
+                    />
+                </StyledKeyValue>
+                <StyledKeyValue>
+                    <Controller
+                        name={'NAME'}
+                        control={control}
+                        rules={{ required: true }}
+                        render={({ field, fieldState }) => {
+                            const hasError = fieldState.error;
+                            return (
+                                <TextField
+                                    fullWidth
+                                    required
+                                    label="Name"
                                     value={field.value ? field.value : ''}
                                     onChange={(value) => field.onChange(value)}
                                 ></TextField>

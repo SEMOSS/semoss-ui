@@ -15,7 +15,7 @@ export const ImportShell = (props: ImportShellProps) => {
             {
                 id: Date.now(), // find better way to make unique id
                 title: stepInfo.title,
-                description: '',
+                description: stepInfo.description,
                 data: stepInfo.data,
             },
         ]);
