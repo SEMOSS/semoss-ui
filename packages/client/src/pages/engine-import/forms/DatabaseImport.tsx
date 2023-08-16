@@ -9,7 +9,6 @@ import {
     Typography,
     Box,
     Grid,
-    IconButton,
     useNotification,
 } from '@semoss/ui';
 import { useNavigate } from 'react-router-dom';
@@ -124,8 +123,8 @@ const IconMapper = {
     'Copy Database': <CopyDb />,
     'Upload Database': <UploadDb />,
     'Build Database': <BuildDb />,
-    'Add Storage': <ConnectStorage />,
-    'Add Model': <ConnectModel />,
+    'Connect to Storage': <ConnectStorage />,
+    'Connect to Model': <ConnectModel />,
 };
 
 export const DatabaseImport = () => {
@@ -325,46 +324,96 @@ export const DatabaseImport = () => {
                             />
                         </StyledSearchbarContainer>
                     ) : null}
+
                     <Box sx={{ width: '100%' }}>
                         {steps.length < 1 && (
-                            <Grid container columns={12} spacing={2}>
-                                {stepsOne.map((val, idx) => (
-                                    <Grid
-                                        item
-                                        key={idx}
-                                        xs={3}
-                                        lg={3}
-                                        md={3}
-                                        xl={3}
-                                    >
-                                        <StyledCard
-                                            onClick={() => {
-                                                // Document first step
-                                                const stepOne = {
-                                                    title: val.name,
-                                                    description: '',
-                                                    data: val.name,
-                                                };
-
-                                                addStep(stepOne);
-                                            }}
+                            <>
+                                <StyledCategoryTitle>
+                                    Select
+                                </StyledCategoryTitle>
+                                <Grid container columns={12} spacing={2}>
+                                    {stepsOne.slice(0, 4).map((val, idx) => (
+                                        <Grid
+                                            item
+                                            key={idx}
+                                            xs={3}
+                                            lg={3}
+                                            md={3}
+                                            xl={3}
                                         >
-                                            <StyledCardContent>
-                                                <Avatar
-                                                    sx={{
-                                                        bgcolor: 'transparent',
-                                                    }}
-                                                >
-                                                    {IconMapper[val.name]}
-                                                </Avatar>
-                                                <Typography variant="body2">
-                                                    {val.name}
-                                                </Typography>
-                                            </StyledCardContent>
-                                        </StyledCard>
-                                    </Grid>
-                                ))}
-                            </Grid>
+                                            <StyledCard
+                                                onClick={() => {
+                                                    // Document first step
+                                                    const stepOne = {
+                                                        title: val.name,
+                                                        description: '',
+                                                        data: val.name,
+                                                    };
+
+                                                    addStep(stepOne);
+                                                }}
+                                            >
+                                                <StyledCardContent>
+                                                    <Avatar
+                                                        sx={{
+                                                            bgcolor:
+                                                                'transparent',
+                                                        }}
+                                                    >
+                                                        {IconMapper[val.name]}
+                                                    </Avatar>
+                                                    <Typography variant="body2">
+                                                        {val.name}
+                                                    </Typography>
+                                                </StyledCardContent>
+                                            </StyledCard>
+                                        </Grid>
+                                    ))}
+                                </Grid>
+
+                                <StyledCategoryTitle>
+                                    Other Options
+                                </StyledCategoryTitle>
+                                <Grid container columns={12} spacing={2}>
+                                    {stepsOne.slice(4, 6).map((val, idx) => (
+                                        <Grid
+                                            item
+                                            key={idx}
+                                            xs={3}
+                                            lg={3}
+                                            md={3}
+                                            xl={3}
+                                        >
+                                            <StyledCard
+                                                onClick={() => {
+                                                    // Document first step
+                                                    const stepOne = {
+                                                        title: val.name,
+                                                        description: '',
+                                                        data: val.name,
+                                                    };
+
+                                                    addStep(stepOne);
+                                                }}
+                                            >
+                                                <StyledCardContent>
+                                                    <Avatar
+                                                        sx={{
+                                                            bgcolor:
+                                                                'transparent',
+                                                        }}
+                                                    >
+                                                        {IconMapper[val.name]}
+                                                    </Avatar>
+                                                    <Typography variant="body2">
+                                                        {val.name}
+                                                    </Typography>
+                                                </StyledCardContent>
+                                            </StyledCard>
+                                        </Grid>
+                                    ))}
+                                </Grid>
+                            </>
                         )}
                     </Box>
                     {/* Selection for options that require more info */}

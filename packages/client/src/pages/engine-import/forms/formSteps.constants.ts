@@ -1,3 +1,4 @@
+//Drag and Drop Data
 import CSV from '@/assets/img/CSV.svg';
 import EXCEL from '@/assets/img/EXCEL.png';
 import TSV from '@/assets/img/TSV.svg';
@@ -6,6 +7,7 @@ import H2_DB from '@/assets/img/H2_DB.png';
 import NEO4J from '@/assets/img/NEO4J.png';
 import TINKER from '@/assets/img/TINKER.png';
 
+//Connect to an External Database
 import ASTER from '@/assets/img/ASTER.png';
 import ATHENA from '@/assets/img/ATHENA.png';
 import BIGQUERY from '@/assets/img/BIGQUERY.png';
@@ -33,6 +35,7 @@ import TERADATA from '@/assets/img/TERADATA.png';
 import TIBCO from '@/assets/img/TIBCO.png';
 import TRINO from '@/assets/img/TRINO.jpg';
 
+//Add Storage
 import AMAZON_S3 from '@/assets/img/Amazon_S3.png';
 import DREAMHOST from '@/assets/img/DREAMHOST.png';
 import dropbox from '@/assets/img/dropbox.png';
@@ -41,13 +44,29 @@ import GOOGLE_DRIVE from '@/assets/img/GOOGLE_DRIVE.png';
 import ONEDRIVE from '@/assets/img/ONEDRIVE.png';
 import AZURE_BLOB from '@/assets/img/AZURE_BLOB.png';
 
+//Commercial Models
+import OPEN_AI from '@/assets/img/OPEN_AI.png';
+import CLAUDE from '@/assets/img/CLAUDE_AI.png';
+
+//Local Models
+import BRAIN from '@/assets/img/BRAIN.png';
+import META from '@/assets/img/META.png';
+import FALCON from '@/assets/img/FALCON_AI.png';
+import VICUNA from '@/assets/img/VICUNA.jpg';
+import MOSAIC from '@/assets/img/MOSAIC.png';
+import DOLLY from '@/assets/img/DOLLY_AI.jpg';
+import FLAN from '@/assets/img/FLAN.jpg';
+import BERT from '@/assets/img/BERT.png';
+import ELEUTHER from '@/assets/img/ELEUTHER_AI.png';
+
+//Embedded Models
+import ORCA from '@/assets/img/ORCA.png';
+import STABILITY_AI from '@/assets/img/STABILITY_AI.png';
+import REPLIT from '@/assets/img/REPLIT_CODE.png';
+
 export const stepsOne = [
     {
         name: 'Connect to Database',
-        description: '',
-    },
-    {
-        name: 'Copy Database',
         description: '',
     },
     {
@@ -55,15 +74,19 @@ export const stepsOne = [
         description: '',
     },
     {
+        name: 'Copy Database',
+        description: '',
+    },
+    {
         name: 'Build Database',
         description: '',
     },
     {
-        name: 'Add Storage',
+        name: 'Connect to Model',
         description: '',
     },
     {
-        name: 'Add Model',
+        name: 'Connect to Storage',
         description: '',
     },
 ];
@@ -120,8 +143,8 @@ export const stepsTwo = {
     ['Commercial Models']: ['Open AI', 'Claude'],
     ['Local Models']: [
         'Wizard 13B',
-        'Llama2 13  ',
-        'Llama2 40 ',
+        'Llama2 13',
+        'Llama2 40',
         'Llama2 70',
         'Falcon',
         'FreeWilly2',
@@ -183,4 +206,28 @@ export const IconDBMapper = {
     'Google Drive': GOOGLE_DRIVE,
     'Microsoft Azure Blob Storage': AZURE_BLOB,
     'Microsoft OneDrive': ONEDRIVE,
+
+    'Open AI': OPEN_AI,
+    Claude: CLAUDE,
+
+    'Wizard 13B': BRAIN,
+    'Llama2 13': META,
+    'Llama2 40': META,
+    'Llama2 70': META,
+    Falcon: FALCON,
+    FreeWilly2: BRAIN,
+    Guanaco: BRAIN,
+    Vicuna: VICUNA,
+    'Mosaic ML': MOSAIC,
+    Dolly: DOLLY,
+    'Replit code model – 3b': REPLIT,
+    'Flan T5 Large': FLAN,
+    'Flan T5 XXL': FLAN,
+    Bert: BERT,
+    'Eleuther GPTJ': ELEUTHER,
+    'Wizard Coder': BRAIN,
+
+    Orca: ORCA,
+    'Stablity AI': STABILITY_AI,
+    'Replit Code Model': REPLIT,
 };
