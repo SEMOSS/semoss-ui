@@ -1,18 +1,13 @@
 import React, { useMemo, useState } from 'react';
 import { useForm, Controller } from 'react-hook-form';
-import {
-    Button,
-    Checkbox,
-    TextField,
-    Stack,
-    Typography,
-    Modal,
-    useNotification,
-} from '@semoss/ui';
+import { Button, TextField, Stack, useNotification } from '@semoss/ui';
 import { ImportFormComponent } from './formTypes';
 import { useRootStore } from '@/hooks';
 import { Metamodel } from '@/components/metamodel';
 import { useNavigate } from 'react-router-dom';
+import { useImport } from '@/hooks';
+
+import { ImportMetamodel } from '@/components/database';
 
 interface SQLServerForm {
     submitFunc: () => void;
@@ -24,6 +19,7 @@ export const SQLServerForm: ImportFormComponent = (props) => {
     const { monolithStore } = useRootStore();
     const navigate = useNavigate();
     const notification = useNotification();
+    const { steps, setIsLoading } = useImport();
 
     const { control, handleSubmit, getValues } = useForm<{
         dbDriver: string;
@@ -81,10 +77,10 @@ export const SQLServerForm: ImportFormComponent = (props) => {
     /**
      * @desc hit pixel call to get new meta vals to pass to metamodel
      */
-    const getMetaWithFilters = async () => {
+    const getMetaWithFilters = async (values) => {
         const originalFormVals = getValues();
+        setIsLoading(true);
 
-        console.log(metamodel);
         let pixel = '';
         pixel += `
         ExternalJdbcSchema(conDetails=[${JSON.stringify({
@@ -98,12 +94,14 @@ export const SQLServerForm: ImportFormComponent = (props) => {
             PASSWORD: originalFormVals.PASSWORD,
             USE_CONNECTION_POOLING: false,
             CONNECTION_URL: '',
-        })}], filters=[${metamodel.tables}]);
+        })}], filters=[${values.tables}]);
         `;
 
         const resp = await monolithStore.runQuery(pixel);
         const output = resp.pixelReturn[0].output,
             operationType = resp.pixelReturn[0].operationType;
+
+        setIsLoading(false);
 
         if (operationType.indexOf('ERROR') > -1) {
             notification.add({
@@ -556,65 +554,19 @@ export const SQLServerForm: ImportFormComponent = (props) => {
                     <Button type={'submit'}>Submit</Button>
                 </form>
             )}
-            <Modal open={showModal} maxWidth="md">
-                <Modal.Title>
-                    Select Tables and Views to grab from data source
-                </Modal.Title>
-                <Modal.Content>
-                    {showModal && (
-                        <div
-                            style={{
-                                width: '900px',
-                                display: 'flex',
-                                flexDirection: 'row',
-                                justifyContent: 'space-between',
-                            }}
-                        >
-                            <div style={{ width: '150px' }}>
-                                <Typography variant={'body1'}>
-                                    Tables
-                                </Typography>
-                                {metamodel.tables.map((table, i) => {
-                                    return (
-                                        <div key={i}>
-                                            <Checkbox
-                                                value={table}
-                                                checked={true}
-                                                onChange={(value) => {
-                                                    console.log(value);
-                                                }}
-                                                label={<span>{table}</span>}
-                                            />
-                                        </div>
-                                    );
-                                })}
-                            </div>
-                            <div style={{ width: '150px' }}>
-                                <Typography variant={'body1'}>Views</Typography>
-                                {metamodel.views.map((view, i) => {
-                                    return (
-                                        <div key={i}>
-                                            <Checkbox
-                                                label={<span>{view}</span>}
-                                            />
-                                        </div>
-                                    );
-                                })}
-                            </div>
-                        </div>
-                    )}
-                </Modal.Content>
-                <Modal.Actions>
-                    <Button
-                        variant={'contained'}
-                        onClick={() => {
-                            getMetaWithFilters();
-                        }}
-                    >
-                        Metamodel
-                    </Button>
-                </Modal.Actions>
-            </Modal>
+
+            {/* Table Selection to pass to metamodel */}
+            {showModal ? (
+                <ImportMetamodel
+                    tables={metamodel.tables}
+                    views={metamodel.views}
+                    open={showModal}
+                    onClose={(values) => {
+                        getMetaWithFilters(values);
+                    }}
+                />
+            ) : null}
+
             {/* Metamodel */}
             {newMetamodel && (
                 <div style={{ width: '100%', height: '600px' }}>

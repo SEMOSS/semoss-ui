@@ -67,7 +67,11 @@ export const LoadingScreen = (props: LoadingScreenProps): JSX.Element => {
         >
             <Backdrop
                 open={loading}
-                sx={{ background: 'rgba(255, 255, 255, 0.5)' }}
+                sx={{
+                    background: 'rgba(255, 255, 255, 0.5)',
+                    zIndex: (theme) =>
+                        Math.max.apply(Math, Object.values(theme.zIndex)) + 1,
+                }}
             >
                 <Stack
                     direction={'column'}

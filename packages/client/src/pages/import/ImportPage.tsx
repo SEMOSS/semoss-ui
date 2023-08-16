@@ -130,7 +130,7 @@ export const ImportPage = () => {
     const [importSearch, setImportSearch] = React.useState('');
     const [search, setSearch] = React.useState('');
 
-    const { steps, addStep, switchStep } = useImport();
+    const { steps, activeStep, setSteps } = useImport();
 
     return (
         <>
@@ -141,7 +141,7 @@ export const ImportPage = () => {
                             <Breadcrumbs separator="/">
                                 <span
                                     onClick={() => {
-                                        switchStep(0);
+                                        setSteps([], -1);
                                     }}
                                 >
                                     Import
@@ -151,7 +151,16 @@ export const ImportPage = () => {
                                         <span
                                             key={i}
                                             onClick={() => {
-                                                switchStep(i + 1);
+                                                const newSteps = [];
+                                                for (
+                                                    let j = 0;
+                                                    j < i + 1;
+                                                    j++
+                                                ) {
+                                                    newSteps.push(steps[j]);
+                                                }
+
+                                                setSteps(newSteps, i + 1);
                                             }}
                                         >
                                             {step.title}
@@ -247,7 +256,14 @@ export const ImportPage = () => {
                                                                 data: val.name,
                                                             };
 
-                                                            addStep(stepOne);
+                                                            setSteps(
+                                                                [
+                                                                    ...steps,
+                                                                    stepOne,
+                                                                ],
+                                                                steps.length +
+                                                                    1,
+                                                            );
                                                         }}
                                                     >
                                                         <StyledCardContent>
@@ -295,8 +311,10 @@ export const ImportPage = () => {
                                                         description: '',
                                                         data: val.name,
                                                     };
-
-                                                    addStep(stepOne);
+                                                    setSteps(
+                                                        [...steps, stepOne],
+                                                        steps.length + 1,
+                                                    );
                                                 }}
                                             >
                                                 <StyledCardContent>
@@ -361,12 +379,17 @@ export const ImportPage = () => {
                                                             >
                                                                 <StyledFormTypeBox
                                                                     onClick={() => {
-                                                                        addStep(
-                                                                            {
-                                                                                title: stage,
-                                                                                description: `Fill out ${stage} details in order to work with data`,
-                                                                                data: stage,
-                                                                            },
+                                                                        setSteps(
+                                                                            [
+                                                                                ...steps,
+                                                                                {
+                                                                                    title: stage,
+                                                                                    description: `Fill out ${stage} details in order to work with data`,
+                                                                                    data: stage,
+                                                                                },
+                                                                            ],
+                                                                            steps.length +
+                                                                                1,
                                                                         );
                                                                     }}
                                                                 >
@@ -424,12 +447,17 @@ export const ImportPage = () => {
                                                                 <StyledFormTypeBox
                                                                     // title={stage}
                                                                     onClick={() => {
-                                                                        addStep(
-                                                                            {
-                                                                                title: stage,
-                                                                                description: `Fill out ${stage} details in order to connect to datasource`,
-                                                                                data: stage,
-                                                                            },
+                                                                        setSteps(
+                                                                            [
+                                                                                ...steps,
+                                                                                {
+                                                                                    title: stage,
+                                                                                    description: `Fill out ${stage} details in order to connect to datasource`,
+                                                                                    data: stage,
+                                                                                },
+                                                                            ],
+                                                                            steps.length +
+                                                                                1,
                                                                         );
                                                                     }}
                                                                 >
@@ -493,14 +521,18 @@ export const ImportPage = () => {
                                                                 sm={1}
                                                             >
                                                                 <StyledFormTypeBox
-                                                                    // title={stage}
                                                                     onClick={() => {
-                                                                        addStep(
-                                                                            {
-                                                                                title: stage,
-                                                                                description: `Fill out ${stage} details in order to create new storage`,
-                                                                                data: stage,
-                                                                            },
+                                                                        setSteps(
+                                                                            [
+                                                                                ...steps,
+                                                                                {
+                                                                                    title: stage,
+                                                                                    description: `Fill out ${stage} details in order to create new storage`,
+                                                                                    data: stage,
+                                                                                },
+                                                                            ],
+                                                                            steps.length +
+                                                                                1,
                                                                         );
                                                                     }}
                                                                 >
@@ -557,12 +589,17 @@ export const ImportPage = () => {
                                                                     <StyledFormTypeBox
                                                                         // title={stage}
                                                                         onClick={() => {
-                                                                            addStep(
-                                                                                {
-                                                                                    title: stage,
-                                                                                    description: `Fill out ${stage} details in order to create new storage`,
-                                                                                    data: stage,
-                                                                                },
+                                                                            setSteps(
+                                                                                [
+                                                                                    ...steps,
+                                                                                    {
+                                                                                        title: stage,
+                                                                                        description: `Fill out ${stage} details in order to create new storage`,
+                                                                                        data: stage,
+                                                                                    },
+                                                                                ],
+                                                                                steps.length +
+                                                                                    1,
                                                                             );
                                                                         }}
                                                                     >
@@ -590,7 +627,7 @@ export const ImportPage = () => {
                                         </Box>
 
                                         <StyledCategoryTitle>
-                                            Embeded
+                                            Embedded
                                         </StyledCategoryTitle>
                                         <Box>
                                             <Grid
@@ -622,12 +659,17 @@ export const ImportPage = () => {
                                                                 <StyledFormTypeBox
                                                                     // title={stage}
                                                                     onClick={() => {
-                                                                        addStep(
-                                                                            {
-                                                                                title: stage,
-                                                                                description: `Fill out ${stage} details in order to create new storage`,
-                                                                                data: stage,
-                                                                            },
+                                                                        setSteps(
+                                                                            [
+                                                                                ...steps,
+                                                                                {
+                                                                                    title: stage,
+                                                                                    description: `Fill out ${stage} details in order to create new storage`,
+                                                                                    data: stage,
+                                                                                },
+                                                                            ],
+                                                                            steps.length +
+                                                                                1,
                                                                         );
                                                                     }}
                                                                 >
@@ -691,12 +733,17 @@ export const ImportPage = () => {
                                                                     <StyledFormTypeBox
                                                                         // title={stage}
                                                                         onClick={() => {
-                                                                            addStep(
-                                                                                {
-                                                                                    title: stage,
-                                                                                    description: `Fill out ${stage} details in order to create new storage`,
-                                                                                    data: stage,
-                                                                                },
+                                                                            setSteps(
+                                                                                [
+                                                                                    ...steps,
+                                                                                    {
+                                                                                        title: stage,
+                                                                                        description: `Fill out ${stage} details in order to create new storage`,
+                                                                                        data: stage,
+                                                                                    },
+                                                                                ],
+                                                                                steps.length +
+                                                                                    1,
                                                                             );
                                                                         }}
                                                                     >
@@ -743,8 +790,8 @@ export const ImportPage = () => {
                     {/* Step 3 will be the form */}
                     {steps.length === 2 && <ImportSpecificPage />}
 
-                    {/* Step 4 will be metamodeling or predicting data types */}
-                    {steps.length === 3 && <div>Metamodel</div>}
+                    {/* Step 4 will be the next thing to be shown after form */}
+                    {steps.length === 3 && steps[2].component}
                 </StyledContainer>
             </Page>
         </>

@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import { Outlet } from 'react-router-dom';
-import { CircularProgress } from '@semoss/ui';
+import { LoadingScreen } from '@/components/ui';
 
 import { ImportContext, ImportContextType } from '@/contexts';
 
@@ -69,7 +69,7 @@ export const ImportLayout = () => {
                 setActiveStep: setActiveStep,
             }}
         >
-            {isLoading && <CircularProgress />}
+            {isLoading && <LoadingScreen.Trigger />}
             <Outlet />
         </ImportContext.Provider>
     );

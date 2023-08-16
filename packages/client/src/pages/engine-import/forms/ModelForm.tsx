@@ -6,6 +6,7 @@ import { Delete } from '@mui/icons-material';
 const StyledFlexEnd = styled('div')(({ theme }) => ({
     display: 'flex',
     justifyContent: 'flex-end',
+    gap: theme.spacing(1),
 }));
 
 const StyledProperty = styled('div')(({ theme }) => ({
@@ -24,12 +25,7 @@ const StyledKeyValue = styled('div')(({ theme }) => ({
 export const ModelForm = () => {
     const { control, handleSubmit } = useForm({
         defaultValues: {
-            SMSS_PROPERTIES: [
-                {
-                    KEY: '',
-                    VALUE: '',
-                },
-            ],
+            SMSS_PROPERTIES: [],
         },
     });
 
@@ -51,19 +47,6 @@ export const ModelForm = () => {
     return (
         <form onSubmit={handleSubmit(onSubmit)}>
             <Stack rowGap={2}>
-                <StyledFlexEnd>
-                    <Button
-                        variant={'contained'}
-                        onClick={() => {
-                            append({
-                                KEY: '',
-                                VALUE: '',
-                            });
-                        }}
-                    >
-                        Add Property
-                    </Button>
-                </StyledFlexEnd>
                 {fields.map((property, i) => {
                     return (
                         <StyledProperty key={i}>
@@ -129,6 +112,17 @@ export const ModelForm = () => {
                     );
                 })}
                 <StyledFlexEnd>
+                    <Button
+                        variant={'contained'}
+                        onClick={() => {
+                            append({
+                                KEY: '',
+                                VALUE: '',
+                            });
+                        }}
+                    >
+                        Add Property
+                    </Button>
                     <Button type="submit" variant={'contained'}>
                         Add Storage
                     </Button>

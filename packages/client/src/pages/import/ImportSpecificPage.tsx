@@ -25,17 +25,18 @@ export const ImportSpecificPage = () => {
 
     const insightId = configStore.store.insightID;
 
-    const { steps } = useImport();
+    const { steps, setIsLoading } = useImport();
 
     /**
      *
      * @param values
      * @returns
-     * @desc this is doing a number of different things,
-     * We will have to wrap this component in a context, in order to give each
-     * component access to the number of things that are needed
+     * @desc determines what pixel to hit based on steps
      */
     const formSubmit = async (values) => {
+        // Loading
+        setIsLoading(true);
+
         /** Storage: START */
         if (values.type === 'storage') {
             const pixel = `CreateStorageEngine(storage=["${
@@ -45,6 +46,8 @@ export const ImportSpecificPage = () => {
             monolithStore.runQuery(pixel).then((response) => {
                 const output = response.pixelReturn[0].output,
                     operationType = response.pixelReturn[0].operationType;
+
+                setIsLoading(false);
 
                 if (operationType.indexOf('ERROR') > -1) {
                     notification.add({
@@ -65,6 +68,7 @@ export const ImportSpecificPage = () => {
         }
         /** Storage: END */
 
+        debugger;
         /** Connect to External: START */
         // I'll be hitting this reactor if dbDriver is in RDBMSTypeEnum on BE
         if (values.type === 'connect') {
@@ -75,6 +79,8 @@ export const ImportSpecificPage = () => {
             const resp = await monolithStore.runQuery(pixel);
             const output = resp.pixelReturn[0].output,
                 operationType = resp.pixelReturn[0].operationType;
+
+            setIsLoading(false);
 
             if (operationType.indexOf('ERROR') > -1) {
                 notification.add({
@@ -100,6 +106,7 @@ export const ImportSpecificPage = () => {
                         )
                         .then((res) => {
                             const output = res.pixelReturn[0].output;
+                            setIsLoading(false);
                             // format response to send to Form
                             setMetamodel(output);
                         });
@@ -114,7 +121,10 @@ export const ImportSpecificPage = () => {
                         .runQuery(
                             `PredictDataTypes(filePath=["${file}"], delimiter=["${values.DELIMETER}"], rowCount=[false])`,
                         )
-                        .then((res) => setPredictDataTypes(res));
+                        .then((res) => {
+                            setIsLoading(false);
+                            setPredictDataTypes(res);
+                        });
                 });
         }
         /** Drag and Drop: END */
@@ -130,14 +140,13 @@ export const ImportSpecificPage = () => {
 
     return (
         <StyledBox>
-            {steps[0].title === 'Add Model' ? (
+            {steps[0].title === 'Connect to Model' ? (
                 <ModelForm
                 // submitFunc={(vals) => formSubmit(vals)}
                 />
-            ) : steps[0].title === 'Add Storage' ? (
+            ) : steps[0].title === 'Connect to Storage' ? (
                 <StorageForm submitFunc={(vals) => formSubmit(vals)} />
             ) : (
-                // 'Connect to Database'
                 FORM_ROUTES.map((f) => {
                     if (f.name === steps[1].title) {
                         return getForm(f);

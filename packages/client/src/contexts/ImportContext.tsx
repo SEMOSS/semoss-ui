@@ -12,7 +12,7 @@ interface ImportStep {
     data: unknown;
 
     /** Component to render in the step */
-    component: React.FunctionComponent;
+    component?: React.FunctionComponent;
 }
 
 /**
