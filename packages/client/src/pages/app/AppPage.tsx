@@ -216,7 +216,9 @@ export const AppPage = observer(() => {
             await monolithStore.setProjectPortal(false, appId, true, 'public');
 
             // Publish the project the insight classes
-            await monolithStore.runQuery(`PublishProject('${appId}');`);
+            await monolithStore.runQuery(
+                `PublishProject('${appId}', release=true);`,
+            );
 
             // close it
             refreshOutlet();
