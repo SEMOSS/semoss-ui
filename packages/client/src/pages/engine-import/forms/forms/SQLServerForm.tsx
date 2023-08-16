@@ -84,9 +84,8 @@ export const SQLServerForm: ImportFormComponent = (props) => {
     const getMetaWithFilters = async () => {
         const originalFormVals = getValues();
 
-        console.log();
+        console.log(metamodel);
         let pixel = '';
-        debugger;
         pixel += `
         ExternalJdbcSchema(conDetails=[${JSON.stringify({
             dbDriver: originalFormVals.dbDriver,
@@ -99,7 +98,7 @@ export const SQLServerForm: ImportFormComponent = (props) => {
             PASSWORD: originalFormVals.PASSWORD,
             USE_CONNECTION_POOLING: false,
             CONNECTION_URL: '',
-        })}], filters=["CATALOG","COMBINE_SHORTAGES","CATALOG_AUDIT"]);
+        })}], filters=[${metamodel.tables}]);
         `;
 
         const resp = await monolithStore.runQuery(pixel);
@@ -143,10 +142,10 @@ export const SQLServerForm: ImportFormComponent = (props) => {
                     columns.push(col.name);
                 });
 
-                tables[tableInfo.name + firstCol] = columns;
+                tables[tableInfo.name + '.' + firstCol] = columns;
             }
 
-            if (owlPositions[node.id]) {
+            if (!owlPositions[node.id]) {
                 owlPositions[node.id] = {
                     top: node.position.y,
                     left: node.position.x,
@@ -176,7 +175,6 @@ export const SQLServerForm: ImportFormComponent = (props) => {
             ${JSON.stringify(owlPositions)}
         ]);`;
 
-        debugger;
         console.log(data);
 
         const resp = await monolithStore.runQuery(pixel);

@@ -117,6 +117,26 @@ export const stepsTwo = {
         'Microsoft Azure Blob Storage',
         'Microsoft OneDrive',
     ],
+    ['Commercial Models']: ['Open AI', 'Claude'],
+    ['Local Models']: [
+        'Wizard 13B',
+        'Llama2 13  ',
+        'Llama2 40 ',
+        'Llama2 70',
+        'Falcon',
+        'FreeWilly2',
+        'Guanaco',
+        'Vicuna',
+        'Mosaic ML',
+        'Dolly',
+        'Replit code model – 3b',
+        'Flan T5 Large',
+        'Flan T5 XXL',
+        'Bert',
+        'Eleuther GPTJ',
+        'Wizard Coder',
+    ],
+    ['Embedded Models']: ['Orca', 'Stablity AI', 'Replit Code Model'],
 };
 
 export const IconDBMapper = {

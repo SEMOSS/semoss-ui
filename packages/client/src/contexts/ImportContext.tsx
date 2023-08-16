@@ -1,16 +1,24 @@
 import { createContext } from 'react';
 
+interface StepInterface {
+    title: string;
+    description: string;
+    data: unknown;
+}
 /**
  * Value
  */
 export type ImportContextType = {
-    steps: any[];
+    steps: StepInterface[];
 
     /** addStep in import flow */
-    addStep: (id: string) => void;
+    addStep: (stepInfo: unknown) => void;
 
     /** remove step in import flow */
     removeStep: (id: string) => void;
+
+    /** navigates to step in workflow */
+    switchStep: (index: number) => void;
 };
 
 /**
