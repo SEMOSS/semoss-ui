@@ -47,11 +47,11 @@ export const stepsOne = [
         description: '',
     },
     {
-        name: 'Copy Database',
+        name: 'Upload Database',
         description: '',
     },
     {
-        name: 'Upload Database',
+        name: 'Copy Database',
         description: '',
     },
     {
@@ -59,11 +59,11 @@ export const stepsOne = [
         description: '',
     },
     {
-        name: 'Add Storage',
+        name: 'Connect to Model',
         description: '',
     },
     {
-        name: 'Add Model',
+        name: 'Connect to Storage',
         description: '',
     },
 ];

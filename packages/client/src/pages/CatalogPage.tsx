@@ -59,7 +59,7 @@ const StyledChipList = styled('div')(({ theme }) => ({
     gap: theme.spacing(2),
 }));
 
-const StyledFilter = styled('div')(({ theme }) => ({}));
+const StyledFilter = styled('div')(() => ({}));
 
 const StyledNestedFilterList = styled(List)(({ theme }) => ({
     width: '100%',
@@ -73,7 +73,7 @@ const StyledAvatarCount = styled(Avatar)(({ theme }) => ({
     color: theme.palette.text.primary,
 }));
 
-const StyledContent = styled('div')(({ theme }) => ({
+const StyledContent = styled('div')(() => ({
     display: 'flex',
     flexDirection: 'column',
     height: '100%',
@@ -391,7 +391,7 @@ export const CatalogPage = observer((): JSX.Element => {
         const favorite = !isFavorited(db.database_id);
         monolithStore
             .setEngineFavorite(db.database_id, favorite)
-            .then((response) => {
+            .then(() => {
                 if (!favorite) {
                     const newFavorites = favoritedDbs;
                     for (let i = newFavorites.length - 1; i >= 0; i--) {
@@ -529,7 +529,7 @@ export const CatalogPage = observer((): JSX.Element => {
 
         const mutateListWithVotes = databases;
 
-        getDatabases.data.forEach((db, i) => {
+        getDatabases.data.forEach((db) => {
             mutateListWithVotes.push({
                 ...db,
                 upvotes: db.upvotes ? db.upvotes : 0,
@@ -650,6 +650,7 @@ export const CatalogPage = observer((): JSX.Element => {
                             alignItems={'center'}
                             spacing={3}
                         >
+                            {/* rose here */}
                             <Button
                                 size={'large'}
                                 variant={'contained'}
@@ -1083,7 +1084,7 @@ export const CatalogPage = observer((): JSX.Element => {
                                                 favorite={() => {
                                                     favoriteDb(db);
                                                 }}
-                                                upvote={(val) => {
+                                                upvote={() => {
                                                     upvoteDb(db);
                                                 }}
                                                 global={
@@ -1128,7 +1129,7 @@ export const CatalogPage = observer((): JSX.Element => {
                                                           }
                                                         : null
                                                 }
-                                                upvote={(val) => {
+                                                upvote={() => {
                                                     upvoteDb(db);
                                                 }}
                                             />

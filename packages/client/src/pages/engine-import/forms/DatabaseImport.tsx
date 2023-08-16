@@ -121,8 +121,8 @@ const IconMapper = {
     'Copy Database': <CopyDb />,
     'Upload Database': <UploadDb />,
     'Build Database': <BuildDb />,
-    'Add Storage': <ConnectStorage />,
-    'Add Model': <ConnectModel />,
+    'Connect to Storage': <ConnectStorage />,
+    'Connect to Model': <ConnectModel />,
 };
 
 export const DatabaseImport = () => {
@@ -261,6 +261,9 @@ export const DatabaseImport = () => {
                             sx={{ width: '100%' }}
                         />
                     </StyledSearchbarContainer>
+
+                    {/* if coming from one page - add here to top */}
+                    <StyledCategoryTitle>Select</StyledCategoryTitle>
                     <Box sx={{ width: '100%' }}>
                         {activeStep === 0 && (
                             <Grid container columns={12} spacing={2}>
@@ -311,6 +314,60 @@ export const DatabaseImport = () => {
                             </Grid>
                         )}
                     </Box>
+
+                    {/* else add here */}
+                    <StyledCategoryTitle>Other Options</StyledCategoryTitle>
+                    <Box sx={{ width: '100%' }}>
+                        {activeStep === 0 && (
+                            <Grid container columns={12} spacing={2}>
+                                {stepsOne.map((val, idx) => (
+                                    <Grid
+                                        item
+                                        key={idx}
+                                        xs={3}
+                                        lg={3}
+                                        md={3}
+                                        xl={3}
+                                    >
+                                        <StyledCard
+                                            onClick={() => {
+                                                setStepOne(val.name);
+                                                if (
+                                                    val.name ===
+                                                        'Copy Database' ||
+                                                    val.name ===
+                                                        'Upload Database' ||
+                                                    val.name ===
+                                                        'Add Storage' ||
+                                                    val.name === 'Add Model'
+                                                ) {
+                                                    setActiveStep(2);
+                                                    setStepTwo('');
+                                                } else {
+                                                    setActiveStep(1);
+                                                    setStepTwo('');
+                                                }
+                                            }}
+                                        >
+                                            <StyledCardContent>
+                                                <Avatar
+                                                    sx={{
+                                                        bgcolor: 'transparent',
+                                                    }}
+                                                >
+                                                    {IconMapper[val.name]}
+                                                </Avatar>
+                                                <Typography variant="body2">
+                                                    {val.name}
+                                                </Typography>
+                                            </StyledCardContent>
+                                        </StyledCard>
+                                    </Grid>
+                                ))}
+                            </Grid>
+                        )}
+                    </Box>
+
                     {(activeStep === 1 || activeStep === 2) && (
                         <StyledBox>
                             {activeStep === 1 && !stepTwo && (
