@@ -528,7 +528,7 @@ export const ImportPage = () => {
                                                                                 ...steps,
                                                                                 {
                                                                                     title: stage,
-                                                                                    description: `Fill out ${stage} details in order to create new storage`,
+                                                                                    description: `Fill out ${stage} details in order to add model to catalog`,
                                                                                     data: stage,
                                                                                 },
                                                                             ],
@@ -595,7 +595,7 @@ export const ImportPage = () => {
                                                                                     ...steps,
                                                                                     {
                                                                                         title: stage,
-                                                                                        description: `Fill out ${stage} details in order to create new storage`,
+                                                                                        description: `Fill out ${stage} details in order to add model to catalog`,
                                                                                         data: stage,
                                                                                     },
                                                                                 ],
@@ -665,7 +665,7 @@ export const ImportPage = () => {
                                                                                 ...steps,
                                                                                 {
                                                                                     title: stage,
-                                                                                    description: `Fill out ${stage} details in order to create new storage`,
+                                                                                    description: `Fill out ${stage} details in order to add model to catalog`,
                                                                                     data: stage,
                                                                                 },
                                                                             ],

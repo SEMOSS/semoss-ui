@@ -68,29 +68,60 @@ export const ImportSpecificPage = () => {
         }
         /** Storage: END */
 
-        /** Connect to External: START */
-        // I'll be hitting this reactor if dbDriver is in RDBMSTypeEnum on BE
-        if (values.type === 'connect') {
-            const pixel = `ExternalJdbcTablesAndViews(conDetails=[
-                ${JSON.stringify(values.conDetails)}
-            ])`;
+        /** Model: START */
+        if (values.type === 'model') {
+            const pixel = `CreateModelEngine(model=["${
+                values.storage
+            }"], modelDetails=[${JSON.stringify(values.fields)}])`;
 
-            const resp = await monolithStore.runQuery(pixel);
-            const output = resp.pixelReturn[0].output,
-                operationType = resp.pixelReturn[0].operationType;
+            monolithStore.runQuery(pixel).then((response) => {
+                const output = response.pixelReturn[0].output,
+                    operationType = response.pixelReturn[0].operationType;
 
-            setIsLoading(false);
+                setIsLoading(false);
 
-            if (operationType.indexOf('ERROR') > -1) {
+                if (operationType.indexOf('ERROR') > -1) {
+                    notification.add({
+                        color: 'error',
+                        message: output,
+                    });
+                    return;
+                }
+
                 notification.add({
-                    color: 'error',
-                    message: output,
+                    color: 'success',
+                    message: `Successfully added model`,
                 });
-            } else {
-                setMetamodel(output);
-            }
+
+                navigate(`/model/${output.database_id}`);
+            });
             return;
         }
+        /** Model: END */
+
+        /** Connect to External: START */
+        // I'll be hitting this reactor if dbDriver is in RDBMSTypeEnum on BE
+        // if (values.type === 'connect') {
+        //     const pixel = `ExternalJdbcTablesAndViews(conDetails=[
+        //         ${JSON.stringify(values.conDetails)}
+        //     ])`;
+
+        //     const resp = await monolithStore.runQuery(pixel);
+        //     const output = resp.pixelReturn[0].output,
+        //         operationType = resp.pixelReturn[0].operationType;
+
+        //     setIsLoading(false);
+
+        //     if (operationType.indexOf('ERROR') > -1) {
+        //         notification.add({
+        //             color: 'error',
+        //             message: output,
+        //         });
+        //     } else {
+        //         setMetamodel(output);
+        //     }
+        //     return;
+        // }
         /** Connect to External: END */
 
         /** Drag and Drop: START */
@@ -140,9 +171,7 @@ export const ImportSpecificPage = () => {
     return (
         <StyledBox>
             {steps[0].title === 'Connect to Model' ? (
-                <ModelForm
-                // submitFunc={(vals) => formSubmit(vals)}
-                />
+                <ModelForm submitFunc={(vals) => formSubmit(vals)} />
             ) : steps[0].title === 'Connect to Storage' ? (
                 <StorageForm submitFunc={(vals) => formSubmit(vals)} />
             ) : (
