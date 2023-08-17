@@ -227,7 +227,7 @@ export const ImportPage = () => {
                         <Box sx={{ width: '100%' }}>
                             <>
                                 <StyledCategoryTitle>
-                                    Select
+                                    Database
                                 </StyledCategoryTitle>
                                 <Grid container columns={12} spacing={2}>
                                     {stepsOne.slice(0, 4).map((val, idx) => {
