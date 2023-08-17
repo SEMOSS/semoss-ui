@@ -38,7 +38,7 @@ export const StorageForm = (props) => {
     });
 
     // Storage Name in last step
-    const { steps, addStep } = useImport();
+    const { steps } = useImport();
 
     const { fields, remove, append } = useFieldArray({
         control,

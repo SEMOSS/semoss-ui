@@ -69,8 +69,10 @@ export const LoadingScreen = (props: LoadingScreenProps): JSX.Element => {
                 open={loading}
                 sx={{
                     background: 'rgba(255, 255, 255, 0.5)',
-                    zIndex: (theme) =>
-                        Math.max.apply(Math, Object.values(theme.zIndex)) + 1,
+                    // Mui Backdrop does not go over MuiDialog
+                    // zIndex: (theme) =>
+                    //     Math.max.apply(Math, Object.values(theme.zIndex)) + 1,
+                    zIndex: 1501,
                 }}
             >
                 <Stack

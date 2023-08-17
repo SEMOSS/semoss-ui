@@ -7,8 +7,6 @@ import { Metamodel } from '@/components/metamodel';
 import { useNavigate } from 'react-router-dom';
 import { useImport } from '@/hooks';
 
-import { ImportMetamodel } from '@/components/database';
-
 interface SQLServerForm {
     submitFunc: () => void;
     metamodel: any;
@@ -68,7 +66,8 @@ export const SQLServerForm: ImportFormComponent = (props) => {
                 ...steps,
                 {
                     title: data.DATABASE_NAME,
-                    description: 'View and ',
+                    description:
+                        'View and edit the relationships of the selected tables from the external connection that was made.',
                     data: conDetails,
                 },
             ],

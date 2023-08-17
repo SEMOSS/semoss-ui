@@ -72,7 +72,7 @@ export const stepsOne = [
             "In today's data-driven world, the ability to effortlessly establish connections with various database types is pivotal for unlocking the full potential of your applications and analytical processes. Whether you're a developer, data analyst, or business professional, this page serves as your gateway to understanding the array of database options at your disposal.",
     },
     {
-        name: 'Upload Database',
+        name: 'Copy Database',
         description: '',
     },
     {

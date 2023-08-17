@@ -152,6 +152,8 @@ interface TablesViewsSelectionProps {
 const TablesViewsSelection = (props: TablesViewsSelectionProps) => {
     const { open = false, onClose = () => null, tables, views } = props;
 
+    const { steps, setSteps } = useImport();
+
     const [checkedTables, setCheckedTables] = useState({});
     const [checkedViews, setCheckedViews] = useState({});
 
@@ -278,6 +280,13 @@ const TablesViewsSelection = (props: TablesViewsSelectionProps) => {
             </Modal.Content>
             <Modal.Actions>
                 <Button
+                    onClick={() => {
+                        setSteps([steps[0], steps[1]], 1);
+                    }}
+                >
+                    Cancel
+                </Button>
+                <Button
                     variant={'contained'}
                     onClick={() => {
                         sendTableViewFilters();
@@ -290,17 +299,28 @@ const TablesViewsSelection = (props: TablesViewsSelectionProps) => {
     );
 };
 
+interface JDBCSchemaInterface {
+    positions: Record<string, { top: number; left: number }>;
+    tables: {
+        columns: string[];
+        isPrimKey: boolean[];
+        raw_type: string[];
+        table: string;
+        type: string[];
+    }[];
+    relationships: { fromTable: string; toTable: string; relName: string }[];
+}
 interface MetamodelViewProps {
-    metamodel: unknown;
+    metamodel: JDBCSchemaInterface;
 }
 
 export const MetamodelView = (props: MetamodelViewProps) => {
     const { metamodel } = props;
 
-    const { configStore, monolithStore } = useRootStore();
+    const { monolithStore } = useRootStore();
     const navigate = useNavigate();
     const notification = useNotification();
-    const { steps, setSteps, setIsLoading } = useImport();
+    const { steps, setIsLoading } = useImport();
 
     /**
      *
@@ -349,8 +369,6 @@ export const MetamodelView = (props: MetamodelViewProps) => {
           ${JSON.stringify(owlPositions)}
       ]);`;
 
-        console.log(data);
-
         const resp = await monolithStore.runQuery(pixel);
         const output = resp.pixelReturn[0].output,
             operationType = resp.pixelReturn[0].operationType;
@@ -374,7 +392,7 @@ export const MetamodelView = (props: MetamodelViewProps) => {
      */
     const nodes = useMemo(() => {
         const formattedNodes = [];
-        // TO-DO: fix TS errors on metamodel and node
+
         if (metamodel) {
             Object.entries(metamodel.positions).forEach((table, i) => {
                 const node = {
