@@ -84,60 +84,60 @@ export const CSVForm: ImportFormComponent = (props) => {
     const nodes = useMemo(() => {
         const formattedNodes = [];
 
-        // // TO-DO: fix TS errors on metamodel and node
-        // if (metamodel) {
-        //     Object.entries(metamodel.positions).forEach((table, i) => {
-        //         // table = ['db name', {x: '', y: '' }]
-        //         const node = {
-        //             data: {
-        //                 name: table[0],
-        //                 properties: [], // get columns from metamodel.nodeProp
-        //             },
-        //             id: table[0],
-        //             position: { x: table[1].left, y: table[1].top },
-        //             type: 'metamodel',
-        //         };
+        // TO-DO: fix TS errors on metamodel and node
+        if (metamodel) {
+            Object.entries(metamodel.positions).forEach((table, i) => {
+                // table = ['db name', {x: '', y: '' }]
+                const node = {
+                    data: {
+                        name: table[0],
+                        properties: [], // get columns from metamodel.nodeProp
+                    },
+                    id: table[0],
+                    position: { x: table[1].left, y: table[1].top },
+                    type: 'metamodel',
+                };
 
-        //         // first see if there is a property for the table name in .nodeProp
-        //         if (metamodel.nodeProp[table[0]]) {
-        //             const columnsForTable = metamodel.nodeProp[table[0]];
+                // first see if there is a property for the table name in .nodeProp
+                if (metamodel.nodeProp[table[0]]) {
+                    const columnsForTable = metamodel.nodeProp[table[0]];
 
-        //             columnsForTable.forEach((col) => {
-        //                 const foundColumn = metamodel.dataTypes[col];
+                    columnsForTable.forEach((col) => {
+                        const foundColumn = metamodel.dataTypes[col];
 
-        //                 node.data.properties.push({
-        //                     id: table[0] + '__' + col,
-        //                     name: col,
-        //                     type: foundColumn,
-        //                 });
-        //             });
-        //         } else {
-        //             const foundColumn = metamodel.dataTypes[table[0]];
-        //             node.data.properties.push({
-        //                 id: table[0],
-        //                 name: table[0],
-        //                 type: foundColumn,
-        //             });
-        //         }
-        //         formattedNodes.push(node);
-        //     });
-        // }
+                        node.data.properties.push({
+                            id: table[0] + '__' + col,
+                            name: col,
+                            type: foundColumn,
+                        });
+                    });
+                } else {
+                    const foundColumn = metamodel.dataTypes[table[0]];
+                    node.data.properties.push({
+                        id: table[0],
+                        name: table[0],
+                        type: foundColumn,
+                    });
+                }
+                formattedNodes.push(node);
+            });
+        }
 
         return formattedNodes;
     }, [metamodel]);
 
     const edges = useMemo(() => {
         const newEdges = [];
-        // if (metamodel) {
-        //     metamodel.relation.forEach((rel) => {
-        //         newEdges.push({
-        //             id: rel.relName,
-        //             type: 'floating',
-        //             source: rel.fromTable,
-        //             target: rel.toTable,
-        //         });
-        //     });
-        // }
+        if (metamodel) {
+            metamodel.relation.forEach((rel) => {
+                newEdges.push({
+                    id: rel.relName,
+                    type: 'floating',
+                    source: rel.fromTable,
+                    target: rel.toTable,
+                });
+            });
+        }
         return newEdges;
     }, [metamodel]);
 
@@ -343,9 +343,9 @@ export const CSVForm: ImportFormComponent = (props) => {
                 <div style={{ width: '100%', height: '600px' }}>
                     <Metamodel
                         callback={submitMetmodelPixel}
-                        onSelectNode={null}
                         edges={edges}
                         nodes={nodes}
+                        isInteractive={true}
                     />
                 </div>
             )}
