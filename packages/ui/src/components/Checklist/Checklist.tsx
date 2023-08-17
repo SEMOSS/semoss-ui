@@ -1,30 +1,38 @@
-import React, { useState } from "react";
-import { Checkbox } from "../../";
+import React from "react";
+import { List as MuiChecklist, SxProps } from "@mui/material";
 
-export const Checklist = (props) => {
-    const { options, onChange } = props;
+export interface ChecklistProps {
+    /**
+     * The content of the component.
+     */
+    children?: React.ReactNode;
 
-    const [checkedItems, setCheckedItems] = useState({});
+    /**
+     * If `true`, compact vertical padding designed for keyboard and mouse input is used for
+     * the list and list items.
+     * The prop is available to descendant components as the `dense` context.
+     * @default false
+     */
+    dense?: boolean;
 
-    const handleToggle = (item) => {
-        setCheckedItems((prevCheckedItems) => ({
-            ...prevCheckedItems,
-            [item]: !prevCheckedItems[item],
-        }));
-    };
+    /**
+     * If `true`, vertical padding is removed from the list.
+     * @default false
+     */
+    disablePadding?: boolean;
 
-    return (
-        <div>
-            {options.map((opt, i) => {
-                return (
-                    <Checkbox
-                        key={i}
-                        label={opt}
-                        checked={checkedItems[opt] || false}
-                        onChange={() => handleToggle(opt)}
-                    />
-                );
-            })}
-        </div>
-    );
+    /**
+     * The content of the subheader, normally `ListSubheader`.
+     */
+    subheader?: React.ReactNode;
+
+    /**
+     * The system prop that allows defining system overrides as well as additional CSS styles.
+     */
+    sx?: SxProps;
+}
+
+export const Checklist = (props: ChecklistProps) => {
+    const { sx } = props;
+    return <MuiChecklist sx={sx} {...props} />;
 };
