@@ -96,9 +96,11 @@ export const Metamodel = (props: MetamodelProps) => {
             }
         }
         if (action === 'TABLE_NAME_CHANGE') {
+            // handle table name change
         }
 
         if (action === 'TABLE_RELATIONSHIP_CHANGE') {
+            // handle table relationship change
         }
         // if action === 'column data type change'
     };
