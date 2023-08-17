@@ -16,13 +16,13 @@ import {
     DatabaseSettingsPage,
     DatabaseReplaceDataPage,
     DatabaseQueryDataPage,
-    DatabaseImport,
 } from './database';
 
 import { EngineLayout, EngineIndexPage } from './engine';
 
 import { SettingsRouter } from './settings';
 import { AppRouter } from './app';
+import { ImportRouter } from './import';
 
 export const Router = observer(() => {
     const { configStore } = useRootStore();
@@ -38,14 +38,8 @@ export const Router = observer(() => {
                 <Route path="app/*" element={<AppRouter />} />
                 <Route path="*" element={<NavigatorLayout />}>
                     <Route index element={<HomePage />} />
-                    {/* <Route
-                        path="import-database"
-                        element={<DatabaseImport />}
-                    /> */}
-                    <Route path="import" element={<DatabaseImport />} />
-
+                    <Route path="import" element={<ImportRouter />} />
                     <Route path="catalog" element={<CatalogPage />} />
-
                     <Route path="storage" element={<Outlet />}>
                         <Route path=":id" element={<EngineLayout />}>
                             <Route index element={<EngineIndexPage />} />

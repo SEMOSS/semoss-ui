@@ -2,6 +2,7 @@ import { useEffect } from 'react';
 import { useFieldArray, useForm, Controller } from 'react-hook-form';
 import { Button, IconButton, TextField, Stack, styled } from '@semoss/ui';
 import { Delete } from '@mui/icons-material';
+import { useImport } from '@/hooks';
 
 const StyledFlexEnd = styled('div')(({ theme }) => ({
     display: 'flex',
@@ -23,11 +24,11 @@ const StyledKeyValue = styled('div')(({ theme }) => ({
 }));
 
 export const StorageForm = (props) => {
-    const { submitFunc, storageName } = props;
+    const { submitFunc } = props;
     const { control, handleSubmit, setValue } = useForm({
         defaultValues: {
             NAME: '',
-            STORAGE_NAME: '',
+            STORAGE_TYPE: '',
             S3_REGION: '',
             S3_ACCESS_KEY: '',
             S3_SECRET_KEY: '',
@@ -36,20 +37,24 @@ export const StorageForm = (props) => {
         },
     });
 
+    // Storage Name in last step
+    const { steps } = useImport();
+
     const { fields, remove, append } = useFieldArray({
         control,
         name: 'SMSS_PROPERTIES',
     });
 
-    //set storage name
+    // set storage name
     useEffect(() => {
-        setValue('STORAGE_NAME', storageName);
-    }, [props]);
+        const lastStep = steps[steps.length - 1];
+        setValue('STORAGE_TYPE', lastStep.title);
+    }, [steps.length]);
 
     const onSubmit = async (data) => {
         const smssProperties = {};
 
-        smssProperties['STORAGE_NAME'] = data.STORAGE_NAME;
+        smssProperties['STORAGE_TYPE'] = data.STORAGE_TYPE;
         smssProperties['S3_REGION'] = data.S3_REGION;
         smssProperties['S3_ACCESS_KEY'] = data.S3_ACCESS_KEY;
         smssProperties['S3_ENDPOINT'] = data.S3_ENDPOINT;
@@ -63,6 +68,7 @@ export const StorageForm = (props) => {
         });
 
         const formVals = {
+            type: 'storage',
             storage: data.NAME,
             fields: smssProperties,
         };
@@ -71,8 +77,27 @@ export const StorageForm = (props) => {
 
     return (
         <form onSubmit={handleSubmit(onSubmit)}>
-            VALLL
             <Stack rowGap={2}>
+                <StyledKeyValue>
+                    <Controller
+                        name={'STORAGE_TYPE'}
+                        control={control}
+                        rules={{ required: true }}
+                        render={({ field, fieldState }) => {
+                            const hasError = fieldState.error;
+                            return (
+                                <TextField
+                                    fullWidth
+                                    required
+                                    label="Storage Type"
+                                    disabled={true}
+                                    value={field.value ? field.value : ''}
+                                    onChange={(value) => field.onChange(value)}
+                                ></TextField>
+                            );
+                        }}
+                    />
+                </StyledKeyValue>
                 <StyledKeyValue>
                     <Controller
                         name={'NAME'}
@@ -85,26 +110,6 @@ export const StorageForm = (props) => {
                                     fullWidth
                                     required
                                     label="Name"
-                                    value={field.value ? field.value : ''}
-                                    onChange={(value) => field.onChange(value)}
-                                ></TextField>
-                            );
-                        }}
-                    />
-                </StyledKeyValue>
-
-                <StyledKeyValue>
-                    <Controller
-                        name={'STORAGE_NAME'}
-                        control={control}
-                        rules={{ required: true }}
-                        render={({ field, fieldState }) => {
-                            const hasError = fieldState.error;
-                            return (
-                                <TextField
-                                    fullWidth
-                                    required
-                                    label="Storage Name"
                                     value={field.value ? field.value : ''}
                                     onChange={(value) => field.onChange(value)}
                                 ></TextField>

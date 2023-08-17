@@ -7,6 +7,7 @@ import {
     Stack,
     Typography,
     Modal,
+    useNotification,
 } from '@semoss/ui';
 
 import { MODULE } from '@/constants';
@@ -68,6 +69,7 @@ const StyledCodeBlock = styled('pre')(({ theme }) => ({
     borderRadius: theme.shape.borderRadius,
     padding: theme.spacing(1),
     margin: '0px',
+    overflowX: 'scroll',
 }));
 
 const StyledCodeBlockHeader = styled('div')(({ theme }) => ({
@@ -88,6 +90,7 @@ export const EngineShell = (props: EngineShellProps) => {
 
     // get the database information
     const { type, id, role, metaVals, refresh } = useDatabase();
+    const notification = useNotification();
 
     // Service for Axios calls
     const { monolithStore, configStore } = useRootStore();
@@ -137,6 +140,10 @@ export const EngineShell = (props: EngineShellProps) => {
 
             if (type.indexOf('ERROR') > -1) {
                 console.error(output);
+                notification.add({
+                    color: 'error',
+                    message: 'Currently no engine usage details available',
+                });
             } else {
                 setCodeBlocks(output);
                 setCodeModal(true);
@@ -183,7 +190,7 @@ export const EngineShell = (props: EngineShellProps) => {
                                     getEngineUsage();
                                 }}
                             >
-                                Show in Code
+                                Code Usage
                             </Button>
 
                             {codeModal && (
