@@ -23,7 +23,7 @@ interface AddAppProps {
     open: boolean;
 
     /** Callback that is triggered onClose */
-    onClose: (refresh: boolean) => void;
+    onClose: (appId?: string) => void;
 }
 
 export const AddApp = (props: AddAppProps) => {
@@ -66,40 +66,35 @@ export const AddApp = (props: AddAppProps) => {
 
             const output = response.pixelReturn[0].output;
 
-            // get the project id
-            const projectId = output.project_id;
+            // get the app id
+            const appId = output.project_id;
 
             // upload the file
             const upload = await monolithStore.uploadFile(
                 [data.PROJECT_UPLOAD],
                 configStore.store.insightID,
-                projectId,
+                appId,
                 path,
             );
 
             // upnzip the file in the new project
             await monolithStore.runQuery(
-                `UnzipFile(filePath=["${`${path}${upload[0].fileName}`}"], space=["${projectId}"])`,
+                `UnzipFile(filePath=["${`${path}${upload[0].fileName}`}"], space=["${appId}"])`,
             );
 
             // Load the insight classes
-            await monolithStore.runQuery(
-                `ReloadInsightClasses('${projectId}');`,
-            );
+            await monolithStore.runQuery(`ReloadInsightClasses('${appId}');`);
 
             // set the project portal
-            await monolithStore.setProjectPortal(
-                false,
-                projectId,
-                true,
-                'public',
-            );
+            await monolithStore.setProjectPortal(false, appId, true, 'public');
 
             // Publish the project the insight classes
-            await monolithStore.runQuery(`PublishProject('${projectId}');`);
+            await monolithStore.runQuery(
+                `PublishProject('${appId}', release=true);`,
+            );
 
             // close it
-            onClose(true);
+            onClose(appId);
         } catch (e) {
             console.error(e);
         } finally {
@@ -198,7 +193,7 @@ export const AddApp = (props: AddAppProps) => {
                     <Button
                         type="button"
                         disabled={isLoading}
-                        onClick={() => onClose(false)}
+                        onClick={() => onClose()}
                     >
                         Cancel
                     </Button>

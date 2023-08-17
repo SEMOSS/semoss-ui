@@ -1,6 +1,6 @@
 import { configure } from 'mobx';
 
-import { MonolithStore, ConfigStore, WorkspaceStore } from '@/stores';
+import { MonolithStore, ConfigStore } from '@/stores';
 
 configure({
     enforceActions: 'always',
@@ -12,12 +12,10 @@ configure({
 export class RootStore {
     monolithStore: MonolithStore;
     configStore: ConfigStore;
-    workspaceStore: WorkspaceStore;
 
     constructor() {
         // create the stores
         this.monolithStore = new MonolithStore(this);
         this.configStore = new ConfigStore(this);
-        this.workspaceStore = new WorkspaceStore(this);
     }
 }

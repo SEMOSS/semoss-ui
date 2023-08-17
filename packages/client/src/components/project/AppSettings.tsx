@@ -323,7 +323,7 @@ export const AppSettings = (props) => {
      * @desc Publishes Portal
      */
     const publish = () => {
-        const pixelString = `PublishProject('${id}');`;
+        const pixelString = `PublishProject('${id}', release=true);`;
 
         monolithStore
             .runQuery(pixelString)

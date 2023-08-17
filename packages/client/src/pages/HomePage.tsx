@@ -12,7 +12,7 @@ import { App, AppTileCard, AddApp } from '@/components/app';
  * Landing page
  */
 export const HomePage = observer((): JSX.Element => {
-    const { workspaceStore, configStore } = useRootStore();
+    const { configStore } = useRootStore();
     const navigate = useNavigate();
 
     const [search, setSearch] = useState('');
@@ -51,30 +51,24 @@ export const HomePage = observer((): JSX.Element => {
      *
      * @param app - Marketplace app that will be open
      */
-    const openNewApp = async (a: App) => {
-        // open the app
-        const app = await workspaceStore.openNewApp(a.project_id, {
-            name: a.project_name,
-        });
-
-        // navigate to it
-        if (app) {
-            navigate(`app`);
-        }
+    const openApp = async (a: App) => {
+        navigate(`app/${a.project_id}`);
     };
 
     /**
      * Close the add app modeal
      *
-     * refresh - refresh the data
+     * appId - app id if it is set
      */
-    const closeAddAppModal = (refresh: boolean) => {
+    const closeAddAppModal = (appId?: string) => {
         // close the modal
         setAddAppModal(false);
 
-        // refresh the list
-        if (refresh) {
+        // refresh the list or navigate to the app
+        if (!appId) {
             myApps.refresh();
+        } else {
+            navigate(`app/${appId}`);
         }
     };
 
@@ -128,7 +122,7 @@ export const HomePage = observer((): JSX.Element => {
                                 >
                                     <AppTileCard
                                         app={app}
-                                        onAction={(app) => openNewApp(app)}
+                                        onAction={(app) => openApp(app)}
                                     />
                                 </Grid>
                             );
@@ -136,7 +130,10 @@ export const HomePage = observer((): JSX.Element => {
                     </Grid>
                 ) : null}
             </Stack>
-            <AddApp open={addAppModal} onClose={() => closeAddAppModal(true)} />
+            <AddApp
+                open={addAppModal}
+                onClose={(appId) => closeAddAppModal(appId)}
+            />
         </Page>
     );
 });

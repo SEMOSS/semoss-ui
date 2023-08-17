@@ -8,7 +8,9 @@ import {
     Select,
     Menu,
     Autocomplete,
+    useNotification,
 } from '@semoss/ui';
+import { useNavigate } from 'react-router-dom';
 import { ImportFormComponent } from './formTypes';
 import { DataFormTable } from './../DataFormTable';
 import { mdiNewspaperVariantMultipleOutline } from '@mdi/js';
@@ -28,6 +30,8 @@ export const CSVForm: ImportFormComponent = (props) => {
     const { control, getValues, handleSubmit, reset, watch } = useForm();
 
     const values = getValues();
+    const notification = useNotification();
+    const navigate = useNavigate();
 
     const watchDelimeter = watch('DELIMETER');
     const watchDatabaseName = watch('DATABASE_NAME');
@@ -141,37 +145,52 @@ export const CSVForm: ImportFormComponent = (props) => {
         return newEdges;
     }, [metamodel]);
 
-    const submitMetmodelPixel = async (edges) => {
-        const dataTypeObject = {};
-        const nodePropObject = {};
+    const submitMetmodelPixel = async (payloadObject) => {
+        let pixel = `databaseVar = RdbmsCsvUpload(database=["${watchDatabaseName}"], filePath=["${
+            watchFile.name
+        }"], delimiter=["${watchDelimeter}"], metamodel=["${JSON.stringify(
+            payloadObject.metamodel,
+        )}"], newHeaders=["${JSON.stringify(
+            payloadObject.newHeaders,
+        )}"], additionalDataTypes=["${JSON.stringify(
+            payloadObject.additionalDataTypes,
+        )}"], dataTypeMap=["${JSON.stringify(
+            payloadObject.dataTypeMap,
+        )}"] descriptionMap=["${JSON.stringify(
+            payloadObject.descriptionMap,
+        )}"], logicalNamesMap=["${JSON.stringify(
+            payloadObject.logicalNamesMap,
+        )}"], existing=[false]); `;
 
-        nodes.forEach((n) => {
-            dataTypeObject[`${n.data.name}`] = n.data.properties[0].type;
-            nodePropObject[`${n.data.name}`] = [];
-        });
+        pixel += `ExtractDatabaseMeta( database=[databaseVar]);`;
 
-        const resp = await monolithStore.runQuery(
-            `databaseVar = RdbmsCsvUpload(database=["${watchDatabaseName}"], filePath=["${
-                watchFile.name
-            }"], delimiter=["${watchDelimeter}"], metamodel=[{"relation": ${JSON.stringify(
-                metamodel.relation,
-            )}, "nodeProp": ${JSON.stringify(
-                nodePropObject,
-            )}}], dataTypeMap=[${JSON.stringify(
-                dataTypeObject,
-            )}], newHeaders=[{}], additionalDataTypes=[{}], descriptionMap=[{}], logicalNamesMap=[{}], existing=[false])`,
-        );
+        pixel += `SaveOwlPositions(database=[databaseVar], positionMap=[${JSON.stringify(
+            metamodel.positions,
+        )}])`;
 
-        // const output = resp.pixelReturn[0].output;
+        const response = await monolithStore.runQuery(pixel);
 
-        // const resp2 = await monolithStore.runQuery(
-        //     `ExtractDatabaseMeta( database=[databaseVar]);SaveOwlPositions(database=[databaseVar], positionMap=[${JSON.stringify(
-        //         metamodel.positions,
-        //     )}]);`,
-        // );
+        const { output, additionalOutput, operationType } =
+            response.pixelReturn[0];
+
+        if (operationType.indexOf('ERROR') > -1) {
+            notification.add({
+                color: 'error',
+                message: output,
+            });
+
+            return;
+        } else {
+            notification.add({
+                color: 'success',
+                message: additionalOutput[0].output,
+            });
+            navigate(`/database/${output.database_id}`);
+        }
     };
 
     metamodel ? console.log(metamodel) : null;
+    console.log(edges, nodes);
 
     return (
         <>

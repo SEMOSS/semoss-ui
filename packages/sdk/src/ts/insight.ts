@@ -88,8 +88,6 @@ export class Insight {
         // reset it
         this._store.isInitialized = false;
 
-        let insightId = '';
-
         // try to set the env from the window
         try {
             const env = JSON.parse(
@@ -107,18 +105,6 @@ export class Insight {
                 if (env.MODULE) {
                     ENV.MODULE = env.MODULE;
                 }
-            }
-        } catch (e) {
-            console.error(e);
-        }
-
-        // if not set from the window, try to grab from the backup
-
-        // try to set the insightId from the url
-        try {
-            if (!insightId) {
-                const urlParams = new URLSearchParams(window.location.search);
-                insightId = urlParams.get('semoss-insight-id');
             }
         } catch (e) {
             console.error(e);
@@ -143,7 +129,7 @@ export class Insight {
                 Object.keys(this._store.system.config.logins).length > 0
             ) {
                 // initialize the app
-                await this.initializeApp(insightId);
+                await this.initializeApp();
 
                 // track that the user is authorized
                 this._store.isAuthorized = true;
