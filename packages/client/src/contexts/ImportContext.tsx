@@ -8,7 +8,7 @@ interface ImportStep {
     /** Description of the step */
     description: string;
 
-    /** Data assocaited with the step */
+    /** Data associated with the step */
     data: unknown;
 
     /** Component to render in the step */

@@ -89,7 +89,7 @@ export const Metamodel = (props: MetamodelProps) => {
                         });
                     }}
                 >
-                    Save
+                    Apply
                 </Button>
             )}
         </MetamodelContext.Provider>

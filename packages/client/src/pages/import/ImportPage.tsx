@@ -27,6 +27,7 @@ import { ConnectStorage } from '@/assets/img/ConnectStorage';
 
 import { useImport } from '@/hooks';
 import { ImportSpecificPage } from './ImportSpecificPage';
+import { ImportConnectionPage } from './ImportConnectionPage';
 
 const StyledContainer = styled('div')(({ theme }) => ({
     display: 'flex',
@@ -791,7 +792,7 @@ export const ImportPage = () => {
                     {steps.length === 2 && <ImportSpecificPage />}
 
                     {/* Step 4 will be the next thing to be shown after form */}
-                    {steps.length === 3 && steps[2].component}
+                    {steps.length === 3 && <ImportConnectionPage />}
                 </StyledContainer>
             </Page>
         </>

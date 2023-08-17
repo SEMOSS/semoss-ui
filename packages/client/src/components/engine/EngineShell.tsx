@@ -69,6 +69,7 @@ const StyledCodeBlock = styled('pre')(({ theme }) => ({
     borderRadius: theme.shape.borderRadius,
     padding: theme.spacing(1),
     margin: '0px',
+    overflowX: 'scroll',
 }));
 
 const StyledCodeBlockHeader = styled('div')(({ theme }) => ({
@@ -189,7 +190,7 @@ export const EngineShell = (props: EngineShellProps) => {
                                     getEngineUsage();
                                 }}
                             >
-                                Show in Code
+                                Code Usage
                             </Button>
 
                             {codeModal && (
