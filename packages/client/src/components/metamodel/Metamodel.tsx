@@ -193,6 +193,7 @@ export const Metamodel = (props: MetamodelProps) => {
             descriptionMap: {}, // colName: description
             logicalNamesMap: {}, // colName/alias: logicalName
             position: [{}],
+            nodes: data.nodes,
         };
         // // format the data
         // const dataObj = {
