@@ -249,7 +249,7 @@ export const Metamodel = (props: MetamodelProps) => {
                 edgeTypes={edgeTypes}
                 fitView={true}
             >
-                <Panel>
+                {/* <Panel>
                     <Button
                         onClick={() => {
                             onSubmit();
@@ -257,12 +257,12 @@ export const Metamodel = (props: MetamodelProps) => {
                     >
                         Apply
                     </Button>
-                </Panel>
+                </Panel> */}
                 <MiniMap />
                 <Controls showInteractive={false} />
             </ReactFlow>
 
-            {/* {callback && (
+            {callback && (
                 <Button
                     onClick={() => {
                         onSubmit();
@@ -270,7 +270,7 @@ export const Metamodel = (props: MetamodelProps) => {
                 >
                     Apply
                 </Button>
-            )} */}
+            )}
         </MetamodelContext.Provider>
     );
 };
