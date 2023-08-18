@@ -286,7 +286,7 @@ export const stepsTwo = {
         },
         {
             name: 'MINIO',
-            disable: true,
+            disable: false,
         },
     ],
     ['Commercial Models']: [

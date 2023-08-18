@@ -1,1 +1,1 @@
-export * from './forms.constants';
+export * from '../forms.constants';

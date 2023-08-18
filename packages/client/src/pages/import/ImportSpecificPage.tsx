@@ -1,7 +1,7 @@
 import React from 'react';
 import { styled, Box, useNotification } from '@semoss/ui';
 import { useNavigate } from 'react-router-dom';
-import { FORM_ROUTES } from '../engine-import/forms/forms';
+import { DATABASE_FORM_ROUTES } from '../engine-import/forms/forms';
 import { StorageForm } from '../engine-import/forms/StorageForm';
 import { ModelForm } from '../engine-import/forms/ModelForm';
 import { useRootStore } from '@/hooks';
@@ -175,7 +175,7 @@ export const ImportSpecificPage = () => {
             ) : steps[0].title === 'Connect to Storage' ? (
                 <StorageForm submitFunc={(vals) => formSubmit(vals)} />
             ) : (
-                FORM_ROUTES.map((f) => {
+                DATABASE_FORM_ROUTES.map((f) => {
                     if (f.name === steps[1].title) {
                         return getForm(f);
                     }

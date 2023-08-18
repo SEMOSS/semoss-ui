@@ -7,6 +7,7 @@ import {
     Stack,
     Typography,
     Table,
+    IconButton,
     Icon,
 } from '@semoss/ui';
 import { ArrowCircleDown, Create } from '@mui/icons-material';
@@ -327,9 +328,9 @@ export const DatabaseMetadataPage = observer(() => {
                                     return (
                                         <Table.Row key={idx}>
                                             <Table.Cell>
-                                                <Icon>
+                                                <IconButton disabled={true}>
                                                     <Create />
-                                                </Icon>
+                                                </IconButton>
                                             </Table.Cell>
                                             <Table.Cell>{name}</Table.Cell>
                                             <Table.Cell>
