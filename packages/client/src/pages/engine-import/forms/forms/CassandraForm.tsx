@@ -24,7 +24,6 @@ export const CassandraForm: ImportFormComponent = () => {
         hostname: string;
         USERNAME: string;
         PASSWORD: string;
-
         DATABASE_NAME: string;
         DATABASE_DESCRIPTION: string;
         DATABASE_TAGS: string[];
