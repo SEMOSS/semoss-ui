@@ -274,10 +274,10 @@ type MetamodelNodeProps = NodeProps<{
     }[];
 
     /** Bool to determine if node is interactive or not */
-    isInteractive: boolean;
+    isInteractive?: boolean;
 
     /** Hook to set data for edit column modal */
-    setColumnToEdit: React.Dispatch<
+    setColumnToEdit?: React.Dispatch<
         React.SetStateAction<{
             table: object;
             columnName: string;
@@ -290,14 +290,14 @@ type MetamodelNodeProps = NodeProps<{
     >;
 
     /** Hook to open/close delete confirmation modal */
-    setOpenDeleteConfirmationModal: React.Dispatch<
+    setOpenDeleteConfirmationModal?: React.Dispatch<
         React.SetStateAction<boolean>
     >;
     /** Hook to open/close edit table modal */
-    setOpenEditTableModal: React.Dispatch<React.SetStateAction<boolean>>;
+    setOpenEditTableModal?: React.Dispatch<React.SetStateAction<boolean>>;
 
     /** Hook to set the data describing the structure to delete confirmation modal */
-    setDataToDelete: React.Dispatch<
+    setDataToDelete?: React.Dispatch<
         React.SetStateAction<{
             structureId: string;
             structureName: string;
@@ -305,7 +305,7 @@ type MetamodelNodeProps = NodeProps<{
         }>
     >;
     /** Hook to set data for edit modal */
-    setTableToEdit: React.Dispatch<
+    setTableToEdit?: React.Dispatch<
         React.SetStateAction<{
             tableId: string;
             tableName: string;
@@ -314,7 +314,7 @@ type MetamodelNodeProps = NodeProps<{
         }>
     >;
     /** Hook to open/close edit column modal */
-    setOpenEditColumnModal: React.Dispatch<React.SetStateAction<boolean>>;
+    setOpenEditColumnModal?: React.Dispatch<React.SetStateAction<boolean>>;
 }>;
 
 const _MetamodelNode = (props: MetamodelNodeProps) => {

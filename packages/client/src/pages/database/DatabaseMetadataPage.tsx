@@ -253,7 +253,7 @@ export const DatabaseMetadataPage = observer(() => {
                             onSelectNode={(n) => {
                                 setSelectedNode(n);
                             }}
-                            // isInteractive={true}
+                            isInteractive={true}
                         />
                     </StyledMetamodelContainer>
                 </Stack>
