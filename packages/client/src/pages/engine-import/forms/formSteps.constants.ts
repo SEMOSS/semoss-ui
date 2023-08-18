@@ -70,100 +70,315 @@ export const stepsOne = [
         name: 'Connect to Database',
         description:
             "In today's data-driven world, the ability to effortlessly establish connections with various database types is pivotal for unlocking the full potential of your applications and analytical processes. Whether you're a developer, data analyst, or business professional, this page serves as your gateway to understanding the array of database options at your disposal.",
+        disabled: false,
     },
     {
         name: 'Copy Database',
         description: '',
+        disabled: true,
     },
     {
         name: 'Upload Database',
         description: '',
+        disabled: true,
     },
     {
         name: 'Build Database',
         description: '',
+        disabled: true,
     },
     {
         name: 'Connect to Model',
         description:
             "In an era fueled by information, the seamless interlinking of various databases stands as a cornerstone for unlocking the untapped potential of LLM applications. Whether you're a seasoned AI practitioner, a language aficionado, or an industry visionary, this page serves as your guiding star to grasp the spectrum of database options available within the LLM landscape.",
+        disabled: false,
     },
     {
         name: 'Connect to Storage',
         description: '',
+        disabled: false,
     },
 ];
 
 export const stepsTwo = {
     ['Drag and Drop Data']: [
-        'CSV',
-        'Excel',
-        'TSV',
-        'SQLite',
-        'H2',
-        'Neo4J',
-        'Tinker',
+        {
+            name: 'CSV',
+            disable: true,
+        },
+        {
+            name: 'Excel',
+            disable: true,
+        },
+        {
+            name: 'TSV',
+            disable: true,
+        },
+        {
+            name: 'SQLite',
+            disable: true,
+        },
+        {
+            name: 'H2',
+            disable: true,
+        },
+        {
+            name: 'Neo4J',
+            disable: true,
+        },
+        {
+            name: 'Tinker',
+            disable: true,
+        },
     ],
     ['Connect to an External Database']: [
-        'Aster',
-        'Athena',
-        'BigQuery',
-        'Cassandra',
-        'Clickhouse',
-        'DATABRICKS',
-        'DataStax',
-        'DB2',
-        'Derby',
-        'Elastic Search',
-        'H2',
-        'Hive',
-        'Impala',
-        'MariaDB',
-        'MySQL',
-        'Open Search',
-        'Oracle',
-        'Phoenix',
-        'Postgres',
-        'Redshift',
-        'SAP Hana',
-        'SEMOSS',
-        'Snowflake',
-        'SQL Server',
-        'SQLITE',
-        'Teradata',
-        'Tibco',
-        'Trino',
+        {
+            name: 'Aster',
+            disable: false,
+        },
+        {
+            name: 'Athena',
+            disable: false,
+        },
+        {
+            name: 'BigQuery',
+            disable: false,
+        },
+        {
+            name: 'Cassandra',
+            disable: false,
+        },
+        {
+            name: 'Clickhouse',
+            disable: false,
+        },
+
+        {
+            name: 'DATABRICKS',
+            disable: false,
+        },
+
+        {
+            name: 'DataStax',
+            disable: false,
+        },
+        {
+            name: 'DB2',
+            disable: false,
+        },
+
+        {
+            name: 'Derby',
+            disable: false,
+        },
+
+        {
+            name: 'Elastic Search',
+            disable: false,
+        },
+
+        {
+            name: 'H2',
+            disable: false,
+        },
+
+        {
+            name: 'Hive',
+            disable: false,
+        },
+
+        {
+            name: 'Impala',
+            disable: true,
+        },
+
+        {
+            name: 'MariaDB',
+            disable: true,
+        },
+
+        {
+            name: 'MySQL',
+            disable: true,
+        },
+        {
+            name: 'Open Search',
+            disable: true,
+        },
+        {
+            name: 'Oracle',
+            disable: true,
+        },
+        {
+            name: 'Phoenix',
+            disable: true,
+        },
+        {
+            name: 'Postgres',
+            disable: false,
+        },
+        {
+            name: 'Redshift',
+            disable: true,
+        },
+        {
+            name: 'SAP Hana',
+            disable: true,
+        },
+        {
+            name: 'SEMOSS',
+            disable: true,
+        },
+        {
+            name: 'Snowflake',
+            disable: true,
+        },
+        {
+            name: 'SQL Server',
+            disable: false,
+        },
+
+        {
+            name: 'SQLITE',
+            disable: true,
+        },
+        {
+            name: 'Teradata',
+            disable: true,
+        },
+        {
+            name: 'Tibco',
+            disable: true,
+        },
+        {
+            name: 'Trino',
+            disable: true,
+        },
     ],
     ['Add Storage']: [
-        'Amazon S3',
-        'Dreamhost',
-        'Dropbox',
-        'Google Cloud Storage',
-        'Google Drive',
-        'Microsoft Azure Blob Storage',
-        'Microsoft OneDrive',
-        'MINIO',
+        {
+            name: 'Amazon S3',
+            disable: false,
+        },
+        {
+            name: 'Dreamhost',
+            disable: true,
+        },
+        {
+            name: 'Dropbox',
+            disable: false,
+        },
+        {
+            name: 'Google Cloud Storage',
+            disable: true,
+        },
+        {
+            name: 'Google Drive',
+            disable: false,
+        },
+        {
+            name: 'Microsoft Azure Blob Storage',
+            disable: true,
+        },
+        {
+            name: 'Microsoft OneDrive',
+            disable: false,
+        },
+        {
+            name: 'MINIO',
+            disable: true,
+        },
     ],
-    ['Commercial Models']: ['Open AI', 'Claude'],
+    ['Commercial Models']: [
+        {
+            name: 'Open AI',
+            disable: false,
+        },
+        {
+            name: 'Claude',
+            disable: true,
+        },
+    ],
     ['Local Models']: [
-        'Wizard 13B',
-        'Llama2 7B',
-        'Llama2 13B',
-        'Llama2 70B',
-        'Falcon',
-        'StableBeluga2',
-        'Guanaco',
-        'Vicuna',
-        'Mosaic ML',
-        'Dolly',
-        'Replit code model – 3b',
-        'Flan T5 Large',
-        'Flan T5 XXL',
-        'Bert',
-        'Eleuther GPTJ',
-        'Wizard Coder',
+        {
+            name: 'Wizard 13B',
+            disable: false,
+        },
+        {
+            name: 'Llama2 7B',
+            disable: false,
+        },
+        {
+            name: 'Llama2 13B',
+            disable: false,
+        },
+        {
+            name: 'Llama2 70B',
+            disable: false,
+        },
+        {
+            name: 'Falcon',
+            disable: false,
+        },
+        {
+            name: 'StableBeluga2',
+            disable: false,
+        },
+        {
+            name: 'Guanaco',
+            disable: false,
+        },
+        {
+            name: 'Vicuna',
+            disable: false,
+        },
+        {
+            name: 'Mosaic ML',
+            disable: false,
+        },
+        {
+            name: 'Dolly',
+            disable: false,
+        },
+        {
+            name: 'Replit code model – 3b',
+            disable: false,
+        },
+        {
+            name: 'Flan T5 Large',
+            disable: false,
+        },
+        {
+            name: 'Flan T5 XXL',
+            disable: false,
+        },
+        {
+            name: 'Bert',
+            disable: false,
+        },
+        {
+            name: 'Eleuther GPTJ',
+            disable: false,
+        },
+        {
+            name: 'Wizard Coder',
+            disable: false,
+        },
     ],
-    ['Embedded Models']: ['Orca', 'Stablity AI', 'Replit Code Model'],
+    ['Embedded Models']: [
+        {
+            name: 'Orca',
+            disable: false,
+        },
+        {
+            name: 'Stablity AI',
+            disable: true,
+        },
+        {
+            name: 'Replit Code Model',
+            disable: true,
+        },
+    ],
 };
 
 export const IconDBMapper = {

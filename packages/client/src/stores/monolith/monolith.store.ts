@@ -695,10 +695,10 @@ export class MonolithStore {
      * @returns
      */
     async updateDatabaseSmssProperties(databaseId: string, smssProps: string) {
-        const url = `${MODULE}/api/app-${databaseId}/updateSmssFile`;
+        const url = `${MODULE}/api/e-${databaseId}/updateSmssFile`;
 
         let postData = '';
-        postData += 'databaseId=' + encodeURIComponent(databaseId);
+        postData += 'engineId=' + encodeURIComponent(databaseId);
         postData += '&smss=' + encodeURIComponent(smssProps);
 
         const response = await axios
