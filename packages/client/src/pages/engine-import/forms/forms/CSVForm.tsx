@@ -106,6 +106,14 @@ export const CSVForm: ImportFormComponent = (props) => {
                 if (metamodel.nodeProp[table[0]]) {
                     const columnsForTable = metamodel.nodeProp[table[0]];
 
+                    const foundColumn = metamodel.dataTypes[table[0]];
+                    console.log(foundColumn);
+                    node.data.properties.push({
+                        id: table[0],
+                        name: table[0],
+                        type: foundColumn,
+                    });
+
                     columnsForTable.forEach((col) => {
                         const foundColumn = metamodel.dataTypes[col];
 
@@ -148,19 +156,11 @@ export const CSVForm: ImportFormComponent = (props) => {
     const submitMetmodelPixel = async (payloadObject) => {
         let pixel = `databaseVar = RdbmsCsvUpload(database=["${watchDatabaseName}"], filePath=["${
             watchFile.name
-        }"], delimiter=["${watchDelimeter}"], metamodel=["${JSON.stringify(
+        }"], delimiter=["${watchDelimeter}"], metamodel=[${JSON.stringify(
             payloadObject.metamodel,
-        )}"], newHeaders=["${JSON.stringify(
-            payloadObject.newHeaders,
-        )}"], additionalDataTypes=["${JSON.stringify(
-            payloadObject.additionalDataTypes,
-        )}"], dataTypeMap=["${JSON.stringify(
+        )}], newHeaders=[{}], additionalDataTypes=[{}], dataTypeMap=[${JSON.stringify(
             payloadObject.dataTypeMap,
-        )}"] descriptionMap=["${JSON.stringify(
-            payloadObject.descriptionMap,
-        )}"], logicalNamesMap=["${JSON.stringify(
-            payloadObject.logicalNamesMap,
-        )}"], existing=[false]); `;
+        )}], descriptionMap=[{}], logicalNamesMap=[{}], existing=[false]); `;
 
         pixel += `ExtractDatabaseMeta( database=[databaseVar]);`;
 
@@ -170,8 +170,7 @@ export const CSVForm: ImportFormComponent = (props) => {
 
         const response = await monolithStore.runQuery(pixel);
 
-        const { output, additionalOutput, operationType } =
-            response.pixelReturn[0];
+        const { output, operationType } = response.pixelReturn[0];
 
         if (operationType.indexOf('ERROR') > -1) {
             notification.add({
@@ -181,16 +180,9 @@ export const CSVForm: ImportFormComponent = (props) => {
 
             return;
         } else {
-            notification.add({
-                color: 'success',
-                message: additionalOutput[0].output,
-            });
             navigate(`/database/${output.database_id}`);
         }
     };
-
-    metamodel ? console.log(metamodel) : null;
-    console.log(edges, nodes);
 
     return (
         <>

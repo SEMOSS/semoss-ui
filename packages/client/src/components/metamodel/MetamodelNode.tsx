@@ -243,7 +243,6 @@ const _MetamodelNode = (props: MetamodelNodeProps) => {
                 ) : (
                     <StyledTitle>{data.name}</StyledTitle>
                 )}
-                <StyledTitle>{data.name}</StyledTitle>
             </StyledRow>
             {data.properties.map((p) => (
                 <StyledRow isHeader={true} key={p.id}>
