@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Page } from '@/components/ui/';
 import {
     Avatar,
@@ -28,6 +28,8 @@ import { ConnectStorage } from '@/assets/img/ConnectStorage';
 import { useImport } from '@/hooks';
 import { ImportSpecificPage } from './ImportSpecificPage';
 import { ImportConnectionPage } from './ImportConnectionPage';
+
+import { useNavigate, useLocation } from 'react-router-dom';
 
 const StyledContainer = styled('div')(({ theme }) => ({
     display: 'flex',
@@ -112,6 +114,12 @@ const StyledFormTypeBox = styled(Box)({
     boxShadow: '0px 5px 22px 0px rgba(0,0,0,0.04)',
 });
 
+const StyledSpan = styled('span')({
+    '&:hover': {
+        cursor: 'pointer',
+    },
+});
+
 const StyledCategoryTitle = styled(Box)({
     fontSize: '16px',
     fontWeight: 'bold',
@@ -130,8 +138,40 @@ const IconMapper = {
 export const ImportPage = () => {
     const [importSearch, setImportSearch] = React.useState('');
     const [search, setSearch] = React.useState('');
-
     const { steps, activeStep, setSteps } = useImport();
+
+    const navigate = useNavigate();
+    const { search: importParams } = useLocation();
+
+    useEffect(() => {
+        const paramedStep = {
+            title: '',
+            description: '',
+            data: '',
+        };
+        switch (importParams) {
+            case '':
+                break;
+            case '?type=database':
+                break;
+            case '?type=model':
+                paramedStep.title = 'Connect to Model';
+                paramedStep.description =
+                    "In an era fueled by information, the seamless interlinking of various databases stands as a cornerstone for unlocking the untapped potential of LLM applications. Whether you're a seasoned AI practitioner, a language aficionado, or an industry visionary, this page serves as your guiding star to grasp the spectrum of database options available within the LLM landscape.";
+                paramedStep.data = 'Connect to Model';
+
+                setSteps([...steps, paramedStep], steps.length + 1);
+                break;
+            case '?type=storage':
+                paramedStep.title = 'Connect to Storage';
+                paramedStep.description =
+                    "In an era fueled by information, the seamless interlinking of various databases stands as a cornerstone for unlocking the untapped potential of LLM applications. Whether you're a seasoned AI practitioner, a language aficionado, or an industry visionary, this page serves as your guiding star to grasp the spectrum of database options available within the LLM landscape.";
+                paramedStep.data = 'Connect to Storage';
+
+                setSteps([...steps, paramedStep], steps.length + 1);
+                break;
+        }
+    }, [importParams]);
 
     return (
         <>
@@ -140,16 +180,17 @@ export const ImportPage = () => {
                     <StyledStack>
                         {steps.length ? (
                             <Breadcrumbs separator="/">
-                                <span
+                                <StyledSpan
                                     onClick={() => {
                                         setSteps([], -1);
+                                        navigate('/import');
                                     }}
                                 >
                                     Import
-                                </span>
+                                </StyledSpan>
                                 {steps.map((step, i) => {
                                     return (
-                                        <span
+                                        <StyledSpan
                                             key={i}
                                             onClick={() => {
                                                 const newSteps = [];
@@ -165,7 +206,7 @@ export const ImportPage = () => {
                                             }}
                                         >
                                             {step.title}
-                                        </span>
+                                        </StyledSpan>
                                     );
                                 })}
                             </Breadcrumbs>
