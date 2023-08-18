@@ -1,9 +1,22 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useForm, Controller } from 'react-hook-form';
-import { Button, TextField, Stack } from '@semoss/ui';
 import { ImportFormComponent } from './formTypes';
 
+import {
+    Button,
+    Collapse,
+    IconButton,
+    TextField,
+    Typography,
+    Stack,
+} from '@semoss/ui';
+import { ExpandLess, ExpandMore } from '@mui/icons-material';
+import { useImport } from '@/hooks';
+
 export const ImpalaForm: ImportFormComponent = () => {
+    const { steps, setSteps } = useImport();
+    const [openSettings, setOpenSettings] = useState(false);
+
     const { control, reset } = useForm();
 
     React.useEffect(() => {
