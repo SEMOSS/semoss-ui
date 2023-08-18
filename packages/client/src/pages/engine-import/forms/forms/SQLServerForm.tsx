@@ -1,6 +1,15 @@
-import React, { useMemo, useState } from 'react';
+import React, { useState } from 'react';
 import { useForm, Controller } from 'react-hook-form';
-import { Button, TextField, Stack, useNotification } from '@semoss/ui';
+import {
+    Button,
+    Collapse,
+    IconButton,
+    TextField,
+    Typography,
+    Stack,
+    useNotification,
+} from '@semoss/ui';
+import { ExpandLess, ExpandMore } from '@mui/icons-material';
 import { ImportFormComponent } from './formTypes';
 import { useRootStore } from '@/hooks';
 import { Metamodel } from '@/components/metamodel';
@@ -16,6 +25,8 @@ export const SQLServerForm: ImportFormComponent = (props) => {
     const navigate = useNavigate();
     const notification = useNotification();
     const { steps, setSteps } = useImport();
+
+    const [openSettings, setOpenSettings] = useState(false);
 
     const { control, handleSubmit, getValues } = useForm<{
         dbDriver: string;
@@ -76,189 +87,204 @@ export const SQLServerForm: ImportFormComponent = (props) => {
     };
 
     return (
-        <>
-            <form onSubmit={handleSubmit(onSubmit)}>
+        <form onSubmit={handleSubmit(onSubmit)}>
+            <Stack rowGap={2}>
+                <Controller
+                    name={'DATABASE_NAME'}
+                    control={control}
+                    rules={{ required: true }}
+                    render={({ field, fieldState }) => {
+                        const hasError = fieldState.error;
+                        return (
+                            <TextField
+                                required
+                                fullWidth
+                                label="Database Name"
+                                value={field.value ? field.value : ''}
+                                onChange={(value) => field.onChange(value)}
+                            ></TextField>
+                        );
+                    }}
+                />
+                <Controller
+                    name={'DATABASE_DESCRIPTION'}
+                    control={control}
+                    rules={{ required: false }}
+                    render={({ field, fieldState }) => {
+                        const hasError = fieldState.error;
+                        return (
+                            <TextField
+                                fullWidth
+                                label="Database Description"
+                                value={field.value ? field.value : ''}
+                                onChange={(value) => field.onChange(value)}
+                            ></TextField>
+                        );
+                    }}
+                />
+                <Controller
+                    name={'DATABASE_TAGS'}
+                    control={control}
+                    rules={{ required: false }}
+                    render={({ field, fieldState }) => {
+                        const hasError = fieldState.error;
+                        return (
+                            <TextField
+                                fullWidth
+                                label="Database Tags"
+                                value={field.value ? field.value : ''}
+                                onChange={(value) => field.onChange(value)}
+                            ></TextField>
+                        );
+                    }}
+                />
+                <Controller
+                    name={'hostname'}
+                    control={control}
+                    rules={{ required: true }}
+                    render={({ field, fieldState }) => {
+                        const hasError = fieldState.error;
+                        return (
+                            <TextField
+                                required
+                                fullWidth
+                                label="Host Name"
+                                value={field.value ? field.value : ''}
+                                onChange={(value) => field.onChange(value)}
+                            ></TextField>
+                        );
+                    }}
+                />
+                <Controller
+                    name={'port'}
+                    control={control}
+                    rules={{ required: false }}
+                    render={({ field, fieldState }) => {
+                        const hasError = fieldState.error;
+                        return (
+                            <TextField
+                                fullWidth
+                                label="Port"
+                                value={field.value ? field.value : ''}
+                                onChange={(value) => field.onChange(value)}
+                            ></TextField>
+                        );
+                    }}
+                />
+                <Controller
+                    name={'database'}
+                    control={control}
+                    rules={{ required: true }}
+                    render={({ field, fieldState }) => {
+                        const hasError = fieldState.error;
+                        return (
+                            <TextField
+                                required
+                                fullWidth
+                                label="Database"
+                                value={field.value ? field.value : ''}
+                                onChange={(value) => field.onChange(value)}
+                            ></TextField>
+                        );
+                    }}
+                />
+                <Controller
+                    name={'schema'}
+                    control={control}
+                    rules={{ required: false }}
+                    render={({ field, fieldState }) => {
+                        const hasError = fieldState.error;
+                        return (
+                            <TextField
+                                fullWidth
+                                label="Schema"
+                                value={field.value ? field.value : ''}
+                                onChange={(value) => field.onChange(value)}
+                            ></TextField>
+                        );
+                    }}
+                />
+                <Controller
+                    name={'USERNAME'}
+                    control={control}
+                    rules={{ required: false }}
+                    render={({ field, fieldState }) => {
+                        const hasError = fieldState.error;
+                        return (
+                            <TextField
+                                fullWidth
+                                label="Username"
+                                value={field.value ? field.value : ''}
+                                onChange={(value) => field.onChange(value)}
+                            ></TextField>
+                        );
+                    }}
+                />
+                <Controller
+                    name={'PASSWORD'}
+                    control={control}
+                    rules={{ required: false }}
+                    render={({ field, fieldState }) => {
+                        const hasError = fieldState.error;
+                        return (
+                            <TextField
+                                fullWidth
+                                label="Password"
+                                value={field.value ? field.value : ''}
+                                onChange={(value) => field.onChange(value)}
+                            ></TextField>
+                        );
+                    }}
+                />
+                <Controller
+                    name={'additional'}
+                    control={control}
+                    rules={{ required: false }}
+                    render={({ field, fieldState }) => {
+                        const hasError = fieldState.error;
+                        return (
+                            <TextField
+                                fullWidth
+                                label="Additional Parameters"
+                                value={field.value ? field.value : ''}
+                                onChange={(value) => field.onChange(value)}
+                            ></TextField>
+                        );
+                    }}
+                />
+                <Controller
+                    name={'CONNECTION_URL'}
+                    control={control}
+                    rules={{ required: false }}
+                    render={({ field, fieldState }) => {
+                        const hasError = fieldState.error;
+                        return (
+                            <TextField
+                                fullWidth
+                                label="JDBC Url"
+                                value={field.value ? field.value : ''}
+                                onChange={(value) => field.onChange(value)}
+                            ></TextField>
+                        );
+                    }}
+                />
+            </Stack>
+
+            <div
+                style={{
+                    display: 'flex',
+                    width: '100%',
+                    justifyContent: 'space-between',
+                }}
+            >
+                <Typography variant={'body1'}>ADVANCED SETTINGS</Typography>
+                <IconButton onClick={() => setOpenSettings(!openSettings)}>
+                    {openSettings ? <ExpandLess /> : <ExpandMore />}
+                </IconButton>
+            </div>
+
+            <Collapse in={openSettings}>
                 <Stack rowGap={2}>
-                    <Controller
-                        name={'DATABASE_NAME'}
-                        control={control}
-                        rules={{ required: true }}
-                        render={({ field, fieldState }) => {
-                            const hasError = fieldState.error;
-                            return (
-                                <TextField
-                                    required
-                                    fullWidth
-                                    label="Database Name"
-                                    value={field.value ? field.value : ''}
-                                    onChange={(value) => field.onChange(value)}
-                                ></TextField>
-                            );
-                        }}
-                    />
-                    <Controller
-                        name={'DATABASE_DESCRIPTION'}
-                        control={control}
-                        rules={{ required: false }}
-                        render={({ field, fieldState }) => {
-                            const hasError = fieldState.error;
-                            return (
-                                <TextField
-                                    fullWidth
-                                    label="Database Description"
-                                    value={field.value ? field.value : ''}
-                                    onChange={(value) => field.onChange(value)}
-                                ></TextField>
-                            );
-                        }}
-                    />
-                    <Controller
-                        name={'DATABASE_TAGS'}
-                        control={control}
-                        rules={{ required: false }}
-                        render={({ field, fieldState }) => {
-                            const hasError = fieldState.error;
-                            return (
-                                <TextField
-                                    fullWidth
-                                    label="Database Tags"
-                                    value={field.value ? field.value : ''}
-                                    onChange={(value) => field.onChange(value)}
-                                ></TextField>
-                            );
-                        }}
-                    />
-                    <Controller
-                        name={'hostname'}
-                        control={control}
-                        rules={{ required: true }}
-                        render={({ field, fieldState }) => {
-                            const hasError = fieldState.error;
-                            return (
-                                <TextField
-                                    required
-                                    fullWidth
-                                    label="Host Name"
-                                    value={field.value ? field.value : ''}
-                                    onChange={(value) => field.onChange(value)}
-                                ></TextField>
-                            );
-                        }}
-                    />
-                    <Controller
-                        name={'port'}
-                        control={control}
-                        rules={{ required: false }}
-                        render={({ field, fieldState }) => {
-                            const hasError = fieldState.error;
-                            return (
-                                <TextField
-                                    fullWidth
-                                    label="Port"
-                                    value={field.value ? field.value : ''}
-                                    onChange={(value) => field.onChange(value)}
-                                ></TextField>
-                            );
-                        }}
-                    />
-                    <Controller
-                        name={'database'}
-                        control={control}
-                        rules={{ required: true }}
-                        render={({ field, fieldState }) => {
-                            const hasError = fieldState.error;
-                            return (
-                                <TextField
-                                    required
-                                    fullWidth
-                                    label="Database"
-                                    value={field.value ? field.value : ''}
-                                    onChange={(value) => field.onChange(value)}
-                                ></TextField>
-                            );
-                        }}
-                    />
-                    <Controller
-                        name={'schema'}
-                        control={control}
-                        rules={{ required: false }}
-                        render={({ field, fieldState }) => {
-                            const hasError = fieldState.error;
-                            return (
-                                <TextField
-                                    fullWidth
-                                    label="Schema"
-                                    value={field.value ? field.value : ''}
-                                    onChange={(value) => field.onChange(value)}
-                                ></TextField>
-                            );
-                        }}
-                    />
-                    <Controller
-                        name={'USERNAME'}
-                        control={control}
-                        rules={{ required: false }}
-                        render={({ field, fieldState }) => {
-                            const hasError = fieldState.error;
-                            return (
-                                <TextField
-                                    fullWidth
-                                    label="Username"
-                                    value={field.value ? field.value : ''}
-                                    onChange={(value) => field.onChange(value)}
-                                ></TextField>
-                            );
-                        }}
-                    />
-                    <Controller
-                        name={'PASSWORD'}
-                        control={control}
-                        rules={{ required: false }}
-                        render={({ field, fieldState }) => {
-                            const hasError = fieldState.error;
-                            return (
-                                <TextField
-                                    fullWidth
-                                    label="Password"
-                                    value={field.value ? field.value : ''}
-                                    onChange={(value) => field.onChange(value)}
-                                ></TextField>
-                            );
-                        }}
-                    />
-                    <Controller
-                        name={'additional'}
-                        control={control}
-                        rules={{ required: false }}
-                        render={({ field, fieldState }) => {
-                            const hasError = fieldState.error;
-                            return (
-                                <TextField
-                                    fullWidth
-                                    label="Additional Parameters"
-                                    value={field.value ? field.value : ''}
-                                    onChange={(value) => field.onChange(value)}
-                                ></TextField>
-                            );
-                        }}
-                    />
-                    <Controller
-                        name={'CONNECTION_URL'}
-                        control={control}
-                        rules={{ required: false }}
-                        render={({ field, fieldState }) => {
-                            const hasError = fieldState.error;
-                            return (
-                                <TextField
-                                    fullWidth
-                                    label="JDBC Url"
-                                    value={field.value ? field.value : ''}
-                                    onChange={(value) => field.onChange(value)}
-                                ></TextField>
-                            );
-                        }}
-                    />
-                    ADVANCED SETTINGS
                     <Controller
                         name={'FETCH_SIZE'}
                         control={control}
@@ -340,9 +366,19 @@ export const SQLServerForm: ImportFormComponent = (props) => {
                         }}
                     />
                 </Stack>
-                <Button type={'submit'}>Submit</Button>
-            </form>
-        </>
+            </Collapse>
+            <div
+                style={{
+                    display: 'flex',
+                    width: '100%',
+                    justifyContent: 'flex-end',
+                }}
+            >
+                <Button variant={'contained'} type={'submit'}>
+                    Connect
+                </Button>
+            </div>
+        </form>
     );
 };
 
