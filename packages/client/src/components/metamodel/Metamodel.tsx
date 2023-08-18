@@ -1,9 +1,33 @@
 import { useCallback, useState, useEffect } from 'react';
 import ReactFlow, { MiniMap, Controls, Node, Edge } from 'react-flow-renderer';
-import { Button } from '@semoss/ui';
+import Panel from 'react-flow-renderer';
+import { Button, styled } from '@semoss/ui';
 import { MetamodelNode } from './MetamodelNode';
 import { FloatingEdge } from './FloatingEdge';
 import { MetamodelContext, MetamodelContextType } from '@/contexts';
+
+const StyledMetamodelPage = styled('div')(() => ({
+    display: 'flex',
+    width: '1271px',
+    height: '1032px',
+    padding: 'var(--spacing-spacing-08, 40px) 0px 20px 0px',
+    alignItems: 'flex-start',
+    gap: 'var(--spacing-spacing-05, 16px)',
+    flexShrink: 0,
+}));
+const StyledMetamodelContainer = styled('div')(() => ({
+    display: 'flex',
+    height: '785px',
+    flexDirection: 'column',
+    alignItems: 'flex-start',
+    gap: '24px',
+    flexShrink: 0,
+    alignSelf: 'stretch',
+}));
+const defaultViewport = { x: 0, y: 0, zoom: 1.5 };
+
+// const StyledReactFlowContainer = styled('div')(() => ({
+// }));
 
 const edgeTypes = {
     floating: FloatingEdge,
@@ -52,6 +76,8 @@ export const Metamodel = (props: MetamodelProps) => {
         callback,
         isInteractive,
     } = props;
+
+    // debugger;
 
     // node is {
     //     data: { name: 'table', properties: [{ id: 'colid', name: 'colname', type: 'coltype' }] },
@@ -210,7 +236,6 @@ export const Metamodel = (props: MetamodelProps) => {
             payloadObj.metamodel.nodeProp[node.data.name] = [];
         }
 
-        console.log('dataObj: ', payloadObj);
         // callback(payloadObj);
         callback(payloadObj);
     };
@@ -224,10 +249,20 @@ export const Metamodel = (props: MetamodelProps) => {
                 edgeTypes={edgeTypes}
                 fitView={true}
             >
+                <Panel>
+                    <Button
+                        onClick={() => {
+                            onSubmit();
+                        }}
+                    >
+                        Apply
+                    </Button>
+                </Panel>
                 <MiniMap />
                 <Controls showInteractive={false} />
             </ReactFlow>
-            {callback && (
+
+            {/* {callback && (
                 <Button
                     onClick={() => {
                         onSubmit();
@@ -235,7 +270,7 @@ export const Metamodel = (props: MetamodelProps) => {
                 >
                     Apply
                 </Button>
-            )}
+            )} */}
         </MetamodelContext.Provider>
     );
 };

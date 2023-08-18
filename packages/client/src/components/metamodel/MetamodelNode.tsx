@@ -1,13 +1,23 @@
 import React, { useState } from 'react';
 import { NodeProps, Handle, Position } from 'react-flow-renderer';
 
-import { styled, Icon, Button, Typography } from '@semoss/ui';
+import {
+    styled,
+    Icon,
+    Button,
+    Typography,
+    Card,
+    List,
+    Table,
+} from '@semoss/ui';
 import {
     TableChartOutlined,
     TableViewRounded,
     ViewColumn,
     EditRounded,
     Delete,
+    AddCircleOutlineRounded,
+    KeyRounded,
 } from '@mui/icons-material';
 
 import { useMetamodel } from '@/hooks';
@@ -48,164 +58,6 @@ const TableIcon = () => {
     );
 };
 
-const StyledMetamodelCard = styled('div')(({ theme }) => ({
-    alignItems: 'flex-start',
-    borderRadius: theme.shape.borderRadius,
-    boxShadow: '0px 5px 22px #0000000f',
-    display: 'inline-flex',
-    flexDirection: 'column',
-    overflow: 'hidden',
-    position: 'relative',
-    width: '354px',
-}));
-const StyledMetamodelHeaderFrame = styled('div')(({ theme }) => ({
-    alignItems: 'center',
-    alignSelf: 'stetch',
-    backgroundColor: 'rgba(241, 233, 251, 1)',
-    borderRadius: '12px 12px 0px 0px',
-    boxShadow: '0px 5px 22px #0000000f',
-    display: 'flex',
-    gap: '10px',
-    height: '54px',
-    padding: '10px',
-    position: 'relative',
-    width: '100%',
-}));
-const StyledMetamodelIconButton = styled(Button)(({ theme }) => ({
-    alignItems: 'center',
-    borderColor: 'rgba(151, 95, 228, 1) !important',
-    borderRadius: theme.shape.borderRadius,
-    justifyContent: 'center !important',
-    marginBottom: '-9px !important',
-    marginTop: '-9px !important',
-}));
-
-const StyledInstanceNode = styled('div')(({ theme }) => ({
-    alignItems: 'center !important',
-    flex: '0 0 auto !important',
-    justifyContent: 'center !important',
-    marginBottom: '-1px !important',
-    marginLeft: '-1px !important',
-    marginRight: '-1px !important',
-    marginTop: '-1px !important',
-}));
-const StyledButtonSecondary = styled(Button)(({ theme }) => ({
-    alignSelf: 'stretch !important',
-    display: 'flex !important',
-    flex: '1 !important',
-    flexGrow: '1 !important',
-    justifyContent: 'center !important',
-    width: '100%',
-}));
-const StyledFrameWrapper = styled('div')(({ theme }) => ({
-    alignItems: 'flex-start',
-    display: 'flex',
-    flex: '1',
-    flexDirection: 'column',
-    flexGrow: '1',
-    gap: '4px',
-    marginBottom: '-10px',
-    marginTop: '-10px',
-    position: 'relative',
-}));
-const StyledMetamodelCardDiv = styled('div')(({ theme }) => ({
-    alignItems: 'flex-start',
-    alignSelf: 'stretch',
-    display: 'flex',
-    flex: '0 0 auto',
-    position: 'relative',
-    width: '100%',
-}));
-
-const StyledHeaderFont = styled(Typography)(() => ({
-    alignItems: 'center',
-    alignSelf: 'stretch',
-    color: '#000000de',
-    flex: 1,
-    fontFamily: 'Inter Hevetica',
-    fontSize: '16px',
-    fontWeight: 500,
-    letterSpacing: '.15px',
-    lineHeight: '24px',
-    marginTop: '-1px',
-    marginLeft: '6px',
-    position: 'relative',
-}));
-const StyledValueFont = styled(Typography)(() => ({
-    alignSelf: 'stretch',
-    color: 'rgba(34, 164, 255, 1)',
-    flex: 1,
-    fontFamily: 'Inter-Medium, Helvetica',
-    fontSize: '16px',
-    fontWeight: 500,
-    letterSpacing: '.15px',
-    lineHeight: '24px',
-    marginTop: '-1px',
-    position: 'relative',
-}));
-
-const StyledColumnNameCell = styled('div')(() => ({
-    flex: '0 0 auto !important',
-}));
-
-const StyledTableHeader = styled('div')(() => ({
-    alignItems: 'flex-start',
-    backgroundColor: '#ffffff',
-    borderRadius: '0px 12px 12px 12px',
-    display: 'inline-flex',
-    flex: '0 0 auto',
-    flexDirection: 'column',
-    padding: '0px 0px 16px',
-    position: 'relative',
-}));
-
-const StyledTableRow = styled('div')(() => ({
-    display: 'flex',
-    alignSelf: 'stretch',
-    alignItems: 'flex-start',
-    padding: '8px 0px',
-    justifyContent: 'space-between',
-    backgroundColor: '#ffffff01',
-    // flex: '0 0 auto',
-    gap: '4',
-    position: 'relative',
-    width: '100%',
-}));
-
-const StyledTableCell = styled('div')(() => ({
-    height: '44px !important',
-    width: '114.67px !important',
-}));
-
-const StyledDivider = styled('div')(() => ({
-    height: '2px',
-    alignSelf: 'stretch !important',
-    borderColor: '#000000',
-    position: 'relative',
-    width: '100%',
-}));
-const StyledIconWrapper = styled('div')(() => ({
-    alignItems: 'center',
-    display: 'flex',
-    justifyContent: 'flex-end',
-    opacity: 0,
-    padding: '10px 16px',
-    position: 'relative',
-    width: '114.67px',
-}));
-
-const StyledIconKeyWrapper = styled('div')(() => ({
-    alignItems: 'flex-start',
-    display: 'inline-flex',
-    flex: '0 0 auto',
-    position: 'relative',
-}));
-const StyledRoundedKeyWrapper = styled('div')(() => ({
-    height: '24px',
-    position: 'relative',
-    width: '24px',
-}));
-
 const StyledNode = styled('div', {
     shouldForwardProp: (prop) => prop !== 'isSelected',
 })<{
@@ -217,6 +69,124 @@ const StyledNode = styled('div', {
         : theme.palette.divider,
     borderStyle: 'solid',
     borderWidth: '1px',
+}));
+
+const StyledMetamodelCard = styled(Card, {
+    shouldForwardProp: (prop) => prop !== 'isSelected',
+})<{ isSelected: boolean }>(({ isSelected }) => ({
+    display: 'inline-flex',
+    paddingBottom: 'var(--spacing-spacing-05, 0px)',
+    flexDirection: 'column',
+    alignItems: 'flex-start',
+    borderRadius: 'var(--border-radius-radius-large, 12px)',
+    backgroundColor: 'var(--light-background-paper, #FFF)',
+    boxShadow: isSelected
+        ? '0px 5px 22px 0px #D6EAFF'
+        : '0px 5px 22px 0px rgba(0, 0, 0, 0.06)',
+    border: isSelected
+        ? '1px solid var(--light-primary-shades-30-p, rgba(4, 113, 240, 0.30))'
+        : '',
+}));
+const StyledMetamodelContent = styled(Card.Content)(() => ({
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'flexStart',
+    // backgroundColor: 'rgba(250, 250, 250, 1)',
+}));
+
+const StyledKeyCell = styled('div')(() => ({
+    display: 'flex',
+    padding: '6px 16px',
+    alignItems: 'center',
+    gap: '6px',
+    flex: '1 0 0',
+    alignSelf: 'stretch',
+}));
+
+const StyledKeyIconContainer = styled('div')(() => ({
+    display: 'flex',
+    alignItems: 'flex-start',
+}));
+
+const StyledPrimaryKeyIcon = styled(KeyRounded)(() => ({
+    width: '24px',
+    height: '24px',
+    justifyContent: 'center',
+    alignItems: 'center',
+    color: 'rgba(4, 113, 240, 1)',
+}));
+const StyledForeignKeyIcon = styled(KeyRounded)(() => ({
+    width: '24px',
+    height: '24px',
+    justifyContent: 'center',
+    alignItems: 'center',
+    color: 'rgba(181, 181, 181, 1)',
+}));
+
+const StyledTableCellRow = styled('div')(() => ({
+    display: 'flex',
+    width: '344px',
+    alignItems: 'flex-start',
+    background: 'rgba(255, 255, 255, 0)',
+}));
+const StyledColumnNameCell = styled('div')(() => ({
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'flex-start',
+    padding: '12px 16px',
+    flex: '1 0 0',
+}));
+const StyledColumnTypeCell = styled('div')(({ theme }) => ({
+    display: 'flex',
+    padding: '12px 16px',
+    justifyContent: 'flex-end',
+    alignItems: 'center',
+    flex: '1 0 0',
+    color: 'rgba(34, 164, 255, 1)',
+}));
+const StyledTypeFont = styled(Typography)(({ theme }) => ({
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'flex-start',
+    color: 'rgba(34, 164, 255, 1)',
+}));
+const StyledNameFont = styled(Typography)(({ theme }) => ({
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'flex-start',
+}));
+const StyledTableHeaderRow = styled('div')(({ theme }) => ({
+    display: 'flex',
+    padding: '16px',
+    alignItems: 'center',
+    gap: '10px',
+    alignSelf: 'stretch',
+    color: 'rgba(0, 0, 0, 0.87)',
+}));
+const StyledIconContainer = styled('div')(({ theme }) => ({
+    display: 'flex',
+    width: '30px',
+    height: '30px',
+    flexDirection: 'column',
+    justifyContent: 'center',
+    alignItems: 'center',
+    gap: '10px',
+    borderRadius: '8px',
+    border: '1px solid var(--light-other-divider, rgba(0, 0, 0, 0.10))',
+}));
+const StyledDivider = styled('div')(() => ({
+    height: '1px',
+    alignSelf: 'stretch',
+    border: '1px solid var(--light-other-divider, rgba(0, 0, 0, 0.10))',
+}));
+const StyledTableFooterRow = styled('div')(({ theme }) => ({
+    display: 'flex',
+    height: '44px',
+    width: '344px',
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'var(--light-background-default, #FAFAFA)',
+    marginBottom: '-11px',
 }));
 
 const StyledHandle = styled(Handle)(() => ({
@@ -243,18 +213,24 @@ const StyledIcon = styled(Icon)(() => ({
     flexShrink: '0',
     fontSize: '.750rem',
 }));
-
-const StyledTitle = styled('div')(() => ({
-    fontSize: '.875rem',
-    whiteSpace: 'nowrap',
-    overflow: 'hidden',
-    textOverflow: 'ellipsis',
-}));
-const StyledTitleContainer = styled('div')(() => ({
+const StyledTitleCell = styled(Typography)(() => ({
     display: 'flex',
-    alignItems: 'center',
-    overflow: 'hidden',
+    flexDirection: 'column',
+    justifyContent: 'center',
+    flex: '1 0 0',
+    alignSelf: 'stretch',
 }));
+// const StyledTitle = styled('div')(() => ({
+//     fontSize: '.875rem',
+//     whiteSpace: 'nowrap',
+//     overflow: 'hidden',
+//     textOverflow: 'ellipsis',
+// }));
+// const StyledTitleContainer = styled('div')(() => ({
+//     display: 'flex',
+//     alignItems: 'center',
+//     overflow: 'hidden',
+// }));
 
 /**
  * node container
@@ -342,46 +318,166 @@ type MetamodelNodeProps = NodeProps<{
 }>;
 
 const _MetamodelNode = (props: MetamodelNodeProps) => {
-    console.log('metamodel props: ', props);
     const { id, data } = props;
 
     const { selectedNodeId, onSelectNodeId, isInteractive, updateData } =
         useMetamodel();
-
-    const [originalData, setOriginalData] = useState(data);
-    const [newData, setNewData] = useState(data);
-
-    const [relations, setRelations] = useState([{ source: '', target: '' }]);
-
-    const [tableOptions, setTableOptions] = useState([]);
-    const [openAddTableModal, setOpenAddTableModal] = useState(false);
-    const [openDeleteTableModal, setOpenDeleteTableModal] = useState(false);
-    const [openEditTableModal, setOpenEditTableModal] = useState(false);
-    const [openDeleteConfirmationModal, setOpenDeleteConfirmationModal] =
-        useState(false);
-    const [dataToDelete, setDataToDelete] = useState({
-        structureId: '',
-        structureName: '',
-        structureType: '',
-    });
-    const [tableToEdit, setTableToEdit] = useState({
-        tableId: '',
-        tableName: '',
-        tableDescription: '',
-        columns: [],
-    });
-    const [columnToEdit, setColumnToEdit] = useState({
-        table: { id: '', name: '' },
-        columnName: '',
-        columnDescription: '',
-        columnType: '',
-        columnDefaultValue: '',
-        columnNotNull: false,
-        columnIsPrimary: false,
-    });
     const [openEditColumnModal, setOpenEditColumnModal] = useState(false);
-    const [databaseUpdated, setDatabaseUpdated] = useState(false);
 
+    // return (
+    //     <StyledMetamodelCard
+    //         isSelected={selectedNodeId === id}
+    //         onClick={() => {
+    //             onSelectNodeId(id);
+    //         }}
+    //     >
+    //         <StyledHandle type="target" position={Position.Left} />
+    //         <StyledMetamodelHeaderFrame>
+    //             <StyledTableRow>
+    //                 {/* <StyledMetamodelIconButton>
+    //                     <TableIcon />
+    //                 </StyledMetamodelIconButton> */}
+    //                 <StyledMetamodelIconButton
+    //                     variant={'text'}
+    //                     color={'primary'}
+    //                     disabled={!isInteractive}
+    //                     onClick={() => {
+    //                         // setTableToEdit({
+    //                         //     tableId: id,
+    //                         //     tableName: data.name,
+    //                         //     tableDescription: '',
+    //                         //     columns: data.properties,
+    //                         // });
+    //                         // setOpenEditTableModal(true);
+    //                     }}
+    //                 >
+    //                     <TableIcon />
+    //                 </StyledMetamodelIconButton>
+    //                 {isInteractive ? (
+    //                     <StyledTableRow>
+    //                         <StyledTitleContainer>
+    //                             {/* <Button
+    //                                 variant={'text'}
+    //                                 color={'primary'}
+    //                                 onClick={() => {
+    //                                     setTableToEdit({
+    //                                         tableId: id,
+    //                                         tableName: data.name,
+    //                                         tableDescription: '',
+    //                                         columns: data.properties,
+    //                                     });
+    //                                     setOpenEditTableModal(true);
+    //                                 }}
+    //                             >
+    //                                 <EditRounded />
+    //                             </Button> */}
+    //                             <StyledHeaderFont variant="body1">
+    //                                 {data.name.toLowerCase()}
+    //                             </StyledHeaderFont>
+    //                         </StyledTitleContainer>
+    //                         <StyledButtonSecondary
+    //                             variant={'text'}
+    //                             color={'error'}
+    //                             onClick={() => {
+    //                                 setDataToDelete({
+    //                                     structureId: id,
+    //                                     structureName: data.name,
+    //                                     structureType: 'table',
+    //                                 });
+    //                                 setOpenDeleteConfirmationModal(true);
+    //                             }}
+    //                         >
+    //                             {/* <Icon size="md" color="red" path={mdiDelete}></Icon> */}
+    //                             <Delete />
+    //                         </StyledButtonSecondary>
+    //                     </StyledTableRow>
+    //                 ) : (
+    //                     <StyledHeaderFont variant="body1">
+    //                         {data.name.toLowerCase()}
+    //                     </StyledHeaderFont>
+    //                 )}
+    //             </StyledTableRow>
+    //         </StyledMetamodelHeaderFrame>
+    //         <StyledDivider />
+    //         {data.properties.map((p) => (
+    //             <StyledTableRow key={p.id}>
+    //                 {isInteractive ? (
+    //                     <StyledTableRow>
+    //                         {/* <StyledTitleContainer> */}
+    //                         {/* <Button
+    //                                 variant={'text'}
+    //                                 color={'primary'}
+    //                                 onClick={() => {
+    //                                     setColumnToEdit({
+    //                                         table: {
+    //                                             id: id,
+    //                                             name: data.name,
+    //                                         },
+    //                                         columnName: p.name,
+    //                                         columnDescription: 'test',
+    //                                         columnType: p.type,
+    //                                         columnDefaultValue: 'empty',
+    //                                         columnNotNull: false,
+    //                                         columnIsPrimary: false,
+    //                                     });
+    //                                     setOpenEditColumnModal(true);
+    //                                 }}
+    //                             > */}
+    //                         {/* <Icon
+    //                                     path={mdiPencil}
+    //                                     color="primary"
+    //                                 ></Icon> */}
+    //                         {/* <EditRounded /> */}
+    //                         {/* </Button> */}
+    //                         <StyledHeaderFont variant="body2">
+    //                             {p.name.toLowerCase()}
+    //                         </StyledHeaderFont>
+    //                         {/* </StyledTitleContainer> */}
+    //                         <StyledValueFont variant="body2">
+    //                             {p.type.toLowerCase()}
+    //                         </StyledValueFont>
+    //                         <StyledButtonSecondary
+    //                             variant={'text'}
+    //                             color={'error'}
+    //                             onClick={() => {
+    //                                 setDataToDelete({
+    //                                     structureId: p.id,
+    //                                     structureName: p.name,
+    //                                     structureType: 'column',
+    //                                 });
+    //                                 setOpenDeleteConfirmationModal(true);
+    //                             }}
+    //                         >
+    //                             <Delete />
+    //                         </StyledButtonSecondary>
+    //                     </StyledTableRow>
+    //                 ) : (
+    //                     <>
+    //                         {/* <StyledIcon>
+    //                             <ViewColumn />
+    //                         </StyledIcon> */}
+    //                         <StyledHeaderFont variant="body2">
+    //                             {p.name.toLowerCase()}
+    //                         </StyledHeaderFont>
+    //                         <StyledValueFont variant="body2">
+    //                             {p.type.toLowerCase()}
+    //                         </StyledValueFont>
+    //                     </>
+    //                 )}
+    //             </StyledTableRow>
+    //         ))}
+    //         <StyledHandle type="source" position={Position.Right} />
+    //         {openEditColumnModal && (
+    //             <EditColumnModal
+    //                 openEditColumnModal={openEditColumnModal}
+    //                 setOpenEditColumnModal={setOpenEditColumnModal}
+    //                 id={id}
+    //                 column={columnToEdit}
+    //                 updateState={updateData}
+    //             />
+    //         )}
+    //     </StyledMetamodelCard>
+    // );
     return (
         <StyledMetamodelCard
             isSelected={selectedNodeId === id}
@@ -390,177 +486,68 @@ const _MetamodelNode = (props: MetamodelNodeProps) => {
             }}
         >
             <StyledHandle type="target" position={Position.Left} />
-            <StyledMetamodelHeaderFrame>
-                <StyledTableRow>
-                    {/* <StyledMetamodelIconButton>
-                        <TableIcon />
-                    </StyledMetamodelIconButton> */}
-                    <StyledMetamodelIconButton
-                        variant={'text'}
-                        color={'primary'}
-                        disabled={!isInteractive}
-                        onClick={() => {
-                            setTableToEdit({
-                                tableId: id,
-                                tableName: data.name,
-                                tableDescription: '',
-                                columns: data.properties,
-                            });
-                            setOpenEditTableModal(true);
-                        }}
-                    >
-                        <TableIcon />
-                    </StyledMetamodelIconButton>
-                    {isInteractive ? (
-                        <StyledTableRow>
-                            <StyledTitleContainer>
-                                {/* <Button
-                                    variant={'text'}
-                                    color={'primary'}
-                                    onClick={() => {
-                                        setTableToEdit({
-                                            tableId: id,
-                                            tableName: data.name,
-                                            tableDescription: '',
-                                            columns: data.properties,
-                                        });
-                                        setOpenEditTableModal(true);
-                                    }}
-                                >
-                                    <EditRounded />
-                                </Button> */}
-                                <StyledHeaderFont variant="body1">
-                                    {data.name.toLowerCase()}
-                                </StyledHeaderFont>
-                            </StyledTitleContainer>
-                            <StyledButtonSecondary
-                                variant={'text'}
-                                color={'error'}
-                                onClick={() => {
-                                    setDataToDelete({
-                                        structureId: id,
-                                        structureName: data.name,
-                                        structureType: 'table',
-                                    });
-                                    setOpenDeleteConfirmationModal(true);
-                                }}
-                            >
-                                {/* <Icon size="md" color="red" path={mdiDelete}></Icon> */}
-                                <Delete />
-                            </StyledButtonSecondary>
-                        </StyledTableRow>
-                    ) : (
-                        <StyledHeaderFont variant="body1">
-                            {data.name.toLowerCase()}
-                        </StyledHeaderFont>
-                    )}
-                </StyledTableRow>
-            </StyledMetamodelHeaderFrame>
+            <StyledTableHeaderRow>
+                <StyledIconContainer>
+                    <TableIcon />
+                </StyledIconContainer>
+                <StyledTitleCell variant="body1">
+                    {data.name.toLowerCase().replaceAll(' ', '_')}
+                </StyledTitleCell>
+            </StyledTableHeaderRow>
             <StyledDivider />
-            {data.properties.map((p) => (
-                <StyledTableRow key={p.id}>
-                    {isInteractive ? (
-                        <StyledTableRow>
-                            {/* <StyledTitleContainer> */}
-                            {/* <Button
-                                    variant={'text'}
-                                    color={'primary'}
-                                    onClick={() => {
-                                        setColumnToEdit({
-                                            table: {
-                                                id: id,
-                                                name: data.name,
-                                            },
-                                            columnName: p.name,
-                                            columnDescription: 'test',
-                                            columnType: p.type,
-                                            columnDefaultValue: 'empty',
-                                            columnNotNull: false,
-                                            columnIsPrimary: false,
-                                        });
-                                        setOpenEditColumnModal(true);
-                                    }}
-                                > */}
-                            {/* <Icon
-                                        path={mdiPencil}
-                                        color="primary"
-                                    ></Icon> */}
-                            {/* <EditRounded /> */}
-                            {/* </Button> */}
-                            <StyledHeaderFont variant="body2">
-                                {p.name.toLowerCase()}
-                            </StyledHeaderFont>
-                            {/* </StyledTitleContainer> */}
-                            <StyledValueFont variant="body2">
-                                {p.type.toLowerCase()}
-                            </StyledValueFont>
-                            <StyledButtonSecondary
-                                variant={'text'}
-                                color={'error'}
-                                onClick={() => {
-                                    setDataToDelete({
-                                        structureId: p.id,
-                                        structureName: p.name,
-                                        structureType: 'column',
-                                    });
-                                    setOpenDeleteConfirmationModal(true);
-                                }}
-                            >
-                                <Delete />
-                            </StyledButtonSecondary>
-                        </StyledTableRow>
-                    ) : (
-                        <>
-                            {/* <StyledIcon>
-                                <ViewColumn />
-                            </StyledIcon> */}
-                            <StyledHeaderFont variant="body2">
-                                {p.name.toLowerCase()}
-                            </StyledHeaderFont>
-                            <StyledValueFont variant="body2">
-                                {p.type.toLowerCase()}
-                            </StyledValueFont>
-                        </>
-                    )}
-                </StyledTableRow>
-            ))}
-            <StyledHandle type="source" position={Position.Right} />
-            {openEditColumnModal && (
-                <EditColumnModal
-                    openEditColumnModal={openEditColumnModal}
-                    setOpenEditColumnModal={setOpenEditColumnModal}
-                    id={id}
-                    column={columnToEdit}
-                    updateState={updateData}
-                />
-            )}
+            <StyledMetamodelContent>
+                {data.properties.map((p, idx) => {
+                    return (
+                        <StyledTableCellRow key={p.id}>
+                            {/* {idx === 0 ? ( // demo purposes... will update when we have primary key and foreign key properties
+                                <StyledKeyCell>
+                                    <StyledKeyIconContainer>
+                                        <StyledPrimaryKeyIcon />
+                                    </StyledKeyIconContainer>
+                                    <StyledColumnNameCell variant="body2">
+                                        {p.name
+                                            .toLowerCase()
+                                            .replaceAll(' ', '_')}
+                                    </StyledColumnNameCell>
+                                </StyledKeyCell>
+                            ) : idx === 1 ? (
+                                <StyledKeyCell>
+                                    <StyledKeyIconContainer>
+                                        <StyledForeignKeyIcon />
+                                    </StyledKeyIconContainer>
+                                    <StyledColumnNameCell variant="body2">
+                                        {p.name
+                                            .toLowerCase()
+                                            .replaceAll(' ', '_')}
+                                    </StyledColumnNameCell>
+                                </StyledKeyCell>
+                            ) : (
+                                <StyledColumnNameCell variant="body2">
+                                    {p.name.toLowerCase().replaceAll(' ', '_')}
+                                </StyledColumnNameCell>
+                            )} */}
+                            <StyledColumnNameCell>
+                                <StyledNameFont variant="body2">
+                                    {p.name.toLowerCase().replaceAll(' ', '_')}
+                                </StyledNameFont>
+                            </StyledColumnNameCell>
+                            <StyledColumnTypeCell>
+                                <StyledTypeFont variant="body2">
+                                    {p.type ? p.type.toLowerCase() : ''}
+                                </StyledTypeFont>
+                            </StyledColumnTypeCell>
+                        </StyledTableCellRow>
+                    );
+                })}
+                <StyledHandle type="source" position={Position.Right} />
+                <StyledTableFooterRow>
+                    <AddCircleOutlineRounded
+                        sx={{ color: 'rgba(0, 0, 0, 0.54)' }}
+                    />
+                </StyledTableFooterRow>
+            </StyledMetamodelContent>
         </StyledMetamodelCard>
     );
-    // return (
-    //     <StyledNode
-    //         isSelected={selectedNodeId === id}
-    //         onClick={() => {
-    //             onSelectNodeId(id);
-    //         }}
-    //     >
-    //         <StyledHandle type="target" position={Position.Left} />
-    //         <StyledRow isHeader={true}>
-    //             <StyledIcon>
-    //                 <TableBar />
-    //             </StyledIcon>
-    //             <StyledTitle>{data.name}</StyledTitle>
-    //         </StyledRow>
-    //         {data.properties.map((p) => (
-    //             <StyledRow isHeader={false} key={p.id}>
-    //                 <StyledIcon>
-    //                     <ViewColumn />
-    //                 </StyledIcon>
-    //                 <StyledTitle>{p.name}</StyledTitle>
-    //             </StyledRow>
-    //         ))}
-    //         <StyledHandle type="source" position={Position.Right} />
-    //     </StyledNode>
-    // );
 };
 
 export const MetamodelNode = React.memo(_MetamodelNode);
