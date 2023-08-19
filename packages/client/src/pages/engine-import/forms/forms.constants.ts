@@ -1177,7 +1177,7 @@ export const STORAGE_FORMS: EngineFields = [
             {
                 fieldName: 'STORAGE_TYPE',
                 label: 'Storage Type',
-                defaultValue: '',
+                defaultValue: 'AMAZON_S3',
                 options: {
                     component: 'text-field',
                 },
@@ -1196,8 +1196,8 @@ export const STORAGE_FORMS: EngineFields = [
             },
             {
                 fieldName: 'S3_REGION',
-                label: 'S3 Region',
-                defaultValue: 'need',
+                label: 'Region',
+                defaultValue: '',
                 options: {
                     component: 'text-field',
                 },
@@ -1206,33 +1206,23 @@ export const STORAGE_FORMS: EngineFields = [
             },
             {
                 fieldName: 'S3_ACCESS_KEY',
-                label: 'S3 Access Key',
-                defaultValue: 'need',
+                label: 'Access Key',
+                defaultValue: '',
                 options: {
                     component: 'text-field',
                 },
                 disabled: false,
-                rules: { required: true },
+                rules: { required: false },
             },
             {
                 fieldName: 'S3_SECRET_KEY',
-                label: 'S3 Secret Key',
-                defaultValue: 'need',
+                label: 'Secret Key',
+                defaultValue: '',
                 options: {
                     component: 'text-field',
                 },
                 disabled: false,
-                rules: { required: true },
-            },
-            {
-                fieldName: 'S3_ENDPOINT',
-                label: 'S3 Endpoint',
-                defaultValue: 'need',
-                options: {
-                    component: 'text-field',
-                },
-                disabled: false,
-                rules: { required: true },
+                rules: { required: false },
             },
         ],
     },
@@ -1262,7 +1252,7 @@ export const STORAGE_FORMS: EngineFields = [
             {
                 fieldName: 'S3_REGION',
                 label: 'S3 Region',
-                defaultValue: 'need',
+                defaultValue: '',
                 options: {
                     component: 'text-field',
                 },
@@ -1272,7 +1262,7 @@ export const STORAGE_FORMS: EngineFields = [
             {
                 fieldName: 'S3_ACCESS_KEY',
                 label: 'S3 Access Key',
-                defaultValue: 'need',
+                defaultValue: '',
                 options: {
                     component: 'text-field',
                 },
@@ -1282,7 +1272,7 @@ export const STORAGE_FORMS: EngineFields = [
             {
                 fieldName: 'S3_SECRET_KEY',
                 label: 'S3 Secret Key',
-                defaultValue: 'need',
+                defaultValue: '',
                 options: {
                     component: 'text-field',
                 },
@@ -1292,7 +1282,7 @@ export const STORAGE_FORMS: EngineFields = [
             {
                 fieldName: 'S3_ENDPOINT',
                 label: 'S3 Endpoint',
-                defaultValue: 'need',
+                defaultValue: '',
                 options: {
                     component: 'text-field',
                 },
@@ -1327,7 +1317,7 @@ export const STORAGE_FORMS: EngineFields = [
             {
                 fieldName: 'S3_REGION',
                 label: 'S3 Region',
-                defaultValue: 'need',
+                defaultValue: '',
                 options: {
                     component: 'text-field',
                 },
@@ -1337,7 +1327,7 @@ export const STORAGE_FORMS: EngineFields = [
             {
                 fieldName: 'S3_ACCESS_KEY',
                 label: 'S3 Access Key',
-                defaultValue: 'need',
+                defaultValue: '',
                 options: {
                     component: 'text-field',
                 },
@@ -1347,7 +1337,7 @@ export const STORAGE_FORMS: EngineFields = [
             {
                 fieldName: 'S3_SECRET_KEY',
                 label: 'S3 Secret Key',
-                defaultValue: 'need',
+                defaultValue: '',
                 options: {
                     component: 'text-field',
                 },
@@ -1357,7 +1347,7 @@ export const STORAGE_FORMS: EngineFields = [
             {
                 fieldName: 'S3_ENDPOINT',
                 label: 'S3 Endpoint',
-                defaultValue: 'need',
+                defaultValue: '',
                 options: {
                     component: 'text-field',
                 },
@@ -1372,7 +1362,7 @@ export const STORAGE_FORMS: EngineFields = [
             {
                 fieldName: 'STORAGE_TYPE',
                 label: 'Storage Type',
-                defaultValue: '',
+                defaultValue: 'GOOGLE_CLOUD_STORAGE',
                 options: {
                     component: 'text-field',
                 },
@@ -1390,9 +1380,9 @@ export const STORAGE_FORMS: EngineFields = [
                 rules: { required: true },
             },
             {
-                fieldName: 'S3_REGION',
-                label: 'S3 Region',
-                defaultValue: 'need',
+                fieldName: 'GCS_REGION',
+                label: 'Region',
+                defaultValue: '',
                 options: {
                     component: 'text-field',
                 },
@@ -1400,9 +1390,9 @@ export const STORAGE_FORMS: EngineFields = [
                 rules: { required: true },
             },
             {
-                fieldName: 'S3_ACCESS_KEY',
-                label: 'S3 Access Key',
-                defaultValue: 'need',
+                fieldName: 'GCS_SERVICE_ACCOUNT_FILE',
+                label: 'Service Account File',
+                defaultValue: '',
                 options: {
                     component: 'text-field',
                 },
@@ -1410,24 +1400,14 @@ export const STORAGE_FORMS: EngineFields = [
                 rules: { required: true },
             },
             {
-                fieldName: 'S3_SECRET_KEY',
-                label: 'S3 Secret Key',
-                defaultValue: 'need',
+                fieldName: 'GCS_BUCKET',
+                label: 'Bucket',
+                defaultValue: '',
                 options: {
                     component: 'text-field',
                 },
                 disabled: false,
-                rules: { required: true },
-            },
-            {
-                fieldName: 'S3_ENDPOINT',
-                label: 'S3 Endpoint',
-                defaultValue: 'need',
-                options: {
-                    component: 'text-field',
-                },
-                disabled: false,
-                rules: { required: true },
+                rules: { required: false },
             },
         ],
     },
@@ -1437,7 +1417,7 @@ export const STORAGE_FORMS: EngineFields = [
             {
                 fieldName: 'STORAGE_TYPE',
                 label: 'Storage Type',
-                defaultValue: '',
+                defaultValue: 'MICROSOFT_AZURE_BLOB_STORAGE',
                 options: {
                     component: 'text-field',
                 },
@@ -1455,9 +1435,9 @@ export const STORAGE_FORMS: EngineFields = [
                 rules: { required: true },
             },
             {
-                fieldName: 'S3_REGION',
-                label: 'S3 Region',
-                defaultValue: 'need',
+                fieldName: 'AZ_ACCOUNT_NAME',
+                label: 'Account Name',
+                defaultValue: '',
                 options: {
                     component: 'text-field',
                 },
@@ -1465,9 +1445,9 @@ export const STORAGE_FORMS: EngineFields = [
                 rules: { required: true },
             },
             {
-                fieldName: 'S3_ACCESS_KEY',
-                label: 'S3 Access Key',
-                defaultValue: 'need',
+                fieldName: 'AZ_PRIMARY_KEY',
+                label: 'Primary Key',
+                defaultValue: '',
                 options: {
                     component: 'text-field',
                 },
@@ -1475,9 +1455,9 @@ export const STORAGE_FORMS: EngineFields = [
                 rules: { required: true },
             },
             {
-                fieldName: 'S3_SECRET_KEY',
-                label: 'S3 Secret Key',
-                defaultValue: 'need',
+                fieldName: 'AZ_CONN_STRING',
+                label: 'Connection String',
+                defaultValue: '',
                 options: {
                     component: 'text-field',
                 },
@@ -1485,9 +1465,9 @@ export const STORAGE_FORMS: EngineFields = [
                 rules: { required: true },
             },
             {
-                fieldName: 'S3_ENDPOINT',
-                label: 'S3 Endpoint',
-                defaultValue: 'need',
+                fieldName: 'AZ_GENERATE_DYNAMIC_SAS',
+                label: 'Generate Dynamic SAS',
+                defaultValue: 'false',
                 options: {
                     component: 'text-field',
                 },
@@ -1567,7 +1547,7 @@ export const STORAGE_FORMS: EngineFields = [
             {
                 fieldName: 'STORAGE_TYPE',
                 label: 'Storage Type',
-                defaultValue: '',
+                defaultValue: 'MINIO',
                 options: {
                     component: 'text-field',
                 },
@@ -1585,9 +1565,9 @@ export const STORAGE_FORMS: EngineFields = [
                 rules: { required: true },
             },
             {
-                fieldName: 'S3_REGION',
-                label: 'S3 Region',
-                defaultValue: 'need',
+                fieldName: 'MINIO_REGION',
+                label: 'Region',
+                defaultValue: 'us-east-1',
                 options: {
                     component: 'text-field',
                 },
@@ -1595,9 +1575,9 @@ export const STORAGE_FORMS: EngineFields = [
                 rules: { required: true },
             },
             {
-                fieldName: 'S3_ACCESS_KEY',
-                label: 'S3 Access Key',
-                defaultValue: 'need',
+                fieldName: 'MINIO_ACCESS_KEY',
+                label: 'Access Key',
+                defaultValue: '',
                 options: {
                     component: 'text-field',
                 },
@@ -1605,9 +1585,9 @@ export const STORAGE_FORMS: EngineFields = [
                 rules: { required: true },
             },
             {
-                fieldName: 'S3_SECRET_KEY',
-                label: 'S3 Secret Key',
-                defaultValue: 'need',
+                fieldName: 'MINIO_SECRET_KEY',
+                label: 'Secret Key',
+                defaultValue: '',
                 options: {
                     component: 'text-field',
                 },
@@ -1615,14 +1595,24 @@ export const STORAGE_FORMS: EngineFields = [
                 rules: { required: true },
             },
             {
-                fieldName: 'S3_ENDPOINT',
-                label: 'S3 Endpoint',
-                defaultValue: 'need',
+                fieldName: 'MINIO_ENDPOINT',
+                label: 'Endpoint',
+                defaultValue: '',
                 options: {
                     component: 'text-field',
                 },
                 disabled: false,
                 rules: { required: true },
+            },
+            {
+                fieldName: 'MINIO_BUCKET',
+                label: 'Root Bucket Path',
+                defaultValue: '',
+                options: {
+                    component: 'text-field',
+                },
+                disabled: false,
+                rules: { required: false },
             },
         ],
     },

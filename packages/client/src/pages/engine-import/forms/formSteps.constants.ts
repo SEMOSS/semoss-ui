@@ -270,19 +270,19 @@ export const stepsTwo = {
         },
         {
             name: 'Google Cloud Storage',
-            disable: true,
+            disable: false,
         },
         {
             name: 'Google Drive',
-            disable: false,
-        },
-        {
-            name: 'Microsoft Azure Blob Storage',
             disable: true,
         },
         {
-            name: 'Microsoft OneDrive',
+            name: 'Microsoft Azure Blob Storage',
             disable: false,
+        },
+        {
+            name: 'Microsoft OneDrive',
+            disable: true,
         },
         {
             name: 'MINIO',
