@@ -216,7 +216,6 @@ export const Metamodel = (props: MetamodelProps) => {
 
         // build dataTypeMap for each table
         for (const node of data.nodes) {
-            console.log('node: ', node);
             // const temp = { [node.data.name]: [] };
             // const temp = [];
             for (const col of node.data.properties) {
@@ -239,8 +238,6 @@ export const Metamodel = (props: MetamodelProps) => {
         // callback(payloadObj);
         callback(payloadObj);
     };
-    console.log('nodes: ', nodes);
-    console.log('props: ', props);
 
     return (
         <MetamodelContext.Provider value={metamodelContext}>

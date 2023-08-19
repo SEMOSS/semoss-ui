@@ -163,8 +163,6 @@ const StyledColumnTypeText = styled(Typography, {
         date: 'var(--alt-purple-alt-purple-400, #975FE4)',
         float: 'var(--alt-dark-blue-alt-dark-blue-700, #3A188E)',
     };
-    console.log('datatype for oclumn: ', columnDataType);
-    console.log('color for oclumn: ', colorKey[columnDataType]);
 
     return {
         display: 'flex',
