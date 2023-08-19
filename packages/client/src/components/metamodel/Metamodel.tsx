@@ -241,18 +241,6 @@ export const Metamodel = (props: MetamodelProps) => {
 
     return (
         <MetamodelContext.Provider value={metamodelContext}>
-            {/* <ReactFlow
-                style={{ width: '100vw', height: '100vh' }}
-                nodes={nodes}
-                edges={edges}
-                nodeTypes={nodeTypes}
-                edgeTypes={edgeTypes}
-                fitView={true}
-            >
-                <MiniMap />
-                <Controls showInteractive={false} />
-            </ReactFlow> */}
-
             <div style={{ height: '100%', width: '100%' }}>
                 <ReactFlow
                     defaultNodes={nodes}
