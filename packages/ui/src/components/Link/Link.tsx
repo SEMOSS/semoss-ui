@@ -19,8 +19,12 @@ export interface LinkProps {
         | "success"
         | "warning";
 
-    //** link to be passed in */
-    href?: string;
+    /**
+     * Link
+     */
+    href: string;
+    rel?: React.HTMLProps<HTMLAnchorElement>["rel"];
+    target?: React.HTMLProps<HTMLAnchorElement>["target"];
 
     /**
      * Callback fired when the link is clicked.
@@ -60,6 +64,6 @@ export interface LinkProps {
 }
 
 export const Link = (props: LinkProps) => {
-    const { sx } = props;
-    return <MuiLink sx={sx} {...props} />;
+    const { sx, ...otherProps } = props;
+    return <MuiLink sx={sx} {...otherProps} />;
 };

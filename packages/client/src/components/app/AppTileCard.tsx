@@ -8,19 +8,19 @@ import {
     Stack,
     Avatar,
     IconButton,
+    Link,
 } from '@semoss/ui';
 
 import { App } from './app.types';
-import {
-    ArrowForwardOutlined,
-    BookmarkBorderOutlined,
-} from '@mui/icons-material';
+import { BookmarkBorderOutlined, OpenInNewOutlined } from '@mui/icons-material';
 
 const StyledCard = styled(Card)(() => ({
     borderRadius: '12px',
 }));
 
 const StyledContent = styled(Card.Content)(({ theme }) => ({
+    // ...theme.typography.body1,
+    // color: theme.palette.text.primary,
     paddingTop: theme.spacing(1.5),
     paddingRight: theme.spacing(1.5),
     paddingLeft: theme.spacing(1.5),
@@ -33,15 +33,13 @@ const StyledActions = styled(Card.Actions)(({ theme }) => ({
     paddingLeft: theme.spacing(1.5),
 }));
 
-const StyledBackdrop = styled('div')(({ theme }) => {
-    return {
-        display: 'flex',
-        flexDirection: 'column',
-        gap: theme.spacing(1),
-        padding: theme.spacing(1),
-        borderRadius: '12px',
-    };
-});
+const StyledBackdrop = styled('div')(({ theme }) => ({
+    display: 'flex',
+    flexDirection: 'column',
+    gap: theme.spacing(1),
+    padding: theme.spacing(1),
+    borderRadius: '12px',
+}));
 
 const StyledChip = styled(Chip)(({ theme }) => ({
     background: theme.palette.background.paper,
@@ -77,21 +75,30 @@ const StyledActionButton = styled(IconButton)(({ theme }) => ({
 }));
 
 interface AppTileCardProps {
-    /** App */
+    /**
+     * App
+     */
     app: App;
 
-    /** Background */
+    /**
+     * Background
+     */
     background?: string;
 
     /**
      * Action that is triggered when clicked
      * aop - current selected app
      */
-    onAction: (app: App) => void;
+    onAction?: (app: App) => void;
+
+    /**
+     * Link to navigate to
+     */
+    href: string;
 }
 
 export const AppTileCard = (props: AppTileCardProps) => {
-    const { app, background = '#DAC9F5', onAction = () => null } = props;
+    const { app, background = '#DAC9F5', onAction = () => null, href } = props;
 
     // pretty format the data
     const createdDate = useMemo(() => {
@@ -105,52 +112,65 @@ export const AppTileCard = (props: AppTileCardProps) => {
 
     return (
         <StyledCard>
-            <StyledContent>
-                <StyledBackdrop sx={{ backgroundColor: background }}>
-                    <Stack
-                        direction={'row'}
-                        alignItems={'center'}
-                        justifyContent={'space-between'}
-                        spacing={1}
-                    >
-                        <StyledChip size={'small'} label={'LLaMa'}></StyledChip>
-                        <StyledAvatar variant={'circular'}>
-                            <BookmarkBorderOutlined />
-                        </StyledAvatar>
-                    </Stack>
-                    <StyledName variant={'body1'}>
-                        {app.project_name}
-                    </StyledName>
-                    <StyledDescription variant={'body2'}>
-                        {app.description || ''}
-                    </StyledDescription>
-                    <Stack
-                        direction={'row'}
-                        spacing={1.25}
-                        flexWrap={'nowrap'}
-                        overflow={'auto'}
-                        height={'32px'}
-                    >
-                        {app.tag ? (
-                            typeof app.tag === 'string' ? (
-                                <Chip variant={'outlined'} label={app.tag} />
-                            ) : (
-                                app.tag.map((t, idx) => {
-                                    return (
+            <Link
+                href={href}
+                rel="noopener noreferrer"
+                color="inherit"
+                underline="none"
+            >
+                <Card.ActionsArea>
+                    <StyledContent>
+                        <StyledBackdrop sx={{ backgroundColor: background }}>
+                            <Stack
+                                direction={'row'}
+                                alignItems={'center'}
+                                justifyContent={'space-between'}
+                                spacing={1}
+                            >
+                                {/* <StyledChip size={'small'} label={'LLaMa'}></StyledChip> */}
+                                <StyledName variant={'h6'}>
+                                    {app.project_name}
+                                </StyledName>
+                                <StyledAvatar variant={'circular'}>
+                                    <BookmarkBorderOutlined />
+                                </StyledAvatar>
+                            </Stack>
+
+                            <StyledDescription variant={'body2'}>
+                                {app.description || ''}
+                            </StyledDescription>
+                            <Stack
+                                direction={'row'}
+                                spacing={1.25}
+                                flexWrap={'nowrap'}
+                                overflow={'auto'}
+                                height={'32px'}
+                            >
+                                {app.tag ? (
+                                    typeof app.tag === 'string' ? (
                                         <Chip
-                                            key={idx}
                                             variant={'outlined'}
-                                            label={t}
+                                            label={app.tag}
                                         />
-                                    );
-                                })
-                            )
-                        ) : (
-                            <>&nbsp;</>
-                        )}
-                    </Stack>
-                </StyledBackdrop>
-            </StyledContent>
+                                    ) : (
+                                        app.tag.map((t, idx) => {
+                                            return (
+                                                <Chip
+                                                    key={idx}
+                                                    variant={'outlined'}
+                                                    label={t}
+                                                />
+                                            );
+                                        })
+                                    )
+                                ) : (
+                                    <>&nbsp;</>
+                                )}
+                            </Stack>
+                        </StyledBackdrop>
+                    </StyledContent>
+                </Card.ActionsArea>
+            </Link>
             <StyledActions>
                 <Stack flexDirection={'column'} flex={1} spacing={0.5}>
                     <Typography variant={'caption'} fontWeight="bold">
@@ -158,12 +178,20 @@ export const AppTileCard = (props: AppTileCardProps) => {
                     </Typography>
                     <Typography variant={'caption'}>{createdDate}</Typography>
                 </Stack>
-                <StyledActionButton
-                    size={'small'}
-                    onClick={() => onAction(app)}
+                <Link
+                    href={href}
+                    rel="noopener noreferrer"
+                    target="_blank"
+                    color="inherit"
+                    underline="none"
                 >
-                    <ArrowForwardOutlined />
-                </StyledActionButton>
+                    <StyledActionButton
+                        size={'small'}
+                        onClick={() => onAction(app)}
+                    >
+                        <OpenInNewOutlined />
+                    </StyledActionButton>
+                </Link>
             </StyledActions>
         </StyledCard>
     );

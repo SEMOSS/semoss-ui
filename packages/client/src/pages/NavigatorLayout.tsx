@@ -5,8 +5,8 @@ import {
     AccountCircle,
     Settings,
     Inventory2Outlined,
-    MenuBookOutlined,
     LibraryBooksOutlined,
+    SmartToyOutlined,
 } from '@mui/icons-material';
 
 import { THEME } from '@/constants';
@@ -36,7 +36,7 @@ const StyledHeaderLogo = styled(Link)(({ theme }) => ({
     height: '100%',
     display: 'flex',
     alignItems: 'center',
-    gap: theme.spacing(1),
+    gap: theme.spacing(2),
     color: 'inherit',
     textDecoration: 'none',
     paddingTop: theme.spacing(1),
@@ -148,7 +148,7 @@ export const NavigatorLayout = observer(() => {
                 </StyledSidebarItem>
                 <StyledSidebarItem to={'catalog?type=model'}>
                     <Icon>
-                        <MenuBookOutlined />
+                        <SmartToyOutlined />
                     </Icon>
                 </StyledSidebarItem>
                 <Stack flex={1}>&nbsp;</Stack>

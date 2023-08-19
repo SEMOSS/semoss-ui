@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { observer } from 'mobx-react-lite';
 import { Stack, Typography, Search, Button, Grid } from '@semoss/ui';
 
-import { useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 
 import { usePixel, useRootStore } from '@/hooks';
 import { Page } from '@/components/ui';
@@ -14,6 +14,7 @@ import { App, AppTileCard, AddApp } from '@/components/app';
 export const HomePage = observer((): JSX.Element => {
     const { configStore } = useRootStore();
     const navigate = useNavigate();
+    const location = useLocation();
 
     const [search, setSearch] = useState('');
 
@@ -52,7 +53,19 @@ export const HomePage = observer((): JSX.Element => {
      * @param app - Marketplace app that will be open
      */
     const openApp = async (a: App) => {
-        navigate(`app/${a.project_id}`);
+        // navigate(`app/${a.project_id}`, {});
+
+        window.open(`#/app/${a.project_id}`, 'rel=noopener noreferrer');
+        console.log('hi');
+    };
+
+    /**
+     * Open a new app
+     *
+     * @param app - Marketplace app that will be open
+     */
+    const openLegacy = async () => {
+        window.open('./packages/legacy', 'rel=noopener noreferrer');
     };
 
     /**
@@ -108,6 +121,39 @@ export const HomePage = observer((): JSX.Element => {
             }
         >
             <Stack direction={'column'} height={'100%'}>
+                <Grid container spacing={3}>
+                    <Grid item sm={12} md={4} lg={3} xl={2}>
+                        <AppTileCard
+                            app={{
+                                project_id: '',
+                                project_name: 'Business Intelligence',
+                                project_type: '',
+                                project_cost: '',
+                                project_global: '',
+                                project_catalog_name: '',
+                                project_created_by: 'SYSTEM',
+                                project_created_by_type: '',
+                                project_date_created: '',
+                                project_has_portal: false,
+                                project_portal_name: '',
+                                project_portal_published_date: '',
+                                project_published_user: '',
+                                project_published_user_type: '',
+                                project_reactors_compiled_date: '',
+                                project_reactors_compiled_user: '',
+                                project_reactors_compiled_user_type: '',
+                                project_favorite: '',
+                                user_permission: '',
+                                group_permission: '',
+                                tag: [],
+                                description:
+                                    'Develop dashboards and visualizations to view data',
+                            }}
+                            background="#BADEFF"
+                            href="./packages/legacy"
+                        />
+                    </Grid>
+                </Grid>
                 {myApps.status === 'SUCCESS' && myApps.data.length > 0 ? (
                     <Grid container spacing={3}>
                         {myApps.data.map((app) => {
@@ -122,7 +168,7 @@ export const HomePage = observer((): JSX.Element => {
                                 >
                                     <AppTileCard
                                         app={app}
-                                        onAction={(app) => openApp(app)}
+                                        href={`#/app/${app.project_id}`}
                                     />
                                 </Grid>
                             );

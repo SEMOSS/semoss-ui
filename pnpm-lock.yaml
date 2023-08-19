@@ -10121,6 +10121,7 @@ packages:
   /chokidar/3.5.3:
     resolution: {integrity: sha512-Dr3sfKRP6oTcjf2JmUmFJfeVMvXBdegxB0iVQ5eb2V10uFJUCAS8OByZdVAyVb8xXNz3GjjTgj9kLWsZTqE6kw==}
     engines: {node: '>= 8.10.0'}
+    requiresBuild: true
     dependencies:
       anymatch: 3.1.3
       braces: 3.0.2
@@ -13143,7 +13144,7 @@ packages:
       lodash: 4.17.21
       pretty-error: 4.0.0
       tapable: 2.2.1
-      webpack: 5.88.2_webpack-cli@4.10.0
+      webpack: 5.88.2_webpack-cli@5.1.4
     dev: true
 
   /htmlparser2/6.1.0:
@@ -14736,7 +14737,7 @@ packages:
       webpack: ^5.0.0
     dependencies:
       schema-utils: 4.2.0
-      webpack: 5.88.2_webpack-cli@4.10.0
+      webpack: 5.88.2_webpack-cli@5.1.4
     dev: true
 
   /minimalistic-assert/1.0.1:
