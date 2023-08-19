@@ -1616,4 +1616,69 @@ export const STORAGE_FORMS: EngineFields = [
             },
         ],
     },
+    {
+        name: 'SFTP',
+        fields: [
+            {
+                fieldName: 'STORAGE_TYPE',
+                label: 'Storage Type',
+                defaultValue: 'SFTP',
+                options: {
+                    component: 'text-field',
+                },
+                disabled: true,
+                rules: { required: true },
+            },
+            {
+                fieldName: 'NAME',
+                label: 'Name',
+                defaultValue: '',
+                options: {
+                    component: 'text-field',
+                },
+                disabled: false,
+                rules: { required: true },
+            },
+            {
+                fieldName: 'HOSTNAME',
+                label: 'Host',
+                defaultValue: '',
+                options: {
+                    component: 'text-field',
+                },
+                disabled: false,
+                rules: { required: true },
+            },
+            {
+                fieldName: 'PORT',
+                label: 'Port',
+                defaultValue: '22',
+                options: {
+                    component: 'text-field',
+                },
+                disabled: false,
+                rules: { required: true },
+            },
+            {
+                fieldName: 'USERNAME',
+                label: 'Username',
+                defaultValue: '',
+                options: {
+                    component: 'text-field',
+                },
+                disabled: false,
+                rules: { required: true },
+            },
+            {
+                fieldName: 'PASSWORD',
+                label: 'Password',
+                defaultValue: '',
+                options: {
+                    component: 'text-field',
+                },
+                disabled: false,
+                rules: { required: false },
+            },
+        ],
+    },
 ];

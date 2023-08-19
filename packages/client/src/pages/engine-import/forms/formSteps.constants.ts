@@ -44,6 +44,7 @@ import GOOGLE_DRIVE from '@/assets/img/GOOGLE_DRIVE.png';
 import ONEDRIVE from '@/assets/img/ONEDRIVE.png';
 import AZURE_BLOB from '@/assets/img/AZURE_BLOB.png';
 import MINIO from '@/assets/img/MINIO.png';
+import SFTP from '@/assets/img/SFTP.png';
 
 //Commercial Models
 import OPEN_AI from '@/assets/img/OPEN_AI.png';
@@ -288,6 +289,10 @@ export const stepsTwo = {
             name: 'MINIO',
             disable: false,
         },
+        {
+            name: 'SFTP',
+            disable: false,
+        },
     ],
     ['Commercial Models']: [
         {
@@ -426,6 +431,7 @@ export const IconDBMapper = {
     'Microsoft Azure Blob Storage': AZURE_BLOB,
     'Microsoft OneDrive': ONEDRIVE,
     MINIO: MINIO,
+    SFTP: SFTP,
 
     'Open AI': OPEN_AI,
     Claude: CLAUDE,
