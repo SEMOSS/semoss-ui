@@ -58,28 +58,13 @@ const TableIcon = () => {
     );
 };
 
-const StyledNode = styled('div', {
-    shouldForwardProp: (prop) => prop !== 'isSelected',
-})<{
-    /** Track if the node is isSelected */
-    isSelected: boolean;
-}>(({ theme, isSelected }) => ({
-    borderColor: isSelected
-        ? theme.palette.primary.main
-        : theme.palette.divider,
-    borderStyle: 'solid',
-    borderWidth: '1px',
-}));
-
-const StyledMetamodelCard = styled(Card, {
+const StyledMetamodelCard = styled('div', {
     shouldForwardProp: (prop) => prop !== 'isSelected',
 })<{ isSelected: boolean }>(({ isSelected }) => ({
     display: 'inline-flex',
-    paddingBottom: 'var(--spacing-spacing-05, 0px)',
     flexDirection: 'column',
     alignItems: 'flex-start',
     borderRadius: 'var(--border-radius-radius-large, 12px)',
-    backgroundColor: 'var(--light-background-paper, #FFF)',
     boxShadow: isSelected
         ? '0px 5px 22px 0px #D6EAFF'
         : '0px 5px 22px 0px rgba(0, 0, 0, 0.06)',
@@ -87,20 +72,185 @@ const StyledMetamodelCard = styled(Card, {
         ? '1px solid var(--light-primary-shades-30-p, rgba(4, 113, 240, 0.30))'
         : '',
 }));
-const StyledMetamodelContent = styled(Card.Content)(() => ({
+const StyledMetamodelCardHeader = styled('div')(() => ({
     display: 'flex',
+    // maxWidth: '215px',
+    width: '325px',
+    height: '44px',
+    padding: '16px',
+    alignItems: 'center',
+    gap: '10px !important',
+    borderRadius: '12px 12px 0px 0px',
+    background: 'var(--alt-purple-alt-purple-50, #F1E9FB)',
+    paddingRight: '6px',
+}));
+const StyledMetamodelCardContent = styled('div')(() => ({
+    display: 'flex',
+    width: '325px',
+    paddingBottom: '0px',
     flexDirection: 'column',
     alignItems: 'flexStart',
-    // backgroundColor: 'rgba(250, 250, 250, 1)',
+    borderRadius: '0px 12px 12px 12px',
+    background: '#FFF',
+}));
+const StyledMetamodelCardItem = styled('div', {
+    shouldForwardProp: (prop) => prop !== 'isPrimary',
+})<{
+    /** Track if the column is a primary key */
+    isPrimary: boolean;
+}>(({ isPrimary }) => ({
+    display: 'flex',
+    padding: isPrimary ? '8px 0px' : '',
+    alignItems: 'flex-start',
+    alignSelf: 'stretch',
+    background: 'rgba(255, 255, 255, 0.00)',
 }));
 
-const StyledKeyCell = styled('div')(() => ({
+const StyledMetamodelCardItemCell = styled('div', {
+    shouldForwardProp: (prop) => prop !== 'cellPosition',
+})<{
+    /** Track the cell position. Can be first, second, or third */
+    cellPosition: string;
+}>(({ cellPosition }) => {
+    if (cellPosition === 'first') {
+        return {
+            display: 'flex',
+            height: '44px',
+            width: '114.667px',
+            padding: '12px 16px',
+            alignItems: 'center',
+        };
+    }
+    if (cellPosition === 'second') {
+        return {
+            display: 'flex',
+            width: '114.667px',
+            padding: '12px 16px',
+            alignItems: 'center',
+        };
+    }
+    if (cellPosition === 'third') {
+        return {
+            display: 'flex',
+            padding: '10px 16px',
+            justifyContent: 'flex-end',
+            alignItems: 'center',
+            flex: '1 0 0',
+        };
+    }
+});
+const StyledMetamodelCardItemCellText = styled(Typography)(() => ({
     display: 'flex',
-    padding: '6px 16px',
+    flexDirection: 'column',
+    alignItems: 'flex-start',
+    color: 'var(--light-text-primary, rgba(0, 0, 0, 0.87))',
+}));
+const StyledColumnTypeText = styled(Typography, {
+    shouldForwardProp: (prop) => prop !== 'columnDataType',
+})<{
+    // Track column data type. int: red, string: blue, date: purple, boolean: green
+    columnDataType: string;
+}>(({ columnDataType }) => {
+    columnDataType = columnDataType.toLowerCase();
+    const colorKey = {
+        integer: 'var(--alt-pink-alt-pink-400, #FF4E90)',
+        int: 'var(--alt-pink-alt-pink-400, #FF4E90)',
+        double: 'var(--alt-pink-alt-pink-400, #FF4E90)',
+        string: 'var(--alt-green-alt-green-400, #00B4A4)',
+        char: 'var(--alt-green-alt-green-400, #00B4A4)',
+        varchar: 'var(--alt-green-alt-green-400, #00B4A4)',
+        boolean: 'var(--light-primary-light, #22A4FF)',
+        date: 'var(--alt-purple-alt-purple-400, #975FE4)',
+        float: 'var(--alt-dark-blue-alt-dark-blue-700, #3A188E)',
+    };
+    console.log('datatype for oclumn: ', columnDataType);
+    console.log('color for oclumn: ', colorKey[columnDataType]);
+
+    return {
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'flex-start',
+        color: columnDataType ? colorKey[columnDataType] : '',
+    };
+});
+
+// contains table icon
+const StyledTableIconContainer = styled('div')(() => ({
+    display: 'flex',
+    width: '30px',
+    height: '30px',
+    flexDirection: 'column',
+    justifyContent: 'center',
     alignItems: 'center',
-    gap: '6px',
+    gap: '10px',
+    flexShrink: 0,
+    borderRadius: '8px',
+    // border: '1px solid var(--alt-purple-alt-purple-400, #975FE4)',
+    background: '#FFF',
+}));
+
+const StyledTableIcon = styled(TableIcon)(() => ({
+    display: 'flex',
+    padding: '4px',
+    justifyContent: 'center',
+    flexDirection: 'column',
+    alignItems: 'center',
     flex: '1 0 0',
     alignSelf: 'stretch',
+    color: 'rgba(151, 95, 228, 1)',
+}));
+
+// contains header cell and aligns it with a gap
+const StyledHeaderCellContainer = styled('div')(() => ({
+    display: 'flex',
+    width: '143px',
+    flexDirection: 'column',
+    alignItems: 'flex-start',
+    gap: '4px',
+}));
+
+// contains header text and icon
+const StyledHeaderCell = styled('div')(() => ({
+    display: 'flex',
+    width: '143px',
+    alignItems: 'flext-start',
+    padding: '3px',
+    marginRight: '6px',
+}));
+const StyledHeaderTextContainer = styled('div')(() => ({
+    display: 'flex',
+    alignItems: 'flex-start',
+    alignSelf: 'stretch',
+}));
+
+const StyledHeaderText = styled(Typography)(() => ({
+    display: 'flex',
+    flexDirection: 'column',
+    justifyContent: 'center',
+    flex: '1 0 0',
+    alignSelf: 'stretch',
+    color: 'var(--light-text-primary, rgba(0, 0, 0, 0.87))',
+    featureSettings: 'clig off, liga off',
+    family: 'Inter',
+    size: '16px',
+    style: 'normal',
+    weight: 500,
+    height: '150%',
+    letterSpacing: '.15px',
+}));
+
+// contains edit icon
+const StyledEditIconContainer = styled('div')(() => ({
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
+    gap: '10px',
+    marginLeft: '3px',
+}));
+const StyledEditIcon = styled(EditRounded)(() => ({
+    height: '24px',
+    width: '24px',
+    flexShrink: 0,
 }));
 
 const StyledKeyIconContainer = styled('div')(() => ({
@@ -108,19 +258,17 @@ const StyledKeyIconContainer = styled('div')(() => ({
     alignItems: 'flex-start',
 }));
 
-const StyledPrimaryKeyIcon = styled(KeyRounded)(() => ({
+const StyledKeyIcon = styled(KeyRounded, {
+    shouldForwardProp: (prop) => prop !== 'isPrimary',
+})<{
+    /** Track if a column is a primary key or foreign key */
+    isPrimary: boolean;
+}>(({ isPrimary }) => ({
     width: '24px',
     height: '24px',
     justifyContent: 'center',
     alignItems: 'center',
-    color: 'rgba(4, 113, 240, 1)',
-}));
-const StyledForeignKeyIcon = styled(KeyRounded)(() => ({
-    width: '24px',
-    height: '24px',
-    justifyContent: 'center',
-    alignItems: 'center',
-    color: 'rgba(181, 181, 181, 1)',
+    color: isPrimary ? 'rgba(4, 113, 240, 1)' : 'rgba(181, 181, 181, 1)',
 }));
 
 const StyledTableCellRow = styled('div')(() => ({
@@ -150,12 +298,12 @@ const StyledTypeFont = styled(Typography)(({ theme }) => ({
     alignItems: 'flex-start',
     color: 'rgba(34, 164, 255, 1)',
 }));
-const StyledNameFont = styled(Typography)(({ theme }) => ({
+const StyledNameFont = styled(Typography)(() => ({
     display: 'flex',
     flexDirection: 'column',
     alignItems: 'flex-start',
 }));
-const StyledTableHeaderRow = styled('div')(({ theme }) => ({
+const StyledTableHeaderRow = styled('div')(() => ({
     display: 'flex',
     padding: '16px',
     alignItems: 'center',
@@ -163,7 +311,7 @@ const StyledTableHeaderRow = styled('div')(({ theme }) => ({
     alignSelf: 'stretch',
     color: 'rgba(0, 0, 0, 0.87)',
 }));
-const StyledIconContainer = styled('div')(({ theme }) => ({
+const StyledIconContainer = styled('div')(() => ({
     display: 'flex',
     width: '30px',
     height: '30px',
@@ -182,11 +330,10 @@ const StyledDivider = styled('div')(() => ({
 const StyledTableFooterRow = styled('div')(({ theme }) => ({
     display: 'flex',
     height: '44px',
-    width: '344px',
+    width: '325px',
     justifyContent: 'center',
     alignItems: 'center',
     backgroundColor: 'var(--light-background-default, #FAFAFA)',
-    marginBottom: '-11px',
 }));
 
 const StyledHandle = styled(Handle)(() => ({
@@ -209,10 +356,6 @@ const StyledRow = styled('div', {
     fontWeight: isHeader ? 'bold' : 'normal',
 }));
 
-const StyledIcon = styled(Icon)(() => ({
-    flexShrink: '0',
-    fontSize: '.750rem',
-}));
 const StyledTitleCell = styled(Typography)(() => ({
     display: 'flex',
     flexDirection: 'column',
@@ -220,17 +363,6 @@ const StyledTitleCell = styled(Typography)(() => ({
     flex: '1 0 0',
     alignSelf: 'stretch',
 }));
-// const StyledTitle = styled('div')(() => ({
-//     fontSize: '.875rem',
-//     whiteSpace: 'nowrap',
-//     overflow: 'hidden',
-//     textOverflow: 'ellipsis',
-// }));
-// const StyledTitleContainer = styled('div')(() => ({
-//     display: 'flex',
-//     alignItems: 'center',
-//     overflow: 'hidden',
-// }));
 
 /**
  * node container
@@ -479,74 +611,70 @@ const _MetamodelNode = (props: MetamodelNodeProps) => {
     //     </StyledMetamodelCard>
     // );
     return (
-        <StyledMetamodelCard
-            isSelected={selectedNodeId === id}
-            onClick={() => {
-                onSelectNodeId(id);
-            }}
-        >
+        <>
             <StyledHandle type="target" position={Position.Left} />
-            <StyledTableHeaderRow>
-                <StyledIconContainer>
-                    <TableIcon />
-                </StyledIconContainer>
-                <StyledTitleCell variant="body1">
-                    {data.name.toLowerCase().replaceAll(' ', '_')}
-                </StyledTitleCell>
-            </StyledTableHeaderRow>
-            <StyledDivider />
-            <StyledMetamodelContent>
-                {data.properties.map((p, idx) => {
-                    return (
-                        <StyledTableCellRow key={p.id}>
-                            {/* {idx === 0 ? ( // demo purposes... will update when we have primary key and foreign key properties
-                                <StyledKeyCell>
-                                    <StyledKeyIconContainer>
-                                        <StyledPrimaryKeyIcon />
-                                    </StyledKeyIconContainer>
-                                    <StyledColumnNameCell variant="body2">
-                                        {p.name
-                                            .toLowerCase()
-                                            .replaceAll(' ', '_')}
-                                    </StyledColumnNameCell>
-                                </StyledKeyCell>
-                            ) : idx === 1 ? (
-                                <StyledKeyCell>
-                                    <StyledKeyIconContainer>
-                                        <StyledForeignKeyIcon />
-                                    </StyledKeyIconContainer>
-                                    <StyledColumnNameCell variant="body2">
-                                        {p.name
-                                            .toLowerCase()
-                                            .replaceAll(' ', '_')}
-                                    </StyledColumnNameCell>
-                                </StyledKeyCell>
-                            ) : (
-                                <StyledColumnNameCell variant="body2">
+            <StyledMetamodelCard
+                isSelected={selectedNodeId === id}
+                onClick={() => {
+                    onSelectNodeId(id);
+                }}
+            >
+                <StyledMetamodelCardHeader>
+                    <StyledTableIconContainer>
+                        <StyledTableIcon />
+                    </StyledTableIconContainer>
+                    <StyledHeaderCellContainer>
+                        <StyledHeaderCell>
+                            <StyledHeaderTextContainer>
+                                <StyledHeaderText variant="body1">
+                                    {data.name
+                                        .toLowerCase()
+                                        .replaceAll(' ', '_')}
+                                </StyledHeaderText>
+                            </StyledHeaderTextContainer>
+                            <StyledEditIconContainer>
+                                <StyledEditIcon />
+                            </StyledEditIconContainer>
+                        </StyledHeaderCell>
+                    </StyledHeaderCellContainer>
+                </StyledMetamodelCardHeader>
+                <StyledMetamodelCardContent>
+                    {data.properties.map((p, idx) => (
+                        <StyledMetamodelCardItem
+                            key={p.id}
+                            isPrimary={idx === 0 ? true : false}
+                        >
+                            <StyledMetamodelCardItemCell cellPosition="first">
+                                <StyledMetamodelCardItemCellText variant="body2">
                                     {p.name.toLowerCase().replaceAll(' ', '_')}
-                                </StyledColumnNameCell>
-                            )} */}
-                            <StyledColumnNameCell>
-                                <StyledNameFont variant="body2">
-                                    {p.name.toLowerCase().replaceAll(' ', '_')}
-                                </StyledNameFont>
-                            </StyledColumnNameCell>
-                            <StyledColumnTypeCell>
-                                <StyledTypeFont variant="body2">
+                                </StyledMetamodelCardItemCellText>
+                            </StyledMetamodelCardItemCell>
+                            <StyledMetamodelCardItemCell cellPosition="second">
+                                <StyledColumnTypeText
+                                    variant="body2"
+                                    columnDataType={p.type ? p.type : ''}
+                                >
                                     {p.type ? p.type.toLowerCase() : ''}
-                                </StyledTypeFont>
-                            </StyledColumnTypeCell>
-                        </StyledTableCellRow>
-                    );
-                })}
-                <StyledHandle type="source" position={Position.Right} />
-                <StyledTableFooterRow>
-                    <AddCircleOutlineRounded
-                        sx={{ color: 'rgba(0, 0, 0, 0.54)' }}
-                    />
-                </StyledTableFooterRow>
-            </StyledMetamodelContent>
-        </StyledMetamodelCard>
+                                </StyledColumnTypeText>
+                            </StyledMetamodelCardItemCell>
+                            {idx === 0 || idx === 1 ? (
+                                <StyledMetamodelCardItemCell cellPosition="third">
+                                    <StyledKeyIconContainer>
+                                        <StyledKeyIcon isPrimary={idx === 0} />
+                                    </StyledKeyIconContainer>
+                                </StyledMetamodelCardItemCell>
+                            ) : null}
+                        </StyledMetamodelCardItem>
+                    ))}
+                    <StyledHandle type="source" position={Position.Right} />
+                    <StyledTableFooterRow>
+                        <AddCircleOutlineRounded
+                            sx={{ color: 'rgba(0, 0, 0, 0.54)' }}
+                        />
+                    </StyledTableFooterRow>
+                </StyledMetamodelCardContent>
+            </StyledMetamodelCard>
+        </>
     );
 };
 

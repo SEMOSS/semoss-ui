@@ -1,6 +1,6 @@
 import { useCallback, useState, useEffect } from 'react';
 import ReactFlow, { MiniMap, Controls, Node, Edge } from 'react-flow-renderer';
-import Panel from 'react-flow-renderer';
+
 import { Button, styled } from '@semoss/ui';
 import { MetamodelNode } from './MetamodelNode';
 import { FloatingEdge } from './FloatingEdge';
@@ -71,8 +71,8 @@ export const Metamodel = (props: MetamodelProps) => {
     const {
         selectedNode = null,
         onSelectNode = () => null,
-        nodes = [],
         edges = [],
+        nodes = [],
         callback,
         isInteractive,
     } = props;
@@ -239,29 +239,35 @@ export const Metamodel = (props: MetamodelProps) => {
         // callback(payloadObj);
         callback(payloadObj);
     };
+    console.log('nodes: ', nodes);
+    console.log('props: ', props);
 
     return (
         <MetamodelContext.Provider value={metamodelContext}>
-            <ReactFlow
-                defaultNodes={nodes}
-                defaultEdges={edges}
+            {/* <ReactFlow
+                style={{ width: '100vw', height: '100vh' }}
+                nodes={nodes}
+                edges={edges}
                 nodeTypes={nodeTypes}
                 edgeTypes={edgeTypes}
                 fitView={true}
             >
-                <Panel>
-                    <Button
-                        onClick={() => {
-                            onSubmit();
-                        }}
-                    >
-                        Apply
-                    </Button>
-                </Panel>
                 <MiniMap />
                 <Controls showInteractive={false} />
-            </ReactFlow>
+            </ReactFlow> */}
 
+            <div style={{ height: '100%', width: '100%' }}>
+                <ReactFlow
+                    defaultNodes={nodes}
+                    defaultEdges={edges}
+                    nodeTypes={nodeTypes}
+                    edgeTypes={edgeTypes}
+                    fitView={true}
+                >
+                    <MiniMap />
+                    <Controls />
+                </ReactFlow>
+            </div>
             {/* {callback && (
                 <Button
                     onClick={() => {
