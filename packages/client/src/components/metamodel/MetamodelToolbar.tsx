@@ -10,10 +10,11 @@ const StyledButtonGroup = styled(ButtonGroup)(() => ({
     flexShrink: 0,
     borderRadius: 'var(--shape-border-radius-lg, 12px)',
     background: 'var(--light-background-paper, #FFF)',
-    // boxShadow: '0px 5px 22px 0px rgba(0, 0, 0, 0.06)',
+    boxShadow: '0px 5px 22px 0px rgba(0, 0, 0, 0.06)',
     border: 'none',
+    borderColor: 'none',
     // borderRadius: '16px',
-    boxShadow: '0 8px 16px 0 #BDC9D7',
+    // boxShadow: '0 8px 16px 0 #BDC9D7',
 }));
 
 const StyledButton = styled(Button)(() => ({
@@ -61,7 +62,7 @@ const ButtonLabel = styled(Typography)(() => ({
 }));
 
 export const MetamodelToolbar = () => (
-    <StyledButtonGroup variant="text">
+    <StyledButtonGroup variant="contained" color="inherit">
         <StyledButton variant="text" onClick={() => console.log('hello')}>
             <StyledSyncIcon />{' '}
             <ButtonLabel variant="body2">Sync Changes</ButtonLabel>
