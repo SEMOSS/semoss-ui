@@ -1,10 +1,12 @@
 import { useCallback, useState, useEffect } from 'react';
 import ReactFlow, { MiniMap, Controls, Node, Edge } from 'react-flow-renderer';
 
-import { Button, styled } from '@semoss/ui';
+import { styled } from '@semoss/ui';
 import { MetamodelNode } from './MetamodelNode';
 import { FloatingEdge } from './FloatingEdge';
 import { MetamodelContext, MetamodelContextType } from '@/contexts';
+
+import { MetamodelToolbar } from './MetamodelToolbar';
 
 const StyledMetamodelPage = styled('div')(() => ({
     display: 'flex',
@@ -35,6 +37,7 @@ const edgeTypes = {
 
 const nodeTypes = {
     metamodel: MetamodelNode,
+    // metamodelButtons: MetamodelButtonNode,
 };
 
 export type MetamodelNode = Node<
@@ -251,6 +254,7 @@ export const Metamodel = (props: MetamodelProps) => {
                 >
                     <MiniMap />
                     <Controls />
+                    <MetamodelToolbar />
                 </ReactFlow>
             </div>
             {/* {callback && (
