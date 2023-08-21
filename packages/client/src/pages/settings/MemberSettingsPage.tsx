@@ -593,7 +593,7 @@ export const MemberSettingsPage = () => {
                                             </List.Icon>
                                             <List.ItemText
                                                 primary={<strong>Admin</strong>}
-                                                secondary="All-Access pass to project information"
+                                                secondary="All-Access pass to app information"
                                             />
                                         </List.Item>
 
@@ -1014,7 +1014,7 @@ export const MemberSettingsPage = () => {
                                         </List.Icon>
                                         <List.ItemText
                                             primary={<strong>Admin</strong>}
-                                            secondary="All-Access pass to project information"
+                                            secondary="All-Access pass to app information"
                                         />
                                     </List.Item>
 

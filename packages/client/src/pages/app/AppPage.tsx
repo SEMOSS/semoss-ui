@@ -191,7 +191,7 @@ export const AppPage = observer(() => {
         try {
             const path = 'version/assets/';
 
-            // upnzip the file in the new project
+            // upnzip the file in the new app
             await monolithStore.runQuery(
                 `DeleteAsset(filePath=["${path}"], space=["${appId}"]);`,
             );
@@ -204,7 +204,7 @@ export const AppPage = observer(() => {
                 path,
             );
 
-            // upnzip the file in the new project
+            // upnzip the file in the new app
             await monolithStore.runQuery(
                 `UnzipFile(filePath=["${`${path}${upload[0].fileName}`}"], space=["${appId}"]);`,
             );
@@ -212,10 +212,10 @@ export const AppPage = observer(() => {
             // Load the insight classes
             await monolithStore.runQuery(`ReloadInsightClasses('${appId}');`);
 
-            // set the project portal
+            // set the app portal
             await monolithStore.setProjectPortal(false, appId, true, 'public');
 
-            // Publish the project the insight classes
+            // Publish the app the insight classes
             await monolithStore.runQuery(
                 `PublishProject('${appId}', release=true);`,
             );
@@ -245,7 +245,7 @@ export const AppPage = observer(() => {
         try {
             const path = 'version/assets/';
 
-            // upnzip the file in the new project
+            // upnzip the file in the new app
             const response = await monolithStore.runQuery(
                 `DownloadAsset(filePath=["${path}"], space=["${appId}"]);`,
             );

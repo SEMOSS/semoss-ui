@@ -80,7 +80,7 @@ const DEFAULT_CARDS = SETTINGS_ROUTES.filter(
 
 const IconMapper = {
     'Database Settings': <DatabaseLayers />,
-    'Project Settings': <Folder />,
+    'App Settings': <Folder />,
     'Insight Settings': <SEMOSS />,
     'Member Settings': <Group />,
     Configuration: <Construction />,
