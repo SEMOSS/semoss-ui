@@ -21,10 +21,12 @@ const StyledPage = styled('div')(() => ({
 }));
 
 const StyledMetamodelContainer = styled('section')(({ theme }) => ({
-    height: '55vh',
+    height: '60vh',
     width: '100%',
-    borderWidth: '1px',
-    borderStyle: 'solid',
+    // borderWidth: '1px',
+    // borderStyle: 'solid',
+    // borderRadius: '16px',
+    boxShadow: '0 8px 16px 0 #BDC9D7',
     // borderColor: theme.palette.outline, // TODO: create a theme variable
     borderRadius: theme.shape.borderRadius,
 }));
