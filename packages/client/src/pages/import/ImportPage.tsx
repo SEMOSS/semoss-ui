@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Page } from '@/components/ui/';
 import {
     Avatar,
@@ -29,6 +29,8 @@ import { useImport } from '@/hooks';
 import { ImportSpecificPage } from './ImportSpecificPage';
 import { ImportConnectionPage } from './ImportConnectionPage';
 
+import { useNavigate, useLocation } from 'react-router-dom';
+
 const StyledContainer = styled('div')(({ theme }) => ({
     display: 'flex',
     width: 'auto',
@@ -50,7 +52,12 @@ const StyledStack = styled('div')(({ theme }) => ({
     gap: theme.spacing(1),
 }));
 
-const StyledCard = styled(Card)(() => ({
+const StyledCard = styled(Card, {
+    shouldForwardProp: (prop) => prop !== 'disabled',
+})<{
+    disabled: boolean;
+}>(({ theme, disabled }) => ({
+    backgroundColor: disabled ? theme.palette.grey['100'] : 'white',
     '&:hover': {
         cursor: 'pointer',
     },
@@ -99,7 +106,11 @@ const StyledCardText = styled('p')({
     margin: '0',
 });
 
-const StyledFormTypeBox = styled(Box)({
+const StyledFormTypeBox = styled(Box, {
+    shouldForwardProp: (prop) => prop !== 'disabled',
+})<{
+    disabled: boolean;
+}>(({ theme, disabled }) => ({
     maxWidth: '215px',
     maxHeight: '75px',
     borderRadius: '12px',
@@ -110,6 +121,13 @@ const StyledFormTypeBox = styled(Box)({
     border: '1px solid rgba(0,0,0,0.1)',
     padding: '16px 24px',
     boxShadow: '0px 5px 22px 0px rgba(0,0,0,0.04)',
+    backgroundColor: disabled ? theme.palette.grey['100'] : 'white',
+}));
+
+const StyledSpan = styled('span')({
+    '&:hover': {
+        cursor: 'pointer',
+    },
 });
 
 const StyledCategoryTitle = styled(Box)({
@@ -130,8 +148,40 @@ const IconMapper = {
 export const ImportPage = () => {
     const [importSearch, setImportSearch] = React.useState('');
     const [search, setSearch] = React.useState('');
-
     const { steps, activeStep, setSteps } = useImport();
+
+    const navigate = useNavigate();
+    const { search: importParams } = useLocation();
+
+    useEffect(() => {
+        const paramedStep = {
+            title: '',
+            description: '',
+            data: '',
+        };
+        switch (importParams) {
+            case '':
+                break;
+            case '?type=database':
+                break;
+            case '?type=model':
+                paramedStep.title = 'Connect to Model';
+                paramedStep.description =
+                    "In an era fueled by information, the seamless interlinking of various databases stands as a cornerstone for unlocking the untapped potential of LLM applications. Whether you're a seasoned AI practitioner, a language aficionado, or an industry visionary, this page serves as your guiding star to grasp the spectrum of database options available within the LLM landscape.";
+                paramedStep.data = 'Connect to Model';
+
+                setSteps([...steps, paramedStep], steps.length + 1);
+                break;
+            case '?type=storage':
+                paramedStep.title = 'Connect to Storage';
+                paramedStep.description =
+                    "In an era fueled by information, the seamless interlinking of various databases stands as a cornerstone for unlocking the untapped potential of LLM applications. Whether you're a seasoned AI practitioner, a language aficionado, or an industry visionary, this page serves as your guiding star to grasp the spectrum of database options available within the LLM landscape.";
+                paramedStep.data = 'Connect to Storage';
+
+                setSteps([...steps, paramedStep], steps.length + 1);
+                break;
+        }
+    }, [importParams]);
 
     return (
         <>
@@ -140,16 +190,17 @@ export const ImportPage = () => {
                     <StyledStack>
                         {steps.length ? (
                             <Breadcrumbs separator="/">
-                                <span
+                                <StyledSpan
                                     onClick={() => {
                                         setSteps([], -1);
+                                        navigate('/import');
                                     }}
                                 >
                                     Import
-                                </span>
+                                </StyledSpan>
                                 {steps.map((step, i) => {
                                     return (
-                                        <span
+                                        <StyledSpan
                                             key={i}
                                             onClick={() => {
                                                 const newSteps = [];
@@ -165,7 +216,7 @@ export const ImportPage = () => {
                                             }}
                                         >
                                             {step.title}
-                                        </span>
+                                        </StyledSpan>
                                     );
                                 })}
                             </Breadcrumbs>
@@ -248,6 +299,7 @@ export const ImportPage = () => {
                                                     xl={3}
                                                 >
                                                     <StyledCard
+                                                        disabled={val.disabled}
                                                         onClick={() => {
                                                             // Document first step
                                                             const stepOne = {
@@ -257,14 +309,16 @@ export const ImportPage = () => {
                                                                 data: val.name,
                                                             };
 
-                                                            setSteps(
-                                                                [
-                                                                    ...steps,
-                                                                    stepOne,
-                                                                ],
-                                                                steps.length +
-                                                                    1,
-                                                            );
+                                                            if (!val.disabled) {
+                                                                setSteps(
+                                                                    [
+                                                                        ...steps,
+                                                                        stepOne,
+                                                                    ],
+                                                                    steps.length +
+                                                                        1,
+                                                                );
+                                                            }
                                                         }}
                                                     >
                                                         <StyledCardContent>
@@ -305,6 +359,7 @@ export const ImportPage = () => {
                                             xl={3}
                                         >
                                             <StyledCard
+                                                disabled={val.disabled}
                                                 onClick={() => {
                                                     // Document first step
                                                     const stepOne = {
@@ -362,7 +417,7 @@ export const ImportPage = () => {
                                                     'Drag and Drop Data'
                                                 ].map((stage, idx) => {
                                                     if (
-                                                        stage
+                                                        stage.name
                                                             .toLowerCase()
                                                             .includes(
                                                                 search.toLowerCase(),
@@ -379,19 +434,26 @@ export const ImportPage = () => {
                                                                 sm={1}
                                                             >
                                                                 <StyledFormTypeBox
+                                                                    disabled={
+                                                                        stage.disable
+                                                                    }
                                                                     onClick={() => {
-                                                                        setSteps(
-                                                                            [
-                                                                                ...steps,
-                                                                                {
-                                                                                    title: stage,
-                                                                                    description: `Fill out ${stage} details in order to work with data`,
-                                                                                    data: stage,
-                                                                                },
-                                                                            ],
-                                                                            steps.length +
-                                                                                1,
-                                                                        );
+                                                                        if (
+                                                                            !stage.disable
+                                                                        ) {
+                                                                            setSteps(
+                                                                                [
+                                                                                    ...steps,
+                                                                                    {
+                                                                                        title: stage.name,
+                                                                                        description: `Fill out ${stage} details in order to work with data`,
+                                                                                        data: stage,
+                                                                                    },
+                                                                                ],
+                                                                                steps.length +
+                                                                                    1,
+                                                                            );
+                                                                        }
                                                                     }}
                                                                 >
                                                                     <StyledInnerBox>
@@ -399,12 +461,13 @@ export const ImportPage = () => {
                                                                             src={
                                                                                 IconDBMapper[
                                                                                     stage
+                                                                                        .name
                                                                                 ]
                                                                             }
                                                                         />
                                                                         <StyledCardText>
                                                                             {
-                                                                                stage
+                                                                                stage.name
                                                                             }
                                                                         </StyledCardText>
                                                                     </StyledInnerBox>
@@ -429,7 +492,7 @@ export const ImportPage = () => {
                                                     'Connect to an External Database'
                                                 ].map((stage, idx) => {
                                                     if (
-                                                        stage
+                                                        stage.name
                                                             .toLowerCase()
                                                             .includes(
                                                                 search.toLowerCase(),
@@ -446,20 +509,27 @@ export const ImportPage = () => {
                                                                 sm={1}
                                                             >
                                                                 <StyledFormTypeBox
+                                                                    disabled={
+                                                                        stage.disable
+                                                                    }
                                                                     // title={stage}
                                                                     onClick={() => {
-                                                                        setSteps(
-                                                                            [
-                                                                                ...steps,
-                                                                                {
-                                                                                    title: stage,
-                                                                                    description: `Fill out ${stage} details in order to connect to datasource`,
-                                                                                    data: stage,
-                                                                                },
-                                                                            ],
-                                                                            steps.length +
-                                                                                1,
-                                                                        );
+                                                                        if (
+                                                                            !stage.disable
+                                                                        ) {
+                                                                            setSteps(
+                                                                                [
+                                                                                    ...steps,
+                                                                                    {
+                                                                                        title: stage.name,
+                                                                                        description: `Fill out ${stage.name} details in order to connect to datasource`,
+                                                                                        data: stage.name,
+                                                                                    },
+                                                                                ],
+                                                                                steps.length +
+                                                                                    1,
+                                                                            );
+                                                                        }
                                                                     }}
                                                                 >
                                                                     <StyledInnerBox>
@@ -467,12 +537,13 @@ export const ImportPage = () => {
                                                                             src={
                                                                                 IconDBMapper[
                                                                                     stage
+                                                                                        .name
                                                                                 ]
                                                                             }
                                                                         />
                                                                         <StyledCardText>
                                                                             {
-                                                                                stage
+                                                                                stage.name
                                                                             }
                                                                         </StyledCardText>
                                                                     </StyledInnerBox>
@@ -505,7 +576,7 @@ export const ImportPage = () => {
                                                     'Commercial Models'
                                                 ].map((stage, idx) => {
                                                     if (
-                                                        stage
+                                                        stage.name
                                                             .toLowerCase()
                                                             .includes(
                                                                 search.toLowerCase(),
@@ -522,19 +593,26 @@ export const ImportPage = () => {
                                                                 sm={1}
                                                             >
                                                                 <StyledFormTypeBox
+                                                                    disabled={
+                                                                        stage.disable
+                                                                    }
                                                                     onClick={() => {
-                                                                        setSteps(
-                                                                            [
-                                                                                ...steps,
-                                                                                {
-                                                                                    title: stage,
-                                                                                    description: `Fill out ${stage} details in order to add model to catalog`,
-                                                                                    data: stage,
-                                                                                },
-                                                                            ],
-                                                                            steps.length +
-                                                                                1,
-                                                                        );
+                                                                        if (
+                                                                            !stage.disable
+                                                                        ) {
+                                                                            setSteps(
+                                                                                [
+                                                                                    ...steps,
+                                                                                    {
+                                                                                        title: stage.name,
+                                                                                        description: `Fill out ${stage.name} details in order to add model to catalog`,
+                                                                                        data: stage.name,
+                                                                                    },
+                                                                                ],
+                                                                                steps.length +
+                                                                                    1,
+                                                                            );
+                                                                        }
                                                                     }}
                                                                 >
                                                                     <StyledInnerBox>
@@ -542,12 +620,13 @@ export const ImportPage = () => {
                                                                             src={
                                                                                 IconDBMapper[
                                                                                     stage
+                                                                                        .name
                                                                                 ]
                                                                             }
                                                                         />
                                                                         <StyledCardText>
                                                                             {
-                                                                                stage
+                                                                                stage.name
                                                                             }
                                                                         </StyledCardText>
                                                                     </StyledInnerBox>
@@ -571,7 +650,7 @@ export const ImportPage = () => {
                                                 {stepsTwo['Local Models'].map(
                                                     (stage, idx) => {
                                                         if (
-                                                            stage
+                                                            stage.name
                                                                 .toLowerCase()
                                                                 .includes(
                                                                     search.toLowerCase(),
@@ -588,20 +667,27 @@ export const ImportPage = () => {
                                                                     sm={1}
                                                                 >
                                                                     <StyledFormTypeBox
+                                                                        disabled={
+                                                                            stage.disable
+                                                                        }
                                                                         // title={stage}
                                                                         onClick={() => {
-                                                                            setSteps(
-                                                                                [
-                                                                                    ...steps,
-                                                                                    {
-                                                                                        title: stage,
-                                                                                        description: `Fill out ${stage} details in order to add model to catalog`,
-                                                                                        data: stage,
-                                                                                    },
-                                                                                ],
-                                                                                steps.length +
-                                                                                    1,
-                                                                            );
+                                                                            if (
+                                                                                !stage.disable
+                                                                            ) {
+                                                                                setSteps(
+                                                                                    [
+                                                                                        ...steps,
+                                                                                        {
+                                                                                            title: stage.name,
+                                                                                            description: `Fill out ${stage.name} details in order to add model to catalog`,
+                                                                                            data: stage.name,
+                                                                                        },
+                                                                                    ],
+                                                                                    steps.length +
+                                                                                        1,
+                                                                                );
+                                                                            }
                                                                         }}
                                                                     >
                                                                         <StyledInnerBox>
@@ -609,12 +695,13 @@ export const ImportPage = () => {
                                                                                 src={
                                                                                     IconDBMapper[
                                                                                         stage
+                                                                                            .name
                                                                                     ]
                                                                                 }
                                                                             />
                                                                             <StyledCardText>
                                                                                 {
-                                                                                    stage
+                                                                                    stage.name
                                                                                 }
                                                                             </StyledCardText>
                                                                         </StyledInnerBox>
@@ -641,7 +728,7 @@ export const ImportPage = () => {
                                                     'Embedded Models'
                                                 ].map((stage, idx) => {
                                                     if (
-                                                        stage
+                                                        stage.name
                                                             .toLowerCase()
                                                             .includes(
                                                                 search.toLowerCase(),
@@ -658,20 +745,27 @@ export const ImportPage = () => {
                                                                 sm={1}
                                                             >
                                                                 <StyledFormTypeBox
+                                                                    disabled={
+                                                                        stage.disable
+                                                                    }
                                                                     // title={stage}
                                                                     onClick={() => {
-                                                                        setSteps(
-                                                                            [
-                                                                                ...steps,
-                                                                                {
-                                                                                    title: stage,
-                                                                                    description: `Fill out ${stage} details in order to add model to catalog`,
-                                                                                    data: stage,
-                                                                                },
-                                                                            ],
-                                                                            steps.length +
-                                                                                1,
-                                                                        );
+                                                                        if (
+                                                                            !stage.disable
+                                                                        ) {
+                                                                            setSteps(
+                                                                                [
+                                                                                    ...steps,
+                                                                                    {
+                                                                                        title: stage.name,
+                                                                                        description: `Fill out ${stage.name} details in order to add model to catalog`,
+                                                                                        data: stage.name,
+                                                                                    },
+                                                                                ],
+                                                                                steps.length +
+                                                                                    1,
+                                                                            );
+                                                                        }
                                                                     }}
                                                                 >
                                                                     <StyledInnerBox>
@@ -679,12 +773,13 @@ export const ImportPage = () => {
                                                                             src={
                                                                                 IconDBMapper[
                                                                                     stage
+                                                                                        .name
                                                                                 ]
                                                                             }
                                                                         />
                                                                         <StyledCardText>
                                                                             {
-                                                                                stage
+                                                                                stage.name
                                                                             }
                                                                         </StyledCardText>
                                                                     </StyledInnerBox>
@@ -715,7 +810,7 @@ export const ImportPage = () => {
                                                 {stepsTwo['Add Storage'].map(
                                                     (stage, idx) => {
                                                         if (
-                                                            stage
+                                                            stage.name
                                                                 .toLowerCase()
                                                                 .includes(
                                                                     search.toLowerCase(),
@@ -732,20 +827,27 @@ export const ImportPage = () => {
                                                                     sm={1}
                                                                 >
                                                                     <StyledFormTypeBox
+                                                                        disabled={
+                                                                            stage.disable
+                                                                        }
                                                                         // title={stage}
                                                                         onClick={() => {
-                                                                            setSteps(
-                                                                                [
-                                                                                    ...steps,
-                                                                                    {
-                                                                                        title: stage,
-                                                                                        description: `Fill out ${stage} details in order to create new storage`,
-                                                                                        data: stage,
-                                                                                    },
-                                                                                ],
-                                                                                steps.length +
-                                                                                    1,
-                                                                            );
+                                                                            if (
+                                                                                !stage.disable
+                                                                            ) {
+                                                                                setSteps(
+                                                                                    [
+                                                                                        ...steps,
+                                                                                        {
+                                                                                            title: stage.name,
+                                                                                            description: `Fill out ${stage} details in order to create new storage`,
+                                                                                            data: stage.name,
+                                                                                        },
+                                                                                    ],
+                                                                                    steps.length +
+                                                                                        1,
+                                                                                );
+                                                                            }
                                                                         }}
                                                                     >
                                                                         <StyledInnerBox>
@@ -753,12 +855,13 @@ export const ImportPage = () => {
                                                                                 src={
                                                                                     IconDBMapper[
                                                                                         stage
+                                                                                            .name
                                                                                     ]
                                                                                 }
                                                                             />
                                                                             <StyledCardText>
                                                                                 {
-                                                                                    stage
+                                                                                    stage.name
                                                                                 }
                                                                             </StyledCardText>
                                                                         </StyledInnerBox>

@@ -1,9 +1,33 @@
 import { useCallback, useState, useEffect } from 'react';
 import ReactFlow, { MiniMap, Controls, Node, Edge } from 'react-flow-renderer';
-import { Button } from '@semoss/ui';
+import Panel from 'react-flow-renderer';
+import { Button, styled } from '@semoss/ui';
 import { MetamodelNode } from './MetamodelNode';
 import { FloatingEdge } from './FloatingEdge';
 import { MetamodelContext, MetamodelContextType } from '@/contexts';
+
+const StyledMetamodelPage = styled('div')(() => ({
+    display: 'flex',
+    width: '1271px',
+    height: '1032px',
+    padding: 'var(--spacing-spacing-08, 40px) 0px 20px 0px',
+    alignItems: 'flex-start',
+    gap: 'var(--spacing-spacing-05, 16px)',
+    flexShrink: 0,
+}));
+const StyledMetamodelContainer = styled('div')(() => ({
+    display: 'flex',
+    height: '785px',
+    flexDirection: 'column',
+    alignItems: 'flex-start',
+    gap: '24px',
+    flexShrink: 0,
+    alignSelf: 'stretch',
+}));
+const defaultViewport = { x: 0, y: 0, zoom: 1.5 };
+
+// const StyledReactFlowContainer = styled('div')(() => ({
+// }));
 
 const edgeTypes = {
     floating: FloatingEdge,
@@ -52,7 +76,8 @@ export const Metamodel = (props: MetamodelProps) => {
         callback,
         isInteractive,
     } = props;
-    console.log('props: ', props);
+
+    // debugger;
 
     // node is {
     //     data: { name: 'table', properties: [{ id: 'colid', name: 'colname', type: 'coltype' }] },
@@ -95,18 +120,31 @@ export const Metamodel = (props: MetamodelProps) => {
                 }
             }
         }
+        if (action === 'COLUMN_TYPE_CHANGE') {
+            // handle column type change
+        }
+        if (action === 'COLUMN_DESCRIPTION_CHANGE') {
+            // handle column type change
+        }
+        if (action === 'COLUMN_LOGICAL_NAME_CHANGE') {
+            // handle column type change
+        }
+
         if (action === 'TABLE_NAME_CHANGE') {
             // handle table name change
         }
-
+        if (action === 'TABLE_DESCRIPTION_CHANGE') {
+            // handle table relationship change
+        }
         if (action === 'TABLE_RELATIONSHIP_CHANGE') {
+            // handle table relationship change
+        }
+        if (action === 'TABLE_POSITION_CHANGE') {
             // handle table relationship change
         }
         // if action === 'column data type change'
     };
 
-    console.log('originalData: ', originalData);
-    console.log('data: ', data);
     // create the context
     const metamodelContext: MetamodelContextType = {
         selectedNodeId: selectedNode ? selectedNode.id : null,
@@ -127,8 +165,6 @@ export const Metamodel = (props: MetamodelProps) => {
                         }
                     }
                 }
-                console.log('node: ', node);
-                console.log('onSelectNode func: ', onSelectNode);
 
                 onSelectNode(node);
             },
@@ -139,21 +175,40 @@ export const Metamodel = (props: MetamodelProps) => {
     };
 
     const onSubmit = () => {
-        // format the data
-        const dataObj = {
-            metamodel: { relation: [], nodeProp: {} },
-            dataTypeMap: {},
+        const payloadObj = {
+            metamodel: {
+                relation: [
+                    // { fromTable: 'id', toTable: 'Drug', relName: 'id_Drug' },
+                ],
+                nodeProp: {
+                    // tableName: [ // 'colname' EXCLUDING THE FIRST COLUMN
+                    // ],
+                },
+            },
+            dataTypeMap: {
+                // colName: type,
+            },
+            newHeaders: {}, // oldColName: newColName
+            additionalDataTypes: {}, // colName: specificFormat
+            descriptionMap: {}, // colName: description
+            logicalNamesMap: {}, // colName/alias: logicalName
+            position: [{}],
         };
+        // // format the data
+        // const dataObj = {
+        //     metamodel: { relation: [], nodeProp: {} },
+        //     dataTypeMap: {},
+        // };
 
         // loop over data state
 
         // build metamodel relation for each table
         for (const edge of data.edges) {
             const relName = `${edge.source}_${edge.target}`;
-            dataObj.metamodel.relation.push({
-                relName: relName,
-                toTable: edge.target,
+            payloadObj.metamodel.relation.push({
                 fromTable: edge.source,
+                toTable: edge.target,
+                relName: relName,
             });
         }
 
@@ -161,24 +216,29 @@ export const Metamodel = (props: MetamodelProps) => {
 
         // build dataTypeMap for each table
         for (const node of data.nodes) {
+            console.log('node: ', node);
             // const temp = { [node.data.name]: [] };
-            const temp = [];
+            // const temp = [];
             for (const col of node.data.properties) {
-                dataObj.dataTypeMap[col.name] = col.type;
+                payloadObj.dataTypeMap[col.name] = col.type;
                 // temp[node.data.name].push(col.name);
-                temp.push(col.name);
+                // if (idx === 0) {
+                // no-op to skip pushing in the first column bc nodeProp does not accept the first column !!! Need to figure out why?
+                // } else {
+                // if (node.data.properties.length <= 1) {
+                //     // no-op
+                // } else {
+                //     temp.push(col.name);
+                // }
+                // }
             }
 
-            dataObj.metamodel.nodeProp[node.data.name] = temp;
+            payloadObj.metamodel.nodeProp[node.data.name] = [];
         }
 
-        console.log('dataObj: ', dataObj);
-        callback(dataObj);
+        // callback(payloadObj);
+        callback(payloadObj);
     };
-
-    useEffect(() => {
-        console.log('data changed: ', data);
-    }, [data]);
 
     return (
         <MetamodelContext.Provider value={metamodelContext}>
@@ -189,9 +249,19 @@ export const Metamodel = (props: MetamodelProps) => {
                 edgeTypes={edgeTypes}
                 fitView={true}
             >
+                {/* <Panel>
+                    <Button
+                        onClick={() => {
+                            onSubmit();
+                        }}
+                    >
+                        Apply
+                    </Button>
+                </Panel> */}
                 <MiniMap />
                 <Controls showInteractive={false} />
             </ReactFlow>
+
             {callback && (
                 <Button
                     onClick={() => {
@@ -210,3 +280,6 @@ export const Metamodel = (props: MetamodelProps) => {
  *  removed arg / prop in CSVForm calling Metamodel component bc it was null and caused error. And the function is not needed in the CSVForm
  *
  */
+
+// OBSERVATION: metamodel in legacy gives the table a primary key column that matches the table name...
+// dataType map needs to include the primary key for all tables
