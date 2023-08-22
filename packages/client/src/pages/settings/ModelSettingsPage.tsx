@@ -146,28 +146,6 @@ export const ModelSettingsPage = () => {
 
     const getDatabases = usePixel<
         {
-            // app_cost;
-            // app_favorite;
-            // app_id;
-            // app_name;
-            // app_subtype;
-            // app_type: 'MODEL';
-            // database_cost: '$';
-            // database_created_by: 'rmemis';
-            // database_created_by_type: 'Native';
-            // database_date_created: '2023-08-22 13:08:57.969';
-            // database_discoverable: false;
-            // database_favorite: 0;
-            // database_global: false;
-            // database_id: '05af805e-14c7-4da1-b0af-9a006421e6d7';
-            // database_name: 'test';
-            // database_subtype: 'OPEN_AI';
-            // database_type: 'MODEL';
-            // hasUpvoted: false;
-            // low_database_name: 'test';
-            // permission: 1;
-            // user_permission: 1;
-
             app_cost: string;
             app_id: string;
             app_name: string;

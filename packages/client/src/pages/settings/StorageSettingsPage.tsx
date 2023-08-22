@@ -30,7 +30,7 @@ export interface DBMember {
     SELECTED: boolean;
 }
 
-export interface Database {
+export interface Storage {
     app_cost: string;
     app_favorite: number;
     app_id: string;
@@ -70,12 +70,6 @@ const StyledSort = styled(Select)({
     width: '20%',
 });
 
-const StyledMenuItem = styled(Select.Item)({
-    width: '100%',
-    gap: '3px',
-    flexShrink: '0',
-});
-
 const initialState = {
     favoritedDbs: [],
     databases: [],
@@ -105,7 +99,7 @@ export const StorageSettingsPage = () => {
     const [search, setSearch] = useState('');
     const [sort, setSort] = useState('Name');
 
-    const [selectedApp, setSelectedApp] = useState<Database>(null);
+    const [selectedApp, setSelectedApp] = useState<Storage>(null);
 
     // To focus when getting new results
     const searchbarRef = useRef(null);

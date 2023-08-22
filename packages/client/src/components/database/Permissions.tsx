@@ -1281,7 +1281,7 @@ export const MembersTable = (props) => {
         | 'getEngineUsers'
         | 'getProjectUsers'
         | 'getInsightUsers' =
-        (type === 'database') | (type === 'model') | (type === 'storage')
+        type === 'database' || type === 'model' || type === 'storage'
             ? 'getEngineUsers'
             : type === 'app'
             ? 'getProjectUsers'
