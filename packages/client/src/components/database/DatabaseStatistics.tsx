@@ -6,7 +6,6 @@ import {
     DownloadForOffline,
     RemoveRedEyeOutlined,
 } from '@mui/icons-material';
-import { SEMOSS } from '@/assets/img/SEMOSS';
 
 import { usePixel } from '@/hooks';
 
@@ -56,14 +55,26 @@ interface DatabaseStatisticsProps {
 export const DatabaseStatistics = (props: DatabaseStatisticsProps) => {
     const { id } = props;
 
-    const {
-        status: usabilityStatus,
-        data: usabilityData,
-        refresh: usabilityRefresh,
-    } = usePixel<number>(`UsabilityScore(database = '${id}');`);
+    const { status, data } = usePixel<
+        | {
+              totalUses: number;
+              totalViews: number;
+              usabilityScore: number;
+              usedIn: unknown[];
+              usesByDate: Record<string, unknown>;
+              viewsByDate: Record<string, unknown>;
+          }
+        | false
+    >(`EngineActivity(engine='${id}');`);
 
-    if (usabilityStatus === 'ERROR') {
+    if (!data) {
+        return null;
+    }
+
+    if (status === 'ERROR') {
         return <div>Error</div>;
+    } else if (status !== 'SUCCESS') {
+        return <div>Loading</div>;
     }
 
     return (
@@ -79,7 +90,9 @@ export const DatabaseStatistics = (props: DatabaseStatisticsProps) => {
 
                         <StyledCardDetailsContainer>
                             <Typography variant="caption">Views</Typography>
-                            <Typography variant="caption">100</Typography>
+                            <Typography variant="caption">
+                                {data.totalViews}
+                            </Typography>
                         </StyledCardDetailsContainer>
                     </StyledCardContent>
                 </StyledCard>
@@ -95,7 +108,7 @@ export const DatabaseStatistics = (props: DatabaseStatisticsProps) => {
 
                         <StyledCardDetailsContainer>
                             <Typography variant="caption">Downloads</Typography>
-                            <Typography variant="caption">100</Typography>
+                            <Typography variant="caption">N/A</Typography>
                         </StyledCardDetailsContainer>
                     </StyledCardContent>
                 </StyledCard>
@@ -106,13 +119,14 @@ export const DatabaseStatistics = (props: DatabaseStatisticsProps) => {
                         <StyledCardImageContainer>
                             <Icon color="primary">
                                 <AutoGraph />
-                                {/* <SEMOSS width={36} height={40} /> */}
                             </Icon>
                         </StyledCardImageContainer>
 
                         <StyledCardDetailsContainer>
                             <Typography variant="caption">Insights</Typography>
-                            <Typography variant="caption">100</Typography>
+                            <Typography variant="caption">
+                                {data.usedIn.length}
+                            </Typography>
                         </StyledCardDetailsContainer>
                     </StyledCardContent>
                 </StyledCard>
@@ -129,7 +143,7 @@ export const DatabaseStatistics = (props: DatabaseStatisticsProps) => {
                         <StyledCardDetailsContainer>
                             <Typography variant="caption">Usability</Typography>
                             <Typography variant="caption">
-                                {usabilityData}/10
+                                {data.usabilityScore}/10
                             </Typography>
                         </StyledCardDetailsContainer>
                     </StyledCardContent>

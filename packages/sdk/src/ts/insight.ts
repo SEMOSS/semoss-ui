@@ -1,5 +1,15 @@
 import axios from 'axios';
-import { getSystemConfig, login, logout, oauth, runPixel } from './api';
+
+import { ENV } from './config';
+import {
+    getSystemConfig,
+    login,
+    logout,
+    oauth,
+    runPixel,
+    upload,
+    download,
+} from './api';
 
 interface InsightStoreInterface {
     /** Id of the app */
@@ -33,24 +43,11 @@ export class Insight {
     private _store: InsightStoreInterface = {
         appId: '',
         insightId: '',
-        isInitialized: true,
+        isInitialized: false,
         isAuthorized: false,
         error: null,
         system: null,
     };
-
-    /**
-     * Id of the app
-     * @param appId - id of app
-     */
-    constructor(appId: string) {
-        if (!appId) {
-            throw new Error(`AppId is required`);
-        }
-
-        // set the appId
-        this._store.appId = appId;
-    }
 
     /** Getters */
     /**
@@ -85,20 +82,44 @@ export class Insight {
     /**
      * Initialize the insight
      *
-     * insightId - insightId to initialize with
+     * options - options to initialize with
      */
-    initialize = async (insightId?: string): Promise<void> => {
-        // try to set the insightID from the url if it is there
+    initialize = async (): Promise<void> => {
+        // reset it
+        this._store.isInitialized = false;
+
+        // try to set the env from the window
         try {
-            if (!insightId) {
-                const urlParams = new URLSearchParams(window.location.search);
-                insightId = urlParams.get('semoss-insight-id');
+            const env = JSON.parse(
+                document.getElementById('semoss-env').textContent,
+            ) as {
+                APP: string;
+                MODULE: string;
+            };
+
+            if (env) {
+                if (env.APP) {
+                    ENV.APP = env.APP;
+                }
+
+                if (env.MODULE) {
+                    ENV.MODULE = env.MODULE;
+                }
             }
         } catch (e) {
             console.error(e);
         }
 
         try {
+            // validate
+            if (!ENV.MODULE) {
+                throw new Error('module is required');
+            }
+
+            if (!ENV.APP) {
+                throw new Error(`appId is required`);
+            }
+
             // get the system information
             await this.initializeSystem();
 
@@ -108,7 +129,7 @@ export class Insight {
                 Object.keys(this._store.system.config.logins).length > 0
             ) {
                 // initialize the app
-                await this.initializeApp(insightId);
+                await this.initializeApp();
 
                 // track that the user is authorized
                 this._store.isAuthorized = true;
@@ -200,7 +221,7 @@ export class Insight {
      */
     private initializeApp = async (id?: string): Promise<void> => {
         const { insightId, errors } = await runPixel<[Record<string, unknown>]>(
-            `SetContext("${this._store.appId}")`,
+            `SetContext("${ENV.APP}")`,
             id || 'new',
         );
 
@@ -354,6 +375,51 @@ export class Insight {
 
                 // success
                 return response;
+            } catch (error) {
+                this.processActionError(error);
+            }
+        },
+
+        /**
+         * Upload a file
+         *
+         * @param files- file objects to upload
+         * @param project - project to upload file to
+         * @param path - relative path
+         */
+        uploadFile: async (
+            files: File[],
+            insightId: string,
+            projectId: string,
+            path: string | null,
+        ): Promise<
+            {
+                fileName: string;
+                fileLocation: string;
+            }[]
+        > => {
+            try {
+                const response = await upload(
+                    files,
+                    insightId || this._store.insightId,
+                    projectId,
+                    path,
+                );
+                return response;
+            } catch (error) {
+                this.processActionError(error);
+            }
+        },
+
+        /**
+         * Download a file by using a unique key
+         *
+         * @param insightID - insightID to download the file
+         * @param fileKey - id for the file to download
+         */
+        download: async (insightID: string, fileKey: string): Promise<void> => {
+            try {
+                await download(insightID, fileKey);
             } catch (error) {
                 this.processActionError(error);
             }

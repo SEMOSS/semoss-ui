@@ -137,7 +137,7 @@ export const ProjectSettingsPage = () => {
     // // show a loading screen when getProjects is pending
     // if (getProjects.status !== 'SUCCESS') {
     //     return (
-    //         <LoadingScreen.Trigger description="Retrieving project folders" />
+    //         <LoadingScreen.Trigger description="Retrieving app folders" />
     //     );
     // }
 
@@ -239,7 +239,7 @@ export const ProjectSettingsPage = () => {
                               </Grid>
                           );
                       })
-                    : 'No projects to choose from'}
+                    : 'No apps to choose from'}
             </Grid>
         </StyledContainer>
     );

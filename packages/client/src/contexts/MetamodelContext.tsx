@@ -8,6 +8,10 @@ export type MetamodelContextType = {
     selectedNodeId: string;
     /** Selected a new node by Id */
     onSelectNodeId: (id: string) => void;
+    /** Boolean to determine if metamodel is interactive aka editable */
+    isInteractive: boolean;
+    /** update metamodel state */
+    updateData: (nodeData: any, action: string) => void;
 };
 
 /**

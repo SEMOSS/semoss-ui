@@ -31,7 +31,7 @@ export const SETTINGS_ROUTES: {
         path: '',
         description: 'View and edit settings for the application',
         adminDescription:
-            'View and make changes to settings at the database, project, and insight level.  As an admin conduct queries on SEMOSS specific databases as well as view and edit existing social properties.',
+            'View and make changes to settings at the database, app, and insight level.  As an admin conduct queries on SEMOSS specific databases as well as view and edit existing social properties.',
         icon: mdiCog,
         history: [],
     },
@@ -51,35 +51,35 @@ export const SETTINGS_ROUTES: {
         history: ['database', 'database/<id>'],
     },
     {
-        title: 'Project Settings',
-        path: 'project',
-        description: 'View and edit settings for projects',
+        title: 'App Settings',
+        path: 'app',
+        description: 'View and edit settings for apps',
         icon: mdiClipboardTextOutline,
-        history: ['project'],
+        history: ['app'],
     },
     {
-        title: 'Project Settings',
-        path: 'project/:id',
+        title: 'App Settings',
+        path: 'app/:id',
         description:
-            'View member permissions, pending requests, and all other viewable settings pertaining to the project',
+            'View member permissions, pending requests, and all other viewable settings pertaining to the app',
         icon: mdiClipboardTextOutline,
-        history: ['project', 'project/<id>'],
+        history: ['app', 'app/<id>'],
     },
-    {
-        title: 'Insight Settings',
-        path: 'insight',
-        description: 'View and edit settings for project insights',
-        icon: mdiTextBoxMultipleOutline,
-        history: ['insight'],
-    },
-    {
-        title: 'Insight Settings',
-        path: 'insight/:id/:projectId',
-        description:
-            'View member permissions, pending requests, and all other viewable settings pertaining to the project',
-        icon: mdiClipboardTextOutline,
-        history: ['insight', 'insight/<id>/<projectId>'],
-    },
+    // {
+    //     title: 'Insight Settings',
+    //     path: 'insight',
+    //     description: 'View and edit settings for app insights',
+    //     icon: mdiTextBoxMultipleOutline,
+    //     history: ['insight'],
+    // },
+    // {
+    //     title: 'Insight Settings',
+    //     path: 'insight/:id/:appId',
+    //     description:
+    //         'View member permissions, pending requests, and all other viewable settings pertaining to the app',
+    //     icon: mdiClipboardTextOutline,
+    //     history: ['insight', 'insight/<id>/<appId>'],
+    // },
     {
         title: 'Member Settings',
         path: 'members',

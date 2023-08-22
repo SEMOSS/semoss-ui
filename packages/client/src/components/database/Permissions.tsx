@@ -37,6 +37,7 @@ import {
     RemoveRedEyeRounded,
     ClearRounded,
     Lock,
+    Visibility,
     VisibilityOffRounded,
 } from '@mui/icons-material';
 
@@ -210,7 +211,7 @@ const permissionMapper = {
  * @name mapMonolithFunction
  */
 const mapMonolithFunction = (
-    workflow: 'database' | 'project' | 'insight',
+    workflow: 'database' | 'app' | 'insight',
     key: string,
 ) => {
     const API_MAP = {
@@ -288,7 +289,7 @@ export interface PermissionsProps {
 }
 
 export const Permissions = (props: PermissionsProps) => {
-    const { id, name, global, visibility, projectid } = props.config;
+    const { id, name, projectid } = props.config;
     const resolvedPathname = useResolvedPath('').pathname;
 
     // Helper hooks
@@ -301,17 +302,22 @@ export const Permissions = (props: PermissionsProps) => {
     // Actually see if user is an owner or editor, quick fix
     const permission = adminMode ? 1 : 3;
 
-    // Props we use for api fns to hit | "project, database, insight"
-    const type: 'database' | 'project' | 'insight' | '' =
-        resolvedPathname.includes('database')
-            ? 'database'
-            : resolvedPathname.includes('project')
-            ? 'project'
-            : resolvedPathname.includes('insight')
-            ? 'insight'
-            : resolvedPathname.includes(`database/${id}`)
-            ? 'database'
-            : '';
+    // Props we use for api fns to hit | "app, database, insight"
+    const type: 'database' | 'app' | 'insight' | '' = resolvedPathname.includes(
+        'database',
+    )
+        ? 'database'
+        : resolvedPathname.includes('app')
+        ? 'app'
+        : resolvedPathname.includes('insight')
+        ? 'insight'
+        : resolvedPathname.includes(`database/${id}`)
+        ? 'database'
+        : resolvedPathname.includes('model')
+        ? 'database'
+        : resolvedPathname.includes('storage')
+        ? 'database'
+        : '';
 
     // if no api prop --> redirect
     if (!type) {
@@ -403,9 +409,7 @@ export const Permissions = (props: PermissionsProps) => {
                     label="Pending Requests"
                     disabled={permission === 3}
                 />
-                {type === 'project' && (
-                    <ToggleTabsGroup.Item label="Data Apps" />
-                )}
+                {type === 'app' && <ToggleTabsGroup.Item label="Data Apps" />}
             </ToggleTabsGroup>
 
             {view === 0 && (
@@ -446,7 +450,7 @@ const StyledNoPendingReqs = styled('div')(({ theme }) => ({
 }));
 
 interface WorkflowAccessProps {
-    type: 'database' | 'project' | 'insight' | 'storage' | 'model';
+    type: 'database' | 'app' | 'insight' | 'storage' | 'model';
     id: string;
     projectId: string;
     onDelete: () => void;
@@ -466,7 +470,7 @@ export const WorkflowAccess = (props: WorkflowAccessProps) => {
     const getWorkflowInfoString =
         type === 'database'
             ? `EngineInfo(engine='${id}');`
-            : type === 'project'
+            : type === 'app'
             ? `ProjectInfo(project='${id}')`
             : type === 'insight'
             ? '1+1'
@@ -523,8 +527,8 @@ export const WorkflowAccess = (props: WorkflowAccessProps) => {
         const functionType =
             type === 'database' || type === 'model' || type === 'storage'
                 ? 'database'
-                : type === 'project'
-                ? 'project'
+                : type === 'app'
+                ? 'app'
                 : 'insight';
 
         monolithStore[mapMonolithFunction(functionType, 'SetVisible')](
@@ -554,8 +558,8 @@ export const WorkflowAccess = (props: WorkflowAccessProps) => {
         const functionType =
             type === 'database' || type === 'model' || type === 'storage'
                 ? 'database'
-                : type === 'project'
-                ? 'project'
+                : type === 'app'
+                ? 'app'
                 : 'insight';
 
         monolithStore[mapMonolithFunction(functionType, 'SetGlobal')](
@@ -612,7 +616,11 @@ export const WorkflowAccess = (props: WorkflowAccessProps) => {
                 <StyledAlert
                     icon={
                         <StyledIcon>
-                            <VisibilityOffRounded />
+                            {!discoverable ? (
+                                <VisibilityOffRounded />
+                            ) : (
+                                <Visibility />
+                            )}
                         </StyledIcon>
                     }
                     action={
@@ -706,7 +714,7 @@ export const PendingMembersTable = (props) => {
     const getPendingUsersString =
         type === 'database'
             ? `GetEngineUserAccessRequest(engine='${id}');`
-            : type === 'project'
+            : type === 'app'
             ? `GetProjectUserAccessRequest(project='${id}')`
             : type === 'insight' &&
               `GetInsightUserAccessRequest(project='${projectId}', id='${id}');`;
@@ -1277,7 +1285,7 @@ export const MembersTable = (props) => {
         | 'getInsightUsers' =
         type === 'database'
             ? 'getEngineUsers'
-            : type === 'project'
+            : type === 'app'
             ? 'getProjectUsers'
             : 'getInsightUsers';
 
@@ -1648,6 +1656,7 @@ export const MembersTable = (props) => {
                                             }}
                                         />
                                     </Table.Cell>
+                                    <Table.Cell>ID</Table.Cell>
                                     <Table.Cell>Name</Table.Cell>
                                     <Table.Cell>Permission</Table.Cell>
                                     <Table.Cell>Permission Date</Table.Cell>
@@ -1702,11 +1711,18 @@ export const MembersTable = (props) => {
                                                         }}
                                                     />
                                                 </Table.Cell>
+
                                                 <Table.Cell
                                                     component="td"
                                                     scope="row"
                                                 >
-                                                    {user.id}: {user.name}
+                                                    {user.id}
+                                                </Table.Cell>
+                                                <Table.Cell
+                                                    component="td"
+                                                    scope="row"
+                                                >
+                                                    {user.name}
                                                 </Table.Cell>
                                                 <Table.Cell>
                                                     <RadioGroup

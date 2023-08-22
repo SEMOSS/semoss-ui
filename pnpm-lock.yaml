@@ -18,89 +18,6 @@ importers:
       lint-staged: 13.2.3
       npm-run-all: 4.1.5
 
-  apps/policy/client:
-    specifiers:
-      '@mdi/js': ^6.9.96
-      '@mdi/react': ^1.6.1
-      '@mui/icons-material': ^5.14.1
-      '@semoss/sdk': workspace:*
-      '@semoss/ui': workspace:*
-      '@types/marked': ^5.0.0
-      '@types/node': ^16.11.47
-      '@types/react': ^17.0.48
-      '@types/react-router-dom': ^5.3.3
-      '@types/webpack': ^5.28.0
-      '@typescript-eslint/eslint-plugin': ^5.32.0
-      '@typescript-eslint/parser': ^5.32.0
-      axios: ^0.24.0
-      css-loader: ^6.7.1
-      dompurify: ^3.0.5
-      dotenv: ^16.0.1
-      eslint: ^8.21.0
-      eslint-config-prettier: ^8.5.0
-      eslint-plugin-prettier: ^4.2.1
-      eslint-plugin-react: ^7.30.1
-      history: ^5.3.0
-      html-webpack-plugin: ^5.5.0
-      identity-obj-proxy: ^3.0.0
-      markdown-to-jsx: ^7.2.1
-      marked: ^5.1.1
-      mini-css-extract-plugin: ^2.6.1
-      npm-run-all: ^4.1.5
-      prettier: 2.4.1
-      raw-loader: ^4.0.2
-      react: ^17.0.2
-      react-dom: ^17.0.2
-      react-hook-form: ^7.34.2
-      react-router-dom: ^6.3.0
-      style-loader: ^3.3.1
-      ts-loader: ^9.3.1
-      typescript: ^4.7.4
-      webpack: ^5.74.0
-      webpack-cli: ^4.10.0
-      webpack-dev-server: ^4.9.3
-    dependencies:
-      '@mdi/js': 6.9.96
-      '@mdi/react': 1.6.1
-      '@mui/icons-material': 5.14.3_7a30a420946de3203f357fe957d1f856
-      '@semoss/sdk': link:../../../packages/sdk
-      '@semoss/ui': link:../../../packages/ui
-      axios: 0.24.0
-      dompurify: 3.0.5
-      history: 5.3.0
-      markdown-to-jsx: 7.3.2_react@17.0.2
-      marked: 5.1.2
-      react: 17.0.2
-      react-dom: 17.0.2_react@17.0.2
-      react-hook-form: 7.45.4_react@17.0.2
-      react-router-dom: 6.14.2_react-dom@17.0.2+react@17.0.2
-    devDependencies:
-      '@types/marked': 5.0.1
-      '@types/node': 16.18.39
-      '@types/react': 17.0.63
-      '@types/react-router-dom': 5.3.3
-      '@types/webpack': 5.28.1_webpack-cli@4.10.0
-      '@typescript-eslint/eslint-plugin': 5.62.0_3f039935af53b1da8113d7d515f7f6a2
-      '@typescript-eslint/parser': 5.62.0_eslint@8.46.0+typescript@4.9.5
-      css-loader: 6.8.1_webpack@5.88.2
-      dotenv: 16.3.1
-      eslint: 8.46.0
-      eslint-config-prettier: 8.10.0_eslint@8.46.0
-      eslint-plugin-prettier: 4.2.1_e15f367fa3c61f99450af3504c5ca303
-      eslint-plugin-react: 7.33.1_eslint@8.46.0
-      html-webpack-plugin: 5.5.3_webpack@5.88.2
-      identity-obj-proxy: 3.0.0
-      mini-css-extract-plugin: 2.7.6_webpack@5.88.2
-      npm-run-all: 4.1.5
-      prettier: 2.4.1
-      raw-loader: 4.0.2_webpack@5.88.2
-      style-loader: 3.3.3_webpack@5.88.2
-      ts-loader: 9.4.4_typescript@4.9.5+webpack@5.88.2
-      typescript: 4.9.5
-      webpack: 5.88.2_webpack-cli@4.10.0
-      webpack-cli: 4.10.0_ef4530ae1fab1aa17d92addf798ee094
-      webpack-dev-server: 4.15.1_b6ed4fc45665505c19b044157b25ef91
-
   packages/client:
     specifiers:
       '@emotion/react': ^11.11.1
@@ -366,6 +283,8 @@ importers:
 
   packages/sdk:
     specifiers:
+      '@rollup/plugin-commonjs': 19.0.2
+      '@rollup/plugin-node-resolve': 13.3.0
       '@types/node': ^16.11.47
       '@types/react': ^17.0.48
       '@types/react-dom': 17.0.20
@@ -379,10 +298,12 @@ importers:
       identity-obj-proxy: ^3.0.0
       npm-run-all: ^4.1.5
       prettier: 2.4.1
-      react: ^17.0.2
-      react-dom: ^17.0.2
+      rollup: 2.79.1
+      tslib: ^2.4.0
       typescript: ^4.7.4
     devDependencies:
+      '@rollup/plugin-commonjs': 19.0.2_rollup@2.79.1
+      '@rollup/plugin-node-resolve': 13.3.0_rollup@2.79.1
       '@types/node': 16.18.39
       '@types/react': 17.0.63
       '@types/react-dom': 17.0.20
@@ -396,8 +317,8 @@ importers:
       identity-obj-proxy: 3.0.0
       npm-run-all: 4.1.5
       prettier: 2.4.1
-      react: 17.0.2
-      react-dom: 17.0.2_react@17.0.2
+      rollup: 2.79.1
+      tslib: 2.6.1
       typescript: 4.9.5
 
   packages/ui:
@@ -4100,22 +4021,6 @@ packages:
     dependencies:
       '@babel/runtime': 7.22.10
       '@mui/material': 5.14.4_0915c20a846dc1f1e157b09ce585fa44
-      '@types/react': 17.0.63
-      react: 17.0.2
-    dev: false
-
-  /@mui/icons-material/5.14.3_7a30a420946de3203f357fe957d1f856:
-    resolution: {integrity: sha512-XkxWPhageu1OPUm2LWjo5XqeQ0t2xfGe8EiLkRW9oz2LHMMZmijvCxulhgquUVTF1DnoSh+3KoDLSsoAFtVNVw==}
-    engines: {node: '>=12.0.0'}
-    peerDependencies:
-      '@mui/material': ^5.0.0
-      '@types/react': ^17.0.0 || ^18.0.0
-      react: ^17.0.0 || ^18.0.0
-    peerDependenciesMeta:
-      '@types/react':
-        optional: true
-    dependencies:
-      '@babel/runtime': 7.22.10
       '@types/react': 17.0.63
       react: 17.0.2
     dev: false
@@ -8347,10 +8252,6 @@ packages:
   /@types/lodash/4.14.196:
     resolution: {integrity: sha512-22y3o88f4a94mKljsZcanlNWPzO0uBsBdzLAngf2tp533LzZcQzb6+eZPJ+vCTt+bqF2XnvT9gejTLsAcJAJyQ==}
 
-  /@types/marked/5.0.1:
-    resolution: {integrity: sha512-Y3pAUzHKh605fN6fvASsz5FDSWbZcs/65Q6xYRmnIP9ZIYz27T4IOmXfH9gWJV1dpi7f1e7z7nBGUTx/a0ptpA==}
-    dev: true
-
   /@types/mdx/2.0.6:
     resolution: {integrity: sha512-sVcwEG10aFU2KcM7cIA0M410UPv/DesOPyG8zMVk0QUDexHA3lYmGucpEpZ2dtWWhi2ip3CG+5g/iH0PwoW4Fw==}
     dev: true
@@ -10220,6 +10121,7 @@ packages:
   /chokidar/3.5.3:
     resolution: {integrity: sha512-Dr3sfKRP6oTcjf2JmUmFJfeVMvXBdegxB0iVQ5eb2V10uFJUCAS8OByZdVAyVb8xXNz3GjjTgj9kLWsZTqE6kw==}
     engines: {node: '>= 8.10.0'}
+    requiresBuild: true
     dependencies:
       anymatch: 3.1.3
       braces: 3.0.2
@@ -11500,10 +11402,6 @@ packages:
 
   /dompurify/2.4.7:
     resolution: {integrity: sha512-kxxKlPEDa6Nc5WJi+qRgPbOAbgTpSULL+vI3NUXsZMlkJxTqYI9wg5ZTay2sFrdZRWHPWNi+EdAhcJf81WtoMQ==}
-    dev: false
-
-  /dompurify/3.0.5:
-    resolution: {integrity: sha512-F9e6wPGtY+8KNMRAVfxeCOHU0/NPWMSENNq4pQctuXRqqdEPW7q3CrLbR5Nse044WwacyjHGOMlvNsBe1y6z9A==}
     dev: false
 
   /domutils/2.8.0:
@@ -13154,12 +13052,6 @@ packages:
     resolution: {integrity: sha512-tzcUFauisWKNHaRkN4Wjl/ZA07gENAjFl3J/c480dprkGTg5EQstgaNFqBfUqCq54kZRIEcreTsAgF/m2quD7A==}
     dev: true
 
-  /history/5.3.0:
-    resolution: {integrity: sha512-ZqaKwjjrAYUYfLG+htGaIIZ4nioX2L70ZUMIFysS3xvBsSG4x/n1V6TXV3N8ZYNuFGlDirFg32T7B6WOUPDYcQ==}
-    dependencies:
-      '@babel/runtime': 7.22.10
-    dev: false
-
   /hoist-non-react-statics/3.3.2:
     resolution: {integrity: sha512-/gGivxi8JPKWNm/W0jSmzcMPpfpPLc3dY/6GxhX2hQ9iGj3aDfklV4ET7NjKpSinLpJ5vafa9iiGIEZg10SfBw==}
     dependencies:
@@ -14669,6 +14561,7 @@ packages:
       react: '>= 0.14.0'
     dependencies:
       react: 17.0.2
+    dev: true
 
   /marked/0.7.0:
     resolution: {integrity: sha512-c+yYdCZJQrsRjTPhUx7VKkApw9bwDkNbHUKo1ovgcfDjb2kc8rLuRbIFyXL5WOEUwzSSKo3IXpph2K6DqB/KZg==}
@@ -14679,12 +14572,6 @@ packages:
   /marked/4.3.0:
     resolution: {integrity: sha512-PRsaiG84bK+AMvxziE/lCFss8juXjNaWzVbN5tXAm4XjeaS9NAHhop+PjQxz2A9h8Q4M/xGmzP8vqNwy6JeK0A==}
     engines: {node: '>= 12'}
-    hasBin: true
-    dev: false
-
-  /marked/5.1.2:
-    resolution: {integrity: sha512-ahRPGXJpjMjwSOlBoTMZAK7ATXkli5qCPxZ21TG44rx1KEo44bii4ekgTDQPNRQ4Kh7JMb9Ub1PVk1NxRSsorg==}
-    engines: {node: '>= 16'}
     hasBin: true
     dev: false
 

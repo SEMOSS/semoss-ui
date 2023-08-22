@@ -2,21 +2,19 @@ import { EngineContextType, EngineContext } from './EngineContext';
 import { MetamodelContextType, MetamodelContext } from './MetamodelContext';
 import { SettingsContextType, SettingsContext } from './SettingsContext';
 import { RootStoreContextType, RootStoreContext } from './RootStoreContext';
-import {
-    ImportStorageContextType,
-    ImportStorageContext,
-} from './ImportStorageContext';
+import { ImportContext, ImportContextType } from './ImportContext';
 
 export type {
     EngineContextType,
-    ImportStorageContextType,
+    ImportContextType,
     MetamodelContextType,
     RootStoreContextType,
     SettingsContextType,
 };
+
 export {
     EngineContext,
-    ImportStorageContext,
+    ImportContext,
     MetamodelContext,
     SettingsContext,
     RootStoreContext,

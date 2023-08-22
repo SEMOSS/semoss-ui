@@ -240,7 +240,7 @@ export const AppSettings = (props) => {
     /** LOADING */
     if (getPortalDetails.status !== 'SUCCESS') {
         return (
-            <LoadingScreen.Trigger description="Getting project portal details" />
+            <LoadingScreen.Trigger description="Getting app portal details" />
         );
     }
 
@@ -323,7 +323,7 @@ export const AppSettings = (props) => {
      * @desc Publishes Portal
      */
     const publish = () => {
-        const pixelString = `PublishProject('${id}');`;
+        const pixelString = `PublishProject('${id}', release=true);`;
 
         monolithStore
             .runQuery(pixelString)

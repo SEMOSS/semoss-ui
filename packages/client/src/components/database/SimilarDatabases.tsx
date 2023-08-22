@@ -11,7 +11,8 @@ interface SimilarDatabasesProps {
 }
 
 const StyledCardContainer = styled('div')({
-    width: '260px',
+    minWidth: '260px',
+    height: '260px',
 });
 
 export const SimilarDatabases = (props: SimilarDatabasesProps) => {
@@ -27,7 +28,14 @@ export const SimilarDatabases = (props: SimilarDatabasesProps) => {
 
     if (status === 'SUCCESS' && data.length) {
         return (
-            <Stack direction={'row'} flexWrap={'nowrap'} overflow={'auto'}>
+            <div
+                style={{
+                    width: '100%',
+                    display: 'flex',
+                    gap: '8px',
+                    overflowX: 'auto',
+                }}
+            >
                 {data.map((db, i) => {
                     return (
                         <StyledCardContainer key={i}>
@@ -35,14 +43,13 @@ export const SimilarDatabases = (props: SimilarDatabasesProps) => {
                                 id={db.database_id}
                                 name={db.database_name}
                                 onClick={() => {
-                                    console.log('navigating');
                                     navigate(`/database/${db.database_id}`);
                                 }}
                             />
                         </StyledCardContainer>
                     );
                 })}
-            </Stack>
+            </div>
         );
     } else if (status === 'LOADING') {
         return (

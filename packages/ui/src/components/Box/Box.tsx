@@ -10,6 +10,7 @@ export interface BoxProps {
 
     /** custom style object */
     sx?: SxProps;
+    title?: string;
 }
 export const Box = (props: BoxProps) => {
     const { children, sx } = props;

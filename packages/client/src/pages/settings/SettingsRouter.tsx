@@ -30,8 +30,8 @@ const SETTINGS_COMPONETS = {
 
     database: DatabaseSettingsPage,
     'database/:id': DatabaseSettingsDetailPage,
-    project: ProjectSettingsPage,
-    'project/:id': ProjectSettingsDetailPage,
+    app: ProjectSettingsPage,
+    'app/:id': ProjectSettingsDetailPage,
     insight: InsightSettingsPage,
     'insight/:id/:projectId': InsightSettingsDetailPage,
 
