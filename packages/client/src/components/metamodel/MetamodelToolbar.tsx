@@ -2,17 +2,18 @@ import React from 'react';
 import { Button, styled, ButtonGroup, Typography } from '@semoss/ui';
 import { Sync, Add, Save } from '@mui/icons-material';
 
-const StyledButtonGroup = styled(ButtonGroup)(() => ({
+const StyledButtonGroup = styled(ButtonGroup)(({ theme }) => ({
     display: 'inline-flex',
     margin: '9px 9px 9px 9px',
     height: '42px',
+    maxWidth: '377.854px',
     alignItems: 'center',
     flexShrink: 0,
-    borderRadius: 'var(--shape-border-radius-lg, 12px)',
-    background: 'var(--light-background-paper, #FFF)',
+    borderRadius: theme.shape.borderRadiusLg,
+    background: theme.palette.background.paper,
     boxShadow: '0px 5px 22px 0px rgba(0, 0, 0, 0.06)',
-    border: 'none',
-    borderColor: 'none',
+    // border: 'none',
+    // borderColor: 'none',
     // borderRadius: '16px',
     // boxShadow: '0 8px 16px 0 #BDC9D7',
 }));
@@ -23,7 +24,7 @@ const StyledButton = styled(Button)(() => ({
     justifyContent: 'center',
     alignItems: 'center',
     gap: '8px',
-    border: 'none',
+    // border: 'none',
 }));
 const StyledIconButton = styled(Button)(() => ({
     display: 'flex',
@@ -32,7 +33,7 @@ const StyledIconButton = styled(Button)(() => ({
     alignItems: 'center',
     gap: '10px',
     alignSelf: 'stretch',
-    border: 'none',
+    // border: 'none',
 }));
 const StyledSyncIcon = styled(Sync)(() => ({
     display: 'flex',
@@ -62,7 +63,7 @@ const ButtonLabel = styled(Typography)(() => ({
 }));
 
 export const MetamodelToolbar = () => (
-    <StyledButtonGroup variant="contained" color="inherit">
+    <StyledButtonGroup variant="outlined" color="inherit">
         <StyledButton variant="text" onClick={() => console.log('hello')}>
             <StyledSyncIcon />{' '}
             <ButtonLabel variant="body2">Sync Changes</ButtonLabel>
