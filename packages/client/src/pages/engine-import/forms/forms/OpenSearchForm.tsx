@@ -1,20 +1,68 @@
 import React from 'react';
 import { useForm, Controller } from 'react-hook-form';
-import { Button, TextField, Stack } from '@semoss/ui';
 import { ImportFormComponent } from './formTypes';
+import { Button, TextField, Stack } from '@semoss/ui';
+import { useImport } from '@/hooks';
 
 export const OpenSearchForm: ImportFormComponent = () => {
-    const { control, reset } = useForm();
+    const { steps, setSteps } = useImport();
 
-    React.useEffect(() => {
-        reset({
-            PORT: '9200',
-            HTTP_TYPE: 'https',
-        });
-    }, []);
+    const { control, reset, handleSubmit } = useForm<{
+        // Metadata
+        DATABASE_NAME: string;
+        DATABASE_DESCRIPTION: string;
+        DATABASE_TAGS: string[];
+
+        // Connection
+        dbDriver: string;
+        additional: string;
+        hostname: string;
+        port: string;
+        httpType: string;
+        USERNAME: string;
+        PASSWORD: string;
+        CONNECTION_URL: string;
+    }>({
+        defaultValues: {
+            dbDriver: 'OPEN_SEARCH',
+            port: '9200',
+            httpType: 'https',
+        },
+    });
+
+    /**
+     *
+     * @param data
+     * @desc sets new step to be shown on ImportPage.tsx
+     */
+    const onSubmit = async (data) => {
+        const conDetails = {
+            dbDriver: data.dbDriver,
+            additional: data.additional,
+            hostname: data.hostname,
+            port: data.port,
+            httpType: data.httpType,
+            USERNAME: data.USERNAME,
+            PASSWORD: data.PASSWORD,
+            CONNECTION_URL: data.CONNECTION_URL,
+        };
+
+        setSteps(
+            [
+                ...steps,
+                {
+                    title: data.DATABASE_NAME,
+                    description:
+                        'View and edit the relationships of the selected tables from the external connection that was made.',
+                    data: conDetails,
+                },
+            ],
+            steps.length + 1,
+        );
+    };
 
     return (
-        <form>
+        <form onSubmit={handleSubmit(onSubmit)}>
             <Stack rowGap={2}>
                 <Controller
                     name={'DATABASE_NAME'}
@@ -66,7 +114,7 @@ export const OpenSearchForm: ImportFormComponent = () => {
                     }}
                 />
                 <Controller
-                    name={'HOST_NAME'}
+                    name={'hostname'}
                     control={control}
                     rules={{ required: true }}
                     render={({ field, fieldState }) => {
@@ -83,7 +131,7 @@ export const OpenSearchForm: ImportFormComponent = () => {
                     }}
                 />
                 <Controller
-                    name={'PORT'}
+                    name={'port'}
                     control={control}
                     rules={{ required: false }}
                     render={({ field, fieldState }) => {
@@ -99,7 +147,7 @@ export const OpenSearchForm: ImportFormComponent = () => {
                     }}
                 />
                 <Controller
-                    name={'HTTP_PATH'}
+                    name={'httpType'}
                     control={control}
                     rules={{ required: false }}
                     render={({ field, fieldState }) => {
@@ -147,7 +195,7 @@ export const OpenSearchForm: ImportFormComponent = () => {
                     }}
                 />
                 <Controller
-                    name={'ADDITIONAL_PARAMETERS'}
+                    name={'additional'}
                     control={control}
                     rules={{ required: false }}
                     render={({ field, fieldState }) => {
@@ -163,7 +211,7 @@ export const OpenSearchForm: ImportFormComponent = () => {
                     }}
                 />
                 <Controller
-                    name={'JDBC_URL'}
+                    name={'CONNECTION_URL'}
                     control={control}
                     rules={{ required: false }}
                     render={({ field, fieldState }) => {
@@ -178,6 +226,17 @@ export const OpenSearchForm: ImportFormComponent = () => {
                         );
                     }}
                 />
+                <div
+                    style={{
+                        display: 'flex',
+                        width: '100%',
+                        justifyContent: 'flex-end',
+                    }}
+                >
+                    <Button variant="contained" type={'submit'}>
+                        Connect
+                    </Button>
+                </div>
             </Stack>
         </form>
     );

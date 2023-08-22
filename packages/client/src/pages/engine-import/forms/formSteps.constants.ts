@@ -180,7 +180,7 @@ export const stepsTwo = {
 
         {
             name: 'H2',
-            disable: false,
+            disable: true,
         },
 
         {
@@ -190,29 +190,29 @@ export const stepsTwo = {
 
         {
             name: 'Impala',
-            disable: true,
+            disable: false,
         },
 
         {
             name: 'MariaDB',
-            disable: true,
+            disable: false,
         },
 
         {
             name: 'MySQL',
-            disable: true,
+            disable: false,
         },
         {
             name: 'Open Search',
-            disable: true,
+            disable: false,
         },
         {
             name: 'Oracle',
-            disable: true,
+            disable: false,
         },
         {
             name: 'Phoenix',
-            disable: true,
+            disable: false,
         },
         {
             name: 'Postgres',
@@ -220,19 +220,19 @@ export const stepsTwo = {
         },
         {
             name: 'Redshift',
-            disable: true,
+            disable: false,
         },
         {
             name: 'SAP Hana',
-            disable: true,
+            disable: false,
         },
         {
             name: 'SEMOSS',
-            disable: true,
+            disable: false,
         },
         {
             name: 'Snowflake',
-            disable: true,
+            disable: false,
         },
         {
             name: 'SQL Server',
@@ -245,15 +245,15 @@ export const stepsTwo = {
         },
         {
             name: 'Teradata',
-            disable: true,
+            disable: false,
         },
         {
             name: 'Tibco',
-            disable: true,
+            disable: false,
         },
         {
             name: 'Trino',
-            disable: true,
+            disable: false,
         },
     ],
     ['Add Storage']: [
@@ -270,7 +270,7 @@ export const stepsTwo = {
             disable: false,
         },
         {
-            name: 'Google Cloud Storage',
+            name: 'Google Cloud',
             disable: false,
         },
         {
@@ -426,7 +426,7 @@ export const IconDBMapper = {
     'Amazon S3': AMAZON_S3,
     Dreamhost: DREAMHOST,
     Dropbox: dropbox,
-    'Google Cloud Storage': GOOGLE_CLOUD,
+    'Google Cloud': GOOGLE_CLOUD,
     'Google Drive': GOOGLE_DRIVE,
     'Microsoft Azure Blob Storage': AZURE_BLOB,
     'Microsoft OneDrive': ONEDRIVE,

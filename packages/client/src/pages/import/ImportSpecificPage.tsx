@@ -160,11 +160,12 @@ export const ImportSpecificPage = () => {
         /** Drag and Drop: END */
     };
 
-    const getForm = (form) => {
+    const getForm = (form, i) => {
         return React.createElement(form.component, {
             submitFunc: formSubmit,
             metamodel: metamodel,
             predictDataTypes: predictDataTypes,
+            key: i,
         });
     };
 
@@ -175,9 +176,9 @@ export const ImportSpecificPage = () => {
             ) : steps[0].title === 'Connect to Storage' ? (
                 <StorageForm submitFunc={(vals) => formSubmit(vals)} />
             ) : (
-                DATABASE_FORM_ROUTES.map((f) => {
+                DATABASE_FORM_ROUTES.map((f, i) => {
                     if (f.name === steps[1].title) {
-                        return getForm(f);
+                        return getForm(f, i);
                     }
                 })
             )}
