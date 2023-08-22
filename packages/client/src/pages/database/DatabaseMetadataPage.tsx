@@ -14,6 +14,7 @@ import { ArrowCircleDown, Create } from '@mui/icons-material';
 import { usePixel, useDatabase, useRootStore } from '@/hooks';
 import { Section } from '@/components/ui';
 import { Metamodel } from '@/components/metamodel';
+import { MetamodelToolbar } from '@/components/metamodel/MetamodelToolbar';
 
 const StyledPage = styled('div')(() => ({
     position: 'relative',
@@ -26,9 +27,10 @@ const StyledMetamodelContainer = styled('section')(({ theme }) => ({
     // borderWidth: '1px',
     // borderStyle: 'solid',
     // borderRadius: '16px',
-    boxShadow: '0 8px 16px 0 #BDC9D7',
+    // boxShadow: '0 8px 16px 0 #BDC9D7',
     // borderColor: theme.palette.outline, // TODO: create a theme variable
-    borderRadius: theme.shape.borderRadius,
+    // borderRadius: theme.shape.borderRadius,
+    borderRadius: theme.shape.borderRadiusNone,
 }));
 
 const StyledTableContainer = styled(Table.Container)(() => ({
@@ -229,6 +231,7 @@ export const DatabaseMetadataPage = observer(() => {
                 >
                     Metamodel
                 </Section.Header>
+                <MetamodelToolbar />
                 <Stack spacing={2}>
                     {/* <StyledSelect
                         value={selectedNode || ''}
@@ -247,6 +250,7 @@ export const DatabaseMetadataPage = observer(() => {
                             );
                         })}
                     </StyledSelect> */}
+
                     <StyledMetamodelContainer>
                         <Metamodel
                             nodes={nodes}
