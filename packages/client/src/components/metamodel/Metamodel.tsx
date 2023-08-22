@@ -1,31 +1,19 @@
 import { useCallback, useState, useEffect } from 'react';
-import ReactFlow, { MiniMap, Controls, Node, Edge } from 'react-flow-renderer';
+import ReactFlow, {
+    MiniMap,
+    Controls,
+    Node,
+    Edge,
+    Background,
+} from 'react-flow-renderer';
 
-import { styled } from '@semoss/ui';
+import { styled, Button } from '@semoss/ui';
 import { MetamodelNode } from './MetamodelNode';
 import { FloatingEdge } from './FloatingEdge';
 import { MetamodelContext, MetamodelContextType } from '@/contexts';
 
 import { MetamodelToolbar } from './MetamodelToolbar';
 
-const StyledMetamodelPage = styled('div')(() => ({
-    display: 'flex',
-    width: '1271px',
-    height: '1032px',
-    padding: 'var(--spacing-spacing-08, 40px) 0px 20px 0px',
-    alignItems: 'flex-start',
-    gap: 'var(--spacing-spacing-05, 16px)',
-    flexShrink: 0,
-}));
-const StyledMetamodelContainer = styled('div')(() => ({
-    display: 'flex',
-    height: '785px',
-    flexDirection: 'column',
-    alignItems: 'flex-start',
-    gap: '24px',
-    flexShrink: 0,
-    alignSelf: 'stretch',
-}));
 const defaultViewport = { x: 0, y: 0, zoom: 1.5 };
 
 // const StyledReactFlowContainer = styled('div')(() => ({
@@ -242,9 +230,22 @@ export const Metamodel = (props: MetamodelProps) => {
         callback(payloadObj);
     };
 
+    const StyledImportButton = styled(Button)(({ theme }) => ({
+        position: 'absolute',
+        bottom: 0,
+        right: 0,
+        display: 'flex',
+        flexDirection: 'column',
+        justifyContent: 'center',
+        alignItems: 'center',
+        borderRadius: theme.shape.borderRadiusLg,
+        background: theme.palette.primary.main,
+        color: 'var(--light-primary-contrast, #FFF)',
+    }));
+
     return (
         <MetamodelContext.Provider value={metamodelContext}>
-            <div style={{ height: '100%', width: '100%' }}>
+            <div style={{ height: '95%', width: '100%' }}>
                 <ReactFlow
                     defaultNodes={nodes}
                     defaultEdges={edges}
@@ -252,10 +253,13 @@ export const Metamodel = (props: MetamodelProps) => {
                     edgeTypes={edgeTypes}
                     fitView={true}
                 >
+                    <Background variant="dots" />
                     <MiniMap />
                     <Controls />
-                    <MetamodelToolbar />
                 </ReactFlow>
+                {/* <StyledImportButton variant="contained">
+                    Import
+                </StyledImportButton> */}
             </div>
             {/* {callback && (
                 <Button
