@@ -210,7 +210,7 @@ const permissionMapper = {
  * @name mapMonolithFunction
  */
 const mapMonolithFunction = (
-    workflow: 'database' | 'app' | 'insight',
+    workflow: 'database' | 'app' | 'insight' | 'storage' | 'model',
     key: string,
 ) => {
     const API_MAP = {
