@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { NodeProps, Handle, Position } from 'react-flow-renderer';
+import React, { useState, useRef, useEffect } from 'react';
+import { NodeProps, Handle, Position, useEdges } from 'react-flow-renderer';
 
 import {
     styled,
@@ -9,6 +9,9 @@ import {
     Card,
     List,
     Table,
+    TextField,
+    Select,
+    Menu,
 } from '@semoss/ui';
 import {
     TableChartOutlined,
@@ -18,6 +21,7 @@ import {
     Delete,
     AddCircleOutlineRounded,
     KeyRounded,
+    DragIndicatorRounded,
 } from '@mui/icons-material';
 
 import { useMetamodel } from '@/hooks';
@@ -159,6 +163,7 @@ type MetamodelNodeProps = NodeProps<{
 }>;
 
 const _MetamodelNode = (props: MetamodelNodeProps) => {
+    const headerRef = useRef();
     const { id, data } = props;
 
     const { selectedNodeId, onSelectNodeId, isInteractive, updateData } =
@@ -166,10 +171,24 @@ const _MetamodelNode = (props: MetamodelNodeProps) => {
     const [openEditColumnModal, setOpenEditColumnModal] = useState(false);
     const [editTable, setEditTable] = useState(false);
 
+    const [metamodelCardWidth, setMetamodelCardWidth] = useState('215px');
+
+    useEffect(() => {
+        if (!headerRef?.current?.clientWidth) return;
+        // if (headerRef.current.clientWidth === )
+        setMetamodelCardWidth(
+            `${Math.floor(1.5 * headerRef.current.clientWidth)}`,
+        );
+    }, [headerRef?.current]);
+
+    useEffect(() => {
+        console.log('metamodelCardwid: ', metamodelCardWidth);
+    }, [metamodelCardWidth]);
+
     /** STYLES */
     const StyledMetamodelCard = styled('div', {
         shouldForwardProp: (prop) => prop !== 'isSelected',
-    })<{ isSelected: boolean }>(({ isSelected }) => ({
+    })<{ isSelected: boolean }>(({ theme, isSelected }) => ({
         display: 'inline-flex',
         flexDirection: 'column',
         // height: isSelected ? '355px' : '',
@@ -177,7 +196,7 @@ const _MetamodelNode = (props: MetamodelNodeProps) => {
         alignItems: 'flex-start',
         flexShrink: isSelected ? 0 : '',
         borderRadius: '16px',
-        boxShadow: '0 8px 16px 0 #BDC9D7',
+        // boxShadow: '0 8px 16px 0 #BDC9D7',
         // borderRadius: 'var(--border-radius-radius-large, 12px)',
         // boxShadow: isSelected
         //     ? '0px 5px 22px 0px #D6EAFF'
@@ -188,27 +207,31 @@ const _MetamodelNode = (props: MetamodelNodeProps) => {
             ? '1px solid var(--light-primary-shades-30-p, rgba(4, 113, 240, 0.30))'
             : '',
     }));
-    const StyledMetamodelCardHeader = styled('div')(() => {
+    const StyledMetamodelCardHeader = styled('div')(({ theme }) => {
         return {
             display: 'flex',
             // maxWidth: '215px',
-            width: editTable ? '373px' : '325px',
-            height: '44px !important',
+            // width: editTable ? '373px' : '325px',
+            minWidth: '215px',
+            height: '44px',
             padding: '16px',
             alignItems: 'center',
             gap: '10px',
             borderRadius: '12px 12px 0px 0px',
-            background: 'var(--semoss-blue-blue-50, #E2F2FF)',
+            background: theme.palette.purple['50'],
+            flexShrink: 0,
+            flexGrow: 1,
         };
     });
     const StyledMetamodelCardContent = styled('div')(() => ({
         display: 'flex',
-        width: editTable ? '373px' : '325px',
+        width: `${metamodelCardWidth}px`,
         paddingBottom: '0px',
         flexDirection: 'column',
         alignItems: 'flex-start',
         borderRadius: '0px 12px 12px 12px',
         background: '#FFF',
+        flexGrow: 1,
     }));
     const StyledMetamodelCardItem = styled('div', {
         shouldForwardProp: (prop) => prop !== 'isPrimary',
@@ -232,27 +255,32 @@ const _MetamodelNode = (props: MetamodelNodeProps) => {
         if (cellPosition === 'first') {
             return {
                 display: 'flex',
-                height: '44px',
+                // maxHeight: '44px',
                 width: '114.667px',
                 padding: '12px 16px',
                 alignItems: 'center',
+                border: 'none',
             };
         }
         if (cellPosition === 'second') {
             return {
                 display: 'flex',
+                // maxHeight: '44px',
                 width: '114.667px',
                 padding: '12px 16px',
                 alignItems: 'center',
+                border: 'none',
             };
         }
         if (cellPosition === 'third') {
             return {
                 display: 'flex',
+                // maxHeight: '44px',
                 padding: '10px 16px',
                 justifyContent: 'flex-end',
                 alignItems: 'center',
                 flex: '1 0 0',
+                border: 'none',
             };
         }
     });
@@ -290,7 +318,7 @@ const _MetamodelNode = (props: MetamodelNodeProps) => {
     });
 
     // contains table icon
-    const StyledTableIconContainer = styled('div')(() => ({
+    const StyledTableIconContainer = styled('div')(({ theme }) => ({
         display: 'flex',
         width: '30px',
         height: '30px',
@@ -300,12 +328,12 @@ const _MetamodelNode = (props: MetamodelNodeProps) => {
         gap: '10px',
         flexShrink: 0,
         borderRadius: '8px',
-        // border: '1px solid var(--alt-purple-alt-purple-400, #975FE4)',
-        border: '1px solid var(--light-primary-main, #0471F0)',
+        border: `1px solid ${theme.palette.purple['400']}`,
+        // border: '1px solid var(--light-primary-main, #0471F0)',
         background: '#FFF',
     }));
 
-    const StyledTableIcon = styled(TableIconBlue)(() => ({
+    const StyledTableIcon = styled(TableIcon)(() => ({
         display: 'flex',
         padding: '4px',
         justifyContent: 'center',
@@ -319,17 +347,35 @@ const _MetamodelNode = (props: MetamodelNodeProps) => {
     // contains header cell and aligns it with a gap
     const StyledHeaderCellContainer = styled('div')(() => ({
         display: 'flex',
-        width: '143px',
+        // width: '143px',
+        maxHeight: editTable ? '40px' : '',
         flexDirection: 'column',
         alignItems: 'flex-start',
         gap: '4px',
         flex: '1 0 0',
     }));
 
+    const StyledTextField = styled(TextField)(() => ({
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'flex-start',
+        gap: '3px',
+    }));
+    // const StyledTextField = styled(TextField)(({ theme }) => ({
+    //     display: 'flex',
+    //     // maxHeight: '36px',
+    //     width: '220px',
+    //     padding: 'var(--shape-border-radius-none, 0px) 12px',
+    //     flexDirection: 'column',
+    //     alignItems: 'flex-start',
+    //     gap: theme.shape.borderRadiusNone,
+    //     borderRadius: theme.shape.borderRadiusNone,
+    // }));
+
     // contains header text and icon
     const StyledHeaderCell = styled('div')(() => ({
         display: 'flex',
-        width: '143px',
+        // width: '143px',
         alignItems: 'flex-start',
         // alignItems: 'center',
         alignSelf: 'stretch',
@@ -379,17 +425,143 @@ const _MetamodelNode = (props: MetamodelNodeProps) => {
         color: isPrimary ? 'rgba(4, 113, 240, 1)' : 'rgba(181, 181, 181, 1)',
     }));
 
-    const StyledTableFooterRow = styled('div')(() => ({
+    const StyledTableFooterRow = styled('div')(({ theme }) => ({
         display: 'flex',
         height: '44px',
-        width: '325px',
+        width: editTable ? '373px' : `${metamodelCardWidth}px`,
         justifyContent: 'center',
         alignItems: 'center',
-        backgroundColor: 'var(--light-background-default, #FAFAFA)',
+        background: theme.palette.secondary.light,
     }));
 
     const StyledHandle = styled(Handle)(() => ({
         // opacity: 0,
+    }));
+
+    const StyledDivider = styled('div')(() => ({
+        height: '1px',
+        alignSelf: 'stretch',
+        border: '1px solid var(--light-other-divider, rgba(0, 0, 0, 0.10))',
+    }));
+
+    /** Edit State styles */
+    const StyledEditRow = styled('div')(() => ({
+        display: 'flex',
+        // height: '54px',
+        padding: '8px 0px 2px 0px',
+        alignItems: 'flex-start',
+        gap: '0px 0px',
+        alignSelf: 'stretch',
+        borderRadius: '0px 0px',
+        background: 'rgba(255, 255, 255, 0.00)',
+    }));
+
+    const StyledDragIconCell = styled('div')(() => ({
+        display: 'flex',
+        padding: '14px 0px 8px 16px',
+        justifyContent: 'flex-end',
+        alignItems: 'center',
+        gap: '12px',
+    }));
+    const StyledDragIconContainer = styled('div')(() => ({
+        display: 'flex',
+        padding: '2px',
+        alignItems: 'center',
+        borderRadius: '48px',
+        color: 'rgba(0, 0, 0, 0.54)',
+    }));
+    const StyledDragIconInnerContainer = styled('div')(() => ({
+        display: 'flex',
+        alignItems: 'flex-start',
+    }));
+    const StyledDragIcon = styled(DragIndicatorRounded)(() => ({
+        display: 'flex',
+        width: '20px',
+        height: '20px',
+        justifyContent: 'center',
+        alignItems: 'center',
+    }));
+
+    const StyledEditCell = styled('div', {
+        shouldForwardProp: (prop) => prop !== 'cellPosition',
+    })<{
+        /** Track the cell position. Can be first, second, or third */
+        cellPosition: string;
+    }>(({ cellPosition }) => {
+        if (cellPosition === 'first') {
+            return {
+                display: 'flex',
+                width: '252px',
+                padding: '12px 16px',
+                alignItems: 'center',
+                border: 'none',
+            };
+        }
+        if (cellPosition === 'second') {
+            return {
+                display: 'flex',
+                width: '252px',
+                padding: '12px 16px',
+                alignItems: 'center',
+                border: 'none',
+                overflow: 'visible',
+            };
+        }
+        if (cellPosition === 'third') {
+            return {
+                display: 'flex',
+                padding: '10px 16px',
+                justifyContent: 'flex-end',
+                alignItems: 'center',
+                border: 'none',
+            };
+        }
+    });
+
+    const StyledEditMetamodelCard = styled('div')(({ theme }) => ({
+        display: 'inline-flex',
+        flexDirection: 'column',
+        padding: '0px',
+        alignItems: 'flex-start',
+        gap: '0px',
+        borderRadius: '0px 12px',
+        boxShadow: '0px 0px',
+    }));
+
+    const StyledEditMetamodelCardHeader = styled('div')(({ theme }) => {
+        return {
+            display: 'flex',
+            padding: '8px 16px',
+            alignItems: 'center',
+            gap: '10px',
+            borderRadius: '12px 12px 0px 0px',
+            background: theme.palette.purple['50'],
+        };
+    });
+
+    // contains header cell and aligns it with a gap
+    const StyledEditHeaderCellContainer = styled('div')(() => ({
+        display: 'flex',
+        padding: 'var(--shape-border-radius-none, 0px)',
+        alignItems: 'center',
+        gap: '10px',
+        borderRadius: 'var(--shape-border-radius-none, 0px)',
+    }));
+    const StyledEditHeaderCell = styled('div')(() => ({
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'flex-start',
+        gap: '3px',
+    }));
+
+    const StyledEditMetamodelCardContent = styled('div')(({ theme }) => ({
+        display: 'flex',
+        padding: theme.shape.borderRadiusNone,
+        flexDirection: 'column',
+        alignItems: 'flex-start',
+        gap: 'var(--shape-border-radius-none, 0px)',
+        borderRadius: 'var(--shape-border-radius-none, 0px) 12px 12px 12px',
+        background: '#FFF',
     }));
 
     // return (
@@ -546,6 +718,128 @@ const _MetamodelNode = (props: MetamodelNodeProps) => {
     //         )}
     //     </StyledMetamodelCard>
     // );
+
+    if (editTable) {
+        return (
+            <>
+                <StyledHandle type="target" position={Position.Left} />
+                <StyledEditMetamodelCard
+                    isSelected={selectedNodeId === id}
+                    onClick={() => {
+                        onSelectNodeId(id);
+                    }}
+                >
+                    <StyledEditMetamodelCardHeader>
+                        <StyledTableIconContainer>
+                            <StyledTableIcon />
+                        </StyledTableIconContainer>
+                        <StyledEditHeaderCellContainer>
+                            <StyledHeaderCell>
+                                <StyledEditHeaderCell>
+                                    <TextField
+                                        variant="outlined"
+                                        value={data.name}
+                                    />
+                                </StyledEditHeaderCell>
+
+                                <StyledEditIconContainer>
+                                    <StyledEditIcon
+                                        onClick={() => setEditTable(!editTable)}
+                                    />
+                                </StyledEditIconContainer>
+                            </StyledHeaderCell>
+                        </StyledEditHeaderCellContainer>
+                    </StyledEditMetamodelCardHeader>
+                    <StyledEditMetamodelCardContent>
+                        {data.properties.map((p, idx) => {
+                            return (
+                                <>
+                                    <StyledEditRow
+                                        key={p.id}
+                                        isPrimary={idx === 0 ? true : false}
+                                    >
+                                        <StyledDragIconCell>
+                                            <StyledDragIconContainer>
+                                                <StyledDragIconInnerContainer>
+                                                    <StyledDragIcon />
+                                                </StyledDragIconInnerContainer>
+                                            </StyledDragIconContainer>
+                                        </StyledDragIconCell>
+                                        <StyledEditCell cellPosition="first">
+                                            {/* <StyledTextFieldCell> */}
+                                            <TextField
+                                                variant="outlined"
+                                                value={p.name}
+                                            />
+                                            {/* </StyledTextFieldCell> */}
+                                        </StyledEditCell>
+
+                                        <StyledEditCell cellPosition="second">
+                                            {/* <StyledTextFieldCell> */}
+                                            {/* <TextField
+                                                variant="outlined"
+                                                value={p.type}
+                                            /> */}
+                                            {/* </StyledTextFieldCell> */}
+                                            <Select
+                                                fullWidth
+                                                sx={{
+                                                    minWidth: '126px',
+                                                    width: '126px',
+                                                }}
+                                                value={p.type}
+                                                onChange={(value) =>
+                                                    console.log(
+                                                        'value type: ',
+                                                        value,
+                                                    )
+                                                }
+                                            >
+                                                <Menu.Item
+                                                    key={'123'}
+                                                    value={'INT'}
+                                                >
+                                                    int
+                                                </Menu.Item>
+                                                <Menu.Item
+                                                    key={'456'}
+                                                    value={'CHAR'}
+                                                >
+                                                    char
+                                                </Menu.Item>
+                                                <Menu.Item
+                                                    key={'789'}
+                                                    value={'BOOLEAN'}
+                                                >
+                                                    boolean
+                                                </Menu.Item>
+                                            </Select>
+                                        </StyledEditCell>
+                                        {idx === 0 || idx === 1 ? (
+                                            <StyledEditCell cellPosition="third">
+                                                <StyledKeyIconContainer>
+                                                    <StyledKeyIcon
+                                                        isPrimary={idx === 0}
+                                                    />
+                                                </StyledKeyIconContainer>
+                                            </StyledEditCell>
+                                        ) : null}
+                                    </StyledEditRow>
+                                    {idx === 0 ? <StyledDivider /> : null}
+                                </>
+                            );
+                        })}
+                        <StyledHandle type="source" position={Position.Right} />
+                        <StyledTableFooterRow>
+                            <AddCircleOutlineRounded
+                                sx={{ color: 'rgba(0, 0, 0, 0.54)' }}
+                            />
+                        </StyledTableFooterRow>
+                    </StyledEditMetamodelCardContent>
+                </StyledEditMetamodelCard>
+            </>
+        );
+    }
     return (
         <>
             <StyledHandle type="target" position={Position.Left} />
@@ -555,17 +849,16 @@ const _MetamodelNode = (props: MetamodelNodeProps) => {
                     onSelectNodeId(id);
                 }}
             >
-                <StyledMetamodelCardHeader>
+                <StyledMetamodelCardHeader ref={headerRef}>
                     <StyledTableIconContainer>
                         <StyledTableIcon />
                     </StyledTableIconContainer>
                     <StyledHeaderCellContainer>
                         <StyledHeaderCell>
-                            {/* <StyledHeaderTextContainer> */}
                             <StyledHeaderText variant="body1">
                                 {data.name.toLowerCase().replaceAll(' ', '_')}
                             </StyledHeaderText>
-                            {/* </StyledHeaderTextContainer> */}
+
                             <StyledEditIconContainer>
                                 <StyledEditIcon
                                     onClick={() => setEditTable(!editTable)}
@@ -575,33 +868,46 @@ const _MetamodelNode = (props: MetamodelNodeProps) => {
                     </StyledHeaderCellContainer>
                 </StyledMetamodelCardHeader>
                 <StyledMetamodelCardContent>
-                    {data.properties.map((p, idx) => (
-                        <StyledMetamodelCardItem
-                            key={p.id}
-                            isPrimary={idx === 0 ? true : false}
-                        >
-                            <StyledMetamodelCardItemCell cellPosition="first">
-                                <StyledMetamodelCardItemCellText variant="body2">
-                                    {p.name.toLowerCase().replaceAll(' ', '_')}
-                                </StyledMetamodelCardItemCellText>
-                            </StyledMetamodelCardItemCell>
-                            <StyledMetamodelCardItemCell cellPosition="second">
-                                <StyledColumnTypeText
-                                    variant="body2"
-                                    columnDataType={p.type ? p.type : ''}
+                    {data.properties.map((p, idx) => {
+                        return (
+                            <>
+                                <StyledMetamodelCardItem
+                                    key={p.id}
+                                    isPrimary={idx === 0 ? true : false}
                                 >
-                                    {p.type ? p.type.toLowerCase() : ''}
-                                </StyledColumnTypeText>
-                            </StyledMetamodelCardItemCell>
-                            {idx === 0 || idx === 1 ? (
-                                <StyledMetamodelCardItemCell cellPosition="third">
-                                    <StyledKeyIconContainer>
-                                        <StyledKeyIcon isPrimary={idx === 0} />
-                                    </StyledKeyIconContainer>
-                                </StyledMetamodelCardItemCell>
-                            ) : null}
-                        </StyledMetamodelCardItem>
-                    ))}
+                                    <StyledMetamodelCardItemCell cellPosition="first">
+                                        <StyledMetamodelCardItemCellText variant="body2">
+                                            {p.name
+                                                .toLowerCase()
+                                                .replaceAll(' ', '_')}
+                                        </StyledMetamodelCardItemCellText>
+                                    </StyledMetamodelCardItemCell>
+
+                                    <StyledMetamodelCardItemCell cellPosition="second">
+                                        <StyledColumnTypeText
+                                            variant="body2"
+                                            columnDataType={
+                                                p.type ? p.type : ''
+                                            }
+                                        >
+                                            {p.type ? p.type.toLowerCase() : ''}
+                                        </StyledColumnTypeText>
+                                    </StyledMetamodelCardItemCell>
+
+                                    {idx === 0 || idx === 1 ? (
+                                        <StyledMetamodelCardItemCell cellPosition="third">
+                                            <StyledKeyIconContainer>
+                                                <StyledKeyIcon
+                                                    isPrimary={idx === 0}
+                                                />
+                                            </StyledKeyIconContainer>
+                                        </StyledMetamodelCardItemCell>
+                                    ) : null}
+                                </StyledMetamodelCardItem>
+                                {idx === 0 ? <StyledDivider /> : null}
+                            </>
+                        );
+                    })}
                     <StyledHandle type="source" position={Position.Right} />
                     <StyledTableFooterRow>
                         <AddCircleOutlineRounded
@@ -610,14 +916,6 @@ const _MetamodelNode = (props: MetamodelNodeProps) => {
                     </StyledTableFooterRow>
                 </StyledMetamodelCardContent>
             </StyledMetamodelCard>
-            {editTable && (
-                <EditTableModal
-                    id={id}
-                    openEditTableModal={editTable}
-                    setOpenEditTableModal={setEditTable}
-                    tableData={data}
-                />
-            )}
         </>
     );
 };
