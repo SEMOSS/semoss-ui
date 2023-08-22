@@ -37,6 +37,7 @@ import {
     RemoveRedEyeRounded,
     ClearRounded,
     Lock,
+    Visibility,
     VisibilityOffRounded,
 } from '@mui/icons-material';
 
@@ -611,7 +612,11 @@ export const WorkflowAccess = (props: WorkflowAccessProps) => {
                 <StyledAlert
                     icon={
                         <StyledIcon>
-                            <VisibilityOffRounded />
+                            {!discoverable ? (
+                                <VisibilityOffRounded />
+                            ) : (
+                                <Visibility />
+                            )}
                         </StyledIcon>
                     }
                     action={
@@ -1647,6 +1652,7 @@ export const MembersTable = (props) => {
                                             }}
                                         />
                                     </Table.Cell>
+                                    <Table.Cell>ID</Table.Cell>
                                     <Table.Cell>Name</Table.Cell>
                                     <Table.Cell>Permission</Table.Cell>
                                     <Table.Cell>Permission Date</Table.Cell>
@@ -1701,11 +1707,18 @@ export const MembersTable = (props) => {
                                                         }}
                                                     />
                                                 </Table.Cell>
+
                                                 <Table.Cell
                                                     component="td"
                                                     scope="row"
                                                 >
-                                                    {user.id}: {user.name}
+                                                    {user.id}
+                                                </Table.Cell>
+                                                <Table.Cell
+                                                    component="td"
+                                                    scope="row"
+                                                >
+                                                    {user.name}
                                                 </Table.Cell>
                                                 <Table.Cell>
                                                     <RadioGroup
