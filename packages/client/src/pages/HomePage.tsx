@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { observer } from 'mobx-react-lite';
 import { Stack, Typography, Search, Button, Grid } from '@semoss/ui';
 
-import { useLocation, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 
 import { usePixel, useRootStore } from '@/hooks';
 import { Page } from '@/components/ui';
@@ -14,7 +14,6 @@ import { App, AppTileCard, AddApp } from '@/components/app';
 export const HomePage = observer((): JSX.Element => {
     const { configStore } = useRootStore();
     const navigate = useNavigate();
-    const location = useLocation();
 
     const [search, setSearch] = useState('');
 
@@ -46,27 +45,6 @@ export const HomePage = observer((): JSX.Element => {
             metaKeys,
         )}, filterWord=["${search}"], onlyPortals=[true]);`,
     );
-
-    /**
-     * Open a new app
-     *
-     * @param app - Marketplace app that will be open
-     */
-    const openApp = async (a: App) => {
-        // navigate(`app/${a.project_id}`, {});
-
-        window.open(`#/app/${a.project_id}`, 'rel=noopener noreferrer');
-        console.log('hi');
-    };
-
-    /**
-     * Open a new app
-     *
-     * @param app - Marketplace app that will be open
-     */
-    const openLegacy = async () => {
-        window.open('./packages/legacy', 'rel=noopener noreferrer');
-    };
 
     /**
      * Close the add app modeal
@@ -150,7 +128,7 @@ export const HomePage = observer((): JSX.Element => {
                                     'Develop dashboards and visualizations to view data',
                             }}
                             background="#BADEFF"
-                            href="./packages/legacy"
+                            href="../../../"
                         />
                     </Grid>
                 </Grid>

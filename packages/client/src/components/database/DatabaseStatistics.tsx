@@ -55,14 +55,21 @@ interface DatabaseStatisticsProps {
 export const DatabaseStatistics = (props: DatabaseStatisticsProps) => {
     const { id } = props;
 
-    const { status, data } = usePixel<{
-        totalUses: number;
-        totalViews: number;
-        usabilityScore: number;
-        usedIn: unknown[];
-        usesByDate: Record<string, unknown>;
-        viewsByDate: Record<string, unknown>;
-    }>(`EngineActivity(engine='${id}');`);
+    const { status, data } = usePixel<
+        | {
+              totalUses: number;
+              totalViews: number;
+              usabilityScore: number;
+              usedIn: unknown[];
+              usesByDate: Record<string, unknown>;
+              viewsByDate: Record<string, unknown>;
+          }
+        | false
+    >(`EngineActivity(engine='${id}');`);
+
+    if (!data) {
+        return null;
+    }
 
     if (status === 'ERROR') {
         return <div>Error</div>;
