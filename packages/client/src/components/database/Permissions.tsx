@@ -288,7 +288,7 @@ export interface PermissionsProps {
 }
 
 export const Permissions = (props: PermissionsProps) => {
-    const { id, name, global, visibility, projectid } = props.config;
+    const { id, name, projectid } = props.config;
     const resolvedPathname = useResolvedPath('').pathname;
 
     // Helper hooks
@@ -311,6 +311,10 @@ export const Permissions = (props: PermissionsProps) => {
         : resolvedPathname.includes('insight')
         ? 'insight'
         : resolvedPathname.includes(`database/${id}`)
+        ? 'database'
+        : resolvedPathname.includes('model')
+        ? 'database'
+        : resolvedPathname.includes('storage')
         ? 'database'
         : '';
 
