@@ -333,7 +333,6 @@ export const MetamodelView = (props: MetamodelViewProps) => {
         const tables = {};
         const owlPositions = {};
 
-        debugger;
         setIsLoading(true);
 
         data.nodes.forEach((node) => {
