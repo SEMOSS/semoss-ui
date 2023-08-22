@@ -183,7 +183,7 @@ export const Metamodel = (props: MetamodelProps) => {
             additionalDataTypes: {}, // colName: specificFormat
             descriptionMap: {}, // colName: description
             logicalNamesMap: {}, // colName/alias: logicalName
-            position: [{}],
+            positions: [{}],
         };
         // // format the data
         // const dataObj = {
