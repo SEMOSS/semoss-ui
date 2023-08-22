@@ -37,6 +37,7 @@ import {
     RemoveRedEyeRounded,
     ClearRounded,
     Lock,
+    Visibility,
     VisibilityOffRounded,
 } from '@mui/icons-material';
 
@@ -210,7 +211,7 @@ const permissionMapper = {
  * @name mapMonolithFunction
  */
 const mapMonolithFunction = (
-    workflow: 'database' | 'app' | 'insight' | 'storage' | 'model',
+    workflow: 'database' | 'app' | 'insight',
     key: string,
 ) => {
     const API_MAP = {
@@ -288,7 +289,7 @@ export interface PermissionsProps {
 }
 
 export const Permissions = (props: PermissionsProps) => {
-    const { id, name, global, visibility, projectid } = props.config;
+    const { id, name, projectid } = props.config;
     const resolvedPathname = useResolvedPath('').pathname;
 
     // Helper hooks
@@ -302,24 +303,25 @@ export const Permissions = (props: PermissionsProps) => {
     const permission = adminMode ? 1 : 3;
 
     // Props we use for api fns to hit | "app, database, insight"
-    const type: 'database' | 'app' | 'insight' | 'model' | 'storage' | '' =
-        resolvedPathname.includes('database')
-            ? 'database'
-            : resolvedPathname.includes('model')
-            ? 'model'
-            : resolvedPathname.includes(`model/${id}`)
-            ? 'model'
-            : resolvedPathname.includes('storage')
-            ? 'storage'
-            : resolvedPathname.includes(`storage/${id}`)
-            ? 'storage'
-            : resolvedPathname.includes('app')
-            ? 'app'
-            : resolvedPathname.includes('insight')
-            ? 'insight'
-            : resolvedPathname.includes(`database/${id}`)
-            ? 'database'
-            : '';
+    const type: 'database' | 'app' | 'insight' | '' = resolvedPathname.includes(
+        'database',
+    )
+        ? 'database'
+        : resolvedPathname.includes('model')
+        ? 'database'
+        : resolvedPathname.includes(`model/${id}`)
+        ? 'database'
+        : resolvedPathname.includes('storage')
+        ? 'database'
+        : resolvedPathname.includes(`storage/${id}`)
+        ? 'database'
+        : resolvedPathname.includes('app')
+        ? 'app'
+        : resolvedPathname.includes('insight')
+        ? 'insight'
+        : resolvedPathname.includes(`database/${id}`)
+        ? 'database'
+        : '';
 
     // if no api prop --> redirect
     if (!type) {
@@ -618,7 +620,11 @@ export const WorkflowAccess = (props: WorkflowAccessProps) => {
                 <StyledAlert
                     icon={
                         <StyledIcon>
-                            <VisibilityOffRounded />
+                            {!discoverable ? (
+                                <VisibilityOffRounded />
+                            ) : (
+                                <Visibility />
+                            )}
                         </StyledIcon>
                     }
                     action={
@@ -1654,6 +1660,7 @@ export const MembersTable = (props) => {
                                             }}
                                         />
                                     </Table.Cell>
+                                    <Table.Cell>ID</Table.Cell>
                                     <Table.Cell>Name</Table.Cell>
                                     <Table.Cell>Permission</Table.Cell>
                                     <Table.Cell>Permission Date</Table.Cell>
@@ -1708,11 +1715,18 @@ export const MembersTable = (props) => {
                                                         }}
                                                     />
                                                 </Table.Cell>
+
                                                 <Table.Cell
                                                     component="td"
                                                     scope="row"
                                                 >
-                                                    {user.id}: {user.name}
+                                                    {user.id}
+                                                </Table.Cell>
+                                                <Table.Cell
+                                                    component="td"
+                                                    scope="row"
+                                                >
+                                                    {user.name}
                                                 </Table.Cell>
                                                 <Table.Cell>
                                                     <RadioGroup

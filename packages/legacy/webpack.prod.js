@@ -27,7 +27,7 @@ module.exports = () => {
             new HtmlWebpackPlugin({
                 scriptLoading: 'blocking',
                 template: './core/template.ejs',
-                filename: '../index.html',
+                filename: '../../../index.html',
                 hash: true,
                 inject: false,
                 title: CUSTOMIZATION.page.title,
