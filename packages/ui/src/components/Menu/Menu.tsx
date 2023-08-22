@@ -53,6 +53,16 @@ export interface MenuProps {
      * @default 'selectedMenu'
      */
     variant?: "menu" | "selectedMenu";
+
+    anchorOrigin?: {
+        vertical: "top" | "center" | "bottom" | number;
+        horizontal: "left" | "center" | "right" | number;
+    };
+
+    transformOrigin?: {
+        vertical: "top" | "center" | "bottom" | number;
+        horizontal: "left" | "center" | "right" | number;
+    };
 }
 
 export const Menu = (props: MenuProps) => {

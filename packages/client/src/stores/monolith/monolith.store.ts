@@ -165,6 +165,23 @@ export class MonolithStore {
         return true;
     }
 
+    /**     *
+     * @returns true if successful
+     */
+    async logout(): Promise<boolean> {
+        await axios
+            .get(`${MODULE}/api/auth/logout/all`, {
+                validateStatus: function (status) {
+                    return true;
+                },
+            })
+            .catch((err) => {
+                throw Error(err);
+            });
+
+        return true;
+    }
+
     /**
      * Allow the user to login using oauth
      *
@@ -788,6 +805,30 @@ export class MonolithStore {
         // there was no response, that is an error
         if (!response) {
             throw Error('No Response to get Projects');
+        }
+
+        return response.data;
+    }
+
+    /**
+     * @name getUserProjectPermission
+     * @param admin - is admin user
+     * @returns Projects retrieved from Promise
+     */
+    async getUserProjectPermission(projectId: string) {
+        let url = `${MODULE}/api/auth/`;
+
+        url += 'project/getUserProjectPermission';
+
+        const response = await axios.get(url, {
+            params: {
+                projectId: projectId,
+            },
+        });
+
+        // there was no response, that is an error
+        if (!response) {
+            throw Error('No Response to get permission');
         }
 
         return response.data;
