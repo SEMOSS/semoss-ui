@@ -394,7 +394,7 @@ export class MonolithStore {
 
         // get the response
         const response = await axios
-            .get(url, {
+            .get<Record<string, unknown>[]>(url, {
                 params: { engineId: appId },
             })
             .catch((error) => {
@@ -406,7 +406,7 @@ export class MonolithStore {
             throw Error('No Response to get non credentialed users');
         }
 
-        return response.data;
+        return response;
     }
 
     /**
@@ -905,7 +905,7 @@ export class MonolithStore {
 
         // get the response
         const response = await axios
-            .get(url, {
+            .get<Record<string, unknown>[]>(url, {
                 params: { projectId: projectId },
             })
             .catch((error) => {
@@ -917,7 +917,7 @@ export class MonolithStore {
             throw Error('No Response to get non credentialed users');
         }
 
-        return response.data;
+        return response;
     }
 
     /**

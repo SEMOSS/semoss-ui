@@ -1,5 +1,5 @@
 import { useParams, useLocation } from 'react-router-dom';
-import { Permissions, WorkflowAccess } from '@/components/database';
+import { Permissions, SettingsTiles } from '@/components/settings';
 import { useNavigate } from 'react-router-dom';
 import { styled } from '@semoss/ui';
 
@@ -18,16 +18,16 @@ export const StorageSettingsDetailPage = () => {
 
     return (
         <StyledContainer>
-            <WorkflowAccess
+            <SettingsTiles
                 type={'storage'}
                 id={id}
-                projectId={undefined}
                 onDelete={() => {
                     console.log('navigate to storage settings');
                     navigate('/storage');
                 }}
             />
             <Permissions
+                type="storage"
                 config={{
                     id: id,
                     name: state ? state.name : 'Name not provided',
