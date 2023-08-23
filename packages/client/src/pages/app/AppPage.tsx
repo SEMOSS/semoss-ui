@@ -9,7 +9,6 @@ import {
     Button,
     IconButton,
     Stack,
-    IconButton,
     FileDropzone,
     Typography,
 } from '@semoss/ui';

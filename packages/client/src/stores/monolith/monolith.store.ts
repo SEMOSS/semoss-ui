@@ -202,7 +202,7 @@ export class MonolithStore {
         }
 
         return new Promise((resolve) => {
-            const url = `${MODULE}/api/auth/login/${provider}`;
+            const url = `${window.location.origin}${MODULE}/api/auth/login/${provider}`;
             const popUpWindow = window.top.open(
                 url,
                 '_blank',
