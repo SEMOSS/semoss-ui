@@ -24,6 +24,12 @@ import { MyProfilePage } from './MyProfilePage';
 import { ThemePage } from './ThemePage';
 import { JobsPage } from '../jobs/JobsPage';
 
+import { ModelSettingsPage } from './ModelSettingsPage';
+import { ModelSettingsDetailPage } from './ModelSettingsDetailPage';
+
+import { StorageSettingsPage } from './StorageSettingsPage';
+import { StorageSettingsDetailPage } from './StorageSettingsDetailPage';
+
 // map each route to a component
 const SETTINGS_COMPONETS = {
     '': SettingsIndexPage,
@@ -45,6 +51,11 @@ const SETTINGS_COMPONETS = {
     'my-profile': MyProfilePage,
     jobs: JobsPage,
     theme: ThemePage,
+
+    model: ModelSettingsPage,
+    'model/:id': ModelSettingsDetailPage,
+    storage: StorageSettingsPage,
+    'storage/:id': StorageSettingsDetailPage,
 };
 
 export const SettingsRouter = observer(() => {

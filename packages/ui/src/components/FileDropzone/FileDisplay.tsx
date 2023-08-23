@@ -1,5 +1,5 @@
 import { useMemo, ComponentPropsWithoutRef } from "react";
-import { styled } from "../../";
+import { styled } from "@mui/material";
 
 import { Icon } from "../Icon";
 import { IconButton } from "../IconButton";

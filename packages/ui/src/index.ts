@@ -1,9 +1,9 @@
 export * from "./theme";
 
-import "@fontsource/inter/300.css";
-import "@fontsource/inter/400.css";
-import "@fontsource/inter/500.css";
-import "@fontsource/inter/700.css";
+// import "@fontsource/inter/300.css";
+// import "@fontsource/inter/400.css";
+// import "@fontsource/inter/500.css";
+// import "@fontsource/inter/700.css";
 
 export * from "./components/Accordion";
 export * from "./components/Alert";

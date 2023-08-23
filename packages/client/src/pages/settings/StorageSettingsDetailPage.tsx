@@ -11,7 +11,7 @@ const StyledContainer = styled('div')(() => ({
     alignItems: 'flex-start',
 }));
 
-export const DatabaseSettingsDetailPage = () => {
+export const StorageSettingsDetailPage = () => {
     const { id } = useParams();
     const { state } = useLocation();
     const navigate = useNavigate();
@@ -19,12 +19,12 @@ export const DatabaseSettingsDetailPage = () => {
     return (
         <StyledContainer>
             <WorkflowAccess
-                type={'database'}
+                type={'storage'}
                 id={id}
                 projectId={undefined}
                 onDelete={() => {
-                    console.log('navigate to model settings');
-                    navigate('/model');
+                    console.log('navigate to storage settings');
+                    navigate('/storage');
                 }}
             />
             <Permissions

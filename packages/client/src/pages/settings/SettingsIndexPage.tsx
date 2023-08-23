@@ -13,7 +13,7 @@ import {
 import { Search as SearchIcon, MoreVert } from '@mui/icons-material';
 
 import { useNavigate } from 'react-router-dom';
-import { useSettings } from '@/hooks';
+// import { useSettings } from '@/hooks';
 
 import { SEMOSS } from '@/assets/img/SEMOSS';
 import { DatabaseLayers } from '@/assets/img/DatabaseLayers';
@@ -25,6 +25,7 @@ import { Link } from '@/assets/img/Link';
 import { GroupRounded } from '@/assets/img/GroupRounded';
 import { PersonRounded } from '@/assets/img/PersonRounded';
 import { PaintRounded } from '@/assets/img/PaintRounded';
+import { ArchiveBox } from '@/assets/img/ArchiveBox';
 
 import { SETTINGS_ROUTES } from './settings.constants';
 
@@ -36,7 +37,7 @@ const StyledContainer = styled('div')(({ theme }) => ({
     gap: theme.spacing(3),
 }));
 
-const StyledCard = styled(Card)(({ theme }) => ({
+const StyledCard = styled(Card)(() => ({
     '&:hover': {
         cursor: 'pointer',
     },
@@ -59,7 +60,7 @@ const StyledSearchbarContainer = styled('div')(({ theme }) => ({
     gap: theme.spacing(3),
 }));
 
-const StyledSort = styled(Select)(({ theme }) => ({
+const StyledSort = styled(Select)(() => ({
     width: '20%',
 }));
 
@@ -92,6 +93,8 @@ const IconMapper = {
     'My Profile': <PersonRounded />,
     Theming: <PaintRounded />,
     Jobs: <Construction />,
+    'Model Settings': <DatabaseLayers />,
+    'Storage Settings': <ArchiveBox />,
 };
 
 export const SettingsIndexPage = () => {
@@ -100,7 +103,7 @@ export const SettingsIndexPage = () => {
     const [search, setSearch] = useState<string>('');
     const [sort, setSort] = useState('Name');
 
-    const { adminMode } = useSettings();
+    // const { adminMode } = useSettings();
 
     useEffect(() => {
         // reset the options if there is no search value

@@ -190,7 +190,7 @@ const StyledCard = styled(Card)({
     borderRadius: '12px',
 });
 
-const StyledIcon = styled(Icon)(({ theme }) => ({
+const StyledIcon = styled(Icon)(() => ({
     color: 'rgba(0, 0, 0, .5)',
 }));
 
@@ -211,7 +211,7 @@ const permissionMapper = {
  * @name mapMonolithFunction
  */
 const mapMonolithFunction = (
-    workflow: 'database' | 'app' | 'insight',
+    workflow: 'database' | 'app' | 'insight' | 'storage' | 'model',
     key: string,
 ) => {
     const API_MAP = {
@@ -303,21 +303,24 @@ export const Permissions = (props: PermissionsProps) => {
     const permission = adminMode ? 1 : 3;
 
     // Props we use for api fns to hit | "app, database, insight"
-    const type: 'database' | 'app' | 'insight' | '' = resolvedPathname.includes(
-        'database',
-    )
-        ? 'database'
-        : resolvedPathname.includes('app')
-        ? 'app'
-        : resolvedPathname.includes('insight')
-        ? 'insight'
-        : resolvedPathname.includes(`database/${id}`)
-        ? 'database'
-        : resolvedPathname.includes('model')
-        ? 'database'
-        : resolvedPathname.includes('storage')
-        ? 'database'
-        : '';
+    const type: 'database' | 'app' | 'insight' | 'model' | 'storage' | '' =
+        resolvedPathname.includes('database')
+            ? 'database'
+            : resolvedPathname.includes('model')
+            ? 'model'
+            : resolvedPathname.includes(`model/${id}`)
+            ? 'model'
+            : resolvedPathname.includes('storage')
+            ? 'storage'
+            : resolvedPathname.includes(`storage/${id}`)
+            ? 'storage'
+            : resolvedPathname.includes('app')
+            ? 'app'
+            : resolvedPathname.includes('insight')
+            ? 'insight'
+            : resolvedPathname.includes(`database/${id}`)
+            ? 'database'
+            : '';
 
     // if no api prop --> redirect
     if (!type) {
@@ -1283,7 +1286,7 @@ export const MembersTable = (props) => {
         | 'getEngineUsers'
         | 'getProjectUsers'
         | 'getInsightUsers' =
-        type === 'database'
+        type === 'database' || type === 'model' || type === 'storage'
             ? 'getEngineUsers'
             : type === 'app'
             ? 'getProjectUsers'
