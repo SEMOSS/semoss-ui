@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { NodeProps, Handle, Position, useEdges } from 'react-flow-renderer';
+import { useForm, Controller, useFieldArray } from 'react-hook-form';
 
 import {
     styled,
@@ -166,13 +167,36 @@ const _MetamodelNode = (props: MetamodelNodeProps) => {
     const headerRef = useRef();
     const { id, data } = props;
 
+    const { control } = useForm({
+        defaultValues: {
+            name: data.name,
+            COLUMNS: data.properties,
+        },
+    });
+    const { fields } = useFieldArray({
+        control,
+        name: 'COLUMNS',
+    });
+
     const { selectedNodeId, onSelectNodeId, isInteractive, updateData } =
         useMetamodel();
     const [openEditColumnModal, setOpenEditColumnModal] = useState(false);
     const [editTable, setEditTable] = useState(false);
 
-    const [metamodelCardWidth, setMetamodelCardWidth] = useState('215px');
+    const [nodeData, setNodeData] = useState({
+        // used to manage node data
+        name: data.name,
+        properties: data.properties,
+    });
 
+    const [metamodelCardWidth, setMetamodelCardWidth] = useState('215px'); // manage metamodel card width
+
+    useEffect(() => {
+        console.log('node data changed: ', nodeData);
+    }, [nodeData]);
+
+    /** STYLES */
+    /** Manage metamodel card width */
     useEffect(() => {
         if (!headerRef?.current?.clientWidth) return;
         // if (headerRef.current.clientWidth === )
@@ -184,8 +208,6 @@ const _MetamodelNode = (props: MetamodelNodeProps) => {
     useEffect(() => {
         console.log('metamodelCardwid: ', metamodelCardWidth);
     }, [metamodelCardWidth]);
-
-    /** STYLES */
     const StyledMetamodelCard = styled('div', {
         shouldForwardProp: (prop) => prop !== 'isSelected',
     })<{ isSelected: boolean }>(({ theme, isSelected }) => ({
@@ -390,7 +412,8 @@ const _MetamodelNode = (props: MetamodelNodeProps) => {
         color: 'var(--light-text-primary, rgba(0, 0, 0, 0.87))',
     }));
 
-    // contains edit icon
+    /** STYLES: EDIT METAMODEL */
+
     const StyledEditIconContainer = styled('div')(() => ({
         display: 'flex',
         width: '24px',
@@ -551,6 +574,7 @@ const _MetamodelNode = (props: MetamodelNodeProps) => {
         display: 'flex',
         flexDirection: 'column',
         alignItems: 'flex-start',
+        alignSelf: 'stretch',
         gap: '3px',
     }));
 
@@ -562,6 +586,29 @@ const _MetamodelNode = (props: MetamodelNodeProps) => {
         gap: 'var(--shape-border-radius-none, 0px)',
         borderRadius: 'var(--shape-border-radius-none, 0px) 12px 12px 12px',
         background: '#FFF',
+    }));
+
+    const StyledEditTableFooterRow = styled('div')(({ theme }) => ({
+        display: 'flex',
+        height: '44px',
+        justifyContent: 'center',
+        alignItems: 'center',
+        alignSelf: 'stretch',
+        background: theme.palette.secondary.light,
+    }));
+
+    const StyledEditTextField = styled(TextField)(() => ({
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'flex-start',
+        gap: '3px',
+        alignSelf: 'stretch',
+    }));
+
+    const StyledSelect = styled(Select)(() => ({
+        minWidth: '126px',
+        // width: '126px',
+        alignmentSelf: 'stretch',
     }));
 
     // return (
@@ -736,9 +783,24 @@ const _MetamodelNode = (props: MetamodelNodeProps) => {
                         <StyledEditHeaderCellContainer>
                             <StyledHeaderCell>
                                 <StyledEditHeaderCell>
-                                    <TextField
-                                        variant="outlined"
-                                        value={data.name}
+                                    <Controller
+                                        name={'name'}
+                                        control={control}
+                                        render={({ field }) => {
+                                            return (
+                                                <StyledEditTextField
+                                                    variant="outlined"
+                                                    value={
+                                                        field.value
+                                                            ? field.value
+                                                            : ''
+                                                    }
+                                                    onChange={(value) =>
+                                                        field.onChange(value)
+                                                    }
+                                                />
+                                            );
+                                        }}
                                     />
                                 </StyledEditHeaderCell>
 
@@ -751,11 +813,11 @@ const _MetamodelNode = (props: MetamodelNodeProps) => {
                         </StyledEditHeaderCellContainer>
                     </StyledEditMetamodelCardHeader>
                     <StyledEditMetamodelCardContent>
-                        {data.properties.map((p, idx) => {
+                        {fields.map((col, idx) => {
                             return (
                                 <>
                                     <StyledEditRow
-                                        key={p.id}
+                                        key={col.id}
                                         isPrimary={idx === 0 ? true : false}
                                     >
                                         <StyledDragIconCell>
@@ -766,54 +828,68 @@ const _MetamodelNode = (props: MetamodelNodeProps) => {
                                             </StyledDragIconContainer>
                                         </StyledDragIconCell>
                                         <StyledEditCell cellPosition="first">
-                                            {/* <StyledTextFieldCell> */}
-                                            <TextField
-                                                variant="outlined"
-                                                value={p.name}
+                                            <Controller
+                                                control={control}
+                                                name={`COLUMNS.${idx}.name`}
+                                                render={({ field }) => (
+                                                    <StyledEditTextField
+                                                        key={`${col.id}_name`}
+                                                        variant="outlined"
+                                                        value={
+                                                            field.value
+                                                                ? field.value
+                                                                : ''
+                                                        }
+                                                        onChange={(value) =>
+                                                            field.onChange(
+                                                                value,
+                                                            )
+                                                        }
+                                                    />
+                                                )}
                                             />
-                                            {/* </StyledTextFieldCell> */}
                                         </StyledEditCell>
 
                                         <StyledEditCell cellPosition="second">
-                                            {/* <StyledTextFieldCell> */}
-                                            {/* <TextField
-                                                variant="outlined"
-                                                value={p.type}
-                                            /> */}
-                                            {/* </StyledTextFieldCell> */}
-                                            <Select
-                                                fullWidth
-                                                sx={{
-                                                    minWidth: '126px',
-                                                    width: '126px',
-                                                }}
-                                                value={p.type}
-                                                onChange={(value) =>
-                                                    console.log(
-                                                        'value type: ',
-                                                        value,
-                                                    )
-                                                }
-                                            >
-                                                <Menu.Item
-                                                    key={'123'}
-                                                    value={'INT'}
-                                                >
-                                                    int
-                                                </Menu.Item>
-                                                <Menu.Item
-                                                    key={'456'}
-                                                    value={'CHAR'}
-                                                >
-                                                    char
-                                                </Menu.Item>
-                                                <Menu.Item
-                                                    key={'789'}
-                                                    value={'BOOLEAN'}
-                                                >
-                                                    boolean
-                                                </Menu.Item>
-                                            </Select>
+                                            <Controller
+                                                control={control}
+                                                name={`COLUMNS.${idx}.type`}
+                                                render={({ field }) => (
+                                                    <StyledSelect
+                                                        key={`${col.id}_type`}
+                                                        fullWidth
+                                                        value={
+                                                            field.value
+                                                                ? field.value
+                                                                : ''
+                                                        }
+                                                        onChange={(value) =>
+                                                            field.onChange(
+                                                                value,
+                                                            )
+                                                        }
+                                                    >
+                                                        <Select.Item
+                                                            key={'123'}
+                                                            value={'INT'}
+                                                        >
+                                                            int
+                                                        </Select.Item>
+                                                        <Select.Item
+                                                            key={'456'}
+                                                            value={'CHAR'}
+                                                        >
+                                                            char
+                                                        </Select.Item>
+                                                        <Select.Item
+                                                            key={'789'}
+                                                            value={'BOOLEAN'}
+                                                        >
+                                                            boolean
+                                                        </Select.Item>
+                                                    </StyledSelect>
+                                                )}
+                                            />
                                         </StyledEditCell>
                                         {idx === 0 || idx === 1 ? (
                                             <StyledEditCell cellPosition="third">
@@ -830,11 +906,11 @@ const _MetamodelNode = (props: MetamodelNodeProps) => {
                             );
                         })}
                         <StyledHandle type="source" position={Position.Right} />
-                        <StyledTableFooterRow>
+                        <StyledEditTableFooterRow>
                             <AddCircleOutlineRounded
                                 sx={{ color: 'rgba(0, 0, 0, 0.54)' }}
                             />
-                        </StyledTableFooterRow>
+                        </StyledEditTableFooterRow>
                     </StyledEditMetamodelCardContent>
                 </StyledEditMetamodelCard>
             </>
@@ -843,6 +919,7 @@ const _MetamodelNode = (props: MetamodelNodeProps) => {
     return (
         <>
             <StyledHandle type="target" position={Position.Left} />
+
             <StyledMetamodelCard
                 isSelected={selectedNodeId === id}
                 onClick={() => {
