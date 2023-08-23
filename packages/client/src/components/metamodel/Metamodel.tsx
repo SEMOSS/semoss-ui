@@ -77,8 +77,6 @@ export const Metamodel = (props: MetamodelProps) => {
         isInteractive,
     } = props;
 
-    // debugger;
-
     // node is {
     //     data: { name: 'table', properties: [{ id: 'colid', name: 'colname', type: 'coltype' }] },
     // id: 'table',

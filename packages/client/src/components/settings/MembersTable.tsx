@@ -502,9 +502,7 @@ export const MembersTable = (props: MembersTableProps) => {
                     adminMode,
                     id,
                 );
-            }
-
-            if (!response) {
+            } else {
                 return;
             }
 
@@ -518,6 +516,7 @@ export const MembersTable = (props: MembersTableProps) => {
                         ],
                     };
                 });
+
                 setNonCredentialedUsers(users);
                 setAddMembersModal(true);
             }

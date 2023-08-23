@@ -33,7 +33,7 @@ export const SettingsLayout = () => {
     const { pathname, state } = useLocation();
 
     // track the active breadcrumbs
-    const [adminMode, setAdminMode] = useState(false);
+    const [adminMode, setAdminMode] = useState(true);
 
     const matchedRoute = useMemo(() => {
         for (const r of SETTINGS_ROUTES) {

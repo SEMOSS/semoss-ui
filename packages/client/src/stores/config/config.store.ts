@@ -304,6 +304,28 @@ export class ConfigStore {
         return true;
     }
 
+    /**     *
+     * @returns true if successful
+     */
+    async logout() {
+        const { monolithStore } = this._root;
+
+        const resp = await monolithStore.logout();
+
+        runInAction(() => {
+            // clear the info and reset the user
+            this._store.user = {
+                loggedIn: false,
+                admin: false,
+                id: '',
+                name: '',
+                email: '',
+            };
+
+            this._store.status = 'MISSING AUTHENTICATION';
+        });
+    }
+
     /**
      * Run a pixel string
      *
