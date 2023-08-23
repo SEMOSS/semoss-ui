@@ -52,6 +52,36 @@ export const SETTINGS_ROUTES: {
         history: ['database', 'database/<id>'],
     },
     {
+        title: 'Storage Settings',
+        path: 'storage',
+        description: 'View and edit settings for storages',
+        icon: mdiArchive,
+        history: ['storage'],
+    },
+    {
+        title: 'Storage Settings',
+        path: 'storage/:id',
+        description:
+            'View member permissions, pending requests, and all other viewable settings pertaining to the storage',
+        icon: mdiArchive,
+        history: ['storage', 'storage/<id>'],
+    },
+    {
+        title: 'Model Settings',
+        path: 'model',
+        description: 'View and edit settings for models',
+        icon: mdiDatabase,
+        history: ['model'],
+    },
+    {
+        title: 'Model Settings',
+        path: 'model/:id',
+        description:
+            'View member permissions, pending requests, and all other viewable settings pertaining to the model',
+        icon: mdiDatabase,
+        history: ['model', 'model/<id>'],
+    },
+    {
         title: 'App Settings',
         path: 'app',
         description: 'View and edit settings for apps',
@@ -154,34 +184,4 @@ export const SETTINGS_ROUTES: {
     //     icon: mdiDatabase,
     //     history: ['settings/'],
     // },
-    {
-        title: 'Storage Settings',
-        path: 'storage',
-        description: 'View and edit settings for storages',
-        icon: mdiArchive,
-        history: ['storage'],
-    },
-    {
-        title: 'Storage Settings',
-        path: 'storage/:id',
-        description:
-            'View member permissions, pending requests, and all other viewable settings pertaining to the storage',
-        icon: mdiArchive,
-        history: ['storage', 'storage/<id>'],
-    },
-    {
-        title: 'Model Settings',
-        path: 'model',
-        description: 'View and edit settings for models',
-        icon: mdiDatabase,
-        history: ['model'],
-    },
-    {
-        title: 'Model Settings',
-        path: 'model/:id',
-        description:
-            'View member permissions, pending requests, and all other viewable settings pertaining to the model',
-        icon: mdiDatabase,
-        history: ['model', 'model/<id>'],
-    },
 ];

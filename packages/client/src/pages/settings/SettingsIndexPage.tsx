@@ -13,19 +13,19 @@ import {
 import { Search as SearchIcon, MoreVert } from '@mui/icons-material';
 
 import { useNavigate } from 'react-router-dom';
-// import { useSettings } from '@/hooks';
 
-import { SEMOSS } from '@/assets/img/SEMOSS';
+import { AdminPanel } from '@/assets/img/AdminPanel';
+import { ArchiveBox } from '@/assets/img/ArchiveBox';
+import { Construction } from '@/assets/img/Construction';
 import { DatabaseLayers } from '@/assets/img/DatabaseLayers';
 import { Folder } from '@/assets/img/Folder';
 import { Group } from '@/assets/img/Group';
-import { Construction } from '@/assets/img/Construction';
-import { AdminPanel } from '@/assets/img/AdminPanel';
-import { Link } from '@/assets/img/Link';
 import { GroupRounded } from '@/assets/img/GroupRounded';
-import { PersonRounded } from '@/assets/img/PersonRounded';
+import { Link } from '@/assets/img/Link';
+import { ModelBrain } from '@/assets/img/ModelBrain';
 import { PaintRounded } from '@/assets/img/PaintRounded';
-import { ArchiveBox } from '@/assets/img/ArchiveBox';
+import { PersonRounded } from '@/assets/img/PersonRounded';
+import { SEMOSS } from '@/assets/img/SEMOSS';
 
 import { SETTINGS_ROUTES } from './settings.constants';
 
@@ -81,6 +81,8 @@ const DEFAULT_CARDS = SETTINGS_ROUTES.filter(
 
 const IconMapper = {
     'Database Settings': <DatabaseLayers />,
+    'Model Settings': <ModelBrain />,
+    'Storage Settings': <ArchiveBox />,
     'App Settings': <Folder />,
     'Insight Settings': <SEMOSS />,
     'Member Settings': <Group />,
@@ -93,8 +95,6 @@ const IconMapper = {
     'My Profile': <PersonRounded />,
     Theming: <PaintRounded />,
     Jobs: <Construction />,
-    'Model Settings': <DatabaseLayers />,
-    'Storage Settings': <ArchiveBox />,
 };
 
 export const SettingsIndexPage = () => {
