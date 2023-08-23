@@ -26,6 +26,7 @@ import { GroupRounded } from '@/assets/img/GroupRounded';
 import { PersonRounded } from '@/assets/img/PersonRounded';
 import { PaintRounded } from '@/assets/img/PaintRounded';
 import { ArchiveBox } from '@/assets/img/ArchiveBox';
+import { Brain } from '@/assets/img/Brain';
 
 import { SETTINGS_ROUTES } from './settings.constants';
 
@@ -93,7 +94,7 @@ const IconMapper = {
     'My Profile': <PersonRounded />,
     Theming: <PaintRounded />,
     Jobs: <Construction />,
-    'Model Settings': <DatabaseLayers />,
+    'Model Settings': <Brain />,
     'Storage Settings': <ArchiveBox />,
 };
 
