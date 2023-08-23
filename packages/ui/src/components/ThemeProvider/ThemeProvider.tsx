@@ -25,8 +25,6 @@ export const ThemeProvider = (props: ThemeProviderProps) => {
     // if the override any options and merge it with the default theme
     const t = useMemo(() => {
         // extendTheme to get added properties to theme
-        const b = deepmerge(lightTheme, theme);
-        console.log(b);
         return createTheme(deepmerge(lightTheme, theme));
     }, [theme]);
 

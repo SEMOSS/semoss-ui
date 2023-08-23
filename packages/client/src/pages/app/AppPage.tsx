@@ -1,27 +1,23 @@
 import { useState, useEffect } from 'react';
 import { observer } from 'mobx-react-lite';
-import { Link, useParams, Navigate } from 'react-router-dom';
+import { useParams, Navigate } from 'react-router-dom';
 import { Controller, useForm } from 'react-hook-form';
 import {
     styled,
     useNotification,
-    Icon,
     Button,
     IconButton,
     Stack,
-    IconButton,
     FileDropzone,
     Typography,
 } from '@semoss/ui';
-import { AccountCircle, Code, Download } from '@mui/icons-material';
+import { Code, Download } from '@mui/icons-material';
 import { Navbar } from '@/components/ui';
-import { THEME } from '@/constants';
 import { useRootStore, useAPI } from '@/hooks';
 import { AppRenderer } from '@/components/app';
 
 const NAV_HEIGHT = '48px';
 const NAV_FOOTER = '24px';
-const NAV_ICON_WIDTH = '56px';
 
 // background: var(--light-text-primary, rgba(0, 0, 0, 0.87));
 const StyledContent = styled('div')(() => ({

@@ -290,6 +290,41 @@ export const lightTheme: CustomThemeOptions = {
         },
     },
     components: {
+        MuiCssBaseline: {
+            styleOverrides: (themeParam) => ({
+                "*::-webkit-scrollbar": {
+                    width: "8px",
+                    height: "8px",
+                    background: "transparent",
+                },
+
+                "*::-webkit-scrollbar-thumb": {
+                    // -webkit-border-radius: '4px',
+                    borderRadius: "4px",
+                    height: "18px",
+                    background: "#bdbdbd",
+                    backgroundClip: "padding-box",
+                },
+
+                "*::-webkit-scrollbar-thumb:hover": {
+                    background: "#e0e0e0",
+                },
+
+                "*::-webkit-scrollbar-thumb:active": {
+                    background: "#bdbdbd",
+                },
+
+                "*::-webkit-scrollbar-button": {
+                    width: "0",
+                    height: "0",
+                    display: "none",
+                },
+
+                "*::-webkit-scrollbar-corner": {
+                    backgroundColor: "transparent",
+                },
+            }),
+        },
         MuiAlertTitle: {
             styleOverrides: {
                 root: ({ theme }) => ({
