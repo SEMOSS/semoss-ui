@@ -1,12 +1,14 @@
+import { styled } from '@semoss/ui';
+import { useNavigate } from 'react-router-dom';
+
+import { SettingsContext } from '@/contexts';
+import { UpdateSMSS } from '@/components/database';
 import {
     MembersTable,
     PendingMembersTable,
-    UpdateSMSS,
-    WorkflowAccess,
-} from '@/components/database';
+    SettingsTiles,
+} from '@/components/settings';
 import { useDatabase } from '@/hooks';
-import { styled } from '@semoss/ui';
-import { useNavigate } from 'react-router-dom';
 
 const StyledContainer = styled('div')(({ theme }) => ({
     width: '100%',
@@ -26,31 +28,24 @@ export const DatabaseSettingsPage = () => {
     console.log('debug', role);
 
     return (
-        <StyledContainer>
-            <WorkflowAccess
-                type={type}
-                id={id}
-                projectId={undefined}
-                onDelete={() => {
-                    console.log('navigate to catalog');
-                    navigate('/catalog');
-                }}
-            />
-            <PendingMembersTable
-                type={'database'}
-                name={'name'}
-                adminMode={true}
-                id={id}
-                projectId={undefined}
-            />
-            <MembersTable
-                type={'database'}
-                name={'name'}
-                adminMode={true}
-                id={id}
-                projectId={undefined}
-            />
-            <UpdateSMSS id={id} />
-        </StyledContainer>
+        <SettingsContext.Provider
+            value={{
+                adminMode: false,
+            }}
+        >
+            <StyledContainer>
+                <SettingsTiles
+                    type={type}
+                    id={id}
+                    onDelete={() => {
+                        console.log('navigate to catalog');
+                        navigate('/catalog');
+                    }}
+                />
+                <PendingMembersTable type={type} id={id} />
+                <MembersTable type={type} id={id} />
+                <UpdateSMSS id={id} />
+            </StyledContainer>
+        </SettingsContext.Provider>
     );
 };

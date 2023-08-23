@@ -5,7 +5,7 @@ import React, {
     useState,
     useRef,
 } from "react";
-import { styled } from "../../";
+import { styled } from "@mui/material";
 
 import { InputOptions } from "./InputOptions";
 import { useValue } from "./useValue";

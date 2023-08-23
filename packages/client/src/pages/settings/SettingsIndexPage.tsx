@@ -13,18 +13,19 @@ import {
 import { Search as SearchIcon, MoreVert } from '@mui/icons-material';
 
 import { useNavigate } from 'react-router-dom';
-import { useSettings } from '@/hooks';
 
-import { SEMOSS } from '@/assets/img/SEMOSS';
+import { AdminPanel } from '@/assets/img/AdminPanel';
+import { ArchiveBox } from '@/assets/img/ArchiveBox';
+import { Construction } from '@/assets/img/Construction';
 import { DatabaseLayers } from '@/assets/img/DatabaseLayers';
 import { Folder } from '@/assets/img/Folder';
 import { Group } from '@/assets/img/Group';
-import { Construction } from '@/assets/img/Construction';
-import { AdminPanel } from '@/assets/img/AdminPanel';
-import { Link } from '@/assets/img/Link';
 import { GroupRounded } from '@/assets/img/GroupRounded';
-import { PersonRounded } from '@/assets/img/PersonRounded';
+import { Link } from '@/assets/img/Link';
+import { ModelBrain } from '@/assets/img/ModelBrain';
 import { PaintRounded } from '@/assets/img/PaintRounded';
+import { PersonRounded } from '@/assets/img/PersonRounded';
+import { SEMOSS } from '@/assets/img/SEMOSS';
 
 import { SETTINGS_ROUTES } from './settings.constants';
 
@@ -36,7 +37,7 @@ const StyledContainer = styled('div')(({ theme }) => ({
     gap: theme.spacing(3),
 }));
 
-const StyledCard = styled(Card)(({ theme }) => ({
+const StyledCard = styled(Card)(() => ({
     '&:hover': {
         cursor: 'pointer',
     },
@@ -59,7 +60,7 @@ const StyledSearchbarContainer = styled('div')(({ theme }) => ({
     gap: theme.spacing(3),
 }));
 
-const StyledSort = styled(Select)(({ theme }) => ({
+const StyledSort = styled(Select)(() => ({
     width: '20%',
 }));
 
@@ -80,7 +81,11 @@ const DEFAULT_CARDS = SETTINGS_ROUTES.filter(
 
 const IconMapper = {
     'Database Settings': <DatabaseLayers />,
-    'Project Settings': <Folder />,
+    'Model Settings': (
+        <ModelBrain color={'#0471F0'} width={'50'} height={'50'} />
+    ),
+    'Storage Settings': <ArchiveBox />,
+    'App Settings': <Folder />,
     'Insight Settings': <SEMOSS />,
     'Member Settings': <Group />,
     Configuration: <Construction />,
@@ -100,7 +105,7 @@ export const SettingsIndexPage = () => {
     const [search, setSearch] = useState<string>('');
     const [sort, setSort] = useState('Name');
 
-    const { adminMode } = useSettings();
+    // const { adminMode } = useSettings();
 
     useEffect(() => {
         // reset the options if there is no search value

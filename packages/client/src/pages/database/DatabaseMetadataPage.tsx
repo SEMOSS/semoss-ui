@@ -7,6 +7,7 @@ import {
     Stack,
     Typography,
     Table,
+    IconButton,
     Icon,
 } from '@semoss/ui';
 import { ArrowCircleDown, Create } from '@mui/icons-material';
@@ -157,7 +158,6 @@ export const DatabaseMetadataPage = observer(() => {
             const data = getDatabaseMetamodel.data;
 
             return data.edges.map((e) => {
-                // debugger
                 return {
                     id: e.relation,
                     type: 'floating',
@@ -259,7 +259,6 @@ export const DatabaseMetadataPage = observer(() => {
                             onSelectNode={(n) => {
                                 setSelectedNode(n);
                             }}
-                            callback={() => console.log('hey')}
                             isInteractive={true}
                         />
                     </StyledMetamodelContainer>
@@ -334,9 +333,9 @@ export const DatabaseMetadataPage = observer(() => {
                                     return (
                                         <Table.Row key={idx}>
                                             <Table.Cell>
-                                                <Icon>
+                                                <IconButton disabled={true}>
                                                     <Create />
-                                                </Icon>
+                                                </IconButton>
                                             </Table.Cell>
                                             <Table.Cell>{name}</Table.Cell>
                                             <Table.Cell>

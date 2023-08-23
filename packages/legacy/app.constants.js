@@ -19,7 +19,7 @@ angular
                 pathSplit = [],
                 returnObj;
 
-            mod = 'MonolithDev';
+            mod = 'Monolith_Dev';
             protocol = window.location.protocol;
             host = window.location.hostname;
             port = window.location.port;
@@ -374,7 +374,7 @@ angular
         ],
     })
     // Add new visualizations to visualization section at bottom of this arrayok
-    .constant('WIDGETS', ['anthem-map-control'])
+    .constant('WIDGETS', [])
     .constant('SHARED_TOOLS', {
         // NEW THEME TOOLS
         grid: {

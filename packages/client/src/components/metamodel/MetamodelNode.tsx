@@ -13,6 +13,7 @@ import {
     TextField,
     Select,
     Menu,
+    MenuItem,
 } from '@semoss/ui';
 import {
     TableChartOutlined,
@@ -78,33 +79,6 @@ const TableIconBlue = () => (
     </svg>
 );
 
-/**
- * node container
- * sub container
- *
- * table header row
- *  table header icon cell
- *  table header name cell
- *      header name font styling
- *  table header edit icon cell
- *      edit table icon button
- *  table header delete icon cell
- *      delete table icon button
- *
- * divider
- *
- * table body container
- *  table row container
- *    table row
- *      table cell container: column name
- *      table cell container: column type
- *      table cell container: column icon forKey/primKey
- *      table cell container: edit column icon button
- *
- * relationship styling
- *
- */
-
 type MetamodelNodeProps = NodeProps<{
     /** Name of the node */
     name: string; // table
@@ -120,10 +94,10 @@ type MetamodelNodeProps = NodeProps<{
     }[];
 
     /** Bool to determine if node is interactive or not */
-    isInteractive: boolean;
+    isInteractive?: boolean;
 
     /** Hook to set data for edit column modal */
-    setColumnToEdit: React.Dispatch<
+    setColumnToEdit?: React.Dispatch<
         React.SetStateAction<{
             table: object;
             columnName: string;
@@ -136,14 +110,14 @@ type MetamodelNodeProps = NodeProps<{
     >;
 
     /** Hook to open/close delete confirmation modal */
-    setOpenDeleteConfirmationModal: React.Dispatch<
+    setOpenDeleteConfirmationModal?: React.Dispatch<
         React.SetStateAction<boolean>
     >;
     /** Hook to open/close edit table modal */
-    setOpenEditTableModal: React.Dispatch<React.SetStateAction<boolean>>;
+    setOpenEditTableModal?: React.Dispatch<React.SetStateAction<boolean>>;
 
     /** Hook to set the data describing the structure to delete confirmation modal */
-    setDataToDelete: React.Dispatch<
+    setDataToDelete?: React.Dispatch<
         React.SetStateAction<{
             structureId: string;
             structureName: string;
@@ -151,7 +125,7 @@ type MetamodelNodeProps = NodeProps<{
         }>
     >;
     /** Hook to set data for edit modal */
-    setTableToEdit: React.Dispatch<
+    setTableToEdit?: React.Dispatch<
         React.SetStateAction<{
             tableId: string;
             tableName: string;
@@ -160,7 +134,7 @@ type MetamodelNodeProps = NodeProps<{
         }>
     >;
     /** Hook to open/close edit column modal */
-    setOpenEditColumnModal: React.Dispatch<React.SetStateAction<boolean>>;
+    setOpenEditColumnModal?: React.Dispatch<React.SetStateAction<boolean>>;
 }>;
 
 const _MetamodelNode = (props: MetamodelNodeProps) => {
@@ -195,7 +169,8 @@ const _MetamodelNode = (props: MetamodelNodeProps) => {
         console.log('node data changed: ', nodeData);
     }, [nodeData]);
 
-    /** STYLES */
+    /** STYLES: VIEW METAMODEL */
+
     /** Manage metamodel card width */
     useEffect(() => {
         if (!headerRef?.current?.clientWidth) return;
@@ -208,21 +183,16 @@ const _MetamodelNode = (props: MetamodelNodeProps) => {
     useEffect(() => {
         console.log('metamodelCardwid: ', metamodelCardWidth);
     }, [metamodelCardWidth]);
+
     const StyledMetamodelCard = styled('div', {
         shouldForwardProp: (prop) => prop !== 'isSelected',
     })<{ isSelected: boolean }>(({ theme, isSelected }) => ({
         display: 'inline-flex',
         flexDirection: 'column',
-        // height: isSelected ? '355px' : '',
         padding: isSelected ? '4px' : '',
         alignItems: 'flex-start',
         flexShrink: isSelected ? 0 : '',
         borderRadius: '16px',
-        // boxShadow: '0 8px 16px 0 #BDC9D7',
-        // borderRadius: 'var(--border-radius-radius-large, 12px)',
-        // boxShadow: isSelected
-        //     ? '0px 5px 22px 0px #D6EAFF'
-        //     : '0px 5px 22px 0px rgba(0, 0, 0, 0.06)',
         border: editTable
             ? '0px 5px 22px 0px rgba(0, 0, 0, 0.06)'
             : isSelected
@@ -232,8 +202,6 @@ const _MetamodelNode = (props: MetamodelNodeProps) => {
     const StyledMetamodelCardHeader = styled('div')(({ theme }) => {
         return {
             display: 'flex',
-            // maxWidth: '215px',
-            // width: editTable ? '373px' : '325px',
             minWidth: '215px',
             height: '44px',
             padding: '16px',
@@ -287,7 +255,6 @@ const _MetamodelNode = (props: MetamodelNodeProps) => {
         if (cellPosition === 'second') {
             return {
                 display: 'flex',
-                // maxHeight: '44px',
                 width: '114.667px',
                 padding: '12px 16px',
                 alignItems: 'center',
@@ -297,7 +264,6 @@ const _MetamodelNode = (props: MetamodelNodeProps) => {
         if (cellPosition === 'third') {
             return {
                 display: 'flex',
-                // maxHeight: '44px',
                 padding: '10px 16px',
                 justifyContent: 'flex-end',
                 alignItems: 'center',
@@ -351,7 +317,6 @@ const _MetamodelNode = (props: MetamodelNodeProps) => {
         flexShrink: 0,
         borderRadius: '8px',
         border: `1px solid ${theme.palette.purple['400']}`,
-        // border: '1px solid var(--light-primary-main, #0471F0)',
         background: '#FFF',
     }));
 
@@ -369,7 +334,6 @@ const _MetamodelNode = (props: MetamodelNodeProps) => {
     // contains header cell and aligns it with a gap
     const StyledHeaderCellContainer = styled('div')(() => ({
         display: 'flex',
-        // width: '143px',
         maxHeight: editTable ? '40px' : '',
         flexDirection: 'column',
         alignItems: 'flex-start',
@@ -383,23 +347,11 @@ const _MetamodelNode = (props: MetamodelNodeProps) => {
         alignItems: 'flex-start',
         gap: '3px',
     }));
-    // const StyledTextField = styled(TextField)(({ theme }) => ({
-    //     display: 'flex',
-    //     // maxHeight: '36px',
-    //     width: '220px',
-    //     padding: 'var(--shape-border-radius-none, 0px) 12px',
-    //     flexDirection: 'column',
-    //     alignItems: 'flex-start',
-    //     gap: theme.shape.borderRadiusNone,
-    //     borderRadius: theme.shape.borderRadiusNone,
-    // }));
 
     // contains header text and icon
     const StyledHeaderCell = styled('div')(() => ({
         display: 'flex',
-        // width: '143px',
         alignItems: 'flex-start',
-        // alignItems: 'center',
         alignSelf: 'stretch',
     }));
 
@@ -413,7 +365,6 @@ const _MetamodelNode = (props: MetamodelNodeProps) => {
     }));
 
     /** STYLES: EDIT METAMODEL */
-
     const StyledEditIconContainer = styled('div')(() => ({
         display: 'flex',
         width: '24px',
@@ -611,167 +562,12 @@ const _MetamodelNode = (props: MetamodelNodeProps) => {
         alignmentSelf: 'stretch',
     }));
 
-    // return (
-    //     <StyledMetamodelCard
-    //         isSelected={selectedNodeId === id}
-    //         onClick={() => {
-    //             onSelectNodeId(id);
-    //         }}
-    //     >
-    //         <StyledHandle type="target" position={Position.Left} />
-    //         <StyledMetamodelHeaderFrame>
-    //             <StyledTableRow>
-    //                 {/* <StyledMetamodelIconButton>
-    //                     <TableIcon />
-    //                 </StyledMetamodelIconButton> */}
-    //                 <StyledMetamodelIconButton
-    //                     variant={'text'}
-    //                     color={'primary'}
-    //                     disabled={!isInteractive}
-    //                     onClick={() => {
-    //                         // setTableToEdit({
-    //                         //     tableId: id,
-    //                         //     tableName: data.name,
-    //                         //     tableDescription: '',
-    //                         //     columns: data.properties,
-    //                         // });
-    //                         // setOpenEditTableModal(true);
-    //                     }}
-    //                 >
-    //                     <TableIcon />
-    //                 </StyledMetamodelIconButton>
-    //                 {isInteractive ? (
-    //                     <StyledTableRow>
-    //                         <StyledTitleContainer>
-    //                             {/* <Button
-    //                                 variant={'text'}
-    //                                 color={'primary'}
-    //                                 onClick={() => {
-    //                                     setTableToEdit({
-    //                                         tableId: id,
-    //                                         tableName: data.name,
-    //                                         tableDescription: '',
-    //                                         columns: data.properties,
-    //                                     });
-    //                                     setOpenEditTableModal(true);
-    //                                 }}
-    //                             >
-    //                                 <EditRounded />
-    //                             </Button> */}
-    //                             <StyledHeaderFont variant="body1">
-    //                                 {data.name.toLowerCase()}
-    //                             </StyledHeaderFont>
-    //                         </StyledTitleContainer>
-    //                         <StyledButtonSecondary
-    //                             variant={'text'}
-    //                             color={'error'}
-    //                             onClick={() => {
-    //                                 setDataToDelete({
-    //                                     structureId: id,
-    //                                     structureName: data.name,
-    //                                     structureType: 'table',
-    //                                 });
-    //                                 setOpenDeleteConfirmationModal(true);
-    //                             }}
-    //                         >
-    //                             {/* <Icon size="md" color="red" path={mdiDelete}></Icon> */}
-    //                             <Delete />
-    //                         </StyledButtonSecondary>
-    //                     </StyledTableRow>
-    //                 ) : (
-    //                     <StyledHeaderFont variant="body1">
-    //                         {data.name.toLowerCase()}
-    //                     </StyledHeaderFont>
-    //                 )}
-    //             </StyledTableRow>
-    //         </StyledMetamodelHeaderFrame>
-    //         <StyledDivider />
-    //         {data.properties.map((p) => (
-    //             <StyledTableRow key={p.id}>
-    //                 {isInteractive ? (
-    //                     <StyledTableRow>
-    //                         {/* <StyledTitleContainer> */}
-    //                         {/* <Button
-    //                                 variant={'text'}
-    //                                 color={'primary'}
-    //                                 onClick={() => {
-    //                                     setColumnToEdit({
-    //                                         table: {
-    //                                             id: id,
-    //                                             name: data.name,
-    //                                         },
-    //                                         columnName: p.name,
-    //                                         columnDescription: 'test',
-    //                                         columnType: p.type,
-    //                                         columnDefaultValue: 'empty',
-    //                                         columnNotNull: false,
-    //                                         columnIsPrimary: false,
-    //                                     });
-    //                                     setOpenEditColumnModal(true);
-    //                                 }}
-    //                             > */}
-    //                         {/* <Icon
-    //                                     path={mdiPencil}
-    //                                     color="primary"
-    //                                 ></Icon> */}
-    //                         {/* <EditRounded /> */}
-    //                         {/* </Button> */}
-    //                         <StyledHeaderFont variant="body2">
-    //                             {p.name.toLowerCase()}
-    //                         </StyledHeaderFont>
-    //                         {/* </StyledTitleContainer> */}
-    //                         <StyledValueFont variant="body2">
-    //                             {p.type.toLowerCase()}
-    //                         </StyledValueFont>
-    //                         <StyledButtonSecondary
-    //                             variant={'text'}
-    //                             color={'error'}
-    //                             onClick={() => {
-    //                                 setDataToDelete({
-    //                                     structureId: p.id,
-    //                                     structureName: p.name,
-    //                                     structureType: 'column',
-    //                                 });
-    //                                 setOpenDeleteConfirmationModal(true);
-    //                             }}
-    //                         >
-    //                             <Delete />
-    //                         </StyledButtonSecondary>
-    //                     </StyledTableRow>
-    //                 ) : (
-    //                     <>
-    //                         {/* <StyledIcon>
-    //                             <ViewColumn />
-    //                         </StyledIcon> */}
-    //                         <StyledHeaderFont variant="body2">
-    //                             {p.name.toLowerCase()}
-    //                         </StyledHeaderFont>
-    //                         <StyledValueFont variant="body2">
-    //                             {p.type.toLowerCase()}
-    //                         </StyledValueFont>
-    //                     </>
-    //                 )}
-    //             </StyledTableRow>
-    //         ))}
-    //         <StyledHandle type="source" position={Position.Right} />
-    //         {openEditColumnModal && (
-    //             <EditColumnModal
-    //                 openEditColumnModal={openEditColumnModal}
-    //                 setOpenEditColumnModal={setOpenEditColumnModal}
-    //                 id={id}
-    //                 column={columnToEdit}
-    //                 updateState={updateData}
-    //             />
-    //         )}
-    //     </StyledMetamodelCard>
-    // );
-
     if (editTable) {
         return (
-            <>
+            <form>
                 <StyledHandle type="target" position={Position.Left} />
                 <StyledEditMetamodelCard
-                    isSelected={selectedNodeId === id}
+                    // isSelected={selectedNodeId === id}
                     onClick={() => {
                         onSelectNodeId(id);
                     }}
@@ -818,7 +614,7 @@ const _MetamodelNode = (props: MetamodelNodeProps) => {
                                 <>
                                     <StyledEditRow
                                         key={col.id}
-                                        isPrimary={idx === 0 ? true : false}
+                                        // isPrimary={idx === 0 ? true : false}
                                     >
                                         <StyledDragIconCell>
                                             <StyledDragIconContainer>
@@ -869,24 +665,24 @@ const _MetamodelNode = (props: MetamodelNodeProps) => {
                                                             )
                                                         }
                                                     >
-                                                        <Select.Item
-                                                            key={'123'}
-                                                            value={'INT'}
+                                                        <MenuItem
+                                                            key={`${idx}_first`}
+                                                            value={1}
                                                         >
-                                                            int
-                                                        </Select.Item>
-                                                        <Select.Item
-                                                            key={'456'}
-                                                            value={'CHAR'}
+                                                            Test
+                                                        </MenuItem>
+                                                        <MenuItem
+                                                            key={`${idx}_second`}
+                                                            value={2}
                                                         >
-                                                            char
-                                                        </Select.Item>
-                                                        <Select.Item
-                                                            key={'789'}
-                                                            value={'BOOLEAN'}
+                                                            Right
+                                                        </MenuItem>
+                                                        <MenuItem
+                                                            key={`${idx}_third`}
+                                                            value={3}
                                                         >
-                                                            boolean
-                                                        </Select.Item>
+                                                            Left
+                                                        </MenuItem>
                                                     </StyledSelect>
                                                 )}
                                             />
@@ -913,11 +709,11 @@ const _MetamodelNode = (props: MetamodelNodeProps) => {
                         </StyledEditTableFooterRow>
                     </StyledEditMetamodelCardContent>
                 </StyledEditMetamodelCard>
-            </>
+            </form>
         );
     }
     return (
-        <>
+        <form>
             <StyledHandle type="target" position={Position.Left} />
 
             <StyledMetamodelCard
@@ -993,7 +789,7 @@ const _MetamodelNode = (props: MetamodelNodeProps) => {
                     </StyledTableFooterRow>
                 </StyledMetamodelCardContent>
             </StyledMetamodelCard>
-        </>
+        </form>
     );
 };
 

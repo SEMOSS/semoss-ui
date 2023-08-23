@@ -47,15 +47,6 @@ export const HomePage = observer((): JSX.Element => {
     );
 
     /**
-     * Open a new app
-     *
-     * @param app - Marketplace app that will be open
-     */
-    const openApp = async (a: App) => {
-        navigate(`app/${a.project_id}`);
-    };
-
-    /**
      * Close the add app modeal
      *
      * appId - app id if it is set
@@ -108,6 +99,39 @@ export const HomePage = observer((): JSX.Element => {
             }
         >
             <Stack direction={'column'} height={'100%'}>
+                <Grid container spacing={3}>
+                    <Grid item sm={12} md={4} lg={3} xl={2}>
+                        <AppTileCard
+                            app={{
+                                project_id: '',
+                                project_name: 'Business Intelligence',
+                                project_type: '',
+                                project_cost: '',
+                                project_global: '',
+                                project_catalog_name: '',
+                                project_created_by: 'SYSTEM',
+                                project_created_by_type: '',
+                                project_date_created: '',
+                                project_has_portal: false,
+                                project_portal_name: '',
+                                project_portal_published_date: '',
+                                project_published_user: '',
+                                project_published_user_type: '',
+                                project_reactors_compiled_date: '',
+                                project_reactors_compiled_user: '',
+                                project_reactors_compiled_user_type: '',
+                                project_favorite: '',
+                                user_permission: '',
+                                group_permission: '',
+                                tag: [],
+                                description:
+                                    'Develop dashboards and visualizations to view data',
+                            }}
+                            background="#BADEFF"
+                            href="../../../"
+                        />
+                    </Grid>
+                </Grid>
                 {myApps.status === 'SUCCESS' && myApps.data.length > 0 ? (
                     <Grid container spacing={3}>
                         {myApps.data.map((app) => {
@@ -122,7 +146,7 @@ export const HomePage = observer((): JSX.Element => {
                                 >
                                     <AppTileCard
                                         app={app}
-                                        onAction={(app) => openApp(app)}
+                                        href={`#/app/${app.project_id}`}
                                     />
                                 </Grid>
                             );
