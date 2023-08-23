@@ -1,13 +1,51 @@
 import React from 'react';
 import { useForm, Controller } from 'react-hook-form';
-import { Button, TextField, Stack } from '@semoss/ui';
 import { ImportFormComponent } from './formTypes';
+import {
+    Button,
+    Collapse,
+    IconButton,
+    TextField,
+    Typography,
+    Stack,
+} from '@semoss/ui';
+import { useImport } from '@/hooks';
 
 export const DataStaxForm: ImportFormComponent = () => {
-    const { control } = useForm();
+    const { steps, setSteps } = useImport();
+
+    const { control, handleSubmit } = useForm();
+
+    const onSubmit = async (data) => {
+        const conDetails = {
+            dbDriver: data.dbDriver,
+            additional: data.additional,
+            hostname: data.hostname,
+            port: data.port,
+            httpPath: data.httpPath,
+            UID: data.UID,
+            PWD: data.PWD,
+            database: data.database,
+            schema: data.schema,
+            CONNECTION_URL: data.CONNECTION_URL,
+        };
+
+        setSteps(
+            [
+                ...steps,
+                {
+                    title: data.DATABASE_NAME,
+                    description:
+                        'View and edit the relationships of the selected tables from the external connection that was made.',
+                    data: conDetails,
+                },
+            ],
+            steps.length + 1,
+        );
+    };
 
     return (
-        <form>
+        <form onSubmit={handleSubmit(onSubmit)}>
             <Stack rowGap={2}>
                 <Controller
                     name={'DATABASE_NAME'}
@@ -141,6 +179,17 @@ export const DataStaxForm: ImportFormComponent = () => {
                         );
                     }}
                 />
+                <div
+                    style={{
+                        display: 'flex',
+                        width: '100%',
+                        justifyContent: 'flex-end',
+                    }}
+                >
+                    <Button variant="contained" disabled={true} type={'submit'}>
+                        Connect
+                    </Button>
+                </div>
             </Stack>
         </form>
     );

@@ -650,12 +650,17 @@ export const CatalogPage = observer((): JSX.Element => {
                             alignItems={'center'}
                             spacing={3}
                         >
-                            {/* rose here */}
                             <Button
                                 size={'large'}
                                 variant={'contained'}
                                 onClick={() => {
-                                    navigate('/import');
+                                    if (catalogType === 'Model') {
+                                        navigate('/import?type=model');
+                                    } else if (catalogType === 'Storage') {
+                                        navigate('/import?type=storage');
+                                    } else {
+                                        navigate('/import');
+                                    }
                                 }}
                                 aria-label={`Navigate to import ${catalogType}`}
                             >

@@ -12,6 +12,8 @@ import {
 import { Delete } from '@mui/icons-material';
 import { useImport } from '@/hooks';
 
+import { MODEL_FORMS } from './forms.constants';
+
 const StyledFlexEnd = styled('div')(({ theme }) => ({
     display: 'flex',
     justifyContent: 'flex-end',
@@ -31,29 +33,34 @@ const StyledKeyValue = styled('div')(({ theme }) => ({
     marginBottom: theme.spacing(2),
 }));
 
+type FormProps = {
+    MODEL: string;
+    SMSS_PROPERTIES: { KEY: string; value: string }[];
+} & { [key: string]: unknown };
+
 export const ModelForm = (props) => {
     const { submitFunc } = props;
 
-    const { control, handleSubmit, setValue } = useForm({
+    // Model in last step
+    const { steps } = useImport();
+
+    const { control, handleSubmit, setValue } = useForm<FormProps>({
         defaultValues: {
-            NAME: '',
             MODEL: '',
-            MODEL_TYPE: '',
-            S3_REGION: '',
-            S3_ACCESS_KEY: '',
-            S3_SECRET_KEY: '',
-            S3_ENDPOINT: '',
-            SMSS_PROPERTIES: [],
+            // NAME: '',
+            // MODEL_TYPE: '',
+            // S3_REGION: '',
+            // S3_ACCESS_KEY: '',
+            // S3_SECRET_KEY: '',
+            // S3_ENDPOINT: '',
+            // SMSS_PROPERTIES: [],
         },
     });
 
-    const { fields, remove, append } = useFieldArray({
-        control,
-        name: 'SMSS_PROPERTIES',
-    });
-
-    // Model in last step
-    const { steps } = useImport();
+    // const { fields, remove, append } = useFieldArray({
+    //     control,
+    //     name: 'SMSS_PROPERTIES',
+    // });
 
     useEffect(() => {
         const lastStep = steps[steps.length - 1];
@@ -63,19 +70,18 @@ export const ModelForm = (props) => {
     const onSubmit = async (data) => {
         const smssProperties = {};
 
-        smssProperties['MODEL'] = data.MODEL;
-        smssProperties['MODEL_TYPE'] = data.MODEL_TYPE;
-        smssProperties['S3_REGION'] = data.S3_REGION;
-        smssProperties['S3_ACCESS_KEY'] = data.S3_ACCESS_KEY;
-        smssProperties['S3_ENDPOINT'] = data.S3_ENDPOINT;
-        smssProperties['S3_SECRET_KEY'] = data.S3_REGION;
-
-        // Format the JSON to send back to submission in parent
-        data.SMSS_PROPERTIES.forEach((obj) => {
-            if (!smssProperties[obj.KEY]) {
-                smssProperties[obj.KEY] = obj.VALUE;
+        Object.entries(data).forEach((obj) => {
+            if (obj[0] !== 'SMSS_PROPERTIES') {
+                smssProperties[obj[0]] = obj[1];
             }
         });
+
+        // Format the JSON to send back to submission in parent
+        // data.SMSS_PROPERTIES.forEach((obj) => {
+        //     if (!smssProperties[obj.KEY]) {
+        //         smssProperties[obj.KEY] = obj.VALUE;
+        //     }
+        // });
 
         const formVals = {
             type: 'model',
@@ -86,163 +92,87 @@ export const ModelForm = (props) => {
         submitFunc(formVals);
     };
 
+    const lastStep = steps[steps.length - 1];
+
+    const foundForm = MODEL_FORMS.find((val) => {
+        return val.name === lastStep.title;
+    });
+
+    if (!foundForm) return <div>No Form found</div>;
+
     return (
         <form onSubmit={handleSubmit(onSubmit)}>
             <Stack rowGap={2}>
-                <StyledKeyValue>
-                    <Controller
-                        name={'MODEL'}
-                        control={control}
-                        rules={{ required: true }}
-                        render={({ field, fieldState }) => {
-                            const hasError = fieldState.error;
-                            return (
-                                <TextField
-                                    fullWidth
-                                    required
-                                    label="Model"
-                                    disabled={true}
-                                    value={field.value ? field.value : ''}
-                                    onChange={(value) => field.onChange(value)}
-                                ></TextField>
-                            );
-                        }}
-                    />
-                </StyledKeyValue>
+                {foundForm.fields.map((val, i) => {
+                    return (
+                        <StyledKeyValue key={i}>
+                            <Controller
+                                name={val.fieldName}
+                                control={control}
+                                rules={val.rules}
+                                render={({ field, fieldState }) => {
+                                    const hasError = fieldState.error;
+                                    if (
+                                        val.options.component === 'text-field'
+                                    ) {
+                                        return (
+                                            <TextField
+                                                fullWidth
+                                                required={val.rules.required}
+                                                label={val.label}
+                                                disabled={val.disabled}
+                                                value={
+                                                    field.value
+                                                        ? field.value
+                                                        : ''
+                                                }
+                                                onChange={(value) =>
+                                                    field.onChange(value)
+                                                }
+                                            ></TextField>
+                                        );
+                                    } else if (
+                                        val.options.component === 'select'
+                                    ) {
+                                        return (
+                                            <Select
+                                                fullWidth
+                                                required={val.rules.required}
+                                                label={val.label}
+                                                disabled={val.disabled}
+                                                value={
+                                                    field.value
+                                                        ? field.value
+                                                        : ''
+                                                }
+                                                onChange={(value) =>
+                                                    field.onChange(value)
+                                                }
+                                            >
+                                                {val.options.options.map(
+                                                    (opt, i) => {
+                                                        return (
+                                                            <Menu.Item
+                                                                key={i}
+                                                                value={
+                                                                    opt.value
+                                                                }
+                                                            >
+                                                                {opt.display}
+                                                            </Menu.Item>
+                                                        );
+                                                    },
+                                                )}
+                                            </Select>
+                                        );
+                                    }
+                                }}
+                            />
+                        </StyledKeyValue>
+                    );
+                })}
 
-                <StyledKeyValue>
-                    <Controller
-                        name={'MODEL_TYPE'}
-                        control={control}
-                        rules={{ required: true }}
-                        render={({ field, fieldState }) => {
-                            const hasError = fieldState.error;
-                            return (
-                                <Select
-                                    fullWidth
-                                    required
-                                    label="Model Type"
-                                    value={field.value ? field.value : ''}
-                                    onChange={(value) => field.onChange(value)}
-                                >
-                                    <Menu.Item value={'EMBEDDED'}>
-                                        Embedded
-                                    </Menu.Item>
-                                    <Menu.Item value={'FAST_CHAT'}>
-                                        Fast Chat
-                                    </Menu.Item>
-                                    <Menu.Item value={'OPEN_AI'}>
-                                        Open AI
-                                    </Menu.Item>
-                                    <Menu.Item value={'TEXT_GENERATION'}>
-                                        Text Generation
-                                    </Menu.Item>
-                                </Select>
-                            );
-                        }}
-                    />
-                </StyledKeyValue>
-
-                <StyledKeyValue>
-                    <Controller
-                        name={'NAME'}
-                        control={control}
-                        rules={{ required: true }}
-                        render={({ field, fieldState }) => {
-                            const hasError = fieldState.error;
-                            return (
-                                <TextField
-                                    fullWidth
-                                    required
-                                    label="Name"
-                                    value={field.value ? field.value : ''}
-                                    onChange={(value) => field.onChange(value)}
-                                ></TextField>
-                            );
-                        }}
-                    />
-                </StyledKeyValue>
-
-                <StyledKeyValue>
-                    <Controller
-                        name={'S3_REGION'}
-                        control={control}
-                        rules={{ required: true }}
-                        render={({ field, fieldState }) => {
-                            const hasError = fieldState.error;
-                            return (
-                                <TextField
-                                    fullWidth
-                                    required
-                                    label="S3 Region"
-                                    value={field.value ? field.value : ''}
-                                    onChange={(value) => field.onChange(value)}
-                                ></TextField>
-                            );
-                        }}
-                    />
-                </StyledKeyValue>
-
-                <StyledKeyValue>
-                    <Controller
-                        name={'S3_ACCESS_KEY'}
-                        control={control}
-                        rules={{ required: true }}
-                        render={({ field, fieldState }) => {
-                            const hasError = fieldState.error;
-                            return (
-                                <TextField
-                                    fullWidth
-                                    required
-                                    label="S3 Access Key"
-                                    value={field.value ? field.value : ''}
-                                    onChange={(value) => field.onChange(value)}
-                                ></TextField>
-                            );
-                        }}
-                    />
-                </StyledKeyValue>
-
-                <StyledKeyValue>
-                    <Controller
-                        name={'S3_SECRET_KEY'}
-                        control={control}
-                        rules={{ required: true }}
-                        render={({ field, fieldState }) => {
-                            const hasError = fieldState.error;
-                            return (
-                                <TextField
-                                    fullWidth
-                                    required
-                                    label="S3 Secret Key"
-                                    value={field.value ? field.value : ''}
-                                    onChange={(value) => field.onChange(value)}
-                                ></TextField>
-                            );
-                        }}
-                    />
-                </StyledKeyValue>
-
-                <StyledKeyValue>
-                    <Controller
-                        name={'S3_ENDPOINT'}
-                        control={control}
-                        rules={{ required: true }}
-                        render={({ field, fieldState }) => {
-                            const hasError = fieldState.error;
-                            return (
-                                <TextField
-                                    fullWidth
-                                    required
-                                    label="S3 Endpoint"
-                                    value={field.value ? field.value : ''}
-                                    onChange={(value) => field.onChange(value)}
-                                ></TextField>
-                            );
-                        }}
-                    />
-                </StyledKeyValue>
-                {fields.map((property, i) => {
+                {/* {fields.map((property, i) => {
                     return (
                         <StyledProperty key={i}>
                             <StyledFlexEnd>
@@ -304,9 +234,9 @@ export const ModelForm = (props) => {
                             </StyledKeyValue>
                         </StyledProperty>
                     );
-                })}
+                })} */}
                 <StyledFlexEnd>
-                    <Button
+                    {/* <Button
                         variant={'contained'}
                         onClick={() => {
                             append({
@@ -316,7 +246,7 @@ export const ModelForm = (props) => {
                         }}
                     >
                         Add Property
-                    </Button>
+                    </Button> */}
                     <Button type="submit" variant={'contained'}>
                         Add Model
                     </Button>

@@ -3,14 +3,19 @@ import {
     useDropzone,
     DropzoneOptions as MuiDropzoneOptions,
 } from "react-dropzone";
-import { SxProps } from "@mui/material";
+import { styled, SxProps } from "@mui/material";
 import { FileUploadOutlined } from "@mui/icons-material";
 import { Avatar } from "../Avatar";
 import { Container } from "../Container";
 import { IconButton } from "../IconButton";
-import { Link } from "../Link";
 import { TextField } from "../TextField";
 import { Typography } from "../Typography";
+
+const StyledLink = styled("button")(({ theme }) => ({
+    display: "inline-block",
+    color: theme.palette.primary.main,
+    cursor: "pointer",
+}));
 
 export interface DropzoneAreaProps extends MuiDropzoneOptions {
     /** custom style object */
@@ -20,6 +25,7 @@ export interface DropzoneAreaProps extends MuiDropzoneOptions {
 interface GetInputPropsOptionsRef {
     ref?: React.RefObject<HTMLInputElement>;
 }
+
 export function DropzoneArea() {
     const { getRootProps, getInputProps } = useDropzone({
         noClick: true,
@@ -73,12 +79,11 @@ export function DropzoneArea() {
                         </Avatar>
                         <span>
                             {
-                                <Link
+                                <StyledLink
                                     onClick={() => fileInput.current.click()}
-                                    sx={{ cursor: "pointer" }}
                                 >
                                     Click to Upload
-                                </Link>
+                                </StyledLink>
                             }
                             &nbsp;or drag and drop
                             <Typography variant="subtitle2">

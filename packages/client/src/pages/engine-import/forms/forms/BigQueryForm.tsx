@@ -2,20 +2,65 @@ import React from 'react';
 import { useForm, Controller } from 'react-hook-form';
 import { Button, TextField, Stack } from '@semoss/ui';
 import { ImportFormComponent } from './formTypes';
+import { useImport } from '@/hooks';
 
 export const BigQueryForm: ImportFormComponent = () => {
-    const { control, reset } = useForm();
+    const { steps, setSteps } = useImport();
 
-    React.useEffect(() => {
-        reset({
-            HOST_NAME: 'https://www.googleapis.com/bigquery/v2',
-            PORT: '443',
-            OAUTH_TYPE: '0',
-        });
-    }, []);
+    const { control, reset, handleSubmit } = useForm<{
+        dbDriver: string;
+        oauthServiceAcctEmail: string;
+        oauthType: string;
+        oauthPvtKeyPath: string;
+        schema: string;
+        projectId: string;
+        port: string;
+        hostname: string;
+        additional: string;
+        CONNECTION_URL: string;
+
+        DATABASE_NAME: string;
+        DATABASE_DESCRIPTION: string;
+        DATABASE_TAGS: string[];
+    }>({
+        defaultValues: {
+            dbDriver: 'BIG_QUERY',
+            hostname: 'https://www.googleapis.com/bigquery/v2',
+            oauthType: '0',
+            port: '443',
+        },
+    });
+
+    const onSubmit = async (data) => {
+        const conDetails = {
+            dbDriver: data.dbDriver,
+            additional: data.additional,
+            hostname: data.hostname,
+            port: data.port,
+            projectId: data.projectId,
+            schema: data.schema,
+            oauthType: data.oauthType,
+            oauthServiceAcctEmail: data.oauthServiceAcctEmail,
+            oauthPvtKeyPath: data.oauthPvtKeyPath,
+            CONNECTION_URL: data.CONNECTION_URL,
+        };
+
+        setSteps(
+            [
+                ...steps,
+                {
+                    title: data.DATABASE_NAME,
+                    description:
+                        'View and edit the relationships of the selected tables from the external connection that was made.',
+                    data: conDetails,
+                },
+            ],
+            steps.length + 1,
+        );
+    };
 
     return (
-        <form>
+        <form onSubmit={handleSubmit(onSubmit)}>
             <Stack rowGap={2}>
                 <Controller
                     name={'DATABASE_NAME'}
@@ -67,7 +112,7 @@ export const BigQueryForm: ImportFormComponent = () => {
                     }}
                 />
                 <Controller
-                    name={'HOST_NAME'}
+                    name={'hostname'}
                     control={control}
                     rules={{ required: true }}
                     render={({ field, fieldState }) => {
@@ -84,7 +129,7 @@ export const BigQueryForm: ImportFormComponent = () => {
                     }}
                 />
                 <Controller
-                    name={'PORT'}
+                    name={'port'}
                     control={control}
                     rules={{ required: false }}
                     render={({ field, fieldState }) => {
@@ -100,7 +145,7 @@ export const BigQueryForm: ImportFormComponent = () => {
                     }}
                 />
                 <Controller
-                    name={'PROJECT'}
+                    name={'projectId'}
                     control={control}
                     rules={{ required: true }}
                     render={({ field, fieldState }) => {
@@ -117,7 +162,7 @@ export const BigQueryForm: ImportFormComponent = () => {
                     }}
                 />
                 <Controller
-                    name={'SCHEMA'}
+                    name={'schema'}
                     control={control}
                     rules={{ required: true }}
                     render={({ field, fieldState }) => {
@@ -134,7 +179,7 @@ export const BigQueryForm: ImportFormComponent = () => {
                     }}
                 />
                 <Controller
-                    name={'OAUTH_TYPE'}
+                    name={'oauthType'}
                     control={control}
                     rules={{ required: true }}
                     render={({ field, fieldState }) => {
@@ -151,7 +196,7 @@ export const BigQueryForm: ImportFormComponent = () => {
                     }}
                 />
                 <Controller
-                    name={'OAUTH_SERVICE_ACCOUNT'}
+                    name={'oauthServiceAcctEmail'}
                     control={control}
                     rules={{ required: false }}
                     render={({ field, fieldState }) => {
@@ -167,7 +212,7 @@ export const BigQueryForm: ImportFormComponent = () => {
                     }}
                 />
                 <Controller
-                    name={'OAUTH_SERVICE_ACCOUNT_KEY'}
+                    name={'oauthPvtKeyPath'}
                     control={control}
                     rules={{ required: false }}
                     render={({ field, fieldState }) => {
@@ -183,7 +228,7 @@ export const BigQueryForm: ImportFormComponent = () => {
                     }}
                 />
                 <Controller
-                    name={'ADDITIONAL_PARAMETERS'}
+                    name={'additional'}
                     control={control}
                     rules={{ required: false }}
                     render={({ field, fieldState }) => {
@@ -199,7 +244,7 @@ export const BigQueryForm: ImportFormComponent = () => {
                     }}
                 />
                 <Controller
-                    name={'JDBC_URL'}
+                    name={'CONNECTION_URL'}
                     control={control}
                     rules={{ required: false }}
                     render={({ field, fieldState }) => {
@@ -214,6 +259,17 @@ export const BigQueryForm: ImportFormComponent = () => {
                         );
                     }}
                 />
+                <div
+                    style={{
+                        display: 'flex',
+                        width: '100%',
+                        justifyContent: 'flex-end',
+                    }}
+                >
+                    <Button variant="contained" type={'submit'}>
+                        Connect
+                    </Button>
+                </div>
             </Stack>
         </form>
     );

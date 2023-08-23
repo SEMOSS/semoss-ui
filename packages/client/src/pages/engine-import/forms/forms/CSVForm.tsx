@@ -8,9 +8,11 @@ import {
     Select,
     Menu,
     Autocomplete,
+    useNotification,
 } from '@semoss/ui';
+import { useNavigate } from 'react-router-dom';
 import { ImportFormComponent } from './formTypes';
-import { DataFormTable } from './../DataFormTable';
+import { DataFormTable } from '../DataFormTable';
 import { mdiNewspaperVariantMultipleOutline } from '@mdi/js';
 import { Metamodel } from '@/components/metamodel';
 import { useRootStore } from '@/hooks';
@@ -28,6 +30,8 @@ export const CSVForm: ImportFormComponent = (props) => {
     const { control, getValues, handleSubmit, reset, watch } = useForm();
 
     const values = getValues();
+    const notification = useNotification();
+    const navigate = useNavigate();
 
     const watchDelimeter = watch('DELIMETER');
     const watchDatabaseName = watch('DATABASE_NAME');
@@ -84,94 +88,109 @@ export const CSVForm: ImportFormComponent = (props) => {
     const nodes = useMemo(() => {
         const formattedNodes = [];
 
-        // // TO-DO: fix TS errors on metamodel and node
-        // if (metamodel) {
-        //     Object.entries(metamodel.positions).forEach((table, i) => {
-        //         // table = ['db name', {x: '', y: '' }]
-        //         const node = {
-        //             data: {
-        //                 name: table[0],
-        //                 properties: [], // get columns from metamodel.nodeProp
-        //             },
-        //             id: table[0],
-        //             position: { x: table[1].left, y: table[1].top },
-        //             type: 'metamodel',
-        //         };
+        // TO-DO: fix TS errors on metamodel and node
+        if (metamodel) {
+            Object.entries(metamodel.positions).forEach((table, i) => {
+                // table = ['db name', {x: '', y: '' }]
+                const node = {
+                    data: {
+                        name: table[0],
+                        properties: [], // get columns from metamodel.nodeProp
+                    },
+                    id: table[0],
+                    position: { x: table[1].left, y: table[1].top },
+                    type: 'metamodel',
+                };
 
-        //         // first see if there is a property for the table name in .nodeProp
-        //         if (metamodel.nodeProp[table[0]]) {
-        //             const columnsForTable = metamodel.nodeProp[table[0]];
+                // first see if there is a property for the table name in .nodeProp
+                if (metamodel.nodeProp[table[0]]) {
+                    const columnsForTable = metamodel.nodeProp[table[0]];
 
-        //             columnsForTable.forEach((col) => {
-        //                 const foundColumn = metamodel.dataTypes[col];
+                    columnsForTable.forEach((col) => {
+                        const foundColumn = metamodel.dataTypes[col];
 
-        //                 node.data.properties.push({
-        //                     id: table[0] + '__' + col,
-        //                     name: col,
-        //                     type: foundColumn,
-        //                 });
-        //             });
-        //         } else {
-        //             const foundColumn = metamodel.dataTypes[table[0]];
-        //             node.data.properties.push({
-        //                 id: table[0],
-        //                 name: table[0],
-        //                 type: foundColumn,
-        //             });
-        //         }
-        //         formattedNodes.push(node);
-        //     });
-        // }
+                        node.data.properties.push({
+                            id: table[0] + '__' + col,
+                            name: col,
+                            type: foundColumn,
+                        });
+                    });
+                } else {
+                    const foundColumn = metamodel.dataTypes[table[0]];
+                    node.data.properties.push({
+                        id: table[0],
+                        name: table[0],
+                        type: foundColumn,
+                    });
+                }
+                formattedNodes.push(node);
+            });
+        }
 
         return formattedNodes;
     }, [metamodel]);
 
     const edges = useMemo(() => {
         const newEdges = [];
-        // if (metamodel) {
-        //     metamodel.relation.forEach((rel) => {
-        //         newEdges.push({
-        //             id: rel.relName,
-        //             type: 'floating',
-        //             source: rel.fromTable,
-        //             target: rel.toTable,
-        //         });
-        //     });
-        // }
+        if (metamodel) {
+            metamodel.relation.forEach((rel) => {
+                newEdges.push({
+                    id: rel.relName,
+                    type: 'floating',
+                    source: rel.fromTable,
+                    target: rel.toTable,
+                });
+            });
+        }
         return newEdges;
     }, [metamodel]);
 
-    const submitMetmodelPixel = async (edges) => {
-        const dataTypeObject = {};
-        const nodePropObject = {};
+    const submitMetmodelPixel = async (payloadObject) => {
+        let pixel = `databaseVar = RdbmsCsvUpload(database=["${watchDatabaseName}"], filePath=["${
+            watchFile.name
+        }"], delimiter=["${watchDelimeter}"], metamodel=["${JSON.stringify(
+            payloadObject.metamodel,
+        )}"], newHeaders=["${JSON.stringify(
+            payloadObject.newHeaders,
+        )}"], additionalDataTypes=["${JSON.stringify(
+            payloadObject.additionalDataTypes,
+        )}"], dataTypeMap=["${JSON.stringify(
+            payloadObject.dataTypeMap,
+        )}"] descriptionMap=["${JSON.stringify(
+            payloadObject.descriptionMap,
+        )}"], logicalNamesMap=["${JSON.stringify(
+            payloadObject.logicalNamesMap,
+        )}"], existing=[false]); `;
 
-        nodes.forEach((n) => {
-            dataTypeObject[`${n.data.name}`] = n.data.properties[0].type;
-            nodePropObject[`${n.data.name}`] = [];
-        });
+        pixel += `ExtractDatabaseMeta( database=[databaseVar]);`;
 
-        const resp = await monolithStore.runQuery(
-            `databaseVar = RdbmsCsvUpload(database=["${watchDatabaseName}"], filePath=["${
-                watchFile.name
-            }"], delimiter=["${watchDelimeter}"], metamodel=[{"relation": ${JSON.stringify(
-                metamodel.relation,
-            )}, "nodeProp": ${JSON.stringify(
-                nodePropObject,
-            )}}], dataTypeMap=[${JSON.stringify(
-                dataTypeObject,
-            )}], newHeaders=[{}], additionalDataTypes=[{}], descriptionMap=[{}], logicalNamesMap=[{}], existing=[false])`,
-        );
+        pixel += `SaveOwlPositions(database=[databaseVar], positionMap=[${JSON.stringify(
+            metamodel.positions,
+        )}])`;
 
-        // const output = resp.pixelReturn[0].output;
+        const response = await monolithStore.runQuery(pixel);
 
-        // const resp2 = await monolithStore.runQuery(
-        //     `ExtractDatabaseMeta( database=[databaseVar]);SaveOwlPositions(database=[databaseVar], positionMap=[${JSON.stringify(
-        //         metamodel.positions,
-        //     )}]);`,
-        // );
+        const { output, additionalOutput, operationType } =
+            response.pixelReturn[0];
+
+        if (operationType.indexOf('ERROR') > -1) {
+            notification.add({
+                color: 'error',
+                message: output,
+            });
+
+            return;
+        } else {
+            notification.add({
+                color: 'success',
+                message: additionalOutput[0].output,
+            });
+            navigate(`/database/${output.database_id}`);
+        }
     };
 
     metamodel ? console.log(metamodel) : null;
+    console.log(edges, nodes);
 
     return (
         <>
@@ -343,9 +362,9 @@ export const CSVForm: ImportFormComponent = (props) => {
                 <div style={{ width: '100%', height: '600px' }}>
                     <Metamodel
                         callback={submitMetmodelPixel}
-                        onSelectNode={null}
                         edges={edges}
                         nodes={nodes}
+                        isInteractive={true}
                     />
                 </div>
             )}
