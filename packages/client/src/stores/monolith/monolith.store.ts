@@ -202,7 +202,7 @@ export class MonolithStore {
         }
 
         return new Promise((resolve) => {
-            const url = `${window.location.origin}${MODULE}/api/auth/login/${provider}`;
+            const url = `${MODULE}/api/auth/login/${provider}`;
             const popUpWindow = window.top.open(
                 url,
                 '_blank',
@@ -220,7 +220,7 @@ export class MonolithStore {
                         clearInterval(interval);
                     } else if (
                         popUpWindow.document.location.href.indexOf(
-                            `${window.location.href}`,
+                            `${window.location.host}`,
                         ) > -1
                     ) {
                         clearInterval(interval);
