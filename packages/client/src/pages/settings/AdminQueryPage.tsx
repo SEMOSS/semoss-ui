@@ -1,18 +1,22 @@
-import { useEffect, useState } from 'react';
-
+import { useEffect, useReducer, useState, useRef } from 'react';
+import Editor from '@monaco-editor/react';
 import {
     styled,
     useNotification,
+    Accordion,
     Alert,
     Button,
+    Divider,
     Table,
     TextField,
     Select,
     Stack,
     TextArea,
+    Typography,
 } from '@semoss/ui';
 
-import { useRootStore } from '@/hooks';
+import { usePixel, useRootStore } from '@/hooks';
+import { useNavigate, useLocation } from 'react-router-dom';
 
 import { Controller, useForm } from 'react-hook-form';
 
@@ -20,6 +24,7 @@ const StyledContainer = styled('div')(() => ({
     display: 'flex',
     width: '100%',
     gap: '24px',
+    flexDirection: 'column',
 }));
 
 const StyledLeft = styled('div')(() => ({
@@ -32,13 +37,39 @@ const StyledRight = styled('div')(() => ({
     flex: '1',
 }));
 
-const DATABASE_OPTIONS = [
-    'LocalMasterDatabase',
-    'security',
-    'scheduler',
-    'themes',
-    'UserTrackingDatabase',
-];
+const StyledPropContainer = styled('div')(({ theme }) => ({
+    display: 'flex',
+    flexDirection: 'column',
+    marginBottom: theme.spacing(2),
+    padding: '24px',
+    borderRadius: '15px',
+    backgroundColor: 'rgba(255, 255, 255, 1)',
+    boxShadow: '0px 5px 5px rgba(0, 0, 0, 0.03)',
+}));
+
+const StyledTitle = styled('div')(({ theme }) => ({
+    marginBottom: theme.spacing(2),
+    display: 'flex',
+}));
+
+const StyledActionButtonsDiv = styled('div')(({ theme }) => ({
+    display: 'flex',
+    justifyContent: 'center',
+    gap: '.5rem',
+}));
+
+const StyledButton = styled(Button)({
+    textTransform: 'none',
+    fontWeight: 'bold',
+});
+
+const StyledSelect = styled(Select)({
+    width: '25%',
+});
+
+const StyledAccordion = styled(Accordion)({
+    zIndex: 1,
+});
 
 interface TypeDbQuery {
     SELECTED_DATABASE: string;
@@ -46,9 +77,180 @@ interface TypeDbQuery {
     ROWS: number;
 }
 
+const initialState = {
+    databases: [],
+};
+
+const reducer = (state, action) => {
+    switch (action.type) {
+        case 'field': {
+            return {
+                ...state,
+                [action.field]: action.value,
+            };
+        }
+    }
+    return state;
+};
+
+const LANGUAGES = {
+    sql: {
+        name: 'SQL',
+    },
+    r: {
+        name: 'R',
+    },
+    python: {
+        name: 'Python',
+    },
+};
+
 export const AdminQueryPage = () => {
-    const { monolithStore } = useRootStore();
+    const { configStore, monolithStore } = useRootStore();
     const notification = useNotification();
+    const { search: catalogParams } = useLocation();
+    const [expanded, setExpanded] = useState(false);
+
+    // get a list of the keys
+    const databaseMetaKeys = configStore.store.config.databaseMetaKeys.filter(
+        (k) => {
+            return (
+                k.display_options === 'single-checklist' ||
+                k.display_options === 'multi-checklist' ||
+                k.display_options === 'single-select' ||
+                k.display_options === 'multi-select' ||
+                k.display_options === 'single-typeahead' ||
+                k.display_options === 'multi-typeahead'
+            );
+        },
+    );
+
+    // get metakeys to the ones we want
+    const metaKeys = databaseMetaKeys.map((k) => {
+        return k.metakey;
+    });
+
+    const [state, dispatch] = useReducer(reducer, initialState);
+    const { databases } = state;
+
+    const [offset, setOffset] = useState(0);
+    const [canCollect, setCanCollect] = useState(true);
+    const canCollectRef = useRef(true);
+    canCollectRef.current = canCollect;
+    const limit = 6;
+
+    const offsetRef = useRef(0);
+    offsetRef.current = offset;
+
+    // save the search string
+    const [search, setSearch] = useState<string>('');
+
+    const [mode, setMode] = useState<string>('My Databases');
+    const [view, setView] = useState<'list' | 'tile'>('tile');
+    const [filterByVisibility, setFilterByVisibility] = useState(true);
+
+    const dbPixelPrefix: string = `MyEngines`;
+
+    // track which filters are opened their selected value, and search term
+    const [filterVisibility, setFilterVisibility] = useState<
+        Record<string, { open: boolean; value: string[]; search: string }>
+    >(() => {
+        return databaseMetaKeys.reduce((prev, current) => {
+            prev[current.metakey] = {
+                open: false,
+                value: [],
+                search: '',
+            };
+
+            return prev;
+        }, {});
+    });
+
+    const [filterValues, setFilterValues] = useState<
+        Record<string, string[] | string | null>
+    >(() => {
+        return databaseMetaKeys.reduce((prev, current) => {
+            const multiple =
+                current.display_options === 'multi-checklist' ||
+                current.display_options === 'multi-select' ||
+                current.display_options === 'multi-typeahead';
+
+            prev[current.metakey] = multiple ? [] : null;
+
+            return prev;
+        }, {});
+    });
+
+    // construct filters to send to metafilters
+    const metaFilters = {};
+    for (const key in filterValues) {
+        const filter = filterValues[key];
+        const filterVal = filterVisibility[key].value;
+        if (filter && filterVal.length > 0) {
+            metaFilters[key] = filterVal;
+        }
+    }
+
+    const metaKeysDescription = [...metaKeys, 'description'];
+
+    const getDatabases = usePixel<
+        {
+            app_cost: string;
+            app_id: string;
+            app_name: string;
+            app_type: string;
+            database_cost: string;
+            database_global: boolean;
+            database_id: string;
+            database_name: string;
+            database_type: string;
+            database_created_by: string;
+            database_date_created: string;
+            description: string;
+            low_database_name: string;
+            permission: number;
+            tag: string;
+            user_permission: number;
+            upvotes: number;
+        }[]
+    >(
+        `${dbPixelPrefix}( metaKeys = ${JSON.stringify(
+            metaKeysDescription,
+        )} , metaFilters = [ ${JSON.stringify(
+            metaFilters,
+        )} ] , filterWord=["${search}"], userT = [true], engineTypes=['DATABASE'], offset=[${offset}], limit=[${limit}]) ;`,
+    );
+
+    useEffect(() => {
+        if (getDatabases.status !== 'SUCCESS') {
+            return;
+        }
+
+        if (getDatabases.data.length < limit) {
+            setCanCollect(false);
+        } else {
+            if (!canCollectRef.current) {
+                setCanCollect(true);
+            }
+        }
+
+        const mutateListWithVotes = databases;
+
+        getDatabases.data.forEach((db) => {
+            mutateListWithVotes.push({
+                ...db,
+                upvotes: db.upvotes ? db.upvotes : 0,
+                views: 'N/A',
+                trending: 'N/A',
+            });
+        });
+
+        dispatch({
+            type: 'field',
+            field: 'databases',
+            value: mutateListWithVotes,
+        });
+    }, [getDatabases.status, getDatabases.data]);
 
     const [output, setOutput] = useState<{
         type: string;
@@ -213,6 +415,63 @@ export const AdminQueryPage = () => {
 
     return (
         <StyledContainer>
+            <StyledPropContainer>
+                <StyledTitle>
+                    <Select
+                        onChange={() => setExpanded(!expanded)}
+                        sx={{
+                            width: '7%',
+                            boxShadow: 'none',
+                            '.MuiOutlinedInput-notchedOutline': { border: 0 },
+                        }}
+                        defaultValue={LANGUAGES['sql'].name}
+                    >
+                        {Object.keys(LANGUAGES).map((option, i) => {
+                            return (
+                                <Select.Item
+                                    value={LANGUAGES[option].name}
+                                    key={i}
+                                >
+                                    {LANGUAGES[option].name}
+                                </Select.Item>
+                            );
+                        })}
+                    </Select>
+                    <Controller
+                        name={'SELECTED_DATABASE'}
+                        control={control}
+                        rules={{ required: true }}
+                        render={({ field }) => {
+                            return (
+                                <StyledSelect
+                                    label="Database"
+                                    value={field.value ? field.value : ''}
+                                    onChange={(e) =>
+                                        field.onChange(e.target.value)
+                                    }
+                                >
+                                    {databases.map((option, i) => {
+                                        return (
+                                            <Select.Item
+                                                value={option.database_name}
+                                                key={i}
+                                            >
+                                                {option.database_name}
+                                            </Select.Item>
+                                        );
+                                    })}
+                                </StyledSelect>
+                            );
+                        }}
+                    />
+                    <StyledActionButtonsDiv>
+                        <StyledButton variant="outlined">Reset</StyledButton>
+                        <StyledButton variant="contained">Save</StyledButton>
+                    </StyledActionButtonsDiv>
+                </StyledTitle>
+                <Divider sx={{ marginBottom: '8px' }} />
+                <Editor height="60vh" defaultLanguage="javascript" />
+            </StyledPropContainer>
             <StyledLeft>
                 <form>
                     <Stack spacing={2}>
@@ -229,13 +488,13 @@ export const AdminQueryPage = () => {
                                             field.onChange(e.target.value)
                                         }
                                     >
-                                        {DATABASE_OPTIONS.map((option, i) => {
+                                        {databases.map((option, i) => {
                                             return (
                                                 <Select.Item
-                                                    value={option}
+                                                    value={option.database_name}
                                                     key={i}
                                                 >
-                                                    {option}
+                                                    {option.database_name}
                                                 </Select.Item>
                                             );
                                         })}
