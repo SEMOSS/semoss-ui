@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { observer } from 'mobx-react-lite';
 import { Link, useParams, Navigate } from 'react-router-dom';
 import { Controller, useForm } from 'react-hook-form';
@@ -15,7 +15,7 @@ import {
 import { AccountCircle, Code, Download } from '@mui/icons-material';
 
 import { THEME } from '@/constants';
-import { useRootStore } from '@/hooks';
+import { useRootStore, useAPI } from '@/hooks';
 import { AppRenderer } from '@/components/app';
 
 const NAV_HEIGHT = '48px';
@@ -171,6 +171,7 @@ export const AppPage = observer(() => {
     // get the app id from the url
     const { appId } = useParams();
 
+    const [appPermission, setAppPermission] = useState('READ_ONLY');
     const [editMode, setEditMode] = useState<boolean>(false);
     const [isLoading, setIsLoading] = useState(false);
     const [counter, setCounter] = useState(0);
@@ -181,6 +182,20 @@ export const AppPage = observer(() => {
         },
     });
 
+    useEffect(() => {
+        getAppPermission();
+
+        return () => {
+            // disable edit
+            setAppPermission('READ_ONLY');
+        };
+    }, []);
+
+    const getAppPermission = async () => {
+        const response = await monolithStore.getUserProjectPermission(appId);
+
+        setAppPermission(response.permission);
+    };
     /**
      * Method that is called to create the app
      */
@@ -191,7 +206,7 @@ export const AppPage = observer(() => {
         try {
             const path = 'version/assets/';
 
-            // upnzip the file in the new project
+            // upnzip the file in the new app
             await monolithStore.runQuery(
                 `DeleteAsset(filePath=["${path}"], space=["${appId}"]);`,
             );
@@ -204,7 +219,7 @@ export const AppPage = observer(() => {
                 path,
             );
 
-            // upnzip the file in the new project
+            // upnzip the file in the new app
             await monolithStore.runQuery(
                 `UnzipFile(filePath=["${`${path}${upload[0].fileName}`}"], space=["${appId}"]);`,
             );
@@ -212,10 +227,10 @@ export const AppPage = observer(() => {
             // Load the insight classes
             await monolithStore.runQuery(`ReloadInsightClasses('${appId}');`);
 
-            // set the project portal
+            // set the app portal
             await monolithStore.setProjectPortal(false, appId, true, 'public');
 
-            // Publish the project the insight classes
+            // Publish the app the insight classes
             await monolithStore.runQuery(
                 `PublishProject('${appId}', release=true);`,
             );
@@ -245,7 +260,7 @@ export const AppPage = observer(() => {
         try {
             const path = 'version/assets/';
 
-            // upnzip the file in the new project
+            // upnzip the file in the new app
             const response = await monolithStore.runQuery(
                 `DownloadAsset(filePath=["${path}"], space=["${appId}"]);`,
             );
@@ -292,7 +307,17 @@ export const AppPage = observer(() => {
                 <Stack flex={1}>&nbsp;</Stack>
                 <StyledTrack
                     active={editMode}
-                    onClick={() => setEditMode(!editMode)}
+                    onClick={() => {
+                        if (appPermission === 'OWNER') {
+                            setEditMode(!editMode);
+                        } else {
+                            notification.add({
+                                color: 'error',
+                                message:
+                                    'Currently you do not have access to edit this application.',
+                            });
+                        }
+                    }}
                 >
                     <StyledHandle active={editMode}>
                         <Code />
@@ -300,7 +325,7 @@ export const AppPage = observer(() => {
                 </StyledTrack>
                 <IconButton
                     size={'small'}
-                    color={'primary'}
+                    disabled={appPermission !== 'OWNER'}
                     onClick={() => {
                         downloadApp();
                     }}

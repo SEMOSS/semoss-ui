@@ -40,11 +40,6 @@ export const UpdateSMSS = (props: UpdateSMSSProps) => {
         if (smssDetails.status !== 'SUCCESS') {
             return;
         }
-        // let stringToDisplay = '';
-
-        // Object.entries(smssDetails.data).forEach((val) => {
-        //     stringToDisplay += `${val[0]} ${val[1]}\n`;
-        // });
 
         setInitialValue(smssDetails.data);
         setValue(smssDetails.data);

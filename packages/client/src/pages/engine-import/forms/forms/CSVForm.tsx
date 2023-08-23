@@ -12,7 +12,7 @@ import {
 } from '@semoss/ui';
 import { useNavigate } from 'react-router-dom';
 import { ImportFormComponent } from './formTypes';
-import { DataFormTable } from './../DataFormTable';
+import { DataFormTable } from '../DataFormTable';
 import { mdiNewspaperVariantMultipleOutline } from '@mdi/js';
 import { Metamodel } from '@/components/metamodel';
 import { useRootStore } from '@/hooks';

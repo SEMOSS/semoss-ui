@@ -44,6 +44,7 @@ import GOOGLE_DRIVE from '@/assets/img/GOOGLE_DRIVE.png';
 import ONEDRIVE from '@/assets/img/ONEDRIVE.png';
 import AZURE_BLOB from '@/assets/img/AZURE_BLOB.png';
 import MINIO from '@/assets/img/MINIO.png';
+import SFTP from '@/assets/img/SFTP.png';
 
 //Commercial Models
 import OPEN_AI from '@/assets/img/OPEN_AI.png';
@@ -179,7 +180,7 @@ export const stepsTwo = {
 
         {
             name: 'H2',
-            disable: false,
+            disable: true,
         },
 
         {
@@ -189,29 +190,29 @@ export const stepsTwo = {
 
         {
             name: 'Impala',
-            disable: true,
+            disable: false,
         },
 
         {
             name: 'MariaDB',
-            disable: true,
+            disable: false,
         },
 
         {
             name: 'MySQL',
-            disable: true,
+            disable: false,
         },
         {
             name: 'Open Search',
-            disable: true,
+            disable: false,
         },
         {
             name: 'Oracle',
-            disable: true,
+            disable: false,
         },
         {
             name: 'Phoenix',
-            disable: true,
+            disable: false,
         },
         {
             name: 'Postgres',
@@ -219,19 +220,19 @@ export const stepsTwo = {
         },
         {
             name: 'Redshift',
-            disable: true,
+            disable: false,
         },
         {
             name: 'SAP Hana',
-            disable: true,
+            disable: false,
         },
         {
             name: 'SEMOSS',
-            disable: true,
+            disable: false,
         },
         {
             name: 'Snowflake',
-            disable: true,
+            disable: false,
         },
         {
             name: 'SQL Server',
@@ -244,15 +245,15 @@ export const stepsTwo = {
         },
         {
             name: 'Teradata',
-            disable: true,
+            disable: false,
         },
         {
             name: 'Tibco',
-            disable: true,
+            disable: false,
         },
         {
             name: 'Trino',
-            disable: true,
+            disable: false,
         },
     ],
     ['Add Storage']: [
@@ -269,24 +270,28 @@ export const stepsTwo = {
             disable: false,
         },
         {
-            name: 'Google Cloud Storage',
-            disable: true,
+            name: 'Google Cloud',
+            disable: false,
         },
         {
             name: 'Google Drive',
-            disable: false,
+            disable: true,
         },
         {
             name: 'Microsoft Azure Blob Storage',
-            disable: true,
-        },
-        {
-            name: 'Microsoft OneDrive',
             disable: false,
         },
         {
-            name: 'MINIO',
+            name: 'Microsoft OneDrive',
             disable: true,
+        },
+        {
+            name: 'MINIO',
+            disable: false,
+        },
+        {
+            name: 'SFTP',
+            disable: false,
         },
     ],
     ['Commercial Models']: [
@@ -421,11 +426,12 @@ export const IconDBMapper = {
     'Amazon S3': AMAZON_S3,
     Dreamhost: DREAMHOST,
     Dropbox: dropbox,
-    'Google Cloud Storage': GOOGLE_CLOUD,
+    'Google Cloud': GOOGLE_CLOUD,
     'Google Drive': GOOGLE_DRIVE,
     'Microsoft Azure Blob Storage': AZURE_BLOB,
     'Microsoft OneDrive': ONEDRIVE,
     MINIO: MINIO,
+    SFTP: SFTP,
 
     'Open AI': OPEN_AI,
     Claude: CLAUDE,

@@ -162,7 +162,7 @@ export const LoginPage = observer(() => {
     }
 
     // get the proviers
-    const providers = [...configStore.store.config.providers, 'ms'];
+    const providers = [...configStore.store.config.providers];
 
     return (
         <>

@@ -11,16 +11,15 @@ const StyledContainer = styled('div')(() => ({
     alignItems: 'flex-start',
 }));
 
-export const ProjectSettingsDetailPage = () => {
+export const ModelSettingsDetailPage = () => {
     const { id } = useParams();
     const { state } = useLocation();
     const navigate = useNavigate();
 
-    // console.log('detail page', id, state);
     return (
         <StyledContainer>
             <SettingsTiles
-                type={'app'}
+                type={'model'}
                 id={id}
                 onDelete={() => {
                     console.log('navigate to model settings');
@@ -28,7 +27,7 @@ export const ProjectSettingsDetailPage = () => {
                 }}
             />
             <Permissions
-                type="app"
+                type="model"
                 config={{
                     id: id,
                     name: state ? state.name : 'Name not provided',

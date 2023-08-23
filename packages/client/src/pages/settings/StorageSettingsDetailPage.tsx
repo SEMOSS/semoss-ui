@@ -11,24 +11,23 @@ const StyledContainer = styled('div')(() => ({
     alignItems: 'flex-start',
 }));
 
-export const ProjectSettingsDetailPage = () => {
+export const StorageSettingsDetailPage = () => {
     const { id } = useParams();
     const { state } = useLocation();
     const navigate = useNavigate();
 
-    // console.log('detail page', id, state);
     return (
         <StyledContainer>
             <SettingsTiles
-                type={'app'}
+                type={'storage'}
                 id={id}
                 onDelete={() => {
-                    console.log('navigate to model settings');
-                    navigate('/model');
+                    console.log('navigate to storage settings');
+                    navigate('/storage');
                 }}
             />
             <Permissions
-                type="app"
+                type="storage"
                 config={{
                     id: id,
                     name: state ? state.name : 'Name not provided',

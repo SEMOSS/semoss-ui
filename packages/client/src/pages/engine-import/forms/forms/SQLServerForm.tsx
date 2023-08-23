@@ -21,11 +21,7 @@ interface SQLServerForm {
     metamodel: any;
 }
 export const SQLServerForm: ImportFormComponent = (props) => {
-    const { monolithStore } = useRootStore();
-    const navigate = useNavigate();
-    const notification = useNotification();
     const { steps, setSteps } = useImport();
-
     const [openSettings, setOpenSettings] = useState(false);
 
     const { control, handleSubmit, getValues } = useForm<{
@@ -268,116 +264,126 @@ export const SQLServerForm: ImportFormComponent = (props) => {
                         );
                     }}
                 />
+
+                <div
+                    style={{
+                        display: 'flex',
+                        width: '100%',
+                        justifyContent: 'space-between',
+                    }}
+                >
+                    <Typography variant={'body1'}>ADVANCED SETTINGS</Typography>
+                    <IconButton onClick={() => setOpenSettings(!openSettings)}>
+                        {openSettings ? <ExpandLess /> : <ExpandMore />}
+                    </IconButton>
+                </div>
+
+                <Collapse in={openSettings}>
+                    <Stack rowGap={2}>
+                        <Controller
+                            name={'FETCH_SIZE'}
+                            control={control}
+                            rules={{ required: false }}
+                            render={({ field, fieldState }) => {
+                                const hasError = fieldState.error;
+                                return (
+                                    <TextField
+                                        fullWidth
+                                        label="Fetch Size"
+                                        value={field.value ? field.value : ''}
+                                        onChange={(value) =>
+                                            field.onChange(value)
+                                        }
+                                    ></TextField>
+                                );
+                            }}
+                        />
+                        <Controller
+                            name={'CONNECTION_TIMEOUT'}
+                            control={control}
+                            rules={{ required: false }}
+                            render={({ field, fieldState }) => {
+                                const hasError = fieldState.error;
+                                return (
+                                    <TextField
+                                        fullWidth
+                                        label="Connection Timeout"
+                                        value={field.value ? field.value : ''}
+                                        onChange={(value) =>
+                                            field.onChange(value)
+                                        }
+                                    ></TextField>
+                                );
+                            }}
+                        />
+                        <Controller
+                            name={'CONNECTION_POOLING'}
+                            control={control}
+                            rules={{ required: false }}
+                            render={({ field, fieldState }) => {
+                                const hasError = fieldState.error;
+                                return (
+                                    <TextField
+                                        fullWidth
+                                        label="Connection Pooling"
+                                        value={field.value ? field.value : ''}
+                                        onChange={(value) =>
+                                            field.onChange(value)
+                                        }
+                                    ></TextField>
+                                );
+                            }}
+                        />
+                        <Controller
+                            name={'POOL_MIN_SIZE'}
+                            control={control}
+                            rules={{ required: false }}
+                            render={({ field, fieldState }) => {
+                                const hasError = fieldState.error;
+                                return (
+                                    <TextField
+                                        fullWidth
+                                        label="Pool Minimum Size"
+                                        value={field.value ? field.value : ''}
+                                        onChange={(value) =>
+                                            field.onChange(value)
+                                        }
+                                    ></TextField>
+                                );
+                            }}
+                        />
+                        <Controller
+                            name={'POOL_MAX_SIZE'}
+                            control={control}
+                            rules={{ required: false }}
+                            render={({ field, fieldState }) => {
+                                const hasError = fieldState.error;
+                                return (
+                                    <TextField
+                                        fullWidth
+                                        label="Pool Maximum Size"
+                                        value={field.value ? field.value : ''}
+                                        onChange={(value) =>
+                                            field.onChange(value)
+                                        }
+                                    ></TextField>
+                                );
+                            }}
+                        />
+                    </Stack>
+                </Collapse>
+                <div
+                    style={{
+                        display: 'flex',
+                        width: '100%',
+                        justifyContent: 'flex-end',
+                    }}
+                >
+                    <Button variant={'contained'} type={'submit'}>
+                        Connect
+                    </Button>
+                </div>
             </Stack>
-
-            <div
-                style={{
-                    display: 'flex',
-                    width: '100%',
-                    justifyContent: 'space-between',
-                }}
-            >
-                <Typography variant={'body1'}>ADVANCED SETTINGS</Typography>
-                <IconButton onClick={() => setOpenSettings(!openSettings)}>
-                    {openSettings ? <ExpandLess /> : <ExpandMore />}
-                </IconButton>
-            </div>
-
-            <Collapse in={openSettings}>
-                <Stack rowGap={2}>
-                    <Controller
-                        name={'FETCH_SIZE'}
-                        control={control}
-                        rules={{ required: false }}
-                        render={({ field, fieldState }) => {
-                            const hasError = fieldState.error;
-                            return (
-                                <TextField
-                                    fullWidth
-                                    label="Fetch Size"
-                                    value={field.value ? field.value : ''}
-                                    onChange={(value) => field.onChange(value)}
-                                ></TextField>
-                            );
-                        }}
-                    />
-                    <Controller
-                        name={'CONNECTION_TIMEOUT'}
-                        control={control}
-                        rules={{ required: false }}
-                        render={({ field, fieldState }) => {
-                            const hasError = fieldState.error;
-                            return (
-                                <TextField
-                                    fullWidth
-                                    label="Connection Timeout"
-                                    value={field.value ? field.value : ''}
-                                    onChange={(value) => field.onChange(value)}
-                                ></TextField>
-                            );
-                        }}
-                    />
-                    <Controller
-                        name={'CONNECTION_POOLING'}
-                        control={control}
-                        rules={{ required: false }}
-                        render={({ field, fieldState }) => {
-                            const hasError = fieldState.error;
-                            return (
-                                <TextField
-                                    fullWidth
-                                    label="Connection Pooling"
-                                    value={field.value ? field.value : ''}
-                                    onChange={(value) => field.onChange(value)}
-                                ></TextField>
-                            );
-                        }}
-                    />
-                    <Controller
-                        name={'POOL_MIN_SIZE'}
-                        control={control}
-                        rules={{ required: false }}
-                        render={({ field, fieldState }) => {
-                            const hasError = fieldState.error;
-                            return (
-                                <TextField
-                                    fullWidth
-                                    label="Pool Minimum Size"
-                                    value={field.value ? field.value : ''}
-                                    onChange={(value) => field.onChange(value)}
-                                ></TextField>
-                            );
-                        }}
-                    />
-                    <Controller
-                        name={'POOL_MAX_SIZE'}
-                        control={control}
-                        rules={{ required: false }}
-                        render={({ field, fieldState }) => {
-                            const hasError = fieldState.error;
-                            return (
-                                <TextField
-                                    fullWidth
-                                    label="Pool Maximum Size"
-                                    value={field.value ? field.value : ''}
-                                    onChange={(value) => field.onChange(value)}
-                                ></TextField>
-                            );
-                        }}
-                    />
-                </Stack>
-            </Collapse>
-            <div
-                style={{
-                    display: 'flex',
-                    width: '100%',
-                    justifyContent: 'flex-end',
-                }}
-            >
-                <Button variant={'contained'} type={'submit'}>
-                    Connect
-                </Button>
-            </div>
         </form>
     );
 };

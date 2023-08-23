@@ -1,12 +1,26 @@
+import { useRef, useState } from 'react';
 import { observer } from 'mobx-react-lite';
 import { Outlet, Link } from 'react-router-dom';
-import { styled, Stack, Icon, Divider } from '@semoss/ui';
+import {
+    Button,
+    styled,
+    Stack,
+    Icon,
+    Divider,
+    List,
+    Popover,
+    Menu,
+    Typography,
+} from '@semoss/ui';
+
+import { useRootStore } from '@/hooks';
 import {
     AccountCircle,
     Settings,
     Inventory2Outlined,
-    MenuBookOutlined,
     LibraryBooksOutlined,
+    Logout,
+    SmartToyOutlined,
 } from '@mui/icons-material';
 
 import { THEME } from '@/constants';
@@ -36,7 +50,7 @@ const StyledHeaderLogo = styled(Link)(({ theme }) => ({
     height: '100%',
     display: 'flex',
     alignItems: 'center',
-    gap: theme.spacing(1),
+    gap: theme.spacing(2),
     color: 'inherit',
     textDecoration: 'none',
     paddingTop: theme.spacing(1),
@@ -111,10 +125,37 @@ const StyledContent = styled('div')(() => ({
     overflow: 'hidden',
 }));
 
+const StyledLogoutContainer = styled('div')(({ theme }) => ({
+    display: 'flex',
+    flexDirection: 'row',
+    gap: theme.spacing(2),
+}));
+
+const StyledIDContainer = styled('div')(({ theme }) => ({
+    maxWidth: theme.spacing(15),
+    display: 'flex',
+    alignItems: 'center',
+}));
+
 /**
  * Wrap the routes with a side navigation
  */
 export const NavigatorLayout = observer(() => {
+    const { configStore, monolithStore } = useRootStore();
+    const [anchorEl, setAnchorEl] = useState<HTMLElement | null>(null);
+
+    const handlePopoverOpen = (event: React.MouseEvent<HTMLElement>) => {
+        if (anchorEl) {
+            setAnchorEl(null);
+        } else {
+            setAnchorEl(event.currentTarget);
+        }
+    };
+
+    const logout = async () => {
+        configStore.logout();
+    };
+
     return (
         <>
             <StyledHeader>
@@ -123,10 +164,53 @@ export const NavigatorLayout = observer(() => {
                     {THEME.name}
                 </StyledHeaderLogo>
                 <Stack flex={1}>&nbsp;</Stack>
-                <StyledHeaderLogout>
+                <StyledHeaderLogout
+                    onClick={(event) => {
+                        handlePopoverOpen(event);
+                    }}
+                >
                     <Icon>
                         <AccountCircle />
                     </Icon>
+                    <Popover
+                        id="logout-popover"
+                        sx={{ mt: '45px' }}
+                        open={Boolean(anchorEl)}
+                        anchorEl={anchorEl}
+                        anchorOrigin={{
+                            vertical: 'top',
+                            horizontal: 'right',
+                        }}
+                    >
+                        <List>
+                            <List.Item>
+                                <StyledLogoutContainer>
+                                    <StyledIDContainer>
+                                        <Typography
+                                            variant={'body1'}
+                                            sx={{
+                                                overflow: 'hidden',
+                                                whiteSpace: 'nowrap',
+                                                textOverflow: 'ellipsis',
+                                            }}
+                                        >
+                                            {configStore.store.user.id}
+                                        </Typography>
+                                    </StyledIDContainer>
+                                    <Button
+                                        variant={'contained'}
+                                        onClick={() => {
+                                            logout();
+                                        }}
+                                        sx={{ display: 'flex', gap: '8px' }}
+                                    >
+                                        Logout
+                                        <Logout />
+                                    </Button>
+                                </StyledLogoutContainer>
+                            </List.Item>
+                        </List>
+                    </Popover>
                 </StyledHeaderLogout>
             </StyledHeader>
             <StyledSidebar>
@@ -148,7 +232,7 @@ export const NavigatorLayout = observer(() => {
                 </StyledSidebarItem>
                 <StyledSidebarItem to={'catalog?type=model'}>
                     <Icon>
-                        <MenuBookOutlined />
+                        <SmartToyOutlined />
                     </Icon>
                 </StyledSidebarItem>
                 <Stack flex={1}>&nbsp;</Stack>

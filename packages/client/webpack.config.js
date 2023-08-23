@@ -26,6 +26,7 @@ const config = {
             favicon: process.env.THEME_FAVICON,
             scriptLoading: 'module',
             template: './src/template.html',
+            filename: 'index.html',
         }),
         // importMetaEnv.webpack({ example: '.env.local' }),
         new webpack.ProvidePlugin({

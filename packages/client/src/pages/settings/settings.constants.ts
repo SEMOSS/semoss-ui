@@ -1,12 +1,13 @@
 import {
     mdiAccountGroup,
     mdiClipboardTextOutline,
-    mdiClock,
+    // mdiClock,
     mdiCog,
     mdiDatabase,
     mdiDatabaseSearch,
     mdiTabletCellphone,
-    mdiTextBoxMultipleOutline,
+    // mdiTextBoxMultipleOutline,
+    mdiArchive,
 } from '@mdi/js';
 
 export const SETTINGS_ROUTES: {
@@ -31,7 +32,7 @@ export const SETTINGS_ROUTES: {
         path: '',
         description: 'View and edit settings for the application',
         adminDescription:
-            'View and make changes to settings at the database, project, and insight level.  As an admin conduct queries on SEMOSS specific databases as well as view and edit existing social properties.',
+            'View and make changes to settings at the database, app, and insight level.  As an admin conduct queries on SEMOSS specific databases as well as view and edit existing social properties.',
         icon: mdiCog,
         history: [],
     },
@@ -51,34 +52,64 @@ export const SETTINGS_ROUTES: {
         history: ['database', 'database/<id>'],
     },
     {
-        title: 'Project Settings',
-        path: 'project',
-        description: 'View and edit settings for projects',
-        icon: mdiClipboardTextOutline,
-        history: ['project'],
+        title: 'Storage Settings',
+        path: 'storage',
+        description: 'View and edit settings for storages',
+        icon: mdiArchive,
+        history: ['storage'],
     },
     {
-        title: 'Project Settings',
-        path: 'project/:id',
+        title: 'Storage Settings',
+        path: 'storage/:id',
         description:
-            'View member permissions, pending requests, and all other viewable settings pertaining to the project',
+            'View member permissions, pending requests, and all other viewable settings pertaining to the storage',
+        icon: mdiArchive,
+        history: ['storage', 'storage/<id>'],
+    },
+    {
+        title: 'Model Settings',
+        path: 'model',
+        description: 'View and edit settings for models',
+        icon: mdiDatabase,
+        history: ['model'],
+    },
+    {
+        title: 'Model Settings',
+        path: 'model/:id',
+        description:
+            'View member permissions, pending requests, and all other viewable settings pertaining to the model',
+        icon: mdiDatabase,
+        history: ['model', 'model/<id>'],
+    },
+    {
+        title: 'App Settings',
+        path: 'app',
+        description: 'View and edit settings for apps',
         icon: mdiClipboardTextOutline,
-        history: ['project', 'project/<id>'],
+        history: ['app'],
+    },
+    {
+        title: 'App Settings',
+        path: 'app/:id',
+        description:
+            'View member permissions, pending requests, and all other viewable settings pertaining to the app',
+        icon: mdiClipboardTextOutline,
+        history: ['app', 'app/<id>'],
     },
     // {
     //     title: 'Insight Settings',
     //     path: 'insight',
-    //     description: 'View and edit settings for project insights',
+    //     description: 'View and edit settings for app insights',
     //     icon: mdiTextBoxMultipleOutline,
     //     history: ['insight'],
     // },
     // {
     //     title: 'Insight Settings',
-    //     path: 'insight/:id/:projectId',
+    //     path: 'insight/:id/:appId',
     //     description:
-    //         'View member permissions, pending requests, and all other viewable settings pertaining to the project',
+    //         'View member permissions, pending requests, and all other viewable settings pertaining to the app',
     //     icon: mdiClipboardTextOutline,
-    //     history: ['insight', 'insight/<id>/<projectId>'],
+    //     history: ['insight', 'insight/<id>/<appId>'],
     // },
     {
         title: 'Member Settings',

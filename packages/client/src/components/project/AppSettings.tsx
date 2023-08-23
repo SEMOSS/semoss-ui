@@ -240,7 +240,7 @@ export const AppSettings = (props) => {
     /** LOADING */
     if (getPortalDetails.status !== 'SUCCESS') {
         return (
-            <LoadingScreen.Trigger description="Getting project portal details" />
+            <LoadingScreen.Trigger description="Getting app portal details" />
         );
     }
 
