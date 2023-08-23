@@ -1,5 +1,5 @@
 import { useParams, useLocation } from 'react-router-dom';
-import { Permissions, WorkflowAccess } from '@/components/database';
+import { Permissions, SettingsTiles } from '@/components/settings';
 import { useNavigate } from 'react-router-dom';
 import { styled } from '@semoss/ui';
 
@@ -18,16 +18,16 @@ export const DatabaseSettingsDetailPage = () => {
 
     return (
         <StyledContainer>
-            <WorkflowAccess
+            <SettingsTiles
                 type={'database'}
                 id={id}
-                projectId={undefined}
                 onDelete={() => {
                     console.log('navigate to model settings');
                     navigate('/model');
                 }}
             />
             <Permissions
+                type={'database'}
                 config={{
                     id: id,
                     name: state ? state.name : 'Name not provided',
