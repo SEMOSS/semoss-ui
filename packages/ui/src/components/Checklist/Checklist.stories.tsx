@@ -26,12 +26,6 @@ export const Default: Story = {
     render: (args) => (
         <Box sx={{ width: "100%", maxWidth: 360, bgcolor: "background.paper" }}>
             <Checklist {...args}>
-                <Checklist.Item divider>
-                    <Checklist.ItemButton />
-
-                    <Checklist.ItemText primary="(Select All)" />
-                </Checklist.Item>
-
                 <Checklist.Item divider secondaryAction={<StarOutlined />}>
                     <Checklist.ItemButton />
 
