@@ -1,16 +1,16 @@
 import { observer } from 'mobx-react-lite';
-import { Outlet, Link } from 'react-router-dom';
+import { Outlet, Link, useLocation } from 'react-router-dom';
 import { styled, Stack, Icon, Divider } from '@semoss/ui';
 
 import {
     Settings,
     Inventory2Outlined,
     LibraryBooksOutlined,
-    SmartToyOutlined,
 } from '@mui/icons-material';
 
 import { Navbar } from '@/components/ui';
 import { Database } from '@/assets/img/Database';
+import { ModelBrain } from '@/assets/img/ModelBrain';
 
 const NAV_HEIGHT = '48px';
 const SIDEBAR_WIDTH = '56px';
@@ -33,7 +33,12 @@ const StyledSidebar = styled('nav')(({ theme }) => ({
     zIndex: 10,
 }));
 
-const StyledSidebarItem = styled(Link)(({ theme }) => ({
+const StyledSidebarItem = styled(Link, {
+    shouldForwardProp: (prop) => prop !== 'selected',
+})<{
+    /** Track if item is selected */
+    selected: boolean;
+}>(({ theme, selected }) => ({
     display: 'flex',
     flexDirection: 'column',
     alignItems: 'center',
@@ -43,9 +48,15 @@ const StyledSidebarItem = styled(Link)(({ theme }) => ({
     height: NAV_HEIGHT,
     width: SIDEBAR_WIDTH,
     cursor: 'pointer',
-    backgroundColor: theme.palette.common.black,
+    backgroundColor: selected
+        ? theme.palette.primary.main
+        : theme.palette.common.black,
+    transition: 'backgroundColor 2s ease',
     '&:hover': {
-        backgroundColor: `rgba(255, 255, 255, ${theme.palette.action.hoverOpacity})`,
+        backgroundColor: selected
+            ? theme.palette.primary.main
+            : `${theme.palette.primary.dark}4D`,
+        transition: 'backgroundColor 2s ease',
     },
 }));
 
@@ -67,33 +78,47 @@ const StyledContent = styled('div')(() => ({
  * Wrap the routes with a side navigation
  */
 export const NavigatorLayout = observer(() => {
+    const location = useLocation();
+
     return (
         <>
             <Navbar />
             <StyledSidebar>
-                <StyledSidebarItem to={''}>
+                <StyledSidebarItem to={''} selected={location.pathname === '/'}>
                     <Icon>
                         <LibraryBooksOutlined />
                     </Icon>
                 </StyledSidebarItem>
                 <StyledSidebarDivider />
-                <StyledSidebarItem to={'catalog?type=database'}>
+                <StyledSidebarItem
+                    to={'catalog?type=database'}
+                    selected={location.search.includes('?type=database')}
+                >
                     <Icon>
                         <Database />
                     </Icon>
                 </StyledSidebarItem>
-                <StyledSidebarItem to={'catalog?type=storage'}>
+                <StyledSidebarItem
+                    to={'catalog?type=storage'}
+                    selected={location.search.includes('?type=storage')}
+                >
                     <Icon>
                         <Inventory2Outlined />
                     </Icon>
                 </StyledSidebarItem>
-                <StyledSidebarItem to={'catalog?type=model'}>
+                <StyledSidebarItem
+                    to={'catalog?type=model'}
+                    selected={location.search.includes('?type=model')}
+                >
                     <Icon>
-                        <SmartToyOutlined />
+                        <ModelBrain />
                     </Icon>
                 </StyledSidebarItem>
                 <Stack flex={1}>&nbsp;</Stack>
-                <StyledSidebarItem to={'settings'}>
+                <StyledSidebarItem
+                    to={'settings'}
+                    selected={location.pathname.includes('settings')}
+                >
                     <Icon>
                         <Settings />
                     </Icon>

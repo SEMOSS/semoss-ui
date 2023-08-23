@@ -81,7 +81,9 @@ const DEFAULT_CARDS = SETTINGS_ROUTES.filter(
 
 const IconMapper = {
     'Database Settings': <DatabaseLayers />,
-    'Model Settings': <ModelBrain />,
+    'Model Settings': (
+        <ModelBrain color={'#0471F0'} width={'50'} height={'50'} />
+    ),
     'Storage Settings': <ArchiveBox />,
     'App Settings': <Folder />,
     'Insight Settings': <SEMOSS />,
