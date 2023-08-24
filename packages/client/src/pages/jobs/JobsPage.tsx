@@ -19,6 +19,7 @@ import {
     Popover,
     IconButton,
     useNotification,
+    Divider,
 } from '@semoss/ui';
 
 import { useAPI, useRootStore, useSettings } from '@/hooks';
@@ -49,6 +50,26 @@ const StyledPopover = styled(Popover)(() => ({
     display: 'flex',
     flexDirection: 'column',
 }));
+
+const StyledJobActionsContainer = styled('div')({
+    display: 'flex',
+    width: '100%',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    padding: '10px',
+    gap: '24px',
+});
+
+const StyledKpiCardContent = styled(Card.Content)({
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingBottom: '1px',
+});
+
+const StyledKpiIcon = styled(Icon)({
+    borderRadius: '5px',
+    verticalAlign: 'middle',
+});
 
 interface TabPanelProps {
     children?: React.ReactNode;
@@ -275,6 +296,7 @@ export function JobsPage() {
             },
             hideable: false,
             columnType: '',
+            sx: null,
         },
         {
             renderHeader: () => {
@@ -294,6 +316,7 @@ export function JobsPage() {
             },
             hideable: true,
             columnType: 'Name',
+            sx: null,
         },
         {
             renderHeader: () => {
@@ -305,6 +328,7 @@ export function JobsPage() {
             },
             hideable: true,
             columnType: 'Type',
+            sx: null,
         },
         {
             renderHeader: () => {
@@ -316,6 +340,7 @@ export function JobsPage() {
             },
             hideable: true,
             columnType: 'Frequency',
+            sx: null,
         },
         {
             renderHeader: () => {
@@ -327,6 +352,7 @@ export function JobsPage() {
             },
             hideable: true,
             columnType: 'Time Zone',
+            sx: null,
         },
         {
             renderHeader: () => {
@@ -343,6 +369,7 @@ export function JobsPage() {
             },
             hideable: true,
             columnType: 'Tags',
+            sx: null,
         },
         {
             renderHeader: () => {
@@ -354,6 +381,7 @@ export function JobsPage() {
             },
             hideable: true,
             columnType: 'Last Run',
+            sx: null,
         },
         {
             renderHeader: () => {
@@ -365,6 +393,7 @@ export function JobsPage() {
             },
             hideable: true,
             columnType: 'Created By',
+            sx: null,
         },
         {
             renderHeader: () => {
@@ -376,6 +405,7 @@ export function JobsPage() {
             },
             hideable: true,
             columnType: 'Modified By',
+            sx: null,
         },
         {
             renderHeader: () => {
@@ -387,6 +417,7 @@ export function JobsPage() {
             },
             hideable: true,
             columnType: 'Last Run By',
+            sx: null,
         },
         {
             renderHeader: () => {
@@ -398,6 +429,7 @@ export function JobsPage() {
             },
             hideable: true,
             columnType: 'Modified Date',
+            sx: null,
         },
         {
             renderHeader: () => {
@@ -408,7 +440,7 @@ export function JobsPage() {
                 return (
                     <>
                         <IconButton
-                            color="primary"
+                            color="info"
                             size="medium"
                             onClick={() => {
                                 executeJob(job.jobId, job.jobGroup);
@@ -417,18 +449,18 @@ export function JobsPage() {
                             <PlayArrow />
                         </IconButton>
                         <IconButton
-                            color="primary"
+                            color="info"
                             size="medium"
                             onClick={() => {
                                 setSelectedJob(job);
                                 setShowJobModal(true);
                             }}
-                            disabled
+                            disabled // enable when edit page is built out
                         >
                             <Edit />
                         </IconButton>
                         <IconButton
-                            color="primary"
+                            color="info"
                             size="medium"
                             onClick={() => {
                                 setSelectedJob(job);
@@ -442,6 +474,7 @@ export function JobsPage() {
             },
             hideable: true,
             columnType: 'Actions',
+            sx: { whiteSpace: 'nowrap' },
         },
     ]);
 
@@ -1807,10 +1840,17 @@ export function JobsPage() {
             <Grid container spacing={3}>
                 <Grid item>
                     <Card>
-                        <Card.Content>
-                            <Icon>
-                                <AvTimer />
-                            </Icon>
+                        <StyledKpiCardContent>
+                            <StyledKpiIcon
+                                fontSize="large"
+                                color="info"
+                                sx={{
+                                    backgroundColor: '#87CEFA',
+                                }}
+                                children={
+                                    <AvTimer sx={{ verticalAlign: 'middle' }} />
+                                }
+                            />
                             <Card.Header
                                 title="Active Jobs"
                                 subheader={
@@ -1821,15 +1861,24 @@ export function JobsPage() {
                                     }).length
                                 }
                             />
-                        </Card.Content>
+                        </StyledKpiCardContent>
                     </Card>
                 </Grid>
                 <Grid item>
                     <Card>
-                        <Card.Content>
-                            <Icon>
-                                <DarkMode />
-                            </Icon>{' '}
+                        <StyledKpiCardContent>
+                            <StyledKpiIcon
+                                fontSize="large"
+                                color="secondary"
+                                sx={{
+                                    backgroundColor: '#CBC3E3',
+                                }}
+                                children={
+                                    <DarkMode
+                                        sx={{ verticalAlign: 'middle' }}
+                                    />
+                                }
+                            />
                             <Card.Header
                                 title="Inactive Jobs"
                                 subheader={
@@ -1840,15 +1889,22 @@ export function JobsPage() {
                                     }).length
                                 }
                             />
-                        </Card.Content>
+                        </StyledKpiCardContent>
                     </Card>
                 </Grid>
                 <Grid item>
                     <Card>
-                        <Card.Content>
-                            <Icon>
-                                <Error />
-                            </Icon>
+                        <StyledKpiCardContent>
+                            <StyledKpiIcon
+                                color="success"
+                                fontSize="large"
+                                sx={{
+                                    backgroundColor: '#ddffdd',
+                                }}
+                                children={
+                                    <Error sx={{ verticalAlign: 'middle' }} />
+                                }
+                            />
                             <Card.Header
                                 title="Failed Jobs"
                                 subheader={
@@ -1857,145 +1913,140 @@ export function JobsPage() {
                                     }).length
                                 }
                             />
-                        </Card.Content>
+                        </StyledKpiCardContent>
                     </Card>
                 </Grid>
             </Grid>
-            <Table aria-label="collapsible table">
-                <Table.Head sx={{ display: 'table-caption', width: '100%' }}>
-                    <Table.Row>
-                        <Table.Cell align="left">
-                            <Tabs
-                                value={tabs.indexOf(selectedTab)}
-                                onChange={(
-                                    event: SyntheticEvent,
-                                    value: number,
-                                ) => {
-                                    setSelectedTab(tabs[value]);
-                                }}
-                                textColor="primary"
-                                indicatorColor="primary"
-                            >
-                                <Tabs.Item label="All" />
-                                <Tabs.Item label="Active" />
-                                <Tabs.Item label="Inactive" />
-                            </Tabs>
-                        </Table.Cell>
-                        <Table.Cell>
-                            <Search
-                                placeholder="Search"
-                                fullWidth
-                                size="small"
-                                onChange={(e) => setSearchValue(e.target.value)}
-                            />
-                        </Table.Cell>
-                        {/* <Table.Cell>
+            <StyledJobActionsContainer>
+                <Tabs
+                    value={tabs.indexOf(selectedTab)}
+                    onChange={(event: SyntheticEvent, value: number) => {
+                        setSelectedTab(tabs[value]);
+                    }}
+                    textColor="secondary"
+                    indicatorColor="secondary"
+                >
+                    <Tabs.Item label="All" />
+                    <Tabs.Item label="Active" />
+                    <Tabs.Item label="Inactive" />
+                </Tabs>
+
+                <Search
+                    sx={{ width: '60%' }}
+                    placeholder="Search"
+                    size="small"
+                    onChange={(e) => setSearchValue(e.target.value)}
+                />
+
+                {/* <Table.Cell>
                             <Icon>
                                 <FilterAltIcon />
                             </Icon>
                         </Table.Cell> */}
-                        <Table.Cell align="right">
-                            <Button
-                                variant="outlined"
-                                onClick={(event) => {
-                                    setColumnSelectorAnchorEl(
-                                        event.currentTarget,
-                                    );
-                                }}
-                            >
-                                <Icon>
-                                    <Menu />
-                                </Icon>
-                                Columns
-                            </Button>
-                            <StyledPopover
-                                id={'column-selector'}
-                                open={Boolean(columnSelectorAnchorEl)}
-                                anchorEl={columnSelectorAnchorEl}
-                                onClose={() => {
-                                    setColumnSelectorAnchorEl(null);
-                                    setSearchColumnType('');
-                                }}
-                                anchorOrigin={{
-                                    vertical: 'bottom',
-                                    horizontal: 'left',
-                                }}
-                                // sx={{
-                                //     display: 'flex',
-                                //     flexDirection: 'column',
-                                // }}
-                            >
-                                <Search
-                                    placeholder="Search Column Type"
-                                    size="small"
-                                    onChange={(e) => {
-                                        setSearchColumnType(
-                                            e.target.value
-                                                .toLocaleLowerCase()
-                                                .trim(),
-                                        );
-                                    }}
-                                />
-                                <Checkbox
-                                    label="Select All"
-                                    checked={jobColumns.every(
-                                        (col) => col.showColumn,
-                                    )}
-                                    onChange={(e, checked) => {
-                                        setJobColumns(
-                                            jobColumns.map((col) => {
-                                                return {
-                                                    ...col,
-                                                    showColumn: checked,
-                                                };
-                                            }),
-                                        );
-                                    }}
-                                />
-                                {/* checklist of column names here */}
-                                {jobColumns.map((col, i) => {
-                                    return (
-                                        col.hideable &&
-                                        col.columnType
-                                            .toLocaleLowerCase()
-                                            .includes(searchColumnType) && (
-                                            <Checkbox
-                                                key={i}
-                                                label={col.columnType}
-                                                checked={col.showColumn}
-                                                onChange={(e, checked) => {
-                                                    // find obejct matching col.columnType and switch col.showColumn
-                                                    const n = [];
-                                                    jobColumns.forEach((jc) => {
-                                                        if (
-                                                            jc.columnType ===
-                                                            col.columnType
-                                                        ) {
-                                                            n.push({
-                                                                ...jc,
-                                                                showColumn:
-                                                                    checked,
-                                                            });
-                                                        } else {
-                                                            n.push(jc);
-                                                        }
+
+                <Button
+                    variant="outlined"
+                    onClick={(event) => {
+                        setColumnSelectorAnchorEl(event.currentTarget);
+                    }}
+                    size="medium"
+                    startIcon={<Menu />}
+                    color="info"
+                >
+                    Columns
+                </Button>
+                <StyledPopover
+                    id={'column-selector'}
+                    open={Boolean(columnSelectorAnchorEl)}
+                    anchorEl={columnSelectorAnchorEl}
+                    onClose={() => {
+                        setColumnSelectorAnchorEl(null);
+                        setSearchColumnType('');
+                    }}
+                    anchorOrigin={{
+                        vertical: 'bottom',
+                        horizontal: 'left',
+                    }}
+                    sx={{
+                        display: 'flex',
+                        flexDirection: 'column',
+                    }}
+                >
+                    <Search
+                        placeholder="Search Column Type"
+                        size="small"
+                        onChange={(e) => {
+                            setSearchColumnType(
+                                e.target.value.toLocaleLowerCase().trim(),
+                            );
+                        }}
+                    />
+                    <div>
+                        <Checkbox
+                            label="Select All"
+                            checked={jobColumns.every((col) => col.showColumn)}
+                            onChange={(e, checked) => {
+                                setJobColumns(
+                                    jobColumns.map((col) => {
+                                        return {
+                                            ...col,
+                                            showColumn: checked,
+                                        };
+                                    }),
+                                );
+                            }}
+                        />
+                    </div>
+                    {/* checklist of column names here */}
+                    {jobColumns.map((col, i) => {
+                        return (
+                            col.hideable &&
+                            col.columnType
+                                .toLocaleLowerCase()
+                                .includes(searchColumnType) && (
+                                <div>
+                                    <Checkbox
+                                        key={i}
+                                        label={col.columnType}
+                                        checked={col.showColumn}
+                                        onChange={(e, checked) => {
+                                            // find obejct matching col.columnType and switch col.showColumn
+                                            const n = [];
+                                            jobColumns.forEach((jc) => {
+                                                if (
+                                                    jc.columnType ===
+                                                    col.columnType
+                                                ) {
+                                                    n.push({
+                                                        ...jc,
+                                                        showColumn: checked,
                                                     });
-                                                    setJobColumns(n);
-                                                }}
-                                            />
-                                        )
-                                    );
-                                })}
-                            </StyledPopover>
-                        </Table.Cell>
-                        <Table.Cell align="right">
-                            <Button variant="contained" startIcon={<Add />}>
-                                Add New
-                            </Button>
-                        </Table.Cell>
-                    </Table.Row>
-                </Table.Head>
-                <Table.Body>
+                                                } else {
+                                                    n.push(jc);
+                                                }
+                                            });
+                                            setJobColumns(n);
+                                        }}
+                                    />
+                                </div>
+                            )
+                        );
+                    })}
+                </StyledPopover>
+
+                <Button
+                    variant="contained"
+                    startIcon={<Add />}
+                    size="medium"
+                    sx={{ whiteSpace: 'nowrap' }}
+                    color="info"
+                >
+                    Add New
+                </Button>
+            </StyledJobActionsContainer>
+            <Divider />
+            <Table aria-label="collapsible table">
+                <Table.Head>
                     <Table.Row>
                         {jobColumns.map((col) => {
                             return (
@@ -2007,6 +2058,8 @@ export function JobsPage() {
                             );
                         })}
                     </Table.Row>
+                </Table.Head>
+                <Table.Body>
                     {filterJobs(jobs).length === 0 ? (
                         <Table.Row
                         // style={{
@@ -2026,7 +2079,10 @@ export function JobsPage() {
                                         {jobColumns.map((col) => {
                                             return (
                                                 col.showColumn && (
-                                                    <Table.Cell>
+                                                    <Table.Cell
+                                                        align="left"
+                                                        sx={col.sx}
+                                                    >
                                                         {col.renderData(job)}
                                                     </Table.Cell>
                                                 )
@@ -2066,9 +2122,7 @@ export function JobsPage() {
                 }}
                 square={true}
             >
-                <Accordion.Trigger
-                    sx={{ display: 'flex', justifyContent: 'space-between' }}
-                >
+                <Accordion.Trigger>
                     <div>History</div>
                     {historyExpanded ? (
                         <KeyboardArrowUp />
@@ -2087,14 +2141,10 @@ export function JobsPage() {
                         <Table aria-label="collapsible table">
                             <Table.Head>
                                 <Table.Row>
-                                    <Table.Cell align="left">
-                                        <></>
-                                    </Table.Cell>
-                                    <Table.Cell align="left">
-                                        <></>
-                                    </Table.Cell>
-                                    <Table.Cell align="left">Name</Table.Cell>
-                                    <Table.Cell align="left">
+                                    <Table.Cell></Table.Cell>
+                                    <Table.Cell></Table.Cell>
+                                    <Table.Cell>Name</Table.Cell>
+                                    <Table.Cell>
                                         <Button
                                             color="inherit"
                                             variant="text"
@@ -2103,8 +2153,8 @@ export function JobsPage() {
                                             Run Date
                                         </Button>
                                     </Table.Cell>
-                                    <Table.Cell align="left">Time</Table.Cell>
-                                    <Table.Cell align="left">Status</Table.Cell>
+                                    <Table.Cell>Time</Table.Cell>
+                                    <Table.Cell>Status</Table.Cell>
                                 </Table.Row>
                             </Table.Head>
                             <Table.Body>
