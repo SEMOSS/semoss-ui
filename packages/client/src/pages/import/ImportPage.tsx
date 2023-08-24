@@ -446,8 +446,8 @@ export const ImportPage = () => {
                                                                                     ...steps,
                                                                                     {
                                                                                         title: stage.name,
-                                                                                        description: `Fill out ${stage} details in order to work with data`,
-                                                                                        data: stage,
+                                                                                        description: `Fill out ${stage.name} details in order to work with data`,
+                                                                                        data: stage.name,
                                                                                     },
                                                                                 ],
                                                                                 steps.length +

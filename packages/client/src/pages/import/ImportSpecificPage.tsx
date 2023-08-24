@@ -147,17 +147,25 @@ export const ImportSpecificPage = () => {
                 .uploadFile(values.FILE, insightId)
                 .then((res: { fileName: string; fileLocation: string }[]) => {
                     const file = res[0].fileLocation;
-                    monolithStore
-                        .runQuery(
-                            `PredictDataTypes(filePath=["${file}"], delimiter=["${values.DELIMETER}"], rowCount=[false])`,
-                        )
-                        .then((res) => {
-                            setIsLoading(false);
-                            setPredictDataTypes(res);
-                        });
+                    predictDataTypesPixelCall(file, values.DELIMETER);
                 });
         }
         /** Drag and Drop: END */
+    };
+
+    /** run predictData type function based off file type */
+    const predictDataTypesPixelCall = async (file, delimeter) => {
+        let pixel = ``;
+        if (steps[steps.length - 1].data === 'Excel') {
+            pixel = `PredictExcelDataTypes(filePath=["${file}"]);`;
+        }
+        if (steps[steps.length - 1].data === 'CSV') {
+            pixel = `PredictDataTypes(filePath=["${file}"], delimiter=["${delimeter}"], rowCount=[false]);`;
+        }
+        monolithStore.runQuery(pixel).then((res) => {
+            setIsLoading(false);
+            setPredictDataTypes(res);
+        });
     };
 
     const getForm = (form, i) => {
