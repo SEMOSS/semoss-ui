@@ -323,6 +323,13 @@ export const lightTheme: CustomThemeOptions = {
                 "*::-webkit-scrollbar-corner": {
                     backgroundColor: "transparent",
                 },
+                // "@font-face": {
+                //     fontFamily: "Inter",
+                //     src: "url(https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap) format(woff2)",
+                //     /* Add more formats if necessary */
+                //     fontWeight: "normal",
+                //     fontStyle: "normal",
+                // },
             }),
         },
         MuiAlertTitle: {

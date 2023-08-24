@@ -171,7 +171,7 @@ export const CatalogPage = observer((): JSX.Element => {
     const [canCollect, setCanCollect] = useState(true);
     const canCollectRef = useRef(true);
     canCollectRef.current = canCollect;
-    const limit = 6;
+    const limit = 15;
 
     const offsetRef = useRef(0);
     offsetRef.current = offset;
