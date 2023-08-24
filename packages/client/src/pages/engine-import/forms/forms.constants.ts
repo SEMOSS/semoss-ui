@@ -105,15 +105,25 @@ export const MODEL_FORMS: EngineFields = [
                 label: 'Model',
                 defaultValue: '',
                 options: {
-                    component: 'text-field',
+                    component: 'select',
+                    options: [
+                        {
+                            display: 'gpt-3.5-turbo',
+                            value: 'gpt-3.5-turbo',
+                        },
+                        {
+                            display: 'gpt-4-32k',
+                            value: 'gpt-4-32k',
+                        },
+                    ],
                 },
-                disabled: true,
+                disabled: false,
                 rules: { required: true },
             },
             {
                 fieldName: 'MODEL_TYPE',
                 label: 'Type',
-                defaultValue: '',
+                defaultValue: 'Open AI',
                 options: {
                     component: 'select',
                     options: [
@@ -137,9 +147,39 @@ export const MODEL_FORMS: EngineFields = [
                 rules: { required: true },
             },
             {
-                fieldName: 'S3_REGION',
-                label: 'S3 Region',
-                defaultValue: 'need',
+                fieldName: 'OPEN_AI_KEY',
+                label: 'Open AI Key',
+                defaultValue: '',
+                options: {
+                    component: 'text-field',
+                },
+                disabled: false,
+                rules: { required: true },
+            },
+            {
+                fieldName: 'VAR_NAME',
+                label: 'Variable Name',
+                defaultValue: '',
+                options: {
+                    component: 'text-field',
+                },
+                disabled: false,
+                rules: { required: true },
+            },
+            {
+                fieldName: 'INIT_MODEL_ENGINE',
+                label: 'Init Script',
+                defaultValue: '',
+                options: {
+                    component: 'text-field',
+                },
+                disabled: false,
+                rules: { required: true },
+            },
+            {
+                fieldName: 'KEEP_CONTEXT',
+                label: 'Keep Context',
+                defaultValue: 'false',
                 options: {
                     component: 'text-field',
                 },
@@ -188,9 +228,39 @@ export const MODEL_FORMS: EngineFields = [
                 rules: { required: true },
             },
             {
-                fieldName: 'S3_REGION',
-                label: 'S3 Region',
-                defaultValue: 'need',
+                fieldName: 'ENDPOINT',
+                label: 'Endpoint',
+                defaultValue: '',
+                options: {
+                    component: 'text-field',
+                },
+                disabled: false,
+                rules: { required: true },
+            },
+            {
+                fieldName: 'VAR_NAME',
+                label: 'Variable Name',
+                defaultValue: '',
+                options: {
+                    component: 'text-field',
+                },
+                disabled: false,
+                rules: { required: true },
+            },
+            {
+                fieldName: 'INIT_MODEL_ENGINE',
+                label: 'Init Script',
+                defaultValue: '',
+                options: {
+                    component: 'text-field',
+                },
+                disabled: false,
+                rules: { required: true },
+            },
+            {
+                fieldName: 'KEEP_CONTEXT',
+                label: 'Keep Context',
+                defaultValue: 'false',
                 options: {
                     component: 'text-field',
                 },
@@ -239,9 +309,39 @@ export const MODEL_FORMS: EngineFields = [
                 rules: { required: true },
             },
             {
-                fieldName: 'S3_REGION',
-                label: 'S3 Region',
-                defaultValue: 'need',
+                fieldName: 'ENDPOINT',
+                label: 'Endpoint',
+                defaultValue: '',
+                options: {
+                    component: 'text-field',
+                },
+                disabled: false,
+                rules: { required: true },
+            },
+            {
+                fieldName: 'VAR_NAME',
+                label: 'Variable Name',
+                defaultValue: '',
+                options: {
+                    component: 'text-field',
+                },
+                disabled: false,
+                rules: { required: true },
+            },
+            {
+                fieldName: 'INIT_MODEL_ENGINE',
+                label: 'Init Script',
+                defaultValue: '',
+                options: {
+                    component: 'text-field',
+                },
+                disabled: false,
+                rules: { required: true },
+            },
+            {
+                fieldName: 'KEEP_CONTEXT',
+                label: 'Keep Context',
+                defaultValue: 'false',
                 options: {
                     component: 'text-field',
                 },
@@ -256,7 +356,7 @@ export const MODEL_FORMS: EngineFields = [
             {
                 fieldName: 'MODEL',
                 label: 'Model',
-                defaultValue: '',
+                defaultValue: 'lmsys/vicuna-7b-v1.5',
                 options: {
                     component: 'text-field',
                 },
@@ -290,9 +390,39 @@ export const MODEL_FORMS: EngineFields = [
                 rules: { required: true },
             },
             {
-                fieldName: 'S3_REGION',
-                label: 'S3 Region',
-                defaultValue: 'need',
+                fieldName: 'ENDPOINT',
+                label: 'Endpoint',
+                defaultValue: '',
+                options: {
+                    component: 'text-field',
+                },
+                disabled: false,
+                rules: { required: true },
+            },
+            {
+                fieldName: 'VAR_NAME',
+                label: 'Variable Name',
+                defaultValue: '',
+                options: {
+                    component: 'text-field',
+                },
+                disabled: false,
+                rules: { required: true },
+            },
+            {
+                fieldName: 'INIT_MODEL_ENGINE',
+                label: 'Init Script',
+                defaultValue: '',
+                options: {
+                    component: 'text-field',
+                },
+                disabled: false,
+                rules: { required: true },
+            },
+            {
+                fieldName: 'KEEP_CONTEXT',
+                label: 'Keep Context',
+                defaultValue: 'false',
                 options: {
                     component: 'text-field',
                 },
@@ -341,9 +471,39 @@ export const MODEL_FORMS: EngineFields = [
                 rules: { required: true },
             },
             {
-                fieldName: 'S3_REGION',
-                label: 'S3 Region',
-                defaultValue: 'need',
+                fieldName: 'ENDPOINT',
+                label: 'Endpoint',
+                defaultValue: '',
+                options: {
+                    component: 'text-field',
+                },
+                disabled: false,
+                rules: { required: true },
+            },
+            {
+                fieldName: 'VAR_NAME',
+                label: 'Variable Name',
+                defaultValue: '',
+                options: {
+                    component: 'text-field',
+                },
+                disabled: false,
+                rules: { required: true },
+            },
+            {
+                fieldName: 'INIT_MODEL_ENGINE',
+                label: 'Init Script',
+                defaultValue: '',
+                options: {
+                    component: 'text-field',
+                },
+                disabled: false,
+                rules: { required: true },
+            },
+            {
+                fieldName: 'KEEP_CONTEXT',
+                label: 'Keep Context',
+                defaultValue: 'false',
                 options: {
                     component: 'text-field',
                 },
@@ -392,9 +552,39 @@ export const MODEL_FORMS: EngineFields = [
                 rules: { required: true },
             },
             {
-                fieldName: 'S3_REGION',
-                label: 'S3 Region',
-                defaultValue: 'need',
+                fieldName: 'ENDPOINT',
+                label: 'Endpoint',
+                defaultValue: '',
+                options: {
+                    component: 'text-field',
+                },
+                disabled: false,
+                rules: { required: true },
+            },
+            {
+                fieldName: 'VAR_NAME',
+                label: 'Variable Name',
+                defaultValue: '',
+                options: {
+                    component: 'text-field',
+                },
+                disabled: false,
+                rules: { required: true },
+            },
+            {
+                fieldName: 'INIT_MODEL_ENGINE',
+                label: 'Init Script',
+                defaultValue: '',
+                options: {
+                    component: 'text-field',
+                },
+                disabled: false,
+                rules: { required: true },
+            },
+            {
+                fieldName: 'KEEP_CONTEXT',
+                label: 'Keep Context',
+                defaultValue: 'false',
                 options: {
                     component: 'text-field',
                 },
@@ -443,9 +633,39 @@ export const MODEL_FORMS: EngineFields = [
                 rules: { required: true },
             },
             {
-                fieldName: 'S3_REGION',
-                label: 'S3 Region',
-                defaultValue: 'need',
+                fieldName: 'ENDPOINT',
+                label: 'Endpoint',
+                defaultValue: '',
+                options: {
+                    component: 'text-field',
+                },
+                disabled: false,
+                rules: { required: true },
+            },
+            {
+                fieldName: 'VAR_NAME',
+                label: 'Variable Name',
+                defaultValue: '',
+                options: {
+                    component: 'text-field',
+                },
+                disabled: false,
+                rules: { required: true },
+            },
+            {
+                fieldName: 'INIT_MODEL_ENGINE',
+                label: 'Init Script',
+                defaultValue: '',
+                options: {
+                    component: 'text-field',
+                },
+                disabled: false,
+                rules: { required: true },
+            },
+            {
+                fieldName: 'KEEP_CONTEXT',
+                label: 'Keep Context',
+                defaultValue: 'false',
                 options: {
                     component: 'text-field',
                 },
@@ -494,9 +714,39 @@ export const MODEL_FORMS: EngineFields = [
                 rules: { required: true },
             },
             {
-                fieldName: 'S3_REGION',
-                label: 'S3 Region',
-                defaultValue: 'need',
+                fieldName: 'ENDPOINT',
+                label: 'Endpoint',
+                defaultValue: '',
+                options: {
+                    component: 'text-field',
+                },
+                disabled: false,
+                rules: { required: true },
+            },
+            {
+                fieldName: 'VAR_NAME',
+                label: 'Variable Name',
+                defaultValue: '',
+                options: {
+                    component: 'text-field',
+                },
+                disabled: false,
+                rules: { required: true },
+            },
+            {
+                fieldName: 'INIT_MODEL_ENGINE',
+                label: 'Init Script',
+                defaultValue: '',
+                options: {
+                    component: 'text-field',
+                },
+                disabled: false,
+                rules: { required: true },
+            },
+            {
+                fieldName: 'KEEP_CONTEXT',
+                label: 'Keep Context',
+                defaultValue: 'false',
                 options: {
                     component: 'text-field',
                 },
@@ -545,9 +795,39 @@ export const MODEL_FORMS: EngineFields = [
                 rules: { required: true },
             },
             {
-                fieldName: 'S3_REGION',
-                label: 'S3 Region',
-                defaultValue: 'need',
+                fieldName: 'ENDPOINT',
+                label: 'Endpoint',
+                defaultValue: '',
+                options: {
+                    component: 'text-field',
+                },
+                disabled: false,
+                rules: { required: true },
+            },
+            {
+                fieldName: 'VAR_NAME',
+                label: 'Variable Name',
+                defaultValue: '',
+                options: {
+                    component: 'text-field',
+                },
+                disabled: false,
+                rules: { required: true },
+            },
+            {
+                fieldName: 'INIT_MODEL_ENGINE',
+                label: 'Init Script',
+                defaultValue: '',
+                options: {
+                    component: 'text-field',
+                },
+                disabled: false,
+                rules: { required: true },
+            },
+            {
+                fieldName: 'KEEP_CONTEXT',
+                label: 'Keep Context',
+                defaultValue: 'false',
                 options: {
                     component: 'text-field',
                 },
@@ -596,9 +876,39 @@ export const MODEL_FORMS: EngineFields = [
                 rules: { required: true },
             },
             {
-                fieldName: 'S3_REGION',
-                label: 'S3 Region',
-                defaultValue: 'need',
+                fieldName: 'ENDPOINT',
+                label: 'Endpoint',
+                defaultValue: '',
+                options: {
+                    component: 'text-field',
+                },
+                disabled: false,
+                rules: { required: true },
+            },
+            {
+                fieldName: 'VAR_NAME',
+                label: 'Variable Name',
+                defaultValue: '',
+                options: {
+                    component: 'text-field',
+                },
+                disabled: false,
+                rules: { required: true },
+            },
+            {
+                fieldName: 'INIT_MODEL_ENGINE',
+                label: 'Init Script',
+                defaultValue: '',
+                options: {
+                    component: 'text-field',
+                },
+                disabled: false,
+                rules: { required: true },
+            },
+            {
+                fieldName: 'KEEP_CONTEXT',
+                label: 'Keep Context',
+                defaultValue: 'false',
                 options: {
                     component: 'text-field',
                 },
@@ -647,9 +957,39 @@ export const MODEL_FORMS: EngineFields = [
                 rules: { required: true },
             },
             {
-                fieldName: 'S3_REGION',
-                label: 'S3 Region',
-                defaultValue: 'need',
+                fieldName: 'ENDPOINT',
+                label: 'Endpoint',
+                defaultValue: '',
+                options: {
+                    component: 'text-field',
+                },
+                disabled: false,
+                rules: { required: true },
+            },
+            {
+                fieldName: 'VAR_NAME',
+                label: 'Variable Name',
+                defaultValue: '',
+                options: {
+                    component: 'text-field',
+                },
+                disabled: false,
+                rules: { required: true },
+            },
+            {
+                fieldName: 'INIT_MODEL_ENGINE',
+                label: 'Init Script',
+                defaultValue: '',
+                options: {
+                    component: 'text-field',
+                },
+                disabled: false,
+                rules: { required: true },
+            },
+            {
+                fieldName: 'KEEP_CONTEXT',
+                label: 'Keep Context',
+                defaultValue: 'false',
                 options: {
                     component: 'text-field',
                 },
@@ -698,9 +1038,39 @@ export const MODEL_FORMS: EngineFields = [
                 rules: { required: true },
             },
             {
-                fieldName: 'S3_REGION',
-                label: 'S3 Region',
-                defaultValue: 'need',
+                fieldName: 'ENDPOINT',
+                label: 'Endpoint',
+                defaultValue: '',
+                options: {
+                    component: 'text-field',
+                },
+                disabled: false,
+                rules: { required: true },
+            },
+            {
+                fieldName: 'VAR_NAME',
+                label: 'Variable Name',
+                defaultValue: '',
+                options: {
+                    component: 'text-field',
+                },
+                disabled: false,
+                rules: { required: true },
+            },
+            {
+                fieldName: 'INIT_MODEL_ENGINE',
+                label: 'Init Script',
+                defaultValue: '',
+                options: {
+                    component: 'text-field',
+                },
+                disabled: false,
+                rules: { required: true },
+            },
+            {
+                fieldName: 'KEEP_CONTEXT',
+                label: 'Keep Context',
+                defaultValue: 'false',
                 options: {
                     component: 'text-field',
                 },
@@ -749,9 +1119,39 @@ export const MODEL_FORMS: EngineFields = [
                 rules: { required: true },
             },
             {
-                fieldName: 'S3_REGION',
-                label: 'S3 Region',
-                defaultValue: 'need',
+                fieldName: 'ENDPOINT',
+                label: 'Endpoint',
+                defaultValue: '',
+                options: {
+                    component: 'text-field',
+                },
+                disabled: false,
+                rules: { required: true },
+            },
+            {
+                fieldName: 'VAR_NAME',
+                label: 'Variable Name',
+                defaultValue: '',
+                options: {
+                    component: 'text-field',
+                },
+                disabled: false,
+                rules: { required: true },
+            },
+            {
+                fieldName: 'INIT_MODEL_ENGINE',
+                label: 'Init Script',
+                defaultValue: '',
+                options: {
+                    component: 'text-field',
+                },
+                disabled: false,
+                rules: { required: true },
+            },
+            {
+                fieldName: 'KEEP_CONTEXT',
+                label: 'Keep Context',
+                defaultValue: 'false',
                 options: {
                     component: 'text-field',
                 },
@@ -800,9 +1200,39 @@ export const MODEL_FORMS: EngineFields = [
                 rules: { required: true },
             },
             {
-                fieldName: 'S3_REGION',
-                label: 'S3 Region',
-                defaultValue: 'need',
+                fieldName: 'ENDPOINT',
+                label: 'Endpoint',
+                defaultValue: '',
+                options: {
+                    component: 'text-field',
+                },
+                disabled: false,
+                rules: { required: true },
+            },
+            {
+                fieldName: 'VAR_NAME',
+                label: 'Variable Name',
+                defaultValue: '',
+                options: {
+                    component: 'text-field',
+                },
+                disabled: false,
+                rules: { required: true },
+            },
+            {
+                fieldName: 'INIT_MODEL_ENGINE',
+                label: 'Init Script',
+                defaultValue: '',
+                options: {
+                    component: 'text-field',
+                },
+                disabled: false,
+                rules: { required: true },
+            },
+            {
+                fieldName: 'KEEP_CONTEXT',
+                label: 'Keep Context',
+                defaultValue: 'false',
                 options: {
                     component: 'text-field',
                 },
@@ -851,9 +1281,39 @@ export const MODEL_FORMS: EngineFields = [
                 rules: { required: true },
             },
             {
-                fieldName: 'S3_REGION',
-                label: 'S3 Region',
-                defaultValue: 'need',
+                fieldName: 'ENDPOINT',
+                label: 'Endpoint',
+                defaultValue: '',
+                options: {
+                    component: 'text-field',
+                },
+                disabled: false,
+                rules: { required: true },
+            },
+            {
+                fieldName: 'VAR_NAME',
+                label: 'Variable Name',
+                defaultValue: '',
+                options: {
+                    component: 'text-field',
+                },
+                disabled: false,
+                rules: { required: true },
+            },
+            {
+                fieldName: 'INIT_MODEL_ENGINE',
+                label: 'Init Script',
+                defaultValue: '',
+                options: {
+                    component: 'text-field',
+                },
+                disabled: false,
+                rules: { required: true },
+            },
+            {
+                fieldName: 'KEEP_CONTEXT',
+                label: 'Keep Context',
+                defaultValue: 'false',
                 options: {
                     component: 'text-field',
                 },
@@ -902,9 +1362,39 @@ export const MODEL_FORMS: EngineFields = [
                 rules: { required: true },
             },
             {
-                fieldName: 'S3_REGION',
-                label: 'S3 Region',
-                defaultValue: 'need',
+                fieldName: 'ENDPOINT',
+                label: 'Endpoint',
+                defaultValue: '',
+                options: {
+                    component: 'text-field',
+                },
+                disabled: false,
+                rules: { required: true },
+            },
+            {
+                fieldName: 'VAR_NAME',
+                label: 'Variable Name',
+                defaultValue: '',
+                options: {
+                    component: 'text-field',
+                },
+                disabled: false,
+                rules: { required: true },
+            },
+            {
+                fieldName: 'INIT_MODEL_ENGINE',
+                label: 'Init Script',
+                defaultValue: '',
+                options: {
+                    component: 'text-field',
+                },
+                disabled: false,
+                rules: { required: true },
+            },
+            {
+                fieldName: 'KEEP_CONTEXT',
+                label: 'Keep Context',
+                defaultValue: 'false',
                 options: {
                     component: 'text-field',
                 },
@@ -953,9 +1443,39 @@ export const MODEL_FORMS: EngineFields = [
                 rules: { required: true },
             },
             {
-                fieldName: 'S3_REGION',
-                label: 'S3 Region',
-                defaultValue: 'need',
+                fieldName: 'ENDPOINT',
+                label: 'Endpoint',
+                defaultValue: '',
+                options: {
+                    component: 'text-field',
+                },
+                disabled: false,
+                rules: { required: true },
+            },
+            {
+                fieldName: 'VAR_NAME',
+                label: 'Variable Name',
+                defaultValue: '',
+                options: {
+                    component: 'text-field',
+                },
+                disabled: false,
+                rules: { required: true },
+            },
+            {
+                fieldName: 'INIT_MODEL_ENGINE',
+                label: 'Init Script',
+                defaultValue: '',
+                options: {
+                    component: 'text-field',
+                },
+                disabled: false,
+                rules: { required: true },
+            },
+            {
+                fieldName: 'KEEP_CONTEXT',
+                label: 'Keep Context',
+                defaultValue: 'false',
                 options: {
                     component: 'text-field',
                 },
@@ -970,7 +1490,7 @@ export const MODEL_FORMS: EngineFields = [
             {
                 fieldName: 'MODEL',
                 label: 'Model',
-                defaultValue: '',
+                defaultValue: 'WizardLM/WizardCoder-15B-V1.0',
                 options: {
                     component: 'text-field',
                 },
@@ -1004,9 +1524,39 @@ export const MODEL_FORMS: EngineFields = [
                 rules: { required: true },
             },
             {
-                fieldName: 'S3_REGION',
-                label: 'S3 Region',
-                defaultValue: 'need',
+                fieldName: 'ENDPOINT',
+                label: 'Endpoint',
+                defaultValue: '',
+                options: {
+                    component: 'text-field',
+                },
+                disabled: false,
+                rules: { required: true },
+            },
+            {
+                fieldName: 'VAR_NAME',
+                label: 'Variable Name',
+                defaultValue: '',
+                options: {
+                    component: 'text-field',
+                },
+                disabled: false,
+                rules: { required: true },
+            },
+            {
+                fieldName: 'INIT_MODEL_ENGINE',
+                label: 'Init Script',
+                defaultValue: '',
+                options: {
+                    component: 'text-field',
+                },
+                disabled: false,
+                rules: { required: true },
+            },
+            {
+                fieldName: 'KEEP_CONTEXT',
+                label: 'Keep Context',
+                defaultValue: 'false',
                 options: {
                     component: 'text-field',
                 },
@@ -1055,9 +1605,39 @@ export const MODEL_FORMS: EngineFields = [
                 rules: { required: true },
             },
             {
-                fieldName: 'S3_REGION',
-                label: 'S3 Region',
-                defaultValue: 'need',
+                fieldName: 'ENDPOINT',
+                label: 'Endpoint',
+                defaultValue: '',
+                options: {
+                    component: 'text-field',
+                },
+                disabled: false,
+                rules: { required: true },
+            },
+            {
+                fieldName: 'VAR_NAME',
+                label: 'Variable Name',
+                defaultValue: '',
+                options: {
+                    component: 'text-field',
+                },
+                disabled: false,
+                rules: { required: true },
+            },
+            {
+                fieldName: 'INIT_MODEL_ENGINE',
+                label: 'Init Script',
+                defaultValue: '',
+                options: {
+                    component: 'text-field',
+                },
+                disabled: false,
+                rules: { required: true },
+            },
+            {
+                fieldName: 'KEEP_CONTEXT',
+                label: 'Keep Context',
+                defaultValue: 'false',
                 options: {
                     component: 'text-field',
                 },
@@ -1106,9 +1686,39 @@ export const MODEL_FORMS: EngineFields = [
                 rules: { required: true },
             },
             {
-                fieldName: 'S3_REGION',
-                label: 'S3 Region',
-                defaultValue: 'need',
+                fieldName: 'ENDPOINT',
+                label: 'Endpoint',
+                defaultValue: '',
+                options: {
+                    component: 'text-field',
+                },
+                disabled: false,
+                rules: { required: true },
+            },
+            {
+                fieldName: 'VAR_NAME',
+                label: 'Variable Name',
+                defaultValue: '',
+                options: {
+                    component: 'text-field',
+                },
+                disabled: false,
+                rules: { required: true },
+            },
+            {
+                fieldName: 'INIT_MODEL_ENGINE',
+                label: 'Init Script',
+                defaultValue: '',
+                options: {
+                    component: 'text-field',
+                },
+                disabled: false,
+                rules: { required: true },
+            },
+            {
+                fieldName: 'KEEP_CONTEXT',
+                label: 'Keep Context',
+                defaultValue: 'false',
                 options: {
                     component: 'text-field',
                 },
@@ -1157,9 +1767,39 @@ export const MODEL_FORMS: EngineFields = [
                 rules: { required: true },
             },
             {
-                fieldName: 'S3_REGION',
-                label: 'S3 Region',
-                defaultValue: 'need',
+                fieldName: 'ENDPOINT',
+                label: 'Endpoint',
+                defaultValue: '',
+                options: {
+                    component: 'text-field',
+                },
+                disabled: false,
+                rules: { required: true },
+            },
+            {
+                fieldName: 'VAR_NAME',
+                label: 'Variable Name',
+                defaultValue: '',
+                options: {
+                    component: 'text-field',
+                },
+                disabled: false,
+                rules: { required: true },
+            },
+            {
+                fieldName: 'INIT_MODEL_ENGINE',
+                label: 'Init Script',
+                defaultValue: '',
+                options: {
+                    component: 'text-field',
+                },
+                disabled: false,
+                rules: { required: true },
+            },
+            {
+                fieldName: 'KEEP_CONTEXT',
+                label: 'Keep Context',
+                defaultValue: 'false',
                 options: {
                     component: 'text-field',
                 },
