@@ -786,7 +786,7 @@ export const CatalogPage = observer((): JSX.Element => {
                         </List.Item>
                     </StyledFilterList> */}
 
-                    <StyledFilterList dense={false}>
+                    <StyledFilterList dense={true}>
                         <List.Item
                             secondaryAction={
                                 <List.ItemButton
@@ -850,20 +850,22 @@ export const CatalogPage = observer((): JSX.Element => {
                                 </StyledChipList>
                             )}
 
-                            <StyledFilterSearchContainer>
-                                <Search
-                                    size={'small'}
-                                    label={'Search by...'}
-                                    onChange={(e) => {
-                                        dispatch({
-                                            type: 'field',
-                                            field: 'filterSearch',
-                                            value: e.target.value,
-                                        });
-                                    }}
-                                    sx={{ width: '100%' }}
-                                />
-                            </StyledFilterSearchContainer>
+                            {Object.entries(filterOptions).length ? (
+                                <StyledFilterSearchContainer>
+                                    <Search
+                                        size={'small'}
+                                        label={'Search by...'}
+                                        onChange={(e) => {
+                                            dispatch({
+                                                type: 'field',
+                                                field: 'filterSearch',
+                                                value: e.target.value,
+                                            });
+                                        }}
+                                        sx={{ width: '100%' }}
+                                    />
+                                </StyledFilterSearchContainer>
+                            ) : null}
 
                             {Object.entries(filterOptions).map((entries, i) => {
                                 const totalFilters =
@@ -1025,8 +1027,6 @@ export const CatalogPage = observer((): JSX.Element => {
                                             <div
                                                 style={{
                                                     width: '100%',
-                                                    paddingLeft: '16px',
-                                                    paddingRight: '16px',
                                                 }}
                                             >
                                                 <Divider></Divider>
