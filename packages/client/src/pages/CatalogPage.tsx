@@ -14,7 +14,6 @@ import {
     ToggleButtonGroup,
     Grid,
     List,
-    TextField,
     CustomPaletteOptions,
 } from '@semoss/ui';
 import {
@@ -38,18 +37,19 @@ const StyledContainer = styled('div')(({ theme }) => ({
     paddingBottom: theme.spacing(1),
 }));
 
-const StyledFitler = styled('div')(({ theme }) => ({
+const StyledFilter = styled('div')(({ theme }) => ({
     display: 'flex',
     flexDirection: 'column',
-    height: '100%',
+    height: 'fit-content',
     width: '355px',
-    gap: theme.spacing(2),
+    boxShadow: '0px 5px 22px 0px rgba(0, 0, 0, 0.06)',
+    background: theme.palette.background.paper,
 }));
 
 const StyledFilterList = styled(List)(({ theme }) => ({
     width: '100%',
-    background: theme.palette.background.default,
     borderRadius: theme.shape.borderRadius,
+    gap: theme.spacing(2),
 }));
 
 const StyledChipList = styled('div')(({ theme }) => ({
@@ -59,7 +59,11 @@ const StyledChipList = styled('div')(({ theme }) => ({
     gap: theme.spacing(2),
 }));
 
-const StyledFilter = styled('div')(() => ({}));
+const StyledFilterSearchContainer = styled('div')(({ theme }) => ({
+    marginTop: theme.spacing(2),
+    marginLeft: theme.spacing(2),
+    marginRight: theme.spacing(2),
+}));
 
 const StyledNestedFilterList = styled(List)(({ theme }) => ({
     width: '100%',
@@ -71,6 +75,7 @@ const StyledAvatarCount = styled(Avatar)(({ theme }) => ({
     height: theme.spacing(4),
     fontSize: theme.spacing(1.75),
     color: theme.palette.text.primary,
+    background: theme.palette.secondary.main,
 }));
 
 const StyledContent = styled('div')(() => ({
@@ -90,13 +95,33 @@ const StyledChip = styled(Chip, {
     const palette = theme.palette as CustomPaletteOptions;
 
     return {
-        color: selected ? palette.semossBlue['900'] : palette.semossBlue['900'],
+        color: selected
+            ? palette.background.paper
+            : palette.primaryContrast['900'],
         backgroundColor: selected
-            ? palette.semossBlue['100']
-            : palette.semossBlue['50'],
+            ? palette.primary.main
+            : palette.primaryContrast['50'],
 
         '&:hover': {
-            color: palette.semossBlue['50'],
+            color: selected
+                ? palette.background.paper
+                : palette.primaryContrast['900'],
+            background: selected
+                ? palette.primaryContrast['900']
+                : palette.primaryContrast['100'],
+        },
+    };
+});
+
+const StyledShowMore = styled(Typography)(({ theme, selected }) => {
+    // TODO: Fix typing
+    const palette = theme.palette as CustomPaletteOptions;
+
+    return {
+        color: palette.primary.main,
+        '&:hover': {
+            color: palette.primaryContrast['900'],
+            cursor: 'pointer',
         },
     };
 });
@@ -104,6 +129,7 @@ const StyledChip = styled(Chip, {
 const initialState = {
     favoritedDbs: [],
     databases: [],
+    filterSearch: '',
 };
 
 const reducer = (state, action) => {
@@ -165,7 +191,7 @@ export const CatalogPage = observer((): JSX.Element => {
     });
 
     const [state, dispatch] = useReducer(reducer, initialState);
-    const { favoritedDbs, databases } = state;
+    const { favoritedDbs, databases, filterSearch } = state;
 
     const [offset, setOffset] = useState(0);
     const [canCollect, setCanCollect] = useState(true);
@@ -694,12 +720,8 @@ export const CatalogPage = observer((): JSX.Element => {
                 </Stack>
             }
         >
-            <StyledContainer
-            // sx={{ border: 'solid red' }}
-            >
-                <StyledFitler
-                // style={{ border: 'solid green' }}
-                >
+            <StyledContainer>
+                <StyledFilter>
                     {/* <StyledFilterList dense={true}>
                         <List.Item>
                             <List.ItemButton
@@ -764,7 +786,7 @@ export const CatalogPage = observer((): JSX.Element => {
                         </List.Item>
                     </StyledFilterList> */}
 
-                    <StyledFilterList dense={true}>
+                    <StyledFilterList dense={false}>
                         <List.Item
                             secondaryAction={
                                 <List.ItemButton
@@ -785,7 +807,7 @@ export const CatalogPage = observer((): JSX.Element => {
                             <List.ItemText
                                 disableTypography
                                 primary={
-                                    <Typography variant="body1">
+                                    <Typography variant="h6">
                                         Filter By
                                     </Typography>
                                 }
@@ -828,30 +850,33 @@ export const CatalogPage = observer((): JSX.Element => {
                                 </StyledChipList>
                             )}
 
+                            <StyledFilterSearchContainer>
+                                <Search
+                                    size={'small'}
+                                    label={'Search by...'}
+                                    onChange={(e) => {
+                                        dispatch({
+                                            type: 'field',
+                                            field: 'filterSearch',
+                                            value: e.target.value,
+                                        });
+                                    }}
+                                    sx={{ width: '100%' }}
+                                />
+                            </StyledFilterSearchContainer>
+
                             {Object.entries(filterOptions).map((entries, i) => {
                                 const totalFilters =
                                     Object.entries(filterOptions).length;
                                 const list = entries[1];
                                 let shownListItems = 0; // for show more functionality
                                 return (
-                                    <StyledFilter key={i}>
+                                    <div key={i}>
                                         <List.Item>
                                             <List.ItemText
                                                 disableTypography
                                                 primary={
-                                                    <Typography
-                                                        variant={'body1'}
-                                                        sx={{
-                                                            alignSelf:
-                                                                'stretch',
-                                                            fontWeight: 500,
-                                                            fontSize: '16px',
-                                                            fontStyle: 'normal',
-                                                            lineHeight: '150%',
-                                                            letterSpacing:
-                                                                '0.15px',
-                                                        }}
-                                                    >
+                                                    <Typography variant={'h6'}>
                                                         {formatDBName(
                                                             entries[0],
                                                         )}
@@ -859,167 +884,131 @@ export const CatalogPage = observer((): JSX.Element => {
                                                 }
                                             />
                                         </List.Item>
-                                        <List.Item>
-                                            <TextField
-                                                label={`Search ${formatDBName(
-                                                    entries[0],
-                                                )}`}
-                                                size={'small'}
-                                                aria-label={`Search ${formatDBName(
-                                                    entries[0],
-                                                )}`}
-                                                sx={{
-                                                    width: '100%',
-                                                }}
-                                                onChange={(e) => {
-                                                    const visibleFilters = {
-                                                        ...filterVisibility,
-                                                    };
-                                                    visibleFilters[entries[0]] =
-                                                        {
-                                                            open: visibleFilters[
+                                        {/* <StyledNestedFilterList dense={true}> */}
+                                        {list.map((filterOption, i) => {
+                                            if (
+                                                shownListItems > 4 &&
+                                                !filterVisibility[entries[0]]
+                                                    .open
+                                            ) {
+                                                return;
+                                            } else {
+                                                if (
+                                                    filterOption.value
+                                                        .toLowerCase()
+                                                        .includes(
+                                                            filterSearch.toLowerCase(),
+                                                        )
+                                                ) {
+                                                    shownListItems += 1;
+                                                    return (
+                                                        <List.Item
+                                                            disableGutters
+                                                            key={i}
+                                                        >
+                                                            <List.ItemButton
+                                                                disableGutters
+                                                                sx={{
+                                                                    paddingLeft:
+                                                                        '16px',
+                                                                    paddingRight:
+                                                                        '16px',
+                                                                }}
+                                                                selected={
+                                                                    filterVisibility[
+                                                                        entries[0]
+                                                                    ].value.indexOf(
+                                                                        filterOption.value,
+                                                                    ) > -1
+                                                                }
+                                                                onClick={() => {
+                                                                    // Reset databases and reset offset
+                                                                    dispatch({
+                                                                        type: 'field',
+                                                                        field: 'databases',
+                                                                        value: [],
+                                                                    });
+                                                                    setOffset(
+                                                                        0,
+                                                                    );
+
+                                                                    setSelectedFilters(
+                                                                        entries[0],
+                                                                        filterOption,
+                                                                    );
+                                                                }}
+                                                                aria-label={
+                                                                    filterVisibility[
+                                                                        entries[0]
+                                                                    ].value.indexOf(
+                                                                        filterOption.value,
+                                                                    ) > -1
+                                                                        ? `Unfilter ${filterOption.value}`
+                                                                        : `Filter ${filterOption.value}`
+                                                                }
+                                                            >
+                                                                <div
+                                                                    style={{
+                                                                        width: '100%',
+                                                                        display:
+                                                                            'flex',
+                                                                        justifyContent:
+                                                                            'space-between',
+                                                                    }}
+                                                                >
+                                                                    <List.ItemText
+                                                                        disableTypography
+                                                                        primary={
+                                                                            <Typography variant="body1">
+                                                                                {
+                                                                                    filterOption.value
+                                                                                }
+                                                                            </Typography>
+                                                                        }
+                                                                    />
+                                                                    <StyledAvatarCount
+                                                                        variant={
+                                                                            'rounded'
+                                                                        }
+                                                                    >
+                                                                        {
+                                                                            filterOption.count
+                                                                        }
+                                                                    </StyledAvatarCount>
+                                                                </div>
+                                                            </List.ItemButton>
+                                                        </List.Item>
+                                                    );
+                                                }
+                                            }
+                                        })}
+                                        {shownListItems > 4 && (
+                                            <List.Item>
+                                                <div
+                                                    onClick={() => {
+                                                        const visibleFilters = {
+                                                            ...filterVisibility,
+                                                        };
+                                                        visibleFilters[
+                                                            entries[0]
+                                                        ] = {
+                                                            open: !visibleFilters[
                                                                 entries[0]
                                                             ].open,
                                                             value: visibleFilters[
                                                                 entries[0]
                                                             ].value,
-                                                            search: e.target
-                                                                .value,
-                                                        };
-                                                    setFilterVisibility(
-                                                        visibleFilters,
-                                                    );
-                                                }}
-                                            />
-                                        </List.Item>
-                                        <StyledNestedFilterList dense={true}>
-                                            {list.map((filterOption, i) => {
-                                                if (
-                                                    shownListItems > 4 &&
-                                                    !filterVisibility[
-                                                        entries[0]
-                                                    ].open
-                                                ) {
-                                                    return;
-                                                } else {
-                                                    if (
-                                                        filterOption.value
-                                                            .toLowerCase()
-                                                            .includes(
-                                                                filterVisibility[
-                                                                    entries[0]
-                                                                ].search.toLowerCase(),
-                                                            )
-                                                    ) {
-                                                        shownListItems += 1;
-                                                        return (
-                                                            <List.Item
-                                                                disableGutters
-                                                                key={i}
-                                                            >
-                                                                <List.ItemButton
-                                                                    disableGutters
-                                                                    sx={{
-                                                                        paddingLeft:
-                                                                            '16px',
-                                                                        paddingRight:
-                                                                            '16px',
-                                                                    }}
-                                                                    selected={
-                                                                        filterVisibility[
-                                                                            entries[0]
-                                                                        ].value.indexOf(
-                                                                            filterOption.value,
-                                                                        ) > -1
-                                                                    }
-                                                                    onClick={() => {
-                                                                        // Reset databases and reset offset
-                                                                        dispatch(
-                                                                            {
-                                                                                type: 'field',
-                                                                                field: 'databases',
-                                                                                value: [],
-                                                                            },
-                                                                        );
-                                                                        setOffset(
-                                                                            0,
-                                                                        );
-
-                                                                        setSelectedFilters(
-                                                                            entries[0],
-                                                                            filterOption,
-                                                                        );
-                                                                    }}
-                                                                    aria-label={
-                                                                        filterVisibility[
-                                                                            entries[0]
-                                                                        ].value.indexOf(
-                                                                            filterOption.value,
-                                                                        ) > -1
-                                                                            ? `Unfilter ${filterOption.value}`
-                                                                            : `Filter ${filterOption.value}`
-                                                                    }
-                                                                >
-                                                                    <div
-                                                                        style={{
-                                                                            width: '100%',
-                                                                            display:
-                                                                                'flex',
-                                                                            justifyContent:
-                                                                                'space-between',
-                                                                        }}
-                                                                    >
-                                                                        <List.ItemText
-                                                                            disableTypography
-                                                                            primary={
-                                                                                <Typography variant="body1">
-                                                                                    {
-                                                                                        filterOption.value
-                                                                                    }
-                                                                                </Typography>
-                                                                            }
-                                                                        />
-                                                                        <StyledAvatarCount
-                                                                            variant={
-                                                                                'rounded'
-                                                                            }
-                                                                        >
-                                                                            {
-                                                                                filterOption.count
-                                                                            }
-                                                                        </StyledAvatarCount>
-                                                                    </div>
-                                                                </List.ItemButton>
-                                                            </List.Item>
-                                                        );
-                                                    }
-                                                }
-                                            })}
-                                            {shownListItems > 4 && (
-                                                <List.Item>
-                                                    <Button
-                                                        onClick={() => {
-                                                            const visibleFilters =
-                                                                {
-                                                                    ...filterVisibility,
-                                                                };
-                                                            visibleFilters[
+                                                            search: visibleFilters[
                                                                 entries[0]
-                                                            ] = {
-                                                                open: !visibleFilters[
-                                                                    entries[0]
-                                                                ].open,
-                                                                value: visibleFilters[
-                                                                    entries[0]
-                                                                ].value,
-                                                                search: visibleFilters[
-                                                                    entries[0]
-                                                                ].search,
-                                                            };
-                                                            setFilterVisibility(
-                                                                visibleFilters,
-                                                            );
-                                                        }}
+                                                            ].search,
+                                                        };
+                                                        setFilterVisibility(
+                                                            visibleFilters,
+                                                        );
+                                                    }}
+                                                >
+                                                    <StyledShowMore
+                                                        variant={'body1'}
                                                     >
                                                         Show{' '}
                                                         {filterVisibility[
@@ -1027,10 +1016,11 @@ export const CatalogPage = observer((): JSX.Element => {
                                                         ].open
                                                             ? 'Less'
                                                             : 'More'}
-                                                    </Button>
-                                                </List.Item>
-                                            )}
-                                        </StyledNestedFilterList>
+                                                    </StyledShowMore>
+                                                </div>
+                                            </List.Item>
+                                        )}
+                                        {/* </StyledNestedFilterList> */}
                                         {i + 1 !== totalFilters && (
                                             <div
                                                 style={{
@@ -1042,12 +1032,12 @@ export const CatalogPage = observer((): JSX.Element => {
                                                 <Divider></Divider>
                                             </div>
                                         )}
-                                    </StyledFilter>
+                                    </div>
                                 );
                             })}
                         </Collapse>
                     </StyledFilterList>
-                </StyledFitler>
+                </StyledFilter>
 
                 <StyledContent>
                     {databases.length ? (

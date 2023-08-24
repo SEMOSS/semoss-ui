@@ -1,4 +1,11 @@
-import { Card, Grid, Icon, styled, Typography } from '@semoss/ui';
+import {
+    Card,
+    Grid,
+    Icon,
+    styled,
+    Typography,
+    CustomPaletteOptions,
+} from '@semoss/ui';
 
 import {
     AutoGraph,
@@ -17,9 +24,7 @@ const StyledCard = styled(Card)(({ theme }) => ({
 
 const StyledCardImageContainer = styled('div')(({ theme }) => {
     // TODO: Fix typing
-    const palette = theme.palette as unknown as {
-        semossBlue: Record<string, string>;
-    };
+    const palette = theme.palette as CustomPaletteOptions;
 
     return {
         display: 'flex',
@@ -28,7 +33,7 @@ const StyledCardImageContainer = styled('div')(({ theme }) => {
         width: theme.spacing(7.5),
         height: theme.spacing(7.5),
         borderRadius: theme.spacing(0.75),
-        backgroundColor: palette.semossBlue['50'],
+        backgroundColor: palette.primaryContrast['50'],
     };
 });
 

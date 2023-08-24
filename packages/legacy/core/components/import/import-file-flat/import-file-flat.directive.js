@@ -587,6 +587,8 @@ function importFileFlatDirective(semossCoreService) {
                         continue;
                     }
 
+                    
+
                     if (!first) {
                         pixel += 'databaseVar = ';
                     }
