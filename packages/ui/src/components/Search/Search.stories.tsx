@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import { Search } from "./";
 
 export default {
@@ -8,11 +8,21 @@ export default {
         placeholder: "Search Placeholder here",
         disabled: false,
         enableEndAdornment: false,
+        label: "hey",
     },
 };
 
 const Template = (args) => {
-    return <Search {...args} />;
+    const [value, setValue] = useState<string>("");
+    return (
+        <Search
+            {...args}
+            value={value}
+            onChange={(e) => {
+                setValue(e.target.value);
+            }}
+        />
+    );
 };
 
 export const Default = Template.bind({});

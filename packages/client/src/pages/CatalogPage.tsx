@@ -74,6 +74,7 @@ const StyledAvatarCount = styled(Avatar)(({ theme }) => ({
     width: theme.spacing(4),
     height: theme.spacing(4),
     fontSize: theme.spacing(1.75),
+    fontWeight: 500,
     color: theme.palette.text.primary,
     background: theme.palette.secondary.main,
 }));
@@ -91,8 +92,13 @@ const StyledChip = styled(Chip, {
     /** Track if the chip is selected */
     selected: boolean;
 }>(({ theme, selected }) => {
+    // const palette = theme.palette as CustomPaletteOptions;
     // TODO: Fix typing
-    const palette = theme.palette as CustomPaletteOptions;
+    const palette = theme.palette as unknown as {
+        primary: Record<string, string>;
+        background: Record<string, string>;
+        primaryContrast: Record<string, string>;
+    };
 
     return {
         color: selected
@@ -113,9 +119,13 @@ const StyledChip = styled(Chip, {
     };
 });
 
-const StyledShowMore = styled(Typography)(({ theme, selected }) => {
+const StyledShowMore = styled(Typography)(({ theme }) => {
     // TODO: Fix typing
-    const palette = theme.palette as CustomPaletteOptions;
+    // const palette = theme.palette as CustomPaletteOptions;
+    const palette = theme.palette as unknown as {
+        primary: Record<string, string>;
+        primaryContrast: Record<string, string>;
+    };
 
     return {
         color: palette.primary.main,
@@ -658,6 +668,7 @@ export const CatalogPage = observer((): JSX.Element => {
                             <Search
                                 size={'small'}
                                 label={`Search ${catalogType}`}
+                                value={search}
                                 onChange={(e) => {
                                     // Reset databases and reset offset
                                     dispatch({
@@ -855,6 +866,7 @@ export const CatalogPage = observer((): JSX.Element => {
                                     <Search
                                         size={'small'}
                                         label={'Search by...'}
+                                        value={filterSearch}
                                         onChange={(e) => {
                                             dispatch({
                                                 type: 'field',
