@@ -8,7 +8,7 @@ export default {
         placeholder: "Search Placeholder here",
         disabled: false,
         enableEndAdornment: false,
-        label: "hey",
+        label: "Label",
     },
 };
 
