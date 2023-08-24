@@ -1,20 +1,10 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { NodeProps, Handle, Position, useEdges } from 'react-flow-renderer';
 import { useForm, Controller, useFieldArray } from 'react-hook-form';
 
-import {
-    styled,
-    Icon,
-    Button,
-    Typography,
-    Card,
-    List,
-    Table,
-    TextField,
-    Select,
-    Menu,
-    MenuItem,
-} from '@semoss/ui';
+import { getDefaultOptions } from './utility';
+
+import { styled, Typography, TextField, Select } from '@semoss/ui';
 import {
     TableChartOutlined,
     TableViewRounded,
@@ -80,6 +70,8 @@ const TableIconBlue = () => (
 );
 
 type MetamodelNodeProps = NodeProps<{
+    /** Index of the node */
+    nodeIndex: number;
     /** Name of the node */
     name: string; // table
 
@@ -154,6 +146,7 @@ const _MetamodelNode = (props: MetamodelNodeProps) => {
 
     const { selectedNodeId, onSelectNodeId, isInteractive, updateData } =
         useMetamodel();
+
     const [openEditColumnModal, setOpenEditColumnModal] = useState(false);
     const [editTable, setEditTable] = useState(false);
 
@@ -168,6 +161,14 @@ const _MetamodelNode = (props: MetamodelNodeProps) => {
     useEffect(() => {
         console.log('node data changed: ', nodeData);
     }, [nodeData]);
+
+    useEffect(() => {
+        if (editTable) {
+            updateData(nodeData, 'edit_node');
+        }
+    }, [editTable]);
+
+    const dataTypeOptions = getDefaultOptions();
 
     /** STYLES: VIEW METAMODEL */
 
@@ -478,7 +479,6 @@ const _MetamodelNode = (props: MetamodelNodeProps) => {
                 padding: '12px 16px',
                 alignItems: 'center',
                 border: 'none',
-                overflow: 'visible',
             };
         }
         if (cellPosition === 'third') {
@@ -561,6 +561,8 @@ const _MetamodelNode = (props: MetamodelNodeProps) => {
         // width: '126px',
         alignmentSelf: 'stretch',
     }));
+
+    // const StyledMenuItem = styled()
 
     if (editTable) {
         return (
@@ -665,24 +667,20 @@ const _MetamodelNode = (props: MetamodelNodeProps) => {
                                                             )
                                                         }
                                                     >
-                                                        <MenuItem
-                                                            key={`${idx}_first`}
-                                                            value={1}
-                                                        >
-                                                            Test
-                                                        </MenuItem>
-                                                        <MenuItem
-                                                            key={`${idx}_second`}
-                                                            value={2}
-                                                        >
-                                                            Right
-                                                        </MenuItem>
-                                                        <MenuItem
-                                                            key={`${idx}_third`}
-                                                            value={3}
-                                                        >
-                                                            Left
-                                                        </MenuItem>
+                                                        {dataTypeOptions.map(
+                                                            (option, idx) => (
+                                                                <Select.Item
+                                                                    key={`${idx}_first`}
+                                                                    value={
+                                                                        option.value
+                                                                    }
+                                                                >
+                                                                    {
+                                                                        option.display
+                                                                    }
+                                                                </Select.Item>
+                                                            ),
+                                                        )}
                                                     </StyledSelect>
                                                 )}
                                             />

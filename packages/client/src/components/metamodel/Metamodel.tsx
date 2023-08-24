@@ -13,6 +13,7 @@ import { FloatingEdge } from './FloatingEdge';
 import { MetamodelContext, MetamodelContextType } from '@/contexts';
 
 import { MetamodelToolbar } from './MetamodelToolbar';
+import { format } from 'path';
 
 const defaultViewport = { x: 0, y: 0, zoom: 1.5 };
 
@@ -37,6 +38,9 @@ interface MetamodelProps {
     nodes?: MetamodelNode[];
     /** Edges (aka relationships) to render in the metamodel */
     edges?: Edge[];
+
+    /** Track the selected node by index */
+    nodeIndex?: number;
 
     /** Track the selected node */
     selectedNode?: MetamodelNode | null;
@@ -82,14 +86,32 @@ export const Metamodel = (props: MetamodelProps) => {
     //     type: 'floating'
     // };
 
+    let formattedNodes = [];
+    for (let i = 0; i < nodes.length; i++) {
+        const tempNode = nodes[i];
+        tempNode.nodeIndex = i;
+        formattedNodes.push(tempNode);
+    }
+
     const [originalData, setOriginalData] = useState({
-        nodes: nodes,
+        nodes: formattedNodes,
         edges: edges,
     });
-    const [data, setData] = useState({ nodes: nodes, edges: edges });
+    const [data, setData] = useState({ nodes: formattedNodes, edges: edges });
+
+    useEffect(() => {
+        console.log('does this update formattednodes? ', formattedNodes);
+    }, [formattedNodes]);
 
     const updateData = (nodeData, action) => {
         const temp = data;
+        // enables Select component's dropdown to open onClick
+        // WITHOUT THIS OPTIONS IN THE SELECT COMPONENT WILL NOT BE
+        if (action === 'edit_node') {
+            selectedNode.draggable = false;
+            selectedNode.className = 'nopan';
+            return;
+        }
         // if action === 'column name change'
         if (action === 'COLUMN_NAME_CHANGE') {
             // access data by nodeData.table.name
@@ -133,6 +155,7 @@ export const Metamodel = (props: MetamodelProps) => {
         }
         // if action === 'column data type change'
     };
+    console.log('the actual selectedNode: ', selectedNode);
 
     // create the context
     const metamodelContext: MetamodelContextType = {
@@ -157,7 +180,7 @@ export const Metamodel = (props: MetamodelProps) => {
 
                 onSelectNode(node);
             },
-            [nodes],
+            [formattedNodes],
         ),
         isInteractive: isInteractive,
         updateData: updateData,
@@ -246,7 +269,7 @@ export const Metamodel = (props: MetamodelProps) => {
         <MetamodelContext.Provider value={metamodelContext}>
             <div style={{ height: '95%', width: '100%' }}>
                 <ReactFlow
-                    defaultNodes={nodes}
+                    defaultNodes={formattedNodes}
                     defaultEdges={edges}
                     nodeTypes={nodeTypes}
                     edgeTypes={edgeTypes}

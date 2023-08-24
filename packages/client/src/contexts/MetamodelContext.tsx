@@ -4,6 +4,8 @@ import { createContext } from 'react';
  * Value
  */
 export type MetamodelContextType = {
+    /** Index of the selected node */
+    nodeIndex: number;
     /** ID of the selected node */
     selectedNodeId: string;
     /** Selected a new node by Id */
@@ -11,7 +13,7 @@ export type MetamodelContextType = {
     /** Boolean to determine if metamodel is interactive aka editable */
     isInteractive: boolean;
     /** update metamodel state */
-    updateData: (nodeData: any, action: string) => void;
+    updateData: (nodeData: any, action: string, nodeIdx?: any) => void;
 };
 
 /**
