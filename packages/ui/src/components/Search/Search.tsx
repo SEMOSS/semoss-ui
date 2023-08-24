@@ -10,12 +10,10 @@ export type SearchFieldProps = TextFieldProps & {
      * @default false
      */
     enableEndAdornment?: boolean;
-
-    value: string;
 };
 
 export const Search = (props: SearchFieldProps) => {
-    const { enableEndAdornment, value = "" } = props;
+    const { enableEndAdornment } = props;
     const textInput = useRef(null);
 
     const refValue = !textInput
