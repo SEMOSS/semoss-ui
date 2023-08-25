@@ -1,78 +1,25 @@
 import { useState, useEffect } from 'react';
 import { observer } from 'mobx-react-lite';
-import { Link, useParams, Navigate } from 'react-router-dom';
+import { useParams, Navigate } from 'react-router-dom';
 import { Controller, useForm } from 'react-hook-form';
 import {
     styled,
     useNotification,
-    Icon,
     Button,
-    Stack,
     IconButton,
+    Stack,
     FileDropzone,
     Typography,
 } from '@semoss/ui';
-import { AccountCircle, Code, Download } from '@mui/icons-material';
-
-import { THEME } from '@/constants';
+import { Code, Download } from '@mui/icons-material';
+import { Navbar } from '@/components/ui';
 import { useRootStore, useAPI } from '@/hooks';
 import { AppRenderer } from '@/components/app';
 
 const NAV_HEIGHT = '48px';
 const NAV_FOOTER = '24px';
-const NAV_ICON_WIDTH = '56px';
 
 // background: var(--light-text-primary, rgba(0, 0, 0, 0.87));
-
-const StyledHeader = styled('div')(({ theme }) => ({
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    height: NAV_HEIGHT,
-    display: 'flex',
-    alignItems: 'center',
-    overflow: 'hidden',
-    color: 'rgba(235, 238, 254, 1)',
-    backgroundColor: theme.palette.common.black,
-    zIndex: 10,
-    gap: theme.spacing(1),
-}));
-
-const StyledHeaderLogo = styled(Link)(({ theme }) => ({
-    height: '100%',
-    display: 'flex',
-    alignItems: 'center',
-    gap: theme.spacing(1),
-    color: 'inherit',
-    textDecoration: 'none',
-    paddingTop: theme.spacing(1),
-    paddingBottom: theme.spacing(1),
-    paddingLeft: theme.spacing(2),
-    paddingRight: theme.spacing(2),
-    cursor: 'pointer',
-    backgroundColor: theme.palette.common.black,
-    '&:hover': {
-        backgroundColor: `rgba(255, 255, 255, ${theme.palette.action.hoverOpacity})`,
-    },
-}));
-
-const StyledHeaderLogout = styled('div')(({ theme }) => ({
-    display: 'flex',
-    flexDirection: 'column',
-    alignItems: 'center',
-    justifyContent: 'center',
-    color: 'inherit',
-    textDecoration: 'none',
-    height: NAV_HEIGHT,
-    width: NAV_ICON_WIDTH,
-    cursor: 'pointer',
-    backgroundColor: theme.palette.common.black,
-    '&:hover': {
-        backgroundColor: `rgba(255, 255, 255, ${theme.palette.action.hoverOpacity})`,
-    },
-}));
-
 const StyledContent = styled('div')(() => ({
     display: 'flex',
     flexDirection: 'row',
@@ -84,6 +31,12 @@ const StyledContent = styled('div')(() => ({
     height: '100%',
     width: '100%',
     overflow: 'hidden',
+}));
+
+const StyledNavbarChildren = styled('div')(({ theme }) => ({
+    display: 'flex',
+    justifyContent: 'flex-end',
+    gap: theme.spacing(2),
 }));
 
 const StyledLeft = styled('div')(({ theme }) => ({
@@ -191,6 +144,9 @@ export const AppPage = observer(() => {
         };
     }, []);
 
+    /**
+     * Determines whether user is allowed to edit or export
+     */
     const getAppPermission = async () => {
         const response = await monolithStore.getUserProjectPermission(appId);
 
@@ -299,45 +255,40 @@ export const AppPage = observer(() => {
 
     return (
         <>
-            <StyledHeader>
-                <StyledHeaderLogo to={'/'}>
-                    {THEME.logo ? <img src={THEME.logo} /> : null}
-                    {THEME.name}
-                </StyledHeaderLogo>
-                <Stack flex={1}>&nbsp;</Stack>
-                <StyledTrack
-                    active={editMode}
-                    onClick={() => {
-                        if (appPermission === 'OWNER') {
-                            setEditMode(!editMode);
-                        } else {
-                            notification.add({
-                                color: 'error',
-                                message:
-                                    'Currently you do not have access to edit this application.',
-                            });
-                        }
-                    }}
-                >
-                    <StyledHandle active={editMode}>
-                        <Code />
-                    </StyledHandle>
-                </StyledTrack>
-                <IconButton
-                    size={'small'}
-                    disabled={appPermission !== 'OWNER'}
-                    onClick={() => {
-                        downloadApp();
-                    }}
-                >
-                    <Download />
-                </IconButton>
-                <StyledHeaderLogout>
-                    <Icon>
-                        <AccountCircle />
-                    </Icon>
-                </StyledHeaderLogout>
-            </StyledHeader>
+            <Navbar>
+                {appPermission === 'OWNER' && (
+                    <StyledNavbarChildren>
+                        <StyledTrack
+                            active={editMode}
+                            onClick={() => {
+                                if (appPermission === 'OWNER') {
+                                    setEditMode(!editMode);
+                                } else {
+                                    notification.add({
+                                        color: 'error',
+                                        message:
+                                            'Currently you do not have access to edit this application.',
+                                    });
+                                }
+                            }}
+                        >
+                            <StyledHandle active={editMode}>
+                                <Code />
+                            </StyledHandle>
+                        </StyledTrack>
+                        <Button
+                            size={'small'}
+                            color={'primary'}
+                            variant={'outlined'}
+                            onClick={() => {
+                                downloadApp();
+                            }}
+                        >
+                            <Download />
+                        </Button>
+                    </StyledNavbarChildren>
+                )}
+            </Navbar>
             <StyledContent>
                 {editMode && (
                     <StyledLeft>

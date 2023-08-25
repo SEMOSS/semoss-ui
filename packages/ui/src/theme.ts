@@ -1,6 +1,7 @@
-import { ThemeOptions, styled, PaletteOptions } from "@mui/material";
+import { ThemeOptions, styled, PaletteOptions, useTheme } from "@mui/material";
+// import { useTheme } from
 // export specifics from the library
-export { styled };
+export { styled, useTheme };
 export type { ThemeOptions };
 
 export interface CustomPaletteColor {
@@ -16,23 +17,25 @@ export interface CustomPaletteColor {
     900?: string;
 }
 export interface CustomPaletteOptions extends PaletteOptions {
-    semossBlue?: CustomPaletteColor;
+    primaryContrast?: CustomPaletteColor;
     green?: CustomPaletteColor;
     darkBlue?: CustomPaletteColor;
     pink?: CustomPaletteColor;
     purple?: CustomPaletteColor;
 }
 
+export interface CustomShapeOptions {
+    borderRadiusNone: number;
+    borderRadius: number;
+    borderRadiusSm?: number;
+    borderRadiusLg?: number;
+    borderRadiusCircle?: number;
+    borderRadiusChip?: number;
+}
+
 export interface CustomThemeOptions extends ThemeOptions {
     palette: CustomPaletteOptions;
-    shape: {
-        borderRadiusNone: number;
-        borderRadius: number;
-        borderRadiusSm?: number;
-        borderRadiusLg?: number;
-        borderRadiusCircle?: number;
-        borderRadiusChip?: number;
-    };
+    shape: CustomShapeOptions;
     space?: {
         auto: string;
         full: string;
@@ -57,12 +60,17 @@ export const lightTheme: CustomThemeOptions = {
     palette: {
         mode: "light",
         primary: {
+            // SEMOSS BLUE
             main: "#0471F0",
             light: "#22A4FF",
             dark: "#1260DD",
+            // DELOITTE GREEN
+            // main: "#26890D",
+            // light: "#86BC25",
+            // dark: "#046A38",
         },
         secondary: {
-            main: "rgba(0, 0, 0, 0.6)",
+            main: "#D9D9D9",
             light: "#F2F2F2",
             dark: "#B5B5B5",
         },
@@ -90,65 +98,77 @@ export const lightTheme: CustomThemeOptions = {
             default: "#FAFAFA",
             paper: "#FFF",
         },
-        semossBlue: {
+        primaryContrast: {
+            // SEMOSS BLUE
             "50": "#E2F2FF",
-            "100": "BADEFF",
-            "200": "8BCAFF",
-            "300": "55B5FF",
-            "400": "22A4FF",
-            "500": "0094FF",
-            "600": "0085FF",
-            "700": "0471F0",
-            "800": "1260DD",
-            "900": "1C3FBE",
+            "100": "#BADEFF",
+            "200": "#8BCAFF",
+            "300": "#55B5FF",
+            "400": "#22A4FF",
+            "500": "#0094FF",
+            "600": "#0085FF",
+            "700": "#0471F0",
+            "800": "#1260DD",
+            "900": "#1C3FBE",
+            // DELOITTE GREEN
+            // "50": "#E7F4E5",
+            // "100": "#C6E4BF",
+            // "200": "#A1D396",
+            // "300": "#7AC36B",
+            // "400": "#5CB649",
+            // "500": "#3EA924",
+            // "600": "#349B1B",
+            // "700": "#26890D",
+            // "800": "#167800",
+            // "900": "#005A00",
         },
         green: {
             "50": "#DEF4F3",
-            "100": "ABE4E0",
-            "200": "6FD4CB",
-            "300": "07C2B6",
-            "400": "00B4A4",
-            "500": "00A593",
-            "600": "009785",
-            "700": "008674",
-            "800": "007664",
-            "900": "005946",
+            "100": "#ABE4E0",
+            "200": "#6FD4CB",
+            "300": "#07C2B6",
+            "400": "#00B4A4",
+            "500": "#00A593",
+            "600": "#009785",
+            "700": "#008674",
+            "800": "#007664",
+            "900": "#005946",
         },
         darkBlue: {
             "50": "#EAE4F2",
-            "100": "C9BCE0",
-            "200": "A690CC",
-            "300": "8364B8",
-            "400": "6944AA",
-            "500": "4F249B",
-            "600": "471F96",
-            "700": "3A188E",
-            "800": "2D1286",
-            "900": "150578",
+            "100": "#C9BCE0",
+            "200": "#A690CC",
+            "300": "#8364B8",
+            "400": "#6944AA",
+            "500": "#4F249B",
+            "600": "#471F96",
+            "700": "#3A188E",
+            "800": "#2D1286",
+            "900": "#150578",
         },
         pink: {
             "50": "#FFE6F0",
-            "100": "FFC0D9",
-            "200": "FF97C0",
-            "300": "FF6DA6",
-            "400": "FF4E90",
-            "500": "FF337B",
-            "600": "ED2F77",
-            "700": "D62C71",
-            "800": "C0286C",
-            "900": "992263",
+            "100": "#FFC0D9",
+            "200": "#FF97C0",
+            "300": "#FF6DA6",
+            "400": "#FF4E90",
+            "500": "#FF337B",
+            "600": "#ED2F77",
+            "700": "#D62C71",
+            "800": "#C0286C",
+            "900": "#992263",
         },
         purple: {
             "50": "#F1E9FB",
-            "100": "DAC9F5",
-            "200": "C3A5F0",
-            "300": "AA7EEA",
-            "400": "975FE4",
-            "500": "8340DE",
-            "600": "783BD7",
-            "700": "6A32CE",
-            "800": "5D2BC7",
-            "900": "481EB8",
+            "100": "#DAC9F5",
+            "200": "#C3A5F0",
+            "300": "#AA7EEA",
+            "400": "#975FE4",
+            "500": "#8340DE",
+            "600": "#783BD7",
+            "700": "#6A32CE",
+            "800": "#5D2BC7",
+            "900": "#481EB8",
         },
     },
     shape: {
@@ -159,24 +179,6 @@ export const lightTheme: CustomThemeOptions = {
         borderRadiusCircle: 64,
         borderRadiusChip: 64,
     },
-    // space: {
-    //     auto: "auto",
-    //     full: "100%",
-    //     none: "0px",
-    //     "01": "2px",
-    //     "02": "4px",
-    //     "03": "8px",
-    //     "04": "12px",
-    //     "05": "16px",
-    //     "06": "24px",
-    //     "07": "32px",
-    //     "08": "40px",
-    //     "09": "48px",
-    //     "10": "64px",
-    //     "11": "80px",
-    //     "12": "96px",
-    //     "13": "160px",
-    // },
     spacing: 8,
     typography: {
         fontFamily: '"Inter", sans-serif',
@@ -286,6 +288,41 @@ export const lightTheme: CustomThemeOptions = {
         },
     },
     components: {
+        MuiCssBaseline: {
+            styleOverrides: (themeParam) => ({
+                "*::-webkit-scrollbar": {
+                    width: "8px",
+                    height: "8px",
+                    background: "transparent",
+                },
+
+                "*::-webkit-scrollbar-thumb": {
+                    // -webkit-border-radius: '4px',
+                    borderRadius: "4px",
+                    height: "18px",
+                    background: "#bdbdbd",
+                    backgroundClip: "padding-box",
+                },
+
+                "*::-webkit-scrollbar-thumb:hover": {
+                    background: "#e0e0e0",
+                },
+
+                "*::-webkit-scrollbar-thumb:active": {
+                    background: "#bdbdbd",
+                },
+
+                "*::-webkit-scrollbar-button": {
+                    width: "0",
+                    height: "0",
+                    display: "none",
+                },
+
+                "*::-webkit-scrollbar-corner": {
+                    backgroundColor: "transparent",
+                },
+            }),
+        },
         MuiAlertTitle: {
             styleOverrides: {
                 root: ({ theme }) => ({
@@ -318,12 +355,17 @@ export const lightTheme: CustomThemeOptions = {
         // https://www.figma.com/file/kZwcxDBSMJbOcFaCin2xbd/MUI-Core-v5.4.0-(Revised)?node-id=454%3A101831&mode=dev
         MuiCard: {
             styleOverrides: {
-                root: ({ theme }) => ({
-                    display: "flex",
-                    flexDirection: "column",
-                    boxShadow:
-                        "0px 5px 22px 0px rgba(0, 0, 0, 0.04), 0px 4px 4px 0.5px rgba(0, 0, 0, 0.03)",
-                }),
+                root: ({ theme }) => {
+                    const shape = theme.shape as CustomShapeOptions;
+
+                    return {
+                        display: "flex",
+                        flexDirection: "column",
+                        boxShadow:
+                            "0px 5px 22px 0px rgba(0, 0, 0, 0.04), 0px 4px 4px 0.5px rgba(0, 0, 0, 0.03)",
+                        borderRadius: shape.borderRadiusLg,
+                    };
+                },
             },
         },
         MuiCardHeader: {
@@ -365,7 +407,7 @@ export const darkTheme: CustomThemeOptions = {
             dark: "#1C3FBE",
         },
         secondary: {
-            main: "#6D6D6D", // rgba(0, 0, 0, 0.6)
+            main: "#6D6D6D",
             light: "#E9E9E9",
             dark: "#3B3B3B",
         },
@@ -393,29 +435,29 @@ export const darkTheme: CustomThemeOptions = {
             default: "#FAFAFA",
             paper: "#FFF",
         },
-        semossBlue: {
+        primaryContrast: {
+            // SEMOSS BLUE
             "50": "#E2F2FF",
-            "100": "BADEFF",
-            "200": "8BCAFF",
-            "300": "55B5FF",
-            "400": "22A4FF",
-            "500": "0094FF",
-            "600": "0085FF",
-            "700": "0471F0",
-            "800": "1260DD",
-            "900": "1C3FBE",
-        },
-        green: {
-            "50": "#DEF4F3",
-            "100": "ABE4E0",
-            "200": "6FD4CB",
-            "300": "07C2B6",
-            "400": "00B4A4",
-            "500": "00A593",
-            "600": "009785",
-            "700": "008674",
-            "800": "007664",
-            "900": "005946",
+            "100": "#BADEFF",
+            "200": "#8BCAFF",
+            "300": "#55B5FF",
+            "400": "#22A4FF",
+            "500": "#0094FF",
+            "600": "#0085FF",
+            "700": "#0471F0",
+            "800": "#1260DD",
+            "900": "#1C3FBE",
+            // DELOITTE GREEN
+            // "50": "#E7F4E5",
+            // "100": "#C6E4BF",
+            // "200": "#A1D396",
+            // "300": "#7AC36B",
+            // "400": "#5CB649",
+            // "500": "#3EA924",
+            // "600": "#349B1B",
+            // "700": "#26890D",
+            // "800": "#167800",
+            // "900": "#005A00",
         },
         darkBlue: {
             "50": "#EAE4F2",

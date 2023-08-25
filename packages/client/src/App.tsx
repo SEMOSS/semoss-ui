@@ -29,6 +29,14 @@ axios.interceptors.response.use(
 // create a new root store
 const _store = new RootStore();
 
+// const CFG_THEME = {
+//     primary: {
+//         main: 'red',
+//         light: 'yellow',
+//         dark: 'blue',
+//     },
+// };
+
 export const App = () => {
     return (
         <RootStoreContext.Provider value={_store}>
