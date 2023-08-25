@@ -68,13 +68,14 @@ const StyledTableContainer = styled(Table.Container)({
     boxShadow: '0px 5px 22px 0px rgba(0, 0, 0, 0.06)',
 });
 
-const StyledMemberTable = styled(Table)({});
+const StyledMemberTable = styled(Table)({ backgroundColor: 'white' });
 
 const StyledTableTitleContainer = styled('div')({
     display: 'flex',
     alignItems: 'center',
     alignSelf: 'stretch',
     boxShadow: '0px -1px 0px 0px rgba(0, 0, 0, 0.12) inset',
+    backgroundColor: 'white',
 });
 
 const StyledTableTitleDiv = styled('div')({
@@ -719,7 +720,7 @@ export const MembersTable = (props: MembersTableProps) => {
                         <StyledMemberTable>
                             <Table.Head>
                                 <Table.Row>
-                                    <Table.Cell>
+                                    <Table.Cell size="small">
                                         <Checkbox
                                             checked={
                                                 selectedMembers.length ===
@@ -740,11 +741,15 @@ export const MembersTable = (props: MembersTableProps) => {
                                             }}
                                         />
                                     </Table.Cell>
-                                    <Table.Cell>ID</Table.Cell>
-                                    <Table.Cell>Name</Table.Cell>
-                                    <Table.Cell>Permission</Table.Cell>
-                                    <Table.Cell>Permission Date</Table.Cell>
-                                    <Table.Cell>Action</Table.Cell>
+                                    <Table.Cell size="small">ID</Table.Cell>
+                                    <Table.Cell size="small">Name</Table.Cell>
+                                    <Table.Cell size="small">
+                                        Permission
+                                    </Table.Cell>
+                                    <Table.Cell size="small">
+                                        Permission Date
+                                    </Table.Cell>
+                                    <Table.Cell size="small">Action</Table.Cell>
                                 </Table.Row>
                             </Table.Head>
                             <Table.Body>
@@ -763,7 +768,7 @@ export const MembersTable = (props: MembersTableProps) => {
                                     if (user) {
                                         return (
                                             <Table.Row key={user.name + i}>
-                                                <Table.Cell>
+                                                <Table.Cell size="medium">
                                                     <Checkbox
                                                         checked={isSelected}
                                                         onChange={() => {
@@ -797,18 +802,20 @@ export const MembersTable = (props: MembersTableProps) => {
                                                 </Table.Cell>
 
                                                 <Table.Cell
+                                                    size="medium"
                                                     component="td"
                                                     scope="row"
                                                 >
                                                     {user.id}
                                                 </Table.Cell>
                                                 <Table.Cell
+                                                    size="medium"
                                                     component="td"
                                                     scope="row"
                                                 >
                                                     {user.name}
                                                 </Table.Cell>
-                                                <Table.Cell>
+                                                <Table.Cell size="medium">
                                                     <RadioGroup
                                                         row
                                                         defaultValue={
@@ -843,10 +850,10 @@ export const MembersTable = (props: MembersTableProps) => {
                                                         />
                                                     </RadioGroup>
                                                 </Table.Cell>
-                                                <Table.Cell>
+                                                <Table.Cell size="medium">
                                                     Not Available
                                                 </Table.Cell>
-                                                <Table.Cell>
+                                                <Table.Cell size="medium">
                                                     <IconButton
                                                         onClick={() => {
                                                             // set user
@@ -869,11 +876,11 @@ export const MembersTable = (props: MembersTableProps) => {
                                             <Table.Row
                                                 key={i + 'No data available'}
                                             >
-                                                <Table.Cell></Table.Cell>
-                                                <Table.Cell></Table.Cell>
-                                                <Table.Cell></Table.Cell>
-                                                <Table.Cell></Table.Cell>
-                                                <Table.Cell></Table.Cell>
+                                                <Table.Cell size="medium"></Table.Cell>
+                                                <Table.Cell size="medium"></Table.Cell>
+                                                <Table.Cell size="medium"></Table.Cell>
+                                                <Table.Cell size="medium"></Table.Cell>
+                                                <Table.Cell size="medium"></Table.Cell>
                                             </Table.Row>
                                         );
                                     }
