@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { NodeProps, Handle, Position } from 'react-flow-renderer';
-import { useForm, Controller, useFieldArray } from 'react-hook-form';
+import { useForm, Controller, useFieldArray, useWatch } from 'react-hook-form';
 
 import { getDefaultOptions } from './utility';
 
@@ -77,6 +77,8 @@ type MetamodelNodeProps = NodeProps<{
         name: string; // column
         /** Data type of the property */
         type: string; // column type
+        physicalType: string; // physical column type
+        specificFormat: string; // specific format for column type
     }[];
 
     /** Bool to determine if node is interactive or not */
@@ -127,7 +129,7 @@ const _MetamodelNode = (props: MetamodelNodeProps) => {
     const headerRef = useRef();
     const { id, data } = props;
 
-    const { control } = useForm({
+    const { control, watch, setValue, getValues } = useForm({
         defaultValues: {
             name: data.name,
             COLUMNS: data.properties,
@@ -159,6 +161,10 @@ const _MetamodelNode = (props: MetamodelNodeProps) => {
     }, [editTable]);
 
     const dataTypeOptions = getDefaultOptions();
+
+    console.log('fields: ', fields);
+    const allValues = getValues(['name', 'COLUMNS']);
+    console.log('allValues: ', allValues);
 
     /** STYLES: VIEW METAMODEL */
 
@@ -192,6 +198,7 @@ const _MetamodelNode = (props: MetamodelNodeProps) => {
             height: '44px',
             padding: '16px',
             alignItems: 'center',
+            // justifyContent: 'space-between',
             gap: '10px',
             borderRadius: '12px 12px 0px 0px',
             background: theme.palette.purple['50'],
@@ -219,6 +226,7 @@ const _MetamodelNode = (props: MetamodelNodeProps) => {
         padding: isPrimary ? '8px 0px' : '',
         alignItems: 'flex-start',
         alignSelf: 'stretch',
+        justifyContent: 'space-between',
         background: 'rgba(255, 255, 255, 0.00)',
     }));
 
@@ -244,6 +252,7 @@ const _MetamodelNode = (props: MetamodelNodeProps) => {
                 padding: '12px 16px',
                 alignItems: 'center',
                 border: 'none',
+                marginLeft: '6px',
             };
         }
         if (cellPosition === 'third') {
@@ -534,7 +543,11 @@ const _MetamodelNode = (props: MetamodelNodeProps) => {
         alignmentSelf: 'stretch',
     }));
 
-    // const StyledMenuItem = styled()
+    useEffect(() => {
+        console.log('new node data: ', nodeData);
+    }, [nodeData]);
+
+    /** Reset Draggable */
 
     if (editTable) {
         return (
@@ -564,9 +577,19 @@ const _MetamodelNode = (props: MetamodelNodeProps) => {
                                                             ? field.value
                                                             : ''
                                                     }
-                                                    onChange={(value) =>
-                                                        field.onChange(value)
+                                                    onChange={(event) =>
+                                                        field.onChange(event)
                                                     }
+                                                    onBlur={(e) => {
+                                                        const tempNodeData =
+                                                            nodeData;
+
+                                                        tempNodeData.name =
+                                                            e.target.value;
+                                                        setNodeData({
+                                                            ...tempNodeData,
+                                                        });
+                                                    }}
                                                 />
                                             );
                                         }}
@@ -609,11 +632,30 @@ const _MetamodelNode = (props: MetamodelNodeProps) => {
                                                                 ? field.value
                                                                 : ''
                                                         }
-                                                        onChange={(value) =>
+                                                        onChange={(event) =>
                                                             field.onChange(
-                                                                value,
+                                                                event,
                                                             )
                                                         }
+                                                        onBlur={(e) => {
+                                                            const tempNodeData =
+                                                                nodeData;
+                                                            console.log(
+                                                                'field: ',
+                                                                field,
+                                                            );
+                                                            console.log(
+                                                                'e: ',
+                                                                e,
+                                                            );
+                                                            tempNodeData.properties[
+                                                                idx
+                                                            ].name =
+                                                                e.target.value;
+                                                            setNodeData({
+                                                                ...tempNodeData,
+                                                            });
+                                                        }}
                                                     />
                                                 )}
                                             />
@@ -632,11 +674,21 @@ const _MetamodelNode = (props: MetamodelNodeProps) => {
                                                                 ? field.value
                                                                 : ''
                                                         }
-                                                        onChange={(value) =>
+                                                        onChange={(event) => {
                                                             field.onChange(
-                                                                value,
-                                                            )
-                                                        }
+                                                                event,
+                                                            );
+
+                                                            const tempNodeData =
+                                                                nodeData;
+                                                            tempNodeData.properties[
+                                                                idx
+                                                            ].type =
+                                                                event.target.value;
+                                                            setNodeData({
+                                                                ...tempNodeData,
+                                                            });
+                                                        }}
                                                     >
                                                         {dataTypeOptions.map(
                                                             (option, idx) => (

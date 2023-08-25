@@ -16,6 +16,7 @@ import { usePixel, useDatabase, useRootStore } from '@/hooks';
 import { Section } from '@/components/ui';
 import { Metamodel } from '@/components/metamodel';
 import { MetamodelToolbar } from '@/components/metamodel/MetamodelToolbar';
+import { table } from 'console';
 
 const StyledPage = styled('div')(() => ({
     position: 'relative',
@@ -110,7 +111,13 @@ export const DatabaseMetadataPage = observer(() => {
             }
 
             // extract the required information
-            const { nodes = [], positions = {} } = getDatabaseMetamodel.data;
+            const {
+                nodes = [],
+                positions = {},
+                dataTypes,
+                additionalDataTypes,
+                physicalTypes,
+            } = getDatabaseMetamodel.data;
 
             return nodes.map((n) => {
                 const node = n.conceptualName;
@@ -126,7 +133,15 @@ export const DatabaseMetadataPage = observer(() => {
                             return {
                                 id: property,
                                 name: String(p).replace(/_/g, ' '),
-                                type: '',
+                                type: dataTypes[property]
+                                    ? dataTypes[property]
+                                    : '',
+                                physicalType: physicalTypes[property]
+                                    ? physicalTypes[property]
+                                    : '',
+                                specifiedFormat: additionalDataTypes[property]
+                                    ? additionalDataTypes[property]
+                                    : '',
                             };
                         }),
                     },
@@ -208,6 +223,10 @@ export const DatabaseMetadataPage = observer(() => {
             monolithStore.download(insightID, output);
         });
     };
+
+    console.log('columnRows: ', columnRows);
+    console.log('getDatabaseMetamodel: ', getDatabaseMetamodel);
+    console.log('nodes: ', nodes);
 
     return (
         <StyledPage>

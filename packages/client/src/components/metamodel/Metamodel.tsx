@@ -99,10 +99,6 @@ export const Metamodel = (props: MetamodelProps) => {
     });
     const [data, setData] = useState({ nodes: formattedNodes, edges: edges });
 
-    useEffect(() => {
-        console.log('does this update formattednodes? ', formattedNodes);
-    }, [formattedNodes]);
-
     const updateData = (nodeData, action) => {
         const temp = data;
         // enables Select component's dropdown to open onClick
@@ -155,7 +151,6 @@ export const Metamodel = (props: MetamodelProps) => {
         }
         // if action === 'column data type change'
     };
-    console.log('the actual selectedNode: ', selectedNode);
 
     // create the context
     const metamodelContext: MetamodelContextType = {
