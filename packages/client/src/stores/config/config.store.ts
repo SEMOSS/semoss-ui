@@ -194,6 +194,7 @@ export class ConfigStore {
                 `GetUserInfo();`,
             );
 
+            // track if the user is an admin
             const isAdmin = await monolithStore.isAdminUser();
 
             const output = pixelReturn[0].output;
@@ -310,7 +311,8 @@ export class ConfigStore {
     async logout() {
         const { monolithStore } = this._root;
 
-        const resp = await monolithStore.logout();
+        // wait for logout
+        await monolithStore.logout();
 
         runInAction(() => {
             // clear the info and reset the user
