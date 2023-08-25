@@ -153,18 +153,12 @@ const _MetamodelNode = (props: MetamodelNodeProps) => {
     });
 
     const [metamodelCardWidth, setMetamodelCardWidth] = useState('215px'); // manage metamodel card width
+    const [dataTypeOptions, setDataTypeOptions] = useState([]);
 
     useEffect(() => {
-        if (editTable) {
-            updateData(nodeData, 'edit_node');
-        }
-    }, [editTable]);
-
-    const dataTypeOptions = getDefaultOptions();
-
-    console.log('fields: ', fields);
-    const allValues = getValues(['name', 'COLUMNS']);
-    console.log('allValues: ', allValues);
+        const temp = getDefaultOptions();
+        setDataTypeOptions(temp);
+    }, []);
 
     /** STYLES: VIEW METAMODEL */
 
@@ -226,7 +220,7 @@ const _MetamodelNode = (props: MetamodelNodeProps) => {
         padding: isPrimary ? '8px 0px' : '',
         alignItems: 'flex-start',
         alignSelf: 'stretch',
-        justifyContent: 'space-between',
+        // justifyContent: 'space-between',
         background: 'rgba(255, 255, 255, 0.00)',
     }));
 
@@ -239,7 +233,8 @@ const _MetamodelNode = (props: MetamodelNodeProps) => {
         if (cellPosition === 'first') {
             return {
                 display: 'flex',
-                width: '114.667px',
+                width: '124.667px',
+                overflow: 'hidden',
                 padding: '12px 16px',
                 alignItems: 'center',
                 border: 'none',
@@ -248,7 +243,7 @@ const _MetamodelNode = (props: MetamodelNodeProps) => {
         if (cellPosition === 'second') {
             return {
                 display: 'flex',
-                width: '114.667px',
+                width: '100.667px',
                 padding: '12px 16px',
                 alignItems: 'center',
                 border: 'none',
@@ -270,6 +265,7 @@ const _MetamodelNode = (props: MetamodelNodeProps) => {
         display: 'flex',
         flexDirection: 'column',
         alignItems: 'flex-start',
+        textOverflow: 'ellipsis',
         color: 'var(--light-text-primary, rgba(0, 0, 0, 0.87))',
     }));
     const StyledColumnTypeText = styled(Typography, {
@@ -288,6 +284,7 @@ const _MetamodelNode = (props: MetamodelNodeProps) => {
             varchar: 'var(--alt-green-alt-green-400, #00B4A4)',
             boolean: 'var(--light-primary-light, #22A4FF)',
             date: 'var(--alt-purple-alt-purple-400, #975FE4)',
+            timestamp: 'var(--alt-purple-alt-purple-400, #975FE4)',
             float: 'var(--alt-dark-blue-alt-dark-blue-700, #3A188E)',
         };
 
@@ -549,7 +546,7 @@ const _MetamodelNode = (props: MetamodelNodeProps) => {
 
     /** Reset Draggable */
 
-    if (editTable) {
+    if (selectedNodeId === id) {
         return (
             <form>
                 <Handle type="target" position={Position.Left} />
@@ -575,6 +572,11 @@ const _MetamodelNode = (props: MetamodelNodeProps) => {
                                                     value={
                                                         field.value
                                                             ? field.value
+                                                                  .replaceAll(
+                                                                      ' ',
+                                                                      '_',
+                                                                  )
+                                                                  .toLowerCase()
                                                             : ''
                                                     }
                                                     onChange={(event) =>
@@ -595,12 +597,12 @@ const _MetamodelNode = (props: MetamodelNodeProps) => {
                                         }}
                                     />
                                 </StyledEditHeaderCell>
-
+                                {/* 
                                 <StyledEditIconContainer>
                                     <StyledEditIcon
                                         onClick={() => setEditTable(!editTable)}
                                     />
-                                </StyledEditIconContainer>
+                                </StyledEditIconContainer> */}
                             </StyledHeaderCell>
                         </StyledEditHeaderCellContainer>
                     </StyledEditMetamodelCardHeader>
@@ -630,6 +632,11 @@ const _MetamodelNode = (props: MetamodelNodeProps) => {
                                                         value={
                                                             field.value
                                                                 ? field.value
+                                                                      .replaceAll(
+                                                                          ' ',
+                                                                          '_',
+                                                                      )
+                                                                      .toLowerCase()
                                                                 : ''
                                                         }
                                                         onChange={(event) =>
@@ -669,6 +676,7 @@ const _MetamodelNode = (props: MetamodelNodeProps) => {
                                                     <StyledSelect
                                                         key={`${col.id}_type`}
                                                         fullWidth
+                                                        className="nodrag"
                                                         value={
                                                             field.value
                                                                 ? field.value
@@ -733,10 +741,10 @@ const _MetamodelNode = (props: MetamodelNodeProps) => {
             </form>
         );
     }
+
     return (
         <form>
             <Handle type="target" position={Position.Left} />
-
             <StyledMetamodelCard
                 isSelected={selectedNodeId === id}
                 onClick={() => {
@@ -753,11 +761,11 @@ const _MetamodelNode = (props: MetamodelNodeProps) => {
                                 {data.name.toLowerCase().replaceAll(' ', '_')}
                             </StyledHeaderText>
 
-                            <StyledEditIconContainer>
+                            {/* <StyledEditIconContainer>
                                 <StyledEditIcon
                                     onClick={() => setEditTable(!editTable)}
                                 />
-                            </StyledEditIconContainer>
+                            </StyledEditIconContainer> */}
                         </StyledHeaderCell>
                     </StyledHeaderCellContainer>
                 </StyledMetamodelCardHeader>
