@@ -192,7 +192,6 @@ const _MetamodelNode = (props: MetamodelNodeProps) => {
             height: '44px',
             padding: '16px',
             alignItems: 'center',
-            // justifyContent: 'space-between',
             gap: '10px',
             borderRadius: '12px 12px 0px 0px',
             background: theme.palette.purple['50'],
@@ -220,7 +219,6 @@ const _MetamodelNode = (props: MetamodelNodeProps) => {
         padding: isPrimary ? '8px 0px' : '',
         alignItems: 'flex-start',
         alignSelf: 'stretch',
-        // justifyContent: 'space-between',
         background: 'rgba(255, 255, 255, 0.00)',
     }));
 
