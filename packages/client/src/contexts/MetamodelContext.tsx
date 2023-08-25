@@ -4,8 +4,6 @@ import { createContext } from 'react';
  * Value
  */
 export type MetamodelContextType = {
-    /** Index of the selected node */
-    nodeIndex: number;
     /** ID of the selected node */
     selectedNodeId: string;
     /** Selected a new node by Id */
