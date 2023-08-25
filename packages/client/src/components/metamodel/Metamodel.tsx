@@ -17,9 +17,6 @@ import { format } from 'path';
 
 const defaultViewport = { x: 0, y: 0, zoom: 1.5 };
 
-// const StyledReactFlowContainer = styled('div')(() => ({
-// }));
-
 const edgeTypes = {
     floating: FloatingEdge,
 };
@@ -101,14 +98,6 @@ export const Metamodel = (props: MetamodelProps) => {
 
     const updateData = (nodeData, action) => {
         const temp = data;
-        // enables Select component's dropdown to open onClick
-        // WITHOUT THIS OPTIONS IN THE SELECT COMPONENT WILL NOT BE
-        if (action === 'edit_node') {
-            selectedNode.draggable = false;
-            selectedNode.className = 'nopan';
-            return;
-        }
-        // if action === 'column name change'
         if (action === 'COLUMN_NAME_CHANGE') {
             // access data by nodeData.table.name
             for (const node of temp.nodes) {
@@ -290,12 +279,3 @@ export const Metamodel = (props: MetamodelProps) => {
         </MetamodelContext.Provider>
     );
 };
-
-/** CHANGES MADE:
- * made onSelectNode an option prop in MetamodelProps
- *  removed arg / prop in CSVForm calling Metamodel component bc it was null and caused error. And the function is not needed in the CSVForm
- *
- */
-
-// OBSERVATION: metamodel in legacy gives the table a primary key column that matches the table name...
-// dataType map needs to include the primary key for all tables
