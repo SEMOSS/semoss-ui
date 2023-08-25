@@ -6,8 +6,6 @@ import {
     Chip,
     Stack,
     Typography,
-    Modal,
-    useNotification,
 } from '@semoss/ui';
 
 import { MODULE } from '@/constants';
@@ -52,7 +50,7 @@ const StyledChipContainer = styled('div')(({ theme }) => ({
     gap: theme.spacing(1),
 }));
 
-const StyledLink = styled(Link)(({ theme }) => ({
+const StyledLink = styled(Link)(() => ({
     textDecoration: 'none',
     color: 'inherit',
 }));
@@ -63,19 +61,6 @@ const StyledDatabaseImage = styled('img')({
     flexShrink: '0',
     borderRadius: '8.862px',
 });
-
-const StyledCodeBlock = styled('pre')(({ theme }) => ({
-    background: theme.palette.grey['100'],
-    borderRadius: theme.shape.borderRadius,
-    padding: theme.spacing(1),
-    margin: '0px',
-    overflowX: 'scroll',
-}));
-
-const StyledCodeBlockHeader = styled('div')(({ theme }) => ({
-    display: 'flex',
-    justifyContent: 'space-between',
-}));
 
 interface EngineShellProps {
     /** Children to wrap in the RootStore */
@@ -90,7 +75,6 @@ export const EngineShell = (props: EngineShellProps) => {
 
     // get the database information
     const { type, id, role, metaVals, refresh } = useDatabase();
-    const notification = useNotification();
 
     // Service for Axios calls
     const { monolithStore, configStore } = useRootStore();
@@ -102,8 +86,6 @@ export const EngineShell = (props: EngineShellProps) => {
     const [edit, setEdit] = useState(false);
 
     const [requestAccess, setRequestAccess] = useState(false);
-    const [codeModal, setCodeModal] = useState(false);
-    const [codeBlocks, setCodeBlocks] = useState({});
 
     // get the engine info
     const { status, data } = usePixel<{
@@ -129,30 +111,6 @@ export const EngineShell = (props: EngineShellProps) => {
         });
     };
 
-    const getEngineUsage = async () => {
-        try {
-            const response = await monolithStore.runQuery(
-                `GetEngineUsage(engine=['${id}'])`,
-            );
-
-            const output = response.pixelReturn[0].output;
-            const type = response.pixelReturn[0].operationType;
-
-            if (type.indexOf('ERROR') > -1) {
-                console.error(output);
-                notification.add({
-                    color: 'error',
-                    message: 'Currently no engine usage details available',
-                });
-            } else {
-                setCodeBlocks(output);
-                setCodeModal(true);
-            }
-        } catch (e) {
-            console.error(e);
-        }
-    };
-
     // show a loading screen when it is pending
     if (status !== 'SUCCESS') {
         return <LoadingScreen.Trigger description="Opening Engine" />;
@@ -166,8 +124,7 @@ export const EngineShell = (props: EngineShellProps) => {
                         <StyledLink to={`/catalog?type=${type}`}>
                             {type === 'database'
                                 ? 'Data'
-                                : type.charAt(0).toUpperCase() +
-                                  type.slice(1)}{' '}
+                                : type.charAt(0).toUpperCase() + type.slice(1)}
                             Catalog
                         </StyledLink>
                         <StyledLink to={`/${type}/${id}`}>
@@ -180,127 +137,10 @@ export const EngineShell = (props: EngineShellProps) => {
                         width={'100%'}
                     >
                         <Typography variant="h4">
-                            {type.charAt(0).toUpperCase() + type.slice(1)}{' '}
+                            {type.charAt(0).toUpperCase() + type.slice(1)}
                             Overview
                         </Typography>
                         <Stack direction="row">
-                            <Button
-                                variant={'outlined'}
-                                onClick={() => {
-                                    getEngineUsage();
-                                }}
-                            >
-                                Code Usage
-                            </Button>
-
-                            {codeModal && (
-                                <Modal open={codeModal} maxWidth={'md'}>
-                                    <Modal.Title>Code Usage</Modal.Title>
-                                    <Modal.Content>
-                                        <Stack spacing={4}>
-                                            {codeBlocks['pixel'] && (
-                                                <div>
-                                                    <StyledCodeBlockHeader>
-                                                        <Typography
-                                                            variant={'body1'}
-                                                        >
-                                                            Pixel
-                                                        </Typography>
-                                                        <Button
-                                                            size={'small'}
-                                                            onClick={() =>
-                                                                navigator.clipboard.writeText(
-                                                                    codeBlocks[
-                                                                        'pixel'
-                                                                    ],
-                                                                )
-                                                            }
-                                                        >
-                                                            Copy
-                                                        </Button>
-                                                    </StyledCodeBlockHeader>
-                                                    <StyledCodeBlock>
-                                                        <code>
-                                                            {
-                                                                codeBlocks[
-                                                                    'pixel'
-                                                                ]
-                                                            }
-                                                        </code>
-                                                    </StyledCodeBlock>
-                                                </div>
-                                            )}
-                                            {codeBlocks['python'] && (
-                                                <div>
-                                                    <StyledCodeBlockHeader>
-                                                        <Typography
-                                                            variant={'body1'}
-                                                        >
-                                                            Python
-                                                        </Typography>
-                                                        <Button
-                                                            size={'small'}
-                                                            onClick={() =>
-                                                                navigator.clipboard.writeText(
-                                                                    codeBlocks[
-                                                                        'python'
-                                                                    ],
-                                                                )
-                                                            }
-                                                        >
-                                                            Copy
-                                                        </Button>
-                                                    </StyledCodeBlockHeader>
-                                                    <StyledCodeBlock>
-                                                        <code>
-                                                            {
-                                                                codeBlocks[
-                                                                    'python'
-                                                                ]
-                                                            }
-                                                        </code>
-                                                    </StyledCodeBlock>
-                                                </div>
-                                            )}
-                                            {codeBlocks['java'] && (
-                                                <div>
-                                                    <StyledCodeBlockHeader>
-                                                        <Typography
-                                                            variant={'body1'}
-                                                        >
-                                                            Java
-                                                        </Typography>
-                                                        <Button
-                                                            size={'small'}
-                                                            onClick={() =>
-                                                                navigator.clipboard.writeText(
-                                                                    codeBlocks[
-                                                                        'java'
-                                                                    ],
-                                                                )
-                                                            }
-                                                        >
-                                                            Copy
-                                                        </Button>
-                                                    </StyledCodeBlockHeader>
-                                                    <StyledCodeBlock>
-                                                        <code>
-                                                            {codeBlocks['java']}
-                                                        </code>
-                                                    </StyledCodeBlock>
-                                                </div>
-                                            )}
-                                        </Stack>
-                                    </Modal.Content>
-                                    <Modal.Actions>
-                                        <Button
-                                            onClick={() => setCodeModal(false)}
-                                        >
-                                            Cancel
-                                        </Button>
-                                    </Modal.Actions>
-                                </Modal>
-                            )}
                             {configStore.store.security &&
                                 data.database_discoverable &&
                                 role !== 'OWNER' && (
@@ -309,7 +149,7 @@ export const EngineShell = (props: EngineShellProps) => {
                                             <RequestAccess
                                                 id={id}
                                                 open={requestAccess}
-                                                onClose={(success) => {
+                                                onClose={() => {
                                                     setRequestAccess(false);
                                                 }}
                                             />
@@ -393,19 +233,19 @@ export const EngineShell = (props: EngineShellProps) => {
                     />
                     <Stack alignItems={'flex-end'} spacing={1} marginBottom={2}>
                         <Typography variant={'body2'}>
-                            Published by:{' '}
+                            Published by:
                             {data.database_created_by
                                 ? data.database_created_by
                                 : 'N/A'}
                         </Typography>
                         <Typography variant={'body2'}>
-                            Published:{' '}
+                            Published:
                             {data.database_date_created
                                 ? data.database_date_created
                                 : 'N/A'}
                         </Typography>
                         <Typography variant={'body2'}>
-                            Updated:{' '}
+                            Updated:
                             {data.last_updated ? data.last_updated : 'N/A'}
                         </Typography>
                     </Stack>

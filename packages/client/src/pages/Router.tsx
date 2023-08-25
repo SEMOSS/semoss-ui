@@ -18,7 +18,7 @@ import {
     DatabaseQueryDataPage,
 } from './database';
 
-import { EngineLayout, EngineIndexPage } from './engine';
+import { EngineLayout, EngineIndexPage, EngineUsagePage } from './engine';
 
 import { SettingsRouter } from './settings';
 import { AppRouter } from './app';
@@ -47,6 +47,7 @@ export const Router = observer(() => {
                                 path="metadata"
                                 element={<DatabaseMetadataPage />}
                             />
+                            <Route path="usage" element={<EngineUsagePage />} />
                             <Route
                                 path="settings"
                                 element={<DatabaseSettingsPage />}
@@ -61,6 +62,7 @@ export const Router = observer(() => {
                                 path="metadata"
                                 element={<DatabaseMetadataPage />}
                             />
+                            <Route path="usage" element={<EngineUsagePage />} />
                             <Route
                                 path="settings"
                                 element={<DatabaseSettingsPage />}
@@ -75,7 +77,7 @@ export const Router = observer(() => {
                                 path="metadata"
                                 element={<DatabaseMetadataPage />}
                             />
-                            <Route path="insights" element={<>TODO</>} />
+                            <Route path="usage" element={<EngineUsagePage />} />
                             <Route
                                 path="settings"
                                 element={<DatabaseSettingsPage />}

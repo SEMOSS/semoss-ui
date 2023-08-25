@@ -21,11 +21,8 @@ const StyledContainer = styled('div')(({ theme }) => ({
 }));
 
 export const DatabaseSettingsPage = () => {
-    const { id, type, role } = useDatabase();
+    const { id, type } = useDatabase();
     const navigate = useNavigate();
-
-    console.log('debug', type);
-    console.log('debug', role);
 
     return (
         <SettingsContext.Provider
@@ -38,7 +35,6 @@ export const DatabaseSettingsPage = () => {
                     type={type}
                     id={id}
                     onDelete={() => {
-                        console.log('navigate to catalog');
                         navigate('/catalog');
                     }}
                 />
