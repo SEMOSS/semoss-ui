@@ -17,28 +17,6 @@ import { EngineContext, EngineContextType } from '@/contexts/EngineContext';
 import { LoadingScreen } from '@/components/ui';
 import { EngineShell } from '@/components/engine';
 
-const StyledTab = styled(Link, {
-    shouldForwardProp: (prop) => prop !== 'selected',
-})<{
-    /** Track if the tab is selected */
-    selected: boolean;
-}>(({ theme, selected }) => ({
-    ...theme.typography.button,
-    display: 'inline-flex',
-    alignItems: 'center',
-    height: theme.spacing(4),
-    padding: theme.spacing(1),
-    borderBottomWidth: '1px',
-    borderBottomStyle: 'solid',
-    borderBottomColor: selected ? theme.palette.primary.main : 'transparent',
-    cursor: 'pointer',
-    textDecoration: 'none',
-    color: theme.palette.text.primary,
-    '&:hover': {
-        backgroundColor: theme.palette.action.hover,
-    },
-}));
-
 const StyledDocument = styled('div')(({ theme }) => ({
     width: '100%',
     padding: theme.spacing(2),
@@ -61,14 +39,13 @@ export const EngineLayout = () => {
     const { id } = useParams();
     const { configStore } = useRootStore();
     const resolvedPath = useResolvedPath('');
-    const location = useLocation();
+    const { pathname } = useLocation();
     const navigate = useNavigate();
 
     let engineType: 'database' | 'storage' | 'model' = 'database';
-
-    if (location.pathname.includes('database')) {
+    if (pathname.includes('database')) {
         engineType = 'database';
-    } else if (location.pathname.includes('storage')) {
+    } else if (pathname.includes('storage')) {
         engineType = 'storage';
     } else {
         engineType = 'model';
@@ -134,31 +111,50 @@ export const EngineLayout = () => {
     // get the user's role
     const getUserEnginePermission = useAPI(['getUserEnginePermission', id]);
 
-    const tabMenu = [
+    // dynamically construct the tabs
+    const tabs: { label: string; path: string }[] = [
         {
             label: 'Overview',
             path: '',
         },
+        {
+            label: 'Usage',
+            path: '/usage',
+        },
     ];
+
+    if (engineType === 'database') {
+        tabs.push({
+            label: 'Metadata',
+            path: '/metadata',
+        });
+    }
+
+    if (
+        getUserEnginePermission.status === 'SUCCESS' &&
+        (getUserEnginePermission.data.permission === 'EDITOR' ||
+            getUserEnginePermission.data.permission === 'OWNER')
+    ) {
+        tabs.push({
+            label: 'Settings',
+            path: '/settings',
+        });
+    }
 
     /**
      * Gets active tab
      * @returns index of selectedTab
      */
-    const activeTab = useCallback(() => {
-        let val = 0;
-        tabMenu.forEach((obj, i) => {
-            if (
-                matchPath(
-                    `${resolvedPath.pathname}${obj.path}`,
-                    location.pathname,
-                )
-            ) {
-                val = i;
+    const activeTabIdx: number = useMemo(() => {
+        for (let tabIdx = 0, tabLen = tabs.length; tabIdx < tabLen; tabIdx++) {
+            const t = tabs[tabIdx];
+            if (matchPath(`${resolvedPath.pathname}${t.path}`, pathname)) {
+                return tabIdx;
             }
-        });
-        return val;
-    }, [resolvedPath, location]);
+        }
+
+        return 0;
+    }, [tabs, resolvedPath, pathname]);
 
     // if the engine isn't found, navigate to the Home Page
     if (!id || getUserEnginePermission.status === 'ERROR') {
@@ -170,32 +166,16 @@ export const EngineLayout = () => {
         return <LoadingScreen.Trigger description="Checking Access" />;
     }
 
-    const engineContextType: EngineContextType = {
-        type: engineType,
-        id: id,
-        role: getUserEnginePermission.data.permission,
-        refresh: engineMetaRefresh,
-        metaVals: values, // Needed so edit button can be in header
-    };
-
-    if (engineType === 'database') {
-        tabMenu.push({
-            label: 'Metadata',
-            path: '/metadata',
-        });
-    }
-    if (
-        engineContextType.role === 'EDITOR' ||
-        engineContextType.role === 'OWNER'
-    ) {
-        tabMenu.push({
-            label: 'Settings',
-            path: '/settings',
-        });
-    }
-
     return (
-        <EngineContext.Provider value={engineContextType}>
+        <EngineContext.Provider
+            value={{
+                type: engineType,
+                id: id,
+                role: getUserEnginePermission.data.permission,
+                refresh: engineMetaRefresh,
+                metaVals: values, // Needed so edit button can be in header
+            }}
+        >
             <EngineShell>
                 <StyledDiv>
                     <StyledToggleTabsGroup
@@ -203,13 +183,13 @@ export const EngineLayout = () => {
                             borderRadius: '12px 12px 0px 0px',
                             width: '100%',
                         }}
-                        value={activeTab()}
+                        value={activeTabIdx}
                         onChange={(e: SyntheticEvent, val: number) => {
-                            const navigateObj = tabMenu[val];
+                            const navigateObj = tabs[val];
                             navigate(`.${navigateObj.path}`);
                         }}
                     >
-                        {tabMenu.map((obj, i) => {
+                        {tabs.map((obj, i) => {
                             return (
                                 <ToggleTabsGroup.Item
                                     key={i}

@@ -70,7 +70,7 @@ export const lightTheme: CustomThemeOptions = {
             // dark: "#046A38",
         },
         secondary: {
-            main: "#D9D9D9",
+            main: "#E9E9E9",
             light: "#F2F2F2",
             dark: "#B5B5B5",
         },
