@@ -163,10 +163,7 @@ const StyledViewsTrendingDiv = styled('div')({
     gap: '4px',
 });
 
-const StyledButtonGroup = styled(ButtonGroup)({
-    // borderRadius: '8px',
-    // border: '1px solid rgba(0, 0, 0, 0.23)'
-});
+const StyledButtonGroup = styled(ButtonGroup)(({ theme }) => ({}));
 
 const StyledButtonGroupItem = styled(ButtonGroup.Item)({});
 
@@ -296,6 +293,7 @@ const StyledStatisticCaption = styled(Typography)(({ theme }) => ({
 const UnstyledVoteCount = styled(ButtonGroup.Item)(({ theme }) => ({
     '&:hover': {
         backgroundColor: 'transparent',
+        borderColor: 'rgba(0, 0, 0, 0.54)',
     },
 }));
 
@@ -592,8 +590,16 @@ export const DatabaseTileCard = (props: DatabaseCardProps) => {
             </Card.Content>
             <Card.Actions>
                 <StyledLeftActions>
-                    <StyledButtonGroup size="small" color="secondary">
+                    <StyledButtonGroup
+                        size="small"
+                        variant={'outlined'}
+                        color="secondary"
+                    >
                         <ButtonGroup.Item
+                            sx={{
+                                borderColor: 'rgba(0, 0, 0, 0.54)',
+                                color: 'rgba(0, 0, 0, 0.60)',
+                            }}
                             title={
                                 isUpvoted
                                     ? `Downvote ${name}`
@@ -611,7 +617,14 @@ export const DatabaseTileCard = (props: DatabaseCardProps) => {
                         >
                             {isUpvoted ? <ArrowDropDown /> : <ArrowDropUp />}
                         </ButtonGroup.Item>
-                        <UnstyledVoteCount>{votes}</UnstyledVoteCount>
+                        <UnstyledVoteCount
+                            sx={{
+                                borderColor: 'rgba(0, 0, 0, 0.54)',
+                                color: 'rgba(0, 0, 0, 0.60)',
+                            }}
+                        >
+                            {votes}
+                        </UnstyledVoteCount>
                     </StyledButtonGroup>
                     {/* <StyledViewsTrendingDiv>
                         <StyledEyeIcon />

@@ -74,29 +74,29 @@ export const SettingsLayout = () => {
             <Page
                 header={
                     <Stack>
-                        <div>
-                            {matchedRoute.path ? (
-                                <Breadcrumbs separator="/">
-                                    <Link to={'.'} style={StyledLink}>
-                                        Settings
-                                    </Link>
-                                    {matchedRoute.history.map((link, i) => {
-                                        return (
-                                            <Link
-                                                style={StyledLink}
-                                                to={link.replace('<id>', id)}
-                                                key={i + link}
-                                                state={...state}
-                                            >
-                                                {link.includes('<id>')
-                                                    ? id
-                                                    : matchedRoute.title}
-                                            </Link>
-                                        );
-                                    })}
-                                </Breadcrumbs>
-                            ) : null}
-                        </div>
+                        {matchedRoute.path ? (
+                            <Breadcrumbs separator="/">
+                                <Link to={'.'} style={StyledLink}>
+                                    Settings
+                                </Link>
+                                {matchedRoute.history.map((link, i) => {
+                                    return (
+                                        <Link
+                                            style={StyledLink}
+                                            to={link.replace('<id>', id)}
+                                            key={i + link}
+                                            state={...state}
+                                        >
+                                            {link.includes('<id>')
+                                                ? id
+                                                : matchedRoute.title}
+                                        </Link>
+                                    );
+                                })}
+                            </Breadcrumbs>
+                        ) : (
+                            <div style={{ height: '24px' }}></div>
+                        )}
                         <Typography variant="h4">
                             {matchedRoute.history.length < 2
                                 ? matchedRoute.title
