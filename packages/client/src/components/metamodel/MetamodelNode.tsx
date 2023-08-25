@@ -1,24 +1,18 @@
-import React, { useState, useRef, useEffect, useCallback } from 'react';
-import { NodeProps, Handle, Position, useEdges } from 'react-flow-renderer';
+import React, { useState, useRef, useEffect } from 'react';
+import { NodeProps, Handle, Position } from 'react-flow-renderer';
 import { useForm, Controller, useFieldArray } from 'react-hook-form';
 
 import { getDefaultOptions } from './utility';
 
 import { styled, Typography, TextField, Select } from '@semoss/ui';
 import {
-    TableChartOutlined,
-    TableViewRounded,
-    ViewColumn,
     EditRounded,
-    Delete,
     AddCircleOutlineRounded,
     KeyRounded,
     DragIndicatorRounded,
 } from '@mui/icons-material';
 
 import { useMetamodel } from '@/hooks';
-
-import { EditColumnModal, EditTableModal } from '@/components/physicalDatabase';
 
 // one-off custom icon from figma
 const TableIcon = () => {
@@ -159,10 +153,6 @@ const _MetamodelNode = (props: MetamodelNodeProps) => {
     const [metamodelCardWidth, setMetamodelCardWidth] = useState('215px'); // manage metamodel card width
 
     useEffect(() => {
-        console.log('node data changed: ', nodeData);
-    }, [nodeData]);
-
-    useEffect(() => {
         if (editTable) {
             updateData(nodeData, 'edit_node');
         }
@@ -175,15 +165,10 @@ const _MetamodelNode = (props: MetamodelNodeProps) => {
     /** Manage metamodel card width */
     useEffect(() => {
         if (!headerRef?.current?.clientWidth) return;
-        // if (headerRef.current.clientWidth === )
         setMetamodelCardWidth(
             `${Math.floor(1.5 * headerRef.current.clientWidth)}`,
         );
     }, [headerRef?.current]);
-
-    useEffect(() => {
-        console.log('metamodelCardwid: ', metamodelCardWidth);
-    }, [metamodelCardWidth]);
 
     const StyledMetamodelCard = styled('div', {
         shouldForwardProp: (prop) => prop !== 'isSelected',
@@ -246,7 +231,6 @@ const _MetamodelNode = (props: MetamodelNodeProps) => {
         if (cellPosition === 'first') {
             return {
                 display: 'flex',
-                // maxHeight: '44px',
                 width: '114.667px',
                 padding: '12px 16px',
                 alignItems: 'center',
@@ -342,13 +326,6 @@ const _MetamodelNode = (props: MetamodelNodeProps) => {
         flex: '1 0 0',
     }));
 
-    const StyledTextField = styled(TextField)(() => ({
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'flex-start',
-        gap: '3px',
-    }));
-
     // contains header text and icon
     const StyledHeaderCell = styled('div')(() => ({
         display: 'flex',
@@ -409,10 +386,6 @@ const _MetamodelNode = (props: MetamodelNodeProps) => {
         background: theme.palette.secondary.light,
     }));
 
-    const StyledHandle = styled(Handle)(() => ({
-        // opacity: 0,
-    }));
-
     const StyledDivider = styled('div')(() => ({
         height: '1px',
         alignSelf: 'stretch',
@@ -422,7 +395,6 @@ const _MetamodelNode = (props: MetamodelNodeProps) => {
     /** Edit State styles */
     const StyledEditRow = styled('div')(() => ({
         display: 'flex',
-        // height: '54px',
         padding: '8px 0px 2px 0px',
         alignItems: 'flex-start',
         gap: '0px 0px',
@@ -567,9 +539,8 @@ const _MetamodelNode = (props: MetamodelNodeProps) => {
     if (editTable) {
         return (
             <form>
-                <StyledHandle type="target" position={Position.Left} />
+                <Handle type="target" position={Position.Left} />
                 <StyledEditMetamodelCard
-                    // isSelected={selectedNodeId === id}
                     onClick={() => {
                         onSelectNodeId(id);
                     }}
@@ -699,7 +670,7 @@ const _MetamodelNode = (props: MetamodelNodeProps) => {
                                 </>
                             );
                         })}
-                        <StyledHandle type="source" position={Position.Right} />
+                        <Handle type="source" position={Position.Right} />
                         <StyledEditTableFooterRow>
                             <AddCircleOutlineRounded
                                 sx={{ color: 'rgba(0, 0, 0, 0.54)' }}
@@ -712,7 +683,7 @@ const _MetamodelNode = (props: MetamodelNodeProps) => {
     }
     return (
         <form>
-            <StyledHandle type="target" position={Position.Left} />
+            <Handle type="target" position={Position.Left} />
 
             <StyledMetamodelCard
                 isSelected={selectedNodeId === id}
@@ -779,7 +750,7 @@ const _MetamodelNode = (props: MetamodelNodeProps) => {
                             </>
                         );
                     })}
-                    <StyledHandle type="source" position={Position.Right} />
+                    <Handle type="source" position={Position.Right} />
                     <StyledTableFooterRow>
                         <AddCircleOutlineRounded
                             sx={{ color: 'rgba(0, 0, 0, 0.54)' }}
