@@ -110,7 +110,7 @@ export const HomePage = observer((): JSX.Element => {
             }
         >
             <StyledContainer>
-                <Grid container rowSpacing={3}>
+                <Grid container columnSpacing={3} rowSpacing={3}>
                     <Grid item sm={12} md={4} lg={3} xl={2}>
                         <AppTileCard
                             app={{
