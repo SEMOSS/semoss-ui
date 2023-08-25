@@ -21,6 +21,7 @@ import { DatabaseLayers } from '@/assets/img/DatabaseLayers';
 import { Folder } from '@/assets/img/Folder';
 import { Group } from '@/assets/img/Group';
 import { GroupRounded } from '@/assets/img/GroupRounded';
+import { Jobs } from '@/assets/img/Jobs';
 import { Link } from '@/assets/img/Link';
 import { ModelBrain } from '@/assets/img/ModelBrain';
 import { PaintRounded } from '@/assets/img/PaintRounded';
@@ -96,7 +97,7 @@ const IconMapper = {
     'Teams Permissions': <GroupRounded />,
     'My Profile': <PersonRounded />,
     Theming: <PaintRounded />,
-    Jobs: <Construction />,
+    Jobs: <Jobs />,
 };
 
 export const SettingsIndexPage = () => {

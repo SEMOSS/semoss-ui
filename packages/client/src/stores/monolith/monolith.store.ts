@@ -220,7 +220,7 @@ export class MonolithStore {
                         clearInterval(interval);
                     } else if (
                         popUpWindow.document.location.href.indexOf(
-                            `${window.location.href}`,
+                            `${window.location.host}`,
                         ) > -1
                     ) {
                         clearInterval(interval);

@@ -1,7 +1,8 @@
-import { useRef } from "react";
+import { useRef, useMemo } from "react";
+// import { Button } from "../Button";
+import { TextFieldProps } from "../TextField";
 import { CloseOutlined, SearchOutlined } from "@mui/icons-material";
-import { Button } from "../Button";
-import { TextField, TextFieldProps } from "../TextField";
+import { Button, TextField } from "../../";
 
 export type SearchFieldProps = TextFieldProps & {
     /**
@@ -14,6 +15,12 @@ export type SearchFieldProps = TextFieldProps & {
 export const Search = (props: SearchFieldProps) => {
     const { enableEndAdornment } = props;
     const textInput = useRef(null);
+
+    const refValue = !textInput
+        ? ""
+        : !textInput.current
+        ? ""
+        : textInput.current.value;
 
     return (
         <TextField
@@ -33,6 +40,13 @@ export const Search = (props: SearchFieldProps) => {
                         )}
                     </>
                 ),
+            }}
+            InputLabelProps={{
+                shrink: refValue.length > 0,
+                style: {
+                    marginLeft: refValue.length > 0 ? "0px" : "30px",
+                    transition: "all 0.1s ease-out",
+                },
             }}
             {...props}
         >

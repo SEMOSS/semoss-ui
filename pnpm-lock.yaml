@@ -50,7 +50,7 @@ importers:
       mobx: 6.3.7
       mobx-react-lite: ^3.4.0
       npm-run-all: ^4.1.5
-      prettier: 2.4.1
+      prettier: ^2.4.1
       raw-loader: ^4.0.2
       react: ^17.0.2
       react-dom: ^17.0.2
@@ -95,13 +95,13 @@ importers:
       dotenv: 16.3.1
       eslint: 8.46.0
       eslint-config-prettier: 8.10.0_eslint@8.46.0
-      eslint-plugin-prettier: 4.2.1_e15f367fa3c61f99450af3504c5ca303
+      eslint-plugin-prettier: 4.2.1_46a6dbb300b8f4180d843910c93e4244
       eslint-plugin-react: 7.33.1_eslint@8.46.0
       html-webpack-plugin: 5.5.3_webpack@5.88.2
       identity-obj-proxy: 3.0.0
       mini-css-extract-plugin: 2.7.6_webpack@5.88.2
       npm-run-all: 4.1.5
-      prettier: 2.4.1
+      prettier: 2.8.8
       raw-loader: 4.0.2_webpack@5.88.2
       style-loader: 3.3.3_webpack@5.88.2
       ts-loader: 9.4.4_typescript@4.9.5+webpack@5.88.2
@@ -4146,8 +4146,8 @@ packages:
     dependencies:
       '@babel/runtime': 7.22.10
       '@emotion/cache': 11.11.0
-      '@emotion/react': 11.11.1_977aa966de7c3a8831d15e06219f9a78
-      '@emotion/styled': 11.11.0_6bbff2e9948d82d0217f957d5cd73f52
+      '@emotion/react': 11.11.1_7a30a420946de3203f357fe957d1f856
+      '@emotion/styled': 11.11.0_ab77819c780d5d5e77cb6a885f8796b8
       csstype: 3.1.2
       prop-types: 15.8.1
       react: 17.0.2
@@ -11851,6 +11851,23 @@ packages:
     dependencies:
       eslint: 7.32.0
       eslint-config-prettier: 8.8.0_eslint@7.32.0
+      prettier: 2.8.8
+      prettier-linter-helpers: 1.0.0
+    dev: true
+
+  /eslint-plugin-prettier/4.2.1_46a6dbb300b8f4180d843910c93e4244:
+    resolution: {integrity: sha512-f/0rXLXUt0oFYs8ra4w49wYZBG5GKZpAYsJSm6rnYL5uVDjd+zowwMwVZHnAjf4edNrKpCDYfXDgmRE/Ak7QyQ==}
+    engines: {node: '>=12.0.0'}
+    peerDependencies:
+      eslint: '>=7.28.0'
+      eslint-config-prettier: '*'
+      prettier: '>=2.0.0'
+    peerDependenciesMeta:
+      eslint-config-prettier:
+        optional: true
+    dependencies:
+      eslint: 8.46.0
+      eslint-config-prettier: 8.10.0_eslint@8.46.0
       prettier: 2.8.8
       prettier-linter-helpers: 1.0.0
     dev: true
