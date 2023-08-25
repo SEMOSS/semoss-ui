@@ -105,11 +105,11 @@ export const stepsTwo = {
     ['Drag and Drop Data']: [
         {
             name: 'CSV',
-            disable: true,
+            disable: false,
         },
         {
             name: 'Excel',
-            disable: true,
+            disable: false,
         },
         {
             name: 'TSV',

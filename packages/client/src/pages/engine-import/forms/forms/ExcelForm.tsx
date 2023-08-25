@@ -1,9 +1,16 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { useForm, Controller } from 'react-hook-form';
-import { Button, TextField, Stack, Select, Menu } from '@semoss/ui';
+import {
+    Button,
+    TextField,
+    Stack,
+    Select,
+    Menu,
+    useNotification,
+} from '@semoss/ui';
+import { useNavigate } from 'react-router-dom';
 import { FileDropzone } from '@semoss/ui';
 import { ImportFormComponent } from './formTypes';
-import { Metamodel } from '@/components/metamodel';
 import { useRootStore } from '@/hooks';
 import { DataFormTable } from '../DataFormTable';
 
@@ -18,6 +25,8 @@ export const ExcelForm: ImportFormComponent = (props) => {
 
     const { monolithStore } = useRootStore();
     const values = getValues();
+    const notification = useNotification();
+    const navigate = useNavigate();
 
     const watchDelimeter = watch('DELIMETER');
     const watchDatabaseName = watch('DATABASE_NAME');
@@ -36,7 +45,6 @@ export const ExcelForm: ImportFormComponent = (props) => {
     }, []);
 
     React.useEffect(() => {
-        console.log(values.FILE);
         reset({
             ...values,
             DELIMETER: ',',
@@ -56,94 +64,86 @@ export const ExcelForm: ImportFormComponent = (props) => {
         }
     }, [values.DATABASE_TYPE]);
 
-    const nodes = React.useMemo(() => {
-        const formattedNodes = [];
+    /** data to be passed to into pixels dataTypeMap param */
+    const excelDataTypesMap = useMemo(() => {
+        const formattedNode = {};
 
         // TO-DO: fix TS errors on metamodel and node
-        if (metamodel) {
-            Object.entries(metamodel.positions).forEach((table, i) => {
-                // table = ['db name', {x: '', y: '' }]
-                const node = {
-                    data: {
-                        name: table[0],
-                        properties: [], // get columns from metamodel.nodeProp
-                    },
-                    id: table[0],
-                    position: { x: table[1].left, y: table[1].top },
-                    type: 'metamodel',
-                };
-
-                // first see if there is a property for the table name in .nodeProp
-                if (metamodel.nodeProp[table[0]]) {
-                    const columnsForTable = metamodel.nodeProp[table[0]];
-
-                    columnsForTable.forEach((col) => {
-                        const foundColumn = metamodel.dataTypes[col];
-
-                        node.data.properties.push({
-                            id: table[0] + '__' + col,
-                            name: col,
-                            type: foundColumn,
-                        });
-                    });
-                } else {
-                    const foundColumn = metamodel.dataTypes[table[0]];
-                    node.data.properties.push({
-                        id: table[0],
-                        name: table[0],
-                        type: foundColumn,
-                    });
-                }
-                formattedNodes.push(node);
-            });
+        if (
+            predictDataTypes &&
+            !predictDataTypes.pixelReturn[0].output.dataTypes
+        ) {
+            console.log('prediect data type:', predictDataTypes);
+            Object.entries(predictDataTypes.pixelReturn[0].output).forEach(
+                (sheet) => {
+                    // table = ['db name', {x: '', y: '' }]
+                    const [sheetKey] = Object.keys(sheet[1]);
+                    const node = {
+                        [sheetKey]: sheet[1][sheetKey].dataTypes,
+                    };
+                    formattedNode[sheet[0]] = node;
+                },
+            );
         }
 
-        return formattedNodes;
-    }, [metamodel]);
+        return formattedNode;
+    }, [predictDataTypes]);
 
-    const edges = React.useMemo(() => {
-        const newEdges = [];
-        if (metamodel) {
-            metamodel.relation.forEach((rel) => {
-                newEdges.push({
-                    id: rel.relName,
-                    type: 'floating',
-                    source: rel.fromTable,
-                    target: rel.toTable,
-                });
-            });
+    /** data to be passed into pixels additionalDataTypes param */
+    const additionalDataTypes = React.useMemo(() => {
+        const formattedNode = {};
+
+        // TO-DO: fix TS errors on metamodel and node
+        if (
+            predictDataTypes &&
+            !predictDataTypes.pixelReturn[0].output.dataTypes
+        ) {
+            Object.entries(predictDataTypes.pixelReturn[0].output).forEach(
+                (sheet) => {
+                    // table = ['db name', {x: '', y: '' }]
+                    const [sheetKey] = Object.keys(sheet[1]);
+                    const node = {
+                        [sheetKey]: {},
+                    };
+                    Object.entries(sheet[1][sheetKey].dataTypes).forEach(
+                        (val) => {
+                            if (val[1] === 'TIMESTAMP') {
+                                console.log('true value: ', val[0]);
+                                node[sheetKey][val[0]] = 'dd\\-mm\\-yyyy';
+                            }
+                            formattedNode[sheet[0]] = node;
+                        },
+                    );
+                },
+            );
         }
-        return newEdges;
-    }, [metamodel]);
 
-    const submitMetmodelPixel = async (edges) => {
-        const dataTypeObject = {};
-        const nodePropObject = {};
+        return formattedNode;
+    }, [excelDataTypesMap]);
 
-        nodes.forEach((n) => {
-            dataTypeObject[`${n.data.name}`] = n.data.properties[0].type;
-            nodePropObject[`${n.data.name}`] = [];
-        });
-
+    const submitFlatTablePixel = async () => {
         const resp = await monolithStore.runQuery(
-            `databaseVar = RdbmsCsvUpload(database=["${watchDatabaseName}"], filePath=["${
+            `databaseVar = RdbmsUploadExcelData(database=["${watchDatabaseName}"], filePath=["${
                 watchFile.name
-            }"], delimiter=["${watchDelimeter}"], metamodel=[{"relation": ${JSON.stringify(
-                metamodel.relation,
-            )}, "nodeProp": ${JSON.stringify(
-                nodePropObject,
-            )}}], dataTypeMap=[${JSON.stringify(
-                dataTypeObject,
-            )}], newHeaders=[{}], additionalDataTypes=[{}], descriptionMap=[{}], logicalNamesMap=[{}], existing=[false])`,
+            }"], delimiter=["${watchDelimeter}"], dataTypeMap=[${JSON.stringify(
+                excelDataTypesMap,
+            )}], newHeaders=[{}], additionalDataTypes=[${JSON.stringify(
+                additionalDataTypes,
+            )}], descriptionMap=[{}], logicalNamesMap=[{}], existing=[false])`,
         );
 
-        // const output = resp.pixelReturn[0].output;
+        const { operationType, output } = resp.pixelReturn[0];
 
-        // const resp2 = await monolithStore.runQuery(
-        //     `ExtractDatabaseMeta( database=[databaseVar]);SaveOwlPositions(database=[databaseVar], positionMap=[${JSON.stringify(
-        //         metamodel.positions,
-        //     )}]);`,
-        // );
+        if (operationType.indexOf('ERROR') > -1) {
+            notification.add({
+                color: 'error',
+                message: output,
+            });
+
+            return;
+        } else {
+            navigate(`/database/${output.database_id}`);
+        }
     };
 
     return (
@@ -284,18 +284,11 @@ export const ExcelForm: ImportFormComponent = (props) => {
             {/* After the Form Submission */}
             {/* Workflow 1 */}
             {predictDataTypes && (
-                <DataFormTable predictDataTypes={predictDataTypes} />
-            )}
-            {/* Workflow 2 */}
-            {metamodel && (
-                <div style={{ width: '100%', height: '600px' }}>
-                    <Metamodel
-                        callback={submitMetmodelPixel}
-                        onSelectNode={null}
-                        edges={edges}
-                        nodes={nodes}
-                    />
-                </div>
+                <DataFormTable
+                    predictDataTypes={predictDataTypes}
+                    formValues={values}
+                    submitFunc={submitFlatTablePixel}
+                />
             )}
         </>
     );
