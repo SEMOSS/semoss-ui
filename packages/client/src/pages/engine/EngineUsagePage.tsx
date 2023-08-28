@@ -89,9 +89,7 @@ export const EngineUsagePage = () => {
                             How to use in {name}
                         </Typography>
                         <StyledCodeBlock>
-                            <StyledCodeContent>
-                                {getEngineUsage.data[p]}
-                            </StyledCodeContent>
+                            <StyledCodeContent>{text}</StyledCodeContent>
                             <Button
                                 size={'medium'}
                                 variant="outlined"
