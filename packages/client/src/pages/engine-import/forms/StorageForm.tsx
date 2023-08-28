@@ -44,7 +44,7 @@ export const StorageForm = (props) => {
     // Storage Name in last step
     const { steps } = useImport();
 
-    const { control, handleSubmit, setValue } = useForm<FormProps>({
+    const { control, handleSubmit, reset } = useForm<FormProps>({
         defaultValues: {
             STORAGE_TYPE: '',
             // SMSS_PROPERTIES: [],
@@ -56,11 +56,24 @@ export const StorageForm = (props) => {
     //     name: 'SMSS_PROPERTIES',
     // });
 
-    // set storage name
-    useEffect(() => {
-        const lastStep = steps[steps.length - 1];
+    const lastStep = steps[steps.length - 1];
 
-        setValue('STORAGE_TYPE', lastStep.title);
+    const foundForm = STORAGE_FORMS.find((val) => {
+        return val.name === lastStep.title;
+    });
+
+    if (!foundForm) return <div>No Form found</div>;
+
+    /**
+     * Sets default Values
+     */
+    useEffect(() => {
+        const defaultVals = {};
+        foundForm.fields.forEach((f) => {
+            defaultVals[f.fieldName] = f.defaultValue;
+        });
+
+        reset(defaultVals);
     }, [steps.length]);
 
     const onSubmit = async (data) => {
@@ -86,14 +99,6 @@ export const StorageForm = (props) => {
         };
         submitFunc(formVals);
     };
-
-    const lastStep = steps[steps.length - 1];
-
-    const foundForm = STORAGE_FORMS.find((val) => {
-        return val.name === lastStep.title;
-    });
-
-    if (!foundForm) return <div>No Form found</div>;
 
     return (
         <form onSubmit={handleSubmit(onSubmit)}>

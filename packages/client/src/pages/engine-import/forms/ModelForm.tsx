@@ -44,15 +44,9 @@ export const ModelForm = (props) => {
     // Model in last step
     const { steps } = useImport();
 
-    const { control, handleSubmit, setValue } = useForm<FormProps>({
+    const { control, handleSubmit, reset } = useForm<FormProps>({
         defaultValues: {
             MODEL: '',
-            // NAME: '',
-            // MODEL_TYPE: '',
-            // S3_REGION: '',
-            // S3_ACCESS_KEY: '',
-            // S3_SECRET_KEY: '',
-            // S3_ENDPOINT: '',
             // SMSS_PROPERTIES: [],
         },
     });
@@ -62,9 +56,24 @@ export const ModelForm = (props) => {
     //     name: 'SMSS_PROPERTIES',
     // });
 
+    /**
+     * Used to get form fields in constants
+     */
+    const lastStep = steps[steps.length - 1];
+
+    const foundForm = MODEL_FORMS.find((val) => {
+        return val.name === lastStep.title;
+    });
+
+    if (!foundForm) return <div>No Form found</div>;
+
     useEffect(() => {
-        const lastStep = steps[steps.length - 1];
-        setValue('MODEL', lastStep.title);
+        const defaultVals = {};
+        foundForm.fields.forEach((f) => {
+            defaultVals[f.fieldName] = f.defaultValue;
+        });
+
+        reset(defaultVals);
     }, [steps.length]);
 
     const onSubmit = async (data) => {
@@ -76,7 +85,7 @@ export const ModelForm = (props) => {
             }
         });
 
-        // Format the JSON to send back to submission in parent
+        /** For custom properties */
         // data.SMSS_PROPERTIES.forEach((obj) => {
         //     if (!smssProperties[obj.KEY]) {
         //         smssProperties[obj.KEY] = obj.VALUE;
@@ -91,14 +100,6 @@ export const ModelForm = (props) => {
 
         submitFunc(formVals);
     };
-
-    const lastStep = steps[steps.length - 1];
-
-    const foundForm = MODEL_FORMS.find((val) => {
-        return val.name === lastStep.title;
-    });
-
-    if (!foundForm) return <div>No Form found</div>;
 
     return (
         <form onSubmit={handleSubmit(onSubmit)}>

@@ -143,7 +143,7 @@ export const EngineShell = (props: EngineShellProps) => {
                         width={'100%'}
                     >
                         <Typography variant="h4">
-                            {type.charAt(0).toUpperCase() + type.slice(1)}
+                            {type.charAt(0).toUpperCase() + type.slice(1)}{' '}
                             Overview
                         </Typography>
                         <Stack direction="row">
@@ -243,7 +243,7 @@ export const EngineShell = (props: EngineShellProps) => {
                         sx={{ color: 'rgba(0, 0, 0, 0.6)' }}
                     >
                         <Typography variant={'body2'}>
-                            Published by:
+                            Published by:{' '}
                             {data.database_created_by
                                 ? 'data.database_created_by'
                                 : 'N/A'}
@@ -255,7 +255,7 @@ export const EngineShell = (props: EngineShellProps) => {
                                 : 'N/A'}
                         </Typography> */}
                         <Typography variant={'body2'}>
-                            Updated:
+                            Updated:{' '}
                             {data.last_updated ? data.last_updated : 'N/A'}
                         </Typography>
                     </Stack>
