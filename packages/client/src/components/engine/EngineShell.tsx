@@ -245,7 +245,7 @@ export const EngineShell = (props: EngineShellProps) => {
                         <Typography variant={'body2'}>
                             Published by:{' '}
                             {data.database_created_by
-                                ? 'data.database_created_by'
+                                ? data.database_created_by
                                 : 'N/A'}
                         </Typography>
                         {/* <Typography variant={'body2'}>
