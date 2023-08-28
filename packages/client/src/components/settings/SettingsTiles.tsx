@@ -31,6 +31,10 @@ const StyledAlert = styled(Alert)(({ theme }) => ({
     backgroundColor: theme.palette.background.paper,
 }));
 
+const StyledGrid = styled(Grid)(() => ({
+    flex: '1',
+}));
+
 interface SettingsTilesProps {
     /**
      * Type of setting
@@ -217,7 +221,7 @@ export const SettingsTiles = (props: SettingsTilesProps) => {
     };
 
     return (
-        <Grid container spacing={3}>
+        <StyledGrid container spacing={3}>
             <Grid item>
                 <StyledAlert
                     icon={
@@ -317,6 +321,6 @@ export const SettingsTiles = (props: SettingsTilesProps) => {
                     </Modal.Actions>
                 </Modal>
             </Grid>
-        </Grid>
+        </StyledGrid>
     );
 };
