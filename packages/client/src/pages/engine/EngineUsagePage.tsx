@@ -72,8 +72,7 @@ export const EngineUsagePage = () => {
             ) : (
                 ''
             )}
-            {/* TODO: Fix this */}
-            {['pixel', 'python', 'java'].map((p, idx) => {
+            {Object.keys(getEngineUsage.data).map((p, idx) => {
                 const text = getEngineUsage.data[p];
                 const name = p.replace(/\w\S*/g, function (txt) {
                     return (
@@ -91,7 +90,7 @@ export const EngineUsagePage = () => {
                         </Typography>
                         <StyledCodeBlock>
                             <StyledCodeContent>
-                                {getEngineUsage.data['pixel']}
+                                {getEngineUsage.data[p]}
                             </StyledCodeContent>
                             <Button
                                 size={'medium'}

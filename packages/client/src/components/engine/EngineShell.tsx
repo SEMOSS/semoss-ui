@@ -130,7 +130,8 @@ export const EngineShell = (props: EngineShellProps) => {
                         <StyledLink to={`/catalog?type=${type}`}>
                             {type === 'database'
                                 ? 'Data'
-                                : type.charAt(0).toUpperCase() + type.slice(1)}
+                                : type.charAt(0).toUpperCase() +
+                                  type.slice(1)}{' '}
                             Catalog
                         </StyledLink>
                         <StyledLink to={`/${type}/${id}`}>
