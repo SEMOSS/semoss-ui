@@ -14,7 +14,7 @@ import { useRootStore, useDatabase, usePixel } from '@/hooks';
 import { EditDatabaseDetails } from '@/components/database';
 import { Page, LoadingScreen } from '@/components/ui';
 import { RequestAccess } from './';
-import { Add, EditOutlined, SimCardDownload } from '@mui/icons-material';
+import { Add, EditRounded, SimCardDownload } from '@mui/icons-material';
 import { formatName } from '@/utils';
 import { Link } from 'react-router-dom';
 
@@ -39,9 +39,13 @@ const StyledInfoRight = styled('div')(({ theme }) => ({
     gap: theme.spacing(1),
 }));
 
-const StyledInfoDescription = styled(Typography)(() => ({
-    maxWidth: '50%',
+const StyledInfoDescription = styled(Typography)(({ theme }) => ({
+    maxWidth: '699px',
+    maxHeight: '174px',
     textOverflow: 'ellipsis',
+    color: 'rgba(0, 0, 0, 0.6)',
+    overflow: 'hidden',
+    whiteSpace: 'normal',
 }));
 
 const StyledChipContainer = styled('div')(({ theme }) => ({
@@ -60,6 +64,7 @@ const StyledDatabaseImage = styled('img')({
     height: '161.723px',
     flexShrink: '0',
     borderRadius: '8.862px',
+    aspectRatio: 'auto',
 });
 
 interface EngineShellProps {
@@ -94,6 +99,7 @@ export const EngineShell = (props: EngineShellProps) => {
         database_created_by?: string;
         database_date_created?: string;
         last_updated?: string;
+        description?: string;
     }>(`GetEngineMetadata(engine=["${id}"], metaKeys=[]); `);
 
     /**
@@ -124,7 +130,8 @@ export const EngineShell = (props: EngineShellProps) => {
                         <StyledLink to={`/catalog?type=${type}`}>
                             {type === 'database'
                                 ? 'Data'
-                                : type.charAt(0).toUpperCase() + type.slice(1)}
+                                : type.charAt(0).toUpperCase() +
+                                  type.slice(1)}{' '}
                             Catalog
                         </StyledLink>
                         <StyledLink to={`/${type}/${id}`}>
@@ -137,8 +144,7 @@ export const EngineShell = (props: EngineShellProps) => {
                         width={'100%'}
                     >
                         <Typography variant="h4">
-                            {type.charAt(0).toUpperCase() + type.slice(1)}
-                            Overview
+                            {formatName(data.database_name)}
                         </Typography>
                         <Stack direction="row">
                             {configStore.store.security &&
@@ -192,7 +198,7 @@ export const EngineShell = (props: EngineShellProps) => {
                                     )}
                                     <Button
                                         onClick={() => setEdit(!edit)}
-                                        startIcon={<EditOutlined />}
+                                        startIcon={<EditRounded />}
                                         variant={'contained'}
                                     >
                                         Edit
@@ -206,11 +212,10 @@ export const EngineShell = (props: EngineShellProps) => {
         >
             <StyledInfo>
                 <StyledInfoLeft>
-                    <Typography variant={'h6'} fontWeight={'medium'}>
-                        {formatName(data.database_name)}
-                    </Typography>
                     <StyledInfoDescription variant={'subtitle1'}>
-                        {metaVals.description}
+                        {metaVals.description
+                            ? metaVals.description
+                            : "Please use the Edit button to provide a description for this database. A description will help other's find the database and understand how to use it. To include a detailed description, use the markdown feature in the Overview section."}
                     </StyledInfoDescription>
 
                     <StyledChipContainer>
@@ -231,21 +236,26 @@ export const EngineShell = (props: EngineShellProps) => {
                         // src={defaultDbImage}
                         src={`${MODULE}/api/app-${id}/appImage/download`}
                     />
-                    <Stack alignItems={'flex-end'} spacing={1} marginBottom={2}>
+                    <Stack
+                        alignItems={'flex-end'}
+                        spacing={1}
+                        marginBottom={2}
+                        sx={{ color: 'rgba(0, 0, 0, 0.6)' }}
+                    >
                         <Typography variant={'body2'}>
-                            Published by:
+                            Published by:{' '}
                             {data.database_created_by
                                 ? data.database_created_by
                                 : 'N/A'}
                         </Typography>
-                        <Typography variant={'body2'}>
-                            Published:
+                        {/* <Typography variant={'body2'}>
+                            Published:{' '}
                             {data.database_date_created
                                 ? data.database_date_created
                                 : 'N/A'}
-                        </Typography>
+                        </Typography> */}
                         <Typography variant={'body2'}>
-                            Updated:
+                            Updated:{' '}
                             {data.last_updated ? data.last_updated : 'N/A'}
                         </Typography>
                     </Stack>

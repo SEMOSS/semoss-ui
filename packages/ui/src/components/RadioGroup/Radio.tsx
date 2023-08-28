@@ -1,4 +1,4 @@
-import { Radio as MuiRadio, SxProps } from "@mui/material";
+import { Radio as MuiRadio, SxProps, Typography } from "@mui/material";
 import { FormControlLabel } from "../FormControl";
 
 export interface RadioProps {
@@ -107,9 +107,13 @@ export interface RadioProps {
 }
 
 export const Radio = (props: RadioProps) => {
-    const { radioProps } = props;
+    const { radioProps, label } = props;
 
     return (
-        <FormControlLabel {...props} control={<MuiRadio {...radioProps} />} />
+        <FormControlLabel
+            {...props}
+            label={<Typography variant="body2">{label}</Typography>}
+            control={<MuiRadio {...radioProps} />}
+        />
     );
 };

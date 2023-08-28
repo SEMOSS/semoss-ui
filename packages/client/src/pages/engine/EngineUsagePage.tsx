@@ -8,9 +8,10 @@ import { ContentCopyOutlined } from '@mui/icons-material';
 const StyledCodeBlock = styled('pre')(({ theme }) => ({
     display: 'flex',
     alignItems: 'flex-start',
+    gap: '40px',
     background: theme.palette.background.paper,
     borderRadius: theme.shape.borderRadius,
-    padding: theme.spacing(1),
+    padding: theme.spacing(2),
     margin: '0px',
     overflowX: 'scroll',
 }));
@@ -71,8 +72,7 @@ export const EngineUsagePage = () => {
             ) : (
                 ''
             )}
-            {/* TODO: Fix this */}
-            {['pixel', 'python', 'java'].map((p, idx) => {
+            {Object.keys(getEngineUsage.data).map((p, idx) => {
                 const text = getEngineUsage.data[p];
                 const name = p.replace(/\w\S*/g, function (txt) {
                     return (
@@ -89,9 +89,7 @@ export const EngineUsagePage = () => {
                             How to use in {name}
                         </Typography>
                         <StyledCodeBlock>
-                            <StyledCodeContent>
-                                {getEngineUsage.data['pixel']}
-                            </StyledCodeContent>
+                            <StyledCodeContent>{text}</StyledCodeContent>
                             <Button
                                 size={'medium'}
                                 variant="outlined"

@@ -72,74 +72,107 @@ export const SettingsLayout = observer(() => {
         >
             <Page
                 header={
-                    <>
-                        {configStore.store.user.admin ? (
-                            <StyledAdminContainer>
-                                <Tooltip
-                                    title={
-                                        !adminMode
-                                            ? 'Enable Admin Mode'
-                                            : 'Disable Admin Mode'
-                                    }
-                                >
-                                    <div>
-                                        <ToggleButton
-                                            size="small"
-                                            color={'primary'}
-                                            value={'adminMode'}
-                                            selected={adminMode}
-                                            onClick={() =>
-                                                setAdminMode(!adminMode)
+                    <Stack>
+                        {matchedRoute.path ? (
+                            <div
+                                style={{
+                                    display: 'flex',
+                                    justifyContent: 'space-between',
+                                }}
+                            >
+                                <Breadcrumbs separator="/">
+                                    <Link to={'.'} style={StyledLink}>
+                                        Settings
+                                    </Link>
+                                    {matchedRoute.history.map((link, i) => {
+                                        return (
+                                            <Link
+                                                style={StyledLink}
+                                                to={link.replace('<id>', id)}
+                                                key={i + link}
+                                                state={...state}
+                                            >
+                                                {link.includes('<id>')
+                                                    ? id
+                                                    : matchedRoute.title}
+                                            </Link>
+                                        );
+                                    })}
+                                </Breadcrumbs>
+                                {configStore.store.user.admin ? (
+                                    <StyledAdminContainer>
+                                        <Tooltip
+                                            title={
+                                                !adminMode
+                                                    ? 'Enable Admin Mode'
+                                                    : 'Disable Admin Mode'
                                             }
                                         >
-                                            <AdminPanelSettingsOutlined />
-                                        </ToggleButton>
-                                    </div>
-                                </Tooltip>
-                            </StyledAdminContainer>
-                        ) : null}
-
-                        <Stack direction="column" spacing={1}>
-                            <div>
-                                {matchedRoute.path ? (
-                                    <Breadcrumbs separator="/">
-                                        <Link to={'.'} style={StyledLink}>
-                                            Settings
-                                        </Link>
-                                        {matchedRoute.history.map((link, i) => {
-                                            return (
-                                                <Link
-                                                    style={StyledLink}
-                                                    to={link.replace(
-                                                        '<id>',
-                                                        id,
-                                                    )}
-                                                    key={i + link}
-                                                    state={...state}
+                                            <div>
+                                                <ToggleButton
+                                                    size="small"
+                                                    color={'primary'}
+                                                    value={'adminMode'}
+                                                    selected={adminMode}
+                                                    onClick={() =>
+                                                        setAdminMode(!adminMode)
+                                                    }
                                                 >
-                                                    {link.includes('<id>')
-                                                        ? id
-                                                        : matchedRoute.title}
-                                                </Link>
-                                            );
-                                        })}
-                                    </Breadcrumbs>
+                                                    <AdminPanelSettingsOutlined />
+                                                </ToggleButton>
+                                            </div>
+                                        </Tooltip>
+                                    </StyledAdminContainer>
                                 ) : null}
                             </div>
-                            <Typography variant="h4">
-                                {matchedRoute.history.length < 2
-                                    ? matchedRoute.title
-                                    : state
-                                    ? state.name
-                                    : matchedRoute.title}
-                            </Typography>
-                            <Typography variant="body1">
-                                {!adminMode || matchedRoute.path !== ''
-                                    ? matchedRoute.description
-                                    : matchedRoute.adminDescription}
-                            </Typography>
-                        </Stack>
-                    </>
+                        ) : (
+                            <div
+                                style={{
+                                    height: '24px',
+                                    display: 'flex',
+                                    justifyContent: 'flex-end',
+                                }}
+                            >
+                                {configStore.store.user.admin ? (
+                                    <StyledAdminContainer>
+                                        <Tooltip
+                                            title={
+                                                !adminMode
+                                                    ? 'Enable Admin Mode'
+                                                    : 'Disable Admin Mode'
+                                            }
+                                        >
+                                            <div>
+                                                <ToggleButton
+                                                    size="small"
+                                                    color={'primary'}
+                                                    value={'adminMode'}
+                                                    selected={adminMode}
+                                                    onClick={() =>
+                                                        setAdminMode(!adminMode)
+                                                    }
+                                                >
+                                                    <AdminPanelSettingsOutlined />
+                                                </ToggleButton>
+                                            </div>
+                                        </Tooltip>
+                                    </StyledAdminContainer>
+                                ) : null}
+                            </div>
+                        )}
+                        <Typography variant="h4">
+                            {matchedRoute.history.length < 2
+                                ? matchedRoute.title
+                                : state
+                                ? state.name
+                                : matchedRoute.title}
+                        </Typography>
+                        <Typography variant="body1">
+                            {!adminMode || matchedRoute.path !== ''
+                                ? matchedRoute.description
+                                : matchedRoute.adminDescription}
+                        </Typography>
+                    </Stack>
                 }
             >
                 <Outlet />

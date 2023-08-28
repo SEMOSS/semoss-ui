@@ -42,6 +42,10 @@ const StyledTableContainer = styled(Table.Container)({
     boxShadow: '0px 5px 22px 0px rgba(0, 0, 0, 0.06)',
 });
 
+const StyledTableRow = styled(Table.Row)({
+    backgroundColor: '#FFF',
+});
+
 const StyledMemberTable = styled(Table)({});
 
 const StyledTableTitleContainer = styled('div')({
@@ -49,6 +53,7 @@ const StyledTableTitleContainer = styled('div')({
     alignItems: 'center',
     alignSelf: 'stretch',
     boxShadow: '0px -1px 0px 0px rgba(0, 0, 0, 0.12) inset',
+    backgroundColor: 'white',
 });
 
 const StyledTableTitleDiv = styled('div')({
@@ -140,6 +145,7 @@ const StyledNoPendingReqs = styled('div')(({ theme }) => ({
     display: 'flex',
     justifyContent: 'center',
     alignItems: 'center',
+    backgroundColor: 'white',
 }));
 
 interface PendingMemberTableProps {
@@ -162,7 +168,7 @@ export const PendingMembersTable = (props: PendingMemberTableProps) => {
     const { adminMode } = useSettings();
 
     const [selectedPending, setSelectedPending] = useState([]);
-    const [openTable, setOpenTable] = useState(true);
+    const [openTable, setOpenTable] = useState(false);
 
     const { control, watch, setValue } = useForm<{
         PENDING_MEMBERS: PendingMember[];
@@ -178,6 +184,12 @@ export const PendingMembersTable = (props: PendingMemberTableProps) => {
         name: 'PENDING_MEMBERS',
     });
     const pendingMembers = watch('PENDING_MEMBERS');
+
+    useEffect(() => {
+        if (pendingMembers.length) {
+            setOpenTable(true);
+        }
+    }, [pendingMembers]);
 
     const pendingUserAccessPixel =
         type === 'database' || type === 'model' || type === 'storage'
@@ -554,8 +566,8 @@ export const PendingMembersTable = (props: PendingMemberTableProps) => {
                         {pendingMembers.length ? (
                             <StyledMemberTable>
                                 <Table.Head>
-                                    <Table.Row>
-                                        <Table.Cell>
+                                    <StyledTableRow>
+                                        <Table.Cell size="small">
                                             <Checkbox
                                                 checked={
                                                     selectedPending.length ===
@@ -576,11 +588,19 @@ export const PendingMembersTable = (props: PendingMemberTableProps) => {
                                                 }}
                                             />
                                         </Table.Cell>
-                                        <Table.Cell>Name</Table.Cell>
-                                        <Table.Cell>Permission</Table.Cell>
-                                        <Table.Cell>Request Date</Table.Cell>
-                                        <Table.Cell>Actions</Table.Cell>
-                                    </Table.Row>
+                                        <Table.Cell size="small">
+                                            Name
+                                        </Table.Cell>
+                                        <Table.Cell size="small">
+                                            Permission
+                                        </Table.Cell>
+                                        <Table.Cell size="small">
+                                            Request Date
+                                        </Table.Cell>
+                                        <Table.Cell size="small">
+                                            Actions
+                                        </Table.Cell>
+                                    </StyledTableRow>
                                 </Table.Head>
                                 <Table.Body>
                                     {pendingMembers.map((x, i) => {
@@ -600,7 +620,7 @@ export const PendingMembersTable = (props: PendingMemberTableProps) => {
                                         }
                                         if (user) {
                                             return (
-                                                <Table.Row key={i}>
+                                                <StyledTableRow key={i}>
                                                     <Table.Cell>
                                                         <Checkbox
                                                             checked={isSelected}
@@ -705,7 +725,7 @@ export const PendingMembersTable = (props: PendingMemberTableProps) => {
                                                             <Close />
                                                         </IconButton>
                                                     </Table.Cell>
-                                                </Table.Row>
+                                                </StyledTableRow>
                                             );
                                         } else {
                                             return (
