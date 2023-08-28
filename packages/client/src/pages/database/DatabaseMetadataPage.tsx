@@ -23,11 +23,16 @@ const StyledPage = styled('div')(() => ({
     zIndex: '0',
 }));
 
-const StyledMetamodelContainer = styled('section')(({ theme }) => ({
-    height: '60vh',
-    width: '100%',
-    borderRadius: theme.shape.borderRadiusNone,
-}));
+const StyledMetamodelContainer = styled('section')(({ theme }) => {
+    const shape = theme.shape as unknown as {
+        borderRadiusNone: string;
+    };
+    return {
+        height: '60vh',
+        width: '100%',
+        borderRadius: shape.borderRadiusNone,
+    };
+});
 
 const StyledTableContainer = styled(Table.Container)(() => ({
     height: '396px',
@@ -244,6 +249,7 @@ export const DatabaseMetadataPage = observer(() => {
                 >
                     Metamodel
                 </Section.Header>
+                {/* Toolbar above metamodel */}
                 <MetamodelToolbar />
                 <Stack spacing={2}>
                     {/* <StyledSelect

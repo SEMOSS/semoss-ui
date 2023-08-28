@@ -2,21 +2,24 @@ import React from 'react';
 import { Button, styled, ButtonGroup, Typography } from '@semoss/ui';
 import { Sync, Add, Save } from '@mui/icons-material';
 
-const StyledButtonGroup = styled(ButtonGroup)(({ theme }) => ({
-    display: 'inline-flex',
-    margin: '9px 9px 9px 9px',
-    height: '42px',
-    maxWidth: '377.854px',
-    alignItems: 'center',
-    flexShrink: 0,
-    borderRadius: theme.shape.borderRadiusLg,
-    background: theme.palette.background.paper,
-    boxShadow: '0px 5px 22px 0px rgba(0, 0, 0, 0.06)',
-    // border: 'none',
-    // borderColor: 'none',
-    // borderRadius: '16px',
-    // boxShadow: '0 8px 16px 0 #BDC9D7',
-}));
+const StyledButtonGroup = styled(ButtonGroup)(({ theme }) => {
+    // TODO: Fix typing
+    const shape = theme.shape as unknown as {
+        borderRadiusLg: string;
+    };
+
+    return {
+        display: 'inline-flex',
+        margin: '9px 9px 9px 9px',
+        height: '42px',
+        maxWidth: '377.854px',
+        alignItems: 'center',
+        flexShrink: 0,
+        borderRadius: shape.borderRadiusLg,
+        background: theme.palette.background.paper,
+        boxShadow: '0px 5px 22px 0px rgba(0, 0, 0, 0.06)',
+    };
+});
 
 const StyledButton = styled(Button)(() => ({
     display: 'flex',

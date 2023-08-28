@@ -5,6 +5,7 @@ import ReactFlow, {
     Node,
     Edge,
     Background,
+    BackgroundVariant,
 } from 'react-flow-renderer';
 
 import { styled, Button } from '@semoss/ui';
@@ -14,8 +15,6 @@ import { MetamodelContext, MetamodelContextType } from '@/contexts';
 
 import { MetamodelToolbar } from './MetamodelToolbar';
 import { format } from 'path';
-
-const defaultViewport = { x: 0, y: 0, zoom: 1.5 };
 
 const edgeTypes = {
     floating: FloatingEdge,
@@ -29,6 +28,10 @@ const nodeTypes = {
 export type MetamodelNode = Node<
     React.ComponentProps<typeof MetamodelNode>['data']
 >;
+
+// interface FormattedNode extends MetamodelNode {
+//     nodeIndex?: number;
+// }
 
 interface MetamodelProps {
     /** Nodes to render in the metamodel */
@@ -83,7 +86,7 @@ export const Metamodel = (props: MetamodelProps) => {
     //     type: 'floating'
     // };
 
-    let formattedNodes = [];
+    const formattedNodes = [];
     for (let i = 0; i < nodes.length; i++) {
         const tempNode = nodes[i];
         tempNode.nodeIndex = i;
@@ -244,7 +247,7 @@ export const Metamodel = (props: MetamodelProps) => {
         flexDirection: 'column',
         justifyContent: 'center',
         alignItems: 'center',
-        borderRadius: theme.shape.borderRadiusLg,
+        // borderRadius: theme.shape.borderRadiusLg,
         background: theme.palette.primary.main,
         color: 'var(--light-primary-contrast, #FFF)',
     }));
@@ -258,8 +261,10 @@ export const Metamodel = (props: MetamodelProps) => {
                     nodeTypes={nodeTypes}
                     edgeTypes={edgeTypes}
                     fitView={true}
+                    defaultPosition={[0, 0]}
+                    defaultZoom={10}
                 >
-                    <Background variant="dots" />
+                    <Background variant={BackgroundVariant.Dots} />
                     <MiniMap />
                     <Controls />
                 </ReactFlow>
