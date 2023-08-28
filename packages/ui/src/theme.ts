@@ -15,6 +15,7 @@ export interface CustomPaletteColor {
     700?: string;
     800?: string;
     900?: string;
+    shadow?: string;
 }
 export interface CustomPaletteOptions extends PaletteOptions {
     primaryContrast?: CustomPaletteColor;
@@ -110,6 +111,7 @@ export const lightTheme: CustomThemeOptions = {
             "700": "#0471F0",
             "800": "#1260DD",
             "900": "#1C3FBE",
+            shadow: "#D6EAFF",
             // DELOITTE GREEN
             // "50": "#E7F4E5",
             // "100": "#C6E4BF",
@@ -121,6 +123,7 @@ export const lightTheme: CustomThemeOptions = {
             // "700": "#26890D",
             // "800": "#167800",
             // "900": "#005A00",
+            // "shadow": "green" // Todo
         },
         green: {
             "50": "#DEF4F3",
@@ -357,13 +360,17 @@ export const lightTheme: CustomThemeOptions = {
             styleOverrides: {
                 root: ({ theme }) => {
                     const shape = theme.shape as CustomShapeOptions;
-
+                    const palette = theme.palette as CustomPaletteOptions;
                     return {
                         display: "flex",
                         flexDirection: "column",
                         boxShadow:
                             "0px 5px 22px 0px rgba(0, 0, 0, 0.04), 0px 4px 4px 0.5px rgba(0, 0, 0, 0.03)",
                         borderRadius: shape.borderRadiusLg,
+
+                        "&:hover": {
+                            boxShadow: `0px 5px 22px 0px ${palette.primaryContrast["shadow"]}`,
+                        },
                     };
                 },
             },
