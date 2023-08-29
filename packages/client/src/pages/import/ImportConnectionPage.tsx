@@ -55,7 +55,6 @@ export const ImportConnectionPage = () => {
         setIsLoading(true);
 
         const formDetails = steps[steps.length - 1];
-
         const pixel = `ExternalJdbcTablesAndViews(conDetails=[
           ${JSON.stringify(formDetails.data)}
         ])`;
@@ -113,6 +112,11 @@ export const ImportConnectionPage = () => {
         }
     };
 
+    const returnToTablesAndViews = () => {
+        setMetamodel(null);
+        setOpenModal(true);
+    };
+
     return (
         <StyledBox>
             {openModal ? (
@@ -127,7 +131,10 @@ export const ImportConnectionPage = () => {
             ) : null}
             {/* Metamodel */}
             {metamodel ? (
-                <MetamodelView metamodel={metamodel} />
+                <MetamodelView
+                    metamodel={metamodel}
+                    returnToTablesAndViews={returnToTablesAndViews}
+                />
             ) : (
                 'Getting Metamodel'
             )}
@@ -312,15 +319,16 @@ interface JDBCSchemaInterface {
 }
 interface MetamodelViewProps {
     metamodel: JDBCSchemaInterface;
+    returnToTablesAndViews: () => void;
 }
 
 export const MetamodelView = (props: MetamodelViewProps) => {
-    const { metamodel } = props;
+    const { metamodel, returnToTablesAndViews } = props;
 
     const { monolithStore } = useRootStore();
     const navigate = useNavigate();
     const notification = useNotification();
-    const { steps, setIsLoading } = useImport();
+    const { steps, setIsLoading, setSteps } = useImport();
 
     /**
      *
@@ -442,15 +450,37 @@ export const MetamodelView = (props: MetamodelViewProps) => {
     }, [metamodel]);
 
     return (
-        <div style={{ width: '100%', height: '600px' }}>
-            <Metamodel
-                onSelectNode={null}
-                edges={edges}
-                nodes={nodes}
-                callback={(data) => {
-                    saveDatabase(data);
-                }}
-            />
-        </div>
+        <Modal open={true} maxWidth={'xl'} fullWidth={true}>
+            <Modal.Title>Metamodel</Modal.Title>
+            <Modal.Content sx={{ height: '85vh' }}>
+                <div style={{ width: '100%', height: '100%' }}>
+                    <Metamodel
+                        onSelectNode={null}
+                        edges={edges}
+                        nodes={nodes}
+                        callback={(data) => {
+                            saveDatabase(data);
+                        }}
+                    />
+                </div>
+            </Modal.Content>
+            <Modal.Actions>
+                <Button
+                    variant={'text'}
+                    onClick={() => {
+                        setSteps([steps[0], steps[1]], 1);
+                    }}
+                >
+                    Cancel
+                </Button>
+                <Button
+                    variant={'outlined'}
+                    onClick={() => returnToTablesAndViews()}
+                >
+                    Tables and Views
+                </Button>
+                <Button variant={'contained'}>Apply</Button>
+            </Modal.Actions>
+        </Modal>
     );
 };
