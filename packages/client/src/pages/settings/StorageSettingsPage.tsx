@@ -1,5 +1,5 @@
 import { useEffect, useState, useRef, useReducer } from 'react';
-import { useRootStore, usePixel } from '@/hooks';
+import { useRootStore, usePixel, useAPI } from '@/hooks';
 import { useSettings } from '@/hooks/useSettings';
 import { useNavigate } from 'react-router-dom';
 
@@ -144,43 +144,16 @@ export const StorageSettingsPage = () => {
         searchbarRef.current?.focus();
     }, [getFavoritedDatabases.status, getFavoritedDatabases.data]);
 
-    const getDatabases = usePixel<
-        {
-            app_cost: string;
-            app_id: string;
-            app_name: string;
-            app_type: string;
-            database_cost: string;
-            database_global: boolean;
-            database_id: string;
-            database_name: string;
-            database_type: string;
-            database_created_by: string;
-            database_date_created: string;
-            description: string;
-            low_database_name: string;
-            permission: number;
-            tag: string;
-            user_permission: number;
-            upvotes?: number;
-        }[]
-    >(`
-        MyEngines(metaKeys = ${JSON.stringify(
-            metaKeys,
-        )}, filterWord=["${search}"], userT=[true], engineTypes=['STORAGE']);
-    `);
+    // All Engines -------------------------------------
+    const getEngines = useAPI(['getEngines', adminMode, search, 'STORAGE']);
 
-    /**
-     * @desc handles response for getDatabases
-     */
     useEffect(() => {
-        if (getDatabases.status !== 'SUCCESS') {
+        if (getEngines.status !== 'SUCCESS') {
             return;
         }
-
         const mutateListWithVotes = [];
 
-        getDatabases.data.forEach((db, i) => {
+        getEngines.data.forEach((db, i) => {
             mutateListWithVotes.push({
                 ...db,
                 upvotes: db.upvotes ? db.upvotes : 0,
@@ -198,7 +171,7 @@ export const StorageSettingsPage = () => {
 
         setSelectedApp(null);
         searchbarRef.current?.focus();
-    }, [getDatabases.status, getDatabases.data]);
+    }, [getEngines.status, getEngines.data]);
 
     /**
      * @name favoriteDb

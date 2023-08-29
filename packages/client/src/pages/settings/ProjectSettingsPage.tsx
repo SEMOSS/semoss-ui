@@ -1,6 +1,6 @@
 import { useEffect, useState, useRef, useReducer } from 'react';
 
-import { useRootStore, usePixel, useSettings } from '../../hooks';
+import { useRootStore, usePixel, useSettings, useAPI } from '../../hooks';
 import { useNavigate } from 'react-router-dom';
 import { ProjectTileCard } from '@/components/project';
 
@@ -97,13 +97,13 @@ export const ProjectSettingsPage = () => {
     const metaKeys = projectMetaKeys.map((k) => {
         return k.metakey;
     });
-    // const getProjects = useAPI(['getProjects', adminMode]);
-    const getProjects = usePixel(`
-        MyProjects(metaKeys = ${JSON.stringify(
-            metaKeys,
-        )}, filterWord=["${search}"]);
-    `);
+    // const getProjects = usePixel(`
+    //     MyProjects(metaKeys = ${JSON.stringify(
+    //         metaKeys,
+    //     )}, filterWord=["${search}"]);
+    // `);
 
+    const getProjects = useAPI(['getProjects', adminMode, search]);
     useEffect(() => {
         // REST call to get all apps
         if (getProjects.status !== 'SUCCESS' || !getProjects.data) {
