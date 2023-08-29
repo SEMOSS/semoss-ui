@@ -294,6 +294,52 @@ export class MonolithStore {
     // Engine
     // ----------------------------------------------------------------------
     /**
+     * @name getEngines
+     * @param admin - is admin user
+     * @returns AppInterface[]
+     */
+    async getEngines(
+        admin: boolean,
+        engineId: string,
+        engineType: string,
+        offset?: number,
+        limit?: number,
+    ) {
+        let url = `${MODULE}/api/auth/`;
+
+        if (admin) {
+            url += 'admin/';
+        }
+
+        url += 'engine/getEngines';
+
+        const params = {};
+
+        params['engineTypes'] = engineType;
+        engineId && (params['engineId'] = engineId);
+
+        offset && (params['offset'] = offset);
+
+        limit && (params['limit'] = limit);
+
+        // get the response
+        const response = await axios
+            .get(url, {
+                params: params,
+            })
+            .catch((error) => {
+                throw Error(error);
+            });
+
+        // there was no response, that is an error
+        if (!response) {
+            throw Error('No Response to get Apps');
+        }
+
+        return response.data;
+    }
+
+    /**
      * @name getUserEnginePermission
      * @desc Get a user's role for the engine
      * @param id - id of engine (db, storage, model)
@@ -319,7 +365,7 @@ export class MonolithStore {
     }
 
     /**
-     * @name getDatabaseUsers
+     * @name getEngineUsers
      * @param admin
      * @param appId
      * @returns MemberInterface[]
@@ -779,7 +825,12 @@ export class MonolithStore {
      * @param admin - is admin user
      * @returns Projects retrieved from Promise
      */
-    async getProjects(admin: boolean) {
+    async getProjects(
+        admin: boolean,
+        search: string,
+        offset?: number,
+        limit?: number,
+    ) {
         let url = `${MODULE}/api/auth/`;
 
         if (admin) {
@@ -787,6 +838,14 @@ export class MonolithStore {
         }
 
         url += 'project/getProjects';
+
+        const params = {};
+
+        search && (params['projectId'] = search);
+
+        offset && (params['offset'] = offset);
+
+        limit && (params['limit'] = limit);
 
         const response = await axios
             .get<
@@ -797,7 +856,9 @@ export class MonolithStore {
                     project_permission: string;
                     project_visibility: boolean;
                 }[]
-            >(url)
+            >(url, {
+                params: params,
+            })
             .catch((error) => {
                 throw Error(error);
             });

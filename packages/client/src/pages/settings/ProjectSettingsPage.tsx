@@ -1,6 +1,6 @@
 import { useEffect, useState, useRef, useReducer } from 'react';
 
-import { useRootStore, usePixel, useSettings } from '../../hooks';
+import { useRootStore, usePixel, useSettings, useAPI } from '../../hooks';
 import { useNavigate } from 'react-router-dom';
 import { ProjectTileCard } from '@/components/project';
 
@@ -71,9 +71,13 @@ export const ProjectSettingsPage = () => {
     const [view, setView] = useState('tile');
     const [search, setSearch] = useState('');
     const [sort, setSort] = useState('Name');
-
+    const [canCollect, setCanCollect] = useState(true);
+    const [offset, setOffset] = useState(0);
     const [selectedProject, setSelectedProject] =
         useState<ProjectInterface>(null);
+
+    //** amount of items to be loaded */
+    const limit = 15;
 
     // To focus when getting new results
     const searchbarRef = useRef(null);
@@ -97,12 +101,19 @@ export const ProjectSettingsPage = () => {
     const metaKeys = projectMetaKeys.map((k) => {
         return k.metakey;
     });
-    // const getProjects = useAPI(['getProjects', adminMode]);
-    const getProjects = usePixel(`
-        MyProjects(metaKeys = ${JSON.stringify(
-            metaKeys,
-        )}, filterWord=["${search}"]);
-    `);
+    // const getProjects = usePixel(`
+    //     MyProjects(metaKeys = ${JSON.stringify(
+    //         metaKeys,
+    //     )}, filterWord=["${search}"]);
+    // `);
+
+    const getProjects = useAPI([
+        'getProjects',
+        adminMode,
+        search,
+        offset,
+        limit,
+    ]);
 
     useEffect(() => {
         // REST call to get all apps
@@ -140,6 +151,85 @@ export const ProjectSettingsPage = () => {
     //         <LoadingScreen.Trigger description="Retrieving app folders" />
     //     );
     // }
+
+    //** reset dataMode if adminMode is toggled */
+    useEffect(() => {
+        setOffset(0);
+        dispatch({
+            type: 'field',
+            field: 'projects',
+            value: [],
+        });
+    }, [adminMode]);
+
+    //** append data through infinite scroll */
+    useEffect(() => {
+        if (getProjects.status !== 'SUCCESS') {
+            return;
+        }
+
+        const mutateListWithVotes = projects;
+
+        getProjects.data.forEach((proj, i) => {
+            mutateListWithVotes.push({
+                ...proj,
+                project_global: proj.project_global,
+                project_id: proj.project_id,
+                project_name: proj.project_name,
+                project_permission: proj.project_permission,
+                project_visibility: proj.project_visibility,
+            });
+        });
+
+        dispatch({
+            type: 'field',
+            field: 'projects',
+            value: mutateListWithVotes,
+        });
+
+        searchbarRef.current?.focus();
+    }, [getProjects.status, getProjects.data]);
+
+    //** infinite sroll variables */
+    let scrollEle, scrollTimeout, currentScroll, previousScroll;
+    const offsetRef = useRef(0);
+    offsetRef.current = offset;
+    const canCollectRef = useRef(true);
+    canCollectRef.current = canCollect;
+
+    const scrollAll = () => {
+        currentScroll = scrollEle.scrollTop + scrollEle.offsetHeight;
+        if (
+            currentScroll > scrollEle.scrollHeight * 0.75 &&
+            currentScroll > previousScroll
+        ) {
+            if (scrollTimeout) {
+                clearTimeout(scrollTimeout);
+            }
+
+            scrollTimeout = setTimeout(() => {
+                if (!canCollectRef.current) {
+                    return;
+                }
+
+                setOffset(offsetRef.current + limit);
+            }, 500);
+        }
+
+        previousScroll = currentScroll;
+    };
+
+    /**
+     * @desc infinite scroll
+     */
+    useEffect(() => {
+        scrollEle = document.querySelector('#home__content');
+
+        scrollEle.addEventListener('scroll', scrollAll);
+        return () => {
+            scrollEle.removeEventListener('scroll', scrollAll);
+        };
+    }, [scrollEle]);
 
     return (
         <StyledContainer>

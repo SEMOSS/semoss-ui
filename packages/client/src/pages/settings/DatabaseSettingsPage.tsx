@@ -1,5 +1,5 @@
 import { useEffect, useState, useRef, useReducer } from 'react';
-import { useRootStore, usePixel } from '@/hooks';
+import { useRootStore, usePixel, useAPI } from '@/hooks';
 import { useSettings } from '@/hooks/useSettings';
 import { useNavigate } from 'react-router-dom';
 
@@ -109,6 +109,7 @@ export const DatabaseSettingsPage = () => {
 
     const [selectedApp, setSelectedApp] = useState<Database>(null);
 
+    //** amount of items to be loaded */
     const limit = 15;
 
     // To focus when getting new results
@@ -134,6 +135,7 @@ export const DatabaseSettingsPage = () => {
         return k.metakey;
     });
 
+    // Favorites ----------------------------------
     const getFavoritedDatabases = usePixel(`
     MyEngines(metaKeys = ${JSON.stringify(
         metaKeys,
@@ -154,43 +156,35 @@ export const DatabaseSettingsPage = () => {
         searchbarRef.current?.focus();
     }, [getFavoritedDatabases.status, getFavoritedDatabases.data]);
 
-    const getDatabases = usePixel<
-        {
-            app_cost: string;
-            app_id: string;
-            app_name: string;
-            app_type: string;
-            database_cost: string;
-            database_global: boolean;
-            database_id: string;
-            database_name: string;
-            database_type: string;
-            database_created_by: string;
-            database_date_created: string;
-            description: string;
-            low_database_name: string;
-            permission: number;
-            tag: string;
-            user_permission: number;
-            upvotes?: number;
-        }[]
-    >(`
-        MyEngines(metaKeys = ${JSON.stringify(
-            metaKeys,
-        )}, filterWord=["${search}"], userT=[true], engineTypes=['DATABASE'], offset=[${offset}], limit=[${limit}]);
-    `);
+    // All Engines -------------------------------------
+    const getEngines = useAPI([
+        'getEngines',
+        adminMode,
+        search,
+        'DATABASE',
+        offset,
+        limit,
+    ]);
 
-    /**
-     * @desc handles response for getDatabases
-     */
+    //** reset dataMode if adminMode is toggled */
     useEffect(() => {
-        if (getDatabases.status !== 'SUCCESS') {
+        setOffset(0);
+        dispatch({
+            type: 'field',
+            field: 'databases',
+            value: [],
+        });
+    }, [adminMode]);
+
+    //** append data through infinite scroll */
+    useEffect(() => {
+        if (getEngines.status !== 'SUCCESS') {
             return;
         }
 
         const mutateListWithVotes = databases;
 
-        getDatabases.data.forEach((db, i) => {
+        getEngines.data.forEach((db, i) => {
             mutateListWithVotes.push({
                 ...db,
                 upvotes: db.upvotes ? db.upvotes : 0,
@@ -208,7 +202,7 @@ export const DatabaseSettingsPage = () => {
 
         setSelectedApp(null);
         searchbarRef.current?.focus();
-    }, [getDatabases.status, getDatabases.data]);
+    }, [getEngines.status, getEngines.data]);
 
     /**
      * @name favoriteDb
@@ -335,6 +329,7 @@ export const DatabaseSettingsPage = () => {
             });
     };
 
+    //** infinite sroll variables */
     let scrollEle, scrollTimeout, currentScroll, previousScroll;
     const offsetRef = useRef(0);
     offsetRef.current = offset;
