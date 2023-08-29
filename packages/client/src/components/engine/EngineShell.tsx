@@ -215,7 +215,9 @@ export const EngineShell = (props: EngineShellProps) => {
                     <StyledInfoDescription variant={'subtitle1'}>
                         {metaVals.description
                             ? metaVals.description
-                            : "Please use the Edit button to provide a description for this database. A description will help other's find the database and understand how to use it. To include a detailed description, use the markdown feature in the Overview section."}
+                            : canEdit
+                            ? `Please use the Edit button to provide a description for this ${type}. A description will help other's find the ${type} and understand how to use it. To include a more details associated to the ${type}, edit the markdown located in the Overview section.`
+                            : `This ${type} is currently awaiting a detailed description, which will be provided by the engine editor in the near future. As of now, the ${type} contains valuable and relevant information that pertains to its designated subject matter. Kindly check back later for a comprehensive overview of the contents and scope of this engine, as the editor will be updating it shortly`}
                     </StyledInfoDescription>
 
                     <StyledChipContainer>
