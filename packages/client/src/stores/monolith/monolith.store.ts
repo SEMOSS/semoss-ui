@@ -300,7 +300,7 @@ export class MonolithStore {
      */
     async getEngines(
         admin: boolean,
-        engineId: string,
+        search: string,
         engineType: string,
         offset?: number,
         limit?: number,
@@ -316,7 +316,7 @@ export class MonolithStore {
         const params = {};
 
         params['engineTypes'] = engineType;
-        engineId && (params['engineId'] = engineId);
+        search && (params['filterWord'] = search);
 
         offset && (params['offset'] = offset);
 

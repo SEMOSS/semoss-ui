@@ -167,7 +167,7 @@ export const StorageSettingsPage = () => {
             field: 'databases',
             value: [],
         });
-    }, [adminMode]);
+    }, [adminMode, search]);
 
     //** append data through infinite scroll */
     useEffect(() => {
@@ -481,7 +481,7 @@ export const StorageSettingsPage = () => {
                               </Grid>
                           );
                       })
-                    : 'No storages to choose from'}
+                    : null}
             </Grid>
         </StyledContainer>
     );

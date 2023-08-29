@@ -101,11 +101,6 @@ export const ProjectSettingsPage = () => {
     const metaKeys = projectMetaKeys.map((k) => {
         return k.metakey;
     });
-    // const getProjects = usePixel(`
-    //     MyProjects(metaKeys = ${JSON.stringify(
-    //         metaKeys,
-    //     )}, filterWord=["${search}"]);
-    // `);
 
     const getProjects = useAPI([
         'getProjects',
@@ -114,27 +109,6 @@ export const ProjectSettingsPage = () => {
         offset,
         limit,
     ]);
-
-    useEffect(() => {
-        // REST call to get all apps
-        if (getProjects.status !== 'SUCCESS' || !getProjects.data) {
-            return;
-        }
-
-        dispatch({
-            type: 'field',
-            field: 'projects',
-            value: getProjects.data,
-        });
-
-        setSelectedProject(null);
-        searchbarRef.current?.focus();
-
-        () => {
-            console.warn('Cleaning up getProjects');
-            // setProjects([]);
-        };
-    }, [getProjects.status, getProjects.data]);
 
     const formatProjectName = (str) => {
         let i;
@@ -145,13 +119,6 @@ export const ProjectSettingsPage = () => {
         return frags.join(' ');
     };
 
-    // // show a loading screen when getProjects is pending
-    // if (getProjects.status !== 'SUCCESS') {
-    //     return (
-    //         <LoadingScreen.Trigger description="Retrieving app folders" />
-    //     );
-    // }
-
     //** reset dataMode if adminMode is toggled */
     useEffect(() => {
         setOffset(0);
@@ -160,7 +127,14 @@ export const ProjectSettingsPage = () => {
             field: 'projects',
             value: [],
         });
-    }, [adminMode]);
+    }, [adminMode, search]);
+
+    // // show a loading screen when getProjects is pending
+    // if (getProjects.status !== 'SUCCESS') {
+    //     return (
+    //         <LoadingScreen.Trigger description="Retrieving app folders" />
+    //     );
+    // }
 
     //** append data through infinite scroll */
     useEffect(() => {

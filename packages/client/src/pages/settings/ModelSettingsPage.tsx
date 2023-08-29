@@ -167,7 +167,7 @@ export const ModelSettingsPage = () => {
             field: 'databases',
             value: [],
         });
-    }, [adminMode]);
+    }, [adminMode, search]);
 
     //** append data through infinite scroll */
     useEffect(() => {
@@ -485,7 +485,7 @@ export const ModelSettingsPage = () => {
                               </Grid>
                           );
                       })
-                    : 'No models to choose from'}
+                    : null}
             </Grid>
         </StyledContainer>
     );
