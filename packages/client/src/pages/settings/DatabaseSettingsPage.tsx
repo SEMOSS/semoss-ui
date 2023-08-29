@@ -104,8 +104,12 @@ export const DatabaseSettingsPage = () => {
     const [view, setView] = useState('tile');
     const [search, setSearch] = useState('');
     const [sort, setSort] = useState('Name');
+    const [canCollect, setCanCollect] = useState(true);
+    const [offset, setOffset] = useState(0);
 
     const [selectedApp, setSelectedApp] = useState<Database>(null);
+
+    const limit = 15;
 
     // To focus when getting new results
     const searchbarRef = useRef(null);
@@ -173,7 +177,7 @@ export const DatabaseSettingsPage = () => {
     >(`
         MyEngines(metaKeys = ${JSON.stringify(
             metaKeys,
-        )}, filterWord=["${search}"], userT=[true], engineTypes=['DATABASE']);
+        )}, filterWord=["${search}"], userT=[true], engineTypes=['DATABASE'], offset=[${offset}], limit=[${limit}]);
     `);
 
     /**
@@ -184,7 +188,7 @@ export const DatabaseSettingsPage = () => {
             return;
         }
 
-        const mutateListWithVotes = [];
+        const mutateListWithVotes = databases;
 
         getDatabases.data.forEach((db, i) => {
             mutateListWithVotes.push({
@@ -330,6 +334,46 @@ export const DatabaseSettingsPage = () => {
                 console.error(error);
             });
     };
+
+    let scrollEle, scrollTimeout, currentScroll, previousScroll;
+    const offsetRef = useRef(0);
+    offsetRef.current = offset;
+    const canCollectRef = useRef(true);
+    canCollectRef.current = canCollect;
+
+    const scrollAll = () => {
+        currentScroll = scrollEle.scrollTop + scrollEle.offsetHeight;
+        if (
+            currentScroll > scrollEle.scrollHeight * 0.75 &&
+            currentScroll > previousScroll
+        ) {
+            if (scrollTimeout) {
+                clearTimeout(scrollTimeout);
+            }
+
+            scrollTimeout = setTimeout(() => {
+                if (!canCollectRef.current) {
+                    return;
+                }
+
+                setOffset(offsetRef.current + limit);
+            }, 500);
+        }
+
+        previousScroll = currentScroll;
+    };
+
+    /**
+     * @desc infinite scroll
+     */
+    useEffect(() => {
+        scrollEle = document.querySelector('#home__content');
+
+        scrollEle.addEventListener('scroll', scrollAll);
+        return () => {
+            scrollEle.removeEventListener('scroll', scrollAll);
+        };
+    }, [scrollEle]);
 
     return (
         <StyledContainer>
