@@ -233,6 +233,14 @@ export const DatabaseMetadataPage = observer(() => {
     console.log('getDatabaseMetamodel: ', getDatabaseMetamodel);
     console.log('nodes: ', nodes);
 
+    // Read Only: Just view and search tables
+
+    // Editor and Owner:
+    // Workflow 1:
+    // ------- Refresh Data Button:
+    // -------------- Opens Modal for Tables and Views -> ExternalUpdateJdbcTablesAndViews();
+    // --------------> Apply button ExternalUpdateJdbcSchema(database=[""], filters=["AUTO_PLAN_DISTRIBUTION"]);
+
     return (
         <StyledPage>
             <Section>
