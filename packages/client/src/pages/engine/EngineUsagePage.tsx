@@ -72,7 +72,7 @@ export const EngineUsagePage = () => {
             ) : (
                 ''
             )}
-            {Object.keys(getEngineUsage.data).map((p, idx) => {
+            {['pixel', 'python', 'java'].map((p, idx) => {
                 const text = getEngineUsage.data[p];
                 const name = p.replace(/\w\S*/g, function (txt) {
                     return (

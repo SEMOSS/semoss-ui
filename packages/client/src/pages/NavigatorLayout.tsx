@@ -117,7 +117,7 @@ export const NavigatorLayout = observer(() => {
                 <Stack flex={1}>&nbsp;</Stack>
                 <StyledSidebarItem
                     to={'settings'}
-                    selected={location.pathname.includes('settings')}
+                    selected={location.pathname === '/settings'}
                 >
                     <Icon>
                         <Settings />

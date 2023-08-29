@@ -18,16 +18,14 @@ The scope should be the name of the package affected along with the overlying is
 
 The following is the list of supported scopes:
 
-* **(client/\<issue>):**
-* **(legacy/\<issue>):**
-* **(playsheet/\<issue>):**
-* **(sdk/\<issue>):**
-* **(ui/\<issue>):**
+* **(client):**
+* **(legacy):**
+* **(playsheet):**
+* **(sdk):**
+* **(ui):**
 * **(environment):**
 
 This list will be expanding as the repository continues to grow. Please share your thoughts and suggestions.
-
-To go off of the example above with requesting access to engines in our catalog, the correct scope would be something like this (client/Catalog), as the package that was affected was the client, and give more info on the actual feature that got added in we specify the overylying part of the codebase that has been changed as 'Catalog'.  The \<issue> will be up to the devs on how to format this.
 
 ### Subject
 The subject contains a succinct description of the change:
