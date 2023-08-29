@@ -383,11 +383,18 @@ export const lightTheme: CustomThemeOptions = {
                     padding: "0px 16px 0px 16px",
                 }),
                 content: ({ theme }) => ({
+                    width: "80%",
                     display: "flex",
                     flexDirection: "column",
                     gap: theme.spacing(1),
                 }),
                 action: ({ theme }) => ({}),
+                title: ({ theme }) => ({
+                    width: "100%",
+                    overflow: "hidden",
+                    whiteSpace: "nowrap",
+                    textOverflow: "ellipsis",
+                }),
             },
         },
         MuiCardContent: {
