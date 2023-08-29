@@ -827,7 +827,7 @@ export class MonolithStore {
      */
     async getProjects(
         admin: boolean,
-        search: string,
+        search?: string,
         offset?: number,
         limit?: number,
     ) {

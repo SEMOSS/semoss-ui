@@ -18,7 +18,7 @@ import {
     FormatListBulletedOutlined,
 } from '@mui/icons-material';
 
-import { DatabaseLandscapeCard, DatabaseTileCard } from '@/components/database';
+import { EngineLandscapeCard, EngineTileCard } from '@/components/engine';
 
 import { formatName } from '@/utils';
 
@@ -410,7 +410,7 @@ export const ModelSettingsPage = () => {
                                   xl={view === 'list' ? 12 : 3}
                               >
                                   {view === 'list' ? (
-                                      <DatabaseLandscapeCard
+                                      <EngineLandscapeCard
                                           name={db.app_name}
                                           id={db.app_id}
                                           tag={db.tag}
@@ -446,7 +446,7 @@ export const ModelSettingsPage = () => {
                                           }}
                                       />
                                   ) : (
-                                      <DatabaseTileCard
+                                      <EngineTileCard
                                           name={db.app_name}
                                           id={db.app_id}
                                           tag={db.tag}

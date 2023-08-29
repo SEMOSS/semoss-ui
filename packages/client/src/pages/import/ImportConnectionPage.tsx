@@ -4,6 +4,7 @@ import {
     Box,
     Button,
     Modal,
+    Skeleton,
     Stack,
     Typography,
     Checkbox,
@@ -118,7 +119,7 @@ export const ImportConnectionPage = () => {
     };
 
     return (
-        <StyledBox>
+        <>
             {openModal ? (
                 <TablesViewsSelection
                     open={openModal}
@@ -131,14 +132,14 @@ export const ImportConnectionPage = () => {
             ) : null}
             {/* Metamodel */}
             {metamodel ? (
-                <MetamodelView
-                    metamodel={metamodel}
-                    returnToTablesAndViews={returnToTablesAndViews}
-                />
-            ) : (
-                'Getting Metamodel'
-            )}
-        </StyledBox>
+                <StyledBox>
+                    <MetamodelView
+                        metamodel={metamodel}
+                        returnToTablesAndViews={returnToTablesAndViews}
+                    />
+                </StyledBox>
+            ) : null}
+        </>
     );
 };
 
@@ -367,15 +368,16 @@ export const MetamodelView = (props: MetamodelViewProps) => {
         });
 
         const pixel = `databaseVar = RdbmsExternalUpload(conDetails=[
-          ${JSON.stringify(formDetails.data)}
-      ], database=["${formDetails.title}"], metamodel=[
+          ${JSON.stringify(formDetails.data)}, database=["${
+            formDetails.title
+        }"], metamodel=[
           ${JSON.stringify({
               relationships: relations,
               tables: tables,
           })}
-      ]); SaveOwlPositions(database=[databaseVar], positionMap=[
+        ]); SaveOwlPositions(database=[databaseVar], positionMap=[
           ${JSON.stringify(owlPositions)}
-      ]);`;
+        ]);`;
 
         const resp = await monolithStore.runQuery(pixel);
         const output = resp.pixelReturn[0].output,
@@ -450,21 +452,24 @@ export const MetamodelView = (props: MetamodelViewProps) => {
     }, [metamodel]);
 
     return (
-        <Modal open={true} maxWidth={'xl'} fullWidth={true}>
-            <Modal.Title>Metamodel</Modal.Title>
-            <Modal.Content sx={{ height: '85vh' }}>
-                <div style={{ width: '100%', height: '100%' }}>
-                    <Metamodel
-                        onSelectNode={null}
-                        edges={edges}
-                        nodes={nodes}
-                        callback={(data) => {
-                            saveDatabase(data);
-                        }}
-                    />
-                </div>
-            </Modal.Content>
-            <Modal.Actions>
+        <div style={{ height: '70vh', width: '100%' }}>
+            <div style={{ width: '100%', height: '95%' }}>
+                <Metamodel
+                    onSelectNode={null}
+                    edges={edges}
+                    nodes={nodes}
+                    callback={(data) => {
+                        saveDatabase(data);
+                    }}
+                />
+            </div>
+            <div
+                style={{
+                    display: 'flex',
+                    justifyContent: 'flex-end',
+                    gap: '8px',
+                }}
+            >
                 <Button
                     variant={'text'}
                     onClick={() => {
@@ -479,8 +484,54 @@ export const MetamodelView = (props: MetamodelViewProps) => {
                 >
                     Tables and Views
                 </Button>
-                <Button variant={'contained'}>Apply</Button>
-            </Modal.Actions>
-        </Modal>
+                <Button
+                    variant={'contained'}
+                    onClick={() => {
+                        console.log('Apply new metamodel');
+                    }}
+                >
+                    Apply
+                </Button>
+            </div>
+        </div>
+        // <Modal open={true} maxWidth={'xl'} fullWidth={true}>
+        //     <Modal.Title>Metamodel</Modal.Title>
+        //     <Modal.Content sx={{ height: '85vh' }}>
+        //         <div style={{ width: '100%', height: '100%' }}>
+        //             <Metamodel
+        //                 onSelectNode={null}
+        //                 edges={edges}
+        //                 nodes={nodes}
+        //                 callback={(data) => {
+        //                     saveDatabase(data);
+        //                 }}
+        //             />
+        //         </div>
+        //     </Modal.Content>
+        //     <Modal.Actions>
+        //         <Button
+        //             variant={'text'}
+        //             onClick={() => {
+        //                 setSteps([steps[0], steps[1]], 1);
+        //             }}
+        //         >
+        //             Cancel
+        //         </Button>
+        //         <Button
+        //             variant={'outlined'}
+        //             onClick={() => returnToTablesAndViews()}
+        //         >
+        //             Tables and Views
+        //         </Button>
+        //         <Button
+        //             variant={'contained'}
+        //             onClick={() => {
+        //                 console.log('Apply new metamodel');
+        //             }}
+        //         >
+        //             Apply
+        //         </Button>
+        //     </Modal.Actions>
+        // </Modal>
     );
 };

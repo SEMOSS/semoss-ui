@@ -22,7 +22,6 @@ import {
 
 import { MODULE } from '@/constants';
 import defaultDbImage from '../../assets/img/placeholder.png';
-// import defaultDBImage from '../../assets/img/placeholder.png';
 import { formatName } from '@/utils';
 
 const StyledLandscapeCard = styled(Card)({
@@ -349,7 +348,7 @@ interface DatabaseCardProps {
     global?: (value) => void;
 }
 
-export const DatabaseLandscapeCard = (props: DatabaseCardProps) => {
+export const EngineLandscapeCard = (props: DatabaseCardProps) => {
     const {
         name,
         id,
@@ -373,7 +372,6 @@ export const DatabaseLandscapeCard = (props: DatabaseCardProps) => {
             <StyledLandscapeCardHeader>
                 <StyledLandscapeCardImg
                     src={`${MODULE}/api/app-${id}/appImage/download`}
-                    // src={defaultDbImage}
                 />
                 <StyledLandscapeCardHeaderDiv>
                     <StyledLandscapeCardTitleDiv>
@@ -402,7 +400,7 @@ export const DatabaseLandscapeCard = (props: DatabaseCardProps) => {
                             <StyledPersonIcon />
                         </StyledAvatar>
                         <StyledPublishedByLabel
-                            color={'secondary'}
+                            sx={{ color: 'rgba(0, 0, 0, 0.6)' }}
                             variant={'caption'}
                         >
                             Published by: {owner}
@@ -447,6 +445,10 @@ export const DatabaseLandscapeCard = (props: DatabaseCardProps) => {
                 <StyledLeftActions>
                     <ButtonGroup size="small" color="secondary">
                         <ButtonGroup.Item
+                            sx={{
+                                borderColor: 'rgba(0, 0, 0, 0.54)',
+                                color: 'rgba(0, 0, 0, 0.60)',
+                            }}
                             title={
                                 isUpvoted
                                     ? `Downvote ${name}`
@@ -464,7 +466,14 @@ export const DatabaseLandscapeCard = (props: DatabaseCardProps) => {
                         >
                             {isUpvoted ? <ArrowDropDown /> : <ArrowDropUp />}
                         </ButtonGroup.Item>
-                        <UnstyledVoteCount>{votes}</UnstyledVoteCount>
+                        <UnstyledVoteCount
+                            sx={{
+                                borderColor: 'rgba(0, 0, 0, 0.54)',
+                                color: 'rgba(0, 0, 0, 0.60)',
+                            }}
+                        >
+                            {votes}
+                        </UnstyledVoteCount>
                     </ButtonGroup>
                     {/* <StyledViewsTrendingDiv>
                         <StyledEyeIcon />
@@ -504,7 +513,7 @@ export const DatabaseLandscapeCard = (props: DatabaseCardProps) => {
     );
 };
 
-export const DatabaseTileCard = (props: DatabaseCardProps) => {
+export const EngineTileCard = (props: DatabaseCardProps) => {
     const {
         name,
         id,
@@ -663,15 +672,15 @@ export const DatabaseTileCard = (props: DatabaseCardProps) => {
     );
 };
 
-export interface PlainDatabaseCardProps {
+export interface PlainEngineCardProps {
     /** Name of the Database */
     name: string;
 
     onClick: () => void;
 }
 
-export const PlainDatabaseCard = (props) => {
-    const { id, name, image = defaultDbImage, onClick } = props;
+export const PlainEngineCard = (props) => {
+    const { id, name, onClick } = props;
     return (
         <StyledPlainTileCard onClick={onClick}>
             <StyledCardImage

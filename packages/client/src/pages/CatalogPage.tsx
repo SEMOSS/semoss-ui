@@ -25,7 +25,7 @@ import {
 
 import { useNavigate, useLocation } from 'react-router-dom';
 
-import { DatabaseLandscapeCard, DatabaseTileCard } from '@/components/database';
+import { EngineLandscapeCard, EngineTileCard } from '@/components/engine';
 import { usePixel, useRootStore } from '@/hooks';
 import { Page } from '@/components/ui';
 
@@ -1076,7 +1076,7 @@ export const CatalogPage = observer((): JSX.Element => {
                                         xl={view === 'list' ? 12 : 4}
                                     >
                                         {view === 'list' ? (
-                                            <DatabaseLandscapeCard
+                                            <EngineLandscapeCard
                                                 name={formatDBName(
                                                     db.database_name,
                                                 )}
@@ -1114,7 +1114,7 @@ export const CatalogPage = observer((): JSX.Element => {
                                                 }
                                             />
                                         ) : (
-                                            <DatabaseTileCard
+                                            <EngineTileCard
                                                 name={formatDBName(
                                                     db.database_name,
                                                 )}
