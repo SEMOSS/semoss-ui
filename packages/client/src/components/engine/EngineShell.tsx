@@ -148,8 +148,8 @@ export const EngineShell = (props: EngineShellProps) => {
                         </Typography>
                         <Stack direction="row">
                             {configStore.store.security &&
-                                data.database_discoverable &&
-                                role !== 'OWNER' && (
+                                (data.database_discoverable ||
+                                    role !== 'OWNER') && (
                                     <>
                                         {requestAccess && (
                                             <RequestAccess
