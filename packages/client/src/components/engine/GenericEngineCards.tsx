@@ -271,7 +271,7 @@ const StyledCardDescription = styled(Typography)({
     minHeight: '60px',
     maxHeight: '60px',
     maxWidth: '350px',
-    whiteSpace: 'prewrap',
+    whiteSpace: 'pre-wrap',
     overflow: 'hidden',
     textOverflow: 'ellipsis',
 });
