@@ -147,30 +147,26 @@ export const EngineShell = (props: EngineShellProps) => {
                             {formatName(data.database_name)}
                         </Typography>
                         <Stack direction="row">
-                            {configStore.store.security &&
-                                (data.database_discoverable ||
-                                    role !== 'OWNER') && (
-                                    <>
-                                        {requestAccess && (
-                                            <RequestAccess
-                                                id={id}
-                                                open={requestAccess}
-                                                onClose={() => {
-                                                    setRequestAccess(false);
-                                                }}
-                                            />
-                                        )}
-                                        <Button
-                                            startIcon={<Add />}
-                                            variant="outlined"
-                                            onClick={() =>
-                                                setRequestAccess(true)
-                                            }
-                                        >
-                                            Request Access
-                                        </Button>
-                                    </>
-                                )}
+                            {configStore.store.security && role !== 'OWNER' && (
+                                <>
+                                    {requestAccess && (
+                                        <RequestAccess
+                                            id={id}
+                                            open={requestAccess}
+                                            onClose={() => {
+                                                setRequestAccess(false);
+                                            }}
+                                        />
+                                    )}
+                                    <Button
+                                        startIcon={<Add />}
+                                        variant="outlined"
+                                        onClick={() => setRequestAccess(true)}
+                                    >
+                                        Request Access
+                                    </Button>
+                                </>
+                            )}
                             {role === 'OWNER' && (
                                 <Button
                                     startIcon={<SimCardDownload />}
