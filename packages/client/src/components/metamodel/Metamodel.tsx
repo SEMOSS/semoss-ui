@@ -39,9 +39,6 @@ interface MetamodelProps {
     /** Edges (aka relationships) to render in the metamodel */
     edges?: Edge[];
 
-    /** Track the selected node by index */
-    nodeIndex?: number;
-
     /** Track the selected node */
     selectedNode?: MetamodelNode | null;
     /** Function that is called when a new node is selected */

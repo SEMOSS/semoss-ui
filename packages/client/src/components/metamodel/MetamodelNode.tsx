@@ -126,7 +126,7 @@ type MetamodelNodeProps = NodeProps<{
 }>;
 
 const _MetamodelNode = (props: MetamodelNodeProps) => {
-    const headerRef = useRef<HTMLDivElement | null>(null);
+    const headerRef = useRef<HTMLDivElement>(null);
     const { id, data } = props;
 
     const { control, watch, setValue, getValues } = useForm({
@@ -164,15 +164,19 @@ const _MetamodelNode = (props: MetamodelNodeProps) => {
 
     /** Manage metamodel card width */
     useEffect(() => {
-        if (!headerRef?.current?.clientWidth) return;
-        setMetamodelCardWidth(
-            `${Math.floor(1.5 * headerRef.current.clientWidth)}`,
-        );
+        if (headerRef.current) {
+            const width: number = headerRef.current.clientWidth;
+            if (width) {
+                setMetamodelCardWidth(`${Math.floor(1.5 * width)}`);
+            }
+        } else {
+            return;
+        }
     }, [headerRef?.current]);
 
     const StyledMetamodelCard = styled('div', {
         shouldForwardProp: (prop) => prop !== 'isSelected',
-    })<{ isSelected: boolean }>(({ theme, isSelected }) => ({
+    })<{ isSelected: boolean }>(({ isSelected }) => ({
         display: 'inline-flex',
         flexDirection: 'column',
         padding: isSelected ? '4px' : '',

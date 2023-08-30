@@ -124,11 +124,12 @@ export const DatabaseMetadataPage = observer(() => {
                 physicalTypes,
             } = getDatabaseMetamodel.data;
 
-            return nodes.map((n) => {
+            return nodes.map((n, idx) => {
                 const node = n.conceptualName;
 
                 return {
                     id: node,
+                    nodeIndex: idx,
                     type: 'metamodel',
                     data: {
                         name: String(n.conceptualName).replace(/_/g, ' '),
@@ -144,7 +145,7 @@ export const DatabaseMetadataPage = observer(() => {
                                 physicalType: physicalTypes[property]
                                     ? physicalTypes[property]
                                     : '',
-                                specifiedFormat: additionalDataTypes[property]
+                                specificFormat: additionalDataTypes[property]
                                     ? additionalDataTypes[property]
                                     : '',
                             };

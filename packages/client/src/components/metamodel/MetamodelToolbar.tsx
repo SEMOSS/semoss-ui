@@ -67,15 +67,23 @@ const ButtonLabel = styled(Typography)(() => ({
 
 export const MetamodelToolbar = () => (
     <StyledButtonGroup variant="outlined" color="inherit">
-        <StyledButton variant="text" onClick={() => console.log('hello')}>
+        <StyledButton
+            disabled={true}
+            variant="text"
+            onClick={() => console.log('hello')}
+        >
             <StyledSyncIcon />{' '}
             <ButtonLabel variant="body2">Sync Changes</ButtonLabel>
         </StyledButton>
-        <StyledButton variant="text" onClick={() => console.log('hello')}>
+        <StyledButton
+            disabled={true}
+            variant="text"
+            onClick={() => console.log('hello')}
+        >
             <StyledAddIcon />
             <ButtonLabel variant="body2">Add Table</ButtonLabel>
         </StyledButton>
-        <StyledIconButton variant="text">
+        <StyledIconButton disabled={true} variant="text">
             <StyledSaveIcon />
         </StyledIconButton>
     </StyledButtonGroup>
