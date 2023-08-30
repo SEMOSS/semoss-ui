@@ -1,12 +1,20 @@
 import { useState } from 'react';
 import { observer } from 'mobx-react-lite';
-import { Stack, Typography, Search, Button, Grid } from '@semoss/ui';
+import { Stack, Typography, Search, Button, Grid, styled } from '@semoss/ui';
 
 import { useNavigate } from 'react-router-dom';
 
 import { usePixel, useRootStore } from '@/hooks';
 import { Page } from '@/components/ui';
 import { App, AppTileCard, AddApp } from '@/components/app';
+
+const StyledContainer = styled('div')(({ theme }) => ({
+    display: 'flex',
+    flexDirection: 'column',
+    gap: theme.spacing(3),
+    paddingTop: theme.spacing(1),
+    paddingBottom: theme.spacing(1),
+}));
 
 /**
  * Landing page
@@ -66,40 +74,43 @@ export const HomePage = observer((): JSX.Element => {
     return (
         <Page
             header={
-                <Stack
-                    direction="row"
-                    alignItems={'center'}
-                    justifyContent={'space-between'}
-                    spacing={4}
-                    sx={{
-                        paddingLeft: '24px',
-                        paddingRight: '24px',
-                    }}
-                >
-                    <Stack direction="row" alignItems={'center'} spacing={2}>
-                        <Typography variant={'h4'}>App Library</Typography>
-                        <Search
-                            size={'small'}
-                            onChange={(e) => {
-                                setSearch(e.target.value);
-                            }}
-                        />
-                    </Stack>
-                    <Button
-                        size={'large'}
-                        variant={'contained'}
-                        onClick={() => {
-                            setAddAppModal(true);
-                        }}
-                        aria-label={`Open the App Model`}
+                <Stack>
+                    <div style={{ height: '24px' }}></div>
+                    <Stack
+                        direction="row"
+                        alignItems={'center'}
+                        justifyContent={'space-between'}
+                        spacing={4}
                     >
-                        Add App
-                    </Button>
+                        <Stack
+                            direction="row"
+                            alignItems={'center'}
+                            spacing={2}
+                        >
+                            <Typography variant={'h4'}>App Library</Typography>
+                            <Search
+                                size={'small'}
+                                onChange={(e) => {
+                                    setSearch(e.target.value);
+                                }}
+                            />
+                        </Stack>
+                        <Button
+                            size={'large'}
+                            variant={'contained'}
+                            onClick={() => {
+                                setAddAppModal(true);
+                            }}
+                            aria-label={`Open the App Model`}
+                        >
+                            Add App
+                        </Button>
+                    </Stack>
                 </Stack>
             }
         >
-            <Stack direction={'column'} height={'100%'}>
-                <Grid container spacing={3}>
+            <StyledContainer>
+                <Grid container columnSpacing={3} rowSpacing={3}>
                     <Grid item sm={12} md={4} lg={3} xl={2}>
                         <AppTileCard
                             app={{
@@ -132,8 +143,11 @@ export const HomePage = observer((): JSX.Element => {
                         />
                     </Grid>
                 </Grid>
+            </StyledContainer>
+
+            <StyledContainer>
                 {myApps.status === 'SUCCESS' && myApps.data.length > 0 ? (
-                    <Grid container spacing={3}>
+                    <Grid container columnSpacing={3} rowSpacing={3}>
                         {myApps.data.map((app) => {
                             return (
                                 <Grid
@@ -151,9 +165,28 @@ export const HomePage = observer((): JSX.Element => {
                                 </Grid>
                             );
                         })}
+                        {/* <Grid item key={'kda'} sm={12} md={4} lg={3} xl={2}>
+                            <AppTileCard
+                                app={{
+                                    project_id: 'gagjdgja',
+                                    project_name: 'gagjdgja',
+                                    project_type: 'gagjdgja',
+                                    project_cost: 'gagjdgja',
+                                    project_global: 'gagjdgja',
+                                    project_catalog_name: 'gagjdgja',
+                                    project_created_by: 'gagjdgja',
+                                    project_created_by_type: 'gagjdgja',
+                                    project_date_created: 'gagjdgja',
+                                    project_has_portal: false,
+                                    project_portal_name: 'gagjdgja',
+                                    project_portal_published_date: 'gagjdgja',
+                                }}
+                                href={`#/app/hadha`}
+                            />
+                        </Grid> */}
                     </Grid>
                 ) : null}
-            </Stack>
+            </StyledContainer>
             <AddApp
                 open={addAppModal}
                 onClose={(appId) => closeAddAppModal(appId)}

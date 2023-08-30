@@ -4,8 +4,7 @@ import { styled, Container } from '@semoss/ui';
 const StyledPage = styled('div')(({ theme }) => ({
     height: '100%',
     width: '100%',
-    overflowX: 'hidden',
-    overflowY: 'auto',
+    overflow: 'scroll',
     backgroundColor: theme.palette.background.paper,
     paddingBottom: theme.spacing(2.5),
     display: 'flex',

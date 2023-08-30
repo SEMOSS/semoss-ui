@@ -123,7 +123,7 @@ export const MODEL_FORMS: EngineFields = [
             {
                 fieldName: 'MODEL_TYPE',
                 label: 'Type',
-                defaultValue: 'Open AI',
+                defaultValue: 'OPEN_AI',
                 options: {
                     component: 'select',
                     options: [
@@ -204,7 +204,7 @@ export const MODEL_FORMS: EngineFields = [
             {
                 fieldName: 'MODEL_TYPE',
                 label: 'Type',
-                defaultValue: '',
+                defaultValue: 'Claude',
                 options: {
                     component: 'select',
                     options: [
