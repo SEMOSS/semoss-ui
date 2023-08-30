@@ -260,6 +260,7 @@ export const DatabaseMetadataPage = observer(() => {
                 </Section.Header>
                 {/* Toolbar above metamodel */}
                 <MetamodelToolbar />
+
                 <Stack spacing={2}>
                     {/* <StyledSelect
                         value={selectedNode || ''}
