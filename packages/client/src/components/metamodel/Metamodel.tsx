@@ -29,9 +29,9 @@ export type MetamodelNode = Node<
     React.ComponentProps<typeof MetamodelNode>['data']
 >;
 
-// interface FormattedNode extends MetamodelNode {
-//     nodeIndex?: number;
-// }
+interface FormattedNode extends MetamodelNode {
+    nodeIndex?: number;
+}
 
 interface MetamodelProps {
     /** Nodes to render in the metamodel */
@@ -85,7 +85,7 @@ export const Metamodel = (props: MetamodelProps) => {
 
     const formattedNodes = [];
     for (let i = 0; i < nodes.length; i++) {
-        const tempNode = nodes[i];
+        const tempNode: FormattedNode = nodes[i];
         tempNode.nodeIndex = i;
         formattedNodes.push(tempNode);
     }
