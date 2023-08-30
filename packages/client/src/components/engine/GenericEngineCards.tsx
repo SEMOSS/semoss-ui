@@ -269,19 +269,18 @@ const StyledPublishedByContainer = styled('div')({
 const StyledCardDescription = styled(Typography)({
     display: 'block',
     minHeight: '60px',
-    maxHeight: '30px',
+    maxHeight: '60px',
     maxWidth: '350px',
-    whiteSpace: 'nowrap',
+    whiteSpace: 'prewrap',
     overflow: 'hidden',
     textOverflow: 'ellipsis',
-    // width: '90%',
-    // border: 'solid blue',
 });
 
 const StyledChipDiv = styled('div')({
     display: 'flex',
     flexDirection: 'row',
     minHeight: '32px',
+    width: '80px',
     alignItems: 'center',
     gap: 2,
 });
@@ -582,7 +581,7 @@ export const EngineTileCard = (props: DatabaseCardProps) => {
                         (typeof tag === 'object' ? (
                             <>
                                 {tag.map((t, i) => {
-                                    if (i <= 4) {
+                                    if (i <= 2) {
                                         return (
                                             <Chip
                                                 key={id + i}
@@ -592,15 +591,35 @@ export const EngineTileCard = (props: DatabaseCardProps) => {
                                         );
                                     }
                                 })}
-                                <StyledPublishedByLabel
-                                    sx={{
-                                        color: 'rgba(0, 0, 0, 0.6)',
-                                        marginLeft: 1,
-                                    }}
-                                    variant={'caption'}
-                                >
-                                    + {tag.length - 5}
-                                </StyledPublishedByLabel>
+                                {tag.length > 3 ? (
+                                    <div
+                                        style={{
+                                            marginLeft: 1,
+                                            display: 'flex',
+                                            flexDirection: 'row',
+                                        }}
+                                    >
+                                        <StyledPublishedByLabel
+                                            sx={{
+                                                color: 'rgba(0, 0, 0, 0.6)',
+                                                marginLeft: 1,
+                                            }}
+                                            variant={'caption'}
+                                        >
+                                            +
+                                        </StyledPublishedByLabel>
+                                        <StyledPublishedByLabel
+                                            sx={{
+                                                color: 'rgba(0, 0, 0, 0.6)',
+                                                display: 'flex',
+                                                flexDirection: 'row',
+                                            }}
+                                            variant={'caption'}
+                                        >
+                                            {tag.length - 3}
+                                        </StyledPublishedByLabel>
+                                    </div>
+                                ) : null}
                             </>
                         ) : (
                             <Chip
