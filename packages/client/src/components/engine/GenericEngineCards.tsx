@@ -371,7 +371,7 @@ export const EngineLandscapeCard = (props: DatabaseCardProps) => {
         <StyledLandscapeCard onClick={() => onClick(id)}>
             <StyledLandscapeCardHeader>
                 <StyledLandscapeCardImg
-                    src={`${MODULE}/api/app-${id}/appImage/download`}
+                    src={`${MODULE}/api/e-${id}/image/download`}
                 />
                 <StyledLandscapeCardHeaderDiv>
                     <StyledLandscapeCardTitleDiv>
@@ -536,7 +536,7 @@ export const EngineTileCard = (props: DatabaseCardProps) => {
         <StyledTileCard onClick={() => onClick(id)}>
             {/* Use Card.Media instead, uses img tag */}
             <StyledCardImage
-                src={`${MODULE}/api/app-${id}/appImage/download`}
+                src={`${MODULE}/api/e-${id}/image/download`}
                 sx={{ height: '118px' }}
             />
             <Card.Header
@@ -684,7 +684,7 @@ export const PlainEngineCard = (props) => {
     return (
         <StyledPlainTileCard onClick={onClick}>
             <StyledCardImage
-                src={`${MODULE}/api/app-${id}/appImage/download`}
+                src={`${MODULE}/api/e-${id}/image/download`}
                 sx={{ height: '118px' }}
             />
             <StyledTileCardContent sx={{ marginTop: '8px' }}>
