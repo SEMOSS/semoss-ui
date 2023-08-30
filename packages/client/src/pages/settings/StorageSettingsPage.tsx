@@ -11,6 +11,10 @@ import {
     ToggleButton,
     ToggleButtonGroup,
     styled,
+    Backdrop,
+    CircularProgress,
+    Stack,
+    Typography,
 } from '@semoss/ui';
 
 import {
@@ -173,6 +177,14 @@ export const StorageSettingsPage = () => {
     useEffect(() => {
         if (getEngines.status !== 'SUCCESS') {
             return;
+        }
+
+        if (getEngines.data.length < limit) {
+            setCanCollect(false);
+        } else {
+            if (!canCollectRef.current) {
+                setCanCollect(true);
+            }
         }
         const mutateListWithVotes = databases;
 
@@ -363,126 +375,154 @@ export const StorageSettingsPage = () => {
     }, [scrollEle]);
 
     return (
-        <StyledContainer>
-            <StyledSearchbarContainer>
-                <StyledSearchbar
-                    value={search}
-                    onChange={(e) => {
-                        setSearch(e.target.value);
-                    }}
-                    label="Storage"
-                    size="small"
-                    // enableEndAdornment={true}
-                    ref={searchbarRef}
-                />
-                <StyledSort
-                    size={'small'}
-                    value={sort}
-                    onChange={(e) => setSort(e.target.value)}
+        <>
+            <Backdrop
+                open={getEngines.status !== 'SUCCESS'}
+                sx={{
+                    backgroundColor: 'rgba(255, 255, 255, 0.5)',
+                    zIndex: 1501,
+                }}
+            >
+                <Stack
+                    direction={'column'}
+                    alignItems={'center'}
+                    justifyContent={'center'}
+                    spacing={1}
                 >
-                    <MenuItem value="Name">Name</MenuItem>
-                    <MenuItem value="Date Created">Date Created</MenuItem>
-                </StyledSort>
+                    <CircularProgress />
+                    <Typography variant="body2">Loading</Typography>
+                    <Typography variant="caption">Storages</Typography>
+                </Stack>
+            </Backdrop>
+            <StyledContainer>
+                <StyledSearchbarContainer>
+                    <StyledSearchbar
+                        value={search}
+                        onChange={(e) => {
+                            setSearch(e.target.value);
+                        }}
+                        label="Storage"
+                        size="small"
+                        // enableEndAdornment={true}
+                        ref={searchbarRef}
+                    />
+                    <StyledSort
+                        size={'small'}
+                        value={sort}
+                        onChange={(e) => setSort(e.target.value)}
+                    >
+                        <MenuItem value="Name">Name</MenuItem>
+                        <MenuItem value="Date Created">Date Created</MenuItem>
+                    </StyledSort>
 
-                <ToggleButtonGroup size={'small'} value={view}>
-                    <ToggleButton onClick={(e, v) => setView(v)} value={'tile'}>
-                        <SpaceDashboardOutlined />
-                    </ToggleButton>
-                    <ToggleButton onClick={(e, v) => setView(v)} value={'list'}>
-                        <FormatListBulletedOutlined />
-                    </ToggleButton>
-                </ToggleButtonGroup>
-            </StyledSearchbarContainer>
-            <Grid container spacing={3}>
-                {databases.length
-                    ? databases.map((db, i) => {
-                          return (
-                              <Grid
-                                  item
-                                  key={i}
-                                  sm={view === 'list' ? 12 : 12}
-                                  md={view === 'list' ? 12 : 6}
-                                  lg={view === 'list' ? 12 : 4}
-                                  xl={view === 'list' ? 12 : 3}
-                              >
-                                  {view === 'list' ? (
-                                      <EngineLandscapeCard
-                                          name={db.app_name}
-                                          id={db.app_id}
-                                          tag={db.tag}
-                                          owner={db.database_created_by}
-                                          description={db.description}
-                                          votes={db.upvotes}
-                                          views={db.views}
-                                          trending={db.trending}
-                                          isGlobal={db.database_global}
-                                          isUpvoted={db.hasUpvoted}
-                                          isFavorite={isFavorited(
-                                              db.database_id,
-                                          )}
-                                          favorite={(val) => {
-                                              favoriteDb(db);
-                                          }}
-                                          onClick={(id) => {
-                                              navigate(`${db.app_id}`, {
-                                                  state: {
-                                                      name: formatName(
-                                                          db.database_name,
-                                                      ),
-                                                      global: db.database_global,
-                                                      permission: db.permission,
-                                                  },
-                                              });
-                                          }}
-                                          upvote={(val) => {
-                                              upvoteDb(db);
-                                          }}
-                                          global={(val) => {
-                                              setDbGlobal(db);
-                                          }}
-                                      />
-                                  ) : (
-                                      <EngineTileCard
-                                          name={db.app_name}
-                                          id={db.app_id}
-                                          tag={db.tag}
-                                          owner={db.database_created_by}
-                                          description={db.description}
-                                          votes={db.upvotes}
-                                          views={db.views}
-                                          trending={db.trending}
-                                          isGlobal={db.database_global}
-                                          isFavorite={isFavorited(
-                                              db.database_id,
-                                          )}
-                                          isUpvoted={db.hasUpvoted}
-                                          favorite={() => {
-                                              favoriteDb(db);
-                                          }}
-                                          onClick={() => {
-                                              navigate(`${db.app_id}`, {
-                                                  state: {
-                                                      name: formatName(
-                                                          db.database_name,
-                                                      ),
-                                                      global: db.database_global,
-                                                      permission: db.permission,
-                                                  },
-                                              });
-                                          }}
-                                          upvote={() => {
-                                              upvoteDb(db);
-                                          }}
-                                          global={() => {
-                                              setDbGlobal(db);
-                                          }}
-                                      />
-                                  )}
-                              </Grid>
-                          );
-                      })
-                    : null}
-            </Grid>
-        </StyledContainer>
+                    <ToggleButtonGroup size={'small'} value={view}>
+                        <ToggleButton
+                            onClick={(e, v) => setView(v)}
+                            value={'tile'}
+                        >
+                            <SpaceDashboardOutlined />
+                        </ToggleButton>
+                        <ToggleButton
+                            onClick={(e, v) => setView(v)}
+                            value={'list'}
+                        >
+                            <FormatListBulletedOutlined />
+                        </ToggleButton>
+                    </ToggleButtonGroup>
+                </StyledSearchbarContainer>
+                <Grid container spacing={3}>
+                    {databases.length
+                        ? databases.map((db, i) => {
+                              return (
+                                  <Grid
+                                      item
+                                      key={i}
+                                      sm={view === 'list' ? 12 : 12}
+                                      md={view === 'list' ? 12 : 6}
+                                      lg={view === 'list' ? 12 : 4}
+                                      xl={view === 'list' ? 12 : 3}
+                                  >
+                                      {view === 'list' ? (
+                                          <EngineLandscapeCard
+                                              name={db.app_name}
+                                              id={db.app_id}
+                                              tag={db.tag}
+                                              owner={db.database_created_by}
+                                              description={db.description}
+                                              votes={db.upvotes}
+                                              views={db.views}
+                                              trending={db.trending}
+                                              isGlobal={db.database_global}
+                                              isUpvoted={db.hasUpvoted}
+                                              isFavorite={isFavorited(
+                                                  db.database_id,
+                                              )}
+                                              favorite={(val) => {
+                                                  favoriteDb(db);
+                                              }}
+                                              onClick={(id) => {
+                                                  navigate(`${db.app_id}`, {
+                                                      state: {
+                                                          name: formatName(
+                                                              db.database_name,
+                                                          ),
+                                                          global: db.database_global,
+                                                          permission:
+                                                              db.permission,
+                                                      },
+                                                  });
+                                              }}
+                                              upvote={(val) => {
+                                                  upvoteDb(db);
+                                              }}
+                                              global={(val) => {
+                                                  setDbGlobal(db);
+                                              }}
+                                          />
+                                      ) : (
+                                          <EngineTileCard
+                                              name={db.app_name}
+                                              id={db.app_id}
+                                              tag={db.tag}
+                                              owner={db.database_created_by}
+                                              description={db.description}
+                                              votes={db.upvotes}
+                                              views={db.views}
+                                              trending={db.trending}
+                                              isGlobal={db.database_global}
+                                              isFavorite={isFavorited(
+                                                  db.database_id,
+                                              )}
+                                              isUpvoted={db.hasUpvoted}
+                                              favorite={() => {
+                                                  favoriteDb(db);
+                                              }}
+                                              onClick={() => {
+                                                  navigate(`${db.app_id}`, {
+                                                      state: {
+                                                          name: formatName(
+                                                              db.database_name,
+                                                          ),
+                                                          global: db.database_global,
+                                                          permission:
+                                                              db.permission,
+                                                      },
+                                                  });
+                                              }}
+                                              upvote={() => {
+                                                  upvoteDb(db);
+                                              }}
+                                              global={() => {
+                                                  setDbGlobal(db);
+                                              }}
+                                          />
+                                      )}
+                                  </Grid>
+                              );
+                          })
+                        : null}
+                </Grid>
+            </StyledContainer>
+        </>
     );
 };
