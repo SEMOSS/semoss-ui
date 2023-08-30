@@ -65,7 +65,7 @@ const TableIconBlue = () => (
 
 type MetamodelNodeProps = NodeProps<{
     /** Index of the node */
-    nodeIndex: number;
+    nodeIndex?: number;
     /** Name of the node */
     name: string; // table
 
@@ -126,7 +126,7 @@ type MetamodelNodeProps = NodeProps<{
 }>;
 
 const _MetamodelNode = (props: MetamodelNodeProps) => {
-    const headerRef = useRef();
+    const headerRef = useRef<HTMLDivElement | null>(null);
     const { id, data } = props;
 
     const { control, watch, setValue, getValues } = useForm({
@@ -186,6 +186,9 @@ const _MetamodelNode = (props: MetamodelNodeProps) => {
             : '',
     }));
     const StyledMetamodelCardHeader = styled('div')(({ theme }) => {
+        const palette = theme.palette as unknown as {
+            purple: Record<string, string>;
+        };
         return {
             display: 'flex',
             minWidth: '215px',
@@ -194,7 +197,7 @@ const _MetamodelNode = (props: MetamodelNodeProps) => {
             alignItems: 'center',
             gap: '10px',
             borderRadius: '12px 12px 0px 0px',
-            background: theme.palette.purple['50'],
+            background: palette.purple['50'],
             flexShrink: 0,
             flexGrow: 1,
         };
@@ -295,19 +298,24 @@ const _MetamodelNode = (props: MetamodelNodeProps) => {
     });
 
     // contains table icon
-    const StyledTableIconContainer = styled('div')(({ theme }) => ({
-        display: 'flex',
-        width: '30px',
-        height: '30px',
-        flexDirection: 'column',
-        justifyContent: 'center',
-        alignItems: 'center',
-        gap: '10px',
-        flexShrink: 0,
-        borderRadius: '8px',
-        border: `1px solid ${theme.palette.purple['400']}`,
-        background: '#FFF',
-    }));
+    const StyledTableIconContainer = styled('div')(({ theme }) => {
+        const palette = theme.palette as unknown as {
+            purple: Record<string, string>;
+        };
+        return {
+            display: 'flex',
+            width: '30px',
+            height: '30px',
+            flexDirection: 'column',
+            justifyContent: 'center',
+            alignItems: 'center',
+            gap: '10px',
+            flexShrink: 0,
+            borderRadius: '8px',
+            border: `1px solid ${palette.purple['400']}`,
+            background: '#FFF',
+        };
+    });
 
     const StyledTableIcon = styled(TableIcon)(() => ({
         display: 'flex',
@@ -479,13 +487,17 @@ const _MetamodelNode = (props: MetamodelNodeProps) => {
     }));
 
     const StyledEditMetamodelCardHeader = styled('div')(({ theme }) => {
+        const palette = theme.palette as unknown as {
+            purple: Record<string, string>;
+        };
+
         return {
             display: 'flex',
             padding: '8px 16px',
             alignItems: 'center',
             gap: '10px',
             borderRadius: '12px 12px 0px 0px',
-            background: theme.palette.purple['50'],
+            background: palette.purple['50'],
         };
     });
 
@@ -505,15 +517,22 @@ const _MetamodelNode = (props: MetamodelNodeProps) => {
         gap: '3px',
     }));
 
-    const StyledEditMetamodelCardContent = styled('div')(({ theme }) => ({
-        display: 'flex',
-        padding: theme.shape.borderRadiusNone,
-        flexDirection: 'column',
-        alignItems: 'flex-start',
-        gap: 'var(--shape-border-radius-none, 0px)',
-        borderRadius: 'var(--shape-border-radius-none, 0px) 12px 12px 12px',
-        background: '#FFF',
-    }));
+    const StyledEditMetamodelCardContent = styled('div')(({ theme }) => {
+        // TODO: Fix typing
+        const shape = theme.shape as unknown as {
+            borderRadiusNone: string;
+        };
+
+        return {
+            display: 'flex',
+            padding: shape.borderRadiusNone,
+            flexDirection: 'column',
+            alignItems: 'flex-start',
+            gap: 'var(--shape-border-radius-none, 0px)',
+            borderRadius: 'var(--shape-border-radius-none, 0px) 12px 12px 12px',
+            background: '#FFF',
+        };
+    });
 
     const StyledEditTableFooterRow = styled('div')(({ theme }) => ({
         display: 'flex',

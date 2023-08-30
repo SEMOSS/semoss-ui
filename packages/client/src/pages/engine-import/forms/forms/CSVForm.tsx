@@ -14,36 +14,55 @@ import {
 import { useNavigate } from 'react-router-dom';
 import { ImportFormComponent } from './formTypes';
 import { DataFormTable } from '../DataFormTable';
-import { mdiNewspaperVariantMultipleOutline } from '@mdi/js';
 import { Metamodel } from '@/components/metamodel';
 import { MetamodelToolbar } from '@/components/metamodel/MetamodelToolbar';
 import { useRootStore } from '@/hooks';
 
-const StyledPageButtons = styled('div')(({ theme }) => ({
-    display: 'flex',
-    padding: theme.shape.borderRadiusNone,
-    justifyContent: 'flex-end',
-    alignItems: 'flex-start',
-    gap: '10px',
-    flexShrink: 0,
-    alignSelf: 'stretch',
-}));
+const StyledPageButtons = styled('div')(({ theme }) => {
+    // TODO: Fix typing
+    const shape = theme.shape as unknown as {
+        borderRadiusNone: string;
+    };
+    return {
+        display: 'flex',
+        padding: shape.borderRadiusNone,
+        justifyContent: 'flex-end',
+        alignItems: 'flex-start',
+        gap: '10px',
+        flexShrink: 0,
+        alignSelf: 'stretch',
+    };
+});
 
-const StyledMetamodelContainer = styled('section')(({ theme }) => ({
-    height: '60vh',
-    width: '100%',
-    borderRadius: theme.shape.borderRadiusNone,
-}));
+const StyledMetamodelContainer = styled('section')(({ theme }) => {
+    // TODO: Fix typing
+    const shape = theme.shape as unknown as {
+        borderRadiusNone: string;
+    };
 
-const StyledImportButton = styled(Button)(({ theme }) => ({
-    display: 'flex',
-    flexDirection: 'column',
-    justifyContent: 'center',
-    alignItems: 'center',
-    borderRadius: theme.shape.borderRadiusLg,
-    background: theme.palette.primary.main,
-    color: 'var(--light-primary-contrast, #FFF)',
-}));
+    return {
+        height: '60vh',
+        width: '100%',
+        borderRadius: shape.borderRadiusNone,
+    };
+});
+
+const StyledImportButton = styled(Button)(({ theme }) => {
+    // TODO: Fix typing
+    const shape = theme.shape as unknown as {
+        borderRadiusLg: string;
+    };
+
+    return {
+        display: 'flex',
+        flexDirection: 'column',
+        justifyContent: 'center',
+        alignItems: 'center',
+        borderRadius: shape.borderRadiusLg,
+        background: theme.palette.primary.main,
+        color: 'var(--light-primary-contrast, #FFF)',
+    };
+});
 
 export const CSVForm: ImportFormComponent = (props) => {
     const { submitFunc, metamodel, predictDataTypes } = props;

@@ -5,12 +5,13 @@ export interface SkeletonProps {
      * Width of the skeleton.
      * Useful when the skeleton is inside an inline element with no width of its own.
      */
-    width: number;
+    width: number | string;
     /**
      * Height of the skeleton.
      * Useful when you don't want to adapt the skeleton to a text element but for instance a card.
      */
-    height: number;
+    height: number | string;
+
     sx?: SxProps;
     /**
      * The animation.
