@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, SyntheticEvent } from 'react';
 import { observer } from 'mobx-react-lite';
 import { useParams, Navigate } from 'react-router-dom';
 import { Controller, useForm } from 'react-hook-form';
@@ -10,11 +10,16 @@ import {
     Stack,
     FileDropzone,
     Typography,
+    ToggleTabsGroup,
 } from '@semoss/ui';
 import { Code, Download } from '@mui/icons-material';
 import { Navbar } from '@/components/ui';
 import { useRootStore, useAPI } from '@/hooks';
 import { AppRenderer } from '@/components/app';
+
+import { SettingsContext } from '@/contexts';
+import { PendingMembersTable } from '../../components/settings/PendingMembersTable';
+import { MembersTable } from '../../components/settings/MembersTable';
 
 const NAV_HEIGHT = '48px';
 const NAV_FOOTER = '24px';
@@ -40,12 +45,15 @@ const StyledNavbarChildren = styled('div')(({ theme }) => ({
 }));
 
 const StyledLeft = styled('div')(({ theme }) => ({
+    display: 'flex',
+    flexDirection: 'column',
     height: '100%',
     width: '50%',
     maxWidth: '400px',
     overflow: 'hidden',
     background: theme.palette.background.paper,
     padding: theme.spacing(2),
+    gap: theme.spacing(2),
 }));
 
 const StyledRight = styled('div')(() => ({
@@ -128,6 +136,7 @@ export const AppPage = observer(() => {
     const [editMode, setEditMode] = useState<boolean>(false);
     const [isLoading, setIsLoading] = useState(false);
     const [counter, setCounter] = useState(0);
+    const [view, setView] = useState(0);
 
     const { handleSubmit, control } = useForm<EditAppForm>({
         defaultValues: {
@@ -152,6 +161,7 @@ export const AppPage = observer(() => {
 
         setAppPermission(response.permission);
     };
+
     /**
      * Method that is called to create the app
      */
@@ -248,6 +258,16 @@ export const AppPage = observer(() => {
         });
     };
 
+    /**
+     * @name handleChange
+     * @param event
+     * @param newValue
+     * @desc changes tab group
+     */
+    const handleChange = (event: SyntheticEvent, newValue: number) => {
+        setView(newValue);
+    };
+
     // navigate home if there is not app id
     if (!appId) {
         return <Navigate to="/" replace />;
@@ -292,40 +312,77 @@ export const AppPage = observer(() => {
             <StyledContent>
                 {editMode && (
                     <StyledLeft>
-                        <form onSubmit={editApp}>
-                            <Stack direction="column" spacing={1}>
-                                <Typography variant="subtitle2">
-                                    Update Project
-                                </Typography>
-                                <Controller
-                                    name={'PROJECT_UPLOAD'}
-                                    control={control}
-                                    rules={{}}
-                                    render={({ field }) => {
-                                        console.log(field.value);
-                                        return (
-                                            <FileDropzone
-                                                multiple={false}
-                                                value={field.value}
-                                                disabled={isLoading}
-                                                onChange={(newValues) => {
-                                                    field.onChange(newValues);
-                                                }}
-                                            />
-                                        );
-                                    }}
-                                />
-                                <Stack alignItems={'center'}>
-                                    <Button
-                                        type="submit"
-                                        variant={'contained'}
-                                        disabled={isLoading}
-                                    >
-                                        Update
-                                    </Button>
+                        <ToggleTabsGroup
+                            value={view}
+                            onChange={handleChange}
+                            aria-label="basic tabs example"
+                        >
+                            <ToggleTabsGroup.Item label="Project Settings" />
+                            <ToggleTabsGroup.Item label="Permissions" />
+                        </ToggleTabsGroup>
+                        {view === 0 && (
+                            <form onSubmit={editApp}>
+                                <Stack direction="column" spacing={1}>
+                                    <Typography variant="subtitle2">
+                                        Update Project
+                                    </Typography>
+                                    <Controller
+                                        name={'PROJECT_UPLOAD'}
+                                        control={control}
+                                        rules={{}}
+                                        render={({ field }) => {
+                                            console.log(field.value);
+                                            return (
+                                                <FileDropzone
+                                                    multiple={false}
+                                                    value={field.value}
+                                                    disabled={isLoading}
+                                                    onChange={(newValues) => {
+                                                        field.onChange(
+                                                            newValues,
+                                                        );
+                                                    }}
+                                                />
+                                            );
+                                        }}
+                                    />
+                                    <Stack alignItems={'center'}>
+                                        <Button
+                                            type="submit"
+                                            variant={'contained'}
+                                            disabled={isLoading}
+                                        >
+                                            Update
+                                        </Button>
+                                    </Stack>
                                 </Stack>
-                            </Stack>
-                        </form>
+                            </form>
+                        )}
+                        {view === 1 && (
+                            <SettingsContext.Provider
+                                value={{
+                                    adminMode: true,
+                                }}
+                            >
+                                <div
+                                    style={{
+                                        display: 'flex',
+                                        flexDirection: 'column',
+                                        gap: '8px',
+                                    }}
+                                >
+                                    <MembersTable
+                                        type={'app'}
+                                        id={appId}
+                                        condensed={true}
+                                    />
+                                    {/* <PendingMembersTable
+                                        type={'app'}
+                                        id={appId}
+                                    /> */}
+                                </div>
+                            </SettingsContext.Provider>
+                        )}
                     </StyledLeft>
                 )}
                 <StyledRight>
