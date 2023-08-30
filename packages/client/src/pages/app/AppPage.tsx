@@ -152,6 +152,7 @@ export const AppPage = observer(() => {
 
         setAppPermission(response.permission);
     };
+
     /**
      * Method that is called to create the app
      */
