@@ -56,13 +56,24 @@ const StyledCard = styled(Card, {
     shouldForwardProp: (prop) => prop !== 'disabled',
 })<{
     disabled: boolean;
-}>(({ theme, disabled }) => ({
-    backgroundColor: disabled ? theme.palette.grey['100'] : 'white',
-    '&:hover': {
-        cursor: 'pointer',
-    },
-}));
+}>(({ theme, disabled }) => {
+    // const palette = theme.palette as CustomPaletteOptions;
+    // TODO: Fix typing
+    const palette = theme.palette as unknown as {
+        primary: Record<string, string>;
+        primaryContrast: Record<string, string>;
+    };
 
+    return {
+        backgroundColor: disabled ? theme.palette.grey['100'] : 'white',
+        '&:hover': {
+            boxShadow: disabled
+                ? '0px 5px 22px 0px rgba(0, 0, 0, 0.04), 0px 4px 4px 0.5px rgba(0, 0, 0, 0.03)'
+                : `0px 5px 22px 0px ${palette.primaryContrast['shadow']}`,
+            cursor: 'pointer',
+        },
+    };
+});
 const StyledCardContent = styled(Card.Content)(() => ({
     display: 'flex',
     padding: '16px',
@@ -110,19 +121,36 @@ const StyledFormTypeBox = styled(Box, {
     shouldForwardProp: (prop) => prop !== 'disabled',
 })<{
     disabled: boolean;
-}>(({ theme, disabled }) => ({
-    maxWidth: '215px',
-    maxHeight: '75px',
-    borderRadius: '12px',
-    cursor: 'pointer',
-    display: 'block',
-    justifyContent: 'center',
-    alignItems: 'center',
-    border: '1px solid rgba(0,0,0,0.1)',
-    padding: '16px 24px',
-    boxShadow: '0px 5px 22px 0px rgba(0,0,0,0.04)',
-    backgroundColor: disabled ? theme.palette.grey['100'] : 'white',
-}));
+}>(({ theme, disabled }) => {
+    // const palette = theme.palette as CustomPaletteOptions;
+    // TODO: Fix typing
+    const palette = theme.palette as unknown as {
+        primary: Record<string, string>;
+        primaryContrast: Record<string, string>;
+    };
+
+    return {
+        maxWidth: '215px',
+        maxHeight: '75px',
+        borderRadius: '12px',
+        cursor: 'pointer',
+        display: 'block',
+        justifyContent: 'center',
+        alignItems: 'center',
+        border: '1px solid rgba(0,0,0,0.1)',
+        padding: '16px 24px',
+        boxShadow:
+            '0px 5px 22px 0px rgba(0, 0, 0, 0.04), 0px 4px 4px 0.5px rgba(0, 0, 0, 0.03)',
+        backgroundColor: disabled ? theme.palette.grey['100'] : 'white',
+
+        '&:hover': {
+            cursor: 'pointer',
+            boxShadow: disabled
+                ? '0px 5px 22px 0px rgba(0, 0, 0, 0.04), 0px 4px 4px 0.5px rgba(0, 0, 0, 0.03)'
+                : `0px 5px 22px 0px ${palette.primaryContrast['shadow']}`,
+        },
+    };
+});
 
 const StyledSpan = styled('span')({
     '&:hover': {
@@ -184,67 +212,82 @@ export const ImportPage = () => {
     }, [importParams]);
 
     return (
-        <>
-            <Page
-                header={
-                    <StyledStack>
-                        {steps.length ? (
-                            <Breadcrumbs separator="/">
-                                <StyledSpan
-                                    onClick={() => {
-                                        setSteps([], -1);
-                                        navigate('/import');
-                                    }}
-                                >
-                                    Import
-                                </StyledSpan>
-                                {steps.map((step, i) => {
-                                    return (
-                                        <StyledSpan
-                                            key={i}
-                                            onClick={() => {
-                                                const newSteps = [];
-                                                for (
-                                                    let j = 0;
-                                                    j < i + 1;
-                                                    j++
-                                                ) {
-                                                    newSteps.push(steps[j]);
-                                                }
+        <Page
+            header={
+                <StyledStack>
+                    {steps.length ? (
+                        <Breadcrumbs separator="/">
+                            <StyledSpan
+                                onClick={() => {
+                                    setSteps([], -1);
+                                    navigate('/import');
+                                }}
+                            >
+                                Import
+                            </StyledSpan>
+                            {steps.map((step, i) => {
+                                return (
+                                    <StyledSpan
+                                        key={i}
+                                        onClick={() => {
+                                            const newSteps = [];
+                                            for (let j = 0; j < i + 1; j++) {
+                                                newSteps.push(steps[j]);
+                                            }
 
-                                                setSteps(newSteps, i + 1);
-                                            }}
-                                        >
-                                            {step.title}
-                                        </StyledSpan>
-                                    );
-                                })}
-                            </Breadcrumbs>
-                        ) : (
-                            <div>&nbsp;</div>
-                        )}
-                        <Typography variant="h4">
-                            {steps.length
-                                ? steps[steps.length - 1].title
-                                : 'Add Source'}
-                        </Typography>
-                        <Typography variant="body1">
-                            {steps.length
-                                ? steps[steps.length - 1].description
-                                : "Welcome to our integrated data nexus, your gateway to a world of interconnected possibilities. This page empowers you with the freedom to effortlessly connect to diverse databases, wield versatile storage solutions, and tap into the transformative capabilities of Large Language Models (LLMs). Whether you're a developer, analyst, or visionary, our platform serves as a springboard for unified data orchestration, innovation, and insights."}
-                        </Typography>
-                    </StyledStack>
-                }
-            >
-                <StyledContainer>
-                    {steps.length < 1 ? (
+                                            setSteps(newSteps, i + 1);
+                                        }}
+                                    >
+                                        {step.title}
+                                    </StyledSpan>
+                                );
+                            })}
+                        </Breadcrumbs>
+                    ) : (
+                        <div>&nbsp;</div>
+                    )}
+                    <Typography variant="h4">
+                        {steps.length
+                            ? steps[steps.length - 1].title
+                            : 'Add Source'}
+                    </Typography>
+                    <Typography variant="body1">
+                        {steps.length
+                            ? steps[steps.length - 1].description
+                            : "Welcome to our integrated data nexus, your gateway to a world of interconnected possibilities. This page empowers you with the freedom to effortlessly connect to diverse databases, wield versatile storage solutions, and tap into the transformative capabilities of Large Language Models (LLMs). Whether you're a developer, analyst, or visionary, our platform serves as a springboard for unified data orchestration, innovation, and insights."}
+                    </Typography>
+                </StyledStack>
+            }
+        >
+            <StyledContainer>
+                {steps.length < 1 ? (
+                    <StyledSearchbarContainer>
+                        <Search
+                            label={'Search'}
+                            size={'small'}
+                            value={importSearch}
+                            onChange={(e) => {
+                                setImportSearch(e.target.value);
+                            }}
+                            placeholder={'Search'}
+                            InputProps={{
+                                startAdornment: <SearchIcon />,
+                            }}
+                            sx={{ width: '100%' }}
+                        />
+                    </StyledSearchbarContainer>
+                ) : null}
+
+                {steps.length === 1 &&
+                    steps[0].title !== 'Copy Database' &&
+                    steps[0].title !== 'Upload Database' && (
                         <StyledSearchbarContainer>
                             <Search
                                 label={'Search'}
                                 size={'small'}
-                                value={importSearch}
+                                value={search}
                                 onChange={(e) => {
-                                    setImportSearch(e.target.value);
+                                    setSearch(e.target.value);
                                 }}
                                 placeholder={'Search'}
                                 InputProps={{
@@ -253,169 +296,145 @@ export const ImportPage = () => {
                                 sx={{ width: '100%' }}
                             />
                         </StyledSearchbarContainer>
-                    ) : null}
-
-                    {steps.length === 1 &&
-                        steps[0].title !== 'Copy Database' &&
-                        steps[0].title !== 'Upload Database' && (
-                            <StyledSearchbarContainer>
-                                <Search
-                                    label={'Search'}
-                                    size={'small'}
-                                    value={search}
-                                    onChange={(e) => {
-                                        setSearch(e.target.value);
-                                    }}
-                                    placeholder={'Search'}
-                                    InputProps={{
-                                        startAdornment: <SearchIcon />,
-                                    }}
-                                    sx={{ width: '100%' }}
-                                />
-                            </StyledSearchbarContainer>
-                        )}
-                    {steps.length < 1 && (
-                        <Box sx={{ width: '100%' }}>
-                            <>
-                                <StyledCategoryTitle>
-                                    Database
-                                </StyledCategoryTitle>
-                                <Grid container columns={12} spacing={2}>
-                                    {stepsOne.slice(0, 4).map((val, idx) => {
-                                        if (
-                                            val.name
-                                                .toLowerCase()
-                                                .includes(
-                                                    importSearch.toLowerCase(),
-                                                )
-                                        ) {
-                                            return (
-                                                <Grid
-                                                    item
-                                                    key={idx}
-                                                    xs={3}
-                                                    lg={3}
-                                                    md={3}
-                                                    xl={3}
-                                                >
-                                                    <StyledCard
-                                                        disabled={val.disabled}
-                                                        onClick={() => {
-                                                            // Document first step
-                                                            const stepOne = {
-                                                                title: val.name,
-                                                                description:
-                                                                    val.description,
-                                                                data: val.name,
-                                                            };
-
-                                                            if (!val.disabled) {
-                                                                setSteps(
-                                                                    [
-                                                                        ...steps,
-                                                                        stepOne,
-                                                                    ],
-                                                                    steps.length +
-                                                                        1,
-                                                                );
-                                                            }
-                                                        }}
-                                                    >
-                                                        <StyledCardContent>
-                                                            <Avatar
-                                                                sx={{
-                                                                    bgcolor:
-                                                                        'transparent',
-                                                                }}
-                                                            >
-                                                                {
-                                                                    IconMapper[
-                                                                        val.name
-                                                                    ]
-                                                                }
-                                                            </Avatar>
-                                                            <Typography variant="body2">
-                                                                {val.name}
-                                                            </Typography>
-                                                        </StyledCardContent>
-                                                    </StyledCard>
-                                                </Grid>
-                                            );
-                                        }
-                                    })}
-                                </Grid>
-
-                                <StyledCategoryTitle>
-                                    Other Options
-                                </StyledCategoryTitle>
-                                <Grid container columns={12} spacing={2}>
-                                    {stepsOne.slice(4, 6).map((val, idx) => (
-                                        <Grid
-                                            item
-                                            key={idx}
-                                            xs={3}
-                                            lg={3}
-                                            md={3}
-                                            xl={3}
-                                        >
-                                            <StyledCard
-                                                disabled={val.disabled}
-                                                onClick={() => {
-                                                    // Document first step
-                                                    const stepOne = {
-                                                        title: val.name,
-                                                        description: '',
-                                                        data: val.name,
-                                                    };
-                                                    setSteps(
-                                                        [...steps, stepOne],
-                                                        steps.length + 1,
-                                                    );
-                                                }}
-                                            >
-                                                <StyledCardContent>
-                                                    <Avatar
-                                                        sx={{
-                                                            bgcolor:
-                                                                'transparent',
-                                                        }}
-                                                    >
-                                                        {IconMapper[val.name]}
-                                                    </Avatar>
-                                                    <Typography variant="body2">
-                                                        {val.name}
-                                                    </Typography>
-                                                </StyledCardContent>
-                                            </StyledCard>
-                                        </Grid>
-                                    ))}
-                                </Grid>
-                            </>
-                        </Box>
                     )}
-                    {/* Selection for options that require more info */}
-                    {steps.length === 1 &&
-                        steps[0].title !== 'Copy Database' &&
-                        steps[0].title !== 'Upload Database' && (
-                            <Box sx={{ width: '100%' }}>
-                                {/* Database Options */}
-                                {steps[0].title
-                                    .toLowerCase()
-                                    .includes('database') && (
-                                    <Box>
-                                        <StyledCategoryTitle>
-                                            File Uploads
-                                        </StyledCategoryTitle>
-                                        <Box>
+                {steps.length < 1 && (
+                    <Box sx={{ width: '100%' }}>
+                        <>
+                            <StyledCategoryTitle>Database</StyledCategoryTitle>
+                            <Grid container columns={12} spacing={2}>
+                                {stepsOne.slice(0, 4).map((val, idx) => {
+                                    if (
+                                        val.name
+                                            .toLowerCase()
+                                            .includes(
+                                                importSearch.toLowerCase(),
+                                            )
+                                    ) {
+                                        return (
                                             <Grid
-                                                container
-                                                columns={6}
-                                                columnSpacing={2}
-                                                rowSpacing={2}
+                                                item
+                                                key={idx}
+                                                xs={3}
+                                                lg={3}
+                                                md={3}
+                                                xl={3}
                                             >
-                                                {stepsTwo[
-                                                    'Drag and Drop Data'
-                                                ].map((stage, idx) => {
+                                                <StyledCard
+                                                    disabled={val.disabled}
+                                                    onClick={() => {
+                                                        // Document first step
+                                                        const stepOne = {
+                                                            title: val.name,
+                                                            description:
+                                                                val.description,
+                                                            data: val.name,
+                                                        };
+
+                                                        if (!val.disabled) {
+                                                            setSteps(
+                                                                [
+                                                                    ...steps,
+                                                                    stepOne,
+                                                                ],
+                                                                steps.length +
+                                                                    1,
+                                                            );
+                                                        }
+                                                    }}
+                                                >
+                                                    <StyledCardContent>
+                                                        <Avatar
+                                                            sx={{
+                                                                bgcolor:
+                                                                    'transparent',
+                                                            }}
+                                                        >
+                                                            {
+                                                                IconMapper[
+                                                                    val.name
+                                                                ]
+                                                            }
+                                                        </Avatar>
+                                                        <Typography variant="body2">
+                                                            {val.name}
+                                                        </Typography>
+                                                    </StyledCardContent>
+                                                </StyledCard>
+                                            </Grid>
+                                        );
+                                    }
+                                })}
+                            </Grid>
+
+                            <StyledCategoryTitle>
+                                Other Options
+                            </StyledCategoryTitle>
+                            <Grid container columns={12} spacing={2}>
+                                {stepsOne.slice(4, 6).map((val, idx) => (
+                                    <Grid
+                                        item
+                                        key={idx}
+                                        xs={3}
+                                        lg={3}
+                                        md={3}
+                                        xl={3}
+                                    >
+                                        <StyledCard
+                                            disabled={val.disabled}
+                                            onClick={() => {
+                                                // Document first step
+                                                const stepOne = {
+                                                    title: val.name,
+                                                    description: '',
+                                                    data: val.name,
+                                                };
+                                                setSteps(
+                                                    [...steps, stepOne],
+                                                    steps.length + 1,
+                                                );
+                                            }}
+                                        >
+                                            <StyledCardContent>
+                                                <Avatar
+                                                    sx={{
+                                                        bgcolor: 'transparent',
+                                                    }}
+                                                >
+                                                    {IconMapper[val.name]}
+                                                </Avatar>
+                                                <Typography variant="body2">
+                                                    {val.name}
+                                                </Typography>
+                                            </StyledCardContent>
+                                        </StyledCard>
+                                    </Grid>
+                                ))}
+                            </Grid>
+                        </>
+                    </Box>
+                )}
+                {/* Selection for options that require more info */}
+                {steps.length === 1 &&
+                    steps[0].title !== 'Copy Database' &&
+                    steps[0].title !== 'Upload Database' && (
+                        <Box sx={{ width: '100%' }}>
+                            {/* Database Options */}
+                            {steps[0].title
+                                .toLowerCase()
+                                .includes('database') && (
+                                <Box>
+                                    <StyledCategoryTitle>
+                                        File Uploads
+                                    </StyledCategoryTitle>
+                                    <Box>
+                                        <Grid
+                                            container
+                                            columns={6}
+                                            columnSpacing={2}
+                                            rowSpacing={2}
+                                        >
+                                            {stepsTwo['Drag and Drop Data'].map(
+                                                (stage, idx) => {
                                                     if (
                                                         stage.name
                                                             .toLowerCase()
@@ -475,106 +494,104 @@ export const ImportPage = () => {
                                                             </Grid>
                                                         );
                                                     }
-                                                })}
-                                            </Grid>
-                                        </Box>
-                                        <StyledCategoryTitle>
-                                            Connections
-                                        </StyledCategoryTitle>
-                                        <Box>
-                                            <Grid
-                                                container
-                                                columns={6}
-                                                columnSpacing={2}
-                                                rowSpacing={2}
-                                            >
-                                                {stepsTwo[
-                                                    'Connect to an External Database'
-                                                ].map((stage, idx) => {
-                                                    if (
-                                                        stage.name
-                                                            .toLowerCase()
-                                                            .includes(
-                                                                search.toLowerCase(),
-                                                            )
-                                                    ) {
-                                                        return (
-                                                            <Grid
-                                                                key={idx}
-                                                                item
-                                                                lg={1}
-                                                                md={1}
-                                                                xs={1}
-                                                                xl={1}
-                                                                sm={1}
-                                                            >
-                                                                <StyledFormTypeBox
-                                                                    disabled={
-                                                                        stage.disable
-                                                                    }
-                                                                    // title={stage}
-                                                                    onClick={() => {
-                                                                        if (
-                                                                            !stage.disable
-                                                                        ) {
-                                                                            setSteps(
-                                                                                [
-                                                                                    ...steps,
-                                                                                    {
-                                                                                        title: stage.name,
-                                                                                        description: `Fill out ${stage.name} details in order to connect to datasource`,
-                                                                                        data: stage.name,
-                                                                                    },
-                                                                                ],
-                                                                                steps.length +
-                                                                                    1,
-                                                                            );
-                                                                        }
-                                                                    }}
-                                                                >
-                                                                    <StyledInnerBox>
-                                                                        <StyledCardImage
-                                                                            src={
-                                                                                IconDBMapper[
-                                                                                    stage
-                                                                                        .name
-                                                                                ]
-                                                                            }
-                                                                        />
-                                                                        <StyledCardText>
-                                                                            {
-                                                                                stage.name
-                                                                            }
-                                                                        </StyledCardText>
-                                                                    </StyledInnerBox>
-                                                                </StyledFormTypeBox>
-                                                            </Grid>
-                                                        );
-                                                    }
-                                                })}
-                                            </Grid>
-                                        </Box>
+                                                },
+                                            )}
+                                        </Grid>
                                     </Box>
-                                )}
-
-                                {/* Model Options */}
-                                {steps[0].title
-                                    .toLowerCase()
-                                    .includes('model') && (
+                                    <StyledCategoryTitle>
+                                        Connections
+                                    </StyledCategoryTitle>
                                     <Box>
-                                        <StyledCategoryTitle>
-                                            Commercially Hosted
-                                        </StyledCategoryTitle>
-                                        <Box>
-                                            <Grid
-                                                container
-                                                columns={6}
-                                                columnSpacing={2}
-                                                rowSpacing={2}
-                                            >
-                                                {stepsTwo[
-                                                    'Commercial Models'
-                                                ].map((stage, idx) => {
+                                        <Grid
+                                            container
+                                            columns={6}
+                                            columnSpacing={2}
+                                            rowSpacing={2}
+                                        >
+                                            {stepsTwo[
+                                                'Connect to an External Database'
+                                            ].map((stage, idx) => {
+                                                if (
+                                                    stage.name
+                                                        .toLowerCase()
+                                                        .includes(
+                                                            search.toLowerCase(),
+                                                        )
+                                                ) {
+                                                    return (
+                                                        <Grid
+                                                            key={idx}
+                                                            item
+                                                            lg={1}
+                                                            md={1}
+                                                            xs={1}
+                                                            xl={1}
+                                                            sm={1}
+                                                        >
+                                                            <StyledFormTypeBox
+                                                                disabled={
+                                                                    stage.disable
+                                                                }
+                                                                // title={stage}
+                                                                onClick={() => {
+                                                                    if (
+                                                                        !stage.disable
+                                                                    ) {
+                                                                        setSteps(
+                                                                            [
+                                                                                ...steps,
+                                                                                {
+                                                                                    title: stage.name,
+                                                                                    description: `Fill out ${stage.name} details in order to connect to datasource`,
+                                                                                    data: stage.name,
+                                                                                },
+                                                                            ],
+                                                                            steps.length +
+                                                                                1,
+                                                                        );
+                                                                    }
+                                                                }}
+                                                            >
+                                                                <StyledInnerBox>
+                                                                    <StyledCardImage
+                                                                        src={
+                                                                            IconDBMapper[
+                                                                                stage
+                                                                                    .name
+                                                                            ]
+                                                                        }
+                                                                    />
+                                                                    <StyledCardText>
+                                                                        {
+                                                                            stage.name
+                                                                        }
+                                                                    </StyledCardText>
+                                                                </StyledInnerBox>
+                                                            </StyledFormTypeBox>
+                                                        </Grid>
+                                                    );
+                                                }
+                                            })}
+                                        </Grid>
+                                    </Box>
+                                </Box>
+                            )}
+
+                            {/* Model Options */}
+                            {steps[0].title.toLowerCase().includes('model') && (
+                                <Box>
+                                    <StyledCategoryTitle>
+                                        Commercially Hosted
+                                    </StyledCategoryTitle>
+                                    <Box>
+                                        <Grid
+                                            container
+                                            columns={6}
+                                            columnSpacing={2}
+                                            rowSpacing={2}
+                                        >
+                                            {stepsTwo['Commercial Models'].map(
+                                                (stage, idx) => {
                                                     if (
                                                         stage.name
                                                             .toLowerCase()
@@ -634,99 +651,22 @@ export const ImportPage = () => {
                                                             </Grid>
                                                         );
                                                     }
-                                                })}
-                                            </Grid>
-                                        </Box>
-                                        <StyledCategoryTitle>
-                                            Locally Hosted
-                                        </StyledCategoryTitle>
-                                        <Box>
-                                            <Grid
-                                                container
-                                                columns={6}
-                                                columnSpacing={2}
-                                                rowSpacing={2}
-                                            >
-                                                {stepsTwo['Local Models'].map(
-                                                    (stage, idx) => {
-                                                        if (
-                                                            stage.name
-                                                                .toLowerCase()
-                                                                .includes(
-                                                                    search.toLowerCase(),
-                                                                )
-                                                        ) {
-                                                            return (
-                                                                <Grid
-                                                                    key={idx}
-                                                                    item
-                                                                    lg={1}
-                                                                    md={1}
-                                                                    xs={1}
-                                                                    xl={1}
-                                                                    sm={1}
-                                                                >
-                                                                    <StyledFormTypeBox
-                                                                        disabled={
-                                                                            stage.disable
-                                                                        }
-                                                                        // title={stage}
-                                                                        onClick={() => {
-                                                                            if (
-                                                                                !stage.disable
-                                                                            ) {
-                                                                                setSteps(
-                                                                                    [
-                                                                                        ...steps,
-                                                                                        {
-                                                                                            title: stage.name,
-                                                                                            description: `Fill out ${stage.name} details in order to add model to catalog`,
-                                                                                            data: stage.name,
-                                                                                        },
-                                                                                    ],
-                                                                                    steps.length +
-                                                                                        1,
-                                                                                );
-                                                                            }
-                                                                        }}
-                                                                    >
-                                                                        <StyledInnerBox>
-                                                                            <StyledCardImage
-                                                                                src={
-                                                                                    IconDBMapper[
-                                                                                        stage
-                                                                                            .name
-                                                                                    ]
-                                                                                }
-                                                                            />
-                                                                            <StyledCardText>
-                                                                                {
-                                                                                    stage.name
-                                                                                }
-                                                                            </StyledCardText>
-                                                                        </StyledInnerBox>
-                                                                    </StyledFormTypeBox>
-                                                                </Grid>
-                                                            );
-                                                        }
-                                                    },
-                                                )}
-                                            </Grid>
-                                        </Box>
-
-                                        <StyledCategoryTitle>
-                                            Embedded
-                                        </StyledCategoryTitle>
-                                        <Box>
-                                            <Grid
-                                                container
-                                                columns={6}
-                                                columnSpacing={2}
-                                                rowSpacing={2}
-                                            >
-                                                {stepsTwo[
-                                                    'Embedded Models'
-                                                ].map((stage, idx) => {
+                                                },
+                                            )}
+                                        </Grid>
+                                    </Box>
+                                    <StyledCategoryTitle>
+                                        Locally Hosted
+                                    </StyledCategoryTitle>
+                                    <Box>
+                                        <Grid
+                                            container
+                                            columns={6}
+                                            columnSpacing={2}
+                                            rowSpacing={2}
+                                        >
+                                            {stepsTwo['Local Models'].map(
+                                                (stage, idx) => {
                                                     if (
                                                         stage.name
                                                             .toLowerCase()
@@ -787,117 +727,194 @@ export const ImportPage = () => {
                                                             </Grid>
                                                         );
                                                     }
-                                                })}
-                                            </Grid>
-                                        </Box>
+                                                },
+                                            )}
+                                        </Grid>
                                     </Box>
-                                )}
-                                {/* Storage Options */}
-                                {steps[0].title
-                                    .toLowerCase()
-                                    .includes('storage') && (
+
+                                    <StyledCategoryTitle>
+                                        Embedded
+                                    </StyledCategoryTitle>
                                     <Box>
-                                        <StyledCategoryTitle>
-                                            Storage
-                                        </StyledCategoryTitle>
-                                        <Box>
-                                            <Grid
-                                                container
-                                                columns={6}
-                                                columnSpacing={2}
-                                                rowSpacing={2}
-                                            >
-                                                {stepsTwo['Add Storage'].map(
-                                                    (stage, idx) => {
-                                                        if (
-                                                            stage.name
-                                                                .toLowerCase()
-                                                                .includes(
-                                                                    search.toLowerCase(),
-                                                                )
-                                                        ) {
-                                                            return (
-                                                                <Grid
-                                                                    key={idx}
-                                                                    item
-                                                                    lg={1}
-                                                                    md={1}
-                                                                    xs={1}
-                                                                    xl={1}
-                                                                    sm={1}
-                                                                >
-                                                                    <StyledFormTypeBox
-                                                                        disabled={
-                                                                            stage.disable
+                                        <Grid
+                                            container
+                                            columns={6}
+                                            columnSpacing={2}
+                                            rowSpacing={2}
+                                        >
+                                            {stepsTwo['Embedded Models'].map(
+                                                (stage, idx) => {
+                                                    if (
+                                                        stage.name
+                                                            .toLowerCase()
+                                                            .includes(
+                                                                search.toLowerCase(),
+                                                            )
+                                                    ) {
+                                                        return (
+                                                            <Grid
+                                                                key={idx}
+                                                                item
+                                                                lg={1}
+                                                                md={1}
+                                                                xs={1}
+                                                                xl={1}
+                                                                sm={1}
+                                                            >
+                                                                <StyledFormTypeBox
+                                                                    disabled={
+                                                                        stage.disable
+                                                                    }
+                                                                    // title={stage}
+                                                                    onClick={() => {
+                                                                        if (
+                                                                            !stage.disable
+                                                                        ) {
+                                                                            setSteps(
+                                                                                [
+                                                                                    ...steps,
+                                                                                    {
+                                                                                        title: stage.name,
+                                                                                        description: `Fill out ${stage.name} details in order to add model to catalog`,
+                                                                                        data: stage.name,
+                                                                                    },
+                                                                                ],
+                                                                                steps.length +
+                                                                                    1,
+                                                                            );
                                                                         }
-                                                                        // title={stage}
-                                                                        onClick={() => {
-                                                                            if (
-                                                                                !stage.disable
-                                                                            ) {
-                                                                                setSteps(
-                                                                                    [
-                                                                                        ...steps,
-                                                                                        {
-                                                                                            title: stage.name,
-                                                                                            description: `Fill out ${stage.name} details in order to create new storage`,
-                                                                                            data: stage.name,
-                                                                                        },
-                                                                                    ],
-                                                                                    steps.length +
-                                                                                        1,
-                                                                                );
+                                                                    }}
+                                                                >
+                                                                    <StyledInnerBox>
+                                                                        <StyledCardImage
+                                                                            src={
+                                                                                IconDBMapper[
+                                                                                    stage
+                                                                                        .name
+                                                                                ]
                                                                             }
-                                                                        }}
-                                                                    >
-                                                                        <StyledInnerBox>
-                                                                            <StyledCardImage
-                                                                                src={
-                                                                                    IconDBMapper[
-                                                                                        stage
-                                                                                            .name
-                                                                                    ]
-                                                                                }
-                                                                            />
-                                                                            <StyledCardText>
-                                                                                {
-                                                                                    stage.name
-                                                                                }
-                                                                            </StyledCardText>
-                                                                        </StyledInnerBox>
-                                                                    </StyledFormTypeBox>
-                                                                </Grid>
-                                                            );
-                                                        }
-                                                    },
-                                                )}
-                                            </Grid>
-                                        </Box>
+                                                                        />
+                                                                        <StyledCardText>
+                                                                            {
+                                                                                stage.name
+                                                                            }
+                                                                        </StyledCardText>
+                                                                    </StyledInnerBox>
+                                                                </StyledFormTypeBox>
+                                                            </Grid>
+                                                        );
+                                                    }
+                                                },
+                                            )}
+                                        </Grid>
                                     </Box>
-                                )}
-                            </Box>
-                        )}
+                                </Box>
+                            )}
+                            {/* Storage Options */}
+                            {steps[0].title
+                                .toLowerCase()
+                                .includes('storage') && (
+                                <Box>
+                                    <StyledCategoryTitle>
+                                        Storage
+                                    </StyledCategoryTitle>
+                                    <Box>
+                                        <Grid
+                                            container
+                                            columns={6}
+                                            columnSpacing={2}
+                                            rowSpacing={2}
+                                        >
+                                            {stepsTwo['Add Storage'].map(
+                                                (stage, idx) => {
+                                                    if (
+                                                        stage.name
+                                                            .toLowerCase()
+                                                            .includes(
+                                                                search.toLowerCase(),
+                                                            )
+                                                    ) {
+                                                        return (
+                                                            <Grid
+                                                                key={idx}
+                                                                item
+                                                                lg={1}
+                                                                md={1}
+                                                                xs={1}
+                                                                xl={1}
+                                                                sm={1}
+                                                            >
+                                                                <StyledFormTypeBox
+                                                                    disabled={
+                                                                        stage.disable
+                                                                    }
+                                                                    // title={stage}
+                                                                    onClick={() => {
+                                                                        if (
+                                                                            !stage.disable
+                                                                        ) {
+                                                                            setSteps(
+                                                                                [
+                                                                                    ...steps,
+                                                                                    {
+                                                                                        title: stage.name,
+                                                                                        description: `Fill out ${stage.name} details in order to create new storage`,
+                                                                                        data: stage.name,
+                                                                                    },
+                                                                                ],
+                                                                                steps.length +
+                                                                                    1,
+                                                                            );
+                                                                        }
+                                                                    }}
+                                                                >
+                                                                    <StyledInnerBox>
+                                                                        <StyledCardImage
+                                                                            src={
+                                                                                IconDBMapper[
+                                                                                    stage
+                                                                                        .name
+                                                                                ]
+                                                                            }
+                                                                        />
+                                                                        <StyledCardText>
+                                                                            {
+                                                                                stage.name
+                                                                            }
+                                                                        </StyledCardText>
+                                                                    </StyledInnerBox>
+                                                                </StyledFormTypeBox>
+                                                            </Grid>
+                                                        );
+                                                    }
+                                                },
+                                            )}
+                                        </Grid>
+                                    </Box>
+                                </Box>
+                            )}
+                        </Box>
+                    )}
 
-                    {/* Step 2 Show Form for Copy and Upload */}
-                    {steps.length === 1 &&
-                        (steps[0].title === 'Copy Database' ||
-                            steps[0].title === 'Upload Database') && (
-                            <StyledBox>
-                                {steps[0].title === 'Copy Database' ? (
-                                    <UploadData />
-                                ) : (
-                                    <CopyDatabaseForm />
-                                )}
-                            </StyledBox>
-                        )}
+                {/* Step 2 Show Form for Copy and Upload */}
+                {steps.length === 1 &&
+                    (steps[0].title === 'Copy Database' ||
+                        steps[0].title === 'Upload Database') && (
+                        <StyledBox>
+                            {steps[0].title === 'Copy Database' ? (
+                                <UploadData />
+                            ) : (
+                                <CopyDatabaseForm />
+                            )}
+                        </StyledBox>
+                    )}
 
-                    {/* Step 3 will be the form */}
-                    {steps.length === 2 && <ImportSpecificPage />}
+                {/* Step 3 will be the form */}
+                {steps.length === 2 && <ImportSpecificPage />}
 
-                    {/* Step 4 will be the next thing to be shown after form */}
-                    {steps.length === 3 && <ImportConnectionPage />}
-                </StyledContainer>
-            </Page>
-        </>
+                {/* Step 4 will be the next thing to be shown after form */}
+                {steps.length === 3 && <ImportConnectionPage />}
+            </StyledContainer>
+        </Page>
     );
 };
