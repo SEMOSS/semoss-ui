@@ -231,8 +231,7 @@ export const EngineShell = (props: EngineShellProps) => {
                 </StyledInfoLeft>
                 <StyledInfoRight>
                     <StyledDatabaseImage
-                        // src={defaultDbImage}
-                        src={`${MODULE}/api/app-${id}/appImage/download`}
+                        src={`${MODULE}/api/e-${id}/image/download`}
                     />
                     <Stack
                         alignItems={'flex-end'}
