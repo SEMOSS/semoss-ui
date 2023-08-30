@@ -267,12 +267,11 @@ const StyledPublishedByContainer = styled('div')({
 });
 
 const StyledCardDescription = styled(Typography)({
-    display: 'flex',
-    flexDirection: 'column',
-    alignSelf: 'stretch',
+    display: 'block',
     minHeight: '60px',
-    maxHeight: '60px',
-    whiteSpace: 'pre-wrap',
+    maxHeight: '30px',
+    maxWidth: '350px',
+    whiteSpace: 'nowrap',
     overflow: 'hidden',
     textOverflow: 'ellipsis',
     // width: '90%',
@@ -281,8 +280,10 @@ const StyledCardDescription = styled(Typography)({
 
 const StyledChipDiv = styled('div')({
     display: 'flex',
-    gap: '4px',
+    flexDirection: 'row',
     minHeight: '32px',
+    alignItems: 'center',
+    gap: 2,
 });
 
 const StyledStatisticCaption = styled(Typography)(({ theme }) => ({
@@ -579,15 +580,28 @@ export const EngineTileCard = (props: DatabaseCardProps) => {
                 <StyledChipDiv>
                     {tag !== undefined &&
                         (typeof tag === 'object' ? (
-                            tag.map((t, i) => {
-                                return (
-                                    <Chip
-                                        key={id + i}
-                                        variant={'outlined'}
-                                        label={t}
-                                    />
-                                );
-                            })
+                            <>
+                                {tag.map((t, i) => {
+                                    if (i <= 4) {
+                                        return (
+                                            <Chip
+                                                key={id + i}
+                                                variant={'outlined'}
+                                                label={t}
+                                            />
+                                        );
+                                    }
+                                })}
+                                <StyledPublishedByLabel
+                                    sx={{
+                                        color: 'rgba(0, 0, 0, 0.6)',
+                                        marginLeft: 1,
+                                    }}
+                                    variant={'caption'}
+                                >
+                                    + {tag.length - 5}
+                                </StyledPublishedByLabel>
+                            </>
                         ) : (
                             <Chip
                                 key={id + tag}
