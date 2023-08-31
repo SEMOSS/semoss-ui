@@ -154,7 +154,7 @@ const StyledSyncIcon = styled(Sync)(() => ({
 export const MetamodelToolbar = () => (
     <StyledComponent>
         <StyledButtonContainer>
-            <Typography variant="h6">Metamodel</Typography>
+            <Typography variant="h6">testMetamodel</Typography>
             <QuickButtonGroup>
                 <IconButton disabled={true}>
                     <FitScreenRounded />

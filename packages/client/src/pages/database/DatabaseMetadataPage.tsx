@@ -16,6 +16,7 @@ import { usePixel, useDatabase, useRootStore } from '@/hooks';
 import { Section } from '@/components/ui';
 import { Metamodel } from '@/components/metamodel';
 import { MetamodelToolbar } from '@/components/metamodel/MetamodelToolbar';
+import { MetamodelNav } from '@/components/metamodel/MetamodelNav';
 import { table } from 'console';
 
 const StyledPage = styled('div')(() => ({
@@ -260,6 +261,7 @@ export const DatabaseMetadataPage = observer(() => {
                 </Section.Header>
                 {/* Toolbar above metamodel */}
                 <MetamodelToolbar />
+                <MetamodelNav />
 
                 <Stack spacing={2}>
                     {/* <StyledSelect
