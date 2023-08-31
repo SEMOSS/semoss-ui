@@ -117,7 +117,7 @@ const StyledPropContainer = styled('div')(({ theme }) => ({
     padding: '24px',
     borderRadius: '15px',
     backgroundColor: 'rgba(255, 255, 255, 1)',
-    boxShadow: '0px 5px 5px rgba(0, 0, 0, 0.03)',
+    boxShadow: '0px 5px 22px 0px rgba(0, 0, 0, 0.06)',
 }));
 
 const initialState = {
@@ -321,15 +321,7 @@ export const SocialPropertiesPage = () => {
     };
 
     const fileContentsPage = () => {
-        const defaultTyping = `this is a line of code
-        that will result
-        in something happening
-        once saved
-        you can also use
-        the reset button to clear this space
-        and start over
-        if you desire
-        `;
+        const defaultTyping = ``;
         return (
             <StyledPropContainer>
                 <StyledTitle>
@@ -365,8 +357,6 @@ export const SocialPropertiesPage = () => {
     return (
         <>
             <StyledContainer>
-                <Divider sx={{ marginBottom: '16px' }} />
-
                 <ToggleTabsGroup
                     sx={{ marginBottom: '16px' }}
                     value={tabValue}
