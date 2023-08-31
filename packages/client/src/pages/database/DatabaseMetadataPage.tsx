@@ -8,7 +8,6 @@ import {
     Typography,
     Table,
     IconButton,
-    Icon,
 } from '@semoss/ui';
 import { ArrowCircleDown, Create } from '@mui/icons-material';
 
@@ -17,7 +16,8 @@ import { Section } from '@/components/ui';
 import { Metamodel } from '@/components/metamodel';
 import { MetamodelToolbar } from '@/components/metamodel/MetamodelToolbar';
 import { MetamodelNav } from '@/components/metamodel/MetamodelNav';
-import { table } from 'console';
+import { MetamodelContext } from '@/contexts';
+// import { table } from 'console';
 
 const StyledPage = styled('div')(() => ({
     position: 'relative',
@@ -29,6 +29,7 @@ const StyledMetamodelContainer = styled('section')(({ theme }) => {
         borderRadiusNone: string;
     };
     return {
+        display: 'flex',
         height: '60vh',
         width: '100%',
         borderRadius: shape.borderRadiusNone,
@@ -261,7 +262,7 @@ export const DatabaseMetadataPage = observer(() => {
                 </Section.Header>
                 {/* Toolbar above metamodel */}
                 <MetamodelToolbar />
-                <MetamodelNav />
+                {/* <MetamodelNav /> */}
 
                 <Stack spacing={2}>
                     {/* <StyledSelect
@@ -283,6 +284,9 @@ export const DatabaseMetadataPage = observer(() => {
                     </StyledSelect> */}
 
                     <StyledMetamodelContainer>
+                        {/* <MetamodelContext.Provider value={metamodelContext}> */}
+                        <MetamodelNav nodes={nodes} />
+                        {/* </MetamodelContext.Provider> */}
                         <Metamodel
                             nodes={nodes}
                             edges={edges}

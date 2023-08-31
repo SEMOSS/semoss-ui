@@ -137,14 +137,14 @@ const StyledSaveButton = styled(Button)(() => ({
     borderRadius: 'var(--shape-border-radius-lg, 12px);',
     background: 'var(--light-primary-main, #0471F0)',
 }));
-const StyledIconButton = styled(Button)(() => ({
-    display: 'flex',
-    padding: '0px 22px',
-    justifyContent: 'center',
-    alignItems: 'center',
-    gap: '10px',
-    alignSelf: 'stretch',
-}));
+// const StyledIconButton = styled(Button)(() => ({
+//     display: 'flex',
+//     padding: '0px 22px',
+//     justifyContent: 'center',
+//     alignItems: 'center',
+//     gap: '10px',
+//     alignSelf: 'stretch',
+// }));
 const StyledSyncIcon = styled(Sync)(() => ({
     display: 'flex',
     alignItems: 'flex-start',

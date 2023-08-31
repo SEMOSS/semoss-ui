@@ -1,5 +1,6 @@
 import { useCallback, useState, useEffect } from 'react';
 import ReactFlow, {
+    ReactFlowProvider,
     MiniMap,
     Controls,
     Node,
@@ -8,6 +9,8 @@ import ReactFlow, {
     BackgroundVariant,
 } from 'react-flow-renderer';
 
+import Panel from 'react-flow-renderer';
+
 import { styled, Button } from '@semoss/ui';
 import { MetamodelNode } from './MetamodelNode';
 import { FloatingEdge } from './FloatingEdge';
@@ -15,6 +18,7 @@ import { MetamodelContext, MetamodelContextType } from '@/contexts';
 
 import { MetamodelToolbar } from './MetamodelToolbar';
 import { format } from 'path';
+import { MetamodelNav } from './MetamodelNav';
 
 const edgeTypes = {
     floating: FloatingEdge,
@@ -22,6 +26,7 @@ const edgeTypes = {
 
 const nodeTypes = {
     metamodel: MetamodelNode,
+    // metamodelNav: MetamodelNav,
     // metamodelButtons: MetamodelButtonNode,
 };
 
@@ -82,12 +87,19 @@ export const Metamodel = (props: MetamodelProps) => {
     //     target: 'tableTo',
     //     type: 'floating'
     // };
+    const MetamodelNavNode = {
+        id: '1',
+        type: 'metamodelNav',
+        data: { name: '', properties: [] },
+        position: { x: 0, y: 0 },
+    };
 
+    // const formattedNodes = [MetamodelNavNode];
     const formattedNodes = [];
     for (let i = 0; i < nodes.length; i++) {
         const tempNode = nodes[i];
         tempNode.nodeIndex = i;
-        formattedNodes.push(tempNode);
+        formattedNodes.push(tempNode as any);
     }
 
     const [originalData, setOriginalData] = useState({
@@ -250,34 +262,26 @@ export const Metamodel = (props: MetamodelProps) => {
     }));
 
     return (
-        <MetamodelContext.Provider value={metamodelContext}>
-            <div style={{ height: '95%', width: '100%' }}>
-                <ReactFlow
-                    defaultNodes={formattedNodes}
-                    defaultEdges={edges}
-                    nodeTypes={nodeTypes}
-                    edgeTypes={edgeTypes}
-                    fitView={true}
-                    defaultPosition={[0, 0]}
-                    defaultZoom={10}
-                >
-                    <Background variant={BackgroundVariant.Dots} />
-                    <MiniMap />
-                    <Controls />
-                </ReactFlow>
-                {/* <StyledImportButton variant="contained">
-                    Import
-                </StyledImportButton> */}
-            </div>
-            {/* {callback && (
-                <Button
-                    onClick={() => {
-                        onSubmit();
-                    }}
-                >
-                    Apply
-                </Button>
-            )} */}
-        </MetamodelContext.Provider>
+        <>
+            {/* <MetamodelToolbar /> */}
+            <MetamodelContext.Provider value={metamodelContext}>
+                <div style={{ height: '100%', width: '100%' }}>
+                    <ReactFlow
+                        defaultNodes={formattedNodes}
+                        defaultEdges={edges}
+                        nodeTypes={nodeTypes}
+                        edgeTypes={edgeTypes}
+                        fitView={true}
+                        defaultPosition={[0, 0]}
+                        defaultZoom={10}
+                    >
+                        {/* <MetamodelNav /> */}
+                        <Background variant={BackgroundVariant.Dots} />
+                        <MiniMap />
+                        <Controls />
+                    </ReactFlow>
+                </div>
+            </MetamodelContext.Provider>
+        </>
     );
 };
