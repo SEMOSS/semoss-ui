@@ -841,7 +841,7 @@ export class MonolithStore {
 
         const params = {};
 
-        search && (params['projectId'] = search);
+        search && (params['filterWord'] = search);
 
         offset && (params['offset'] = offset);
 

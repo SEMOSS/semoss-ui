@@ -123,7 +123,7 @@ export const lightTheme: CustomThemeOptions = {
             // "700": "#26890D",
             // "800": "#167800",
             // "900": "#005A00",
-            // "shadow": "green" // Todo
+            // "shadow": "#E7F4E5" // Todo
         },
         green: {
             "50": "#DEF4F3",

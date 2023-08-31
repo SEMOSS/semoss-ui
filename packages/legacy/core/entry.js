@@ -155,6 +155,7 @@ import './components/catalog/catalog.directive';
 import './components/build/build.directive';
 import './components/project/project.directive';
 import './components/document-qa/document-qa.directive';
+import './components/embed-terminal/embed-terminal.directive';
 
 // markdown
 import './components/markdown/markdown.directive';
@@ -294,6 +295,7 @@ angular.module('app', [
     'app.edit-assisted-query.directive',
     'app.document-qa.directive',
     'app.rewrite.directive',
+    'app.embed-terminal.directive',
     'react',
 ]);
 
