@@ -37,6 +37,7 @@ const StyledInfoRight = styled('div')(({ theme }) => ({
     display: 'flex',
     flexDirection: 'column',
     gap: theme.spacing(1),
+    width: '288px',
 }));
 
 const StyledInfoDescription = styled(Typography)(({ theme }) => ({
@@ -147,30 +148,26 @@ export const EngineShell = (props: EngineShellProps) => {
                             {formatName(data.database_name)}
                         </Typography>
                         <Stack direction="row">
-                            {configStore.store.security &&
-                                data.database_discoverable &&
-                                role !== 'OWNER' && (
-                                    <>
-                                        {requestAccess && (
-                                            <RequestAccess
-                                                id={id}
-                                                open={requestAccess}
-                                                onClose={() => {
-                                                    setRequestAccess(false);
-                                                }}
-                                            />
-                                        )}
-                                        <Button
-                                            startIcon={<Add />}
-                                            variant="outlined"
-                                            onClick={() =>
-                                                setRequestAccess(true)
-                                            }
-                                        >
-                                            Request Access
-                                        </Button>
-                                    </>
-                                )}
+                            {configStore.store.security && role !== 'OWNER' && (
+                                <>
+                                    {requestAccess && (
+                                        <RequestAccess
+                                            id={id}
+                                            open={requestAccess}
+                                            onClose={() => {
+                                                setRequestAccess(false);
+                                            }}
+                                        />
+                                    )}
+                                    <Button
+                                        startIcon={<Add />}
+                                        variant="outlined"
+                                        onClick={() => setRequestAccess(true)}
+                                    >
+                                        Request Access
+                                    </Button>
+                                </>
+                            )}
                             {role === 'OWNER' && (
                                 <Button
                                     startIcon={<SimCardDownload />}
@@ -235,8 +232,7 @@ export const EngineShell = (props: EngineShellProps) => {
                 </StyledInfoLeft>
                 <StyledInfoRight>
                     <StyledDatabaseImage
-                        // src={defaultDbImage}
-                        src={`${MODULE}/api/app-${id}/appImage/download`}
+                        src={`${MODULE}/api/e-${id}/image/download`}
                     />
                     <Stack
                         alignItems={'flex-end'}
@@ -244,11 +240,19 @@ export const EngineShell = (props: EngineShellProps) => {
                         marginBottom={2}
                         sx={{ color: 'rgba(0, 0, 0, 0.6)' }}
                     >
-                        <Typography variant={'body2'}>
+                        <Typography
+                            variant={'body2'}
+                            sx={{
+                                width: '100%',
+                                overflow: 'hidden',
+                                whiteSpace: 'nowrap',
+                                textOverflow: 'ellipsis',
+                            }}
+                        >
                             Published by:{' '}
                             {data.database_created_by
                                 ? data.database_created_by
-                                : 'N/A'}
+                                : 'N/A'}{' '}
                         </Typography>
                         {/* <Typography variant={'body2'}>
                             Published:{' '}
@@ -256,7 +260,15 @@ export const EngineShell = (props: EngineShellProps) => {
                                 ? data.database_date_created
                                 : 'N/A'}
                         </Typography> */}
-                        <Typography variant={'body2'}>
+                        <Typography
+                            variant={'body2'}
+                            sx={{
+                                width: '100%',
+                                overflow: 'hidden',
+                                whiteSpace: 'nowrap',
+                                textOverflow: 'ellipsis',
+                            }}
+                        >
                             Updated:{' '}
                             {data.last_updated ? data.last_updated : 'N/A'}
                         </Typography>

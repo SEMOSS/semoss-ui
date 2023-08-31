@@ -1,4 +1,4 @@
-export type Role = 'OWNER' | 'EDITOR' | 'VIEWER' | 'READ_ONLY';
+export type Role = 'OWNER' | 'EDITOR' | 'VIEWER' | 'READ_ONLY' | 'DISCOVERABLE';
 
 export interface PixelCommand {
     type: string;
