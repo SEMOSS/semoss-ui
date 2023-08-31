@@ -37,6 +37,7 @@ const StyledInfoRight = styled('div')(({ theme }) => ({
     display: 'flex',
     flexDirection: 'column',
     gap: theme.spacing(1),
+    width: '288px',
 }));
 
 const StyledInfoDescription = styled(Typography)(({ theme }) => ({
@@ -239,11 +240,19 @@ export const EngineShell = (props: EngineShellProps) => {
                         marginBottom={2}
                         sx={{ color: 'rgba(0, 0, 0, 0.6)' }}
                     >
-                        <Typography variant={'body2'}>
+                        <Typography
+                            variant={'body2'}
+                            sx={{
+                                width: '100%',
+                                overflow: 'hidden',
+                                whiteSpace: 'nowrap',
+                                textOverflow: 'ellipsis',
+                            }}
+                        >
                             Published by:{' '}
                             {data.database_created_by
                                 ? data.database_created_by
-                                : 'N/A'}
+                                : 'N/A'}{' '}
                         </Typography>
                         {/* <Typography variant={'body2'}>
                             Published:{' '}
@@ -251,7 +260,15 @@ export const EngineShell = (props: EngineShellProps) => {
                                 ? data.database_date_created
                                 : 'N/A'}
                         </Typography> */}
-                        <Typography variant={'body2'}>
+                        <Typography
+                            variant={'body2'}
+                            sx={{
+                                width: '100%',
+                                overflow: 'hidden',
+                                whiteSpace: 'nowrap',
+                                textOverflow: 'ellipsis',
+                            }}
+                        >
                             Updated:{' '}
                             {data.last_updated ? data.last_updated : 'N/A'}
                         </Typography>
