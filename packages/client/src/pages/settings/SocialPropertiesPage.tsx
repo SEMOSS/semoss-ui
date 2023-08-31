@@ -316,7 +316,7 @@ export const SocialPropertiesPage = () => {
                 )}
             </div>
         ) : (
-            <div> No social props</div>
+            <div> No socials props</div>
         );
     };
 
