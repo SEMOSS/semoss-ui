@@ -87,14 +87,6 @@ export const Metamodel = (props: MetamodelProps) => {
     //     target: 'tableTo',
     //     type: 'floating'
     // };
-    const MetamodelNavNode = {
-        id: '1',
-        type: 'metamodelNav',
-        data: { name: '', properties: [] },
-        position: { x: 0, y: 0 },
-    };
-
-    // const formattedNodes = [MetamodelNavNode];
     const formattedNodes = [];
     for (let i = 0; i < nodes.length; i++) {
         const tempNode = nodes[i];
@@ -256,30 +248,48 @@ export const Metamodel = (props: MetamodelProps) => {
         flexDirection: 'column',
         justifyContent: 'center',
         alignItems: 'center',
-        // borderRadius: theme.shape.borderRadiusLg,
         background: theme.palette.primary.main,
         color: 'var(--light-primary-contrast, #FFF)',
     }));
 
+    const reactFlowWidth = `calc(1456px - 245px)`;
+
     return (
         <>
-            {/* <MetamodelToolbar /> */}
             <MetamodelContext.Provider value={metamodelContext}>
-                <div style={{ height: '100%', width: '100%' }}>
-                    <ReactFlow
-                        defaultNodes={formattedNodes}
-                        defaultEdges={edges}
-                        nodeTypes={nodeTypes}
-                        edgeTypes={edgeTypes}
-                        fitView={true}
-                        defaultPosition={[0, 0]}
-                        defaultZoom={10}
-                    >
-                        {/* <MetamodelNav /> */}
-                        <Background variant={BackgroundVariant.Dots} />
-                        <MiniMap />
-                        <Controls />
-                    </ReactFlow>
+                <div
+                    style={{ display: 'flex', height: '100vh', width: '100vw' }}
+                >
+                    <div style={{ width: '245px' }}>
+                        <MetamodelNav nodes={formattedNodes} />
+                    </div>
+                    <div style={{ position: 'relative' }}>
+                        <div
+                            style={{
+                                position: 'absolute',
+                                left: '0',
+                                top: '0',
+                                width: reactFlowWidth,
+                                minWidth: reactFlowWidth,
+                                height: '100%',
+                                overflow: 'auto',
+                            }}
+                        >
+                            <ReactFlow
+                                defaultNodes={formattedNodes}
+                                defaultEdges={edges}
+                                nodeTypes={nodeTypes}
+                                edgeTypes={edgeTypes}
+                                defaultPosition={[-245, 0]}
+                                fitView={true}
+                                // defaultZoom={10}
+                            >
+                                <Background variant={BackgroundVariant.Dots} />
+                                <MiniMap />
+                                <Controls />
+                            </ReactFlow>
+                        </div>
+                    </div>
                 </div>
             </MetamodelContext.Provider>
         </>

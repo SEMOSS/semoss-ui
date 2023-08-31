@@ -13,12 +13,12 @@ import {
     Button,
 } from '@semoss/ui';
 
-// import { useMetamodel } from '@/hooks';
-// import { MetamodelContext } from '@/contexts';
+import { useMetamodel } from '@/hooks';
+import { MetamodelContext, MetamodelContextType } from '@/contexts';
 
 export const MetamodelNav = ({ nodes }) => {
     console.log('nodes are: ', nodes);
-    // const { selectedNodeId, onSelectNodeId } = useMetamodel();
+    const { selectedNodeId, onSelectNodeId } = useMetamodel();
     console.log('nodes are: ', nodes);
 
     const searchRef = useRef(undefined);
@@ -180,13 +180,13 @@ export const MetamodelNav = ({ nodes }) => {
 
     const handleTableClick = (table, idx) => {
         console.log('table: ', table);
+        // focusTableNode(table);
     };
 
     /** Reset Draggable */
 
     return (
         <>
-            {/* <MetamodelContext.Provider value={MetamodelContext}> */}
             <StyledNavContainer>
                 <StyledSearchContainer>
                     <StyledSearch
@@ -216,6 +216,10 @@ export const MetamodelNav = ({ nodes }) => {
                                         key={tableIdx}
                                         variant="text"
                                         color="inherit"
+                                        onClick={
+                                            () => onSelectNodeId(table.id)
+                                            // handleTableClick(table, tableIdx)
+                                        }
                                     >
                                         <Typography variant="body2">
                                             {table.data.name}
@@ -227,7 +231,6 @@ export const MetamodelNav = ({ nodes }) => {
                     </Accordion.Content>
                 </Accordion>
             </StyledNavContainer>
-            {/* </MetamodelContext.Provider> */}
         </>
     );
 };

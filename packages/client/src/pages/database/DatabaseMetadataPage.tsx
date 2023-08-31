@@ -262,7 +262,6 @@ export const DatabaseMetadataPage = observer(() => {
                 </Section.Header>
                 {/* Toolbar above metamodel */}
                 <MetamodelToolbar />
-                {/* <MetamodelNav /> */}
 
                 <Stack spacing={2}>
                     {/* <StyledSelect
@@ -282,21 +281,15 @@ export const DatabaseMetadataPage = observer(() => {
                             );
                         })}
                     </StyledSelect> */}
-
-                    <StyledMetamodelContainer>
-                        {/* <MetamodelContext.Provider value={metamodelContext}> */}
-                        <MetamodelNav nodes={nodes} />
-                        {/* </MetamodelContext.Provider> */}
-                        <Metamodel
-                            nodes={nodes}
-                            edges={edges}
-                            selectedNode={selectedNode}
-                            onSelectNode={(n) => {
-                                setSelectedNode(n);
-                            }}
-                            isInteractive={true}
-                        />
-                    </StyledMetamodelContainer>
+                    <Metamodel
+                        nodes={nodes}
+                        edges={edges}
+                        selectedNode={selectedNode}
+                        onSelectNode={(n) => {
+                            setSelectedNode(n);
+                        }}
+                        isInteractive={true}
+                    />
                 </Stack>
             </Section>
 
