@@ -22,19 +22,22 @@ const StyledTileCard = styled(Card)(({ theme }) => ({
         cursor: 'pointer',
     },
     overflow: 'hidden',
-    height: theme.spacing(25),
+    height: 'auto',
     display: 'flex',
     flexDirection: 'column',
+    gap: 4,
+    padding: '0px, 16px, 0px, 16px',
 }));
 
 const StyledCardContent = styled(Card.Content)(() => ({
+    display: 'block',
     overflow: 'hidden',
     textOverflow: 'ellipsis',
+    whiteSpace: 'nowrap',
+    maxWidth: '350px',
 }));
 
-const StyledCardActions = styled(Card.Actions)(() => ({
-    marginTop: 'auto',
-}));
+const StyledCardActions = styled(Card.Actions)(() => ({}));
 
 const StyledTileCardActionsLeft = styled('div')(({ theme }) => ({
     display: 'flex',
@@ -57,25 +60,25 @@ export const ProjectTileCard = (props) => {
                 titleTypographyProps={{ variant: 'subtitle1' }}
                 avatar={<Folder />}
             ></Card.Header>
-            <StyledCardContent sx={{ marginTop: -2 }}>
+            <StyledCardContent>
                 <Typography variant="caption">
                     {description ? description : 'No description available'}
                 </Typography>
             </StyledCardContent>
-            <StyledCardActions>
-                {/* <StyledTileCardActionsUserCount>
+            {/* <StyledCardActions>
+                <StyledTileCardActionsUserCount>
                     <Typography>20 Users · 2 Data Sources</Typography>
-                </StyledTileCardActionsUserCount> */}
+                </StyledTileCardActionsUserCount>
                 <StyledTileCardActionsLeft>
                     <AccessTimeFilled />
                     <Typography variant="caption">
                         {modifiedDate ? modifiedDate : '7/19/2023 · 10:00AM'}
                     </Typography>
                 </StyledTileCardActionsLeft>
-                {/* <IconButton>
+                <IconButton>
                     <MoreVert />
-                </IconButton> */}
-            </StyledCardActions>
+                </IconButton>
+            </StyledCardActions> */}
         </StyledTileCard>
     );
 };
