@@ -177,11 +177,41 @@ export const MODEL_FORMS: EngineFields = [
                 rules: { required: true },
             },
             {
-                fieldName: 'KEEP_CONTEXT',
-                label: 'Keep Context',
+                fieldName: 'KEEP_CONVERSATION_HISTORY',
+                label: 'Keep Conversation History',
                 defaultValue: 'false',
                 options: {
-                    component: 'text-field',
+                    component: 'select',
+                    options: [
+                        {
+                            display: 'true',
+                            value: 'true',
+                        },
+                        {
+                            display: 'false',
+                            value: 'false',
+                        },
+                    ],
+                },
+                disabled: false,
+                rules: { required: true },
+            },
+            {
+                fieldName: 'KEEP_INPUT_OUTPUT',
+                label: 'Record Questions and Responses',
+                defaultValue: 'false',
+                options: {
+                    component: 'select',
+                    options: [
+                        {
+                            display: 'true',
+                            value: 'true',
+                        },
+                        {
+                            display: 'false',
+                            value: 'false',
+                        },
+                    ],
                 },
                 disabled: false,
                 rules: { required: true },
@@ -258,11 +288,41 @@ export const MODEL_FORMS: EngineFields = [
                 rules: { required: true },
             },
             {
-                fieldName: 'KEEP_CONTEXT',
-                label: 'Keep Context',
+                fieldName: 'KEEP_CONVERSATION_HISTORY',
+                label: 'Keep Conversation History',
                 defaultValue: 'false',
                 options: {
-                    component: 'text-field',
+                    component: 'select',
+                    options: [
+                        {
+                            display: 'true',
+                            value: 'true',
+                        },
+                        {
+                            display: 'false',
+                            value: 'false',
+                        },
+                    ],
+                },
+                disabled: false,
+                rules: { required: true },
+            },
+            {
+                fieldName: 'KEEP_INPUT_OUTPUT',
+                label: 'Record Questions and Responses',
+                defaultValue: 'false',
+                options: {
+                    component: 'select',
+                    options: [
+                        {
+                            display: 'true',
+                            value: 'true',
+                        },
+                        {
+                            display: 'false',
+                            value: 'false',
+                        },
+                    ],
                 },
                 disabled: false,
                 rules: { required: true },
@@ -339,11 +399,41 @@ export const MODEL_FORMS: EngineFields = [
                 rules: { required: true },
             },
             {
-                fieldName: 'KEEP_CONTEXT',
-                label: 'Keep Context',
+                fieldName: 'KEEP_CONVERSATION_HISTORY',
+                label: 'Keep Conversation History',
                 defaultValue: 'false',
                 options: {
-                    component: 'text-field',
+                    component: 'select',
+                    options: [
+                        {
+                            display: 'true',
+                            value: 'true',
+                        },
+                        {
+                            display: 'false',
+                            value: 'false',
+                        },
+                    ],
+                },
+                disabled: false,
+                rules: { required: true },
+            },
+            {
+                fieldName: 'KEEP_INPUT_OUTPUT',
+                label: 'Record Questions and Responses',
+                defaultValue: 'false',
+                options: {
+                    component: 'select',
+                    options: [
+                        {
+                            display: 'true',
+                            value: 'true',
+                        },
+                        {
+                            display: 'false',
+                            value: 'false',
+                        },
+                    ],
                 },
                 disabled: false,
                 rules: { required: true },
@@ -420,11 +510,41 @@ export const MODEL_FORMS: EngineFields = [
                 rules: { required: true },
             },
             {
-                fieldName: 'KEEP_CONTEXT',
-                label: 'Keep Context',
+                fieldName: 'KEEP_CONVERSATION_HISTORY',
+                label: 'Keep Conversation History',
                 defaultValue: 'false',
                 options: {
-                    component: 'text-field',
+                    component: 'select',
+                    options: [
+                        {
+                            display: 'true',
+                            value: 'true',
+                        },
+                        {
+                            display: 'false',
+                            value: 'false',
+                        },
+                    ],
+                },
+                disabled: false,
+                rules: { required: true },
+            },
+            {
+                fieldName: 'KEEP_INPUT_OUTPUT',
+                label: 'Record Questions and Responses',
+                defaultValue: 'false',
+                options: {
+                    component: 'select',
+                    options: [
+                        {
+                            display: 'true',
+                            value: 'true',
+                        },
+                        {
+                            display: 'false',
+                            value: 'false',
+                        },
+                    ],
                 },
                 disabled: false,
                 rules: { required: true },
@@ -501,11 +621,41 @@ export const MODEL_FORMS: EngineFields = [
                 rules: { required: true },
             },
             {
-                fieldName: 'KEEP_CONTEXT',
-                label: 'Keep Context',
+                fieldName: 'KEEP_CONVERSATION_HISTORY',
+                label: 'Keep Conversation History',
                 defaultValue: 'false',
                 options: {
-                    component: 'text-field',
+                    component: 'select',
+                    options: [
+                        {
+                            display: 'true',
+                            value: 'true',
+                        },
+                        {
+                            display: 'false',
+                            value: 'false',
+                        },
+                    ],
+                },
+                disabled: false,
+                rules: { required: true },
+            },
+            {
+                fieldName: 'KEEP_INPUT_OUTPUT',
+                label: 'Record Questions and Responses',
+                defaultValue: 'false',
+                options: {
+                    component: 'select',
+                    options: [
+                        {
+                            display: 'true',
+                            value: 'true',
+                        },
+                        {
+                            display: 'false',
+                            value: 'false',
+                        },
+                    ],
                 },
                 disabled: false,
                 rules: { required: true },
@@ -582,11 +732,41 @@ export const MODEL_FORMS: EngineFields = [
                 rules: { required: true },
             },
             {
-                fieldName: 'KEEP_CONTEXT',
-                label: 'Keep Context',
+                fieldName: 'KEEP_CONVERSATION_HISTORY',
+                label: 'Keep Conversation History',
                 defaultValue: 'false',
                 options: {
-                    component: 'text-field',
+                    component: 'select',
+                    options: [
+                        {
+                            display: 'true',
+                            value: 'true',
+                        },
+                        {
+                            display: 'false',
+                            value: 'false',
+                        },
+                    ],
+                },
+                disabled: false,
+                rules: { required: true },
+            },
+            {
+                fieldName: 'KEEP_INPUT_OUTPUT',
+                label: 'Record Questions and Responses',
+                defaultValue: 'false',
+                options: {
+                    component: 'select',
+                    options: [
+                        {
+                            display: 'true',
+                            value: 'true',
+                        },
+                        {
+                            display: 'false',
+                            value: 'false',
+                        },
+                    ],
                 },
                 disabled: false,
                 rules: { required: true },
@@ -663,11 +843,41 @@ export const MODEL_FORMS: EngineFields = [
                 rules: { required: true },
             },
             {
-                fieldName: 'KEEP_CONTEXT',
-                label: 'Keep Context',
+                fieldName: 'KEEP_CONVERSATION_HISTORY',
+                label: 'Keep Conversation History',
                 defaultValue: 'false',
                 options: {
-                    component: 'text-field',
+                    component: 'select',
+                    options: [
+                        {
+                            display: 'true',
+                            value: 'true',
+                        },
+                        {
+                            display: 'false',
+                            value: 'false',
+                        },
+                    ],
+                },
+                disabled: false,
+                rules: { required: true },
+            },
+            {
+                fieldName: 'KEEP_INPUT_OUTPUT',
+                label: 'Record Questions and Responses',
+                defaultValue: 'false',
+                options: {
+                    component: 'select',
+                    options: [
+                        {
+                            display: 'true',
+                            value: 'true',
+                        },
+                        {
+                            display: 'false',
+                            value: 'false',
+                        },
+                    ],
                 },
                 disabled: false,
                 rules: { required: true },
@@ -744,11 +954,41 @@ export const MODEL_FORMS: EngineFields = [
                 rules: { required: true },
             },
             {
-                fieldName: 'KEEP_CONTEXT',
-                label: 'Keep Context',
+                fieldName: 'KEEP_CONVERSATION_HISTORY',
+                label: 'Keep Conversation History',
                 defaultValue: 'false',
                 options: {
-                    component: 'text-field',
+                    component: 'select',
+                    options: [
+                        {
+                            display: 'true',
+                            value: 'true',
+                        },
+                        {
+                            display: 'false',
+                            value: 'false',
+                        },
+                    ],
+                },
+                disabled: false,
+                rules: { required: true },
+            },
+            {
+                fieldName: 'KEEP_INPUT_OUTPUT',
+                label: 'Record Questions and Responses',
+                defaultValue: 'false',
+                options: {
+                    component: 'select',
+                    options: [
+                        {
+                            display: 'true',
+                            value: 'true',
+                        },
+                        {
+                            display: 'false',
+                            value: 'false',
+                        },
+                    ],
                 },
                 disabled: false,
                 rules: { required: true },
@@ -825,11 +1065,41 @@ export const MODEL_FORMS: EngineFields = [
                 rules: { required: true },
             },
             {
-                fieldName: 'KEEP_CONTEXT',
-                label: 'Keep Context',
+                fieldName: 'KEEP_CONVERSATION_HISTORY',
+                label: 'Keep Conversation History',
                 defaultValue: 'false',
                 options: {
-                    component: 'text-field',
+                    component: 'select',
+                    options: [
+                        {
+                            display: 'true',
+                            value: 'true',
+                        },
+                        {
+                            display: 'false',
+                            value: 'false',
+                        },
+                    ],
+                },
+                disabled: false,
+                rules: { required: true },
+            },
+            {
+                fieldName: 'KEEP_INPUT_OUTPUT',
+                label: 'Record Questions and Responses',
+                defaultValue: 'false',
+                options: {
+                    component: 'select',
+                    options: [
+                        {
+                            display: 'true',
+                            value: 'true',
+                        },
+                        {
+                            display: 'false',
+                            value: 'false',
+                        },
+                    ],
                 },
                 disabled: false,
                 rules: { required: true },
@@ -906,11 +1176,41 @@ export const MODEL_FORMS: EngineFields = [
                 rules: { required: true },
             },
             {
-                fieldName: 'KEEP_CONTEXT',
-                label: 'Keep Context',
+                fieldName: 'KEEP_CONVERSATION_HISTORY',
+                label: 'Keep Conversation History',
                 defaultValue: 'false',
                 options: {
-                    component: 'text-field',
+                    component: 'select',
+                    options: [
+                        {
+                            display: 'true',
+                            value: 'true',
+                        },
+                        {
+                            display: 'false',
+                            value: 'false',
+                        },
+                    ],
+                },
+                disabled: false,
+                rules: { required: true },
+            },
+            {
+                fieldName: 'KEEP_INPUT_OUTPUT',
+                label: 'Record Questions and Responses',
+                defaultValue: 'false',
+                options: {
+                    component: 'select',
+                    options: [
+                        {
+                            display: 'true',
+                            value: 'true',
+                        },
+                        {
+                            display: 'false',
+                            value: 'false',
+                        },
+                    ],
                 },
                 disabled: false,
                 rules: { required: true },
@@ -987,11 +1287,41 @@ export const MODEL_FORMS: EngineFields = [
                 rules: { required: true },
             },
             {
-                fieldName: 'KEEP_CONTEXT',
-                label: 'Keep Context',
+                fieldName: 'KEEP_CONVERSATION_HISTORY',
+                label: 'Keep Conversation History',
                 defaultValue: 'false',
                 options: {
-                    component: 'text-field',
+                    component: 'select',
+                    options: [
+                        {
+                            display: 'true',
+                            value: 'true',
+                        },
+                        {
+                            display: 'false',
+                            value: 'false',
+                        },
+                    ],
+                },
+                disabled: false,
+                rules: { required: true },
+            },
+            {
+                fieldName: 'KEEP_INPUT_OUTPUT',
+                label: 'Record Questions and Responses',
+                defaultValue: 'false',
+                options: {
+                    component: 'select',
+                    options: [
+                        {
+                            display: 'true',
+                            value: 'true',
+                        },
+                        {
+                            display: 'false',
+                            value: 'false',
+                        },
+                    ],
                 },
                 disabled: false,
                 rules: { required: true },
@@ -1068,11 +1398,41 @@ export const MODEL_FORMS: EngineFields = [
                 rules: { required: true },
             },
             {
-                fieldName: 'KEEP_CONTEXT',
-                label: 'Keep Context',
+                fieldName: 'KEEP_CONVERSATION_HISTORY',
+                label: 'Keep Conversation History',
                 defaultValue: 'false',
                 options: {
-                    component: 'text-field',
+                    component: 'select',
+                    options: [
+                        {
+                            display: 'true',
+                            value: 'true',
+                        },
+                        {
+                            display: 'false',
+                            value: 'false',
+                        },
+                    ],
+                },
+                disabled: false,
+                rules: { required: true },
+            },
+            {
+                fieldName: 'KEEP_INPUT_OUTPUT',
+                label: 'Record Questions and Responses',
+                defaultValue: 'false',
+                options: {
+                    component: 'select',
+                    options: [
+                        {
+                            display: 'true',
+                            value: 'true',
+                        },
+                        {
+                            display: 'false',
+                            value: 'false',
+                        },
+                    ],
                 },
                 disabled: false,
                 rules: { required: true },
@@ -1149,11 +1509,41 @@ export const MODEL_FORMS: EngineFields = [
                 rules: { required: true },
             },
             {
-                fieldName: 'KEEP_CONTEXT',
-                label: 'Keep Context',
+                fieldName: 'KEEP_CONVERSATION_HISTORY',
+                label: 'Keep Conversation History',
                 defaultValue: 'false',
                 options: {
-                    component: 'text-field',
+                    component: 'select',
+                    options: [
+                        {
+                            display: 'true',
+                            value: 'true',
+                        },
+                        {
+                            display: 'false',
+                            value: 'false',
+                        },
+                    ],
+                },
+                disabled: false,
+                rules: { required: true },
+            },
+            {
+                fieldName: 'KEEP_INPUT_OUTPUT',
+                label: 'Record Questions and Responses',
+                defaultValue: 'false',
+                options: {
+                    component: 'select',
+                    options: [
+                        {
+                            display: 'true',
+                            value: 'true',
+                        },
+                        {
+                            display: 'false',
+                            value: 'false',
+                        },
+                    ],
                 },
                 disabled: false,
                 rules: { required: true },
@@ -1230,11 +1620,41 @@ export const MODEL_FORMS: EngineFields = [
                 rules: { required: true },
             },
             {
-                fieldName: 'KEEP_CONTEXT',
-                label: 'Keep Context',
+                fieldName: 'KEEP_CONVERSATION_HISTORY',
+                label: 'Keep Conversation History',
                 defaultValue: 'false',
                 options: {
-                    component: 'text-field',
+                    component: 'select',
+                    options: [
+                        {
+                            display: 'true',
+                            value: 'true',
+                        },
+                        {
+                            display: 'false',
+                            value: 'false',
+                        },
+                    ],
+                },
+                disabled: false,
+                rules: { required: true },
+            },
+            {
+                fieldName: 'KEEP_INPUT_OUTPUT',
+                label: 'Record Questions and Responses',
+                defaultValue: 'false',
+                options: {
+                    component: 'select',
+                    options: [
+                        {
+                            display: 'true',
+                            value: 'true',
+                        },
+                        {
+                            display: 'false',
+                            value: 'false',
+                        },
+                    ],
                 },
                 disabled: false,
                 rules: { required: true },
@@ -1311,11 +1731,41 @@ export const MODEL_FORMS: EngineFields = [
                 rules: { required: true },
             },
             {
-                fieldName: 'KEEP_CONTEXT',
-                label: 'Keep Context',
+                fieldName: 'KEEP_CONVERSATION_HISTORY',
+                label: 'Keep Conversation History',
                 defaultValue: 'false',
                 options: {
-                    component: 'text-field',
+                    component: 'select',
+                    options: [
+                        {
+                            display: 'true',
+                            value: 'true',
+                        },
+                        {
+                            display: 'false',
+                            value: 'false',
+                        },
+                    ],
+                },
+                disabled: false,
+                rules: { required: true },
+            },
+            {
+                fieldName: 'KEEP_INPUT_OUTPUT',
+                label: 'Record Questions and Responses',
+                defaultValue: 'false',
+                options: {
+                    component: 'select',
+                    options: [
+                        {
+                            display: 'true',
+                            value: 'true',
+                        },
+                        {
+                            display: 'false',
+                            value: 'false',
+                        },
+                    ],
                 },
                 disabled: false,
                 rules: { required: true },
@@ -1392,11 +1842,41 @@ export const MODEL_FORMS: EngineFields = [
                 rules: { required: true },
             },
             {
-                fieldName: 'KEEP_CONTEXT',
-                label: 'Keep Context',
+                fieldName: 'KEEP_CONVERSATION_HISTORY',
+                label: 'Keep Conversation History',
                 defaultValue: 'false',
                 options: {
-                    component: 'text-field',
+                    component: 'select',
+                    options: [
+                        {
+                            display: 'true',
+                            value: 'true',
+                        },
+                        {
+                            display: 'false',
+                            value: 'false',
+                        },
+                    ],
+                },
+                disabled: false,
+                rules: { required: true },
+            },
+            {
+                fieldName: 'KEEP_INPUT_OUTPUT',
+                label: 'Record Questions and Responses',
+                defaultValue: 'false',
+                options: {
+                    component: 'select',
+                    options: [
+                        {
+                            display: 'true',
+                            value: 'true',
+                        },
+                        {
+                            display: 'false',
+                            value: 'false',
+                        },
+                    ],
                 },
                 disabled: false,
                 rules: { required: true },
@@ -1473,11 +1953,41 @@ export const MODEL_FORMS: EngineFields = [
                 rules: { required: true },
             },
             {
-                fieldName: 'KEEP_CONTEXT',
-                label: 'Keep Context',
+                fieldName: 'KEEP_CONVERSATION_HISTORY',
+                label: 'Keep Conversation History',
                 defaultValue: 'false',
                 options: {
-                    component: 'text-field',
+                    component: 'select',
+                    options: [
+                        {
+                            display: 'true',
+                            value: 'true',
+                        },
+                        {
+                            display: 'false',
+                            value: 'false',
+                        },
+                    ],
+                },
+                disabled: false,
+                rules: { required: true },
+            },
+            {
+                fieldName: 'KEEP_INPUT_OUTPUT',
+                label: 'Record Questions and Responses',
+                defaultValue: 'false',
+                options: {
+                    component: 'select',
+                    options: [
+                        {
+                            display: 'true',
+                            value: 'true',
+                        },
+                        {
+                            display: 'false',
+                            value: 'false',
+                        },
+                    ],
                 },
                 disabled: false,
                 rules: { required: true },
@@ -1554,11 +2064,41 @@ export const MODEL_FORMS: EngineFields = [
                 rules: { required: true },
             },
             {
-                fieldName: 'KEEP_CONTEXT',
-                label: 'Keep Context',
+                fieldName: 'KEEP_CONVERSATION_HISTORY',
+                label: 'Keep Conversation History',
                 defaultValue: 'false',
                 options: {
-                    component: 'text-field',
+                    component: 'select',
+                    options: [
+                        {
+                            display: 'true',
+                            value: 'true',
+                        },
+                        {
+                            display: 'false',
+                            value: 'false',
+                        },
+                    ],
+                },
+                disabled: false,
+                rules: { required: true },
+            },
+            {
+                fieldName: 'KEEP_INPUT_OUTPUT',
+                label: 'Record Questions and Responses',
+                defaultValue: 'false',
+                options: {
+                    component: 'select',
+                    options: [
+                        {
+                            display: 'true',
+                            value: 'true',
+                        },
+                        {
+                            display: 'false',
+                            value: 'false',
+                        },
+                    ],
                 },
                 disabled: false,
                 rules: { required: true },
@@ -1635,11 +2175,41 @@ export const MODEL_FORMS: EngineFields = [
                 rules: { required: true },
             },
             {
-                fieldName: 'KEEP_CONTEXT',
-                label: 'Keep Context',
+                fieldName: 'KEEP_CONVERSATION_HISTORY',
+                label: 'Keep Conversation History',
                 defaultValue: 'false',
                 options: {
-                    component: 'text-field',
+                    component: 'select',
+                    options: [
+                        {
+                            display: 'true',
+                            value: 'true',
+                        },
+                        {
+                            display: 'false',
+                            value: 'false',
+                        },
+                    ],
+                },
+                disabled: false,
+                rules: { required: true },
+            },
+            {
+                fieldName: 'KEEP_INPUT_OUTPUT',
+                label: 'Record Questions and Responses',
+                defaultValue: 'false',
+                options: {
+                    component: 'select',
+                    options: [
+                        {
+                            display: 'true',
+                            value: 'true',
+                        },
+                        {
+                            display: 'false',
+                            value: 'false',
+                        },
+                    ],
                 },
                 disabled: false,
                 rules: { required: true },
@@ -1716,11 +2286,41 @@ export const MODEL_FORMS: EngineFields = [
                 rules: { required: true },
             },
             {
-                fieldName: 'KEEP_CONTEXT',
-                label: 'Keep Context',
+                fieldName: 'KEEP_CONVERSATION_HISTORY',
+                label: 'Keep Conversation History',
                 defaultValue: 'false',
                 options: {
-                    component: 'text-field',
+                    component: 'select',
+                    options: [
+                        {
+                            display: 'true',
+                            value: 'true',
+                        },
+                        {
+                            display: 'false',
+                            value: 'false',
+                        },
+                    ],
+                },
+                disabled: false,
+                rules: { required: true },
+            },
+            {
+                fieldName: 'KEEP_INPUT_OUTPUT',
+                label: 'Record Questions and Responses',
+                defaultValue: 'false',
+                options: {
+                    component: 'select',
+                    options: [
+                        {
+                            display: 'true',
+                            value: 'true',
+                        },
+                        {
+                            display: 'false',
+                            value: 'false',
+                        },
+                    ],
                 },
                 disabled: false,
                 rules: { required: true },
@@ -1797,11 +2397,41 @@ export const MODEL_FORMS: EngineFields = [
                 rules: { required: true },
             },
             {
-                fieldName: 'KEEP_CONTEXT',
-                label: 'Keep Context',
+                fieldName: 'KEEP_CONVERSATION_HISTORY',
+                label: 'Keep Conversation History',
                 defaultValue: 'false',
                 options: {
-                    component: 'text-field',
+                    component: 'select',
+                    options: [
+                        {
+                            display: 'true',
+                            value: 'true',
+                        },
+                        {
+                            display: 'false',
+                            value: 'false',
+                        },
+                    ],
+                },
+                disabled: false,
+                rules: { required: true },
+            },
+            {
+                fieldName: 'KEEP_INPUT_OUTPUT',
+                label: 'Record Questions and Responses',
+                defaultValue: 'false',
+                options: {
+                    component: 'select',
+                    options: [
+                        {
+                            display: 'true',
+                            value: 'true',
+                        },
+                        {
+                            display: 'false',
+                            value: 'false',
+                        },
+                    ],
                 },
                 disabled: false,
                 rules: { required: true },
