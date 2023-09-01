@@ -8,8 +8,18 @@ import ReactFlow, {
     Background,
     BackgroundVariant,
 } from 'react-flow-renderer';
-
 import Panel from 'react-flow-renderer';
+
+// import {
+//     ReactFlow as RF,
+//     Controls,
+//     Node,
+//     Edge,
+//     Background,
+//     BackgroundVariant,
+//     MiniMap,
+//     Panel
+// } from 'reactflow';
 
 import { styled, Button } from '@semoss/ui';
 import { MetamodelNode } from './MetamodelNode';
@@ -257,6 +267,7 @@ export const Metamodel = (props: MetamodelProps) => {
     return (
         <>
             <MetamodelContext.Provider value={metamodelContext}>
+                boom
                 <div
                     style={{ display: 'flex', height: '100vh', width: '100vw' }}
                 >
@@ -275,6 +286,19 @@ export const Metamodel = (props: MetamodelProps) => {
                                 overflow: 'auto',
                             }}
                         >
+                            {/* <RF
+                                defaultNodes={formattedNodes}
+                                defaultEdges={edges}
+                                nodeTypes={nodeTypes}
+                                edgeTypes={edgeTypes}
+                                //  defaultPosition={[-245, 0]}
+                                fitView={true}
+                            >
+                                <Panel position="top-center"> hey</Panel>
+                                <Background variant={BackgroundVariant.Dots} />
+                                <MiniMap />
+                                <Controls />
+                            </RF> */}
                             <ReactFlow
                                 defaultNodes={formattedNodes}
                                 defaultEdges={edges}
