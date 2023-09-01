@@ -137,14 +137,14 @@ const StyledSaveButton = styled(Button)(() => ({
     borderRadius: 'var(--shape-border-radius-lg, 12px);',
     background: 'var(--light-primary-main, #0471F0)',
 }));
-const StyledIconButton = styled(Button)(() => ({
-    display: 'flex',
-    padding: '0px 22px',
-    justifyContent: 'center',
-    alignItems: 'center',
-    gap: '10px',
-    alignSelf: 'stretch',
-}));
+// const StyledIconButton = styled(Button)(() => ({
+//     display: 'flex',
+//     padding: '0px 22px',
+//     justifyContent: 'center',
+//     alignItems: 'center',
+//     gap: '10px',
+//     alignSelf: 'stretch',
+// }));
 const StyledSyncIcon = styled(Sync)(() => ({
     display: 'flex',
     alignItems: 'flex-start',
@@ -154,7 +154,7 @@ const StyledSyncIcon = styled(Sync)(() => ({
 export const MetamodelToolbar = () => (
     <StyledComponent>
         <StyledButtonContainer>
-            <Typography variant="h6">Metamodel</Typography>
+            <Typography variant="h6">testMetamodel</Typography>
             <QuickButtonGroup>
                 <IconButton disabled={true}>
                     <FitScreenRounded />

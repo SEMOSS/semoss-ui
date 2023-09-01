@@ -8,7 +8,6 @@ import {
     Typography,
     Table,
     IconButton,
-    Icon,
 } from '@semoss/ui';
 import { ArrowCircleDown, Create } from '@mui/icons-material';
 
@@ -16,7 +15,9 @@ import { usePixel, useDatabase, useRootStore } from '@/hooks';
 import { Section } from '@/components/ui';
 import { Metamodel } from '@/components/metamodel';
 import { MetamodelToolbar } from '@/components/metamodel/MetamodelToolbar';
-import { table } from 'console';
+import { MetamodelNav } from '@/components/metamodel/MetamodelNav';
+import { MetamodelContext } from '@/contexts';
+// import { table } from 'console';
 
 const StyledPage = styled('div')(() => ({
     position: 'relative',
@@ -28,6 +29,7 @@ const StyledMetamodelContainer = styled('section')(({ theme }) => {
         borderRadiusNone: string;
     };
     return {
+        display: 'flex',
         height: '60vh',
         width: '100%',
         borderRadius: shape.borderRadiusNone,
@@ -279,18 +281,15 @@ export const DatabaseMetadataPage = observer(() => {
                             );
                         })}
                     </StyledSelect> */}
-
-                    <StyledMetamodelContainer>
-                        <Metamodel
-                            nodes={nodes}
-                            edges={edges}
-                            selectedNode={selectedNode}
-                            onSelectNode={(n) => {
-                                setSelectedNode(n);
-                            }}
-                            isInteractive={true}
-                        />
-                    </StyledMetamodelContainer>
+                    <Metamodel
+                        nodes={nodes}
+                        edges={edges}
+                        selectedNode={selectedNode}
+                        onSelectNode={(n) => {
+                            setSelectedNode(n);
+                        }}
+                        isInteractive={true}
+                    />
                 </Stack>
             </Section>
 

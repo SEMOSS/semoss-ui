@@ -1,5 +1,6 @@
 import { useCallback, useState, useEffect } from 'react';
 import ReactFlow, {
+    ReactFlowProvider,
     MiniMap,
     Controls,
     Node,
@@ -8,6 +9,8 @@ import ReactFlow, {
     BackgroundVariant,
 } from 'react-flow-renderer';
 
+import Panel from 'react-flow-renderer';
+
 import { styled, Button } from '@semoss/ui';
 import { MetamodelNode } from './MetamodelNode';
 import { FloatingEdge } from './FloatingEdge';
@@ -15,6 +18,7 @@ import { MetamodelContext, MetamodelContextType } from '@/contexts';
 
 import { MetamodelToolbar } from './MetamodelToolbar';
 import { format } from 'path';
+import { MetamodelNav } from './MetamodelNav';
 
 const edgeTypes = {
     floating: FloatingEdge,
@@ -22,6 +26,7 @@ const edgeTypes = {
 
 const nodeTypes = {
     metamodel: MetamodelNode,
+    // metamodelNav: MetamodelNav,
     // metamodelButtons: MetamodelButtonNode,
 };
 
@@ -82,12 +87,11 @@ export const Metamodel = (props: MetamodelProps) => {
     //     target: 'tableTo',
     //     type: 'floating'
     // };
-
     const formattedNodes = [];
     for (let i = 0; i < nodes.length; i++) {
         const tempNode: FormattedNode = nodes[i];
         tempNode.nodeIndex = i;
-        formattedNodes.push(tempNode);
+        formattedNodes.push(tempNode as any);
     }
 
     const [originalData, setOriginalData] = useState({
@@ -244,40 +248,50 @@ export const Metamodel = (props: MetamodelProps) => {
         flexDirection: 'column',
         justifyContent: 'center',
         alignItems: 'center',
-        // borderRadius: theme.shape.borderRadiusLg,
         background: theme.palette.primary.main,
         color: 'var(--light-primary-contrast, #FFF)',
     }));
 
+    const reactFlowWidth = `calc(1456px - 245px)`;
+
     return (
-        <MetamodelContext.Provider value={metamodelContext}>
-            <div style={{ height: '95%', width: '100%' }}>
-                <ReactFlow
-                    defaultNodes={formattedNodes}
-                    defaultEdges={edges}
-                    nodeTypes={nodeTypes}
-                    edgeTypes={edgeTypes}
-                    fitView={true}
-                    defaultPosition={[0, 0]}
-                    defaultZoom={10}
+        <>
+            <MetamodelContext.Provider value={metamodelContext}>
+                <div
+                    style={{ display: 'flex', height: '100vh', width: '100vw' }}
                 >
-                    <Background variant={BackgroundVariant.Dots} />
-                    <MiniMap />
-                    <Controls />
-                </ReactFlow>
-                {/* <StyledImportButton variant="contained">
-                    Import
-                </StyledImportButton> */}
-            </div>
-            {/* {callback && (
-                <Button
-                    onClick={() => {
-                        onSubmit();
-                    }}
-                >
-                    Apply
-                </Button>
-            )} */}
-        </MetamodelContext.Provider>
+                    <div style={{ width: '245px' }}>
+                        <MetamodelNav nodes={formattedNodes} />
+                    </div>
+                    <div style={{ position: 'relative' }}>
+                        <div
+                            style={{
+                                position: 'absolute',
+                                left: '0',
+                                top: '0',
+                                width: reactFlowWidth,
+                                minWidth: reactFlowWidth,
+                                height: '100%',
+                                overflow: 'auto',
+                            }}
+                        >
+                            <ReactFlow
+                                defaultNodes={formattedNodes}
+                                defaultEdges={edges}
+                                nodeTypes={nodeTypes}
+                                edgeTypes={edgeTypes}
+                                defaultPosition={[-245, 0]}
+                                fitView={true}
+                                // defaultZoom={10}
+                            >
+                                <Background variant={BackgroundVariant.Dots} />
+                                <MiniMap />
+                                <Controls />
+                            </ReactFlow>
+                        </div>
+                    </div>
+                </div>
+            </MetamodelContext.Provider>
+        </>
     );
 };
