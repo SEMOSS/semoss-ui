@@ -151,7 +151,7 @@ export const MODEL_FORMS: EngineFields = [
                 label: 'Open AI Key',
                 defaultValue: '',
                 options: {
-                    component: 'text-field',
+                    component: 'password',
                 },
                 disabled: false,
                 rules: { required: true },
@@ -194,7 +194,7 @@ export const MODEL_FORMS: EngineFields = [
             {
                 fieldName: 'MODEL',
                 label: 'Model',
-                defaultValue: '',
+                defaultValue: 'Claude',
                 options: {
                     component: 'text-field',
                 },
@@ -275,7 +275,7 @@ export const MODEL_FORMS: EngineFields = [
             {
                 fieldName: 'MODEL',
                 label: 'Model',
-                defaultValue: '',
+                defaultValue: 'Wizard 13B',
                 options: {
                     component: 'text-field',
                 },
@@ -437,7 +437,7 @@ export const MODEL_FORMS: EngineFields = [
             {
                 fieldName: 'MODEL',
                 label: 'Model',
-                defaultValue: '',
+                defaultValue: 'Llama2 13B',
                 options: {
                     component: 'text-field',
                 },
@@ -518,7 +518,7 @@ export const MODEL_FORMS: EngineFields = [
             {
                 fieldName: 'MODEL',
                 label: 'Model',
-                defaultValue: '',
+                defaultValue: 'Llama2 70B',
                 options: {
                     component: 'text-field',
                 },
@@ -599,7 +599,7 @@ export const MODEL_FORMS: EngineFields = [
             {
                 fieldName: 'MODEL',
                 label: 'Model',
-                defaultValue: '',
+                defaultValue: 'Falcon',
                 options: {
                     component: 'text-field',
                 },
@@ -680,7 +680,7 @@ export const MODEL_FORMS: EngineFields = [
             {
                 fieldName: 'MODEL',
                 label: 'Model',
-                defaultValue: '',
+                defaultValue: 'StableBeluga2',
                 options: {
                     component: 'text-field',
                 },
@@ -761,7 +761,7 @@ export const MODEL_FORMS: EngineFields = [
             {
                 fieldName: 'MODEL',
                 label: 'Model',
-                defaultValue: '',
+                defaultValue: 'Guanaco',
                 options: {
                     component: 'text-field',
                 },
@@ -842,7 +842,7 @@ export const MODEL_FORMS: EngineFields = [
             {
                 fieldName: 'MODEL',
                 label: 'Model',
-                defaultValue: '',
+                defaultValue: 'Vicuna',
                 options: {
                     component: 'text-field',
                 },
@@ -923,7 +923,7 @@ export const MODEL_FORMS: EngineFields = [
             {
                 fieldName: 'MODEL',
                 label: 'Model',
-                defaultValue: '',
+                defaultValue: 'Mosaic ML',
                 options: {
                     component: 'text-field',
                 },
@@ -1004,7 +1004,7 @@ export const MODEL_FORMS: EngineFields = [
             {
                 fieldName: 'MODEL',
                 label: 'Model',
-                defaultValue: '',
+                defaultValue: 'Dolly',
                 options: {
                     component: 'text-field',
                 },
@@ -1085,7 +1085,7 @@ export const MODEL_FORMS: EngineFields = [
             {
                 fieldName: 'MODEL',
                 label: 'Model',
-                defaultValue: '',
+                defaultValue: 'Replit code model – 3b',
                 options: {
                     component: 'text-field',
                 },
@@ -1166,7 +1166,7 @@ export const MODEL_FORMS: EngineFields = [
             {
                 fieldName: 'MODEL',
                 label: 'Model',
-                defaultValue: '',
+                defaultValue: 'Flan T5 Large',
                 options: {
                     component: 'text-field',
                 },
@@ -1247,7 +1247,7 @@ export const MODEL_FORMS: EngineFields = [
             {
                 fieldName: 'MODEL',
                 label: 'Model',
-                defaultValue: '',
+                defaultValue: 'Flan T5 XXL',
                 options: {
                     component: 'text-field',
                 },
@@ -1328,7 +1328,7 @@ export const MODEL_FORMS: EngineFields = [
             {
                 fieldName: 'MODEL',
                 label: 'Model',
-                defaultValue: '',
+                defaultValue: 'Bert',
                 options: {
                     component: 'text-field',
                 },
@@ -1409,7 +1409,7 @@ export const MODEL_FORMS: EngineFields = [
             {
                 fieldName: 'MODEL',
                 label: 'Model',
-                defaultValue: '',
+                defaultValue: 'Eleuther GPTJ',
                 options: {
                     component: 'text-field',
                 },
@@ -1571,7 +1571,7 @@ export const MODEL_FORMS: EngineFields = [
             {
                 fieldName: 'MODEL',
                 label: 'Model',
-                defaultValue: '',
+                defaultValue: 'Orca',
                 options: {
                     component: 'text-field',
                 },
@@ -1859,7 +1859,7 @@ export const STORAGE_FORMS: EngineFields = [
                 label: 'Secret Key',
                 defaultValue: '',
                 options: {
-                    component: 'text-field',
+                    component: 'password',
                 },
                 disabled: false,
                 rules: { required: false },
@@ -1914,7 +1914,7 @@ export const STORAGE_FORMS: EngineFields = [
                 label: 'S3 Secret Key',
                 defaultValue: '',
                 options: {
-                    component: 'text-field',
+                    component: 'password',
                 },
                 disabled: false,
                 rules: { required: true },
@@ -1979,7 +1979,7 @@ export const STORAGE_FORMS: EngineFields = [
                 label: 'S3 Secret Key',
                 defaultValue: '',
                 options: {
-                    component: 'text-field',
+                    component: 'password',
                 },
                 disabled: false,
                 rules: { required: true },
@@ -2142,7 +2142,7 @@ export const STORAGE_FORMS: EngineFields = [
             {
                 fieldName: 'S3_REGION',
                 label: 'S3 Region',
-                defaultValue: 'need',
+                defaultValue: '',
                 options: {
                     component: 'text-field',
                 },
@@ -2152,7 +2152,7 @@ export const STORAGE_FORMS: EngineFields = [
             {
                 fieldName: 'S3_ACCESS_KEY',
                 label: 'S3 Access Key',
-                defaultValue: 'need',
+                defaultValue: '',
                 options: {
                     component: 'text-field',
                 },
@@ -2162,9 +2162,9 @@ export const STORAGE_FORMS: EngineFields = [
             {
                 fieldName: 'S3_SECRET_KEY',
                 label: 'S3 Secret Key',
-                defaultValue: 'need',
+                defaultValue: '',
                 options: {
-                    component: 'text-field',
+                    component: 'password',
                 },
                 disabled: false,
                 rules: { required: true },
@@ -2172,7 +2172,7 @@ export const STORAGE_FORMS: EngineFields = [
             {
                 fieldName: 'S3_ENDPOINT',
                 label: 'S3 Endpoint',
-                defaultValue: 'need',
+                defaultValue: '',
                 options: {
                     component: 'text-field',
                 },
@@ -2229,7 +2229,7 @@ export const STORAGE_FORMS: EngineFields = [
                 label: 'Secret Key',
                 defaultValue: '',
                 options: {
-                    component: 'text-field',
+                    component: 'password',
                 },
                 disabled: false,
                 rules: { required: true },

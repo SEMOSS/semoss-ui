@@ -280,6 +280,7 @@ export const SemossForm: ImportFormComponent = () => {
                         return (
                             <TextField
                                 fullWidth
+                                type="password"
                                 label="Password"
                                 value={field.value ? field.value : ''}
                                 onChange={(value) => field.onChange(value)}

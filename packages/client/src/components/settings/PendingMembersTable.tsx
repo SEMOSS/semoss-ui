@@ -5,13 +5,15 @@ import {
     Button,
     Collapse,
     Checkbox,
+    Divider,
     Table,
+    Icon,
     IconButton,
     RadioGroup,
     Typography,
     useNotification,
 } from '@semoss/ui';
-import { Check, Close, ExpandLess, ExpandMore } from '@mui/icons-material';
+import { Add, Check, Close, ExpandLess, ExpandMore } from '@mui/icons-material';
 import { AxiosResponse } from 'axios';
 
 import { useRootStore, usePixel, useSettings } from '@/hooks';
@@ -133,7 +135,10 @@ const permissionMapper = {
 // Pending Members Table
 interface PendingMember {
     ID: string;
+    NAME: string;
+    EMAIL: string;
     PERMISSION: SETTINGS_ROLE;
+    // Requester Info
     REQUEST_TIMESTAMP: string;
     REQUEST_TYPE: string;
     REQUEST_USERID: string;
@@ -588,14 +593,49 @@ export const PendingMembersTable = (props: PendingMemberTableProps) => {
                                                 }}
                                             />
                                         </Table.Cell>
+                                        <Table.Cell size="small">ID</Table.Cell>
                                         <Table.Cell size="small">
-                                            Name
+                                            <div
+                                                style={{
+                                                    display: 'flex',
+                                                    flexDirection: 'row',
+                                                    justifyContent:
+                                                        'space-between',
+                                                }}
+                                            >
+                                                Name
+                                                <Divider></Divider>
+                                                <Icon
+                                                    sx={{
+                                                        color: '#E9E9E9',
+                                                    }}
+                                                >
+                                                    <Add />
+                                                </Icon>
+                                            </div>
+                                        </Table.Cell>
+                                        <Table.Cell size="small">
+                                            <div
+                                                style={{
+                                                    display: 'flex',
+                                                    flexDirection: 'row',
+                                                    justifyContent:
+                                                        'space-between',
+                                                }}
+                                            >
+                                                Request Date
+                                                <Divider></Divider>
+                                                <Icon
+                                                    sx={{
+                                                        color: '#E9E9E9',
+                                                    }}
+                                                >
+                                                    <Add />
+                                                </Icon>
+                                            </div>
                                         </Table.Cell>
                                         <Table.Cell size="small">
                                             Permission
-                                        </Table.Cell>
-                                        <Table.Cell size="small">
-                                            Request Date
                                         </Table.Cell>
                                         <Table.Cell size="small">
                                             Actions
@@ -664,6 +704,15 @@ export const PendingMembersTable = (props: PendingMemberTableProps) => {
                                                     >
                                                         {user.REQUEST_USERID}
                                                     </Table.Cell>
+                                                    <Table.Cell
+                                                        component="td"
+                                                        scope="row"
+                                                    >
+                                                        {user.NAME}
+                                                    </Table.Cell>
+                                                    <Table.Cell>
+                                                        {user.REQUEST_TIMESTAMP}
+                                                    </Table.Cell>
                                                     <Table.Cell>
                                                         <RadioGroup
                                                             row
@@ -696,9 +745,7 @@ export const PendingMembersTable = (props: PendingMemberTableProps) => {
                                                             />
                                                         </RadioGroup>
                                                     </Table.Cell>
-                                                    <Table.Cell>
-                                                        {user.REQUEST_TIMESTAMP}
-                                                    </Table.Cell>
+
                                                     <Table.Cell>
                                                         <IconButton
                                                             onClick={() => {
