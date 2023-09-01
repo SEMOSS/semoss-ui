@@ -12,7 +12,7 @@ import {
 import { ArrowCircleDown, Create } from '@mui/icons-material';
 
 import { usePixel, useDatabase, useRootStore } from '@/hooks';
-import { Section } from '@/components/ui';
+import { LoadingScreen, Section } from '@/components/ui';
 import { Metamodel } from '@/components/metamodel';
 import { MetamodelToolbar } from '@/components/metamodel/MetamodelToolbar';
 import { MetamodelNav } from '@/components/metamodel/MetamodelNav';
@@ -236,6 +236,12 @@ export const DatabaseMetadataPage = observer(() => {
     console.log('getDatabaseMetamodel: ', getDatabaseMetamodel);
     console.log('nodes: ', nodes);
 
+    debugger;
+    if (getDatabaseMetamodel.status !== 'SUCCESS') {
+        return (
+            <LoadingScreen.Trigger description="Loading metadata"></LoadingScreen.Trigger>
+        );
+    }
     // Read Only: Just view and search tables
 
     // Editor and Owner:
@@ -243,6 +249,29 @@ export const DatabaseMetadataPage = observer(() => {
     // ------- Refresh Data Button:
     // -------------- Opens Modal for Tables and Views -> ExternalUpdateJdbcTablesAndViews();
     // --------------> Apply button ExternalUpdateJdbcSchema(database=[""], filters=["AUTO_PLAN_DISTRIBUTION"]);
+
+    // const n = [
+    //     {
+    //         id: 'PUSH_PLAN_EMERGENCY',
+    //         data: {
+    //             name: 'PUSH PLAN EMERGENCY',
+    //             properties: [
+    //                 {
+    //                     id: 'PUSH_PLAN_EMERGENCY__AMOUNT_ALLOCATED',
+    //                     name: 'AMOUNT ALLOCATED',
+    //                     physicalType: 'int',
+    //                     specificFormat: '',
+    //                     type: 'INT',
+    //                 },
+    //             ],
+    //         },
+    //         position: {
+    //             x: 1757.5985107421875,
+    //             y: 86.0527572631836,
+    //         },
+    //         type: 'default',
+    //     },
+    // ]
 
     return (
         <StyledPage>
@@ -258,29 +287,9 @@ export const DatabaseMetadataPage = observer(() => {
                         </Button>
                     }
                 >
-                    Metamodel
+                    {/* Metamodel */}
                 </Section.Header>
-                {/* Toolbar above metamodel */}
-                <MetamodelToolbar />
-
                 <Stack spacing={2}>
-                    {/* <StyledSelect
-                        value={selectedNode || ''}
-                        onChange={(e) => {
-                            setSelectedNode(e.target.value as MetamodelNode);
-                        }}
-                        renderValue={(n: MetamodelNode) => n.data.name}
-                        multiple={false}
-                    >
-                        {nodes.map((n) => {
-                            return (
-                                //@ts-expect-error This is an error in the component
-                                <MenuItem key={n.id} value={n}>
-                                    {n.data.name}
-                                </MenuItem>
-                            );
-                        })}
-                    </StyledSelect> */}
                     <Metamodel
                         nodes={nodes}
                         edges={edges}

@@ -48,6 +48,7 @@ const StyledComponent = styled('div')(({ theme }) => {
         padding: '16px',
         gap: '10px',
         height: '64px',
+        width: '100%',
         alignItems: 'center',
         alignSelf: 'stretch',
         borderRadius: shape.borderRadiusLg,
@@ -154,7 +155,7 @@ const StyledSyncIcon = styled(Sync)(() => ({
 export const MetamodelToolbar = () => (
     <StyledComponent>
         <StyledButtonContainer>
-            <Typography variant="h6">testMetamodel</Typography>
+            <Typography variant="h6">Metamodel</Typography>
             <QuickButtonGroup>
                 <IconButton disabled={true}>
                     <FitScreenRounded />
@@ -182,7 +183,11 @@ export const MetamodelToolbar = () => (
                         <Typography variant="button">Sync</Typography>
                     </StyledSyncButtonLabel>
                 </StyledSyncButton>
-                <StyledSaveButton disabled={true} variant="contained">
+                <StyledSaveButton
+                    disabled={true}
+                    variant="contained"
+                    onClick={() => console.log('save')}
+                >
                     Save
                 </StyledSaveButton>
             </ExtraButtonGroup>

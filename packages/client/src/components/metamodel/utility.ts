@@ -1,4 +1,4 @@
-import { Position } from 'react-flow-renderer';
+import { Position } from 'reactflow';
 
 // this helper function returns the intersection point
 // of the line between the center of the intersectionNode and the target node

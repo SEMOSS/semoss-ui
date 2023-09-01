@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { NodeProps, Handle, Position } from 'react-flow-renderer';
+import { NodeProps, Handle, Position } from 'reactflow';
 import { useForm, Controller, useFieldArray, useWatch } from 'react-hook-form';
 
 import { getDefaultOptions } from './utility';
@@ -155,6 +155,7 @@ const _MetamodelNode = (props: MetamodelNodeProps) => {
     const [metamodelCardWidth, setMetamodelCardWidth] = useState('215px'); // manage metamodel card width
     const [dataTypeOptions, setDataTypeOptions] = useState([]);
 
+    debugger;
     useEffect(() => {
         const temp = getDefaultOptions();
         setDataTypeOptions(temp);

@@ -1,25 +1,16 @@
 import { useCallback, useState, useEffect } from 'react';
+
+import { MetamodelNav } from '@/components/metamodel/MetamodelNav';
+
 import ReactFlow, {
-    ReactFlowProvider,
-    MiniMap,
     Controls,
     Node,
     Edge,
     Background,
     BackgroundVariant,
-} from 'react-flow-renderer';
-import Panel from 'react-flow-renderer';
-
-// import {
-//     ReactFlow as RF,
-//     Controls,
-//     Node,
-//     Edge,
-//     Background,
-//     BackgroundVariant,
-//     MiniMap,
-//     Panel
-// } from 'reactflow';
+    MiniMap,
+    Panel,
+} from 'reactflow';
 
 import { styled, Button } from '@semoss/ui';
 import { MetamodelNode } from './MetamodelNode';
@@ -27,8 +18,9 @@ import { FloatingEdge } from './FloatingEdge';
 import { MetamodelContext, MetamodelContextType } from '@/contexts';
 
 import { MetamodelToolbar } from './MetamodelToolbar';
-import { format } from 'path';
-import { MetamodelNav } from './MetamodelNav';
+
+// Needed for React Flow to keep styles
+import 'reactflow/dist/style.css';
 
 const edgeTypes = {
     floating: FloatingEdge,
@@ -97,6 +89,7 @@ export const Metamodel = (props: MetamodelProps) => {
     //     target: 'tableTo',
     //     type: 'floating'
     // };
+
     const formattedNodes = [];
     for (let i = 0; i < nodes.length; i++) {
         const tempNode: FormattedNode = nodes[i];
@@ -108,6 +101,7 @@ export const Metamodel = (props: MetamodelProps) => {
         nodes: formattedNodes,
         edges: edges,
     });
+
     const [data, setData] = useState({ nodes: formattedNodes, edges: edges });
 
     const updateData = (nodeData, action) => {
@@ -265,57 +259,35 @@ export const Metamodel = (props: MetamodelProps) => {
     const reactFlowWidth = `calc(1456px - 245px)`;
 
     return (
-        <>
+        <div style={{ display: 'flex', height: '100vh', width: '100%' }}>
             <MetamodelContext.Provider value={metamodelContext}>
-                boom
-                <div
-                    style={{ display: 'flex', height: '100vh', width: '100vw' }}
+                <ReactFlow
+                    defaultNodes={formattedNodes}
+                    defaultEdges={edges}
+                    nodeTypes={nodeTypes}
+                    edgeTypes={edgeTypes}
+                    fitView={true}
+                    attributionPosition="top-right"
                 >
-                    <div style={{ width: '245px' }}>
+                    <Background variant={BackgroundVariant.Dots} />
+                    <MiniMap />
+                    <Controls />
+                    <Panel
+                        style={{ width: '100%', marginLeft: '0px' }}
+                        position="top-left"
+                    >
+                        {/* Maybe pass children here to get the print metadata button included */}
+                        <MetamodelToolbar />
+                    </Panel>
+
+                    <Panel
+                        style={{ marginTop: '90px', marginLeft: '0px' }}
+                        position={'top-left'}
+                    >
                         <MetamodelNav nodes={formattedNodes} />
-                    </div>
-                    <div style={{ position: 'relative' }}>
-                        <div
-                            style={{
-                                position: 'absolute',
-                                left: '0',
-                                top: '0',
-                                width: reactFlowWidth,
-                                minWidth: reactFlowWidth,
-                                height: '100%',
-                                overflow: 'auto',
-                            }}
-                        >
-                            {/* <RF
-                                defaultNodes={formattedNodes}
-                                defaultEdges={edges}
-                                nodeTypes={nodeTypes}
-                                edgeTypes={edgeTypes}
-                                //  defaultPosition={[-245, 0]}
-                                fitView={true}
-                            >
-                                <Panel position="top-center"> hey</Panel>
-                                <Background variant={BackgroundVariant.Dots} />
-                                <MiniMap />
-                                <Controls />
-                            </RF> */}
-                            <ReactFlow
-                                defaultNodes={formattedNodes}
-                                defaultEdges={edges}
-                                nodeTypes={nodeTypes}
-                                edgeTypes={edgeTypes}
-                                defaultPosition={[-245, 0]}
-                                fitView={true}
-                                // defaultZoom={10}
-                            >
-                                <Background variant={BackgroundVariant.Dots} />
-                                <MiniMap />
-                                <Controls />
-                            </ReactFlow>
-                        </div>
-                    </div>
-                </div>
+                    </Panel>
+                </ReactFlow>
             </MetamodelContext.Provider>
-        </>
+        </div>
     );
 };

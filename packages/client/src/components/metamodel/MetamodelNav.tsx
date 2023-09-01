@@ -1,7 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Handle, Position } from 'react-flow-renderer';
 import { useForm } from 'react-hook-form';
-import { MetamodelNode } from './MetamodelNode';
 import { ExpandMoreRounded } from '@mui/icons-material';
 
 import {
@@ -48,20 +46,20 @@ export const MetamodelNav = ({ nodes }) => {
 
     const StyledNavContainer = styled('div')(({ theme }) => {
         const shape = theme.shape as unknown as {
-            borderRadiusNone: string;
+            borderRadius: string;
         };
         return {
             display: 'flex',
-            width: '245px',
-            height: '697px',
+            width: '100%',
             padding: '16px',
             flexDirection: 'column',
             alignItems: 'flex-start',
             gap: '10px',
-            borderRadius: shape.borderRadiusNone,
             background: theme.palette.background.paper,
+            borderRadius: shape.borderRadius,
             boxShadow: '0px 5px 22px 0px rgba(0, 0, 0, 0.06);',
             // opacity: '100%',
+            // height: '697px',
         };
     });
     const StyledSearchContainer = styled('div')(({ theme }) => {
@@ -186,52 +184,50 @@ export const MetamodelNav = ({ nodes }) => {
     /** Reset Draggable */
 
     return (
-        <>
-            <StyledNavContainer>
-                <StyledSearchContainer>
-                    <StyledSearch
-                        ref={searchRef}
-                        placeholder={'Search'}
-                        size={'small'}
-                        value={searchFilter}
-                        onChange={(e) => {
-                            setValue('SEARCH_FILTER', e.target.value);
-                        }}
-                    />
-                </StyledSearchContainer>
-                <Accordion>
-                    <StyledAccordionTrigger>
-                        <StyledAccordionLabel>
-                            <Typography variant="body1"> Tables</Typography>
-                        </StyledAccordionLabel>
-                        <StyledDropdownIconContainer>
-                            <ExpandMoreRounded />
-                        </StyledDropdownIconContainer>
-                    </StyledAccordionTrigger>
-                    <Accordion.Content>
-                        <StyledAccordionContent>
-                            {nodes.map((table, tableIdx) => {
-                                return (
-                                    <StyledTableItem
-                                        key={tableIdx}
-                                        variant="text"
-                                        color="inherit"
-                                        onClick={
-                                            () => onSelectNodeId(table.id)
-                                            // handleTableClick(table, tableIdx)
-                                        }
-                                    >
-                                        <Typography variant="body2">
-                                            {table.data.name}
-                                        </Typography>
-                                    </StyledTableItem>
-                                );
-                            })}
-                        </StyledAccordionContent>
-                    </Accordion.Content>
-                </Accordion>
-            </StyledNavContainer>
-        </>
+        <StyledNavContainer>
+            <StyledSearchContainer>
+                <StyledSearch
+                    ref={searchRef}
+                    placeholder={'Search'}
+                    size={'small'}
+                    value={searchFilter}
+                    onChange={(e) => {
+                        setValue('SEARCH_FILTER', e.target.value);
+                    }}
+                />
+            </StyledSearchContainer>
+            <Accordion>
+                <StyledAccordionTrigger>
+                    <StyledAccordionLabel>
+                        <Typography variant="body1"> Tables</Typography>
+                    </StyledAccordionLabel>
+                    <StyledDropdownIconContainer>
+                        <ExpandMoreRounded />
+                    </StyledDropdownIconContainer>
+                </StyledAccordionTrigger>
+                <Accordion.Content>
+                    <StyledAccordionContent>
+                        {nodes.map((table, tableIdx) => {
+                            return (
+                                <StyledTableItem
+                                    key={tableIdx}
+                                    variant="text"
+                                    color="inherit"
+                                    onClick={
+                                        () => onSelectNodeId(table.id)
+                                        // handleTableClick(table, tableIdx)
+                                    }
+                                >
+                                    <Typography variant="body2">
+                                        {table.data.name}
+                                    </Typography>
+                                </StyledTableItem>
+                            );
+                        })}
+                    </StyledAccordionContent>
+                </Accordion.Content>
+            </Accordion>
+        </StyledNavContainer>
     );
 };
 
