@@ -2,7 +2,13 @@ import React, { useState, useRef, useEffect } from 'react';
 import { Handle, Position } from 'react-flow-renderer';
 import { useForm } from 'react-hook-form';
 import { MetamodelNode } from './MetamodelNode';
-import { ExpandMoreRounded } from '@mui/icons-material';
+import {
+    ExpandMore,
+    ExpandMoreRounded,
+    Keyboard,
+    KeyboardDoubleArrowLeftRounded,
+    MyLocationRounded,
+} from '@mui/icons-material';
 
 import {
     styled,
@@ -11,6 +17,8 @@ import {
     Typography,
     List,
     Button,
+    Icon,
+    IconButton,
 } from '@semoss/ui';
 
 import { useMetamodel } from '@/hooks';
@@ -22,6 +30,7 @@ export const MetamodelNav = ({ nodes }) => {
     console.log('nodes are: ', nodes);
 
     const searchRef = useRef(undefined);
+    const tablesRef = useRef(undefined);
 
     const { control, watch, setValue } = useForm<{
         NODES: { tableName: string; tableColumns: unknown[] }[];
@@ -38,6 +47,8 @@ export const MetamodelNav = ({ nodes }) => {
 
     const searchFilter = watch('SEARCH_FILTER');
 
+    const [expandTable, setExpandTable] = useState(false);
+
     // get the metamodel nodes
 
     // USE EFFECT: set active node
@@ -53,10 +64,11 @@ export const MetamodelNav = ({ nodes }) => {
         return {
             display: 'flex',
             width: '245px',
-            height: '697px',
+            height: '100%',
             padding: '16px',
             flexDirection: 'column',
             alignItems: 'flex-start',
+            alignSelf: 'stretch',
             gap: '10px',
             borderRadius: shape.borderRadiusNone,
             background: theme.palette.background.paper,
@@ -71,7 +83,7 @@ export const MetamodelNav = ({ nodes }) => {
         return {
             display: 'flex',
             padding: shape.borderRadiusNone,
-            alignItems: 'flex-start',
+            alignItems: 'center',
             gap: '20px',
             borderRadius: shape.borderRadiusNone,
         };
@@ -93,74 +105,16 @@ export const MetamodelNav = ({ nodes }) => {
             borderRadiusNone: string;
         };
         return {
+            height: '28px',
+            maxHeight: '28px',
+            width: '213px',
             display: 'flex',
-            padding: '8px 16px',
+            // padding: '8px 16px',
             flexDirection: 'column',
             alignItems: 'center',
             alignSelf: 'stretch',
-        };
-    });
-    const StyledSubAccordion = styled(Accordion)(({ theme }) => {
-        const shape = theme.shape as unknown as {
-            borderRadiusNone: string;
-        };
-        return {
-            display: 'flex',
-            padding: '4px 0px',
-            flexDirection: 'column',
-            alignItems: 'flex-start',
-            flex: '1 0 0',
-            boxShadow: '0px 5px 22px 0px rgba(0, 0, 0, 0.06);',
-        };
-    });
-    const StyledAccordionLabel = styled('div')(({ theme }) => {
-        const shape = theme.shape as unknown as {
-            borderRadiusNone: string;
-        };
-        return {
-            display: 'flex',
-            padding: '4px 0px',
-            flexDirection: 'column',
-            alignItems: 'flex-start',
-            flex: '1 0 0',
-        };
-    });
-    const StyledDropdownIconContainer = styled('div')(({ theme }) => {
-        const shape = theme.shape as unknown as {
-            borderRadiusNone: string;
-        };
-        return {
-            display: 'flex',
-            alignItems: 'flex-start',
-        };
-    });
-
-    const StyledNestingContainer = styled('div')(({ theme }) => {
-        return {
-            display: 'flex',
-            alignItems: 'center',
-            background: 'rgba(211, 47, 47, 0.10);',
-        };
-    });
-    const StyledTableNesting = styled('div')(({ theme }) => {
-        return {
-            width: '32px',
-            height: '16px',
-            background: 'rgba(255, 255, 255, 0.00);',
-        };
-    });
-    const StyledNesting = styled('div')(({ theme }) => {
-        return {
-            width: '48px',
-            height: '16px',
-            background: 'rgba(255, 255, 255, 0.00);',
-        };
-    });
-    const StyledContentContainer = styled('div')(({ theme }) => {
-        return {
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'flex-start',
+            border: 'none !important',
+            boxShadow: 'none !important',
         };
     });
     const StyledAccordionContent = styled('div')(({ theme }) => {
@@ -171,10 +125,63 @@ export const MetamodelNav = ({ nodes }) => {
             gap: '10px',
         };
     });
-    const StyledTableItem = styled(Button)(({ theme }) => {
+
+    const ApplyNesting = styled('div')(({ theme }) => {
         return {
             display: 'flex',
-            textAlign: 'left',
+            padding: 'var(--shape-border-radius-none, 0px) 16px',
+            alignItems: 'center',
+            gap: 'var(--shape-border-radius-none, 0px)',
+            alignSelf: 'stretch',
+        };
+    });
+    const StyledItemContainer = styled('div')(({ theme }) => {
+        return {
+            display: 'flex',
+            alignItems: 'center',
+            gap: 'var(--shape-border-radius-none, 0px)',
+            alignSelf: 'stretch',
+            height: '24px',
+            maxHeight: '24px',
+            borderRadius: 'var(--shape-border-radius-none, 0px);',
+            border: 0,
+        };
+    });
+    const StyledItem = styled('div')(({ theme }) => {
+        return {
+            display: 'flex',
+            alignItems: 'center',
+            flex: '1 0 0',
+            border: 0,
+        };
+    });
+    const StyledItemText = styled('div')(({ theme }) => {
+        return {
+            display: 'flex',
+            height: '24px',
+            flexDirection: 'column',
+            alignItems: 'center',
+        };
+    });
+    const StyledItemTextTypography = styled(Typography)(({ theme }) => {
+        return {
+            fontFamily: 'Inter',
+            fontSize: '12px',
+            fontStyle: 'normal',
+            fontWeight: 400,
+            lineHeight: '100%',
+            letterSpacing: '0.15px%',
+            color: 'var(--light-text-secondary, rgba(0, 0, 0, 0.60))',
+            fontFeatureSettings: 'clig off, liga off',
+        };
+    });
+    const StyledExpandIconContainer = styled('div')(({ theme }) => {
+        return {
+            display: 'flex',
+            paddingRight: '0px',
+            alignItems: 'flex-start',
+            gap: '10px',
+            borderRadius: 'var(--shape-border-radius-none, 0px)',
         };
     });
 
@@ -184,10 +191,20 @@ export const MetamodelNav = ({ nodes }) => {
     };
 
     /** Reset Draggable */
+    console.log('tablesRef: ', tablesRef);
 
     return (
         <>
             <StyledNavContainer>
+                <List.Item>
+                    <ApplyNesting />
+                    <List.ItemText>
+                        <Typography variant="h6">Explorer</Typography>
+                    </List.ItemText>
+                    <Icon>
+                        <KeyboardDoubleArrowLeftRounded />
+                    </Icon>
+                </List.Item>
                 <StyledSearchContainer>
                     <StyledSearch
                         ref={searchRef}
@@ -199,78 +216,125 @@ export const MetamodelNav = ({ nodes }) => {
                         }}
                     />
                 </StyledSearchContainer>
-                <Accordion>
+                <Accordion
+                    ref={tablesRef}
+                    defaultExpanded={true}
+                    disableGutters={true}
+                    sx={{
+                        width: '235px',
+                        border: 'none !important',
+                        boxShadow: 'none !important',
+                    }}
+                >
                     <StyledAccordionTrigger>
-                        <StyledAccordionLabel>
-                            <Typography variant="body1"> Tables</Typography>
-                        </StyledAccordionLabel>
-                        <StyledDropdownIconContainer>
-                            <ExpandMoreRounded />
-                        </StyledDropdownIconContainer>
+                        <StyledItem>
+                            <StyledExpandIconContainer>
+                                <ExpandMoreRounded />
+                            </StyledExpandIconContainer>
+                            <StyledItemText>
+                                <Typography variant="body1"> Tables</Typography>
+                            </StyledItemText>
+                        </StyledItem>
                     </StyledAccordionTrigger>
-                    <Accordion.Content>
-                        <StyledAccordionContent>
-                            {nodes.map((table, tableIdx) => {
-                                return (
-                                    <StyledTableItem
-                                        key={tableIdx}
-                                        variant="text"
-                                        color="inherit"
-                                        onClick={
-                                            () => onSelectNodeId(table.id)
-                                            // handleTableClick(table, tableIdx)
-                                        }
-                                    >
-                                        <Typography variant="body2">
-                                            {table.data.name}
-                                        </Typography>
-                                    </StyledTableItem>
-                                );
-                            })}
-                        </StyledAccordionContent>
+                    <Accordion.Content
+                        sx={{
+                            display: 'flex',
+                            wdith: '100%',
+                            flexDirection: 'column',
+                            padding: '0px',
+                            gap: '10px',
+                            alignSelf: 'stretch',
+                            alignItems: 'flex-start',
+                            border: 0,
+                        }}
+                    >
+                        {nodes.map((table, tableIdx) => {
+                            return (
+                                <Accordion
+                                    key={tableIdx}
+                                    defaultExpanded={false}
+                                    disableGutters={true}
+                                    sx={{
+                                        width: '100%',
+                                        border: 'none !important',
+                                        boxShadow: 'none !important',
+                                    }}
+                                >
+                                    <StyledAccordionTrigger>
+                                        <StyledItemContainer
+                                            sx={{ width: '213px' }}
+                                        >
+                                            <StyledItem>
+                                                <ApplyNesting />
+                                                <StyledExpandIconContainer>
+                                                    <ExpandMoreRounded
+                                                        sx={{
+                                                            color: 'var(--light-text-secondary, rgba(0, 0, 0, 0.60))',
+                                                        }}
+                                                    />
+                                                </StyledExpandIconContainer>
+                                                <StyledItemText>
+                                                    <StyledItemTextTypography
+                                                        variant="body1"
+                                                        sx={{
+                                                            fontSize: '12px',
+                                                        }}
+                                                    >
+                                                        {table.data.name}
+                                                    </StyledItemTextTypography>
+                                                </StyledItemText>
+                                            </StyledItem>
+                                            <IconButton
+                                                sx={{
+                                                    '&:hover': {
+                                                        backgroundColor:
+                                                            'var(--alt-purple-alt-purple-50, #F1E9FB)',
+                                                    },
+                                                }}
+                                            >
+                                                <MyLocationRounded
+                                                    sx={{
+                                                        color: 'var(--light-text-secondary, rgba(0, 0, 0, 0.60))',
+                                                    }}
+                                                />
+                                            </IconButton>
+                                        </StyledItemContainer>
+                                    </StyledAccordionTrigger>
+                                    <Accordion.Content>
+                                        <StyledAccordionContent>
+                                            {table.data.properties.map(
+                                                (column, colIdx) => (
+                                                    <StyledItemContainer
+                                                        key={`${tableIdx}_${colIdx}`}
+                                                    >
+                                                        <StyledItem>
+                                                            <ApplyNesting />
+                                                            <StyledItemText>
+                                                                <StyledItemTextTypography
+                                                                    variant="body1"
+                                                                    sx={{
+                                                                        fontSize:
+                                                                            '11px',
+                                                                    }}
+                                                                >
+                                                                    {
+                                                                        column.name
+                                                                    }
+                                                                </StyledItemTextTypography>
+                                                            </StyledItemText>
+                                                        </StyledItem>
+                                                    </StyledItemContainer>
+                                                ),
+                                            )}
+                                        </StyledAccordionContent>
+                                    </Accordion.Content>
+                                </Accordion>
+                            );
+                        })}
+                        {/* </StyledAccordionContent> */}
                     </Accordion.Content>
                 </Accordion>
             </StyledNavContainer>
         </>
     );
 };
-
-{
-    /* // export const MetamodelNav = React.memo(_MetamodelNav); */
-}
-
-{
-    /* 
-// <StyledSubAccordion key={tableIdx}>
-    //     <StyledAccordionTrigger>
-    //         <StyledNestingContainer>
-    //             <StyledTableNesting />
-    //         </StyledNestingContainer>
-    //         <StyledAccordionLabel>
-    //             <Typography variant="caption">
-    //                 {table.data.name}
-    //             </Typography>
-    //         </StyledAccordionLabel>
-    //     </StyledAccordionTrigger>
-    //     <Accordion.Content>
-    //         <StyledAccordionContent>
-    //             {table.data.properties.map(
-    //                 (column, colIdx) => (
-    //                     <StyledContentContainer
-    //                         key={`${tableIdx}_${colIdx}`}
-    //                     >
-    //                         <StyledNestingContainer>
-    //                             <StyledNesting />
-    //                         </StyledNestingContainer>
-    //                         <StyledAccordionLabel>
-    //                             <Typography variant="caption">
-    //                                 {column.name}
-    //                             </Typography>
-    //                         </StyledAccordionLabel>
-    //                     </StyledContentContainer>
-    //                 ),
-    //             )}
-    //         </StyledAccordionContent>
-    //     </Accordion.Content>
-    // </StyledSubAccordion> */
-}

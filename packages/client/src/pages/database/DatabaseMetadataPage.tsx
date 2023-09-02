@@ -32,6 +32,7 @@ const StyledMetamodelContainer = styled('section')(({ theme }) => {
         display: 'flex',
         height: '60vh',
         width: '100%',
+
         borderRadius: shape.borderRadiusNone,
     };
 });
@@ -281,15 +282,17 @@ export const DatabaseMetadataPage = observer(() => {
                             );
                         })}
                     </StyledSelect> */}
-                    <Metamodel
-                        nodes={nodes}
-                        edges={edges}
-                        selectedNode={selectedNode}
-                        onSelectNode={(n) => {
-                            setSelectedNode(n);
-                        }}
-                        isInteractive={true}
-                    />
+                    <StyledMetamodelContainer>
+                        <Metamodel
+                            nodes={nodes}
+                            edges={edges}
+                            selectedNode={selectedNode}
+                            onSelectNode={(n) => {
+                                setSelectedNode(n);
+                            }}
+                            isInteractive={true}
+                        />
+                    </StyledMetamodelContainer>
                 </Stack>
             </Section>
 

@@ -19,6 +19,7 @@ import { MetamodelContext, MetamodelContextType } from '@/contexts';
 import { MetamodelToolbar } from './MetamodelToolbar';
 import { format } from 'path';
 import { MetamodelNav } from './MetamodelNav';
+import { MetamodelEditMenu } from './MetamodelEditMenu';
 
 const edgeTypes = {
     floating: FloatingEdge,
@@ -100,7 +101,9 @@ export const Metamodel = (props: MetamodelProps) => {
     });
     const [data, setData] = useState({ nodes: formattedNodes, edges: edges });
 
+    //
     const updateData = (nodeData, action) => {
+        console.log('nodeData: ', nodeData);
         const temp = data;
         if (action === 'COLUMN_NAME_CHANGE') {
             // access data by nodeData.table.name
@@ -144,6 +147,11 @@ export const Metamodel = (props: MetamodelProps) => {
         }
         // if action === 'column data type change'
     };
+
+    /**
+     * Store old data
+     * Store new data
+     */
 
     // create the context
     const metamodelContext: MetamodelContextType = {
@@ -252,7 +260,7 @@ export const Metamodel = (props: MetamodelProps) => {
         color: 'var(--light-primary-contrast, #FFF)',
     }));
 
-    const reactFlowWidth = `calc(1456px - 245px)`;
+    const reactFlowWidth = `calc(1456px - 245px - 345px)`;
 
     return (
         <>
@@ -260,10 +268,25 @@ export const Metamodel = (props: MetamodelProps) => {
                 <div
                     style={{ display: 'flex', height: '100vh', width: '100vw' }}
                 >
-                    <div style={{ width: '245px' }}>
+                    <div
+                        style={{
+                            width: '245px',
+                            height: '100%',
+                            // flexShrink: 0,
+                            overflow: 'auto',
+                        }}
+                    >
                         <MetamodelNav nodes={formattedNodes} />
                     </div>
-                    <div style={{ position: 'relative' }}>
+                    <div
+                        style={{
+                            // flex: 1,
+                            position: 'relative',
+                            width: reactFlowWidth,
+                            minWidth: reactFlowWidth,
+                            overflow: 'hidden',
+                        }}
+                    >
                         <div
                             style={{
                                 position: 'absolute',
@@ -289,6 +312,20 @@ export const Metamodel = (props: MetamodelProps) => {
                                 <Controls />
                             </ReactFlow>
                         </div>
+                    </div>
+                    <div
+                        style={{
+                            width: '345px',
+                            height: '100%',
+                            // flexShrink: 0,
+                            overflow: 'auto',
+                        }}
+                    >
+                        <MetamodelEditMenu
+                            node={
+                                selectedNode ? selectedNode : formattedNodes[0]
+                            }
+                        />
                     </div>
                 </div>
             </MetamodelContext.Provider>
