@@ -420,6 +420,19 @@ export const lightTheme: CustomThemeOptions = {
                 }),
             },
         },
+        MuiPaper: {
+            styleOverrides: {
+                root: ({ theme }) => {
+                    const shape = theme.shape as CustomShapeOptions;
+                    const palette = theme.palette as CustomPaletteOptions;
+                    return {
+                        boxShadow:
+                            "0px 5px 22px 0px rgba(0, 0, 0, 0.04), 0px 4px 4px 0.5px rgba(0, 0, 0, 0.03)",
+                        borderRadius: shape.borderRadiusLg,
+                    };
+                },
+            },
+        },
     },
 };
 

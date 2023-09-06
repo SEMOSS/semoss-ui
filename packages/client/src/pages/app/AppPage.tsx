@@ -1,65 +1,93 @@
-import { useState, useEffect, SyntheticEvent } from 'react';
+import React, {
+    useState,
+    useEffect,
+    useReducer,
+    useCallback,
+    useRef,
+} from 'react';
 import { observer } from 'mobx-react-lite';
-import { useParams, Navigate } from 'react-router-dom';
+import { useParams, Navigate, useNavigate } from 'react-router-dom';
 import { Controller, useForm } from 'react-hook-form';
 import {
-    styled,
-    useNotification,
     Button,
+    Divider,
+    FileDropzone,
+    Icon,
     IconButton,
     Stack,
-    FileDropzone,
     Typography,
     ToggleTabsGroup,
+    useNotification,
+    styled,
 } from '@semoss/ui';
-import { Code, Download } from '@mui/icons-material';
+import {
+    BugReport,
+    Code,
+    CodeOff,
+    Download,
+    Settings,
+    PersonAdd,
+} from '@mui/icons-material';
 import { Navbar } from '@/components/ui';
 import { useRootStore, useAPI } from '@/hooks';
 import { AppRenderer } from '@/components/app';
 
 import { SettingsContext } from '@/contexts';
-import { PendingMembersTable } from '../../components/settings/PendingMembersTable';
-import { MembersTable } from '../../components/settings/MembersTable';
+import { MembersTable } from '@/components/settings/MembersTable';
+import { PendingMembersTable } from '@/components/settings/PendingMembersTable';
+import { AppSettings } from '@/components/project/';
+import { SettingsTiles } from '@/components/settings';
 
 const NAV_HEIGHT = '48px';
 const NAV_FOOTER = '24px';
+const SIDEBAR_WIDTH = '56px';
 
-// background: var(--light-text-primary, rgba(0, 0, 0, 0.87));
-const StyledContent = styled('div')(() => ({
-    display: 'flex',
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    position: 'absolute',
-    paddingTop: NAV_HEIGHT,
-    paddingBottom: NAV_FOOTER,
-    height: '100%',
-    width: '100%',
-    overflow: 'hidden',
+const StyledViewport = styled('div')(({ theme }) => ({
+    height: '100vh',
 }));
 
+// Navigation Styles Start -------------------------------------
 const StyledNavbarChildren = styled('div')(({ theme }) => ({
     display: 'flex',
-    justifyContent: 'flex-end',
-    gap: theme.spacing(2),
+    justifyContent: 'space-between',
 }));
 
-const StyledLeft = styled('div')(({ theme }) => ({
+const StyledNavbarLeft = styled('div')(({ theme }) => ({
+    display: 'flex',
+    // gap: theme.spacing(2),
+}));
+
+const StyledNavbarRight = styled('div')(({ theme }) => ({
+    display: 'flex',
+    gap: theme.spacing(2),
+    alignItems: 'center',
+}));
+
+const StyledNavbarItem = styled('div', {
+    shouldForwardProp: (prop) => prop !== 'selected',
+})<{
+    /** Track if item is selected */
+    selected: boolean;
+}>(({ theme, selected }) => ({
     display: 'flex',
     flexDirection: 'column',
-    height: '100%',
-    width: '50%',
-    maxWidth: '400px',
-    overflow: 'hidden',
-    background: theme.palette.background.paper,
-    padding: theme.spacing(2),
-    gap: theme.spacing(2),
-}));
-
-const StyledRight = styled('div')(() => ({
-    flex: '1',
-    height: '100%',
-    overflow: 'hidden',
+    alignItems: 'center',
+    justifyContent: 'center',
+    color: 'inherit',
+    textDecoration: 'none',
+    height: NAV_HEIGHT,
+    width: SIDEBAR_WIDTH,
+    cursor: 'pointer',
+    backgroundColor: selected
+        ? theme.palette.primary.main
+        : theme.palette.common.black,
+    transition: 'backgroundColor 2s ease',
+    '&:hover': {
+        backgroundColor: selected
+            ? theme.palette.primary.main
+            : `${theme.palette.primary.dark}4D`,
+        transition: 'backgroundColor 2s ease',
+    },
 }));
 
 const StyledTrack = styled('div', {
@@ -116,6 +144,83 @@ const StyledHandle = styled(IconButton, {
         duration: theme.transitions.duration.standard,
     }),
 }));
+// Navigation Styles End ---------------------------------------
+
+// background: var(--light-text-primary, rgba(0, 0, 0, 0.87));
+const StyledContent = styled('div')(() => ({
+    // border: 'solid blue',
+    height: `100%`,
+    overflow: 'hidden',
+}));
+
+const StyledTop = styled('div')(({ theme }) => ({
+    display: 'flex',
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    overflow: 'hidden',
+
+    // width: '100%',
+    // paddingTop: NAV_HEIGHT,
+    // paddingBottom: NAV_FOOTER,
+    // position: 'absolute',
+    // height: '100%',
+
+    // Take in prop that will resize height of top portion
+    marginTop: NAV_HEIGHT,
+    // height: editorView ? height : '100%', // resizable
+
+    // border: 'solid yellow',
+    // marginBottom: NAV_FOOTER,
+}));
+
+const StyledTopLeft = styled('div')(({ theme }) => ({
+    display: 'flex',
+    overflowX: 'hidden',
+    background: theme.palette.background.paper,
+    justifyContent: 'space-between',
+    // gap: theme.spacing(2),
+    // flexDirection: 'column',
+    // border: 'solid green',
+
+    // Take in prop that will resize width of left portion
+    height: '100%',
+    width: '50%', // resizable
+    maxWidth: '500px',
+}));
+
+const StyledTopLeftContent = styled('div')(({ theme }) => ({
+    height: '95vh',
+    width: '100%',
+    overflowY: 'scroll',
+    paddingLeft: theme.spacing(2),
+    paddingTop: theme.spacing(2),
+    paddingBottom: theme.spacing(2),
+    // border: 'solid red',
+}));
+
+const StyledTopRight = styled('div')(() => ({
+    flex: '1',
+    height: '100%', //resizable
+    overflow: 'hidden',
+}));
+
+const StyledBottom = styled('div')(({ theme }) => ({
+    marginRight: theme.spacing(1),
+}));
+
+const StyledHorizDivider = styled(Divider)(() => ({
+    height: '4px',
+    '&:hover': {
+        cursor: 'row-resize',
+    },
+}));
+
+const StyledVertDivider = styled(Divider)(() => ({
+    '&:hover': {
+        cursor: 'col-resize',
+    },
+}));
 
 type EditAppForm = {
     PROJECT_UPLOAD: File;
@@ -128,6 +233,7 @@ export const AppPage = observer(() => {
     const notification = useNotification();
 
     const { monolithStore, configStore } = useRootStore();
+    const navigate = useNavigate();
 
     // get the app id from the url
     const { appId } = useParams();
@@ -136,7 +242,7 @@ export const AppPage = observer(() => {
     const [editMode, setEditMode] = useState<boolean>(false);
     const [isLoading, setIsLoading] = useState(false);
     const [counter, setCounter] = useState(0);
-    const [view, setView] = useState(0);
+    const [view, setView] = useState<string>('');
 
     const { handleSubmit, control } = useForm<EditAppForm>({
         defaultValues: {
@@ -264,7 +370,7 @@ export const AppPage = observer(() => {
      * @param newValue
      * @desc changes tab group
      */
-    const handleChange = (event: SyntheticEvent, newValue: number) => {
+    const handleChange = (newValue: string) => {
         setView(newValue);
     };
 
@@ -273,122 +379,284 @@ export const AppPage = observer(() => {
         return <Navigate to="/" replace />;
     }
 
+    // RESIZABLE WINDOW START ----------------------------
+    const [topPanelHeight, setTopPanelHeight] = useState(
+        `calc(100% + ${NAV_FOOTER} - ${NAV_HEIGHT} - ${NAV_HEIGHT})`,
+    );
+    const [dragging, setDragging] = useState(false);
+    const containerRef = useRef(null);
+
+    const handleMouseMove = useCallback(
+        (e) => {
+            if (!dragging) return;
+
+            const containerHeight = containerRef.current.offsetHeight;
+            const mouseX = e.clientY;
+
+            const panelTopHeight = '70%';
+            // const panelTopHeight = `${(mouseX / containerHeight) * 100}%`;
+
+            setTopPanelHeight(panelTopHeight);
+        },
+        [dragging],
+    );
+
+    const handleConsoleExpand = useCallback(() => {
+        setDragging(true);
+    }, []);
+
+    const handleMouseUp = useCallback(() => {
+        setDragging(false);
+    }, []);
+
+    // Attach and detach event listeners when isDragging changes
+    useEffect(() => {
+        if (dragging) {
+            document.addEventListener('mousemove', handleMouseMove);
+            document.addEventListener('mouseup', handleMouseUp);
+        } else {
+            document.removeEventListener('mousemove', handleMouseMove);
+            document.removeEventListener('mouseup', handleMouseUp);
+        }
+
+        // Clean up when the component unmounts
+        return () => {
+            document.removeEventListener('mousemove', handleMouseMove);
+            document.removeEventListener('mouseup', handleMouseUp);
+        };
+    }, [dragging, handleMouseMove, handleMouseUp]);
+
     return (
-        <>
+        <StyledViewport>
             <Navbar>
                 {appPermission === 'OWNER' && (
                     <StyledNavbarChildren>
-                        <StyledTrack
-                            active={editMode}
-                            onClick={() => {
-                                if (appPermission === 'OWNER') {
-                                    setEditMode(!editMode);
-                                } else {
-                                    notification.add({
-                                        color: 'error',
-                                        message:
-                                            'Currently you do not have access to edit this application.',
-                                    });
-                                }
-                            }}
-                        >
-                            <StyledHandle active={editMode}>
-                                <Code />
-                            </StyledHandle>
-                        </StyledTrack>
-                        <Button
-                            size={'small'}
-                            color={'primary'}
-                            variant={'outlined'}
-                            onClick={() => {
-                                downloadApp();
-                            }}
-                        >
-                            <Download />
-                        </Button>
+                        <StyledNavbarLeft>
+                            {editMode ? (
+                                <>
+                                    <StyledNavbarItem
+                                        selected={view === 'code-editor'}
+                                        onClick={() => {
+                                            handleChange('code-editor');
+                                        }}
+                                    >
+                                        <CodeOff />
+                                    </StyledNavbarItem>
+                                    <StyledNavbarItem
+                                        selected={view === 'settings'}
+                                        onClick={() => {
+                                            handleChange('settings');
+                                        }}
+                                    >
+                                        <Settings />
+                                    </StyledNavbarItem>
+                                    <StyledNavbarItem
+                                        selected={view === 'permissions'}
+                                        onClick={() => {
+                                            handleChange('permissions');
+                                        }}
+                                    >
+                                        <PersonAdd />
+                                    </StyledNavbarItem>
+                                </>
+                            ) : null}
+                        </StyledNavbarLeft>
+                        <StyledNavbarRight>
+                            <StyledTrack
+                                active={editMode}
+                                onClick={() => {
+                                    if (appPermission === 'OWNER') {
+                                        setEditMode(!editMode);
+                                        if (!editMode) {
+                                            setView('settings');
+                                        } else {
+                                            setView('');
+                                        }
+                                    } else {
+                                        notification.add({
+                                            color: 'error',
+                                            message:
+                                                'Currently you do not have access to edit this application.',
+                                        });
+                                    }
+                                }}
+                            >
+                                <StyledHandle active={editMode}>
+                                    <Code />
+                                </StyledHandle>
+                            </StyledTrack>
+                            <Button
+                                size={'small'}
+                                color={'primary'}
+                                variant={'outlined'}
+                                onClick={() => {
+                                    downloadApp();
+                                }}
+                            >
+                                <Download />
+                            </Button>
+                        </StyledNavbarRight>
                     </StyledNavbarChildren>
                 )}
             </Navbar>
-            <StyledContent>
-                {editMode && (
-                    <StyledLeft>
-                        <ToggleTabsGroup
-                            value={view}
-                            onChange={handleChange}
-                            aria-label="basic tabs example"
+            <StyledContent ref={containerRef}>
+                <StyledTop
+                    style={{
+                        height:
+                            editMode && view === 'code-editor'
+                                ? topPanelHeight
+                                : '100%',
+                    }}
+                >
+                    {editMode && (
+                        <SettingsContext.Provider
+                            value={{
+                                adminMode: configStore.store.user.admin,
+                            }}
                         >
-                            <ToggleTabsGroup.Item label="Project Settings" />
-                            <ToggleTabsGroup.Item label="Permissions" />
-                        </ToggleTabsGroup>
-                        {view === 0 && (
-                            <form onSubmit={editApp}>
-                                <Stack direction="column" spacing={1}>
-                                    <Typography variant="subtitle2">
-                                        Update Project
-                                    </Typography>
-                                    <Controller
-                                        name={'PROJECT_UPLOAD'}
-                                        control={control}
-                                        rules={{}}
-                                        render={({ field }) => {
-                                            console.log(field.value);
-                                            return (
-                                                <FileDropzone
-                                                    multiple={false}
-                                                    value={field.value}
-                                                    disabled={isLoading}
-                                                    onChange={(newValues) => {
-                                                        field.onChange(
-                                                            newValues,
+                            <StyledTopLeft>
+                                <StyledTopLeftContent>
+                                    {view === 'settings' && (
+                                        <form onSubmit={editApp}>
+                                            <Stack
+                                                direction="column"
+                                                spacing={1}
+                                            >
+                                                <Typography variant={'h5'}>
+                                                    Settings
+                                                </Typography>
+                                                <Typography variant={'h6'}>
+                                                    Access
+                                                </Typography>
+                                                <SettingsTiles
+                                                    type={'app'}
+                                                    id={appId}
+                                                    condensed={true}
+                                                    onDelete={() => {
+                                                        console.log(
+                                                            'navigate to app library',
+                                                        );
+                                                        navigate('/');
+                                                    }}
+                                                />
+                                                <Typography variant={'h6'}>
+                                                    Publish
+                                                </Typography>
+                                                <AppSettings
+                                                    id={appId}
+                                                    condensed={true}
+                                                />
+                                                <Typography variant="h6">
+                                                    Update Project
+                                                </Typography>
+                                                <Controller
+                                                    name={'PROJECT_UPLOAD'}
+                                                    control={control}
+                                                    rules={{}}
+                                                    render={({ field }) => {
+                                                        console.log(
+                                                            field.value,
+                                                        );
+                                                        return (
+                                                            <FileDropzone
+                                                                multiple={false}
+                                                                value={
+                                                                    field.value
+                                                                }
+                                                                disabled={
+                                                                    isLoading
+                                                                }
+                                                                onChange={(
+                                                                    newValues,
+                                                                ) => {
+                                                                    field.onChange(
+                                                                        newValues,
+                                                                    );
+                                                                }}
+                                                            />
                                                         );
                                                     }}
                                                 />
-                                            );
-                                        }}
-                                    />
-                                    <Stack alignItems={'center'}>
-                                        <Button
-                                            type="submit"
-                                            variant={'contained'}
-                                            disabled={isLoading}
+                                                <Stack alignItems={'center'}>
+                                                    <Button
+                                                        type="submit"
+                                                        variant={'contained'}
+                                                        disabled={isLoading}
+                                                    >
+                                                        Update
+                                                    </Button>
+                                                </Stack>
+                                            </Stack>
+                                        </form>
+                                    )}
+                                    {view === 'permissions' && (
+                                        <div
+                                            style={{
+                                                display: 'flex',
+                                                flexDirection: 'column',
+                                                gap: '8px',
+                                            }}
                                         >
-                                            Update
-                                        </Button>
-                                    </Stack>
-                                </Stack>
-                            </form>
-                        )}
-                        {view === 1 && (
-                            <SettingsContext.Provider
-                                value={{
-                                    adminMode: true,
+                                            <Typography variant={'h5'}>
+                                                Member Permissions
+                                            </Typography>
+                                            <Typography variant={'h6'}>
+                                                Members
+                                            </Typography>
+                                            <MembersTable
+                                                type={'app'}
+                                                id={appId}
+                                                condensed={true}
+                                            />
+                                            {/* <Typography variant="h6">
+                                                Pending Permissions
+                                            </Typography> */}
+                                            {/* <PendingMembersTable
+                                                type={'app'}
+                                                id={appId}
+                                            /> */}
+                                        </div>
+                                    )}
+                                    {view === 'code-editor' && (
+                                        <div> Insert editor</div>
+                                    )}
+                                </StyledTopLeftContent>
+                                <StyledVertDivider orientation={'vertical'} />
+                            </StyledTopLeft>
+                        </SettingsContext.Provider>
+                    )}
+                    <StyledTopRight>
+                        <AppRenderer key={counter} appId={appId}></AppRenderer>
+                    </StyledTopRight>
+                </StyledTop>
+                {editMode && view === 'code-editor' ? (
+                    <>
+                        <StyledHorizDivider
+                            light={false}
+                            onMouseDown={(e) => {
+                                setDragging(true);
+                            }}
+                        />
+                        <StyledBottom>
+                            <div
+                                style={{
+                                    display: 'flex',
+                                    justifyContent: 'flex-end',
+                                    width: '100%',
+                                    alignItems: 'center',
                                 }}
                             >
-                                <div
-                                    style={{
-                                        display: 'flex',
-                                        flexDirection: 'column',
-                                        gap: '8px',
-                                    }}
-                                >
-                                    <MembersTable
-                                        type={'app'}
-                                        id={appId}
-                                        condensed={true}
-                                    />
-                                    {/* <PendingMembersTable
-                                        type={'app'}
-                                        id={appId}
-                                    /> */}
-                                </div>
-                            </SettingsContext.Provider>
-                        )}
-                    </StyledLeft>
-                )}
-                <StyledRight>
-                    <AppRenderer key={counter} appId={appId}></AppRenderer>
-                </StyledRight>
+                                <Icon>
+                                    <BugReport style={{}} />
+                                </Icon>
+                                <Typography variant="caption">
+                                    Debug Console
+                                </Typography>
+                            </div>
+                        </StyledBottom>
+                    </>
+                ) : null}
             </StyledContent>
-        </>
+        </StyledViewport>
     );
 });

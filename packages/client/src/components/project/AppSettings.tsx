@@ -4,6 +4,7 @@ import {
     useNotification,
     Avatar,
     Button,
+    Paper,
     Switch,
     Table,
     Typography,
@@ -82,6 +83,14 @@ const StyledCardLeft = styled('div')(({ theme }) => ({
     alignItems: 'flex-start',
 }));
 
+const StyledCondensedPublishContainer = styled('div')(({ theme }) => ({
+    display: 'flex',
+    width: '100%',
+    gap: '1rem',
+    flexDirection: 'column',
+    alignItems: 'flex-start',
+}));
+
 const StyledListItemHeader = styled('div')(({ theme }) => ({
     display: 'flex',
     width: theme.spacing(79),
@@ -103,6 +112,13 @@ const StyledSubRow = styled('div')({
     width: '100%',
     margin: '10px 0',
 });
+
+const StyledSubHeaderContainer = styled('div')(({ theme }) => ({
+    display: 'flex',
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    width: '100%',
+}));
 
 const StyledLeftActionContainer = styled('div')({
     display: 'flex',
@@ -160,6 +176,11 @@ const StyledTable = styled(Table)(({ theme }) => ({
     borderWidth: 'thin',
 }));
 
+const StyledPaper = styled(Paper)(({ theme }) => ({
+    backgroundColor: theme.palette.background.paper,
+    padding: theme.spacing(1),
+}));
+
 // User Table
 interface User {
     id: string;
@@ -168,8 +189,14 @@ interface User {
     time: string;
 }
 
-export const AppSettings = (props) => {
-    const { id } = props;
+interface AppSettingsProps {
+    id: string;
+
+    condensed?: boolean;
+}
+
+export const AppSettings = (props: AppSettingsProps) => {
+    const { id, condensed = false } = props;
     const { monolithStore, configStore } = useRootStore();
     const notification = useNotification();
 
@@ -390,138 +417,112 @@ export const AppSettings = (props) => {
             });
     };
 
-    return (
-        <StyledAppSettings>
-            <StyledTopCardContainer>
-                <StyledCardDiv>
-                    <StyledCardLeft>
-                        <StyledListItemHeader>
-                            <Typography variant="h6">Portals</Typography>
-                        </StyledListItemHeader>
-
-                        <StyledLeftActionContainer>
-                            {portalDetails.lastCompiled && (
-                                <StyledLeftActionDiv>
-                                    <StyledActionDivLeft>
-                                        <Typography variant="body2">
-                                            Last compiled by:
-                                        </Typography>
-                                    </StyledActionDivLeft>
-                                    <Avatar>
-                                        <StyledPersonIcon />
-                                    </Avatar>
-                                    <Typography variant="body2">
-                                        {portalDetails.compiledBy}
-                                    </Typography>
-                                    <Typography variant="body2">on</Typography>
-                                    <Typography variant="body2">
-                                        {portalDetails.lastCompiled}
-                                    </Typography>
-                                </StyledLeftActionDiv>
-                            )}
-                        </StyledLeftActionContainer>
-                    </StyledCardLeft>
-
-                    <StyledCardRight>
-                        <StyledSubColumn>
-                            <StyledSubRow>
+    if (condensed) {
+        return (
+            <StyledPaper>
+                <StyledCondensedPublishContainer>
+                    <StyledSubColumn style={{ width: '100%' }}>
+                        <StyledSubHeaderContainer>
+                            <div
+                                style={{
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                }}
+                            >
                                 <StyledSwitchIcon />
                                 <Typography variant="subtitle1">
                                     Enable Publishing
                                 </Typography>
-                            </StyledSubRow>
+                            </div>
+                            <StyledRightSwitch
+                                checked={portalDetails.hasPortal}
+                                value={portalDetails.hasPortal}
+                                onChange={() => {
+                                    enablePublishing();
+                                }}
+                            ></StyledRightSwitch>
+                        </StyledSubHeaderContainer>
 
+                        <StyledSubRow>
+                            <Typography variant="body2">
+                                Enable the publishing of the portal.
+                            </Typography>
+                        </StyledSubRow>
+                    </StyledSubColumn>
+
+                    <>
+                        <Divider />
+
+                        <StyledSubColumn style={{ width: '100%' }}>
                             <StyledSubRow>
-                                <Typography variant="body2">
-                                    Enable the publishing of the portal.
-                                </Typography>
-
-                                <StyledRightSwitch
-                                    checked={portalDetails.hasPortal}
-                                    value={portalDetails.hasPortal}
-                                    onChange={() => {
-                                        enablePublishing();
+                                <div
+                                    style={{
+                                        display: 'flex',
+                                        alignItems: 'center',
                                     }}
-                                ></StyledRightSwitch>
-                            </StyledSubRow>
-                        </StyledSubColumn>
-
-                        <>
-                            <Divider />
-
-                            <StyledSubColumn>
-                                <StyledSubRow>
+                                >
                                     <StyledRefreshIcon />
                                     <Typography variant="subtitle1">
                                         Publish Portal
                                     </Typography>
-                                </StyledSubRow>
+                                </div>
 
-                                <StyledSubRow>
-                                    <Typography variant="body2">
-                                        Publish the portal to generate a
-                                        shareable link.
-                                    </Typography>
+                                <StyledRightButton
+                                    disabled={!portalDetails.hasPortal}
+                                    variant="outlined"
+                                    onClick={() => {
+                                        publish();
+                                    }}
+                                >
+                                    <StyledPublishedIcon />
+                                    Publish
+                                </StyledRightButton>
+                            </StyledSubRow>
 
-                                    <StyledRightButton
-                                        disabled={!portalDetails.hasPortal}
-                                        variant="outlined"
-                                        onClick={() => {
-                                            publish();
-                                        }}
-                                    >
-                                        <StyledPublishedIcon />
-                                        Publish
-                                    </StyledRightButton>
-                                </StyledSubRow>
+                            <StyledSubRow>
+                                <Typography variant="body2">
+                                    Publish the portal to generate a shareable
+                                    link.
+                                </Typography>
+                            </StyledSubRow>
 
-                                <StyledSubRow>
-                                    <TextField
-                                        focused={false}
-                                        label={'Link'}
-                                        variant={'outlined'}
-                                        value={
-                                            portalDetails.hasPortal
-                                                ? portalDetails.url
-                                                : ''
-                                        }
-                                        sx={{ width: '100%' }}
-                                        InputProps={{
-                                            startAdornment: <InsertLink />,
-                                        }}
-                                    >
-                                        {portalDetails.hasPortal
+                            <StyledSubRow>
+                                <TextField
+                                    focused={false}
+                                    label={'Link'}
+                                    variant={'outlined'}
+                                    value={
+                                        portalDetails.hasPortal
                                             ? portalDetails.url
-                                            : ''}
-                                    </TextField>
-                                </StyledSubRow>
-                            </StyledSubColumn>
-                        </>
-                    </StyledCardRight>
-                </StyledCardDiv>
-            </StyledTopCardContainer>
-
-            {portalReactors.reactors.length ? (
-                <StyledCardContainer>
+                                            : ''
+                                    }
+                                    sx={{ width: '100%' }}
+                                    InputProps={{
+                                        startAdornment: <InsertLink />,
+                                    }}
+                                >
+                                    {portalDetails.hasPortal
+                                        ? portalDetails.url
+                                        : ''}
+                                </TextField>
+                            </StyledSubRow>
+                        </StyledSubColumn>
+                    </>
+                </StyledCondensedPublishContainer>
+            </StyledPaper>
+        );
+    } else {
+        return (
+            <StyledAppSettings>
+                <StyledTopCardContainer>
                     <StyledCardDiv>
                         <StyledCardLeft>
                             <StyledListItemHeader>
-                                <Typography variant="h6">Reactors</Typography>
+                                <Typography variant="h6">Portals</Typography>
                             </StyledListItemHeader>
 
-                            <StyledListItemHeader>
-                                Custom reactors created for the portal.
-                            </StyledListItemHeader>
-                            <Button
-                                variant="contained"
-                                onClick={() => {
-                                    recompileReactors();
-                                }}
-                            >
-                                Recompile
-                            </Button>
-                            {portalReactors.lastCompiled && (
-                                <StyledLeftActionContainer>
+                            <StyledLeftActionContainer>
+                                {portalDetails.lastCompiled && (
                                     <StyledLeftActionDiv>
                                         <StyledActionDivLeft>
                                             <Typography variant="body2">
@@ -532,44 +533,172 @@ export const AppSettings = (props) => {
                                             <StyledPersonIcon />
                                         </Avatar>
                                         <Typography variant="body2">
-                                            {portalReactors.compiledBy}
+                                            {portalDetails.compiledBy}
                                         </Typography>
-                                        {/* <Typography variant="body2">
-                                        {user.time}
-                                    </Typography> */}
                                         <Typography variant="body2">
                                             on
                                         </Typography>
                                         <Typography variant="body2">
-                                            {portalReactors.lastCompiled}
+                                            {portalDetails.lastCompiled}
                                         </Typography>
-                                    </StyledLeftActionDiv>{' '}
-                                </StyledLeftActionContainer>
-                            )}
+                                    </StyledLeftActionDiv>
+                                )}
+                            </StyledLeftActionContainer>
                         </StyledCardLeft>
+
                         <StyledCardRight>
-                            <StyledTable>
-                                <Table.Body>
-                                    {portalReactors.reactors.map(
-                                        (reactor, i) => {
-                                            return (
-                                                <Table.Row key={reactor + i}>
-                                                    <Table.Cell>
-                                                        {reactor}
-                                                    </Table.Cell>
-                                                    <Table.Cell align="right">
-                                                        <Java />
-                                                    </Table.Cell>
-                                                </Table.Row>
-                                            );
-                                        },
-                                    )}
-                                </Table.Body>
-                            </StyledTable>
+                            <StyledSubColumn>
+                                <StyledSubRow>
+                                    <StyledSwitchIcon />
+                                    <Typography variant="subtitle1">
+                                        Enable Publishing
+                                    </Typography>
+                                </StyledSubRow>
+
+                                <StyledSubRow>
+                                    <Typography variant="body2">
+                                        Enable the publishing of the portal.
+                                    </Typography>
+
+                                    <StyledRightSwitch
+                                        checked={portalDetails.hasPortal}
+                                        value={portalDetails.hasPortal}
+                                        onChange={() => {
+                                            enablePublishing();
+                                        }}
+                                    ></StyledRightSwitch>
+                                </StyledSubRow>
+                            </StyledSubColumn>
+
+                            <>
+                                <Divider />
+
+                                <StyledSubColumn>
+                                    <StyledSubRow>
+                                        <StyledRefreshIcon />
+                                        <Typography variant="subtitle1">
+                                            Publish Portal
+                                        </Typography>
+                                    </StyledSubRow>
+
+                                    <StyledSubRow>
+                                        <Typography variant="body2">
+                                            Publish the portal to generate a
+                                            shareable link.
+                                        </Typography>
+
+                                        <StyledRightButton
+                                            disabled={!portalDetails.hasPortal}
+                                            variant="outlined"
+                                            onClick={() => {
+                                                publish();
+                                            }}
+                                        >
+                                            <StyledPublishedIcon />
+                                            Publish
+                                        </StyledRightButton>
+                                    </StyledSubRow>
+
+                                    <StyledSubRow>
+                                        <TextField
+                                            focused={false}
+                                            label={'Link'}
+                                            variant={'outlined'}
+                                            value={
+                                                portalDetails.hasPortal
+                                                    ? portalDetails.url
+                                                    : ''
+                                            }
+                                            sx={{ width: '100%' }}
+                                            InputProps={{
+                                                startAdornment: <InsertLink />,
+                                            }}
+                                        >
+                                            {portalDetails.hasPortal
+                                                ? portalDetails.url
+                                                : ''}
+                                        </TextField>
+                                    </StyledSubRow>
+                                </StyledSubColumn>
+                            </>
                         </StyledCardRight>
                     </StyledCardDiv>
-                </StyledCardContainer>
-            ) : null}
-        </StyledAppSettings>
-    );
+                </StyledTopCardContainer>
+
+                {portalReactors.reactors.length ? (
+                    <StyledCardContainer>
+                        <StyledCardDiv>
+                            <StyledCardLeft>
+                                <StyledListItemHeader>
+                                    <Typography variant="h6">
+                                        Reactors
+                                    </Typography>
+                                </StyledListItemHeader>
+
+                                <StyledListItemHeader>
+                                    Custom reactors created for the portal.
+                                </StyledListItemHeader>
+                                <Button
+                                    variant="contained"
+                                    onClick={() => {
+                                        recompileReactors();
+                                    }}
+                                >
+                                    Recompile
+                                </Button>
+                                {portalReactors.lastCompiled && (
+                                    <StyledLeftActionContainer>
+                                        <StyledLeftActionDiv>
+                                            <StyledActionDivLeft>
+                                                <Typography variant="body2">
+                                                    Last compiled by:
+                                                </Typography>
+                                            </StyledActionDivLeft>
+                                            <Avatar>
+                                                <StyledPersonIcon />
+                                            </Avatar>
+                                            <Typography variant="body2">
+                                                {portalReactors.compiledBy}
+                                            </Typography>
+                                            {/* <Typography variant="body2">
+                                            {user.time}
+                                        </Typography> */}
+                                            <Typography variant="body2">
+                                                on
+                                            </Typography>
+                                            <Typography variant="body2">
+                                                {portalReactors.lastCompiled}
+                                            </Typography>
+                                        </StyledLeftActionDiv>{' '}
+                                    </StyledLeftActionContainer>
+                                )}
+                            </StyledCardLeft>
+                            <StyledCardRight>
+                                <StyledTable>
+                                    <Table.Body>
+                                        {portalReactors.reactors.map(
+                                            (reactor, i) => {
+                                                return (
+                                                    <Table.Row
+                                                        key={reactor + i}
+                                                    >
+                                                        <Table.Cell>
+                                                            {reactor}
+                                                        </Table.Cell>
+                                                        <Table.Cell align="right">
+                                                            <Java />
+                                                        </Table.Cell>
+                                                    </Table.Row>
+                                                );
+                                            },
+                                        )}
+                                    </Table.Body>
+                                </StyledTable>
+                            </StyledCardRight>
+                        </StyledCardDiv>
+                    </StyledCardContainer>
+                ) : null}
+            </StyledAppSettings>
+        );
+    }
 };

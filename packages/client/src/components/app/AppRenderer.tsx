@@ -32,6 +32,7 @@ export const AppRenderer = (props: AppRendererProps) => {
             ref={iframeRef}
             src={src}
             style={{
+                // border: 'solid red',
                 border: 'none',
                 height: '100%',
                 width: '100%',
