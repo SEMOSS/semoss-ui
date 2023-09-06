@@ -3,6 +3,7 @@ import {
     styled,
     Alert,
     Button,
+    Paper,
     Grid,
     Modal,
     Icon,
@@ -47,10 +48,15 @@ interface SettingsTilesProps {
      * @returns
      */
     onDelete: () => void;
+
+    /**
+     * Condensed View
+     */
+    condensed?: boolean;
 }
 
 export const SettingsTiles = (props: SettingsTilesProps) => {
-    const { type, id, onDelete } = props;
+    const { type, id, condensed, onDelete } = props;
 
     const { monolithStore } = useRootStore();
     const notification = useNotification();
@@ -70,6 +76,8 @@ export const SettingsTiles = (props: SettingsTilesProps) => {
     const info = usePixel<{
         database_global: boolean;
         database_discoverable: boolean;
+        project_global: boolean;
+        project_discoverable: boolean;
     }>(infoPixel);
 
     useEffect(() => {
@@ -78,8 +86,16 @@ export const SettingsTiles = (props: SettingsTilesProps) => {
             return;
         }
 
-        setDiscoverable(info.data.database_discoverable);
-        setGlobal(info.data.database_global);
+        setDiscoverable(
+            type === 'app'
+                ? info.data.project_discoverable
+                : info.data.database_discoverable,
+        );
+        setGlobal(
+            type === 'app'
+                ? info.data.project_global
+                : info.data.database_global,
+        );
     }, [info.status, info.data]);
 
     /**
@@ -149,7 +165,7 @@ export const SettingsTiles = (props: SettingsTilesProps) => {
                 return;
             }
 
-            if (response.data.success) {
+            if (response.data.success || response.data) {
                 setDiscoverable(!discoverable);
 
                 notification.add({
@@ -216,10 +232,11 @@ export const SettingsTiles = (props: SettingsTilesProps) => {
         }
     };
 
-    return (
-        <Grid container spacing={3}>
-            <Grid item>
+    if (condensed) {
+        return (
+            <Paper sx={{ width: '100%' }}>
                 <StyledAlert
+                    sx={{ width: '100%', boxShadow: 'none' }}
                     icon={
                         <StyledIcon>
                             <Lock />
@@ -244,9 +261,8 @@ export const SettingsTiles = (props: SettingsTilesProps) => {
                         ? 'All members can access'
                         : 'No one outside of the specified member group can access'}
                 </StyledAlert>
-            </Grid>
-            <Grid item>
                 <StyledAlert
+                    sx={{ width: '100%', boxShadow: 'none' }}
                     icon={
                         <StyledIcon>
                             {!discoverable ? (
@@ -276,9 +292,8 @@ export const SettingsTiles = (props: SettingsTilesProps) => {
                     Users {discoverable ? 'can' : 'cannot'} request access to
                     this {type} if private
                 </StyledAlert>
-            </Grid>
-            <Grid item>
                 <StyledAlert
+                    sx={{ width: '100%', boxShadow: 'none' }}
                     icon={
                         <StyledIcon>
                             <Delete />
@@ -316,7 +331,113 @@ export const SettingsTiles = (props: SettingsTilesProps) => {
                         </Button>
                     </Modal.Actions>
                 </Modal>
+            </Paper>
+        );
+    } else {
+        return (
+            <Grid container spacing={3}>
+                <Grid item>
+                    <StyledAlert
+                        icon={
+                            <StyledIcon>
+                                <Lock />
+                            </StyledIcon>
+                        }
+                        action={
+                            <Switch
+                                title={
+                                    global
+                                        ? `Make ${type} private`
+                                        : `Make ${type} public`
+                                }
+                                checked={global}
+                                onChange={() => {
+                                    changeGlobal();
+                                }}
+                            ></Switch>
+                        }
+                    >
+                        <Alert.Title>
+                            {global ? 'Public' : 'Private'}
+                        </Alert.Title>
+                        {global
+                            ? 'All members can access'
+                            : 'No one outside of the specified member group can access'}
+                    </StyledAlert>
+                </Grid>
+                <Grid item>
+                    <StyledAlert
+                        icon={
+                            <StyledIcon>
+                                {!discoverable ? (
+                                    <VisibilityOffRounded />
+                                ) : (
+                                    <Visibility />
+                                )}
+                            </StyledIcon>
+                        }
+                        action={
+                            <Switch
+                                title={
+                                    discoverable
+                                        ? `Make ${type} non-discoverable`
+                                        : `Make ${type} discoverable`
+                                }
+                                checked={discoverable}
+                                onChange={() => {
+                                    changeDiscoverable();
+                                }}
+                            ></Switch>
+                        }
+                    >
+                        <Alert.Title>
+                            {discoverable ? 'Discoverable' : 'Non-Discoverable'}
+                        </Alert.Title>
+                        Users {discoverable ? 'can' : 'cannot'} request access
+                        to this {type} if private
+                    </StyledAlert>
+                </Grid>
+                <Grid item>
+                    <StyledAlert
+                        icon={
+                            <StyledIcon>
+                                <Delete />
+                            </StyledIcon>
+                        }
+                        action={
+                            <Button
+                                variant="contained"
+                                color="error"
+                                onClick={() => setDeleteModal(true)}
+                            >
+                                Delete
+                            </Button>
+                        }
+                    >
+                        <Alert.Title>Delete {type}</Alert.Title>
+                        Remove {type} from catalog
+                    </StyledAlert>
+                    <Modal open={deleteModal}>
+                        <Modal.Title>Are you sure?</Modal.Title>
+                        <Modal.Content>
+                            This action is irreversable. This will permanentely
+                            delete this {type}.
+                        </Modal.Content>
+                        <Modal.Actions>
+                            <Button onClick={() => setDeleteModal(false)}>
+                                Cancel
+                            </Button>
+                            <Button
+                                color={'error'}
+                                variant={'contained'}
+                                onClick={() => deleteWorkflow()}
+                            >
+                                Delete
+                            </Button>
+                        </Modal.Actions>
+                    </Modal>
+                </Grid>
             </Grid>
-        </Grid>
-    );
+        );
+    }
 };

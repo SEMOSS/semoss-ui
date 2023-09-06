@@ -1193,15 +1193,14 @@ export class MonolithStore {
         let url = `${MODULE}/api/auth/`,
             postData = '';
 
-        // if (admin) {
-        //     url += 'admin/';
-        // }
+        if (admin) {
+            url += 'admin/';
+        }
 
-        // change to database
-        url += 'project/setProjectVisibility';
+        url += 'project/setProjectDiscoverable';
 
         postData += 'projectId=' + encodeURIComponent(appId);
-        postData += '&visibility=' + encodeURIComponent(visible);
+        postData += '&discoverable=' + encodeURIComponent(visible);
 
         const response = await axios.post<{ success: boolean }>(url, postData, {
             headers: {

@@ -121,7 +121,7 @@ export const EngineLayout = () => {
 
     if (getUserEnginePermission.status === 'SUCCESS') {
         if (
-            getUserEnginePermission.data.permission === 'EDITOR' ||
+            getUserEnginePermission.data.permission === 'EDIT' ||
             getUserEnginePermission.data.permission === 'OWNER' ||
             getUserEnginePermission.data.permission === 'READ_ONLY'
         ) {
@@ -138,7 +138,7 @@ export const EngineLayout = () => {
             });
         }
         if (
-            getUserEnginePermission.data.permission === 'EDITOR' ||
+            getUserEnginePermission.data.permission === 'EDIT' ||
             getUserEnginePermission.data.permission === 'OWNER'
         ) {
             tabs.push({
