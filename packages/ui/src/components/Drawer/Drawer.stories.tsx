@@ -24,8 +24,16 @@ const Template = (args) => {
                     setOpen(false);
                 }}
                 {...args}
+                divider
             >
-                Drawer Container
+                <Drawer.Header>Drawer Header</Drawer.Header>
+                <Drawer.Item value="test">Drawer Item #1</Drawer.Item>
+                <Drawer.Item value="test">Drawer Item #2</Drawer.Item>
+                <Drawer.Divider />
+                <Drawer.Item value="test">Drawer Item #3</Drawer.Item>
+                <Drawer.Item value="test">Drawer Item #4</Drawer.Item>
+                <Drawer.Item value="test">Drawer Item #5</Drawer.Item>
+                <Drawer.Footer>Footer</Drawer.Footer>
             </Drawer>
         </>
     );

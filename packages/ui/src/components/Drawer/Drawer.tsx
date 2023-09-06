@@ -6,9 +6,15 @@ import {
     ModalProps,
     SlideProps,
     PaperProps,
+    styled,
+    Box,
 } from "@mui/material";
 
-interface DrawerProps {
+const StyledDrawer = styled(MuiDrawer)({
+    maxWidth: "320px",
+});
+
+export interface DrawerProps {
     /**
      * Side from which the drawer will appear.
      * @default 'left'
@@ -64,7 +70,16 @@ export const Drawer = (props: DrawerProps) => {
                 // setOpen(!open)
             }}
         >
-            <MuiDrawer {...props}>{props.children}</MuiDrawer>
+            <StyledDrawer
+                {...props}
+                PaperProps={{
+                    sx: {
+                        width: "320px",
+                    },
+                }}
+            >
+                <Box>{props.children}</Box>
+            </StyledDrawer>
         </ClickAwayListener>
     );
 };
