@@ -28,15 +28,27 @@ export const AppRenderer = (props: AppRendererProps) => {
 
     // return the app
     return (
-        <iframe
-            ref={iframeRef}
-            src={src}
+        <div
             style={{
-                // border: 'solid red',
-                border: 'none',
+                display: 'flex',
+                flexDirection: 'column',
+                justifyContent: 'center',
+                alignItems: 'center',
                 height: '100%',
                 width: '100%',
             }}
-        />
+        >
+            <iframe
+                ref={iframeRef}
+                src={src}
+                style={{
+                    height: '95%',
+                    width: '95%',
+                    border: 'none',
+                }}
+            />
+            {/* Anytime you move Bottom panel over Iframe there is buggy behavior */}
+            <span>&nbsp;</span>
+        </div>
     );
 };
