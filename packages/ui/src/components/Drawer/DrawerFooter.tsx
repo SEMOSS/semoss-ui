@@ -20,13 +20,15 @@ export interface DrawerFooterProps extends BoxProps {
      * The system prop that allows defining system overrides as well as additional CSS styles.
      */
     sx?: SxProps;
+
+    divider?: boolean;
 }
 
 export const DrawerFooter = (props: DrawerFooterProps) => {
-    const { sx } = props;
+    const { sx, divider } = props;
     return (
         <StyledContainer sx={sx} {...props}>
-            <Drawer.Divider />
+            {divider && <Drawer.Divider />}
             <StyledBox>{props.children}</StyledBox>
         </StyledContainer>
     );

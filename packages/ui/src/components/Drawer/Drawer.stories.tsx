@@ -67,7 +67,9 @@ const Template = (args) => {
                     endcontent={<StarRounded sx={{ color: "#40a0ff" }} />}
                     textcontent={"Menu Item #4"}
                 />
-                <Drawer.Footer>Footer Content Here</Drawer.Footer>
+                <Drawer.Footer divider={false}>
+                    Footer Content Here
+                </Drawer.Footer>
             </Drawer>
         </>
     );
