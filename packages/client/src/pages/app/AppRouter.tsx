@@ -1,8 +1,7 @@
 import { observer } from 'mobx-react-lite';
 import { Routes, Route, Navigate } from 'react-router-dom';
-
 import { AppPage } from './AppPage';
-// import { ResizePanels } from './NewTwo';
+import { Copy } from './Copy';
 
 export const AppRouter = observer(() => {
     return (

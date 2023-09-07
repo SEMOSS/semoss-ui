@@ -1,18 +1,13 @@
-import React, { useState, useEffect } from 'react';
+import React, {
+    useState,
+    useEffect,
+    useReducer,
+    useCallback,
+    useRef,
+} from 'react';
+import { observer } from 'mobx-react-lite';
 import { useParams, Navigate, useNavigate } from 'react-router-dom';
 import { Controller, useForm } from 'react-hook-form';
-import { observer } from 'mobx-react-lite';
-// Context and Hooks
-import { SettingsContext } from '@/contexts';
-import { useRootStore, useAPI } from '@/hooks';
-// Components
-import { Navbar } from '@/components/ui';
-import { MembersTable } from '@/components/settings/MembersTable';
-import { PendingMembersTable } from '@/components/settings/PendingMembersTable';
-import { AppSettings } from '@/components/project/';
-import { SettingsTiles } from '@/components/settings';
-import { AppRenderer } from '@/components/app';
-
 import {
     Button,
     Divider,
@@ -25,7 +20,6 @@ import {
     useNotification,
     styled,
 } from '@semoss/ui';
-
 import {
     BugReport,
     Code,
@@ -34,6 +28,15 @@ import {
     Settings,
     PersonAdd,
 } from '@mui/icons-material';
+import { Navbar } from '@/components/ui';
+import { useRootStore, useAPI } from '@/hooks';
+import { AppRenderer } from '@/components/app';
+
+import { SettingsContext } from '@/contexts';
+import { MembersTable } from '@/components/settings/MembersTable';
+import { PendingMembersTable } from '@/components/settings/PendingMembersTable';
+import { AppSettings } from '@/components/project/';
+import { SettingsTiles } from '@/components/settings';
 
 const NAV_HEIGHT = '48px';
 const NAV_FOOTER = '24px';
@@ -141,59 +144,83 @@ const StyledHandle = styled(IconButton, {
         duration: theme.transitions.duration.standard,
     }),
 }));
+// Navigation Styles End ---------------------------------------
 
-// End of Navigation Styles -----------------------
-// Start Of Top Panel Styles ----------------------
+// background: var(--light-text-primary, rgba(0, 0, 0, 0.87));
+const StyledContent = styled('div')(() => ({
+    border: 'solid blue',
+    height: `100%`,
+    overflow: 'hidden',
+}));
+
+const StyledTop = styled('div')(({ theme }) => ({
+    display: 'flex',
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    overflow: 'hidden',
+
+    // Take in prop that will resize height of top portion
+    // marginTop: NAV_HEIGHT,
+    border: 'solid yellow',
+}));
+
 const StyledTopLeft = styled('div')(({ theme }) => ({
     display: 'flex',
     overflowX: 'hidden',
     background: theme.palette.background.paper,
     justifyContent: 'space-between',
-    paddingLeft: theme.spacing(2),
-    paddingTop: theme.spacing(2),
-    paddingBottom: theme.spacing(2),
-    paddingRight: theme.spacing(2),
+    // gap: theme.spacing(2),
+    // flexDirection: 'column',
+    // border: 'solid green',
 
     // Take in prop that will resize width of left portion
-    height: '100%',
-    width: '100%',
+    // height: '100%',
+    width: '50%', // resizable
+    maxWidth: '500px',
 }));
 
 const StyledTopLeftContent = styled('div')(({ theme }) => ({
-    display: 'flex',
+    height: '95vh',
     width: '100%',
-    gap: theme.spacing(2),
+    overflowY: 'scroll',
+    paddingLeft: theme.spacing(2),
+    paddingTop: theme.spacing(2),
+    paddingBottom: theme.spacing(2),
+    // border: 'solid red',
 }));
 
-const StyledVertDivider = styled('div')(({ theme }) => ({
-    width: theme.spacing(0.25),
-    background: theme.palette.divider,
-    '&:hover': {
-        cursor: 'ew-resize',
-    },
-}));
-// End of Top Panel Styles --------------------------
-// Start of Bottom Panel Styles ---------------------
-const StyledHorizDivider = styled('div')(({ theme }) => ({
-    height: theme.spacing(0.25),
-    background: theme.palette.divider,
-    '&:hover': {
-        cursor: 'ns-resize',
-    },
+const StyledTopRight = styled('div')(() => ({
+    flex: '1',
+    height: '100%', //resizable
+    overflow: 'hidden',
 }));
 
 const StyledBottom = styled('div')(({ theme }) => ({
-    paddingLeft: theme.spacing(1),
-    paddingRight: theme.spacing(1),
+    marginRight: theme.spacing(1),
 }));
 
-// Start of Types -----------------------------------
+const StyledHorizDivider = styled(Divider)(() => ({
+    height: '4px',
+    '&:hover': {
+        cursor: 'row-resize',
+    },
+}));
+
+const StyledVertDivider = styled(Divider)(() => ({
+    '&:hover': {
+        cursor: 'col-resize',
+    },
+}));
+
 type EditAppForm = {
     PROJECT_UPLOAD: File;
 };
-// End of Types -------------------------------------
 
-export const AppPage = observer(() => {
+/**
+ * Layout for the app
+ */
+export const Copy = observer(() => {
     const notification = useNotification();
 
     const { monolithStore, configStore } = useRootStore();
@@ -214,54 +241,14 @@ export const AppPage = observer(() => {
         },
     });
 
-    // Start of Resizable Panels ----------------------
+    useEffect(() => {
+        getAppPermission();
 
-    const [topPanelHeight, setTopPanelHeight] = useState('100%');
-    const [bottomPanelHeight, setBottomPanelHeight] = useState('4%');
-
-    const [leftPanelWidth, setLeftPanelWidth] = useState('35%');
-    const [rightPanelWidth, setRightPanelWidth] = useState('65%');
-
-    const handleVerticalResize = (e) => {
-        const newBottomPanelHeight = `${window.innerHeight - e.clientY}px`;
-        const newTopPanelHeight = `${e.clientY}px`;
-
-        setTopPanelHeight(newTopPanelHeight);
-        setBottomPanelHeight(newBottomPanelHeight);
-    };
-
-    const handleHorizontalResize = (e) => {
-        const newRightPanelWidth = `${window.innerWidth - e.clientX}px`;
-        const newLeftPanelWidth = `${e.clientX}px`;
-
-        setLeftPanelWidth(newLeftPanelWidth);
-        setRightPanelWidth(newRightPanelWidth);
-    };
-    // End of Resizable Panels ------------------------
-
-    /**
-     * @name handleChange
-     * @param event
-     * @param newValue
-     * @desc changes tab group
-     */
-    const handleChange = (newValue: string) => {
-        if (newValue === 'code-editor') {
-            setTopPanelHeight('95%');
-        } else {
-            setTopPanelHeight('100%');
-        }
-        setView(newValue);
-    };
-
-    /**
-     * Refresh the view
-     */
-    const refreshOutlet = () => {
-        setCounter((c) => {
-            return c + 1;
-        });
-    };
+        return () => {
+            // disable edit
+            setAppPermission('READ_ONLY');
+        };
+    }, []);
 
     /**
      * Determines whether user is allowed to edit or export
@@ -359,17 +346,44 @@ export const AppPage = observer(() => {
         }
     };
 
-    // USE EFFECTS ----------------------------------
-    useEffect(() => {
-        getAppPermission();
-        return () => {
-            // disable edit
-            setAppPermission('READ_ONLY');
-        };
-    }, []);
+    /**
+     * Refresh the view
+     */
+    const refreshOutlet = () => {
+        setCounter((c) => {
+            return c + 1;
+        });
+    };
+
+    /**
+     * @name handleChange
+     * @param event
+     * @param newValue
+     * @desc changes tab group
+     */
+    const handleChange = (newValue: string) => {
+        setView(newValue);
+    };
+
+    // navigate home if there is not app id
+    if (!appId) {
+        return <Navigate to="/" replace />;
+    }
+
+    // RESIZABLE WINDOW START ----------------------------
+    const [topPanelHeight, setTopPanelHeight] = useState('70%');
+    const [bottomPanelHeight, setBottomPanelHeight] = useState('30%');
+
+    const handleVerticalResize = (e) => {
+        const newBottomPanelHeight = `${window.innerHeight - e.clientY}px`;
+        const newTopPanelHeight = `${e.clientY}px`;
+
+        setTopPanelHeight(newTopPanelHeight);
+        setBottomPanelHeight(newBottomPanelHeight);
+    };
 
     return (
-        <div style={{ height: '100vh', width: '100vw' }}>
+        <StyledViewport>
             <Navbar>
                 {appPermission === 'OWNER' && (
                     <StyledNavbarChildren>
@@ -441,32 +455,25 @@ export const AppPage = observer(() => {
                     </StyledNavbarChildren>
                 )}
             </Navbar>
-            <div
-                className="panel"
-                style={{
-                    display: 'flex',
-                    flexDirection: 'row',
-                    width: '100%',
-                    height: topPanelHeight,
-                    paddingTop: NAV_HEIGHT,
-                }}
-            >
-                {editMode && (
-                    <div
-                        style={{
-                            width:
-                                view === 'code-editor' ? leftPanelWidth : '25%',
-                        }}
-                    >
-                        {view === 'settings' && (
+            <StyledContent>
+                {/* Top Panel, resizes based on Divider drag in Bottom Panel */}
+                <StyledTop
+                    style={{
+                        height:
+                            editMode && view === 'code-editor'
+                                ? topPanelHeight
+                                : '100%',
+                    }}
+                >
+                    {editMode && (
+                        <SettingsContext.Provider
+                            value={{
+                                adminMode: configStore.store.user.admin,
+                            }}
+                        >
                             <StyledTopLeft>
                                 <StyledTopLeftContent>
-                                    <SettingsContext.Provider
-                                        value={{
-                                            adminMode:
-                                                configStore.store.user.admin,
-                                        }}
-                                    >
+                                    {view === 'settings' && (
                                         <form onSubmit={editApp}>
                                             <Stack
                                                 direction="column"
@@ -538,23 +545,14 @@ export const AppPage = observer(() => {
                                                 </Stack>
                                             </Stack>
                                         </form>
-                                    </SettingsContext.Provider>
-                                </StyledTopLeftContent>
-                            </StyledTopLeft>
-                        )}
-                        {view === 'permissions' && (
-                            <StyledTopLeft>
-                                <StyledTopLeftContent>
-                                    <SettingsContext.Provider
-                                        value={{
-                                            adminMode:
-                                                configStore.store.user.admin,
-                                        }}
-                                    >
-                                        <Stack
-                                            direction="column"
-                                            spacing={1}
-                                            sx={{ width: '100%' }}
+                                    )}
+                                    {view === 'permissions' && (
+                                        <div
+                                            style={{
+                                                display: 'flex',
+                                                flexDirection: 'column',
+                                                gap: '8px',
+                                            }}
                                         >
                                             <Typography variant={'h5'}>
                                                 Member Permissions
@@ -574,102 +572,70 @@ export const AppPage = observer(() => {
                                                 type={'app'}
                                                 id={appId}
                                             /> */}
-                                            {/* </div> */}
-                                        </Stack>
-                                    </SettingsContext.Provider>
+                                        </div>
+                                    )}
+                                    {view === 'code-editor' && (
+                                        // <AppEditor />
+                                        <div> Insert editor</div>
+                                    )}
                                 </StyledTopLeftContent>
+                                <StyledVertDivider orientation={'vertical'} />
                             </StyledTopLeft>
-                        )}
-                        {view === 'code-editor' && (
-                            <div
-                                style={{
-                                    display: 'flex',
-                                    flexDirection: 'row',
-                                    justifyContent: 'space-between',
-                                    width: '100%',
-                                    height: '100%',
-                                    // border: 'solid yellow',
-                                }}
-                            >
-                                {/* <AppEditor /> */}
-                                <span>Insert editor</span>
-                                <StyledVertDivider
-                                    onMouseDown={(e) => {
-                                        e.preventDefault();
-                                        window.addEventListener(
-                                            'mousemove',
-                                            handleHorizontalResize,
-                                        );
-                                        window.addEventListener(
-                                            'mouseup',
-                                            () => {
-                                                window.removeEventListener(
-                                                    'mousemove',
-                                                    handleHorizontalResize,
-                                                );
-                                            },
-                                        );
-                                    }}
-                                />
-                            </div>
-                        )}
-                    </div>
-                )}
+                        </SettingsContext.Provider>
+                    )}
+                    <StyledTopRight>
+                        <AppRenderer key={counter} appId={appId}></AppRenderer>
+                    </StyledTopRight>
+                </StyledTop>
 
-                <div
-                    style={{
-                        width: !editMode
-                            ? '100%'
-                            : view === 'code-editor'
-                            ? rightPanelWidth
-                            : '75%',
-                    }}
-                >
-                    <AppRenderer key={counter} appId={appId}></AppRenderer>
-                </div>
-            </div>
-
-            {/* Resizable Bottom Panel  */}
-            {editMode && view === 'code-editor' ? (
-                <StyledBottom
-                    sx={{
-                        // border: 'solid green',
-                        height: bottomPanelHeight,
-                        display: 'flex',
-                        flexDirection: 'column',
-                    }}
-                >
-                    <StyledHorizDivider
-                        onMouseDown={(e) => {
-                            e.preventDefault();
-                            window.addEventListener(
-                                'mousemove',
-                                handleVerticalResize,
-                            );
-                            window.addEventListener('mouseup', () => {
-                                window.removeEventListener(
+                {/* Bottom Panel for Console, Resizes top and Bottom Panel */}
+                {editMode && view === 'code-editor' ? (
+                    <>
+                        <StyledHorizDivider
+                            light={false}
+                            onMouseDown={(e) => {
+                                window.addEventListener(
                                     'mousemove',
                                     handleVerticalResize,
                                 );
-                            });
-                        }}
-                    ></StyledHorizDivider>
-                    <div
-                        style={{
-                            display: 'flex',
-                            justifyContent: 'flex-end',
-                            width: '100%',
-                            alignItems: 'center',
-                        }}
-                    >
-                        <Icon>
-                            <BugReport style={{}} />
-                        </Icon>
-                        <Typography variant="caption">Debug Console</Typography>
-                    </div>
-                    {/* <AppConsole /> */}
-                </StyledBottom>
-            ) : null}
-        </div>
+                                window.addEventListener('mouseup', () => {
+                                    window.removeEventListener(
+                                        'mousemove',
+                                        handleVerticalResize,
+                                    );
+                                });
+                            }}
+                            // onMouseDown={(e) => {
+                            //     setDragging(true);
+                            // }}
+                            // onDragStart={() => setDragging(true)}
+                        />
+                        <StyledBottom
+                            sx={{
+                                border: 'solid green',
+                                height: bottomPanelHeight,
+                            }}
+                        >
+                            <div
+                                style={{
+                                    display: 'flex',
+                                    justifyContent: 'flex-end',
+                                    width: '100%',
+                                    alignItems: 'center',
+                                }}
+                            >
+                                <Icon>
+                                    <BugReport style={{}} />
+                                </Icon>
+                                <Typography variant="caption">
+                                    Debug Console
+                                </Typography>
+                            </div>
+                            {/* <AppConsole /> */}
+                        </StyledBottom>
+                    </>
+                ) : null}
+            </StyledContent>
+        </StyledViewport>
     );
 });
