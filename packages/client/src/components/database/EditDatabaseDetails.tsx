@@ -5,6 +5,8 @@ import {
     Stack,
     TextField,
     Autocomplete,
+    List,
+    Box,
     useNotification,
     styled,
 } from '@semoss/ui';
@@ -27,6 +29,9 @@ interface EditDatabaseDetailsProps {
 
     /** Values to show in the fields */
     values: Record<string, unknown>;
+
+    /** Current image src */
+    currentImageSrc?: string;
 }
 
 /**
@@ -34,13 +39,38 @@ interface EditDatabaseDetailsProps {
  */
 export const EditDatabaseDetails = observer(
     (props: EditDatabaseDetailsProps) => {
-        const { open = false, onClose = () => null, values = {} } = props;
+        const {
+            open = false,
+            onClose = () => null,
+            values = {},
+            currentImageSrc,
+        } = props;
 
         // get the notification
         const notification = useNotification();
 
         // get the configStore
         const { configStore, monolithStore } = useRootStore();
+
+        //image options
+        const imageOptions = [
+            { label: 'Default', src: currentImageSrc },
+            { label: 'test', src: 'https://via.placeholder.com/180x150/200' },
+            { label: 'test 1', src: 'https://via.placeholder.com/180x150/200' },
+            { label: 'test 2', src: 'https://via.placeholder.com/180x150/200' },
+        ];
+
+        //get and set image label and source
+        const [newImageLabel, setNewImageLabel] = useState('Default');
+        const [newImageSrc, setNewImageSrc] = useState(currentImageSrc);
+
+        useEffect(() => {
+            imageOptions.filter((obj) => {
+                if (obj.label === newImageLabel) {
+                    setNewImageSrc(obj.src);
+                }
+            });
+        }, [newImageLabel]);
 
         // get a list of the keys
         const databaseMetaKeys =
@@ -119,6 +149,8 @@ export const EditDatabaseDetails = observer(
                 }
             }
 
+            console.log('data is', data);
+
             if (Object.keys(meta).length === 0) {
                 notification.add({
                     color: 'warning',
@@ -172,7 +204,7 @@ export const EditDatabaseDetails = observer(
                     onClose(false);
                 }}
             >
-                <Modal.Title>Edit Database Details</Modal.Title>
+                <Modal.Title>Edit Database Details TEST</Modal.Title>
                 <Modal.Content>
                     <Stack spacing={4}>
                         {databaseMetaKeys.map((key) => {
@@ -311,6 +343,53 @@ export const EditDatabaseDetails = observer(
 
                             // return null;
                         })}
+
+                        <Controller
+                            name={'image'}
+                            control={control}
+                            render={({ field }) => {
+                                return (
+                                    <Autocomplete
+                                        disableClearable
+                                        label={'Image'}
+                                        options={imageOptions}
+                                        value={newImageLabel}
+                                        isOptionEqualToValue={(option, value) =>
+                                            option.label === value.label
+                                        }
+                                        onChange={(event, newValue) => {
+                                            field.onChange(newValue.src);
+                                            setNewImageLabel(newValue.label);
+                                        }}
+                                        renderInput={(params) => (
+                                            <TextField
+                                                {...params}
+                                                label="Image"
+                                                InputProps={{
+                                                    ...params.InputProps,
+                                                    startAdornment: (
+                                                        <img
+                                                            src={newImageSrc}
+                                                        />
+                                                    ),
+                                                }}
+                                            />
+                                        )}
+                                        renderOption={(props, option) => (
+                                            <Box component="li" {...props}>
+                                                <img
+                                                    loading="lazy"
+                                                    width="20"
+                                                    src={option.src}
+                                                    alt=""
+                                                />
+                                                {option.label}
+                                            </Box>
+                                        )}
+                                    />
+                                );
+                            }}
+                        />
                     </Stack>
                 </Modal.Content>
                 <Modal.Actions>

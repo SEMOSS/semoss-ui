@@ -186,6 +186,7 @@ export const EngineShell = (props: EngineShellProps) => {
                                         <EditDatabaseDetails
                                             values={metaVals}
                                             open={edit}
+                                            currentImageSrc={`${MODULE}/api/app-${id}/appImage/download`}
                                             onClose={(success) => {
                                                 // reload if successfully submitted
                                                 if (success) {
