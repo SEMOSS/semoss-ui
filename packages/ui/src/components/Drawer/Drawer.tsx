@@ -1,13 +1,13 @@
 import React from "react";
 import {
     Drawer as MuiDrawer,
-    ClickAwayListener,
     SxProps,
     ModalProps,
     SlideProps,
     PaperProps,
     styled,
     Box,
+    ClickAwayListener,
 } from "@mui/material";
 
 const StyledDrawer = styled(MuiDrawer)({
@@ -41,6 +41,10 @@ export interface DrawerProps {
      */
     open?: boolean;
     /**
+    setState for open
+ */
+    setOpen: (val: boolean) => void;
+    /**
      * Props applied to the [`Paper`](/material-ui/api/paper/) element.
      * @default {}
      */
@@ -61,24 +65,28 @@ export interface DrawerProps {
 }
 
 export const Drawer = (props: DrawerProps) => {
+    const { setOpen, open, children, ...otherProps } = props;
+    const handleClickaway = () => {
+        setOpen(false);
+    };
     return (
         <ClickAwayListener
             onClickAway={(e) => {
-                if (props.open) {
-                    props.onClose(e, "backdropClick");
+                if (open) {
+                    handleClickaway();
                 }
-                // setOpen(!open)
             }}
         >
             <StyledDrawer
-                {...props}
+                {...otherProps}
+                open={open}
                 PaperProps={{
                     sx: {
                         width: "320px",
                     },
                 }}
             >
-                <Box>{props.children}</Box>
+                <Box>{children}</Box>
             </StyledDrawer>
         </ClickAwayListener>
     );

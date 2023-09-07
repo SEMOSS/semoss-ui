@@ -1,4 +1,5 @@
 import { MenuItem as MuiMenuItem, SxProps, styled } from "@mui/material";
+import { ListItemText, ListItemIcon } from "@mui/material";
 
 const StyledMenuItem = styled(MuiMenuItem)({
     padding: "8px, 16px, 8px, 16px",
@@ -11,11 +12,6 @@ export interface DrawerItemProps {
      * @default false
      */
     autoFocus?: boolean;
-
-    /**
-     * content to render
-     */
-    children: React.ReactNode;
 
     /**
      * If `true`, compact vertical padding designed for keyboard and mouse input is used.
@@ -42,6 +38,9 @@ export interface DrawerItemProps {
      */
     divider?: boolean;
 
+    //** item to be displayed on line end */
+    endcontent?: React.ReactNode;
+
     /**
      on click function to fired
     */
@@ -53,8 +52,11 @@ export interface DrawerItemProps {
      */
     selected?: boolean;
 
-    /** value of item */
-    value?: string | number;
+    //** item to be displayed at line start */
+    startcontent?: React.ReactNode;
+
+    //**text content */
+    textcontent: React.ReactNode;
 
     /**
      * The system prop that allows defining system overrides as well as additional CSS styles.
@@ -64,5 +66,11 @@ export interface DrawerItemProps {
 
 export const DrawerItem = (props: DrawerItemProps) => {
     const { sx } = props;
-    return <StyledMenuItem sx={sx} {...props} />;
+    return (
+        <StyledMenuItem sx={sx} {...props}>
+            <ListItemIcon>{props.startcontent}</ListItemIcon>
+            <ListItemText>{props.textcontent}</ListItemText>
+            <ListItemIcon>{props.endcontent}</ListItemIcon>
+        </StyledMenuItem>
+    );
 };

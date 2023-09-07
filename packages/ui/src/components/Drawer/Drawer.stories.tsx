@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { Drawer } from "./";
 import { Button } from "../../";
+import { StarRounded } from "@mui/icons-material";
 
 export default {
     title: "Components/Drawer",
@@ -10,30 +11,63 @@ export default {
 const Template = (args) => {
     const [open, setOpen] = useState(false);
 
-    const toggleDrawer = () => {
-        setOpen(!open);
+    const handleClick = () => {
+        setOpen(true);
+    };
+
+    const handleClickaway = () => {
+        setOpen(false);
     };
 
     return (
         <>
-            <Button onClick={() => setOpen(true)}>Open Drawer</Button>
+            <Button
+                onClick={(e) => {
+                    //** IMPORTANT -- use stopPropagation, otherwise the onClickAway functionality will not work */
+                    e.stopPropagation();
+                    handleClick();
+                }}
+            >
+                Open Drawer
+            </Button>
             <Drawer
                 open={open}
-                onClose={(e, v) => {
-                    console.log("here", e, v);
-                    setOpen(false);
-                }}
                 {...args}
-                divider
+                anchor="left"
+                variant="persistent"
+                setOpen={setOpen}
             >
-                <Drawer.Header>Drawer Header</Drawer.Header>
-                <Drawer.Item value="test">Drawer Item #1</Drawer.Item>
-                <Drawer.Item value="test">Drawer Item #2</Drawer.Item>
+                <Drawer.Header text={"Drawer Header"} />
+                <Drawer.Item
+                    startcontent={
+                        <StarRounded sx={{ color: "#40a0ff", mr: 2 }} />
+                    }
+                    endcontent={<StarRounded sx={{ color: "#40a0ff" }} />}
+                    textcontent={"Menu Item #1"}
+                />
+                <Drawer.Item
+                    startcontent={
+                        <StarRounded sx={{ color: "#40a0ff", mr: 2 }} />
+                    }
+                    endcontent={<StarRounded sx={{ color: "#40a0ff" }} />}
+                    textcontent={"Menu Item #2"}
+                />
+                <Drawer.Item
+                    startcontent={
+                        <StarRounded sx={{ color: "#40a0ff", mr: 2 }} />
+                    }
+                    endcontent={<StarRounded sx={{ color: "#40a0ff" }} />}
+                    textcontent={"Menu Item #3"}
+                />
                 <Drawer.Divider />
-                <Drawer.Item value="test">Drawer Item #3</Drawer.Item>
-                <Drawer.Item value="test">Drawer Item #4</Drawer.Item>
-                <Drawer.Item value="test">Drawer Item #5</Drawer.Item>
-                <Drawer.Footer>Footer</Drawer.Footer>
+                <Drawer.Item
+                    startcontent={
+                        <StarRounded sx={{ color: "#40a0ff", mr: 2 }} />
+                    }
+                    endcontent={<StarRounded sx={{ color: "#40a0ff" }} />}
+                    textcontent={"Menu Item #4"}
+                />
+                <Drawer.Footer>Footer Content Here</Drawer.Footer>
             </Drawer>
         </>
     );
