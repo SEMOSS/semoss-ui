@@ -91,14 +91,14 @@ export const EngineIndexPage = observer(() => {
                     <DatabaseStatistics id={id} />
                 </Section>
             )}
-            {/* {type === 'database' && (
+            {type === 'database' && (
                 <Section>
                     <Section.Header>
                         <Typography variant={'h6'}>Similar</Typography>
                     </Section.Header>
                     <SimilarDatabases id={id} />
                 </Section>
-            )} */}
+            )}
         </StyledPage>
     );
 });
