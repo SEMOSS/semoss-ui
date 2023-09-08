@@ -53,6 +53,10 @@ export interface DrawerProps {
      * Props applied to the [`Slide`](/material-ui/api/slide/) element.
      */
     SlideProps?: Partial<SlideProps>;
+
+    //** Props applied to the ['Modal'] */
+    ModalProps?: ModalProps;
+
     /**
      * The system prop that allows defining system overrides as well as additional CSS styles.
      */
@@ -62,16 +66,22 @@ export interface DrawerProps {
      * @default 'temporary'
      */
     variant?: "permanent" | "persistent" | "temporary";
+
+    //** clickaway functionality */
+    clickaway?: boolean;
 }
 
 export const Drawer = (props: DrawerProps) => {
-    const { setOpen, open, children, ...otherProps } = props;
+    const { setOpen, clickaway, open, children, ...otherProps } = props;
     const handleClickaway = () => {
         setOpen(false);
     };
     return (
         <ClickAwayListener
-            onClickAway={(e) => {
+            onClickAway={() => {
+                if (!clickaway) {
+                    return;
+                }
                 if (open) {
                     handleClickaway();
                 }
@@ -83,6 +93,7 @@ export const Drawer = (props: DrawerProps) => {
                 PaperProps={{
                     sx: {
                         width: "320px",
+                        position: "absolute",
                     },
                 }}
             >
