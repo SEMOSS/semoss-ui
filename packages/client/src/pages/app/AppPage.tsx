@@ -1,3 +1,4 @@
+/* eslint-disable prettier/prettier */
 import React, { useState, useEffect } from 'react';
 import { useParams, Navigate, useNavigate } from 'react-router-dom';
 import { Controller, useForm } from 'react-hook-form';
@@ -9,7 +10,7 @@ import { useRootStore, useAPI } from '@/hooks';
 import { Navbar } from '@/components/ui';
 import { MembersTable } from '@/components/settings/MembersTable';
 import { PendingMembersTable } from '@/components/settings/PendingMembersTable';
-import { AppSettings } from '@/components/project/';
+import { AppSettings } from '@/components/app';
 import { SettingsTiles } from '@/components/settings';
 import { AppRenderer } from '@/components/app';
 
@@ -28,6 +29,7 @@ import {
 
 import {
     BugReport,
+    CloseOutlined,
     Code,
     CodeOff,
     Download,
@@ -183,8 +185,25 @@ const StyledHorizDivider = styled('div')(({ theme }) => ({
 }));
 
 const StyledBottom = styled('div')(({ theme }) => ({
+    display: 'flex',
+    flexDirection: 'column',
+    overflow: 'hidden',
+    gap: theme.spacing(1),
     paddingLeft: theme.spacing(1),
     paddingRight: theme.spacing(1),
+    background: theme.palette.background.paper,
+}));
+
+const StyledOpenConsoleButton = styled('div')(({ theme }) => ({
+    display: 'flex',
+    alignItems: 'center',
+    '&:hover': {
+        cursor: 'pointer',
+    },
+}));
+
+const StyledIcon = styled(Icon)(({ theme }) => ({
+    color: 'rgba(0, 0, 0, .5)',
 }));
 
 // Start of Types -----------------------------------
@@ -202,6 +221,9 @@ export const AppPage = observer(() => {
     // get the app id from the url
     const { appId } = useParams();
 
+    // For console
+    const dateObject = new Date();
+
     const [appPermission, setAppPermission] = useState('READ_ONLY');
     const [editMode, setEditMode] = useState<boolean>(false);
     const [isLoading, setIsLoading] = useState(false);
@@ -217,17 +239,27 @@ export const AppPage = observer(() => {
     // Start of Resizable Panels ----------------------
 
     const [topPanelHeight, setTopPanelHeight] = useState('100%');
-    const [bottomPanelHeight, setBottomPanelHeight] = useState('4%');
+    const [bottomPanelHeight, setBottomPanelHeight] = useState('3.5%');
 
     const [leftPanelWidth, setLeftPanelWidth] = useState('35%');
     const [rightPanelWidth, setRightPanelWidth] = useState('65%');
 
-    const handleVerticalResize = (e) => {
-        const newBottomPanelHeight = `${window.innerHeight - e.clientY}px`;
-        const newTopPanelHeight = `${e.clientY}px`;
+    const [showConsole, setShowConsole] = useState(false);
 
-        setTopPanelHeight(newTopPanelHeight);
-        setBottomPanelHeight(newBottomPanelHeight);
+    const handleVerticalResize = (e) => {
+        const bottomPanelHeight =
+            (window.innerHeight - e.clientY) / window.innerHeight;
+        const newBottomPanelHeight = `${bottomPanelHeight * 100}%`;
+        const newTopPanelHeight = `${(e.clientY / window.innerHeight) * 100}%`;
+
+        if (bottomPanelHeight < 0.035) {
+            setShowConsole(false);
+        } else {
+            // console.log(newBottomPanelHeight)
+            setTopPanelHeight(newTopPanelHeight);
+            setBottomPanelHeight(newBottomPanelHeight);
+            setShowConsole(true);
+        }
     };
 
     const handleHorizontalResize = (e) => {
@@ -246,11 +278,6 @@ export const AppPage = observer(() => {
      * @desc changes tab group
      */
     const handleChange = (newValue: string) => {
-        if (newValue === 'code-editor') {
-            setTopPanelHeight('95%');
-        } else {
-            setTopPanelHeight('100%');
-        }
         setView(newValue);
     };
 
@@ -410,8 +437,10 @@ export const AppPage = observer(() => {
                                     if (appPermission === 'OWNER') {
                                         setEditMode(!editMode);
                                         if (!editMode) {
+                                            setTopPanelHeight('96.5%');
                                             setView('settings');
                                         } else {
+                                            setTopPanelHeight('100%');
                                             setView('');
                                         }
                                     } else {
@@ -454,175 +483,199 @@ export const AppPage = observer(() => {
                 {editMode && (
                     <div
                         style={{
-                            width:
-                                view === 'code-editor' ? leftPanelWidth : '25%',
+                            width: leftPanelWidth,
                         }}
                     >
-                        {view === 'settings' && (
-                            <StyledTopLeft>
-                                <StyledTopLeftContent>
-                                    <SettingsContext.Provider
-                                        value={{
-                                            adminMode:
-                                                configStore.store.user.admin,
-                                        }}
-                                    >
-                                        <form onSubmit={editApp}>
+                        <div
+                            style={{
+                                display: 'flex',
+                                flexDirection: 'row',
+                                justifyContent: 'space-between',
+                                width: '100%',
+                                height: '100%',
+                            }}
+                        >
+                            {view === 'settings' && (
+                                <StyledTopLeft>
+                                    <StyledTopLeftContent>
+                                        <SettingsContext.Provider
+                                            value={{
+                                                adminMode:
+                                                    configStore.store.user
+                                                        .admin,
+                                            }}
+                                        >
+                                            <form
+                                                onSubmit={editApp}
+                                                style={{
+                                                    width: '100%',
+                                                    height: '100%',
+                                                }}
+                                            >
+                                                <Stack
+                                                    direction="column"
+                                                    spacing={1}
+                                                    sx={{
+                                                        width: '100%',
+                                                    }}
+                                                >
+                                                    <Typography variant={'h5'}>
+                                                        Settings
+                                                    </Typography>
+                                                    <Typography variant={'h6'}>
+                                                        Access
+                                                    </Typography>
+                                                    <SettingsTiles
+                                                        type={'app'}
+                                                        id={appId}
+                                                        condensed={true}
+                                                        onDelete={() => {
+                                                            console.log(
+                                                                'navigate to app library',
+                                                            );
+                                                            navigate('/');
+                                                        }}
+                                                    />
+                                                    <Typography variant={'h6'}>
+                                                        Publish
+                                                    </Typography>
+                                                    <AppSettings
+                                                        id={appId}
+                                                        condensed={true}
+                                                    />
+                                                    <Typography variant="h6">
+                                                        Update Project
+                                                    </Typography>
+
+                                                    <Controller
+                                                        name={'PROJECT_UPLOAD'}
+                                                        control={control}
+                                                        rules={{}}
+                                                        render={({ field }) => {
+                                                            return (
+                                                                <FileDropzone
+                                                                    multiple={
+                                                                        false
+                                                                    }
+                                                                    value={
+                                                                        field.value
+                                                                    }
+                                                                    disabled={
+                                                                        isLoading
+                                                                    }
+                                                                    onChange={(
+                                                                        newValues,
+                                                                    ) => {
+                                                                        field.onChange(
+                                                                            newValues,
+                                                                        );
+                                                                    }}
+                                                                />
+                                                            );
+                                                        }}
+                                                    />
+                                                    <Stack
+                                                        alignItems={'center'}
+                                                    >
+                                                        <Button
+                                                            type="submit"
+                                                            variant={
+                                                                'contained'
+                                                            }
+                                                            disabled={isLoading}
+                                                        >
+                                                            Update
+                                                        </Button>
+                                                    </Stack>
+                                                </Stack>
+                                            </form>
+                                        </SettingsContext.Provider>
+                                    </StyledTopLeftContent>
+                                </StyledTopLeft>
+                            )}
+                            {view === 'permissions' && (
+                                <StyledTopLeft>
+                                    <StyledTopLeftContent>
+                                        <SettingsContext.Provider
+                                            value={{
+                                                adminMode:
+                                                    configStore.store.user
+                                                        .admin,
+                                            }}
+                                        >
                                             <Stack
                                                 direction="column"
                                                 spacing={1}
+                                                sx={{ width: '100%' }}
                                             >
                                                 <Typography variant={'h5'}>
-                                                    Settings
+                                                    Member Permissions
                                                 </Typography>
                                                 <Typography variant={'h6'}>
-                                                    Access
+                                                    Members
                                                 </Typography>
-                                                <SettingsTiles
+                                                <MembersTable
                                                     type={'app'}
                                                     id={appId}
                                                     condensed={true}
-                                                    onDelete={() => {
-                                                        console.log(
-                                                            'navigate to app library',
-                                                        );
-                                                        navigate('/');
-                                                    }}
                                                 />
-                                                <Typography variant={'h6'}>
-                                                    Publish
-                                                </Typography>
-                                                <AppSettings
-                                                    id={appId}
-                                                    condensed={true}
-                                                />
-                                                <Typography variant="h6">
-                                                    Update Project
-                                                </Typography>
-                                                <Controller
-                                                    name={'PROJECT_UPLOAD'}
-                                                    control={control}
-                                                    rules={{}}
-                                                    render={({ field }) => {
-                                                        console.log(
-                                                            field.value,
-                                                        );
-                                                        return (
-                                                            <FileDropzone
-                                                                multiple={false}
-                                                                value={
-                                                                    field.value
-                                                                }
-                                                                disabled={
-                                                                    isLoading
-                                                                }
-                                                                onChange={(
-                                                                    newValues,
-                                                                ) => {
-                                                                    field.onChange(
-                                                                        newValues,
-                                                                    );
-                                                                }}
-                                                            />
-                                                        );
-                                                    }}
-                                                />
-                                                <Stack alignItems={'center'}>
-                                                    <Button
-                                                        type="submit"
-                                                        variant={'contained'}
-                                                        disabled={isLoading}
-                                                    >
-                                                        Update
-                                                    </Button>
-                                                </Stack>
-                                            </Stack>
-                                        </form>
-                                    </SettingsContext.Provider>
-                                </StyledTopLeftContent>
-                            </StyledTopLeft>
-                        )}
-                        {view === 'permissions' && (
-                            <StyledTopLeft>
-                                <StyledTopLeftContent>
-                                    <SettingsContext.Provider
-                                        value={{
-                                            adminMode:
-                                                configStore.store.user.admin,
-                                        }}
-                                    >
-                                        <Stack
-                                            direction="column"
-                                            spacing={1}
-                                            sx={{ width: '100%' }}
-                                        >
-                                            <Typography variant={'h5'}>
-                                                Member Permissions
-                                            </Typography>
-                                            <Typography variant={'h6'}>
-                                                Members
-                                            </Typography>
-                                            <MembersTable
-                                                type={'app'}
-                                                id={appId}
-                                                condensed={true}
-                                            />
-                                            {/* <Typography variant="h6">
+                                                {/* <Typography variant="h6">
                                                 Pending Permissions
                                             </Typography> */}
-                                            {/* <PendingMembersTable
+                                                {/* <PendingMembersTable
                                                 type={'app'}
                                                 id={appId}
                                             /> */}
-                                            {/* </div> */}
-                                        </Stack>
-                                    </SettingsContext.Provider>
-                                </StyledTopLeftContent>
-                            </StyledTopLeft>
-                        )}
-                        {view === 'code-editor' && (
-                            <div
-                                style={{
-                                    display: 'flex',
-                                    flexDirection: 'row',
-                                    justifyContent: 'space-between',
-                                    width: '100%',
-                                    height: '100%',
-                                    // border: 'solid yellow',
-                                }}
-                            >
-                                {/* <AppEditor /> */}
-                                <span>Insert editor</span>
-                                <StyledVertDivider
-                                    onMouseDown={(e) => {
-                                        e.preventDefault();
-                                        window.addEventListener(
+                                                {/* </div> */}
+                                            </Stack>
+                                        </SettingsContext.Provider>
+                                    </StyledTopLeftContent>
+                                </StyledTopLeft>
+                            )}
+                            {view === 'code-editor' && (
+                                <StyledTopLeft>
+                                    <div
+                                        style={{
+                                            display: 'flex',
+                                            flexDirection: 'column',
+                                        }}
+                                    >
+                                        {/* <AppEditor /> */}
+                                        <Typography variant="h6">
+                                            Currently in Progress...
+                                        </Typography>
+                                        <Typography variant="body1">
+                                            We appreciate the patience with
+                                            ongoing development, in the future
+                                            the ability to update the
+                                            application view via FE code will be
+                                            located here.
+                                        </Typography>
+                                    </div>
+                                </StyledTopLeft>
+                            )}
+                            <StyledVertDivider
+                                onMouseDown={(e) => {
+                                    e.preventDefault();
+                                    window.addEventListener(
+                                        'mousemove',
+                                        handleHorizontalResize,
+                                    );
+                                    window.addEventListener('mouseup', () => {
+                                        window.removeEventListener(
                                             'mousemove',
                                             handleHorizontalResize,
                                         );
-                                        window.addEventListener(
-                                            'mouseup',
-                                            () => {
-                                                window.removeEventListener(
-                                                    'mousemove',
-                                                    handleHorizontalResize,
-                                                );
-                                            },
-                                        );
-                                    }}
-                                />
-                            </div>
-                        )}
+                                    });
+                                }}
+                            />
+                        </div>
                     </div>
                 )}
 
                 <div
                     style={{
-                        width: !editMode
-                            ? '100%'
-                            : view === 'code-editor'
-                            ? rightPanelWidth
-                            : '75%',
+                        width: !editMode ? '100%' : rightPanelWidth,
                     }}
                 >
                     <AppRenderer key={counter} appId={appId}></AppRenderer>
@@ -630,14 +683,9 @@ export const AppPage = observer(() => {
             </div>
 
             {/* Resizable Bottom Panel  */}
-            {editMode && view === 'code-editor' ? (
+            {editMode ? (
                 <StyledBottom
-                    sx={{
-                        // border: 'solid green',
-                        height: bottomPanelHeight,
-                        display: 'flex',
-                        flexDirection: 'column',
-                    }}
+                    sx={{ height: `calc(${bottomPanelHeight} - 2px)` }}
                 >
                     <StyledHorizDivider
                         onMouseDown={(e) => {
@@ -657,15 +705,71 @@ export const AppPage = observer(() => {
                     <div
                         style={{
                             display: 'flex',
-                            justifyContent: 'flex-end',
+                            flexDirection: 'column',
                             width: '100%',
-                            alignItems: 'center',
+                            overflow: 'hidden',
                         }}
                     >
-                        <Icon>
-                            <BugReport style={{}} />
-                        </Icon>
-                        <Typography variant="caption">Debug Console</Typography>
+                        <div
+                            style={{
+                                display: 'flex',
+                                justifyContent: 'space-between',
+                                width: '100%',
+                                alignItems: 'center',
+                            }}
+                        >
+                            <Typography variant="caption">
+                                {dateObject.toUTCString()}
+                            </Typography>
+                            <StyledOpenConsoleButton
+                                onClick={() => {
+                                    if (
+                                        topPanelHeight === '96.5%' &&
+                                        bottomPanelHeight === '3.5%'
+                                    ) {
+                                        setShowConsole(true);
+                                        setTopPanelHeight('75%');
+                                        setBottomPanelHeight('25%');
+                                    } else {
+                                        setShowConsole(false);
+                                        setTopPanelHeight('96.5%');
+                                        setBottomPanelHeight('3.5%');
+                                    }
+                                }}
+                            >
+                                <StyledIcon>
+                                    <BugReport />
+                                </StyledIcon>
+                                <Typography variant="caption">
+                                    Debug Console
+                                </Typography>
+                                {showConsole ? (
+                                    <StyledIcon>
+                                        <CloseOutlined />
+                                    </StyledIcon>
+                                ) : null}
+                            </StyledOpenConsoleButton>
+                        </div>
+                        {showConsole ? (
+                            <div
+                                style={{
+                                    display: 'flex',
+                                    flexDirection: 'column',
+                                    width: '100%',
+                                }}
+                            >
+                                <Typography variant="h6">
+                                    Currently in Progress...
+                                </Typography>
+                                <Typography variant="body1">
+                                    We appreciate the patience with ongoing
+                                    development, in the future this view will
+                                    allow you to see the different responses
+                                    that come back via the application, whether
+                                    that being errors warnings and messages.
+                                </Typography>
+                            </div>
+                        ) : null}
                     </div>
                     {/* <AppConsole /> */}
                 </StyledBottom>

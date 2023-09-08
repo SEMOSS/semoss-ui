@@ -3,7 +3,7 @@ import { styled, ToggleTabsGroup } from '@semoss/ui';
 
 import { useSettings, useAPI } from '@/hooks';
 
-import { AppSettings } from '../project';
+import { AppSettings } from '../app';
 
 import { SETTINGS_TYPE } from './settings.types';
 import { PendingMembersTable } from './PendingMembersTable';
