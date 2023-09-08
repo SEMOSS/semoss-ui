@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { styled, Container } from '@semoss/ui';
 
 const StyledPage = styled('div')(({ theme }) => ({
-    height: '100vh',
+    height: '100%',
     width: '100%',
     overflow: 'scroll',
     backgroundColor: theme.palette.background.paper,

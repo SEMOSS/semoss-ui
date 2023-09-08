@@ -56,13 +56,24 @@ const StyledCard = styled(Card, {
     shouldForwardProp: (prop) => prop !== 'disabled',
 })<{
     disabled: boolean;
-}>(({ theme, disabled }) => ({
-    backgroundColor: disabled ? theme.palette.grey['100'] : 'white',
-    '&:hover': {
-        cursor: 'pointer',
-    },
-}));
+}>(({ theme, disabled }) => {
+    // const palette = theme.palette as CustomPaletteOptions;
+    // TODO: Fix typing
+    const palette = theme.palette as unknown as {
+        primary: Record<string, string>;
+        primaryContrast: Record<string, string>;
+    };
 
+    return {
+        backgroundColor: disabled ? theme.palette.grey['100'] : 'white',
+        '&:hover': {
+            boxShadow: disabled
+                ? '0px 5px 22px 0px rgba(0, 0, 0, 0.04), 0px 4px 4px 0.5px rgba(0, 0, 0, 0.03)'
+                : `0px 5px 22px 0px ${palette.primaryContrast['shadow']}`,
+            cursor: 'pointer',
+        },
+    };
+});
 const StyledCardContent = styled(Card.Content)(() => ({
     display: 'flex',
     padding: '16px',
@@ -110,19 +121,36 @@ const StyledFormTypeBox = styled(Box, {
     shouldForwardProp: (prop) => prop !== 'disabled',
 })<{
     disabled: boolean;
-}>(({ theme, disabled }) => ({
-    maxWidth: '215px',
-    maxHeight: '75px',
-    borderRadius: '12px',
-    cursor: 'pointer',
-    display: 'block',
-    justifyContent: 'center',
-    alignItems: 'center',
-    border: '1px solid rgba(0,0,0,0.1)',
-    padding: '16px 24px',
-    boxShadow: '0px 5px 22px 0px rgba(0,0,0,0.04)',
-    backgroundColor: disabled ? theme.palette.grey['100'] : 'white',
-}));
+}>(({ theme, disabled }) => {
+    // const palette = theme.palette as CustomPaletteOptions;
+    // TODO: Fix typing
+    const palette = theme.palette as unknown as {
+        primary: Record<string, string>;
+        primaryContrast: Record<string, string>;
+    };
+
+    return {
+        maxWidth: '215px',
+        maxHeight: '75px',
+        borderRadius: '12px',
+        cursor: 'pointer',
+        display: 'block',
+        justifyContent: 'center',
+        alignItems: 'center',
+        border: '1px solid rgba(0,0,0,0.1)',
+        padding: '16px 24px',
+        boxShadow:
+            '0px 5px 22px 0px rgba(0, 0, 0, 0.04), 0px 4px 4px 0.5px rgba(0, 0, 0, 0.03)',
+        backgroundColor: disabled ? theme.palette.grey['100'] : 'white',
+
+        '&:hover': {
+            cursor: 'pointer',
+            boxShadow: disabled
+                ? '0px 5px 22px 0px rgba(0, 0, 0, 0.04), 0px 4px 4px 0.5px rgba(0, 0, 0, 0.03)'
+                : `0px 5px 22px 0px ${palette.primaryContrast['shadow']}`,
+        },
+    };
+});
 
 const StyledSpan = styled('span')({
     '&:hover': {

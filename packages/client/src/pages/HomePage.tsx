@@ -115,7 +115,7 @@ export const HomePage = observer((): JSX.Element => {
                         <AppTileCard
                             app={{
                                 project_id: '',
-                                project_name: 'Business Intelligence',
+                                project_name: 'BI',
                                 project_type: '',
                                 project_cost: '',
                                 project_global: '',
@@ -140,6 +140,37 @@ export const HomePage = observer((): JSX.Element => {
                             }}
                             background="#BADEFF"
                             href="../../../"
+                        />
+                    </Grid>
+                    <Grid item sm={12} md={4} lg={3} xl={2}>
+                        <AppTileCard
+                            app={{
+                                project_id: '',
+                                project_name: 'Terminal',
+                                project_type: '',
+                                project_cost: '',
+                                project_global: '',
+                                project_catalog_name: '',
+                                project_created_by: 'SYSTEM',
+                                project_created_by_type: '',
+                                project_date_created: '',
+                                project_has_portal: false,
+                                project_portal_name: '',
+                                project_portal_published_date: '',
+                                project_published_user: '',
+                                project_published_user_type: '',
+                                project_reactors_compiled_date: '',
+                                project_reactors_compiled_user: '',
+                                project_reactors_compiled_user_type: '',
+                                project_favorite: '',
+                                user_permission: '',
+                                group_permission: '',
+                                tag: [],
+                                description:
+                                    'Execute commands and see a response',
+                            }}
+                            background="#BADEFF"
+                            href="../../../#!/embed-terminal"
                         />
                     </Grid>
                 </Grid>

@@ -25,7 +25,7 @@ import {
 
 import { useNavigate, useLocation } from 'react-router-dom';
 
-import { DatabaseLandscapeCard, DatabaseTileCard } from '@/components/database';
+import { EngineLandscapeCard, EngineTileCard } from '@/components/engine';
 import { usePixel, useRootStore } from '@/hooks';
 import { Page } from '@/components/ui';
 
@@ -217,12 +217,12 @@ export const CatalogPage = observer((): JSX.Element => {
     const [search, setSearch] = useState<string>('');
 
     // which view we are on
-    const [mode, setMode] = useState<string>('My Databases');
+    const [mode, setMode] = useState<'Mine' | 'Discoverable'>('Mine');
     const [view, setView] = useState<'list' | 'tile'>('tile');
     const [filterByVisibility, setFilterByVisibility] = useState(true);
 
     const dbPixelPrefix: string =
-        mode === 'My Databases' ? `MyEngines` : 'MyDiscoverableEngines';
+        mode === 'Mine' ? `MyEngines` : 'MyDiscoverableEngines';
 
     // track the options
     const [filterOptions, setFilterOptions] = useState<
@@ -640,6 +640,7 @@ export const CatalogPage = observer((): JSX.Element => {
     ) {
         return <>ERROR</>;
     }
+    console.log(catalogType);
 
     return (
         <Page
@@ -826,40 +827,50 @@ export const CatalogPage = observer((): JSX.Element => {
                         </List.Item>
 
                         <Collapse in={filterByVisibility}>
-                            {catalogType.toUpperCase() === 'DATABASE' && (
-                                <StyledChipList>
-                                    <StyledChip
-                                        label={'My Databases'}
-                                        selected={mode === 'My Databases'}
-                                        onClick={() => {
-                                            // Reset databases and reset offset
-                                            dispatch({
-                                                type: 'field',
-                                                field: 'databases',
-                                                value: [],
-                                            });
-                                            setOffset(0);
-                                            setMode('My Databases');
-                                        }}
-                                    ></StyledChip>
-                                    <StyledChip
-                                        label={'Discoverable Databases'}
-                                        selected={
-                                            mode === 'Discoverable Databases'
-                                        }
-                                        onClick={() => {
-                                            // Reset databases and reset offset
-                                            dispatch({
-                                                type: 'field',
-                                                field: 'databases',
-                                                value: [],
-                                            });
-                                            setOffset(0);
-                                            setMode('Discoverable Databases');
-                                        }}
-                                    ></StyledChip>
-                                </StyledChipList>
-                            )}
+                            {/* {catalogType.toUpperCase() === 'DATABASE' && ( */}
+                            <StyledChipList>
+                                <StyledChip
+                                    label={
+                                        catalogType === 'Database'
+                                            ? 'My Databases'
+                                            : catalogType === 'Storage'
+                                            ? 'My Storages'
+                                            : 'My Models'
+                                    }
+                                    selected={mode === 'Mine'}
+                                    onClick={() => {
+                                        // Reset engines and reset offset
+                                        dispatch({
+                                            type: 'field',
+                                            field: 'databases',
+                                            value: [],
+                                        });
+                                        setOffset(0);
+                                        setMode('Mine');
+                                    }}
+                                ></StyledChip>
+                                <StyledChip
+                                    label={
+                                        catalogType === 'Database'
+                                            ? 'Discoverable Databases'
+                                            : catalogType === 'Storage'
+                                            ? 'Discoverable Storages'
+                                            : 'Discoverable Models'
+                                    }
+                                    selected={mode === 'Discoverable'}
+                                    onClick={() => {
+                                        // Reset engines and reset offset
+                                        dispatch({
+                                            type: 'field',
+                                            field: 'databases',
+                                            value: [],
+                                        });
+                                        setOffset(0);
+                                        setMode('Discoverable');
+                                    }}
+                                ></StyledChip>
+                            </StyledChipList>
+                            {/* )} */}
 
                             {Object.entries(filterOptions).length ? (
                                 <StyledFilterSearchContainer>
@@ -1065,7 +1076,7 @@ export const CatalogPage = observer((): JSX.Element => {
                                         xl={view === 'list' ? 12 : 4}
                                     >
                                         {view === 'list' ? (
-                                            <DatabaseLandscapeCard
+                                            <EngineLandscapeCard
                                                 name={formatDBName(
                                                     db.database_name,
                                                 )}
@@ -1103,7 +1114,7 @@ export const CatalogPage = observer((): JSX.Element => {
                                                 }
                                             />
                                         ) : (
-                                            <DatabaseTileCard
+                                            <EngineTileCard
                                                 name={formatDBName(
                                                     db.database_name,
                                                 )}

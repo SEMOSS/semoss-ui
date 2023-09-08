@@ -1,5 +1,5 @@
 import { useEffect, useState, useRef, useReducer } from 'react';
-import { useRootStore, usePixel } from '@/hooks';
+import { useRootStore, usePixel, useAPI } from '@/hooks';
 import { useSettings } from '@/hooks/useSettings';
 import { useNavigate } from 'react-router-dom';
 
@@ -11,6 +11,10 @@ import {
     ToggleButton,
     ToggleButtonGroup,
     styled,
+    Backdrop,
+    CircularProgress,
+    Stack,
+    Typography,
 } from '@semoss/ui';
 
 import {
@@ -18,7 +22,7 @@ import {
     FormatListBulletedOutlined,
 } from '@mui/icons-material';
 
-import { DatabaseLandscapeCard, DatabaseTileCard } from '@/components/database';
+import { EngineLandscapeCard, EngineTileCard } from '@/components/engine';
 
 import { formatName } from '@/utils';
 
@@ -100,6 +104,11 @@ export const StorageSettingsPage = () => {
     const [sort, setSort] = useState('Name');
 
     const [selectedApp, setSelectedApp] = useState<Storage>(null);
+    const [canCollect, setCanCollect] = useState(true);
+    const [offset, setOffset] = useState(0);
+
+    //** amount of items to be loaded */
+    const limit = 15;
 
     // To focus when getting new results
     const searchbarRef = useRef(null);
@@ -127,7 +136,7 @@ export const StorageSettingsPage = () => {
     const getFavoritedDatabases = usePixel(`
     MyEngines(metaKeys = ${JSON.stringify(
         metaKeys,
-    )}, filterWord=["${search}"], onlyFavorites=[true], engineTypes=['STORGAE']);
+    )}, filterWord=["${search}"], onlyFavorites=[true], engineTypes=['STORAGE']);
     `);
 
     useEffect(() => {
@@ -144,43 +153,42 @@ export const StorageSettingsPage = () => {
         searchbarRef.current?.focus();
     }, [getFavoritedDatabases.status, getFavoritedDatabases.data]);
 
-    const getDatabases = usePixel<
-        {
-            app_cost: string;
-            app_id: string;
-            app_name: string;
-            app_type: string;
-            database_cost: string;
-            database_global: boolean;
-            database_id: string;
-            database_name: string;
-            database_type: string;
-            database_created_by: string;
-            database_date_created: string;
-            description: string;
-            low_database_name: string;
-            permission: number;
-            tag: string;
-            user_permission: number;
-            upvotes?: number;
-        }[]
-    >(`
-        MyEngines(metaKeys = ${JSON.stringify(
-            metaKeys,
-        )}, filterWord=["${search}"], userT=[true], engineTypes=['STORAGE']);
-    `);
+    // All Engines -------------------------------------
+    const getEngines = useAPI([
+        'getEngines',
+        adminMode,
+        search,
+        'STORAGE',
+        offset,
+        limit,
+    ]);
 
-    /**
-     * @desc handles response for getDatabases
-     */
+    //** reset dataMode if adminMode is toggled */
     useEffect(() => {
-        if (getDatabases.status !== 'SUCCESS') {
+        setOffset(0);
+        dispatch({
+            type: 'field',
+            field: 'databases',
+            value: [],
+        });
+    }, [adminMode, search]);
+
+    //** append data through infinite scroll */
+    useEffect(() => {
+        if (getEngines.status !== 'SUCCESS') {
             return;
         }
 
-        const mutateListWithVotes = [];
+        if (getEngines.data.length < limit) {
+            setCanCollect(false);
+        } else {
+            if (!canCollectRef.current) {
+                setCanCollect(true);
+            }
+        }
+        const mutateListWithVotes = databases;
 
-        getDatabases.data.forEach((db, i) => {
+        getEngines.data.forEach((db, i) => {
             mutateListWithVotes.push({
                 ...db,
                 upvotes: db.upvotes ? db.upvotes : 0,
@@ -198,7 +206,7 @@ export const StorageSettingsPage = () => {
 
         setSelectedApp(null);
         searchbarRef.current?.focus();
-    }, [getDatabases.status, getDatabases.data]);
+    }, [getEngines.status, getEngines.data]);
 
     /**
      * @name favoriteDb
@@ -325,127 +333,202 @@ export const StorageSettingsPage = () => {
             });
     };
 
-    return (
-        <StyledContainer>
-            <StyledSearchbarContainer>
-                <StyledSearchbar
-                    value={search}
-                    onChange={(e) => {
-                        setSearch(e.target.value);
-                    }}
-                    label="Storage"
-                    size="small"
-                    // enableEndAdornment={true}
-                    ref={searchbarRef}
-                />
-                <StyledSort
-                    size={'small'}
-                    value={sort}
-                    onChange={(e) => setSort(e.target.value)}
-                >
-                    <MenuItem value="Name">Name</MenuItem>
-                    <MenuItem value="Date Created">Date Created</MenuItem>
-                </StyledSort>
+    //** infinite sroll variables */
+    let scrollEle, scrollTimeout, currentScroll, previousScroll;
+    const offsetRef = useRef(0);
+    offsetRef.current = offset;
+    const canCollectRef = useRef(true);
+    canCollectRef.current = canCollect;
 
-                <ToggleButtonGroup size={'small'} value={view}>
-                    <ToggleButton onClick={(e, v) => setView(v)} value={'tile'}>
-                        <SpaceDashboardOutlined />
-                    </ToggleButton>
-                    <ToggleButton onClick={(e, v) => setView(v)} value={'list'}>
-                        <FormatListBulletedOutlined />
-                    </ToggleButton>
-                </ToggleButtonGroup>
-            </StyledSearchbarContainer>
-            <Grid container spacing={3}>
-                {databases.length
-                    ? databases.map((db, i) => {
-                          return (
-                              <Grid
-                                  item
-                                  key={i}
-                                  sm={view === 'list' ? 12 : 12}
-                                  md={view === 'list' ? 12 : 6}
-                                  lg={view === 'list' ? 12 : 4}
-                                  xl={view === 'list' ? 12 : 3}
-                              >
-                                  {view === 'list' ? (
-                                      <DatabaseLandscapeCard
-                                          name={db.app_name}
-                                          id={db.app_id}
-                                          tag={db.tag}
-                                          owner={db.database_created_by}
-                                          description={db.description}
-                                          votes={db.upvotes}
-                                          views={db.views}
-                                          trending={db.trending}
-                                          isGlobal={db.database_global}
-                                          isUpvoted={db.hasUpvoted}
-                                          isFavorite={isFavorited(
-                                              db.database_id,
-                                          )}
-                                          favorite={(val) => {
-                                              favoriteDb(db);
-                                          }}
-                                          onClick={(id) => {
-                                              navigate(`${db.app_id}`, {
-                                                  state: {
-                                                      name: formatName(
-                                                          db.database_name,
-                                                      ),
-                                                      global: db.database_global,
-                                                      permission: db.permission,
-                                                  },
-                                              });
-                                          }}
-                                          upvote={(val) => {
-                                              upvoteDb(db);
-                                          }}
-                                          global={(val) => {
-                                              setDbGlobal(db);
-                                          }}
-                                      />
-                                  ) : (
-                                      <DatabaseTileCard
-                                          name={db.app_name}
-                                          id={db.app_id}
-                                          tag={db.tag}
-                                          owner={db.database_created_by}
-                                          description={db.description}
-                                          votes={db.upvotes}
-                                          views={db.views}
-                                          trending={db.trending}
-                                          isGlobal={db.database_global}
-                                          isFavorite={isFavorited(
-                                              db.database_id,
-                                          )}
-                                          isUpvoted={db.hasUpvoted}
-                                          favorite={() => {
-                                              favoriteDb(db);
-                                          }}
-                                          onClick={() => {
-                                              navigate(`${db.app_id}`, {
-                                                  state: {
-                                                      name: formatName(
-                                                          db.database_name,
-                                                      ),
-                                                      global: db.database_global,
-                                                      permission: db.permission,
-                                                  },
-                                              });
-                                          }}
-                                          upvote={() => {
-                                              upvoteDb(db);
-                                          }}
-                                          global={() => {
-                                              setDbGlobal(db);
-                                          }}
-                                      />
-                                  )}
-                              </Grid>
-                          );
-                      })
-                    : 'No storages to choose from'}
-            </Grid>
-        </StyledContainer>
+    const scrollAll = () => {
+        currentScroll = scrollEle.scrollTop + scrollEle.offsetHeight;
+        if (
+            currentScroll > scrollEle.scrollHeight * 0.75 &&
+            currentScroll > previousScroll
+        ) {
+            if (scrollTimeout) {
+                clearTimeout(scrollTimeout);
+            }
+
+            scrollTimeout = setTimeout(() => {
+                if (!canCollectRef.current) {
+                    return;
+                }
+
+                setOffset(offsetRef.current + limit);
+            }, 500);
+        }
+
+        previousScroll = currentScroll;
+    };
+
+    /**
+     * @desc infinite scroll
+     */
+    useEffect(() => {
+        scrollEle = document.querySelector('#home__content');
+
+        scrollEle.addEventListener('scroll', scrollAll);
+        return () => {
+            scrollEle.removeEventListener('scroll', scrollAll);
+        };
+    }, [scrollEle]);
+
+    return (
+        <>
+            <Backdrop
+                open={getEngines.status !== 'SUCCESS'}
+                sx={{
+                    backgroundColor: 'rgba(255, 255, 255, 0.5)',
+                    zIndex: 1501,
+                }}
+            >
+                <Stack
+                    direction={'column'}
+                    alignItems={'center'}
+                    justifyContent={'center'}
+                    spacing={1}
+                >
+                    <CircularProgress />
+                    <Typography variant="body2">Loading</Typography>
+                    <Typography variant="caption">Storages</Typography>
+                </Stack>
+            </Backdrop>
+            <StyledContainer>
+                <StyledSearchbarContainer>
+                    <StyledSearchbar
+                        value={search}
+                        onChange={(e) => {
+                            setSearch(e.target.value);
+                        }}
+                        label="Storage"
+                        size="small"
+                        // enableEndAdornment={true}
+                        ref={searchbarRef}
+                    />
+                    <StyledSort
+                        size={'small'}
+                        value={sort}
+                        onChange={(e) => setSort(e.target.value)}
+                    >
+                        <MenuItem value="Name">Name</MenuItem>
+                        <MenuItem value="Date Created">Date Created</MenuItem>
+                    </StyledSort>
+
+                    <ToggleButtonGroup size={'small'} value={view}>
+                        <ToggleButton
+                            onClick={(e, v) => setView(v)}
+                            value={'tile'}
+                        >
+                            <SpaceDashboardOutlined />
+                        </ToggleButton>
+                        <ToggleButton
+                            onClick={(e, v) => setView(v)}
+                            value={'list'}
+                        >
+                            <FormatListBulletedOutlined />
+                        </ToggleButton>
+                    </ToggleButtonGroup>
+                </StyledSearchbarContainer>
+                <Grid container spacing={3}>
+                    {databases.length
+                        ? databases.map((db, i) => {
+                              return (
+                                  <Grid
+                                      item
+                                      key={i}
+                                      sm={view === 'list' ? 12 : 12}
+                                      md={view === 'list' ? 12 : 6}
+                                      lg={view === 'list' ? 12 : 4}
+                                      xl={view === 'list' ? 12 : 3}
+                                  >
+                                      {view === 'list' ? (
+                                          <EngineLandscapeCard
+                                              name={db.database_name}
+                                              id={db.database_id}
+                                              tag={db.tag}
+                                              owner={db.database_created_by}
+                                              description={db.description}
+                                              votes={db.upvotes}
+                                              views={db.views}
+                                              trending={db.trending}
+                                              isGlobal={db.database_global}
+                                              isUpvoted={db.hasUpvoted}
+                                              isFavorite={isFavorited(
+                                                  db.database_id,
+                                              )}
+                                              favorite={(val) => {
+                                                  favoriteDb(db);
+                                              }}
+                                              onClick={(id) => {
+                                                  navigate(
+                                                      `${db.database_id}`,
+                                                      {
+                                                          state: {
+                                                              name: formatName(
+                                                                  db.database_name,
+                                                              ),
+                                                              global: db.database_global,
+                                                              permission:
+                                                                  db.permission,
+                                                          },
+                                                      },
+                                                  );
+                                              }}
+                                              upvote={(val) => {
+                                                  upvoteDb(db);
+                                              }}
+                                              global={(val) => {
+                                                  setDbGlobal(db);
+                                              }}
+                                          />
+                                      ) : (
+                                          <EngineTileCard
+                                              name={db.database_name}
+                                              id={db.database_id}
+                                              tag={db.tag}
+                                              owner={db.database_created_by}
+                                              description={db.description}
+                                              votes={db.upvotes}
+                                              views={db.views}
+                                              trending={db.trending}
+                                              isGlobal={db.database_global}
+                                              isFavorite={isFavorited(
+                                                  db.database_id,
+                                              )}
+                                              isUpvoted={db.hasUpvoted}
+                                              favorite={() => {
+                                                  favoriteDb(db);
+                                              }}
+                                              onClick={() => {
+                                                  navigate(
+                                                      `${db.database_id}`,
+                                                      {
+                                                          state: {
+                                                              name: formatName(
+                                                                  db.database_name,
+                                                              ),
+                                                              global: db.database_global,
+                                                              permission:
+                                                                  db.permission,
+                                                          },
+                                                      },
+                                                  );
+                                              }}
+                                              upvote={() => {
+                                                  upvoteDb(db);
+                                              }}
+                                              global={() => {
+                                                  setDbGlobal(db);
+                                              }}
+                                          />
+                                      )}
+                                  </Grid>
+                              );
+                          })
+                        : null}
+                </Grid>
+            </StyledContainer>
+        </>
     );
 };

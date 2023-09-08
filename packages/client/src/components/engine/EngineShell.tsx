@@ -37,6 +37,7 @@ const StyledInfoRight = styled('div')(({ theme }) => ({
     display: 'flex',
     flexDirection: 'column',
     gap: theme.spacing(1),
+    width: '288px',
 }));
 
 const StyledInfoDescription = styled(Typography)(({ theme }) => ({
@@ -130,7 +131,8 @@ export const EngineShell = (props: EngineShellProps) => {
                         <StyledLink to={`/catalog?type=${type}`}>
                             {type === 'database'
                                 ? 'Data'
-                                : type.charAt(0).toUpperCase() + type.slice(1)}
+                                : type.charAt(0).toUpperCase() +
+                                  type.slice(1)}{' '}
                             Catalog
                         </StyledLink>
                         <StyledLink to={`/${type}/${id}`}>
@@ -143,34 +145,29 @@ export const EngineShell = (props: EngineShellProps) => {
                         width={'100%'}
                     >
                         <Typography variant="h4">
-                            {type.charAt(0).toUpperCase() + type.slice(1)}{' '}
-                            Overview
+                            {formatName(data.database_name)}
                         </Typography>
                         <Stack direction="row">
-                            {configStore.store.security &&
-                                data.database_discoverable &&
-                                role !== 'OWNER' && (
-                                    <>
-                                        {requestAccess && (
-                                            <RequestAccess
-                                                id={id}
-                                                open={requestAccess}
-                                                onClose={() => {
-                                                    setRequestAccess(false);
-                                                }}
-                                            />
-                                        )}
-                                        <Button
-                                            startIcon={<Add />}
-                                            variant="outlined"
-                                            onClick={() =>
-                                                setRequestAccess(true)
-                                            }
-                                        >
-                                            Request Access
-                                        </Button>
-                                    </>
-                                )}
+                            {configStore.store.security && role !== 'OWNER' && (
+                                <>
+                                    {requestAccess && (
+                                        <RequestAccess
+                                            id={id}
+                                            open={requestAccess}
+                                            onClose={() => {
+                                                setRequestAccess(false);
+                                            }}
+                                        />
+                                    )}
+                                    <Button
+                                        startIcon={<Add />}
+                                        variant="outlined"
+                                        onClick={() => setRequestAccess(true)}
+                                    >
+                                        Request Access
+                                    </Button>
+                                </>
+                            )}
                             {role === 'OWNER' && (
                                 <Button
                                     startIcon={<SimCardDownload />}
@@ -215,7 +212,9 @@ export const EngineShell = (props: EngineShellProps) => {
                     <StyledInfoDescription variant={'subtitle1'}>
                         {metaVals.description
                             ? metaVals.description
-                            : "Please use the Edit button to provide a description for this database. A description will help other's find the database and understand how to use it. To include a detailed description, use the markdown feature in the Overview section."}
+                            : canEdit
+                            ? `Please use the Edit button to provide a description for this ${type}. A description will help other's find the ${type} and understand how to use it. To include a more details associated to the ${type}, edit the markdown located in the Overview section.`
+                            : `This ${type} is currently awaiting a detailed description, which will be provided by the engine editor in the near future. As of now, the ${type} contains valuable and relevant information that pertains to its designated subject matter. Kindly check back later for a comprehensive overview of the contents and scope of this engine, as the editor will be updating it shortly`}
                     </StyledInfoDescription>
 
                     <StyledChipContainer>
@@ -233,8 +232,7 @@ export const EngineShell = (props: EngineShellProps) => {
                 </StyledInfoLeft>
                 <StyledInfoRight>
                     <StyledDatabaseImage
-                        // src={defaultDbImage}
-                        src={`${MODULE}/api/app-${id}/appImage/download`}
+                        src={`${MODULE}/api/e-${id}/image/download`}
                     />
                     <Stack
                         alignItems={'flex-end'}
@@ -242,22 +240,81 @@ export const EngineShell = (props: EngineShellProps) => {
                         marginBottom={2}
                         sx={{ color: 'rgba(0, 0, 0, 0.6)' }}
                     >
-                        <Typography variant={'body2'}>
-                            Published by:{' '}
-                            {data.database_created_by
-                                ? 'data.database_created_by'
-                                : 'N/A'}
-                        </Typography>
+                        <div
+                            style={{
+                                width: '100%',
+                                display: 'flex',
+                                justifyContent: 'flex-end',
+                                flexDirection: 'row',
+                                gap: '8px',
+                            }}
+                        >
+                            <Typography
+                                variant={'body2'}
+                                sx={{
+                                    maxWidth: '35%',
+                                }}
+                            >
+                                Published by:{' '}
+                            </Typography>
+                            <Typography
+                                variant={'body2'}
+                                sx={{
+                                    maxWidth: '65%',
+                                    display: 'flex',
+                                    justifyContent: 'flex-end',
+                                    overflow: 'hidden',
+                                    whiteSpace: 'nowrap',
+                                    textOverflow: 'ellipsis',
+                                    direction: 'rtl',
+                                    textAlign: 'left',
+                                }}
+                            >
+                                {data.database_created_by
+                                    ? data.database_created_by
+                                    : 'N/A'}
+                            </Typography>
+                        </div>
+
                         {/* <Typography variant={'body2'}>
                             Published:{' '}
                             {data.database_date_created
                                 ? data.database_date_created
                                 : 'N/A'}
                         </Typography> */}
-                        <Typography variant={'body2'}>
-                            Updated:{' '}
-                            {data.last_updated ? data.last_updated : 'N/A'}
-                        </Typography>
+                        <div
+                            style={{
+                                width: '100%',
+                                display: 'flex',
+                                justifyContent: 'flex-end',
+                                flexDirection: 'row',
+                                gap: '8px',
+                            }}
+                        >
+                            <Typography
+                                variant={'body2'}
+                                sx={{
+                                    maxWidth: '35%',
+                                }}
+                            >
+                                Updated:{' '}
+                            </Typography>
+                            <Typography
+                                variant={'body2'}
+                                sx={{
+                                    maxWidth: '65%',
+                                    display: 'flex',
+                                    justifyContent: 'flex-end',
+                                    overflow: 'hidden',
+                                    whiteSpace: 'nowrap',
+                                    textOverflow: 'ellipsis',
+                                    direction: 'rtl',
+                                    textAlign: 'left',
+                                }}
+                            >
+                                {data.last_updated ? data.last_updated : 'N/A'}
+                            </Typography>
+                        </div>
                     </Stack>
                 </StyledInfoRight>
             </StyledInfo>

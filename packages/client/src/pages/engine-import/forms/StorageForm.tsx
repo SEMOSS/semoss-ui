@@ -132,6 +132,26 @@ export const StorageForm = (props) => {
                                             ></TextField>
                                         );
                                     } else if (
+                                        val.options.component === 'password'
+                                    ) {
+                                        return (
+                                            <TextField
+                                                type="password"
+                                                fullWidth
+                                                required={val.rules.required}
+                                                label={val.label}
+                                                disabled={val.disabled}
+                                                value={
+                                                    field.value
+                                                        ? field.value
+                                                        : ''
+                                                }
+                                                onChange={(value) =>
+                                                    field.onChange(value)
+                                                }
+                                            ></TextField>
+                                        );
+                                    } else if (
                                         val.options.component === 'select'
                                     ) {
                                         return (

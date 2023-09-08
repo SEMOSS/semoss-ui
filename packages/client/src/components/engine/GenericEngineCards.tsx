@@ -22,7 +22,6 @@ import {
 
 import { MODULE } from '@/constants';
 import defaultDbImage from '../../assets/img/placeholder.png';
-// import defaultDBImage from '../../assets/img/placeholder.png';
 import { formatName } from '@/utils';
 
 const StyledLandscapeCard = styled(Card)({
@@ -268,22 +267,22 @@ const StyledPublishedByContainer = styled('div')({
 });
 
 const StyledCardDescription = styled(Typography)({
-    display: 'flex',
-    flexDirection: 'column',
-    alignSelf: 'stretch',
+    display: 'block',
     minHeight: '60px',
     maxHeight: '60px',
+    maxWidth: '350px',
     whiteSpace: 'pre-wrap',
     overflow: 'hidden',
     textOverflow: 'ellipsis',
-    // width: '90%',
-    // border: 'solid blue',
 });
 
 const StyledChipDiv = styled('div')({
     display: 'flex',
-    gap: '4px',
+    flexDirection: 'row',
     minHeight: '32px',
+    width: '80px',
+    alignItems: 'center',
+    gap: 2,
 });
 
 const StyledStatisticCaption = styled(Typography)(({ theme }) => ({
@@ -349,7 +348,7 @@ interface DatabaseCardProps {
     global?: (value) => void;
 }
 
-export const DatabaseLandscapeCard = (props: DatabaseCardProps) => {
+export const EngineLandscapeCard = (props: DatabaseCardProps) => {
     const {
         name,
         id,
@@ -372,20 +371,19 @@ export const DatabaseLandscapeCard = (props: DatabaseCardProps) => {
         <StyledLandscapeCard onClick={() => onClick(id)}>
             <StyledLandscapeCardHeader>
                 <StyledLandscapeCardImg
-                    src={`${MODULE}/api/app-${id}/appImage/download`}
-                    // src={defaultDbImage}
+                    src={`${MODULE}/api/e-${id}/image/download`}
                 />
                 <StyledLandscapeCardHeaderDiv>
                     <StyledLandscapeCardTitleDiv>
                         <Typography variant={'body1'}>
-                            {formatDBName(name)}
+                            {name ? formatDBName(name) : id}
                         </Typography>
                         <IconButton
                             size={'small'}
                             title={
                                 isFavorite
-                                    ? `Unfavorite ${name}`
-                                    : `Favorite ${name}`
+                                    ? `Unfavorite ${name ? name : id}`
+                                    : `Favorite ${name ? name : id}`
                             }
                             onClick={(e) => {
                                 e.stopPropagation();
@@ -402,7 +400,7 @@ export const DatabaseLandscapeCard = (props: DatabaseCardProps) => {
                             <StyledPersonIcon />
                         </StyledAvatar>
                         <StyledPublishedByLabel
-                            color={'secondary'}
+                            sx={{ color: 'rgba(0, 0, 0, 0.6)' }}
                             variant={'caption'}
                         >
                             Published by: {owner}
@@ -447,10 +445,14 @@ export const DatabaseLandscapeCard = (props: DatabaseCardProps) => {
                 <StyledLeftActions>
                     <ButtonGroup size="small" color="secondary">
                         <ButtonGroup.Item
+                            sx={{
+                                borderColor: 'rgba(0, 0, 0, 0.54)',
+                                color: 'rgba(0, 0, 0, 0.60)',
+                            }}
                             title={
                                 isUpvoted
-                                    ? `Downvote ${name}`
-                                    : `Upvote ${name}`
+                                    ? `Downvote ${name ? name : id}`
+                                    : `Upvote ${name ? name : id}`
                             }
                             onClick={(e) => {
                                 e.stopPropagation();
@@ -458,13 +460,20 @@ export const DatabaseLandscapeCard = (props: DatabaseCardProps) => {
                             }}
                             aria-label={
                                 isUpvoted
-                                    ? `Downvote ${name}`
-                                    : `Upvote ${name}`
+                                    ? `Downvote ${name ? name : id}`
+                                    : `Upvote ${name ? name : id}`
                             }
                         >
                             {isUpvoted ? <ArrowDropDown /> : <ArrowDropUp />}
                         </ButtonGroup.Item>
-                        <UnstyledVoteCount>{votes}</UnstyledVoteCount>
+                        <UnstyledVoteCount
+                            sx={{
+                                borderColor: 'rgba(0, 0, 0, 0.54)',
+                                color: 'rgba(0, 0, 0, 0.60)',
+                            }}
+                        >
+                            {votes}
+                        </UnstyledVoteCount>
                     </ButtonGroup>
                     {/* <StyledViewsTrendingDiv>
                         <StyledEyeIcon />
@@ -483,8 +492,8 @@ export const DatabaseLandscapeCard = (props: DatabaseCardProps) => {
                     disabled={!global}
                     title={
                         isGlobal
-                            ? `Make ${name} private`
-                            : `Make ${name} public`
+                            ? `Make ${name ? name : id} private`
+                            : `Make ${name ? name : id} public`
                     }
                     onClick={(e) => {
                         e.stopPropagation();
@@ -493,8 +502,8 @@ export const DatabaseLandscapeCard = (props: DatabaseCardProps) => {
                     }}
                     aria-label={
                         isGlobal
-                            ? `Make ${name} private`
-                            : `Make ${name} public`
+                            ? `Make ${name ? name : id} private`
+                            : `Make ${name ? name : id} public`
                     }
                 >
                     {isGlobal ? <LockOpenRounded /> : <LockRounded />}
@@ -504,7 +513,7 @@ export const DatabaseLandscapeCard = (props: DatabaseCardProps) => {
     );
 };
 
-export const DatabaseTileCard = (props: DatabaseCardProps) => {
+export const EngineTileCard = (props: DatabaseCardProps) => {
     const {
         name,
         id,
@@ -527,11 +536,11 @@ export const DatabaseTileCard = (props: DatabaseCardProps) => {
         <StyledTileCard onClick={() => onClick(id)}>
             {/* Use Card.Media instead, uses img tag */}
             <StyledCardImage
-                src={`${MODULE}/api/app-${id}/appImage/download`}
+                src={`${MODULE}/api/e-${id}/image/download`}
                 sx={{ height: '118px' }}
             />
             <Card.Header
-                title={formatDBName(name)}
+                title={name ? formatDBName(name) : id}
                 subheader={
                     <StyledPublishedByContainer>
                         <StyledAvatar>
@@ -546,8 +555,8 @@ export const DatabaseTileCard = (props: DatabaseCardProps) => {
                     <IconButton
                         title={
                             isFavorite
-                                ? `Unfavorite ${name}`
-                                : `Favorite ${name}`
+                                ? `Unfavorite ${name ? name : id}`
+                                : `Favorite ${name ? name : id}`
                         }
                         onClick={(e) => {
                             e.stopPropagation();
@@ -555,8 +564,8 @@ export const DatabaseTileCard = (props: DatabaseCardProps) => {
                         }}
                         aria-label={
                             isFavorite
-                                ? `Unfavorite ${name}`
-                                : `Favorite ${name}`
+                                ? `Unfavorite ${name ? name : id}`
+                                : `Favorite ${name ? name : id}`
                         }
                     >
                         {isFavorite ? <Star /> : <StarOutlineOutlined />}
@@ -570,15 +579,48 @@ export const DatabaseTileCard = (props: DatabaseCardProps) => {
                 <StyledChipDiv>
                     {tag !== undefined &&
                         (typeof tag === 'object' ? (
-                            tag.map((t, i) => {
-                                return (
-                                    <Chip
-                                        key={id + i}
-                                        variant={'outlined'}
-                                        label={t}
-                                    />
-                                );
-                            })
+                            <>
+                                {tag.map((t, i) => {
+                                    if (i <= 2) {
+                                        return (
+                                            <Chip
+                                                key={id + i}
+                                                variant={'outlined'}
+                                                label={t}
+                                            />
+                                        );
+                                    }
+                                })}
+                                {tag.length > 3 ? (
+                                    <div
+                                        style={{
+                                            marginLeft: 1,
+                                            display: 'flex',
+                                            flexDirection: 'row',
+                                        }}
+                                    >
+                                        <StyledPublishedByLabel
+                                            sx={{
+                                                color: 'rgba(0, 0, 0, 0.6)',
+                                                marginLeft: 1,
+                                            }}
+                                            variant={'caption'}
+                                        >
+                                            +
+                                        </StyledPublishedByLabel>
+                                        <StyledPublishedByLabel
+                                            sx={{
+                                                color: 'rgba(0, 0, 0, 0.6)',
+                                                display: 'flex',
+                                                flexDirection: 'row',
+                                            }}
+                                            variant={'caption'}
+                                        >
+                                            {tag.length - 3}
+                                        </StyledPublishedByLabel>
+                                    </div>
+                                ) : null}
+                            </>
                         ) : (
                             <Chip
                                 key={id + tag}
@@ -602,8 +644,8 @@ export const DatabaseTileCard = (props: DatabaseCardProps) => {
                             }}
                             title={
                                 isUpvoted
-                                    ? `Downvote ${name}`
-                                    : `Upvote ${name}`
+                                    ? `Downvote ${name ? name : id}`
+                                    : `Upvote ${name ? name : id}`
                             }
                             onClick={(e) => {
                                 e.stopPropagation();
@@ -611,8 +653,8 @@ export const DatabaseTileCard = (props: DatabaseCardProps) => {
                             }}
                             aria-label={
                                 isUpvoted
-                                    ? `Downvote ${name}`
-                                    : `Upvote ${name}`
+                                    ? `Downvote ${name ? name : id}`
+                                    : `Upvote ${name ? name : id}`
                             }
                         >
                             {isUpvoted ? <ArrowDropDown /> : <ArrowDropUp />}
@@ -642,8 +684,8 @@ export const DatabaseTileCard = (props: DatabaseCardProps) => {
                 <StyledLockButton
                     title={
                         isGlobal
-                            ? `Make ${name} private`
-                            : `Make ${name} public`
+                            ? `Make ${name ? name : id} private`
+                            : `Make ${name ? name : id} public`
                     }
                     disabled={!global}
                     onClick={(e) => {
@@ -652,8 +694,8 @@ export const DatabaseTileCard = (props: DatabaseCardProps) => {
                     }}
                     aria-label={
                         isGlobal
-                            ? `Make ${name} private`
-                            : `Make ${name} public`
+                            ? `Make ${name ? name : id} private`
+                            : `Make ${name ? name : id} public`
                     }
                 >
                     {isGlobal ? <LockOpenRounded /> : <LockRounded />}
@@ -663,24 +705,24 @@ export const DatabaseTileCard = (props: DatabaseCardProps) => {
     );
 };
 
-export interface PlainDatabaseCardProps {
+export interface PlainEngineCardProps {
     /** Name of the Database */
     name: string;
 
     onClick: () => void;
 }
 
-export const PlainDatabaseCard = (props) => {
-    const { id, name, image = defaultDbImage, onClick } = props;
+export const PlainEngineCard = (props) => {
+    const { id, name, onClick } = props;
     return (
         <StyledPlainTileCard onClick={onClick}>
             <StyledCardImage
-                src={`${MODULE}/api/app-${id}/appImage/download`}
+                src={`${MODULE}/api/e-${id}/image/download`}
                 sx={{ height: '118px' }}
             />
             <StyledTileCardContent sx={{ marginTop: '8px' }}>
                 <StyledDbName variant={'body1'}>
-                    {formatDBName(name)}
+                    {name ? formatDBName(name) : id}
                 </StyledDbName>
             </StyledTileCardContent>
         </StyledPlainTileCard>

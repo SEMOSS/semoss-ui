@@ -453,6 +453,41 @@ function config(
                 ],
             },
         })
+        .state('embed-terminal', {
+            url: '/embed-terminal',
+            template: '<embed-terminal></embed-terminal>',
+            resolve: {
+                checkConfig: [
+                    '$q',
+                    '$state',
+                    'CONFIG',
+                    'semossCoreService',
+                    'monolithService',
+                    function (
+                        $q,
+                        $state,
+                        CONFIG,
+                        semossCoreService,
+                        monolithService
+                    ) {
+                        if (CONFIG.security && !CONFIG.loggedIn) {
+                            $state.go('login');
+                            return true;
+                        }
+                        if (!CONFIG.version) {
+                            return securityConfig(
+                                $q,
+                                semossCoreService,
+                                monolithService,
+                                CONFIG
+                            );
+                        }
+
+                        return true;
+                    },
+                ],
+            },
+        })
         .state('html', {
             url: '/html',
             template: '<viewer-html></viewer-html>',
