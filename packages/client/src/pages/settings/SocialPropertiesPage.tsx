@@ -7,7 +7,7 @@ import React, {
 } from 'react';
 import { useForm } from 'react-hook-form';
 
-import { useAPI, useRootStore } from '@/hooks';
+import { useAPI, useRootStore, useSettings } from '@/hooks';
 import { LoadingScreen } from '@/components/ui';
 import {
     Divider,
@@ -26,6 +26,8 @@ import ms from '../../assets/img/ms.png';
 import dropbox from '../../assets/img/dropbox.png';
 import github from '../../assets/img/github.png';
 import other from '../../assets/img/other.png';
+
+import { useNavigate } from 'react-router-dom';
 
 const SOCIAL = {
     google: {
@@ -139,6 +141,13 @@ const reducer = (state, action) => {
 export const SocialPropertiesPage = () => {
     // useStateChange doesn't play well with Accordion
     // const [socialProps, setSocialProps] = useState({});
+    const { adminMode } = useSettings();
+
+    const navigate = useNavigate();
+
+    if (!adminMode) {
+        navigate('/settings');
+    }
 
     const [state, dispatch] = useReducer(reducer, initialState);
     const { socialProps } = state;
