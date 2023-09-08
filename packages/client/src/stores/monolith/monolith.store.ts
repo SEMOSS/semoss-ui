@@ -1677,6 +1677,8 @@ export class MonolithStore {
 
         if (admin) {
             url += 'admin/';
+        } else {
+            return;
         }
 
         url += 'user/getAllUsers';
