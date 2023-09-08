@@ -60,7 +60,6 @@ export const ProjectSettingsDetailPage = () => {
                     }}
                 />
             ) : null}
-
             <Permissions
                 type="app"
                 refreshPermission={refresh}

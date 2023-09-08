@@ -444,8 +444,8 @@ export const StorageSettingsPage = () => {
                                   >
                                       {view === 'list' ? (
                                           <EngineLandscapeCard
-                                              name={db.app_name}
-                                              id={db.app_id}
+                                              name={db.database_name}
+                                              id={db.database_id}
                                               tag={db.tag}
                                               owner={db.database_created_by}
                                               description={db.description}
@@ -461,16 +461,19 @@ export const StorageSettingsPage = () => {
                                                   favoriteDb(db);
                                               }}
                                               onClick={(id) => {
-                                                  navigate(`${db.app_id}`, {
-                                                      state: {
-                                                          name: formatName(
-                                                              db.database_name,
-                                                          ),
-                                                          global: db.database_global,
-                                                          permission:
-                                                              db.permission,
+                                                  navigate(
+                                                      `${db.database_id}`,
+                                                      {
+                                                          state: {
+                                                              name: formatName(
+                                                                  db.database_name,
+                                                              ),
+                                                              global: db.database_global,
+                                                              permission:
+                                                                  db.permission,
+                                                          },
                                                       },
-                                                  });
+                                                  );
                                               }}
                                               upvote={(val) => {
                                                   upvoteDb(db);
@@ -481,8 +484,8 @@ export const StorageSettingsPage = () => {
                                           />
                                       ) : (
                                           <EngineTileCard
-                                              name={db.app_name}
-                                              id={db.app_id}
+                                              name={db.database_name}
+                                              id={db.database_id}
                                               tag={db.tag}
                                               owner={db.database_created_by}
                                               description={db.description}
@@ -498,16 +501,19 @@ export const StorageSettingsPage = () => {
                                                   favoriteDb(db);
                                               }}
                                               onClick={() => {
-                                                  navigate(`${db.app_id}`, {
-                                                      state: {
-                                                          name: formatName(
-                                                              db.database_name,
-                                                          ),
-                                                          global: db.database_global,
-                                                          permission:
-                                                              db.permission,
+                                                  navigate(
+                                                      `${db.database_id}`,
+                                                      {
+                                                          state: {
+                                                              name: formatName(
+                                                                  db.database_name,
+                                                              ),
+                                                              global: db.database_global,
+                                                              permission:
+                                                                  db.permission,
+                                                          },
                                                       },
-                                                  });
+                                                  );
                                               }}
                                               upvote={() => {
                                                   upvoteDb(db);
