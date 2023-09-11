@@ -24,8 +24,6 @@ const Template = (args) => {
         <TreeView
             {...args}
             aria-label="controlled"
-            defaultCollapseIcon={<ExpandMore />}
-            defaultExpandIcon={<ChevronRight />}
             expanded={expanded}
             selected={selected}
             onNodeToggle={handleToggle}

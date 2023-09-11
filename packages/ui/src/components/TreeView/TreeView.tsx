@@ -65,11 +65,15 @@ export interface TreeViewProps {
 }
 
 export const TreeView = (props: TreeViewProps) => {
-    const { multiSelect = true } = props;
+    const {
+        multiSelect = true,
+        defaultCollapseIcon = <ExpandMore />,
+        defaultExpandIcon = <ChevronRight />,
+    } = props;
     return (
         <MuiTreeView
-            defaultCollapseIcon={<ExpandMore />}
-            defaultExpandIcon={<ChevronRight />}
+            defaultCollapseIcon={defaultCollapseIcon}
+            defaultExpandIcon={defaultExpandIcon}
             multiSelect={multiSelect}
             {...props}
         />
