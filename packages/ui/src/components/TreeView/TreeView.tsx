@@ -12,6 +12,12 @@ export interface TreeViewProps {
      */
     defaultCollapseIcon?: React.ReactNode;
     /**
+     * Expanded node ids.
+     * Used when the item's expansion are not controlled.
+     * @default []
+     */
+    defaultExpanded?: string[];
+    /**
      * The default icon used to expand the node.
      */
     defaultExpandIcon?: React.ReactNode;
