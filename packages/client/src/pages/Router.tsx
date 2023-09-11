@@ -9,8 +9,8 @@ import { NavigatorLayout } from './NavigatorLayout';
 
 import { LoginPage } from './LoginPage';
 import { HomePage } from './HomePage';
+import { BuilderPage } from './BuilderPage';
 import { CatalogPage } from './CatalogPage';
-
 import {
     DatabaseMetadataPage,
     DatabaseSettingsPage,
@@ -101,6 +101,7 @@ export const Router = observer(() => {
                 <Route path="*" element={<Navigate to="/" replace />} />
             </Route>
             <Route path="/login" element={<LoginPage />}></Route>
+            <Route path="/builder" element={<BuilderPage />}></Route>
         </Routes>
     );
 });
