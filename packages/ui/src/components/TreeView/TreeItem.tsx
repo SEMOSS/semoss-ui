@@ -35,7 +35,7 @@ export interface TreeItemProps {
     /**
      * The tree node label.
      */
-    labelText: React.ReactNode;
+    labelText?: React.ReactNode;
     /**
      * The tree node label.
      */
