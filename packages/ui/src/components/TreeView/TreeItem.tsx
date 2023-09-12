@@ -1,6 +1,5 @@
-import { SxProps, Box } from "@mui/material";
+import { SxProps } from "@mui/material";
 import { TreeItem as MuiTreeItem } from "@mui/x-tree-view/";
-import { styled } from "../../theme";
 
 export interface TreeItemProps {
     /**
@@ -33,14 +32,6 @@ export interface TreeItemProps {
      */
     label?: React.ReactNode;
     /**
-     * The tree node label.
-     */
-    labelText?: React.ReactNode;
-    /**
-     * The tree node label.
-     */
-    labelEndContent?: React.ReactNode;
-    /**
      * The id of the node.
      */
     nodeId: string;
@@ -50,29 +41,6 @@ export interface TreeItemProps {
     sx?: SxProps;
 }
 
-const StyledContainer = styled(Box)({
-    display: "flex",
-    justifyContent: "space-between",
-    alignItems: "center",
-    flexWrap: "wrap",
-    verticalAlign: "middle",
-});
-
-const StyledBox = styled(Box)({
-    display: "inline-flex",
-    verticalAlign: "middle",
-});
-
 export const TreeItem = (props: TreeItemProps) => {
-    return (
-        <MuiTreeItem
-            label={
-                <StyledContainer>
-                    <Box>{props.labelText}</Box>
-                    <StyledBox>{props.labelEndContent}</StyledBox>
-                </StyledContainer>
-            }
-            {...props}
-        />
-    );
+    return <MuiTreeItem {...props} />;
 };
