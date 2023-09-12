@@ -12,7 +12,7 @@ import { MembersTable } from '@/components/settings/MembersTable';
 import { PendingMembersTable } from '@/components/settings/PendingMembersTable';
 import { AppSettings } from '@/components/app';
 import { SettingsTiles } from '@/components/settings';
-import { AppRenderer } from '@/components/app';
+import { AppRenderer, AppEditor } from '@/components/app';
 
 import {
     Button,
@@ -640,7 +640,7 @@ export const AppPage = observer(() => {
                                             flexDirection: 'column',
                                         }}
                                     >
-                                        {/* <AppEditor /> */}
+                                        <AppEditor appId={appId} />
                                         <Typography variant="h6">
                                             Currently in Progress...
                                         </Typography>

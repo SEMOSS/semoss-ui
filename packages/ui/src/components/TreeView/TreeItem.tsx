@@ -57,6 +57,7 @@ const StyledContainer = styled(Box)({
     flexWrap: "wrap",
     verticalAlign: "middle",
 });
+
 const StyledBox = styled(Box)({
     display: "inline-flex",
     verticalAlign: "middle",
