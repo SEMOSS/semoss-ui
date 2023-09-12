@@ -195,7 +195,16 @@ export const AppEditor = (props: AppEditorProps) => {
      */
     function renderTreeNodes(nodes) {
         return nodes.map((node, i) => (
-            <TreeView.Item key={node.id} nodeId={node.id} labelText={node.name}>
+            <TreeView.Item
+                key={node.id}
+                nodeId={node.id}
+                label={
+                    <div style={{ display: 'flex', gap: '8px' }}>
+                        <span>{node.type === 'directory' ? '+' : null}</span>
+                        <span>{node.name}</span>
+                    </div>
+                }
+            >
                 {node.children && node.children.length > 0
                     ? renderTreeNodes(node.children)
                     : null}
