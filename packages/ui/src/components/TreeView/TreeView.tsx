@@ -1,5 +1,4 @@
 import { SxProps } from "@mui/material";
-import { ExpandMore, ChevronRight } from "@mui/icons-material/";
 import { TreeView as MuiTreeView } from "@mui/x-tree-view/TreeView";
 
 export interface TreeViewProps {
@@ -71,17 +70,6 @@ export interface TreeViewProps {
 }
 
 export const TreeView = (props: TreeViewProps) => {
-    const {
-        multiSelect = true,
-        defaultCollapseIcon = <ExpandMore />,
-        defaultExpandIcon = <ChevronRight />,
-    } = props;
-    return (
-        <MuiTreeView
-            defaultCollapseIcon={defaultCollapseIcon}
-            defaultExpandIcon={defaultExpandIcon}
-            multiSelect={multiSelect}
-            {...props}
-        />
-    );
+    const { multiSelect = true } = props;
+    return <MuiTreeView multiSelect={multiSelect} {...props} />;
 };
