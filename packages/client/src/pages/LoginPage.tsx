@@ -14,6 +14,7 @@ import {
     Typography,
     Paper,
     Divider,
+    Box,
 } from '@semoss/ui';
 
 import { useRootStore } from '@/hooks';
@@ -21,13 +22,18 @@ import MS from '@/assets/img/ms.png';
 
 const StyledContainer = styled('div')(({ theme }) => ({
     padding: theme.spacing(4),
-    maxWidth: '600px',
-    width: '100%',
+    width: '610px',
 }));
 
-const StyledPaper = styled(Paper)(({ theme }) => ({
-    padding: theme.spacing(4),
-    width: '100%',
+const StyledPaper = styled(Box)(({ theme }) => ({
+    display: 'flex',
+    width: '610px',
+    flexDirection: 'column',
+    justifyContent: 'center',
+    alignItems: 'flex-start',
+    gap: '32px',
+    paddingLeft: '144px',
+    paddingTop: '175px',
 }));
 
 const StyledAction = styled(Button)(({ theme }) => ({
@@ -182,99 +188,103 @@ export const LoginPage = observer(() => {
                     {snackbar.message}
                 </Alert>
             </Snackbar>
-
-            <Stack alignItems={'center'} justifyContent={'center'}>
-                <StyledContainer>
-                    <StyledPaper variant={'elevation'} elevation={2} square>
-                        <Stack spacing={3}>
-                            <Typography variant="h5">Login</Typography>
-                            {error && <Alert color="error">{error}</Alert>}
-                            {providers.indexOf('native') > -1 && (
-                                <>
-                                    <Stack spacing={2}>
-                                        <Controller
-                                            name={'USERNAME'}
-                                            control={control}
-                                            rules={{ required: true }}
-                                            render={({ field }) => {
-                                                return (
-                                                    <TextField
-                                                        label="Username"
-                                                        variant="outlined"
-                                                        fullWidth
-                                                        value={
-                                                            field.value
-                                                                ? field.value
-                                                                : ''
-                                                        }
-                                                        onChange={(e) =>
-                                                            field.onChange(
-                                                                e.target.value,
-                                                            )
-                                                        }
-                                                    />
-                                                );
-                                            }}
-                                        />
-                                        <Controller
-                                            name={'PASSWORD'}
-                                            control={control}
-                                            rules={{ required: true }}
-                                            render={({ field }) => {
-                                                return (
-                                                    <TextField
-                                                        label="Password"
-                                                        variant="outlined"
-                                                        type="password"
-                                                        fullWidth
-                                                        value={
-                                                            field.value
-                                                                ? field.value
-                                                                : ''
-                                                        }
-                                                        onChange={(e) =>
-                                                            field.onChange(
-                                                                e.target.value,
-                                                            )
-                                                        }
-                                                    />
-                                                );
-                                            }}
-                                        />
-                                        <Button
-                                            fullWidth
-                                            variant={'contained'}
-                                            onClick={login}
-                                        >
-                                            SIGN IN
-                                        </Button>
-                                    </Stack>
-                                </>
-                            )}
-                            {providers.indexOf('native') > -1 &&
-                                providers.indexOf('ms') > -1 && (
+            <Stack direction="row">
+                <Stack alignItems={'center'} justifyContent={'center'}>
+                    <StyledContainer>
+                        <StyledPaper variant={'elevation'} elevation={2} square>
+                            <Stack spacing={3}>
+                                <Typography variant="h5">Login</Typography>
+                                {error && <Alert color="error">{error}</Alert>}
+                                {providers.indexOf('native') > -1 && (
                                     <>
-                                        <Divider />
+                                        <Stack spacing={2}>
+                                            <Controller
+                                                name={'USERNAME'}
+                                                control={control}
+                                                rules={{ required: true }}
+                                                render={({ field }) => {
+                                                    return (
+                                                        <TextField
+                                                            label="Username"
+                                                            variant="outlined"
+                                                            fullWidth
+                                                            value={
+                                                                field.value
+                                                                    ? field.value
+                                                                    : ''
+                                                            }
+                                                            onChange={(e) =>
+                                                                field.onChange(
+                                                                    e.target
+                                                                        .value,
+                                                                )
+                                                            }
+                                                        />
+                                                    );
+                                                }}
+                                            />
+                                            <Controller
+                                                name={'PASSWORD'}
+                                                control={control}
+                                                rules={{ required: true }}
+                                                render={({ field }) => {
+                                                    return (
+                                                        <TextField
+                                                            label="Password"
+                                                            variant="outlined"
+                                                            type="password"
+                                                            fullWidth
+                                                            value={
+                                                                field.value
+                                                                    ? field.value
+                                                                    : ''
+                                                            }
+                                                            onChange={(e) =>
+                                                                field.onChange(
+                                                                    e.target
+                                                                        .value,
+                                                                )
+                                                            }
+                                                        />
+                                                    );
+                                                }}
+                                            />
+                                            <Button
+                                                fullWidth
+                                                variant={'contained'}
+                                                onClick={login}
+                                            >
+                                                SIGN IN
+                                            </Button>
+                                        </Stack>
                                     </>
                                 )}
-                            {providers.indexOf('ms') > -1 && (
-                                <StyledAction
-                                    variant="outlined"
-                                    onClick={() => {
-                                        oauth('ms');
-                                    }}
-                                    fullWidth
-                                >
-                                    <StyledActionImage src={MS} />
-                                    <StyledActionText>
-                                        Microsoft
-                                    </StyledActionText>
-                                </StyledAction>
-                            )}
-                        </Stack>
-                    </StyledPaper>
-                    {isLoading && <LinearProgress />}
-                </StyledContainer>
+                                {providers.indexOf('native') > -1 &&
+                                    providers.indexOf('ms') > -1 && (
+                                        <>
+                                            <Divider />
+                                        </>
+                                    )}
+                                {providers.indexOf('ms') > -1 && (
+                                    <StyledAction
+                                        variant="outlined"
+                                        onClick={() => {
+                                            oauth('ms');
+                                        }}
+                                        fullWidth
+                                    >
+                                        <StyledActionImage src={MS} />
+                                        <StyledActionText>
+                                            Microsoft
+                                        </StyledActionText>
+                                    </StyledAction>
+                                )}
+                            </Stack>
+                        </StyledPaper>
+                        {isLoading && <LinearProgress />}
+                    </StyledContainer>
+                </Stack>
+                <div>Hello</div>
             </Stack>
         </>
     );
