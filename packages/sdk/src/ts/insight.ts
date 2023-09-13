@@ -32,7 +32,6 @@ interface InsightStoreInterface {
         /** Config information */
         config: {
             logins: Record<string, unknown>;
-            security: boolean;
             providers: string[];
             [key: string]: unknown;
         };
@@ -91,7 +90,7 @@ export class Insight {
         // try to set the env from the window
         try {
             const env = JSON.parse(
-                document.getElementById('semoss-env').textContent,
+                document.getElementById('semoss-env')?.textContent || '',
             ) as {
                 APP: string;
                 MODULE: string;
@@ -123,11 +122,13 @@ export class Insight {
             // get the system information
             await this.initializeSystem();
 
+            // skip if the system doesn't initialize correctly
+            if (!this._store.system) {
+                return;
+            }
+
             // if security is not enabled or the user is logged in, load the app
-            if (
-                !this._store.system.config.security ||
-                Object.keys(this._store.system.config.logins).length > 0
-            ) {
+            if (Object.keys(this._store.system.config.logins).length > 0) {
                 // initialize the app
                 await this.initializeApp();
 
@@ -142,7 +143,7 @@ export class Insight {
             console.error(error);
 
             // store the error
-            this._store.error = error;
+            this._store.error = error as Error;
         }
     };
 
@@ -167,7 +168,7 @@ export class Insight {
             console.error(error);
 
             // store the error
-            this._store.error = error;
+            this._store.error = error as Error;
         }
     };
 
@@ -184,7 +185,6 @@ export class Insight {
             system = {
                 config: {
                     logins: {},
-                    security: false,
                     providers: [],
                 },
             };
@@ -263,7 +263,7 @@ export class Insight {
     private processActionError = (error: Error) => {
         // ignore 302 errors
         if (axios.isAxiosError(error)) {
-            if (error.response.status === 302) {
+            if (error.response?.status === 302) {
                 this._store.isAuthorized = false;
                 return;
             }
@@ -301,6 +301,7 @@ export class Insight {
                         credentials.username,
                         credentials.password,
                     );
+
                     if (response) {
                         loggedIn = true;
                     }
@@ -322,8 +323,10 @@ export class Insight {
                 // success
                 return loggedIn;
             } catch (error) {
-                this.processActionError(error);
+                this.processActionError(error as Error);
             }
+
+            return false;
         },
 
         /**
@@ -333,14 +336,16 @@ export class Insight {
             try {
                 const response = await logout();
                 if (!response) {
-                    return;
+                    return false;
                 }
 
                 // success
                 return true;
             } catch (error) {
-                this.processActionError(error);
+                this.processActionError(error as Error);
             }
+
+            return false;
         },
 
         /**
@@ -359,7 +364,7 @@ export class Insight {
                 // success
                 return response;
             } catch (error) {
-                this.processActionError(error);
+                this.processActionError(error as Error);
             }
         },
 
@@ -376,7 +381,7 @@ export class Insight {
                 // success
                 return response;
             } catch (error) {
-                this.processActionError(error);
+                this.processActionError(error as Error);
             }
         },
 
@@ -405,10 +410,13 @@ export class Insight {
                     projectId,
                     path,
                 );
+
                 return response;
             } catch (error) {
-                this.processActionError(error);
+                this.processActionError(error as Error);
             }
+
+            return [];
         },
 
         /**
@@ -421,7 +429,7 @@ export class Insight {
             try {
                 await download(insightID, fileKey);
             } catch (error) {
-                this.processActionError(error);
+                this.processActionError(error as Error);
             }
         },
     };

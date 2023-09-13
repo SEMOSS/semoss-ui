@@ -1,9 +1,16 @@
 {
-    "name": "@semoss/builder",
+    "name": "@semoss/canvas",
     "version": "1.0.0-beta.1",
+    "type": "module",
+    "main": "dist/index.js",
+    "types": "dist/index.d.ts",
+    "files": [
+        "src",
+        "dist"
+    ],
     "scripts": {
-        "dev": "rollup --config rollup.config.ts --configPlugin typescript --watch",
-        "build": "rollup --config rollup.config.ts --configPlugin typescript",
+        "dev": "rollup --config rollup.config.js --watch",
+        "build": "rollup --config rollup.config.js",
         "lint": "eslint . --ext .js,.jsx,.ts,.tsx",
         "lint:fix": "eslint . --ext .js,.jsx,.ts,.tsx --fix",
         "format": "prettier . --check --plugin-search-dir=.",
@@ -11,33 +18,34 @@
         "fix": "run-s format:fix lint:fix",
         "type-check": "tsc --pretty --noEmit"
     },
-    "main": "dist/index.js",
-    "types": "dist/index.d.ts",
-    "files": [
-        "src",
-        "dist"
-    ],
     "peerDependencies": {
         "react": "^17.0.0 || ^18.0.0",
         "react-dom": "^17.0.0 || ^18.0.0"
     },
+    "dependencies": {
+        "@semoss/sdk": "workspace:*",
+        "mobx": "6.3.7",
+        "mobx-react-lite": "^3.4.0"
+    },
     "devDependencies": {
-        "@rollup/plugin-commonjs": "19.0.2",
-        "@rollup/plugin-node-resolve": "13.3.0",
+        "@rollup/plugin-commonjs": "25.0.4",
+        "@rollup/plugin-node-resolve": "15.2.1",
+        "@rollup/plugin-typescript": "^11.1.3",
         "@types/node": "^16.11.47",
         "@types/react": "^17.0.48",
         "@types/react-dom": "17.0.20",
         "@typescript-eslint/eslint-plugin": "^5.32.0",
         "@typescript-eslint/parser": "^5.32.0",
-        "axios": "^0.24.0",
         "eslint": "^8.21.0",
         "eslint-config-prettier": "^8.5.0",
         "eslint-plugin-prettier": "^4.2.1",
         "eslint-plugin-react": "^7.30.1",
-        "identity-obj-proxy": "^3.0.0",
         "npm-run-all": "^4.1.5",
         "prettier": "2.4.1",
-        "rollup": "2.79.1",
+        "react": "^17.0.2",
+        "react-dom": "^17.0.2",
+        "rollup": "3.29.1",
+        "rollup-plugin-delete": "2.0.0",
         "tslib": "^2.4.0",
         "typescript": "^4.7.4"
     }

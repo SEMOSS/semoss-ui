@@ -9,7 +9,7 @@ import { NavigatorLayout } from './NavigatorLayout';
 
 import { LoginPage } from './LoginPage';
 import { HomePage } from './HomePage';
-import { BuilderPage } from './BuilderPage';
+import { EditorPage } from './EditorPage';
 import { CatalogPage } from './CatalogPage';
 import {
     DatabaseMetadataPage,
@@ -101,7 +101,7 @@ export const Router = observer(() => {
                 <Route path="*" element={<Navigate to="/" replace />} />
             </Route>
             <Route path="/login" element={<LoginPage />}></Route>
-            <Route path="/builder" element={<BuilderPage />}></Route>
+            <Route path="/edit" element={<EditorPage />}></Route>
         </Routes>
     );
 });

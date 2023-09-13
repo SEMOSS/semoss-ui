@@ -1,18 +1,22 @@
 import { createContext, useState, useEffect, useMemo } from 'react';
 import { unstable_batchedUpdates } from 'react-dom';
 
-import { Insight } from '../ts';
+import { Insight } from '@/ts';
 
 /**
  * Context of the react data
  */
-export const InsightContext = createContext<{
-    isInitialized: Insight['isInitialized'];
-    isAuthorized: Insight['isAuthorized'];
-    error: Insight['error'];
-    system: Insight['system'];
-    actions: Insight['actions'];
-}>(undefined);
+export const InsightContext = createContext<
+    | {
+          insight: Insight;
+          isInitialized: Insight['isInitialized'];
+          isAuthorized: Insight['isAuthorized'];
+          error: Insight['error'];
+          system: Insight['system'];
+          actions: Insight['actions'];
+      }
+    | undefined
+>(undefined);
 
 interface InsightProviderProps {
     /** Content to render with the insight */
@@ -68,12 +72,13 @@ export const InsightProvider = (props: InsightProviderProps) => {
         syncInsight();
     };
 
-    const wrappedActions: Insight['actions'] = useMemo(() => {
-        const actions = {};
-        for (const a in insight.actions) {
-            actions[a] = async (...args) => {
+    const wrappedActions = useMemo(() => {
+        return Object.keys(insight.actions).reduce((acc, val) => {
+            //@ts-expect-error TODO Fix Typing
+            acc[val] = async (...args: unknown[]) => {
                 // wait for the action to complete
-                const response = await insight.actions[a].apply(null, args);
+                //@ts-expect-error TODO Fix Typing
+                const response = await acc[val].call(acc[val], [...args]);
 
                 // sync it
                 syncInsight();
@@ -81,9 +86,9 @@ export const InsightProvider = (props: InsightProviderProps) => {
                 // return the response
                 return response;
             };
-        }
 
-        return actions as Insight['actions'];
+            return acc;
+        }, {} as Insight['actions']);
     }, [insight.actions]);
 
     // initialize the insight / destroy
@@ -100,6 +105,7 @@ export const InsightProvider = (props: InsightProviderProps) => {
     return (
         <InsightContext.Provider
             value={{
+                insight: insight,
                 isInitialized: isInitialized,
                 isAuthorized: isAuthorized,
                 error: error,

@@ -6,7 +6,6 @@ import { ENV } from './config';
  * Get the System's configuration information
  */
 export const getSystemConfig = async (): Promise<{
-    security: boolean;
     logins: { [key: string]: unknown };
     loginsAllowed: { [key: string]: boolean };
     [key: string]: unknown;
@@ -14,7 +13,6 @@ export const getSystemConfig = async (): Promise<{
     // get the response
     const response = await axios
         .get<{
-            security: boolean;
             logins: { [key: string]: unknown };
             loginsAllowed: { [key: string]: boolean };
             [key: string]: unknown;
@@ -29,10 +27,10 @@ export const getSystemConfig = async (): Promise<{
     }
 
     if (response.data && response.data.csrf) {
-        let token = response.data['X-CSRF-Token'];
+        let token = response.data['X-CSRF-Token'] as string;
 
         axios.interceptors.request.use(
-            async (config: any) => {
+            async (config) => {
                 if (config.method === 'post') {
                     // use the token if it is there
 
@@ -54,7 +52,9 @@ export const getSystemConfig = async (): Promise<{
                             tokenResponse.headers['x-csrf-token'];
                     }
 
-                    config.headers['X-CSRF-Token'] = token;
+                    if (config.headers) {
+                        config.headers['X-CSRF-Token'] = token;
+                    }
                 }
 
                 return config;
