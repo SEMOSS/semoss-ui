@@ -131,6 +131,7 @@ interface TypeUserLogin {
     USERNAME: string;
     PASSWORD: string;
     REMEMBER_LOGIN: boolean;
+    OTP_CONFIRM: string;
 }
 
 /**
@@ -140,6 +141,7 @@ export const LoginPage = observer(() => {
     const { configStore } = useRootStore();
 
     const [loginType, setLoginType] = useState('Native');
+    const [showOTPCodeField, setShowOTPCodeField] = useState(false);
     const [snackbar, setSnackbar] = useState<{
         open: boolean;
         message: string;
@@ -157,11 +159,11 @@ export const LoginPage = observer(() => {
             USERNAME: '',
             PASSWORD: '',
             REMEMBER_LOGIN: false,
+            OTP_CONFIRM: '',
         },
     });
 
     const location = useLocation();
-    const theme = useTheme();
 
     /**
      * Allow the user to login
@@ -176,18 +178,66 @@ export const LoginPage = observer(() => {
                 return;
             }
 
-            await configStore
-                .login(data.USERNAME, data.PASSWORD)
-                .then(() => {
-                    // noop
-                })
-                .catch((error) => {
-                    setError(error.message);
-                })
-                .finally(() => {
-                    // turn off loading
-                    setIsLoading(false);
-                });
+            if (!showOTPCodeField) {
+                if (loginType === 'Native') {
+                    await configStore
+                        .login(data.USERNAME, data.PASSWORD)
+                        .then(() => {
+                            // noop
+                        })
+                        .catch((error) => {
+                            setError(error.message);
+                        })
+                        .finally(() => {
+                            // turn off loading
+                            setIsLoading(false);
+                        });
+                }
+                if (loginType === 'LDAP') {
+                    await configStore
+                        .loginLDAP(data.USERNAME, data.PASSWORD)
+                        .then(() => {
+                            // noop
+                        })
+                        .catch((error) => {
+                            setError(error.message);
+                        })
+                        .finally(() => {
+                            // turn off loading
+                            setIsLoading(false);
+                        });
+                }
+                if (loginType === 'LinOTP') {
+                    await configStore
+                        .loginOTP(data.USERNAME, data.PASSWORD)
+                        .then(() => {
+                            // noop
+                        })
+                        .catch((error) => {
+                            setError(error.message);
+                        })
+                        .finally(() => {
+                            // turn off loading
+                            setIsLoading(false);
+                        });
+                    setShowOTPCodeField(true);
+                }
+            }
+            if (showOTPCodeField) {
+                await configStore
+                    .confirmOTP(data.OTP_CONFIRM)
+                    .then(() => {
+                        // noop
+                    })
+                    .catch((error) => {
+                        setError(error.message);
+                    })
+                    .finally(() => {
+                        // turn off loading
+                        setIsLoading(false);
+                    });
+                setShowOTPCodeField(true);
+            }
         },
     );
 
@@ -364,62 +414,105 @@ export const LoginPage = observer(() => {
                                 {providers.indexOf('native') > -1 && (
                                     <>
                                         <Stack spacing={2}>
-                                            <Controller
-                                                name={'USERNAME'}
-                                                control={control}
-                                                rules={{ required: true }}
-                                                render={({ field }) => {
-                                                    return (
-                                                        <TextField
-                                                            label="Username"
-                                                            variant="outlined"
-                                                            fullWidth
-                                                            value={
-                                                                field.value
-                                                                    ? field.value
-                                                                    : ''
-                                                            }
-                                                            onChange={(e) =>
-                                                                field.onChange(
-                                                                    e.target
-                                                                        .value,
-                                                                )
-                                                            }
-                                                        />
-                                                    );
-                                                }}
-                                            />
-                                            <Controller
-                                                name={'PASSWORD'}
-                                                control={control}
-                                                rules={{ required: true }}
-                                                render={({ field }) => {
-                                                    return (
-                                                        <TextField
-                                                            label="Password"
-                                                            variant="outlined"
-                                                            type="password"
-                                                            fullWidth
-                                                            value={
-                                                                field.value
-                                                                    ? field.value
-                                                                    : ''
-                                                            }
-                                                            onChange={(e) =>
-                                                                field.onChange(
-                                                                    e.target
-                                                                        .value,
-                                                                )
-                                                            }
-                                                        />
-                                                    );
-                                                }}
-                                            />
+                                            {!showOTPCodeField && (
+                                                <>
+                                                    <Controller
+                                                        name={'USERNAME'}
+                                                        control={control}
+                                                        rules={{
+                                                            required: true,
+                                                        }}
+                                                        render={({ field }) => {
+                                                            return (
+                                                                <TextField
+                                                                    label="Username"
+                                                                    variant="outlined"
+                                                                    fullWidth
+                                                                    value={
+                                                                        field.value
+                                                                            ? field.value
+                                                                            : ''
+                                                                    }
+                                                                    onChange={(
+                                                                        e,
+                                                                    ) =>
+                                                                        field.onChange(
+                                                                            e
+                                                                                .target
+                                                                                .value,
+                                                                        )
+                                                                    }
+                                                                />
+                                                            );
+                                                        }}
+                                                    />
+                                                    <Controller
+                                                        name={'PASSWORD'}
+                                                        control={control}
+                                                        rules={{
+                                                            required: true,
+                                                        }}
+                                                        render={({ field }) => {
+                                                            return (
+                                                                <TextField
+                                                                    label="Password"
+                                                                    variant="outlined"
+                                                                    type="password"
+                                                                    fullWidth
+                                                                    value={
+                                                                        field.value
+                                                                            ? field.value
+                                                                            : ''
+                                                                    }
+                                                                    onChange={(
+                                                                        e,
+                                                                    ) =>
+                                                                        field.onChange(
+                                                                            e
+                                                                                .target
+                                                                                .value,
+                                                                        )
+                                                                    }
+                                                                />
+                                                            );
+                                                        }}
+                                                    />
+                                                </>
+                                            )}
+                                            {showOTPCodeField && (
+                                                <Controller
+                                                    name={'OTP_CONFIRM'}
+                                                    control={control}
+                                                    rules={{
+                                                        required: true,
+                                                    }}
+                                                    render={({ field }) => {
+                                                        return (
+                                                            <TextField
+                                                                label="OTP Confirmation Code"
+                                                                variant="outlined"
+                                                                fullWidth
+                                                                value={
+                                                                    field.value
+                                                                        ? field.value
+                                                                        : ''
+                                                                }
+                                                                onChange={(e) =>
+                                                                    field.onChange(
+                                                                        e.target
+                                                                            .value,
+                                                                    )
+                                                                }
+                                                            />
+                                                        );
+                                                    }}
+                                                />
+                                            )}
                                             <StyledRememberBox>
                                                 <Controller
                                                     name={'REMEMBER_LOGIN'}
                                                     control={control}
-                                                    rules={{ required: true }}
+                                                    rules={{ required: false }}
                                                     render={({ field }) => {
                                                         return (
                                                             <Checkbox
