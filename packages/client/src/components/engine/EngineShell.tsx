@@ -39,7 +39,7 @@ const StyledInfoRight = styled('div')(({ theme }) => ({
     gap: theme.spacing(1),
 }));
 
-const StyledInfoDescription = styled(Typography)(({ theme }) => ({
+const StyledInfoDescription = styled(Typography)(() => ({
     maxWidth: '699px',
     maxHeight: '174px',
     textOverflow: 'ellipsis',

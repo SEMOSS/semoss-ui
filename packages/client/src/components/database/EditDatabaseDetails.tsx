@@ -20,6 +20,10 @@ const StyledEditorContainer = styled('div')(({ theme }) => ({
     marginBottom: theme.spacing(1),
 }));
 
+const StyledStack = styled(Stack)(({ theme }) => ({
+    marginTop: theme.spacing(1),
+}));
+
 interface EditDatabaseDetailsProps {
     /** Track if the edit is open */
     open: boolean;
@@ -206,7 +210,55 @@ export const EditDatabaseDetails = observer(
             >
                 <Modal.Title>Edit Database Details TEST</Modal.Title>
                 <Modal.Content>
-                    <Stack spacing={4}>
+                    <StyledStack spacing={4}>
+                        <Controller
+                            name={'image'}
+                            control={control}
+                            render={({ field }) => {
+                                return (
+                                    <Autocomplete
+                                        disableClearable
+                                        label={'Image'}
+                                        options={imageOptions}
+                                        value={newImageLabel}
+                                        isOptionEqualToValue={(option, value) =>
+                                            option.label === value.label
+                                        }
+                                        onChange={(event, newValue) => {
+                                            field.onChange(newValue.src);
+                                            setNewImageLabel(newValue.label);
+                                        }}
+                                        renderInput={(params) => (
+                                            <TextField
+                                                {...params}
+                                                label="Image"
+                                                InputProps={{
+                                                    ...params.InputProps,
+                                                    startAdornment: (
+                                                        <img
+                                                            src={newImageSrc}
+                                                        />
+                                                    ),
+                                                }}
+                                            />
+                                        )}
+                                        renderOption={(props, option) => (
+                                            <Box component="li" {...props}>
+                                                <img
+                                                    loading="lazy"
+                                                    width="20"
+                                                    height="20"
+                                                    src={option.src}
+                                                    alt=""
+                                                />
+                                                {option.label}
+                                            </Box>
+                                        )}
+                                    />
+                                );
+                            }}
+                        />
+
                         {databaseMetaKeys.map((key) => {
                             const { metakey, display_options } = key;
                             const label =
@@ -343,54 +395,7 @@ export const EditDatabaseDetails = observer(
 
                             // return null;
                         })}
-
-                        <Controller
-                            name={'image'}
-                            control={control}
-                            render={({ field }) => {
-                                return (
-                                    <Autocomplete
-                                        disableClearable
-                                        label={'Image'}
-                                        options={imageOptions}
-                                        value={newImageLabel}
-                                        isOptionEqualToValue={(option, value) =>
-                                            option.label === value.label
-                                        }
-                                        onChange={(event, newValue) => {
-                                            field.onChange(newValue.src);
-                                            setNewImageLabel(newValue.label);
-                                        }}
-                                        renderInput={(params) => (
-                                            <TextField
-                                                {...params}
-                                                label="Image"
-                                                InputProps={{
-                                                    ...params.InputProps,
-                                                    startAdornment: (
-                                                        <img
-                                                            src={newImageSrc}
-                                                        />
-                                                    ),
-                                                }}
-                                            />
-                                        )}
-                                        renderOption={(props, option) => (
-                                            <Box component="li" {...props}>
-                                                <img
-                                                    loading="lazy"
-                                                    width="20"
-                                                    src={option.src}
-                                                    alt=""
-                                                />
-                                                {option.label}
-                                            </Box>
-                                        )}
-                                    />
-                                );
-                            }}
-                        />
-                    </Stack>
+                    </StyledStack>
                 </Modal.Content>
                 <Modal.Actions>
                     <Button
