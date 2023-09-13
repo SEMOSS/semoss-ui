@@ -4,7 +4,7 @@ import React from 'react';
 /**
  * Block
  */
-export type Block<W extends Widget = Widget> = W extends W
+export type Block<W extends WidgetDef = WidgetDef> = W extends W
     ? {
           /** ID of the Block */
           id: string;
@@ -41,9 +41,9 @@ export type Block<W extends Widget = Widget> = W extends W
     : never;
 
 /**
- * Widget
+ * Widget Definition
  */
-export interface Widget<W extends string = string> {
+export interface WidgetDef<W extends string = string> {
     /** Unique widget name */
     widget: W;
 
@@ -58,30 +58,25 @@ export interface Widget<W extends string = string> {
 }
 
 /**
- * Config information for the widget
+ * Component Innformation
  */
-export type WidgetConfig<W extends Widget = Widget> = {
+export type Widget<W extends WidgetDef> = React.FunctionComponent<{
+    /** Id of the block */
+    id: string;
+}> & {
     /** Unique widget name */
     widget: W['widget'];
-
-    /**
-     * Component to render the block
-     */
-    block: React.FunctionComponent<{
-        /** Id of the block */
-        id: string;
-    }>;
 
     /** Default settings */
     config: {
         /** Data associated with the widget */
-        data: WidgetJSON<W, W>['data'];
+        data: W['data'];
 
         /** Listeners associated with the widget */
-        listeners: WidgetJSON<W, W>['listeners'];
+        listeners: W['listeners'];
 
         /** Children associated with the widget */
-        slots: WidgetJSON<W, W>['slots'];
+        slots: Record<W['slots'], WidgetJSON[]>;
     };
 };
 
@@ -89,9 +84,9 @@ export type WidgetConfig<W extends Widget = Widget> = {
  * WidgetJSON
  */
 export type WidgetJSON<
-    T extends Widget = Widget,
-    A extends Widget = Widget,
-> = T extends Widget
+    T extends WidgetDef = WidgetDef,
+    A extends WidgetDef = WidgetDef,
+> = T extends WidgetDef
     ? {
           /** Type of the widget */
           widget: T['widget'];
@@ -110,9 +105,8 @@ export type WidgetJSON<
 /**
  * WidgetRegistry
  */
-export type WidgetRegistry<W extends Widget = Widget> = W extends Widget
-    ? Record<Widget['widget'], WidgetConfig<W>>
-    : never;
+export type WidgetRegistry<W extends WidgetDef = WidgetDef> =
+    W extends WidgetDef ? Record<W['widget'], Widget<W>> : never;
 /**
  * Query
  */

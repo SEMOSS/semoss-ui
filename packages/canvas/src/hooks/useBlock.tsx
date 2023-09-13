@@ -2,7 +2,7 @@ import { useCallback, useMemo } from 'react';
 import { toJS, computed } from 'mobx';
 
 import { Paths, PathValue } from '@/types';
-import { Actions, ActionMessages, Block, Widget } from '@/stores';
+import { Actions, ActionMessages, Block, WidgetDef } from '@/stores';
 import { copy } from '@/utility';
 
 import { useCanvas } from './useCanvas';
@@ -10,7 +10,7 @@ import { useCanvas } from './useCanvas';
 /**
  * Widget Props
  */
-interface useBlockReturn<W extends Widget> {
+interface useBlockReturn<W extends WidgetDef> {
     /** Data for the widget  */
     data: Block<W>['data'];
 
@@ -49,7 +49,9 @@ interface useBlockReturn<W extends Widget> {
 /**
  * Access methods for the block
  */
-export const useBlock = <W extends Widget>(id: string): useBlockReturn<W> => {
+export const useBlock = <W extends WidgetDef>(
+    id: string,
+): useBlockReturn<W> => {
     // get the store
     const { store } = useCanvas();
 
@@ -67,9 +69,9 @@ export const useBlock = <W extends Widget>(id: string): useBlockReturn<W> => {
      * @param value - value of the data to set
      */
     const setData = useCallback(
-        <P extends Paths<Block<Widget>['data'], 4>>(
+        <P extends Paths<Block<WidgetDef>['data'], 4>>(
             path: P | null,
-            value: PathValue<Block<Widget>['data'], P>,
+            value: PathValue<Block<WidgetDef>['data'], P>,
         ): void => {
             store.dispatch({
                 message: ActionMessages.SET_BLOCK_DATA,
@@ -88,7 +90,9 @@ export const useBlock = <W extends Widget>(id: string): useBlockReturn<W> => {
      * @param path - path of the data to delete
      */
     const deleteData = useCallback(
-        <P extends Paths<Block<Widget>['data'], 4>>(path: P | null): void => {
+        <P extends Paths<Block<WidgetDef>['data'], 4>>(
+            path: P | null,
+        ): void => {
             store.dispatch({
                 message: ActionMessages.DELETE_BLOCK_DATA,
                 payload: {

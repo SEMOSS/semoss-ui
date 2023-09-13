@@ -30,7 +30,7 @@ export const Renderer = observer(({ id }: RendererProps): JSX.Element => {
     }
 
     // return the element
-    return createElement(observer(widget.block), {
+    return createElement(observer(widget), {
         key: id,
         id: id,
     });

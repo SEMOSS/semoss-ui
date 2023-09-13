@@ -1,6 +1,6 @@
 import { makeAutoObservable, reaction, runInAction } from 'mobx';
 
-import { Insight } from '@semoss/sdk';
+import { runPixel } from '@semoss/sdk';
 import { cancellablePromise, getValueByPath } from '@/utility';
 
 import {
@@ -10,9 +10,12 @@ import {
     MoveBlockAction,
     RemoveBlockAction,
 } from './canvas.actions';
-import { Query, Block, Widget, WidgetJSON } from './canvas.types';
+import { Query, Block, WidgetDef, WidgetJSON } from './canvas.types';
 
 export interface CanvasStoreInterface {
+    /** Id of the canvas */
+    insightId: string;
+
     /** Queries rendered in the insight */
     queries: Record<string, Query>;
 
@@ -25,14 +28,10 @@ export interface CanvasStoreInterface {
  */
 export class CanvasStore {
     private _store: CanvasStoreInterface = {
+        insightId: '',
         queries: {},
         blocks: {},
     };
-
-    /**
-     * Insight that the blocks are connected to
-     */
-    private _insight: Insight;
 
     /**
      * Utility variables
@@ -47,9 +46,15 @@ export class CanvasStore {
         queryPromises: {},
     };
 
-    constructor(insight: Insight) {
-        // add the insight
-        this._insight = insight;
+    constructor(
+        insightId: string,
+        state: {
+            blocks?: CanvasStoreInterface['blocks'];
+            queries?: CanvasStoreInterface['queries'];
+        } = {},
+    ) {
+        // id to run queries off of
+        this._store.insightId = insightId;
 
         // make it observable
         makeAutoObservable(this);
@@ -76,6 +81,12 @@ export class CanvasStore {
                 }
             },
         );
+
+        // set the initial state after reactive to invoke it
+        runInAction(() => {
+            this._store.blocks = state.blocks || {};
+            this._store.queries = state.queries || {};
+        });
     }
 
     /**
@@ -102,7 +113,7 @@ export class CanvasStore {
      * @param id - id of the block to get
      * @returns the specific block information
      */
-    getBlock<W extends Widget = Widget>(id: string): Block<W> {
+    getBlock<W extends WidgetDef = WidgetDef>(id: string): Block<W> {
         if (this._store.blocks[id]) {
             return this._store.blocks[id] as Block<W>;
         }
@@ -414,7 +425,7 @@ export class CanvasStore {
             const filled = this.flattenParameter(q.query);
 
             // run the query
-            return this._insight.actions.query<[unknown]>(filled);
+            return runPixel<[unknown]>(filled, this._store.insightId);
         });
 
         p.promise

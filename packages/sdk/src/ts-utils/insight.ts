@@ -50,6 +50,19 @@ export class Insight {
 
     /** Getters */
     /**
+     * App Id
+     */
+    get appId() {
+        return this._store.appId;
+    }
+
+    /**
+     * Insight Id
+     */
+    get insightId() {
+        return this._store.insightId;
+    }
+    /**
      * If the insight is initialied
      */
     get isInitialized() {
