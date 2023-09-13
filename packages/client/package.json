@@ -20,7 +20,7 @@
         "@mui/material": "^5.13.5",
         "@semoss/ui": "workspace:*",
         "@semoss/canvas": "workspace:*",
-        "axios": "^0.24.0",
+        "axios": "^1.5.0",
         "dayjs": "^1.11.4",
         "dompurify": "^2.3.10",
         "marked": "^4.0.18",

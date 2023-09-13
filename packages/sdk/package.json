@@ -31,7 +31,7 @@
         "@types/react-dom": "17.0.20",
         "@typescript-eslint/eslint-plugin": "^5.32.0",
         "@typescript-eslint/parser": "^5.32.0",
-        "axios": "^0.24.0",
+        "axios": "^1.5.0",
         "eslint": "^8.21.0",
         "eslint-config-prettier": "^8.5.0",
         "eslint-plugin-prettier": "^4.2.1",
@@ -43,6 +43,9 @@
         "react-dom": "^17.0.2",
         "rollup": "3.29.1",
         "rollup-plugin-delete": "2.0.0",
+        "rollup-plugin-dts": "^6.0.2",
+        "rollup-plugin-peer-deps-external": "^2.2.4",
+        "tsc-alias": "^1.8.7",
         "tslib": "^2.4.0",
         "typescript": "^4.7.4"
     }

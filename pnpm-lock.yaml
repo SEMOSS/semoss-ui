@@ -41,6 +41,9 @@ importers:
       react-dom: ^17.0.2
       rollup: 3.29.1
       rollup-plugin-delete: 2.0.0
+      rollup-plugin-dts: ^6.0.2
+      rollup-plugin-peer-deps-external: ^2.2.4
+      tsc-alias: ^1.8.7
       tslib: ^2.4.0
       typescript: ^4.7.4
     dependencies:
@@ -66,6 +69,9 @@ importers:
       react-dom: 17.0.2_react@17.0.2
       rollup: 3.29.1
       rollup-plugin-delete: 2.0.0
+      rollup-plugin-dts: 6.0.2_rollup@3.29.1+typescript@4.9.5
+      rollup-plugin-peer-deps-external: 2.2.4_rollup@3.29.1
+      tsc-alias: 1.8.7
       tslib: 2.6.1
       typescript: 4.9.5
 
@@ -86,7 +92,7 @@ importers:
       '@types/webpack': ^5.28.0
       '@typescript-eslint/eslint-plugin': ^5.32.0
       '@typescript-eslint/parser': ^5.32.0
-      axios: ^0.24.0
+      axios: ^1.5.0
       css-loader: ^6.7.1
       dayjs: ^1.11.4
       dompurify: ^2.3.10
@@ -126,7 +132,7 @@ importers:
       '@mui/material': 5.14.4_0915c20a846dc1f1e157b09ce585fa44
       '@semoss/canvas': link:../canvas
       '@semoss/ui': link:../ui
-      axios: 0.24.0
+      axios: 1.5.0
       dayjs: 1.11.9
       dompurify: 2.4.7
       marked: 4.3.0
@@ -344,7 +350,7 @@ importers:
       '@types/react-dom': 17.0.20
       '@typescript-eslint/eslint-plugin': ^5.32.0
       '@typescript-eslint/parser': ^5.32.0
-      axios: ^0.24.0
+      axios: ^1.5.0
       eslint: ^8.21.0
       eslint-config-prettier: ^8.5.0
       eslint-plugin-prettier: ^4.2.1
@@ -356,6 +362,9 @@ importers:
       react-dom: ^17.0.2
       rollup: 3.29.1
       rollup-plugin-delete: 2.0.0
+      rollup-plugin-dts: ^6.0.2
+      rollup-plugin-peer-deps-external: ^2.2.4
+      tsc-alias: ^1.8.7
       tslib: ^2.4.0
       typescript: ^4.7.4
     devDependencies:
@@ -367,7 +376,7 @@ importers:
       '@types/react-dom': 17.0.20
       '@typescript-eslint/eslint-plugin': 5.62.0_3f039935af53b1da8113d7d515f7f6a2
       '@typescript-eslint/parser': 5.62.0_eslint@8.46.0+typescript@4.9.5
-      axios: 0.24.0
+      axios: 1.5.0
       eslint: 8.46.0
       eslint-config-prettier: 8.10.0_eslint@8.46.0
       eslint-plugin-prettier: 4.2.1_e15f367fa3c61f99450af3504c5ca303
@@ -379,6 +388,9 @@ importers:
       react-dom: 17.0.2_react@17.0.2
       rollup: 3.29.1
       rollup-plugin-delete: 2.0.0
+      rollup-plugin-dts: 6.0.2_rollup@3.29.1+typescript@4.9.5
+      rollup-plugin-peer-deps-external: 2.2.4_rollup@3.29.1
+      tsc-alias: 1.8.7
       tslib: 2.6.1
       typescript: 4.9.5
 
@@ -530,6 +542,16 @@ packages:
     dependencies:
       '@babel/highlight': 7.22.10
       chalk: 2.4.2
+
+  /@babel/code-frame/7.22.13:
+    resolution: {integrity: sha512-XktuhWlJ5g+3TJXc5upd9Ks1HutSArik6jf2eAjYFyIOf4ej3RN+184cZbzDvbPnuTJIUhPKKJE3cIsYTiAT3w==}
+    engines: {node: '>=6.9.0'}
+    requiresBuild: true
+    dependencies:
+      '@babel/highlight': 7.22.13
+      chalk: 2.4.2
+    dev: true
+    optional: true
 
   /@babel/compat-data/7.22.9:
     resolution: {integrity: sha512-5UamI7xkUcJ3i9qVDS+KFDEK8/7oJ55/sJMB1Ge7IEapr7KfdfV/HErR+koZwOfd+SgtFKOKRhRakdg++DcJpQ==}
@@ -902,6 +924,16 @@ packages:
       '@babel/helper-validator-identifier': 7.22.5
       chalk: 2.4.2
       js-tokens: 4.0.0
+
+  /@babel/highlight/7.22.13:
+    resolution: {integrity: sha512-C/BaXcnnvBCmHTpz/VGZ8jgtE2aYlW4hxDhseJAWZb7gqGM/qtCK6iZUb0TyKFf7BOUsBH7Q7fkRsDRhg1XklQ==}
+    engines: {node: '>=6.9.0'}
+    dependencies:
+      '@babel/helper-validator-identifier': 7.22.5
+      chalk: 2.4.2
+      js-tokens: 4.0.0
+    dev: true
+    optional: true
 
   /@babel/parser/7.21.9:
     resolution: {integrity: sha512-q5PNg/Bi1OpGgx5jYlvWZwAorZepEudDMCLtj967aeS7WMont7dUZI46M2XwcIQqvUlMxWfdLFu4S/qSxeUu5g==}
@@ -9710,7 +9742,6 @@ packages:
 
   /asynckit/0.4.0:
     resolution: {integrity: sha512-Oei9OH4tRh0YqU3GxhX79dM/mwVgvbZJaSNaRk+bshkj0S5cfHcgYakreBjrHwatXKbz+IoIdYLxrKim2MjW0Q==}
-    dev: true
 
   /attr-accept/2.2.2:
     resolution: {integrity: sha512-7prDjvt9HmqiZ0cl5CRjtS84sEyhsHP2coDkaZKRKVfCDo9s7iw7ChVmar78Gu9pC4SoR/28wFu/G5JJhTnqEg==}
@@ -9733,10 +9764,12 @@ packages:
     engines: {node: '>= 0.4'}
     dev: true
 
-  /axios/0.24.0:
-    resolution: {integrity: sha512-Q6cWsys88HoPgAaFAVUb0WpPk0O8iTeisR9IMqy9G8AbO4NlpVknrnQS03zzF9PGAWgO3cgletO3VjV/P7VztA==}
+  /axios/1.5.0:
+    resolution: {integrity: sha512-D4DdjDo5CY50Qms0qGQTTw6Q44jl7zRwY7bthds06pUGfChBCTcQs+N743eFWGEd6pRTMd6A+I87aWyFV5wiZQ==}
     dependencies:
       follow-redirects: 1.15.2
+      form-data: 4.0.0
+      proxy-from-env: 1.1.0
     transitivePeerDependencies:
       - debug
 
@@ -10512,7 +10545,6 @@ packages:
     engines: {node: '>= 0.8'}
     dependencies:
       delayed-stream: 1.0.0
-    dev: true
 
   /comma-separated-tokens/1.0.8:
     resolution: {integrity: sha512-GHuDRO12Sypu2cV70d1dkA2EUmXHgntrzbpvOB+Qy+49ypNfGgFQIC2fhhXbnyrJRynDCAARsT7Ou0M6hirpfw==}
@@ -10552,6 +10584,11 @@ packages:
   /commander/8.3.0:
     resolution: {integrity: sha512-OkTL9umf+He2DZkUq8f8J9of7yL6RJKI24dVITBmNfZBmri9zYZQrKkuXiKhyfPSu8tUhnVBB1iKXevvnlR4Ww==}
     engines: {node: '>= 12'}
+    dev: true
+
+  /commander/9.5.0:
+    resolution: {integrity: sha512-KRs7WVDKg86PWiuAqhDrAQnTXZKraVcCc6vFdL14qrZ/DcWwuRo7VoiYXalXO7S5GKpqYiVEwCbgFDfxNHKJBQ==}
+    engines: {node: ^12.20.0 || >=14}
     dev: true
 
   /common-path-prefix/3.0.0:
@@ -11444,7 +11481,6 @@ packages:
   /delayed-stream/1.0.0:
     resolution: {integrity: sha512-ZySD7Nf91aLB0RxL4KGrKHBXl7Eds1DAmEdcoVawXnLD7SDhpNgtuII2aAkg7a7QS41jxPSZ17p4VdGnMHk3MQ==}
     engines: {node: '>=0.4.0'}
-    dev: true
 
   /delegates/1.0.0:
     resolution: {integrity: sha512-bd2L678uiWATM6m5Z1VzNCErI3jiGzt6HGY8OVICs40JQq/HALfbyNJmp0UDakEY4pMMaN0Ly5om/B1VI/+xfQ==}
@@ -12743,6 +12779,14 @@ packages:
       mime-types: 2.1.35
     dev: true
 
+  /form-data/4.0.0:
+    resolution: {integrity: sha512-ETEklSGi5t0QMZuiXoA/Q6vcnxcLQP5vdugSpuAyi6SVGi2clPPp+xgEhuMaHC+zGgn31Kd235W35f7Hykkaww==}
+    engines: {node: '>= 6'}
+    dependencies:
+      asynckit: 0.4.0
+      combined-stream: 1.0.8
+      mime-types: 2.1.35
+
   /format/0.2.2:
     resolution: {integrity: sha512-wzsgA6WOq+09wrU1tsJ09udeR/YZRaeArL9e1wPbFg3GG2yDnC2ldKpxs4xunpFF9DgqCqOIra3bc1HWrJ37Ww==}
     engines: {node: '>=0.4.x'}
@@ -13342,7 +13386,7 @@ packages:
       lodash: 4.17.21
       pretty-error: 4.0.0
       tapable: 2.2.1
-      webpack: 5.88.2_webpack-cli@5.1.4
+      webpack: 5.88.2_webpack-cli@4.10.0
     dev: true
 
   /htmlparser2/6.1.0:
@@ -14672,6 +14716,13 @@ packages:
       '@jridgewell/sourcemap-codec': 1.4.15
     dev: true
 
+  /magic-string/0.30.3:
+    resolution: {integrity: sha512-B7xGbll2fG/VjP+SWg4sX3JynwIU0mjoTc6MPpKNuIvftk6u6vqhDnk1R80b8C2GBR6ywqy+1DcKBrevBg+bmw==}
+    engines: {node: '>=12'}
+    dependencies:
+      '@jridgewell/sourcemap-codec': 1.4.15
+    dev: true
+
   /make-dir/2.1.0:
     resolution: {integrity: sha512-LS9X+dc8KLxXCb8dni79fLIIUA5VyZoyjSMCwTluaXA0o27cCK0bhXkpgw+sTXVpPy/lSO57ilRixqk0vDmtRA==}
     engines: {node: '>=6'}
@@ -14927,14 +14978,12 @@ packages:
   /mime-db/1.52.0:
     resolution: {integrity: sha512-sPU4uV7dYlvtWJxwwxHD0PuihVNiE7TyAbQ5SWxDCB9mUYvOgroQOwYQQOKPJ8CIbE+1ETVlOoK1UC2nU3gYvg==}
     engines: {node: '>= 0.6'}
-    dev: true
 
   /mime-types/2.1.35:
     resolution: {integrity: sha512-ZDY+bPm5zTTF+YpCrAU9nK0UgICYPT0QtT1NZWFv4s++TNkcgVaT0g6+4R2uI4MjQjzysHB1zxuWL50hzaeXiw==}
     engines: {node: '>= 0.6'}
     dependencies:
       mime-db: 1.52.0
-    dev: true
 
   /mime/1.6.0:
     resolution: {integrity: sha512-x0Vn8spI+wuJ1O6S7gnbaQg8Pxh4NNHb7KSINmEWKiPE4RKOplvijn+NkmYmmRgP68mc70j2EbeTFRsrswaQeg==}
@@ -14970,7 +15019,7 @@ packages:
       webpack: ^5.0.0
     dependencies:
       schema-utils: 4.2.0
-      webpack: 5.88.2_webpack-cli@5.1.4
+      webpack: 5.88.2_webpack-cli@4.10.0
     dev: true
 
   /minimalistic-assert/1.0.1:
@@ -15204,6 +15253,11 @@ packages:
     dependencies:
       dns-packet: 5.6.0
       thunky: 1.1.0
+    dev: true
+
+  /mylas/2.1.13:
+    resolution: {integrity: sha512-+MrqnJRtxdF+xngFfUUkIMQrUUL0KsxbADUkn23Z/4ibGg192Q+z+CQyiYwvWTsYjJygmMR8+w3ZDa98Zh6ESg==}
+    engines: {node: '>=12.0.0'}
     dev: true
 
   /nan/2.17.0:
@@ -15986,6 +16040,12 @@ packages:
     engines: {node: '>=14.16'}
     dependencies:
       find-up: 6.3.0
+    dev: true
+
+  /plimit-lit/1.5.0:
+    resolution: {integrity: sha512-Eb/MqCb1Iv/ok4m1FqIXqvUKPISufcjZ605hl3KM/n8GaX8zfhtgdLwZU3vKjuHGh2O9Rjog/bHTq8ofIShdng==}
+    dependencies:
+      queue-lit: 1.5.0
     dev: true
 
   /polished/4.2.2:
@@ -16822,7 +16882,6 @@ packages:
 
   /proxy-from-env/1.1.0:
     resolution: {integrity: sha512-D+zkORCbA9f1tdWRK0RaCR3GPv50cMxcrz4X8k5LTSUD1Dkw47mKJEZQNunItRTkWwgtaUSo1RVFRIG9ZXiFYg==}
-    dev: true
 
   /prr/1.0.1:
     resolution: {integrity: sha512-yPw4Sng1gWghHQWj0B3ZggWUm4qVbPwPFcRG8KyxiU7J2OHFSoEHKS+EZ3fv5l1t9CyCiop6l/ZYeWbrgoQejw==}
@@ -16901,6 +16960,10 @@ packages:
     dependencies:
       object-assign: 4.1.1
       strict-uri-encode: 1.1.0
+    dev: true
+
+  /queue-lit/1.5.0:
+    resolution: {integrity: sha512-IslToJ4eiCEE9xwMzq3viOO5nH8sUWUCwoElrhNMozzr9IIt2qqvB4I+uHu/zJTQVqc9R5DFwok4ijNK1pU3fA==}
     dev: true
 
   /queue-microtask/1.2.3:
@@ -17686,6 +17749,28 @@ packages:
     engines: {node: '>=10'}
     dependencies:
       del: 5.1.0
+    dev: true
+
+  /rollup-plugin-dts/6.0.2_rollup@3.29.1+typescript@4.9.5:
+    resolution: {integrity: sha512-GYCCy9DyE5csSuUObktJBpjNpW2iLZMabNDIiAqzQWBl7l/WHzjvtAXevf8Lftk8EA920tuxeB/g8dM8MVMR6A==}
+    engines: {node: '>=v16'}
+    peerDependencies:
+      rollup: ^3.25
+      typescript: ^4.5 || ^5.0
+    dependencies:
+      magic-string: 0.30.3
+      rollup: 3.29.1
+      typescript: 4.9.5
+    optionalDependencies:
+      '@babel/code-frame': 7.22.13
+    dev: true
+
+  /rollup-plugin-peer-deps-external/2.2.4_rollup@3.29.1:
+    resolution: {integrity: sha512-AWdukIM1+k5JDdAqV/Cxd+nejvno2FVLVeZ74NKggm3Q5s9cbbcOgUPGdbxPi4BXu7xGaZ8HG12F+thImYu/0g==}
+    peerDependencies:
+      rollup: '*'
+    dependencies:
+      rollup: 3.29.1
     dev: true
 
   /rollup-plugin-postcss/4.0.2_postcss@8.4.27+ts-node@10.9.1:
@@ -18866,6 +18951,18 @@ packages:
 
   /ts-toolbelt/9.6.0:
     resolution: {integrity: sha512-nsZd8ZeNUzukXPlJmTBwUAuABDe/9qtVDelJeT/qW0ow3ZS3BsQJtNkan1802aM9Uf68/Y8ljw86Hu0h5IUW3w==}
+    dev: true
+
+  /tsc-alias/1.8.7:
+    resolution: {integrity: sha512-59Q/zUQa3miTf99mLbSqaW0hi1jt4WoG8Uhe5hSZJHQpSoFW9eEwvW7jlKMHXWvT+zrzy3SN9PE/YBhQ+WVydA==}
+    hasBin: true
+    dependencies:
+      chokidar: 3.5.3
+      commander: 9.5.0
+      globby: 11.1.0
+      mylas: 2.1.13
+      normalize-path: 3.0.0
+      plimit-lit: 1.5.0
     dev: true
 
   /tslib/1.14.1:

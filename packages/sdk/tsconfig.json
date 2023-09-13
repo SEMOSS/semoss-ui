@@ -8,18 +8,18 @@
 
         /* Modules */
         "baseUrl": "src",
-        "rootDir": "src",
+        "outDir": "./dist",
         "module": "esnext",
         "moduleResolution": "node",
         "allowSyntheticDefaultImports": true,
         "paths": {
-            "@/*": ["*"],
-            "react": ["node_modules/react"]
+            "@/*": ["*"]
         },
 
-        /* Emit */
+        /* Decleration */
         "declaration": true,
-        "declarationDir": "dist",
+        "declarationDir": "./dist/dts",
+        "declarationMap": true,
         "emitDeclarationOnly": true,
 
         /* Skip */
