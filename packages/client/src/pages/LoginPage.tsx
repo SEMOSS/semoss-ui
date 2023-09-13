@@ -2,6 +2,8 @@ import { useState } from 'react';
 import { observer } from 'mobx-react-lite';
 import { Navigate, useLocation, Location } from 'react-router-dom';
 import { useForm, Controller } from 'react-hook-form';
+import { THEME } from '@/constants';
+import GRAPHIC from '@/assets/login_graphic.png';
 
 import {
     styled,
@@ -12,44 +14,107 @@ import {
     LinearProgress,
     TextField,
     Typography,
-    Paper,
+    Checkbox,
     Divider,
     Box,
+    ButtonGroup,
+    useTheme,
 } from '@semoss/ui';
 
 import { useRootStore } from '@/hooks';
 import MS from '@/assets/img/ms.png';
+import GOOGLE from '@/assets/img/google.png';
 
 const StyledContainer = styled('div')(({ theme }) => ({
     padding: theme.spacing(4),
     width: '610px',
 }));
 
-const StyledPaper = styled(Box)(({ theme }) => ({
+const StyledRememberBox = styled(Box)({
+    display: 'flex',
+    justifyContent: 'space-between',
+});
+
+const StyledBox = styled(Box)(({ theme }) => ({
     display: 'flex',
     width: '610px',
     flexDirection: 'column',
     justifyContent: 'center',
     alignItems: 'flex-start',
     gap: '32px',
-    paddingLeft: '144px',
-    paddingTop: '175px',
+    paddingLeft: '50px',
 }));
 
 const StyledAction = styled(Button)(({ theme }) => ({
     display: 'flex',
     alignItems: 'center',
-    gap: theme.spacing(0.5),
-    padding: theme.spacing(1),
+    justifyContent: 'center',
     overflow: 'hidden',
 }));
 
-const StyledActionImage = styled('img')(({ theme }) => ({
-    height: theme.spacing(4),
+const StyledActionBox = styled(Button)(({ theme }) => ({
+    display: 'flex',
+    alignItems: 'center',
+    gap: '16px',
+    padding: '4px',
 }));
 
+const StyledActionImage = styled('img')(({ theme }) => ({
+    height: theme.spacing(3),
+}));
+
+const StyledLogo = styled('img')(({ theme }) => ({}));
+
 const StyledActionText = styled('span')(() => ({
-    flex: '1',
+    fontFamily: 'Inter',
+    fontSize: '14px',
+    fontStyle: 'normal',
+    fontWeight: 500,
+    lineHeight: '24px',
+    letterSpacing: '0.4px',
+    color: '#000',
+}));
+
+const StyledDividerBox = styled(Box)({
+    color: '#000',
+    fontFeatureSettings: '"clig" off, "liga" off',
+    fontFamily: 'Inter',
+    fontSize: '16px',
+    fontStyle: 'normal',
+    fontWeight: 700,
+    lineHeight: '150%' /* 24px */,
+    letterSpacing: ' 0.15px',
+});
+
+const StyledButtonGroup = styled(ButtonGroup)(({ theme }) => ({
+    '.MuiButtonGroup-grouped': {
+        borderColor: '#fff',
+    },
+}));
+
+const StyledRegisterNowBox = styled(Box)({
+    display: 'flex',
+    align: 'center',
+    alignItems: 'center',
+    justifyContent: 'center',
+});
+
+const StyledLogoBox = styled(Box)({
+    display: 'flex',
+    align: 'center',
+    alignItems: 'center',
+    gap: '4px',
+    marginBottom: '16px',
+});
+
+const StyledLogoText = styled('span')(() => ({
+    fontFeatureSettings: '"clig" off, "liga" off',
+    fontFamily: 'Inter',
+    fontSize: '16px',
+    fontStyle: 'normal',
+    fontWeight: 500,
+    lineHeight: '150%',
+    letterSpacing: '0.15px',
 }));
 
 // const StyledActionText2 = StyledOld(Typography, {
@@ -65,6 +130,7 @@ const StyledActionText = styled('span')(() => ({
 interface TypeUserLogin {
     USERNAME: string;
     PASSWORD: string;
+    REMEMBER_LOGIN: boolean;
 }
 
 /**
@@ -73,6 +139,7 @@ interface TypeUserLogin {
 export const LoginPage = observer(() => {
     const { configStore } = useRootStore();
 
+    const [loginType, setLoginType] = useState('Native');
     const [snackbar, setSnackbar] = useState<{
         open: boolean;
         message: string;
@@ -89,10 +156,12 @@ export const LoginPage = observer(() => {
         defaultValues: {
             USERNAME: '',
             PASSWORD: '',
+            REMEMBER_LOGIN: false,
         },
     });
 
     const location = useLocation();
+    const theme = useTheme();
 
     /**
      * Allow the user to login
@@ -188,12 +257,109 @@ export const LoginPage = observer(() => {
                     {snackbar.message}
                 </Alert>
             </Snackbar>
-            <Stack direction="row">
+            <Stack direction="row" spacing={16}>
                 <Stack alignItems={'center'} justifyContent={'center'}>
                     <StyledContainer>
-                        <StyledPaper variant={'elevation'} elevation={2} square>
-                            <Stack spacing={3}>
-                                <Typography variant="h5">Login</Typography>
+                        <StyledBox>
+                            <Stack spacing={3} sx={{ width: '100%' }}>
+                                <Stack spacing={0}>
+                                    <StyledLogoBox>
+                                        <StyledLogo
+                                            src={THEME.logo}
+                                            sx={{
+                                                /* or to blue */
+                                                filter: 'invert(0.5) sepia(1) saturate(5) hue-rotate(175deg)',
+                                            }}
+                                        />{' '}
+                                        <StyledLogoText>SeMOSS</StyledLogoText>
+                                    </StyledLogoBox>
+                                    <Typography variant="h4">
+                                        Welcome!
+                                    </Typography>
+                                    <Typography variant="body1">
+                                        Log in below
+                                    </Typography>
+                                </Stack>
+                                <StyledButtonGroup variant="outlined">
+                                    <ButtonGroup.Item
+                                        onClick={() => setLoginType('Native')}
+                                        sx={{
+                                            backgroundColor:
+                                                loginType === 'Native'
+                                                    ? '#0471F0'
+                                                    : '#fff',
+                                            color:
+                                                loginType === 'Native'
+                                                    ? '#fff'
+                                                    : '#0471F0',
+                                            ':hover': {
+                                                bgcolor:
+                                                    loginType === 'Native'
+                                                        ? '#0471F0'
+                                                        : 'transparent',
+                                                color:
+                                                    loginType === 'Native'
+                                                        ? '#fff'
+                                                        : '#0471F0',
+                                                borderColor: '#fff',
+                                            },
+                                        }}
+                                    >
+                                        Native
+                                    </ButtonGroup.Item>
+                                    <ButtonGroup.Item
+                                        onClick={() => setLoginType('LDAP')}
+                                        sx={{
+                                            backgroundColor:
+                                                loginType === 'LDAP'
+                                                    ? '#0471F0'
+                                                    : '#fff',
+                                            color:
+                                                loginType === 'LDAP'
+                                                    ? '#fff'
+                                                    : '#0471F0',
+                                            ':hover': {
+                                                bgcolor:
+                                                    loginType === 'LDAP'
+                                                        ? '#0471F0'
+                                                        : 'transparent',
+                                                color:
+                                                    loginType === 'LDAP'
+                                                        ? '#fff'
+                                                        : '#0471F0',
+                                                borderColor: '#fff',
+                                            },
+                                        }}
+                                    >
+                                        LDAP
+                                    </ButtonGroup.Item>
+                                    <ButtonGroup.Item
+                                        onClick={() => setLoginType('LinOTP')}
+                                        sx={{
+                                            backgroundColor:
+                                                loginType === 'LinOTP'
+                                                    ? '#0471F0'
+                                                    : '#fff',
+                                            color:
+                                                loginType === 'LinOTP'
+                                                    ? '#fff'
+                                                    : '#0471F0',
+                                            ':hover': {
+                                                bgcolor:
+                                                    loginType === 'LinOTP'
+                                                        ? '#0471F0'
+                                                        : 'transparent',
+                                                color:
+                                                    loginType === 'LinOTP'
+                                                        ? '#fff'
+                                                        : '#0471F0',
+                                                borderColor: '#fff',
+                                            },
+                                        }}
+                                    >
+                                        LinOTP
+                                    </ButtonGroup.Item>
+                                </StyledButtonGroup>
                                 {error && <Alert color="error">{error}</Alert>}
                                 {providers.indexOf('native') > -1 && (
                                     <>
@@ -249,20 +415,63 @@ export const LoginPage = observer(() => {
                                                     );
                                                 }}
                                             />
+                                            <StyledRememberBox>
+                                                <Controller
+                                                    name={'REMEMBER_LOGIN'}
+                                                    control={control}
+                                                    rules={{ required: true }}
+                                                    render={({ field }) => {
+                                                        return (
+                                                            <Checkbox
+                                                                label="Keep me logged in"
+                                                                checked={
+                                                                    field.value
+                                                                }
+                                                                value={
+                                                                    field.value
+                                                                        ? field.value
+                                                                        : false
+                                                                }
+                                                                onChange={(
+                                                                    e: React.ChangeEvent<HTMLInputElement>,
+                                                                ) =>
+                                                                    field.onChange(
+                                                                        e.target
+                                                                            .checked,
+                                                                    )
+                                                                }
+                                                            />
+                                                        );
+                                                    }}
+                                                />
+                                                <Button variant="text">
+                                                    Forgot Password
+                                                </Button>
+                                            </StyledRememberBox>
                                             <Button
                                                 fullWidth
                                                 variant={'contained'}
                                                 onClick={login}
                                             >
-                                                SIGN IN
+                                                Login with {loginType}
                                             </Button>
+                                            <StyledRegisterNowBox>
+                                                Don&apos;t have an account?{' '}
+                                                <Button variant="text">
+                                                    Register Now
+                                                </Button>
+                                            </StyledRegisterNowBox>
                                         </Stack>
                                     </>
                                 )}
                                 {providers.indexOf('native') > -1 &&
                                     providers.indexOf('ms') > -1 && (
                                         <>
-                                            <Divider />
+                                            <Divider>
+                                                <StyledDividerBox>
+                                                    or
+                                                </StyledDividerBox>
+                                            </Divider>
                                         </>
                                     )}
                                 {providers.indexOf('ms') > -1 && (
@@ -273,18 +482,42 @@ export const LoginPage = observer(() => {
                                         }}
                                         fullWidth
                                     >
-                                        <StyledActionImage src={MS} />
-                                        <StyledActionText>
-                                            Microsoft
-                                        </StyledActionText>
+                                        <StyledActionBox>
+                                            <StyledActionImage src={MS} />
+                                            <StyledActionText>
+                                                Microsoft
+                                            </StyledActionText>
+                                        </StyledActionBox>
+                                    </StyledAction>
+                                )}
+                                {providers.indexOf('google') > -1 && (
+                                    <StyledAction
+                                        variant="outlined"
+                                        onClick={() => {
+                                            oauth('google');
+                                        }}
+                                        fullWidth
+                                    >
+                                        <StyledActionBox>
+                                            <StyledActionImage src={GOOGLE} />
+                                            <StyledActionText>
+                                                Google
+                                            </StyledActionText>
+                                        </StyledActionBox>
                                     </StyledAction>
                                 )}
                             </Stack>
-                        </StyledPaper>
+                        </StyledBox>
                         {isLoading && <LinearProgress />}
                     </StyledContainer>
                 </Stack>
-                <div>Hello</div>
+                <StyledActionImage
+                    sx={{
+                        width: '100%',
+                        height: '100vh',
+                    }}
+                    src={GRAPHIC}
+                />
             </Stack>
         </>
     );
