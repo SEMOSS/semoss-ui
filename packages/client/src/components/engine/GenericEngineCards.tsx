@@ -193,6 +193,14 @@ const StyledTileCard = styled(Card)({
     },
 });
 
+const StyledTileCardCondensed = styled(Card)({
+    '&:hover': {
+        cursor: 'pointer',
+    },
+    width: '360px',
+    height: '320px',
+});
+
 const StyledPlainTileCard = styled(StyledTileCard)({
     height: '100%',
 });
@@ -240,6 +248,20 @@ const StyledCardImage = styled('img')({
     overflow: 'clip',
     objectFit: 'cover',
     width: '100%',
+    // aspectRatio: '1/1'
+});
+
+const StyledCardImageCondensed = styled('img')({
+    display: 'flex',
+    height: '118px',
+    alignItems: 'flex-start',
+    gap: '10px',
+    alignSelf: 'stretch',
+
+    overflowClipMargin: 'content-box',
+    overflow: 'clip',
+    objectFit: 'cover',
+    width: '75%',
     // aspectRatio: '1/1'
 });
 
@@ -705,26 +727,86 @@ export const EngineTileCard = (props: DatabaseCardProps) => {
     );
 };
 
-export interface PlainEngineCardProps {
-    /** Name of the Database */
-    name: string;
-
-    onClick: () => void;
-}
-
-export const PlainEngineCard = (props) => {
-    const { id, name, onClick } = props;
+export const PlainEngineCard = (props: DatabaseCardProps) => {
+    const { name, id, description, tag, owner = 'N/A', onClick } = props;
     return (
-        <StyledPlainTileCard onClick={onClick}>
+        <StyledTileCardCondensed onClick={() => onClick(id)}>
+            {/* Use Card.Media instead, uses img tag */}
             <StyledCardImage
                 src={`${MODULE}/api/e-${id}/image/download`}
                 sx={{ height: '118px' }}
             />
-            <StyledTileCardContent sx={{ marginTop: '8px' }}>
-                <StyledDbName variant={'body1'}>
-                    {formatDBName(name)}
-                </StyledDbName>
-            </StyledTileCardContent>
-        </StyledPlainTileCard>
+            <Card.Header
+                title={name}
+                subheader={
+                    <StyledPublishedByContainer>
+                        <StyledAvatar>
+                            <StyledPersonIcon />
+                        </StyledAvatar>
+                        <StyledPublishedByLabel variant={'caption'}>
+                            Published by: {owner}
+                        </StyledPublishedByLabel>
+                    </StyledPublishedByContainer>
+                }
+            />
+            <Card.Content>
+                <StyledCardDescription variant={'body2'}>
+                    {description ? description : 'No description available'}
+                </StyledCardDescription>
+                <StyledChipDiv>
+                    {tag !== undefined &&
+                        (typeof tag === 'object' ? (
+                            <>
+                                {tag.map((t, i) => {
+                                    if (i <= 2) {
+                                        return (
+                                            <Chip
+                                                key={id + i}
+                                                variant={'outlined'}
+                                                label={t}
+                                            />
+                                        );
+                                    }
+                                })}
+                                {tag.length > 3 ? (
+                                    <div
+                                        style={{
+                                            marginLeft: 1,
+                                            display: 'flex',
+                                            flexDirection: 'row',
+                                        }}
+                                    >
+                                        <StyledPublishedByLabel
+                                            sx={{
+                                                color: 'rgba(0, 0, 0, 0.6)',
+                                                marginLeft: 1,
+                                            }}
+                                            variant={'caption'}
+                                        >
+                                            +
+                                        </StyledPublishedByLabel>
+                                        <StyledPublishedByLabel
+                                            sx={{
+                                                color: 'rgba(0, 0, 0, 0.6)',
+                                                display: 'flex',
+                                                flexDirection: 'row',
+                                            }}
+                                            variant={'caption'}
+                                        >
+                                            {tag.length - 3}
+                                        </StyledPublishedByLabel>
+                                    </div>
+                                ) : null}
+                            </>
+                        ) : (
+                            <Chip
+                                key={id + tag}
+                                variant={'outlined'}
+                                label={tag}
+                            />
+                        ))}
+                </StyledChipDiv>
+            </Card.Content>
+        </StyledTileCardCondensed>
     );
 };

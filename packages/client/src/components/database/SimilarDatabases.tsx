@@ -14,10 +14,7 @@ const StyledCardContainer = styled('div')({
 });
 
 const StyledSkeleton = styled(Skeleton)(({ theme }) => ({
-    width: '360px',
-    height: '200px',
     borderRadius: theme.shape.borderRadius,
-    zIndex: 100,
 }));
 
 const StyledBox = styled(Box)({
@@ -25,6 +22,7 @@ const StyledBox = styled(Box)({
     display: 'flex',
     gap: '24px',
     overflowX: 'auto',
+    height: '340px',
 });
 
 export const SimilarDatabases = (props: SimilarDatabasesProps) => {
@@ -33,8 +31,16 @@ export const SimilarDatabases = (props: SimilarDatabasesProps) => {
 
     const { status, data } = usePixel<
         {
-            database_name: string;
+            /** Name of the Database */
+            name: string;
+            /** ID of Database */
             database_id: string;
+            /** Owner of the Database */
+            database_created_by: string;
+            /** Description of the Database */
+            description: string;
+            /** Tag of the Database */
+            tag: string[] | string;
         }[]
     >(`SimilarCatalog(database=["${id}"])`);
 
@@ -45,8 +51,11 @@ export const SimilarDatabases = (props: SimilarDatabasesProps) => {
                     return (
                         <StyledCardContainer key={i}>
                             <PlainEngineCard
+                                name={db.name}
                                 id={db.database_id}
-                                name={db.database_name}
+                                tag={db.tag}
+                                owner={db.database_created_by}
+                                description={db.description}
                                 onClick={() => {
                                     navigate(`/database/${db.database_id}`);
                                 }}
@@ -64,12 +73,12 @@ export const SimilarDatabases = (props: SimilarDatabasesProps) => {
                         key={idx}
                         variant="rounded"
                         width={360}
-                        height={200}
+                        height={320}
                     />
                 ))}
             </StyledBox>
         );
     } else {
-        return <div>None similar databases found...</div>;
+        return <div>No similar databases found...</div>;
     }
 };
