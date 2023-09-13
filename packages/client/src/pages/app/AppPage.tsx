@@ -270,7 +270,6 @@ export const AppPage = observer(() => {
         setRightPanelWidth(newRightPanelWidth);
     };
     // End of Resizable Panels ------------------------
-
     /**
      * @name handleChange
      * @param event
@@ -278,6 +277,11 @@ export const AppPage = observer(() => {
      * @desc changes tab group
      */
     const handleChange = (newValue: string) => {
+        // resize window
+        if (newValue === 'code-editor') {
+            setLeftPanelWidth('45%');
+            setRightPanelWidth('55%');
+        }
         setView(newValue);
     };
 
@@ -386,7 +390,9 @@ export const AppPage = observer(() => {
         }
     };
 
-    // USE EFFECTS ----------------------------------
+    /**
+     * Effects Section
+     */
     useEffect(() => {
         getAppPermission();
         return () => {
@@ -438,7 +444,7 @@ export const AppPage = observer(() => {
                                         setEditMode(!editMode);
                                         if (!editMode) {
                                             setTopPanelHeight('96.5%');
-                                            setView('settings');
+                                            setView('code-editor');
                                         } else {
                                             setTopPanelHeight('100%');
                                             setView('');
@@ -633,26 +639,7 @@ export const AppPage = observer(() => {
                                 </StyledTopLeft>
                             )}
                             {view === 'code-editor' && (
-                                <StyledTopLeft>
-                                    <div
-                                        style={{
-                                            display: 'flex',
-                                            flexDirection: 'column',
-                                        }}
-                                    >
-                                        <AppEditor appId={appId} />
-                                        <Typography variant="h6">
-                                            Currently in Progress...
-                                        </Typography>
-                                        <Typography variant="body1">
-                                            We appreciate the patience with
-                                            ongoing development, in the future
-                                            the ability to update the
-                                            application view via FE code will be
-                                            located here.
-                                        </Typography>
-                                    </div>
-                                </StyledTopLeft>
+                                <AppEditor appId={appId} />
                             )}
                             <StyledVertDivider
                                 onMouseDown={(e) => {

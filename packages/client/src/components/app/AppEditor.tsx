@@ -1,7 +1,28 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef, useCallback } from 'react';
 import { useRootStore, useAPI } from '@/hooks';
 
-import { TreeView, useNotification, styled } from '@semoss/ui';
+import {
+    Collapse,
+    IconButton,
+    TreeView,
+    useNotification,
+    styled,
+    Typography,
+} from '@semoss/ui';
+import {
+    ExpandMore,
+    ChevronRight,
+    KeyboardDoubleArrowLeft,
+    KeyboardDoubleArrowRight,
+} from '@mui/icons-material/';
+
+const StyledVertDivider = styled('div')(({ theme }) => ({
+    width: theme.spacing(0.25),
+    background: theme.palette.divider,
+    '&:hover': {
+        cursor: 'ew-resize',
+    },
+}));
 
 interface AppEditorProps {
     /**
@@ -22,6 +43,48 @@ export const AppEditor = (props: AppEditorProps) => {
     const { appId } = props;
     const { monolithStore, configStore } = useRootStore();
 
+    /**
+     * EDITOR LAYOUT START OF CODE
+     */
+
+    const [openTreeView, setOpenTreeView] = useState(false);
+    const [leftPanelWidth, setLeftPanelWidth] = useState('5%');
+    const [rightPanelWidth, setRightPanelWidth] = useState('95%');
+    const ref = useRef<any>(null);
+
+    // useEffect(() => {}, [openTreeView]);
+    /**
+     * TODO: fix resizing seems to be opposite
+     * @param e
+     * @returns
+     */
+    const handleHorizontalResize = (e) => {
+        if (!ref.current) {
+            return;
+        }
+        const containerReferenceWidth = ref.current.offsetWidth;
+
+        const fileExplorerWidth =
+            (containerReferenceWidth - e.clientX) / containerReferenceWidth;
+        const newFileExplorerWidth = `${fileExplorerWidth * 100}%`;
+        const newEditorWidth = `${
+            (e.clientX / containerReferenceWidth) * 100
+        }%`;
+
+        debugger;
+        if (fileExplorerWidth > 0.035) {
+            setLeftPanelWidth(newFileExplorerWidth);
+            setRightPanelWidth(newEditorWidth);
+        }
+    };
+
+    /**
+     * EDITOR LAYOUT END OF CODE
+     */
+
+    /**
+     * FILE EXPLORER START OF CODE
+     */
     const [appDirectory, setAppDirectory] = useState([]);
     const [expanded, setExpanded] = React.useState<string[]>([]);
     const [selected, setSelected] = React.useState<string[]>([]);
@@ -70,11 +133,48 @@ export const AppEditor = (props: AppEditorProps) => {
             }
         });
 
-        setAppDirectory(formattedNodes);
+        const formattedDirectoryNodes = sortArrayOfObjects(
+            formattedNodes,
+            'type',
+        );
+
+        setAppDirectory(formattedDirectoryNodes);
     };
 
     const handleToggle = (event: React.SyntheticEvent, nodeIds: string[]) => {
         setExpanded(nodeIds);
+    };
+
+    /**
+     * Sorts the directory structure before putting into state.
+     * @param arr
+     * @param propertyName
+     * @param order
+     * @returns
+     */
+    const sortArrayOfObjects = (arr, propertyName) => {
+        const sortedArr = arr.sort((a, b) => {
+            if (
+                a[propertyName] === 'directory' &&
+                b[propertyName] !== 'directory'
+            ) {
+                return -1; // 'directory' comes before other types
+            }
+            if (
+                a[propertyName] !== 'directory' &&
+                b[propertyName] === 'directory'
+            ) {
+                return 1; // 'directory' comes before other types
+            }
+            if (a[propertyName] < b[propertyName]) {
+                return -1;
+            }
+            if (a[propertyName] > b[propertyName]) {
+                return 1;
+            }
+            return 0;
+        });
+        return sortedArr;
     };
 
     /**
@@ -127,12 +227,17 @@ export const AppEditor = (props: AppEditorProps) => {
                 });
             });
 
+            const formattedDirectoryNodes = sortArrayOfObjects(
+                newNodeChildren,
+                'type',
+            );
+
             const updatedTreeData = updateNodeRecursively(
                 appDirectory,
                 foundNode.id,
                 {
                     ...foundNode,
-                    children: newNodeChildren,
+                    children: formattedDirectoryNodes,
                 },
             );
 
@@ -195,35 +300,150 @@ export const AppEditor = (props: AppEditorProps) => {
      */
     function renderTreeNodes(nodes) {
         return nodes.map((node, i) => (
-            <TreeView.Item
-                key={node.id}
-                nodeId={node.id}
-                label={
-                    <div style={{ display: 'flex', gap: '8px' }}>
-                        <span>{node.type === 'directory' ? '+' : null}</span>
-                        <span>{node.name}</span>
-                    </div>
-                }
-            >
+            <TreeView.Item key={node.id} nodeId={node.id} label={node.name}>
                 {node.children && node.children.length > 0
                     ? renderTreeNodes(node.children)
                     : null}
             </TreeView.Item>
         ));
     }
+    /**
+     * FILE EXPLORER END OF CODE
+     */
+
+    /**
+     * CODE EDITOR START OF CODE
+     */
 
     return (
-        <div style={{ display: 'flex', flexDirection: 'row' }}>
-            <TreeView
-                expanded={expanded}
-                selected={selected}
-                onNodeToggle={handleToggle}
-                onNodeSelect={handleSelect}
-                multiSelect
+        <div
+            style={{
+                display: 'flex',
+                flexDirection: 'row',
+                width: '100%',
+                height: '100%',
+                // border: 'solid green',
+            }}
+            ref={ref}
+        >
+            <div
+                style={{
+                    width: leftPanelWidth,
+                    display: 'flex',
+                    flexDirection: 'row',
+                }}
             >
-                {renderTreeNodes(appDirectory)}
-            </TreeView>
-            <div>App Editor</div>
+                <div
+                    style={{
+                        display: 'flex',
+                        flexDirection: 'row',
+                        width: '100%',
+                        height: '100%',
+                        // border: 'solid red'
+                    }}
+                >
+                    <div
+                        style={{
+                            height: '100%',
+                            width: '42px',
+                            // border: 'solid green',
+                        }}
+                    >
+                        {openTreeView ? (
+                            <IconButton
+                                size="small"
+                                onClick={() => {
+                                    setLeftPanelWidth('5%');
+                                    setRightPanelWidth('95%');
+                                    setOpenTreeView(false);
+                                }}
+                            >
+                                <KeyboardDoubleArrowLeft />
+                            </IconButton>
+                        ) : (
+                            <IconButton
+                                size="small"
+                                onClick={() => {
+                                    setLeftPanelWidth('45%');
+                                    setRightPanelWidth('50%');
+                                    setOpenTreeView(true);
+                                }}
+                            >
+                                <KeyboardDoubleArrowRight />
+                            </IconButton>
+                        )}
+                    </div>
+
+                    {openTreeView ? (
+                        <div
+                            style={{
+                                display: 'flex',
+                                flexDirection: 'column',
+                                width: 'calc(100% - 42px)',
+                                // border: 'solid green',
+                            }}
+                        >
+                            <div
+                                style={{
+                                    display: 'flex',
+                                    justifyContent: 'space-between',
+                                    marginTop: '2px',
+                                    marginLeft: '8px',
+                                    alignItems: 'center',
+                                }}
+                            >
+                                <Typography variant="h6">
+                                    File Explorer
+                                </Typography>
+                            </div>
+                            <div
+                                style={{
+                                    width: '100%',
+                                    height: '100%',
+                                    overflowX: 'scroll',
+                                }}
+                            >
+                                <TreeView
+                                    sx={{ width: '100%' }}
+                                    expanded={expanded}
+                                    selected={selected}
+                                    onNodeToggle={handleToggle}
+                                    onNodeSelect={handleSelect}
+                                    defaultCollapseIcon={<ExpandMore />}
+                                    defaultExpandIcon={<ChevronRight />}
+                                    multiSelect
+                                >
+                                    {renderTreeNodes(appDirectory)}
+                                </TreeView>
+                            </div>
+                        </div>
+                    ) : null}
+                    <StyledVertDivider
+                        onMouseDown={(e) => {
+                            e.preventDefault();
+                            window.addEventListener(
+                                'mousemove',
+                                handleHorizontalResize,
+                            );
+                            window.addEventListener('mouseup', () => {
+                                window.removeEventListener(
+                                    'mousemove',
+                                    handleHorizontalResize,
+                                );
+                            });
+                        }}
+                    />
+                </div>
+            </div>
+            {/* We need an active file to show editor */}
+            <div
+                style={{
+                    width: rightPanelWidth,
+                    // border: 'solid yellow',
+                }}
+            >
+                App Editor
+            </div>
         </div>
     );
 };
