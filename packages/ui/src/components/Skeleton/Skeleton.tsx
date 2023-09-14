@@ -5,13 +5,12 @@ export interface SkeletonProps {
      * Width of the skeleton.
      * Useful when the skeleton is inside an inline element with no width of its own.
      */
-    width: number;
+    width: number | string;
     /**
      * Height of the skeleton.
      * Useful when you don't want to adapt the skeleton to a text element but for instance a card.
      */
-    height: number;
-    sx?: SxProps;
+    height: number | string;
     /**
      * The animation.
      * If `false` the animation effect is disabled.
@@ -23,6 +22,8 @@ export interface SkeletonProps {
      * @default 'text'
      */
     variant?: "circular" | "rectangular" | "rounded" | "text";
+
+    sx?: SxProps;
 }
 
 export const Skeleton = (props: SkeletonProps) => {

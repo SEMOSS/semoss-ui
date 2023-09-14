@@ -1,12 +1,20 @@
-/* eslint-disable prettier/prettier */
+/**
+ * ---------------------------*------------------------------------
+ * This will be your app page, what this component does is
+ * really is to handle the layout and switching between navigation.
+ *
+ * - We have Resizable Panels for the structure of the page.
+ * - The Bigger Components that get consumed here are:
+ *      - AppEditor (also resizable), AppConsole, AppRenderer
+ * ---------------------------*------------------------------------
+ *
+ */
 import React, { useState, useEffect } from 'react';
 import { useParams, Navigate, useNavigate } from 'react-router-dom';
 import { Controller, useForm } from 'react-hook-form';
 import { observer } from 'mobx-react-lite';
-// Context and Hooks
 import { SettingsContext } from '@/contexts';
 import { useRootStore, useAPI } from '@/hooks';
-// Components
 import { Navbar } from '@/components/ui';
 import { MembersTable } from '@/components/settings/MembersTable';
 import { PendingMembersTable } from '@/components/settings/PendingMembersTable';
@@ -16,7 +24,6 @@ import { AppRenderer, AppEditor } from '@/components/app';
 
 import {
     Button,
-    Divider,
     FileDropzone,
     Icon,
     IconButton,
@@ -37,6 +44,7 @@ import {
     PersonAdd,
 } from '@mui/icons-material';
 
+// Styles --------------------------------------*
 const NAV_HEIGHT = '48px';
 const NAV_FOOTER = '24px';
 const SIDEBAR_WIDTH = '56px';
@@ -45,7 +53,7 @@ const StyledViewport = styled('div')(({ theme }) => ({
     height: '100vh',
 }));
 
-// Navigation Styles Start -------------------------------------
+// Navigation
 const StyledNavbarChildren = styled('div')(({ theme }) => ({
     display: 'flex',
     justifyContent: 'space-between',
@@ -144,8 +152,9 @@ const StyledHandle = styled(IconButton, {
     }),
 }));
 
-// End of Navigation Styles -----------------------
-// Start Of Top Panel Styles ----------------------
+// End of Navigation Styles
+
+// Start Of Top Panel Styles
 const StyledTopLeft = styled('div')(({ theme }) => ({
     display: 'flex',
     overflowX: 'hidden',
@@ -174,8 +183,9 @@ const StyledVertDivider = styled('div')(({ theme }) => ({
         cursor: 'ew-resize',
     },
 }));
-// End of Top Panel Styles --------------------------
-// Start of Bottom Panel Styles ---------------------
+// End of Top Panel Styles
+
+// Start of Bottom Panel Styles
 const StyledHorizDivider = styled('div')(({ theme }) => ({
     height: theme.spacing(0.25),
     background: theme.palette.divider,
@@ -206,22 +216,22 @@ const StyledIcon = styled(Icon)(({ theme }) => ({
     color: 'rgba(0, 0, 0, .5)',
 }));
 
-// Start of Types -----------------------------------
+// Types ---------------------------------------*
 type EditAppForm = {
     PROJECT_UPLOAD: File;
 };
-// End of Types -------------------------------------
 
+// Start of Component ------------------------***
+// ---------------_-------------_-------------***
 export const AppPage = observer(() => {
-    const notification = useNotification();
-
     const { monolithStore, configStore } = useRootStore();
+    const notification = useNotification();
     const navigate = useNavigate();
 
-    // get the app id from the url
+    // App ID Needed for pixel calls
     const { appId } = useParams();
 
-    // For console
+    // Console when in edit mode
     const dateObject = new Date();
 
     const [appPermission, setAppPermission] = useState('READ_ONLY');
@@ -236,66 +246,19 @@ export const AppPage = observer(() => {
         },
     });
 
-    // Start of Resizable Panels ----------------------
-
-    const [topPanelHeight, setTopPanelHeight] = useState('100%');
-    const [bottomPanelHeight, setBottomPanelHeight] = useState('3.5%');
-
-    const [leftPanelWidth, setLeftPanelWidth] = useState('35%');
-    const [rightPanelWidth, setRightPanelWidth] = useState('65%');
-
-    const [showConsole, setShowConsole] = useState(false);
-
-    const handleVerticalResize = (e) => {
-        const bottomPanelHeight =
-            (window.innerHeight - e.clientY) / window.innerHeight;
-        const newBottomPanelHeight = `${bottomPanelHeight * 100}%`;
-        const newTopPanelHeight = `${(e.clientY / window.innerHeight) * 100}%`;
-
-        if (bottomPanelHeight < 0.035) {
-            setShowConsole(false);
-        } else {
-            // console.log(newBottomPanelHeight)
-            setTopPanelHeight(newTopPanelHeight);
-            setBottomPanelHeight(newBottomPanelHeight);
-            setShowConsole(true);
-        }
-    };
-
-    const handleHorizontalResize = (e) => {
-        const newRightPanelWidth = `${window.innerWidth - e.clientX}px`;
-        const newLeftPanelWidth = `${e.clientX}px`;
-
-        setLeftPanelWidth(newLeftPanelWidth);
-        setRightPanelWidth(newRightPanelWidth);
-    };
-    // End of Resizable Panels ------------------------
     /**
-     * @name handleChange
-     * @param event
-     * @param newValue
-     * @desc changes tab group
+     * Effects Section ------------------------
      */
-    const handleChange = (newValue: string) => {
-        // resize window
-        if (newValue === 'code-editor') {
-            setLeftPanelWidth('45%');
-            setRightPanelWidth('55%');
-        }
-        setView(newValue);
-    };
+    useEffect(() => {
+        getAppPermission();
+        return () => {
+            // disable edit
+            setAppPermission('READ_ONLY');
+        };
+    }, []);
 
     /**
-     * Refresh the view
-     */
-    const refreshOutlet = () => {
-        setCounter((c) => {
-            return c + 1;
-        });
-    };
-
-    /**
-     * Determines whether user is allowed to edit or export
+     * Determines whether user is allowed to edit or export the app in view
      */
     const getAppPermission = async () => {
         const response = await monolithStore.getUserProjectPermission(appId);
@@ -390,19 +353,79 @@ export const AppPage = observer(() => {
         }
     };
 
+    // Start of Resizable Panels ----------------------
+
+    const [topPanelHeight, setTopPanelHeight] = useState('100%');
+    const [bottomPanelHeight, setBottomPanelHeight] = useState('3.5%');
+
+    const [leftPanelWidth, setLeftPanelWidth] = useState('50%');
+    const [rightPanelWidth, setRightPanelWidth] = useState('45%');
+
+    const [showConsole, setShowConsole] = useState(false);
+
+    const handleVerticalResize = (e) => {
+        const bottomPanelHeight =
+            (window.innerHeight - e.clientY) / window.innerHeight;
+        const newBottomPanelHeight = `${bottomPanelHeight * 100}%`;
+        const newTopPanelHeight = `${(e.clientY / window.innerHeight) * 100}%`;
+
+        if (bottomPanelHeight < 0.035) {
+            setShowConsole(false);
+        } else {
+            // console.log(newBottomPanelHeight)
+            setTopPanelHeight(newTopPanelHeight);
+            setBottomPanelHeight(newBottomPanelHeight);
+            setShowConsole(true);
+        }
+    };
+
+    const handleHorizontalResize = (e) => {
+        const containerWidth = window.innerWidth;
+        const rightContainerWidth =
+            ((containerWidth - e.clientX) / containerWidth) * 100;
+        const leftContainerWidth = (e.clientX / containerWidth) * 100;
+
+        const newRightPanelWidthPercentage = `${rightContainerWidth}%`;
+        const newLeftPanelWidthPercentage = `${leftContainerWidth}%`;
+
+        console.log('right width', rightContainerWidth);
+
+        // if
+
+        setLeftPanelWidth(newLeftPanelWidthPercentage);
+        setRightPanelWidth(newRightPanelWidthPercentage);
+    };
+    // End of Resizable Panels ------------------------
+
     /**
-     * Effects Section
+     * @desc handle changes for navigation in editor mode (setting, editor, access)
+     * @param event
+     * @param newValue
+     * @desc changes tab group
      */
-    useEffect(() => {
-        getAppPermission();
-        return () => {
-            // disable edit
-            setAppPermission('READ_ONLY');
-        };
-    }, []);
+    const handleChange = (newValue: string) => {
+        // resize window
+        if (newValue === 'code-editor') {
+            setLeftPanelWidth('55%');
+            setRightPanelWidth('45%');
+        } else {
+            setLeftPanelWidth('25%');
+            setRightPanelWidth('75%');
+        }
+        setView(newValue);
+    };
+
+    /**
+     * @desc Refreshes the inner Iframe/Application
+     */
+    const refreshOutlet = () => {
+        setCounter((c) => {
+            return c + 1;
+        });
+    };
 
     return (
-        <div style={{ height: '100vh', width: '100vw' }}>
+        <div style={{ height: '100vh', width: '100vw', overflow: 'hidden' }}>
             <Navbar>
                 {appPermission === 'OWNER' && (
                     <StyledNavbarChildren>
@@ -738,6 +761,7 @@ export const AppPage = observer(() => {
                             </StyledOpenConsoleButton>
                         </div>
                         {showConsole ? (
+                            // <AppConsole>
                             <div
                                 style={{
                                     display: 'flex',
