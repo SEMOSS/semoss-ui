@@ -170,6 +170,7 @@ export const LoginPage = observer(() => {
         color: 'success',
     });
     const [error, setError] = useState('');
+    const [success, setSuccess] = useState('');
     const [isLoading, setIsLoading] = useState(false);
 
     const { control, handleSubmit } = useForm({
@@ -293,11 +294,13 @@ export const LoginPage = observer(() => {
                 setError(
                     'Username, password, password confirmation, email, first and last name are required',
                 );
+                setIsLoading(false);
                 return;
             }
 
             if (data.PASSWORD !== data.PASSWORD_CONFIRMATION) {
                 setError('Passwords do not match');
+                setIsLoading(false);
                 return;
             }
 
@@ -311,16 +314,22 @@ export const LoginPage = observer(() => {
                     data.EXTENTION,
                     data.COUNTRY_CODE,
                 )
-                .then(() => {
-                    // noop
+                .then((res) => {
+                    if (res) {
+                        setError('');
+                        setRegister(false);
+                        setSuccess(
+                            'Account registration successful. Log in below.',
+                        );
+                    }
                 })
                 .catch((error) => {
+                    setIsLoading(false);
                     setError(error.message);
                 })
                 .finally(() => {
                     // turn off loading
                     setIsLoading(false);
-                    navigate('/');
                 });
         },
     );
@@ -503,6 +512,9 @@ export const LoginPage = observer(() => {
                                     </StyledButtonGroup>
                                 )}
                                 {error && <Alert color="error">{error}</Alert>}
+                                {success && (
+                                    <Alert color="success">{success}</Alert>
+                                )}
                                 {providers.indexOf('native') > -1 && (
                                     <>
                                         <Stack spacing={2}>
@@ -619,6 +631,15 @@ export const LoginPage = observer(() => {
                                                             return (
                                                                 <TextField
                                                                     label="Email"
+                                                                    error={error.includes(
+                                                                        'is not a valid email address',
+                                                                    )}
+                                                                    helperText={
+                                                                        error.includes(
+                                                                            'is not a valid email address',
+                                                                        ) &&
+                                                                        'Please enter a valid email'
+                                                                    }
                                                                     size="small"
                                                                     variant="outlined"
                                                                     fullWidth
@@ -751,6 +772,47 @@ export const LoginPage = observer(() => {
                                                             return (
                                                                 <TextField
                                                                     label="Password"
+                                                                    error={
+                                                                        error.includes(
+                                                                            'Passwords do not match',
+                                                                        ) ||
+                                                                        error.includes(
+                                                                            'Password must be at least 8 characters in length',
+                                                                        ) ||
+                                                                        error.includes(
+                                                                            'Password must have atleast one uppercase character',
+                                                                        ) ||
+                                                                        error.includes(
+                                                                            'Password must have atleast one lowercase character',
+                                                                        ) ||
+                                                                        error.includes(
+                                                                            'Password must have atleast one special character among [!,@,#,$,%,^,&,*]',
+                                                                        )
+                                                                    }
+                                                                    helperText={
+                                                                        error &&
+                                                                        (error.includes(
+                                                                            'Password must be at least 8 characters in length',
+                                                                        ) ||
+                                                                            error.includes(
+                                                                                'Password must have atleast one uppercase character',
+                                                                            ) ||
+                                                                            error.includes(
+                                                                                'Password must have atleast one lowercase character',
+                                                                            ) ||
+                                                                            error.includes(
+                                                                                'Password must have atleast one special character among [!,@,#,$,%,^,&,*]',
+                                                                            ) ||
+                                                                            error.includes(
+                                                                                'Password must have atleast one special character among [!,@,#,$,%,^,&,*]',
+                                                                            ))
+                                                                            ? error.includes(
+                                                                                  'Passwords do no match',
+                                                                              )
+                                                                                ? 'Passwords do not match'
+                                                                                : 'Passwords must be at least 8 characters in length and contain one lowercase, one uppercase, one special character.'
+                                                                            : ''
+                                                                    }
                                                                     size="small"
                                                                     variant="outlined"
                                                                     type="password"
@@ -788,6 +850,29 @@ export const LoginPage = observer(() => {
                                                                 <TextField
                                                                     label="Password Confirmation"
                                                                     size="small"
+                                                                    error={
+                                                                        error.includes(
+                                                                            'Passwords do not match',
+                                                                        ) ||
+                                                                        error.includes(
+                                                                            'Password must be at least 8 characters in length',
+                                                                        ) ||
+                                                                        error.includes(
+                                                                            'Password must have atleast one uppercase character',
+                                                                        ) ||
+                                                                        error.includes(
+                                                                            'Password must have atleast one lowercase character',
+                                                                        ) ||
+                                                                        error.includes(
+                                                                            'Password must have atleast one special character among [!,@,#,$,%,^,&,*]',
+                                                                        )
+                                                                    }
+                                                                    helperText={
+                                                                        error.includes(
+                                                                            'Passwords do not match',
+                                                                        ) &&
+                                                                        'Passwords do no match'
+                                                                    }
                                                                     variant="outlined"
                                                                     type="password"
                                                                     fullWidth
