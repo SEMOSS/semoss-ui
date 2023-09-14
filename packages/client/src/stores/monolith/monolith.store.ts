@@ -272,6 +272,63 @@ export class MonolithStore {
         return status;
     }
 
+    /**
+     * @name createUser
+     * @desc this call will run createUser endpoint
+     * @param name, name of new user
+     * @param username, username of new user
+     * @param email, email of new user
+     * @param password, password of new user
+     * @param phone, phone of new user
+     * @param phoneextension, phoneextension of new user
+     * @param countrycode, countrycode of new user
+     * @returns $http promise
+     */
+    async registerUser(
+        name: string,
+        username: string,
+        email: string,
+        password: string,
+        phone: string,
+        phoneextension: string,
+        countrycode: string,
+    ) {
+        const create: string =
+            'name=' +
+            encodeURIComponent(name) +
+            '&username=' +
+            encodeURIComponent(username) +
+            '&email=' +
+            encodeURIComponent(email) +
+            '&password=' +
+            encodeURIComponent(password);
+        '&phone=' +
+            encodeURIComponent(phone) +
+            '&phoneextension=' +
+            encodeURIComponent(phoneextension) +
+            '&countrycode=' +
+            encodeURIComponent(countrycode);
+        return await axios
+            .post(`${MODULE}/api/auth/createUser`, create, {
+                headers: {
+                    'content-type': 'application/x-www-form-urlencoded',
+                },
+            })
+            .catch((error) => {
+                if (
+                    error.response &&
+                    error.response.status === 401 &&
+                    error.response.data &&
+                    error.response.data.requirePwdChange
+                ) {
+                    return;
+                }
+
+                // throw the message
+                throw Error(error.response.data.errorMessage);
+            });
+    }
+
     /**     *
      * @returns true if successful
      */

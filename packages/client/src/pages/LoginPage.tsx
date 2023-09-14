@@ -18,7 +18,7 @@ import {
     Divider,
     Box,
     ButtonGroup,
-    useTheme,
+    Modal,
 } from '@semoss/ui';
 
 import { useRootStore } from '@/hooks';
@@ -117,15 +117,14 @@ const StyledLogoText = styled('span')(() => ({
     letterSpacing: '0.15px',
 }));
 
-// const StyledActionText2 = StyledOld(Typography, {
-//     flex: '1',
-//     textAlign: 'left',
-//     overflow: 'hidden',
-//     whiteSpace: 'nowrap',
-//     textOverflow: 'ellipsis',
-//     color: theme.colors['grey-1'],
-//     fontSize: theme.fontSizes.sm,
-// });
+const StyledButtonText = styled(Button)({
+    fontFamily: 'Inter',
+    fontSize: '15px',
+    fontStyle: 'normal',
+    fontWeight: 600,
+    lineHeight: '26px' /* 173.333% */,
+    letterSpacing: '0.46px',
+});
 
 interface TypeUserLogin {
     USERNAME: string;
@@ -134,13 +133,27 @@ interface TypeUserLogin {
     OTP_CONFIRM: string;
 }
 
+interface TypeUserRegister {
+    FIRST_NAME: '';
+    LAST_NAME: '';
+    USERNAME: '';
+    EMAIL: '';
+    PHONE: '';
+    EXTENTION: '';
+    COUNTRY_CODE: '';
+    PASSWORD: '';
+    PASSWORD_CONFIRMATION: '';
+}
+
 /**
  * LoginPage
  */
 export const LoginPage = observer(() => {
     const { configStore } = useRootStore();
 
+    const [forgotPassword, setForgotPassword] = useState(false);
     const [loginType, setLoginType] = useState('Native');
+    const [register, setRegister] = useState(false);
     const [showOTPCodeField, setShowOTPCodeField] = useState(false);
     const [snackbar, setSnackbar] = useState<{
         open: boolean;
@@ -160,6 +173,20 @@ export const LoginPage = observer(() => {
             PASSWORD: '',
             REMEMBER_LOGIN: false,
             OTP_CONFIRM: '',
+        },
+    });
+
+    const { control: registerControl, handleSubmit: registerSubmit } = useForm({
+        defaultValues: {
+            FIRST_NAME: '',
+            LAST_NAME: '',
+            USERNAME: '',
+            EMAIL: '',
+            PHONE: '',
+            EXTENTION: '',
+            COUNTRY_CODE: '',
+            PASSWORD: '',
+            PASSWORD_CONFIRMATION: '',
         },
     });
 
@@ -238,6 +265,56 @@ export const LoginPage = observer(() => {
                     });
                 setShowOTPCodeField(true);
             }
+        },
+    );
+
+    /**
+     * Allow the user to login
+     */
+    const registerAccount = registerSubmit(
+        async (data: TypeUserRegister): Promise<TypeUserRegister> => {
+            // turn on loading
+            setIsLoading(true);
+
+            if (
+                !data.USERNAME ||
+                !data.PASSWORD ||
+                !data.PASSWORD_CONFIRMATION ||
+                !data.FIRST_NAME ||
+                !data.LAST_NAME ||
+                !data.EMAIL
+            ) {
+                setError(
+                    'Username, password, password confirmation, email, first and last name are required',
+                );
+                return;
+            }
+
+            if (data.PASSWORD !== data.PASSWORD_CONFIRMATION) {
+                setError('Passwords do not match');
+                return;
+            }
+
+            const response = await configStore
+                .register(
+                    `${data.FIRST_NAME} ${data.LAST_NAME}`,
+                    data.USERNAME,
+                    data.EMAIL,
+                    data.PASSWORD,
+                    data.PHONE,
+                    data.EXTENTION,
+                    data.COUNTRY_CODE,
+                )
+                .then(() => {
+                    // noop
+                })
+                .catch((error) => {
+                    setError(error.message);
+                })
+                .finally(() => {
+                    // turn off loading
+                    setIsLoading(false);
+                });
         },
     );
 
@@ -414,7 +491,321 @@ export const LoginPage = observer(() => {
                                 {providers.indexOf('native') > -1 && (
                                     <>
                                         <Stack spacing={2}>
-                                            {!showOTPCodeField && (
+                                            {!showOTPCodeField && register && (
+                                                <>
+                                                    <Controller
+                                                        name={'FIRST_NAME'}
+                                                        control={
+                                                            registerControl
+                                                        }
+                                                        rules={{
+                                                            required: true,
+                                                        }}
+                                                        render={({ field }) => {
+                                                            return (
+                                                                <TextField
+                                                                    label="First Name"
+                                                                    variant="outlined"
+                                                                    size="small"
+                                                                    fullWidth
+                                                                    value={
+                                                                        field.value
+                                                                            ? field.value
+                                                                            : ''
+                                                                    }
+                                                                    onChange={(
+                                                                        e,
+                                                                    ) =>
+                                                                        field.onChange(
+                                                                            e
+                                                                                .target
+                                                                                .value,
+                                                                        )
+                                                                    }
+                                                                />
+                                                            );
+                                                        }}
+                                                    />
+                                                    <Controller
+                                                        name={'LAST_NAME'}
+                                                        control={
+                                                            registerControl
+                                                        }
+                                                        rules={{
+                                                            required: true,
+                                                        }}
+                                                        render={({ field }) => {
+                                                            return (
+                                                                <TextField
+                                                                    label="Last Name"
+                                                                    size="small"
+                                                                    variant="outlined"
+                                                                    fullWidth
+                                                                    value={
+                                                                        field.value
+                                                                            ? field.value
+                                                                            : ''
+                                                                    }
+                                                                    onChange={(
+                                                                        e,
+                                                                    ) =>
+                                                                        field.onChange(
+                                                                            e
+                                                                                .target
+                                                                                .value,
+                                                                        )
+                                                                    }
+                                                                />
+                                                            );
+                                                        }}
+                                                    />
+                                                    <Controller
+                                                        name={'USERNAME'}
+                                                        control={
+                                                            registerControl
+                                                        }
+                                                        rules={{
+                                                            required: true,
+                                                        }}
+                                                        render={({ field }) => {
+                                                            return (
+                                                                <TextField
+                                                                    label="Username"
+                                                                    size="small"
+                                                                    variant="outlined"
+                                                                    fullWidth
+                                                                    value={
+                                                                        field.value
+                                                                            ? field.value
+                                                                            : ''
+                                                                    }
+                                                                    onChange={(
+                                                                        e,
+                                                                    ) =>
+                                                                        field.onChange(
+                                                                            e
+                                                                                .target
+                                                                                .value,
+                                                                        )
+                                                                    }
+                                                                />
+                                                            );
+                                                        }}
+                                                    />
+                                                    <Controller
+                                                        name={'EMAIL'}
+                                                        control={
+                                                            registerControl
+                                                        }
+                                                        rules={{
+                                                            required: true,
+                                                        }}
+                                                        render={({ field }) => {
+                                                            return (
+                                                                <TextField
+                                                                    label="Email"
+                                                                    size="small"
+                                                                    variant="outlined"
+                                                                    fullWidth
+                                                                    value={
+                                                                        field.value
+                                                                            ? field.value
+                                                                            : ''
+                                                                    }
+                                                                    onChange={(
+                                                                        e,
+                                                                    ) =>
+                                                                        field.onChange(
+                                                                            e
+                                                                                .target
+                                                                                .value,
+                                                                        )
+                                                                    }
+                                                                />
+                                                            );
+                                                        }}
+                                                    />
+                                                    <Controller
+                                                        name={'PHONE'}
+                                                        control={
+                                                            registerControl
+                                                        }
+                                                        rules={{
+                                                            required: false,
+                                                        }}
+                                                        render={({ field }) => {
+                                                            return (
+                                                                <TextField
+                                                                    label="Phone Number"
+                                                                    size="small"
+                                                                    variant="outlined"
+                                                                    fullWidth
+                                                                    value={
+                                                                        field.value
+                                                                            ? field.value
+                                                                            : ''
+                                                                    }
+                                                                    onChange={(
+                                                                        e,
+                                                                    ) =>
+                                                                        field.onChange(
+                                                                            e
+                                                                                .target
+                                                                                .value,
+                                                                        )
+                                                                    }
+                                                                />
+                                                            );
+                                                        }}
+                                                    />
+                                                    <Controller
+                                                        name={'EXTENTION'}
+                                                        control={
+                                                            registerControl
+                                                        }
+                                                        rules={{
+                                                            required: false,
+                                                        }}
+                                                        render={({ field }) => {
+                                                            return (
+                                                                <TextField
+                                                                    label="Phone Extention"
+                                                                    size="small"
+                                                                    variant="outlined"
+                                                                    fullWidth
+                                                                    value={
+                                                                        field.value
+                                                                            ? field.value
+                                                                            : ''
+                                                                    }
+                                                                    onChange={(
+                                                                        e,
+                                                                    ) =>
+                                                                        field.onChange(
+                                                                            e
+                                                                                .target
+                                                                                .value,
+                                                                        )
+                                                                    }
+                                                                />
+                                                            );
+                                                        }}
+                                                    />
+                                                    <Controller
+                                                        name={'COUNTRY_CODE'}
+                                                        control={
+                                                            registerControl
+                                                        }
+                                                        rules={{
+                                                            required: false,
+                                                        }}
+                                                        render={({ field }) => {
+                                                            return (
+                                                                <TextField
+                                                                    label="Country Code"
+                                                                    size="small"
+                                                                    variant="outlined"
+                                                                    fullWidth
+                                                                    value={
+                                                                        field.value
+                                                                            ? field.value
+                                                                            : ''
+                                                                    }
+                                                                    onChange={(
+                                                                        e,
+                                                                    ) =>
+                                                                        field.onChange(
+                                                                            e
+                                                                                .target
+                                                                                .value,
+                                                                        )
+                                                                    }
+                                                                />
+                                                            );
+                                                        }}
+                                                    />
+                                                    <Controller
+                                                        name={'PASSWORD'}
+                                                        control={
+                                                            registerControl
+                                                        }
+                                                        rules={{
+                                                            required: true,
+                                                        }}
+                                                        render={({ field }) => {
+                                                            return (
+                                                                <TextField
+                                                                    label="Password"
+                                                                    size="small"
+                                                                    variant="outlined"
+                                                                    type="password"
+                                                                    fullWidth
+                                                                    value={
+                                                                        field.value
+                                                                            ? field.value
+                                                                            : ''
+                                                                    }
+                                                                    onChange={(
+                                                                        e,
+                                                                    ) =>
+                                                                        field.onChange(
+                                                                            e
+                                                                                .target
+                                                                                .value,
+                                                                        )
+                                                                    }
+                                                                />
+                                                            );
+                                                        }}
+                                                    />
+                                                    <Controller
+                                                        name={
+                                                            'PASSWORD_CONFIRMATION'
+                                                        }
+                                                        control={
+                                                            registerControl
+                                                        }
+                                                        rules={{
+                                                            required: true,
+                                                        }}
+                                                        render={({ field }) => {
+                                                            return (
+                                                                <TextField
+                                                                    label="Password Confirmation"
+                                                                    size="small"
+                                                                    variant="outlined"
+                                                                    type="password"
+                                                                    fullWidth
+                                                                    value={
+                                                                        field.value
+                                                                            ? field.value
+                                                                            : ''
+                                                                    }
+                                                                    onChange={(
+                                                                        e,
+                                                                    ) =>
+                                                                        field.onChange(
+                                                                            e
+                                                                                .target
+                                                                                .value,
+                                                                        )
+                                                                    }
+                                                                />
+                                                            );
+                                                        }}
+                                                    />
+                                                    <Button
+                                                        fullWidth
+                                                        variant={'contained'}
+                                                        onClick={
+                                                            registerAccount
+                                                        }
+                                                    >
+                                                        Register Account
+                                                    </Button>
+                                                </>
+                                            )}
+                                            {!showOTPCodeField && !register && (
                                                 <>
                                                     <Controller
                                                         name={'USERNAME'}
@@ -508,96 +899,133 @@ export const LoginPage = observer(() => {
                                                     }}
                                                 />
                                             )}
-                                            <StyledRememberBox>
-                                                <Controller
-                                                    name={'REMEMBER_LOGIN'}
-                                                    control={control}
-                                                    rules={{ required: false }}
-                                                    render={({ field }) => {
-                                                        return (
-                                                            <Checkbox
-                                                                label="Keep me logged in"
-                                                                checked={
-                                                                    field.value
-                                                                }
-                                                                value={
-                                                                    field.value
-                                                                        ? field.value
-                                                                        : false
-                                                                }
-                                                                onChange={(
-                                                                    e: React.ChangeEvent<HTMLInputElement>,
-                                                                ) =>
-                                                                    field.onChange(
-                                                                        e.target
-                                                                            .checked,
-                                                                    )
-                                                                }
-                                                            />
-                                                        );
-                                                    }}
-                                                />
-                                                <Button variant="text">
-                                                    Forgot Password
-                                                </Button>
-                                            </StyledRememberBox>
-                                            <Button
-                                                fullWidth
-                                                variant={'contained'}
-                                                onClick={login}
-                                            >
-                                                Login with {loginType}
-                                            </Button>
-                                            <StyledRegisterNowBox>
-                                                Don&apos;t have an account?{' '}
-                                                <Button variant="text">
-                                                    Register Now
-                                                </Button>
-                                            </StyledRegisterNowBox>
+                                            {!register && (
+                                                <>
+                                                    <StyledRememberBox>
+                                                        <Controller
+                                                            name={
+                                                                'REMEMBER_LOGIN'
+                                                            }
+                                                            control={control}
+                                                            rules={{
+                                                                required: false,
+                                                            }}
+                                                            render={({
+                                                                field,
+                                                            }) => {
+                                                                return (
+                                                                    <Checkbox
+                                                                        label="Keep me logged in"
+                                                                        checked={
+                                                                            field.value
+                                                                        }
+                                                                        value={
+                                                                            field.value
+                                                                                ? field.value
+                                                                                : false
+                                                                        }
+                                                                        onChange={(
+                                                                            e: React.ChangeEvent<HTMLInputElement>,
+                                                                        ) =>
+                                                                            field.onChange(
+                                                                                e
+                                                                                    .target
+                                                                                    .checked,
+                                                                            )
+                                                                        }
+                                                                    />
+                                                                );
+                                                            }}
+                                                        />
+                                                        <StyledButtonText
+                                                            variant="text"
+                                                            onClick={() =>
+                                                                setForgotPassword(
+                                                                    true,
+                                                                )
+                                                            }
+                                                        >
+                                                            Forgot Password
+                                                        </StyledButtonText>
+                                                    </StyledRememberBox>
+                                                    <Button
+                                                        fullWidth
+                                                        variant={'contained'}
+                                                        onClick={login}
+                                                    >
+                                                        Login with {loginType}
+                                                    </Button>
+                                                    <StyledRegisterNowBox>
+                                                        Don&apos;t have an
+                                                        account?{' '}
+                                                        <StyledButtonText
+                                                            variant="text"
+                                                            onClick={() =>
+                                                                setRegister(
+                                                                    true,
+                                                                )
+                                                            }
+                                                        >
+                                                            Register Now
+                                                        </StyledButtonText>
+                                                    </StyledRegisterNowBox>
+                                                    {providers.indexOf(
+                                                        'native',
+                                                    ) > -1 &&
+                                                        providers.indexOf(
+                                                            'ms',
+                                                        ) > -1 && (
+                                                            <>
+                                                                <Divider>
+                                                                    <StyledDividerBox>
+                                                                        or
+                                                                    </StyledDividerBox>
+                                                                </Divider>
+                                                            </>
+                                                        )}
+                                                    {providers.indexOf('ms') >
+                                                        -1 && (
+                                                        <StyledAction
+                                                            variant="outlined"
+                                                            onClick={() => {
+                                                                oauth('ms');
+                                                            }}
+                                                            fullWidth
+                                                        >
+                                                            <StyledActionBox>
+                                                                <StyledActionImage
+                                                                    src={MS}
+                                                                />
+                                                                <StyledActionText>
+                                                                    Microsoft
+                                                                </StyledActionText>
+                                                            </StyledActionBox>
+                                                        </StyledAction>
+                                                    )}
+                                                    {providers.indexOf(
+                                                        'google',
+                                                    ) > -1 && (
+                                                        <StyledAction
+                                                            variant="outlined"
+                                                            onClick={() => {
+                                                                oauth('google');
+                                                            }}
+                                                            fullWidth
+                                                        >
+                                                            <StyledActionBox>
+                                                                <StyledActionImage
+                                                                    src={GOOGLE}
+                                                                />
+                                                                <StyledActionText>
+                                                                    Google
+                                                                </StyledActionText>
+                                                            </StyledActionBox>
+                                                        </StyledAction>
+                                                    )}
+                                                </>
+                                            )}
                                         </Stack>
                                     </>
-                                )}
-                                {providers.indexOf('native') > -1 &&
-                                    providers.indexOf('ms') > -1 && (
-                                        <>
-                                            <Divider>
-                                                <StyledDividerBox>
-                                                    or
-                                                </StyledDividerBox>
-                                            </Divider>
-                                        </>
-                                    )}
-                                {providers.indexOf('ms') > -1 && (
-                                    <StyledAction
-                                        variant="outlined"
-                                        onClick={() => {
-                                            oauth('ms');
-                                        }}
-                                        fullWidth
-                                    >
-                                        <StyledActionBox>
-                                            <StyledActionImage src={MS} />
-                                            <StyledActionText>
-                                                Microsoft
-                                            </StyledActionText>
-                                        </StyledActionBox>
-                                    </StyledAction>
-                                )}
-                                {providers.indexOf('google') > -1 && (
-                                    <StyledAction
-                                        variant="outlined"
-                                        onClick={() => {
-                                            oauth('google');
-                                        }}
-                                        fullWidth
-                                    >
-                                        <StyledActionBox>
-                                            <StyledActionImage src={GOOGLE} />
-                                            <StyledActionText>
-                                                Google
-                                            </StyledActionText>
-                                        </StyledActionBox>
-                                    </StyledAction>
                                 )}
                             </Stack>
                         </StyledBox>
@@ -612,6 +1040,30 @@ export const LoginPage = observer(() => {
                     src={GRAPHIC}
                 />
             </Stack>
+            <Modal
+                open={forgotPassword}
+                maxWidth={'md'}
+                onClose={() => {
+                    setForgotPassword(false);
+                }}
+            >
+                <Modal.Title>Forgot your password?</Modal.Title>
+                <Modal.Content>
+                    <Box>
+                        Please contact your administrator to reset password.
+                    </Box>
+                </Modal.Content>
+                <Modal.Actions>
+                    <Button
+                        variant={'outlined'}
+                        onClick={() => {
+                            setForgotPassword(false);
+                        }}
+                    >
+                        Ok
+                    </Button>
+                </Modal.Actions>
+            </Modal>
         </>
     );
 });

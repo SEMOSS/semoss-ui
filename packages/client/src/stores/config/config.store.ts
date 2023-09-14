@@ -354,6 +354,50 @@ export class ConfigStore {
     }
 
     /**
+     * Allow the user to login with lin otp
+     *
+     * @param username - username to login with
+     * @param password - password to login with
+     * @returns true if successful
+     */
+    async register(
+        name: string,
+        username: string,
+        email: string,
+        password: string,
+        phone: string,
+        phoneextension: string,
+        countrycode: string,
+    ): Promise<boolean> {
+        const { monolithStore } = this._root;
+
+        // login that preceeds sending of OTP
+        const response = await monolithStore.registerUser(
+            name,
+            username,
+            email,
+            password,
+            phone,
+            phoneextension,
+            countrycode,
+        );
+
+        runInAction(() => {
+            // clear the info and reset the user
+            this._store.user = {
+                loggedIn: true,
+                admin: false,
+                id: '',
+                name: '',
+                email: '',
+            };
+        });
+
+        // success
+        return true;
+    }
+
+    /**
      * Allow the user to login using oauth
      *
      * @param provider - provider to login with
