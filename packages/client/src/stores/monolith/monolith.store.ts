@@ -201,7 +201,7 @@ export class MonolithStore {
                 }
 
                 // throw the message
-                throw Error(error.response.data.errorMessage);
+                throw Error(error);
             });
 
         return status;
@@ -266,7 +266,7 @@ export class MonolithStore {
                 }
 
                 // throw the message
-                throw Error(error.response.data.errorMessage);
+                throw Error(error);
             });
 
         return status;
