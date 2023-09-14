@@ -1,5 +1,6 @@
 import { Actions } from './canvas.actions';
 import React from 'react';
+import { CanvasStore } from './canvas.store';
 
 /**
  * Block
@@ -107,6 +108,13 @@ export type WidgetJSON<
  */
 export type WidgetRegistry<W extends WidgetDef = WidgetDef> =
     W extends WidgetDef ? Record<W['widget'], Widget<W>> : never;
+
+/**
+ * Unwrap the WidgetRegistry
+ */
+export type WidgetRegistryUnwrap<R extends WidgetRegistry<WidgetDef>> =
+    R extends WidgetRegistry<infer W> ? W : never;
+
 /**
  * Query
  */
@@ -128,4 +136,22 @@ export type Query = {
 
     /** Current data of the Query */
     data: unknown;
+};
+
+export type Callbacks = {
+    /**
+     * onChange Callback that is triggered after an action is fired
+     */
+    onChange: (event: {
+        action: Actions;
+        store: CanvasStore;
+        error: Error | null;
+    }) => void;
+
+    /**
+     * onQuery callback that is triggered after a query has been ran
+     */
+    onQuery: (event: { query: string; store: CanvasStore }) => Promise<{
+        data: unknown;
+    }>;
 };

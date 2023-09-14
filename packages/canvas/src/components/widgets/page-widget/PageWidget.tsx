@@ -2,7 +2,7 @@ import { CSSProperties } from 'react';
 
 import { useBlock } from '@/hooks';
 import { Widget, WidgetDef } from '@/stores';
-import { Renderer } from '@/components/canvas';
+import { Slot } from '@/components/canvas';
 
 export interface PageWidgetDef extends WidgetDef<'page'> {
     widget: 'page';
@@ -17,9 +17,7 @@ export const PageWidget: Widget<PageWidgetDef> = ({ id }) => {
 
     return (
         <div style={data.style}>
-            {slots.content.children.map((c) => (
-                <Renderer key={c} id={c} />
-            ))}
+            <Slot slot={slots.content}></Slot>
         </div>
     );
 };

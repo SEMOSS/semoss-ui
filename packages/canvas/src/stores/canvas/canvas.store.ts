@@ -1,6 +1,5 @@
 import { makeAutoObservable, reaction, runInAction } from 'mobx';
 
-import { runPixel } from '@semoss/sdk';
 import { cancellablePromise, getValueByPath } from '@/utility';
 
 import {
@@ -10,12 +9,9 @@ import {
     MoveBlockAction,
     RemoveBlockAction,
 } from './canvas.actions';
-import { Query, Block, WidgetDef, WidgetJSON } from './canvas.types';
+import { Query, Block, WidgetDef, WidgetJSON, Callbacks } from './canvas.types';
 
 export interface CanvasStoreInterface {
-    /** Id of the canvas */
-    insightId: string;
-
     /** Queries rendered in the insight */
     queries: Record<string, Query>;
 
@@ -28,7 +24,6 @@ export interface CanvasStoreInterface {
  */
 export class CanvasStore {
     private _store: CanvasStoreInterface = {
-        insightId: '',
         queries: {},
         blocks: {},
     };
@@ -37,24 +32,46 @@ export class CanvasStore {
      * Utility variables
      */
     private _utils: {
-        /** track any executing queries */
+        /**
+         * Track any executing queries
+         */
         queryPromises: Record<
             string,
             ReturnType<typeof cancellablePromise> | null
         >;
+
+        /**
+         * Track callbacks
+         */
+        callbacks: Callbacks;
     } = {
         queryPromises: {},
+        callbacks: {
+            onChange: () => null,
+            onQuery: async () => ({
+                data: undefined,
+                error: Error('Define onQuery'),
+            }),
+        },
     };
 
     constructor(
-        insightId: string,
-        state: {
+        config: {
             blocks?: CanvasStoreInterface['blocks'];
             queries?: CanvasStoreInterface['queries'];
-        } = {},
+            onChange?: Callbacks['onChange'];
+            onQuery: Callbacks['onQuery'];
+        } = {
+            onQuery: async () => {
+                throw Error('Define onQuery');
+            },
+        },
     ) {
-        // id to run queries off of
-        this._store.insightId = insightId;
+        // set the callbacks
+        this._utils.callbacks = {
+            onChange: config.onChange || (() => null),
+            onQuery: config.onQuery,
+        };
 
         // make it observable
         makeAutoObservable(this);
@@ -84,8 +101,8 @@ export class CanvasStore {
 
         // set the initial state after reactive to invoke it
         runInAction(() => {
-            this._store.blocks = state.blocks || {};
-            this._store.queries = state.queries || {};
+            this._store.blocks = config.blocks || {};
+            this._store.queries = config.queries || {};
         });
     }
 
@@ -113,12 +130,12 @@ export class CanvasStore {
      * @param id - id of the block to get
      * @returns the specific block information
      */
-    getBlock<W extends WidgetDef = WidgetDef>(id: string): Block<W> {
+    getBlock<W extends WidgetDef = WidgetDef>(id: string): Block<W> | null {
         if (this._store.blocks[id]) {
             return this._store.blocks[id] as Block<W>;
         }
 
-        throw `Block ${id} does not exist`;
+        return null;
     }
 
     /**
@@ -126,12 +143,12 @@ export class CanvasStore {
      * @param id - id of the queries to get
      * @returns the specific block information
      */
-    getQuery(id: string): Query {
+    getQuery(id: string): Query | null {
         if (this._store.queries[id]) {
             return this._store.queries[id];
         }
 
-        throw `Query ${id} does not exist`;
+        return null;
     }
 
     /**
@@ -150,47 +167,62 @@ export class CanvasStore {
             JSON.parse(JSON.stringify(action.payload)),
         );
 
-        // apply the action
-        if (ActionMessages.SET_STATE === action.message) {
-            const { blocks, queries } = action.payload;
+        let error: Error | null = null;
 
-            this.setState(blocks, queries);
-        } else if (ActionMessages.ADD_BLOCK === action.message) {
-            const { json, position } = action.payload;
+        try {
+            // apply the action
+            if (ActionMessages.SET_STATE === action.message) {
+                const { blocks, queries } = action.payload;
 
-            this.addBlock(json, position);
-        } else if (ActionMessages.MOVE_BLOCK === action.message) {
-            const { id, position } = action.payload;
+                this.setState(blocks, queries);
+            } else if (ActionMessages.ADD_BLOCK === action.message) {
+                const { json, position } = action.payload;
 
-            this.moveBlock(id, position);
-        } else if (ActionMessages.REMOVE_BLOCK === action.message) {
-            const { id, keep } = action.payload;
+                this.addBlock(json, position);
+            } else if (ActionMessages.MOVE_BLOCK === action.message) {
+                const { id, position } = action.payload;
 
-            this.removeBlock(id, keep);
-        } else if (ActionMessages.SET_BLOCK_DATA === action.message) {
-            const { id, path, value } = action.payload;
+                this.moveBlock(id, position);
+            } else if (ActionMessages.REMOVE_BLOCK === action.message) {
+                const { id, keep } = action.payload;
 
-            this.setBlockData(id, path, value);
-        } else if (ActionMessages.DELETE_BLOCK_DATA === action.message) {
-            const { id, path } = action.payload;
+                this.removeBlock(id, keep);
+            } else if (ActionMessages.SET_BLOCK_DATA === action.message) {
+                const { id, path, value } = action.payload;
 
-            this.deleteBlockData(id, path);
-        } else if (ActionMessages.SET_LISTENER === action.message) {
-            const { id, listener, actions } = action.payload;
+                this.setBlockData(id, path, value);
+            } else if (ActionMessages.DELETE_BLOCK_DATA === action.message) {
+                const { id, path } = action.payload;
 
-            this.setListener(id, listener, actions);
-        } else if (ActionMessages.SET_QUERY === action.message) {
-            const { id, query } = action.payload;
+                this.deleteBlockData(id, path);
+            } else if (ActionMessages.SET_LISTENER === action.message) {
+                const { id, listener, actions } = action.payload;
 
-            this.setQuery(id, query);
-        } else if (ActionMessages.DELETE_QUERY === action.message) {
-            const { id } = action.payload;
+                this.setListener(id, listener, actions);
+            } else if (ActionMessages.SET_QUERY === action.message) {
+                const { id, query } = action.payload;
 
-            this.deleteQuery(id);
-        } else if (ActionMessages.DISPATCH_EVENT === action.message) {
-            const { name, payload } = action.payload;
+                this.setQuery(id, query);
+            } else if (ActionMessages.DELETE_QUERY === action.message) {
+                const { id } = action.payload;
 
-            this.dispatchEvent(name, payload);
+                this.deleteQuery(id);
+            } else if (ActionMessages.DISPATCH_EVENT === action.message) {
+                const { name, payload } = action.payload;
+
+                this.dispatchEvent(name, payload);
+            }
+        } catch (e) {
+            console.error(e);
+
+            error = e as Error;
+        } finally {
+            // call the on change with the previous action
+            this._utils.callbacks.onChange({
+                action: action,
+                store: this,
+                error: error,
+            });
         }
     };
 
@@ -251,7 +283,6 @@ export class CanvasStore {
     /**
      * Helpers
      */
-
     /**
      * Generate a new block from the json
      * @param json - json of the block that we are generating
@@ -424,28 +455,18 @@ export class CanvasStore {
             // fill the query
             const filled = this.flattenParameter(q.query);
 
-            // run the query
-            return runPixel<[unknown]>(filled, this._store.insightId);
+            // call the callback
+            return this._utils.callbacks.onQuery({
+                query: filled,
+                store: this,
+            });
         });
 
         p.promise
-            .then((response) => {
-                // skip if no resposne
-                if (!response) {
-                    return;
-                }
-
-                const { errors, pixelReturn } = response;
-
-                // throw the error
-                if (errors.length > 0) {
-                    throw Error(errors.join(';'));
-                }
-
-                const { output } = pixelReturn[0];
+            .then(({ data }) => {
                 runInAction(() => {
                     // set the data
-                    q.data = output;
+                    q.data = data;
                 });
             })
             .catch((e) => {

@@ -48,8 +48,6 @@ importers:
       typescript: ^4.7.4
     dependencies:
       '@semoss/sdk': link:../sdk
-      mobx: 6.3.7
-      mobx-react-lite: 3.4.3_17a9a2b9737f188c3f2d8ece9728da86
     devDependencies:
       '@rollup/plugin-commonjs': 25.0.4_rollup@3.29.1
       '@rollup/plugin-node-resolve': 15.2.1_rollup@3.29.1
@@ -63,6 +61,8 @@ importers:
       eslint-config-prettier: 8.10.0_eslint@8.46.0
       eslint-plugin-prettier: 4.2.1_e15f367fa3c61f99450af3504c5ca303
       eslint-plugin-react: 7.33.1_eslint@8.46.0
+      mobx: 6.3.7
+      mobx-react-lite: 3.4.3_17a9a2b9737f188c3f2d8ece9728da86
       npm-run-all: 4.1.5
       prettier: 2.4.1
       react: 17.0.2
@@ -85,7 +85,6 @@ importers:
       '@mui/icons-material': ^5.11.16
       '@mui/material': ^5.13.5
       '@semoss/canvas': workspace:*
-      '@semoss/sdk': workspace:*
       '@semoss/ui': workspace:*
       '@types/node': ^16.11.47
       '@types/react': ^17.0.48
@@ -132,7 +131,6 @@ importers:
       '@mui/icons-material': 5.14.3_4f90e9dfc5c73fb4904576d208f600be
       '@mui/material': 5.14.4_0915c20a846dc1f1e157b09ce585fa44
       '@semoss/canvas': link:../canvas
-      '@semoss/sdk': link:../sdk
       '@semoss/ui': link:../ui
       axios: 1.5.0
       dayjs: 1.11.9
@@ -13388,7 +13386,7 @@ packages:
       lodash: 4.17.21
       pretty-error: 4.0.0
       tapable: 2.2.1
-      webpack: 5.88.2_webpack-cli@4.10.0
+      webpack: 5.88.2_webpack-cli@5.1.4
     dev: true
 
   /htmlparser2/6.1.0:
@@ -15021,7 +15019,7 @@ packages:
       webpack: ^5.0.0
     dependencies:
       schema-utils: 4.2.0
-      webpack: 5.88.2_webpack-cli@4.10.0
+      webpack: 5.88.2_webpack-cli@5.1.4
     dev: true
 
   /minimalistic-assert/1.0.1:
@@ -15175,7 +15173,6 @@ packages:
       mobx: 6.3.7
       react: 17.0.2
       react-dom: 17.0.2_react@17.0.2
-    dev: false
 
   /mobx-react-lite/3.4.3_7ce7b07feada789f9a30bdc76b17bdf4:
     resolution: {integrity: sha512-NkJREyFTSUXR772Qaai51BnE1voWx56LOL80xG7qkZr6vo8vEaLF3sz1JNUVh+rxmUzxYaqOhfuxTfqUh0FXUg==}
@@ -15201,7 +15198,6 @@ packages:
 
   /mobx/6.3.7:
     resolution: {integrity: sha512-X7yU7eOEyxIBk4gjIi2UIilwdw48gXh0kcZ5ex3Rc+COJsJmJ4SNpf42uYea3aUqb1hedTv5xzJrq5Q55p0P5g==}
-    dev: false
 
   /monaco-editor/0.43.0:
     resolution: {integrity: sha512-cnoqwQi/9fml2Szamv1XbSJieGJ1Dc8tENVMD26Kcfl7xGQWp7OBKMjlwKVGYFJ3/AXJjSOGvcqK7Ry/j9BM1Q==}

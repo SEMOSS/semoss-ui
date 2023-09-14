@@ -1,51 +1,63 @@
 import { useMemo } from 'react';
 
-import { CanvasStore, Block, WidgetDef, WidgetRegistry, Query } from '@/stores';
+import {
+    CanvasStore,
+    Block,
+    WidgetRegistry,
+    WidgetRegistryUnwrap,
+    Query,
+    Callbacks,
+} from '@/stores';
 import { CanvasContext } from '@/contexts';
-import { Renderer } from './Renderer';
 
-export interface CanvasProps<W extends WidgetDef> {
+export interface CanvasProps<R extends WidgetRegistry> {
     /** Content to render  */
-    children?: React.ReactNode;
-
-    /** Insight ID to connect the canvas to */
-    insightId?: string;
+    children: React.ReactNode;
 
     /** Widgets available to all of the blocks */
-    widgets: WidgetRegistry<W>;
-
-    /** Current active block  */
-    active?: string;
+    widgets: R;
 
     /** Blocks that will be loaded into the canvas */
-    blocks: Record<string, Block<W>>;
+    blocks: Record<string, Block<WidgetRegistryUnwrap<R>>>;
 
     /** Queries that will be loaed into the canvas */
     queries?: Record<string, Query>;
 
     /** Callback that is triggered when the json changes */
-    onChange?: (json: string) => void;
+    onChange?: Callbacks['onChange'];
+
+    /** Callback that is triggered when a query is called */
+    onQuery?: Callbacks['onQuery'];
 }
 
-export const Canvas = <W extends WidgetDef = WidgetDef>(
-    props: CanvasProps<W>,
+export const Canvas = <R extends WidgetRegistry = WidgetRegistry>(
+    props: CanvasProps<R>,
 ) => {
     const {
         children,
-        insightId = 'new',
         widgets,
-        active,
-        blocks,
+        blocks = {},
         queries = {},
+        onChange = () => null,
+        onQuery = async () => ({
+            data: null,
+        }),
     } = props;
 
     // create the store if possible
     const store = useMemo(() => {
-        return new CanvasStore(insightId, {
+        const s = new CanvasStore({
             blocks: blocks,
             queries: queries,
+            onChange: onChange,
+            onQuery: onQuery,
         });
-    }, [insightId, blocks, queries]);
+
+        // Callback that is fired when the store is changed
+        s.onChange(onChange);
+
+        return s;
+    }, [blocks, queries]);
 
     if (!store) {
         return null;
@@ -58,7 +70,7 @@ export const Canvas = <W extends WidgetDef = WidgetDef>(
                 store: store,
             }}
         >
-            {!children && active ? <Renderer id={active} /> : children}
+            {children}
         </CanvasContext.Provider>
     );
 };

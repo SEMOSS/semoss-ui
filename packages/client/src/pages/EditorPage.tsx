@@ -1,3 +1,4 @@
+import { runPixel } from '@/api';
 import { Canvas, Widgets } from '@semoss/canvas';
 
 export const EditorPage = () => {
@@ -43,7 +44,19 @@ export const EditorPage = () => {
                 },
             }}
             widgets={Widgets}
-            active="root"
-        />
+            onQuery={async ({ query }) => {
+                const response = await runPixel('', query);
+
+                if (response.errors) {
+                    throw new Error(response.errors.join(''));
+                }
+
+                return {
+                    data: response.pixelReturn[0].output,
+                };
+            }}
+        >
+            <Canvas.Renderer id="root" />
+        </Canvas>
     );
 };

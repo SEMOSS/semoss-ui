@@ -13,9 +13,9 @@ export interface TextWidgetDef extends WidgetDef<'text'> {
 }
 
 export const TextWidget: Widget<TextWidgetDef> = ({ id }) => {
-    const { data } = useBlock<TextWidgetDef>(id);
+    const { data, attrs } = useBlock<TextWidgetDef>(id);
 
-    return <span>{data.text}</span>;
+    return <span {...attrs}>{data.text}</span>;
 };
 
 TextWidget.widget = 'text';
