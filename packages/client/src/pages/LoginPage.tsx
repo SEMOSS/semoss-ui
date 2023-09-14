@@ -35,7 +35,7 @@ const StyledRememberBox = styled(Box)({
     justifyContent: 'space-between',
 });
 
-const StyledBox = styled(Box)(({ theme }) => ({
+const StyledBox = styled(Box)({
     display: 'flex',
     width: '610px',
     flexDirection: 'column',
@@ -43,27 +43,27 @@ const StyledBox = styled(Box)(({ theme }) => ({
     alignItems: 'flex-start',
     gap: '32px',
     paddingLeft: '50px',
-}));
+});
 
-const StyledAction = styled(Button)(({ theme }) => ({
+const StyledAction = styled(Button)({
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
     overflow: 'hidden',
-}));
+});
 
-const StyledActionBox = styled(Button)(({ theme }) => ({
+const StyledActionBox = styled(Button)({
     display: 'flex',
     alignItems: 'center',
     gap: '16px',
     padding: '4px',
-}));
+});
 
 const StyledActionImage = styled('img')(({ theme }) => ({
     height: theme.spacing(3),
 }));
 
-const StyledLogo = styled('img')(({ theme }) => ({}));
+const StyledLogo = styled('img')({});
 
 const StyledActionText = styled('span')(() => ({
     fontFamily: 'Inter',
@@ -86,11 +86,11 @@ const StyledDividerBox = styled(Box)({
     letterSpacing: ' 0.15px',
 });
 
-const StyledButtonGroup = styled(ButtonGroup)(({ theme }) => ({
+const StyledButtonGroup = styled(ButtonGroup)({
     '.MuiButtonGroup-grouped': {
         borderColor: '#fff',
     },
-}));
+});
 
 const StyledRegisterNowBox = styled(Box)({
     display: 'flex',
@@ -124,6 +124,11 @@ const StyledButtonText = styled(Button)({
     fontWeight: 600,
     lineHeight: '26px' /* 173.333% */,
     letterSpacing: '0.46px',
+});
+
+const StyledGoBackBox = styled(Box)({
+    display: 'flex',
+    justifyContent: 'space-between',
 });
 
 interface TypeUserLogin {
@@ -794,15 +799,29 @@ export const LoginPage = observer(() => {
                                                             );
                                                         }}
                                                     />
-                                                    <Button
-                                                        fullWidth
-                                                        variant={'contained'}
-                                                        onClick={
-                                                            registerAccount
-                                                        }
-                                                    >
-                                                        Register Account
-                                                    </Button>
+                                                    <StyledGoBackBox>
+                                                        <Button
+                                                            variant={'text'}
+                                                            onClick={() =>
+                                                                setRegister(
+                                                                    false,
+                                                                )
+                                                            }
+                                                        >
+                                                            Go Back
+                                                        </Button>
+                                                        <Button
+                                                            fullWidth
+                                                            variant={
+                                                                'contained'
+                                                            }
+                                                            onClick={
+                                                                registerAccount
+                                                            }
+                                                        >
+                                                            Register Account
+                                                        </Button>
+                                                    </StyledGoBackBox>
                                                 </>
                                             )}
                                             {!showOTPCodeField && !register && (
