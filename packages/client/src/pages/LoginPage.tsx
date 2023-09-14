@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { observer } from 'mobx-react-lite';
-import { Navigate, useLocation, Location } from 'react-router-dom';
+import { Navigate, useLocation, Location, useNavigate } from 'react-router-dom';
 import { useForm, Controller } from 'react-hook-form';
 import { THEME } from '@/constants';
 import GRAPHIC from '@/assets/login_graphic.png';
@@ -196,6 +196,7 @@ export const LoginPage = observer(() => {
     });
 
     const location = useLocation();
+    const navigate = useNavigate();
 
     /**
      * Allow the user to login
@@ -319,6 +320,7 @@ export const LoginPage = observer(() => {
                 .finally(() => {
                     // turn off loading
                     setIsLoading(false);
+                    navigate('/');
                 });
         },
     );
@@ -409,89 +411,97 @@ export const LoginPage = observer(() => {
                                         Welcome!
                                     </Typography>
                                     <Typography variant="body1">
-                                        Log in below
+                                        {register
+                                            ? 'Register below'
+                                            : 'Log in below'}
                                     </Typography>
                                 </Stack>
-                                <StyledButtonGroup variant="outlined">
-                                    <ButtonGroup.Item
-                                        onClick={() => setLoginType('Native')}
-                                        sx={{
-                                            backgroundColor:
-                                                loginType === 'Native'
-                                                    ? '#0471F0'
-                                                    : '#fff',
-                                            color:
-                                                loginType === 'Native'
-                                                    ? '#fff'
-                                                    : '#0471F0',
-                                            ':hover': {
-                                                bgcolor:
+                                {!register && (
+                                    <StyledButtonGroup variant="outlined">
+                                        <ButtonGroup.Item
+                                            onClick={() =>
+                                                setLoginType('Native')
+                                            }
+                                            sx={{
+                                                backgroundColor:
                                                     loginType === 'Native'
                                                         ? '#0471F0'
-                                                        : 'transparent',
+                                                        : '#fff',
                                                 color:
                                                     loginType === 'Native'
                                                         ? '#fff'
                                                         : '#0471F0',
-                                                borderColor: '#fff',
-                                            },
-                                        }}
-                                    >
-                                        Native
-                                    </ButtonGroup.Item>
-                                    <ButtonGroup.Item
-                                        onClick={() => setLoginType('LDAP')}
-                                        sx={{
-                                            backgroundColor:
-                                                loginType === 'LDAP'
-                                                    ? '#0471F0'
-                                                    : '#fff',
-                                            color:
-                                                loginType === 'LDAP'
-                                                    ? '#fff'
-                                                    : '#0471F0',
-                                            ':hover': {
-                                                bgcolor:
+                                                ':hover': {
+                                                    bgcolor:
+                                                        loginType === 'Native'
+                                                            ? '#0471F0'
+                                                            : 'transparent',
+                                                    color:
+                                                        loginType === 'Native'
+                                                            ? '#fff'
+                                                            : '#0471F0',
+                                                    borderColor: '#fff',
+                                                },
+                                            }}
+                                        >
+                                            Native
+                                        </ButtonGroup.Item>
+                                        <ButtonGroup.Item
+                                            onClick={() => setLoginType('LDAP')}
+                                            sx={{
+                                                backgroundColor:
                                                     loginType === 'LDAP'
                                                         ? '#0471F0'
-                                                        : 'transparent',
+                                                        : '#fff',
                                                 color:
                                                     loginType === 'LDAP'
                                                         ? '#fff'
                                                         : '#0471F0',
-                                                borderColor: '#fff',
-                                            },
-                                        }}
-                                    >
-                                        LDAP
-                                    </ButtonGroup.Item>
-                                    <ButtonGroup.Item
-                                        onClick={() => setLoginType('LinOTP')}
-                                        sx={{
-                                            backgroundColor:
-                                                loginType === 'LinOTP'
-                                                    ? '#0471F0'
-                                                    : '#fff',
-                                            color:
-                                                loginType === 'LinOTP'
-                                                    ? '#fff'
-                                                    : '#0471F0',
-                                            ':hover': {
-                                                bgcolor:
+                                                ':hover': {
+                                                    bgcolor:
+                                                        loginType === 'LDAP'
+                                                            ? '#0471F0'
+                                                            : 'transparent',
+                                                    color:
+                                                        loginType === 'LDAP'
+                                                            ? '#fff'
+                                                            : '#0471F0',
+                                                    borderColor: '#fff',
+                                                },
+                                            }}
+                                        >
+                                            LDAP
+                                        </ButtonGroup.Item>
+                                        <ButtonGroup.Item
+                                            onClick={() =>
+                                                setLoginType('LinOTP')
+                                            }
+                                            sx={{
+                                                backgroundColor:
                                                     loginType === 'LinOTP'
                                                         ? '#0471F0'
-                                                        : 'transparent',
+                                                        : '#fff',
                                                 color:
                                                     loginType === 'LinOTP'
                                                         ? '#fff'
                                                         : '#0471F0',
-                                                borderColor: '#fff',
-                                            },
-                                        }}
-                                    >
-                                        LinOTP
-                                    </ButtonGroup.Item>
-                                </StyledButtonGroup>
+                                                ':hover': {
+                                                    bgcolor:
+                                                        loginType === 'LinOTP'
+                                                            ? '#0471F0'
+                                                            : 'transparent',
+                                                    color:
+                                                        loginType === 'LinOTP'
+                                                            ? '#fff'
+                                                            : '#0471F0',
+                                                    borderColor: '#fff',
+                                                },
+                                            }}
+                                        >
+                                            LinOTP
+                                        </ButtonGroup.Item>
+                                    </StyledButtonGroup>
+                                )}
                                 {error && <Alert color="error">{error}</Alert>}
                                 {providers.indexOf('native') > -1 && (
                                     <>
@@ -801,6 +811,7 @@ export const LoginPage = observer(() => {
                                                     />
                                                     <StyledGoBackBox>
                                                         <Button
+                                                            fullWidth
                                                             variant={'text'}
                                                             onClick={() =>
                                                                 setRegister(
