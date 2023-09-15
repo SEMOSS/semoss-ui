@@ -76,7 +76,7 @@ const StyledBottomPanel = styled('div')(({ theme }) => ({
 }));
 
 export const AppPage = observer(() => {
-    const { monolithStore } = useRootStore();
+    const { monolithStore, configStore } = useRootStore();
 
     // App ID Needed for pixel calls
     const { appId } = useParams();
@@ -116,10 +116,14 @@ export const AppPage = observer(() => {
     const switchEditorMode = (mode: boolean) => {
         setEditMode(mode);
         if (mode) {
-            setTopPanelHeight('96.5%');
-            setEditorView('code-editor');
+            // setTopPanelHeight('96.5%');
+            if (configStore.store.user.admin) {
+                setEditorView('code-editor');
+            } else {
+                setEditorView('settings');
+            }
         } else {
-            setTopPanelHeight('100%');
+            // setTopPanelHeight('100%');
             setEditorView('');
         }
     };
@@ -134,6 +138,9 @@ export const AppPage = observer(() => {
         newValue: 'code-editor' | 'settings' | 'permissions' | '',
     ) => {
         if (newValue === 'code-editor') {
+            if (!configStore.store.user.admin) {
+                return;
+            }
             setLeftPanelWidth('55%');
             setRightPanelWidth('45%');
         } else {
@@ -146,11 +153,9 @@ export const AppPage = observer(() => {
     const setConsoleHeight = () => {
         if (bottomPanelHeight === '3.5%') {
             setShowConsole(true);
-            setTopPanelHeight('75%');
             setBottomPanelHeight('25%');
         } else {
             setShowConsole(false);
-            setTopPanelHeight('96.5%');
             setBottomPanelHeight('3.5%');
         }
     };
@@ -200,12 +205,9 @@ export const AppPage = observer(() => {
         const newRightPanelWidthPercentage = `${rightContainerWidth}%`;
         const newLeftPanelWidthPercentage = `${leftContainerWidth}%`;
 
-        console.log('right width', rightContainerWidth);
-
         setLeftPanelWidth(newLeftPanelWidthPercentage);
         setRightPanelWidth(newRightPanelWidthPercentage);
     };
-    // End of Resizable Panels ------------------------
 
     /**
      * Value to pass for App Context
