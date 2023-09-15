@@ -73,10 +73,9 @@ export const TextEditor = (props: TextEditorProps) => {
                 interpretedLanguage = 'markdown';
             }
         }
-        debugger;
+        // debugger;
         return interpretedLanguage;
     }, [files.length]);
-    debugger;
 
     if (files.length) {
         return (
@@ -84,7 +83,6 @@ export const TextEditor = (props: TextEditorProps) => {
                 width={'100%'}
                 height={'100%'}
                 theme={'vs-dark'}
-                // defaultValue={'heye'}
                 value={files[0].content}
                 language={fileLanguage}
                 onChange={(newValue, e) => {

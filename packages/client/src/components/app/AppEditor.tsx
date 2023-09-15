@@ -215,7 +215,7 @@ export const AppEditor = (props: AppEditorProps) => {
             setAppDirectory(updatedTreeData);
         } else {
             const newFiles = [];
-            debugger;
+            // debugger;
 
             newFiles.push({
                 name: foundNode.name,
@@ -366,7 +366,7 @@ export const AppEditor = (props: AppEditorProps) => {
                 >
                     <div
                         style={{
-                            border: 'solid green',
+                            // border: 'solid green',
                             display: 'flex',
                             justifyContent: 'space-between',
                             overflow: 'hidden',
@@ -426,134 +426,3 @@ export const AppEditor = (props: AppEditorProps) => {
         </div>
     );
 };
-
-// return (
-//     <div
-//         style={{
-//             display: 'flex',
-//             flexDirection: 'row',
-//             width: '100%',
-//             height: '100%',
-//             // border: 'solid green',
-//         }}
-//         ref={ref}
-//     >
-//         <div
-//             style={{
-//                 // width: leftPanelWidth,
-//                 display: 'flex',
-//                 flexDirection: 'row',
-//             }}
-//         >
-//             <div
-//                 style={{
-//                     display: 'flex',
-//                     flexDirection: 'row',
-//                     width: '100%',
-//                     height: '100%',
-//                     // border: 'solid red'
-//                 }}
-//             >
-//                 <div
-//                     style={{
-//                         height: '100%',
-//                         width: '42px',
-//                         // border: 'solid green',
-//                     }}
-//                 >
-//                     {openTreeView ? (
-//                         <IconButton
-//                             size="small"
-//                             onClick={() => {
-//                                 // setLeftPanelWidth('5%');
-//                                 // setRightPanelWidth('95%');
-//                                 setOpenTreeView(false);
-//                             }}
-//                         >
-//                             <KeyboardDoubleArrowLeft />
-//                         </IconButton>
-//                     ) : (
-//                         <IconButton
-//                             size="small"
-//                             onClick={() => {
-//                                 // setLeftPanelWidth('45%');
-//                                 // setRightPanelWidth('55%');
-//                                 setOpenTreeView(true);
-//                             }}
-//                         >
-//                             <KeyboardDoubleArrowRight />
-//                         </IconButton>
-//                     )}
-//                 </div>
-
-//                 {openTreeView ? (
-//                     <div
-//                         style={{
-//                             display: 'flex',
-//                             flexDirection: 'column',
-//                             width: 'calc(100% - 42px)',
-//                             // border: 'solid green',
-//                         }}
-//                     >
-//                         <div
-//                             style={{
-//                                 display: 'flex',
-//                                 justifyContent: 'space-between',
-//                                 marginTop: '2px',
-//                                 marginLeft: '8px',
-//                                 alignItems: 'center',
-//                             }}
-//                         >
-//                             <Typography variant="h6">
-//                                 File Explorer
-//                             </Typography>
-//                         </div>
-//                         <div
-//                             style={{
-//                                 width: '100%',
-//                                 height: '100%',
-//                                 overflowX: 'scroll',
-//                             }}
-//                         >
-//                             <TreeView
-//                                 sx={{ width: '100%' }}
-//                                 expanded={expanded}
-//                                 selected={selected}
-//                                 onNodeToggle={handleToggle}
-//                                 onNodeSelect={handleSelect}
-//                                 defaultCollapseIcon={<ExpandMore />}
-//                                 defaultExpandIcon={<ChevronRight />}
-//                                 multiSelect
-//                             >
-//                                 {renderTreeNodes(appDirectory)}
-//                             </TreeView>
-//                         </div>
-//                     </div>
-//                 ) : null}
-//                 {/* <StyledVertDivider
-//                     onMouseDown={(e) => {
-//                         e.preventDefault();
-//                         window.addEventListener(
-//                             'mousemove',
-//                             handleHorizontalResize,
-//                         );
-//                         window.addEventListener('mouseup', () => {
-//                             window.removeEventListener(
-//                                 'mousemove',
-//                                 handleHorizontalResize,
-//                             );
-//                         });
-//                     }}
-//                 /> */}
-//             </div>
-//         </div>
-//         {/* We need an active file to show editor */}
-//         <div
-//             style={{
-//                 width: 'auto',
-//             }}
-//         >
-//             <TextEditor files={filesToView} />
-//         </div>
-//     </div>
-// );
