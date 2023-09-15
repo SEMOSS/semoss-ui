@@ -1,32 +1,22 @@
 import { useMemo } from 'react';
 
-import {
-    CanvasStore,
-    Block,
-    WidgetRegistry,
-    WidgetRegistryUnwrap,
-    Query,
-    Callbacks,
-} from '@/stores';
+import { CanvasStore, WidgetRegistry, Callbacks, CanvasConfig } from '@/stores';
 import { CanvasContext } from '@/contexts';
 
 export interface CanvasProps<R extends WidgetRegistry> {
     /** Content to render  */
     children: React.ReactNode;
 
+    /** Config to pass into the canvas store */
+    config: CanvasConfig<R>;
+
     /** Widgets available to all of the blocks */
     widgets: R;
 
-    /** Blocks that will be loaded into the canvas */
-    blocks: Record<string, Block<WidgetRegistryUnwrap<R>>>;
-
-    /** Queries that will be loaed into the canvas */
-    queries?: Record<string, Query>;
-
-    /** Callback that is triggered when the json changes */
+    /** OnChange callback that is triggered after a dispatch */
     onChange?: Callbacks['onChange'];
 
-    /** Callback that is triggered when a query is called */
+    /** onQuery callback that is triggered when a query is run */
     onQuery?: Callbacks['onQuery'];
 }
 
@@ -36,8 +26,10 @@ export const Canvas = <R extends WidgetRegistry = WidgetRegistry>(
     const {
         children,
         widgets,
-        blocks = {},
-        queries = {},
+        config = {
+            blocks: {},
+            queries: {},
+        },
         onChange = () => null,
         onQuery = async () => ({
             data: null,
@@ -45,21 +37,16 @@ export const Canvas = <R extends WidgetRegistry = WidgetRegistry>(
     } = props;
 
     // create the store if possible
-    const store = useMemo(() => {
-        const s = new CanvasStore({
-            blocks: blocks,
-            queries: queries,
+    const canvas = useMemo(() => {
+        const s = new CanvasStore(config, {
             onChange: onChange,
             onQuery: onQuery,
         });
 
-        // Callback that is fired when the store is changed
-        s.onChange(onChange);
-
         return s;
-    }, [blocks, queries]);
+    }, [config]);
 
-    if (!store) {
+    if (!canvas) {
         return null;
     }
 
@@ -67,7 +54,7 @@ export const Canvas = <R extends WidgetRegistry = WidgetRegistry>(
         <CanvasContext.Provider
             value={{
                 widgets: widgets,
-                store: store,
+                canvas: canvas,
             }}
         >
             {children}

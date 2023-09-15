@@ -13,10 +13,10 @@ export interface PageWidgetDef extends WidgetDef<'page'> {
 }
 
 export const PageWidget: Widget<PageWidgetDef> = ({ id }) => {
-    const { data, slots } = useBlock<PageWidgetDef>(id);
+    const { attrs, data, slots } = useBlock<PageWidgetDef>(id);
 
     return (
-        <div style={data.style}>
+        <div style={data.style} {...attrs}>
             <Slot slot={slots.content}></Slot>
         </div>
     );

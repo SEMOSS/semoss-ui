@@ -5,6 +5,7 @@ import { useMetamodel } from './useMetamodel';
 import { useRootStore } from './useRootStore';
 import { useSettings } from './useSettings';
 import { usePixel } from './usePixel';
+import { useDesigner } from './useDesigner';
 
 export {
     useAPI,
@@ -14,4 +15,5 @@ export {
     useRootStore,
     useSettings,
     usePixel,
+    useDesigner,
 };

@@ -9,7 +9,15 @@ import {
     MoveBlockAction,
     RemoveBlockAction,
 } from './canvas.actions';
-import { Query, Block, WidgetDef, WidgetJSON, Callbacks } from './canvas.types';
+import {
+    Query,
+    Block,
+    WidgetDef,
+    WidgetJSON,
+    Callbacks,
+    CanvasConfig,
+    WidgetRegistry,
+} from './canvas.types';
 
 export interface CanvasStoreInterface {
     /** Queries rendered in the insight */
@@ -56,22 +64,14 @@ export class CanvasStore {
     };
 
     constructor(
-        config: {
-            blocks?: CanvasStoreInterface['blocks'];
-            queries?: CanvasStoreInterface['queries'];
-            onChange?: Callbacks['onChange'];
+        config: CanvasConfig<WidgetRegistry>,
+        callbacks: {
+            onChange: Callbacks['onChange'];
             onQuery: Callbacks['onQuery'];
-        } = {
-            onQuery: async () => {
-                throw Error('Define onQuery');
-            },
         },
     ) {
         // set the callbacks
-        this._utils.callbacks = {
-            onChange: config.onChange || (() => null),
-            onQuery: config.onQuery,
-        };
+        this._utils.callbacks = callbacks;
 
         // make it observable
         makeAutoObservable(this);
@@ -336,7 +336,7 @@ export class CanvasStore {
      * @param child - id of the child block
      * @returns true if the child is in the parent
      */
-    private containsBlock = (parent: string, child: string): boolean => {
+    containsBlock = (parent: string, child: string): boolean => {
         const queue = [parent];
         while (queue.length) {
             const current = queue.shift() as string;
@@ -440,7 +440,7 @@ export class CanvasStore {
         const q = this._store.queries[id];
 
         // set the state to show it is initialized and loading
-        q.isInitialized = true;
+        q.isInitialized = false;
         q.isLoading = true;
         q.error = null;
 
@@ -465,6 +465,7 @@ export class CanvasStore {
         p.promise
             .then(({ data }) => {
                 runInAction(() => {
+                    console.log('hi');
                     // set the data
                     q.data = data;
                 });
@@ -479,6 +480,9 @@ export class CanvasStore {
             })
             .finally(() => {
                 runInAction(() => {
+                    // set it is initialized
+                    q.isInitialized = true;
+
                     // turn off the loading screen
                     q.isLoading = false;
                 });

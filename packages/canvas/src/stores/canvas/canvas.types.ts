@@ -3,6 +3,17 @@ import React from 'react';
 import { CanvasStore } from './canvas.store';
 
 /**
+ * Initial config to pass into the canvas
+ */
+export interface CanvasConfig<R extends WidgetRegistry> {
+    /** Blocks that will be loaded into the canvas */
+    blocks: Record<string, Block<WidgetRegistryUnwrap<R>>>;
+
+    /** Queries that will be loaed into the canvas */
+    queries?: Record<string, Query>;
+}
+
+/**
  * Block
  */
 export type Block<W extends WidgetDef = WidgetDef> = W extends W

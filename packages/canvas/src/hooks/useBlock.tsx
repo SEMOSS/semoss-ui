@@ -53,10 +53,10 @@ export const useBlock = <W extends WidgetDef>(
     id: string,
 ): useBlockReturn<W> => {
     // get the store
-    const { store } = useCanvas();
+    const { canvas } = useCanvas();
 
     // get the block
-    const block = store.getBlock(id);
+    const block = canvas.getBlock(id);
 
     // get block
     if (!block) {
@@ -73,7 +73,7 @@ export const useBlock = <W extends WidgetDef>(
             path: P | null,
             value: PathValue<Block<WidgetDef>['data'], P>,
         ): void => {
-            store.dispatch({
+            canvas.dispatch({
                 message: ActionMessages.SET_BLOCK_DATA,
                 payload: {
                     id: id,
@@ -93,7 +93,7 @@ export const useBlock = <W extends WidgetDef>(
         <P extends Paths<Block<WidgetDef>['data'], 4>>(
             path: P | null,
         ): void => {
-            store.dispatch({
+            canvas.dispatch({
                 message: ActionMessages.DELETE_BLOCK_DATA,
                 payload: {
                     id: id,
@@ -129,7 +129,7 @@ export const useBlock = <W extends WidgetDef>(
                     return;
                 }
 
-                store.dispatch(action);
+                canvas.dispatch(action);
             });
         };
 
@@ -148,7 +148,7 @@ export const useBlock = <W extends WidgetDef>(
     const data = computed(() => {
         return copy(block.data, (instance) => {
             if (typeof instance === 'string') {
-                return store.calculateParameter(instance);
+                return canvas.calculateParameter(instance);
             }
 
             return instance;

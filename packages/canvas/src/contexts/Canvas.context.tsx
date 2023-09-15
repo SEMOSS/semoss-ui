@@ -6,7 +6,7 @@ export interface CanvasContextProps {
     widgets: WidgetRegistry;
 
     /** Store to provide */
-    store: CanvasStore;
+    canvas: CanvasStore;
 }
 
 /**
