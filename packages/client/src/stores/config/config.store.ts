@@ -274,6 +274,129 @@ export class ConfigStore {
         return true;
     }
 
+    async loginLDAP(username: string, password: string): Promise<boolean> {
+        const { monolithStore } = this._root;
+
+        // try to login
+        await monolithStore.loginLDAP(username, password);
+
+        // set the response data
+        runInAction(() => {
+            // clear the info and reset the user
+            this._store.user = {
+                loggedIn: true,
+                admin: false,
+                id: '',
+                name: '',
+                email: '',
+            };
+        });
+
+        // get the user information
+        await this.getUser();
+
+        // success
+        return true;
+    }
+
+    /**
+     * Allow the user to login with lin otp
+     *
+     * @param username - username to login with
+     * @param password - password to login with
+     * @returns true if successful
+     */
+    async loginOTP(username: string, password: string): Promise<boolean> {
+        const { monolithStore } = this._root;
+
+        // login that preceeds sending of OTP
+        const response = await monolithStore.loginOTP(username, password);
+
+        // we need to change the password, navigate to the reset screen
+        if (response === 'change-password') {
+            return false;
+        }
+
+        // success
+        return true;
+    }
+
+    /**
+     * Confirm the OTP from LinOTP
+     *
+     * @param otp - otp to login with
+     * @returns true if successful
+     */
+    async confirmOTP(otp: string): Promise<boolean> {
+        const { monolithStore } = this._root;
+
+        // try to login
+        await monolithStore.confirmOTP(otp);
+
+        // if status is pending OTP
+        // set the response data
+        runInAction(() => {
+            // clear the info and reset the user
+            this._store.user = {
+                loggedIn: true,
+                admin: false,
+                id: '',
+                name: '',
+                email: '',
+            };
+        });
+
+        // get the user information
+        await this.getUser();
+
+        // success
+        return true;
+    }
+
+    /**
+     * Allow the user to login with lin otp
+     *
+     * @param username - username to login with
+     * @param password - password to login with
+     * @returns true if successful
+     */
+    async register(
+        name: string,
+        username: string,
+        email: string,
+        password: string,
+        phone: string,
+        phoneextension: string,
+        countrycode: string,
+    ): Promise<boolean> {
+        const { monolithStore } = this._root;
+
+        // login that preceeds sending of OTP
+        const response = await monolithStore.registerUser(
+            name,
+            username,
+            email,
+            password,
+            phone,
+            phoneextension,
+            countrycode,
+        );
+
+        runInAction(() => {
+            // clear the info and reset the user
+            this._store.user = {
+                loggedIn: true,
+                admin: false,
+                id: '',
+                name: '',
+                email: '',
+            };
+        });
+
+        // success
+        return true;
+    }
+
     /**
      * Allow the user to login using oauth
      *
