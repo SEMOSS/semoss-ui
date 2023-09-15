@@ -8,6 +8,7 @@ import React, {
 import { useForm } from 'react-hook-form';
 
 import { useAPI, useRootStore, useSettings } from '@/hooks';
+import { EditRounded, GridOff } from '@mui/icons-material';
 import { LoadingScreen } from '@/components/ui';
 import {
     Divider,
@@ -18,6 +19,8 @@ import {
     TextField,
     ToggleTabsGroup,
     Typography,
+    Grid,
+    Card,
     useNotification,
 } from '@semoss/ui';
 import Editor from '@monaco-editor/react';
@@ -289,31 +292,6 @@ export const SocialPropertiesPage = () => {
                             );
                         })}
                     </Accordion>
-                    {/* <Accordion
-                        expanded={emailExpanded}
-                        onChange={() => setEmailExpanded(!emailExpanded)}
-                    >
-                        <Accordion.Trigger
-                            sx={{ padding: '8px', fontSize: '16px' }}
-                        >
-                            <strong>Email</strong>
-                        </Accordion.Trigger>
-
-                        {authentication.map((value) => {
-                            return (
-                                <Accordion.Content sx={{ fontSize: '14px' }}>
-                                    <StyledImage
-                                        src={
-                                            SOCIAL[value]?.image ||
-                                            SOCIAL['native'].image
-                                        }
-                                    />
-                                    {SOCIAL[value]?.name ||
-                                        value[0].toUpperCase() + value.slice(1)}
-                                </Accordion.Content>
-                            );
-                        })}
-                    </Accordion> */}
                 </div>
                 {accordionValue && (
                     <SocialProperty
@@ -405,6 +383,7 @@ interface PropertyProps {
 
 const SocialProperty = (props) => {
     const { fieldName, fields, onChange } = props;
+    const [editMode, setEditMode] = useState<boolean>(false);
 
     const { monolithStore } = useRootStore();
     const notification = useNotification();
@@ -456,48 +435,91 @@ const SocialProperty = (props) => {
                 </Typography>
 
                 <StyledActionButtonsDiv>
-                    <StyledButton
-                        variant="outlined"
-                        onClick={() => {
-                            if (!defaultValues) {
-                                reset();
-                            } else {
-                                reset(mapDefaultValues(defaultValues));
-                            }
-                        }}
-                    >
-                        Reset
-                    </StyledButton>
-                    <StyledButton
-                        variant="contained"
-                        onClick={() => onSubmit()}
-                    >
-                        Save
-                    </StyledButton>
+                    {editMode ? (
+                        <>
+                            <StyledButton
+                                variant="outlined"
+                                onClick={() => {
+                                    if (!defaultValues) {
+                                        reset();
+                                    } else {
+                                        reset(mapDefaultValues(defaultValues));
+                                    }
+                                }}
+                            >
+                                Reset
+                            </StyledButton>
+                            <StyledButton
+                                variant="contained"
+                                onClick={() => {
+                                    setEditMode(false);
+                                    onSubmit();
+                                }}
+                            >
+                                Save
+                            </StyledButton>
+                        </>
+                    ) : (
+                        <>
+                            <StyledButton
+                                variant="outlined"
+                                onClick={() => setEditMode(true)}
+                                color="inherit"
+                                endIcon={<EditRounded />}
+                                sx={{ borderColor: 'rgba(217, 217, 217, 0.5)' }}
+                            >
+                                Key Value Edit
+                            </StyledButton>
+                        </>
+                    )}
                 </StyledActionButtonsDiv>
             </StyledTitle>
 
-            {fields.map((f, i) => {
-                return (
-                    <StyledPropContainer key={i}>
-                        <StyledKeyValue>
-                            <TextField
-                                label="key"
-                                defaultValue={f.label}
-                                variant="outlined"
-                                sx={{ marginRight: '12px' }}
-                                fullWidth
-                            />
-                            <TextField
-                                label="value"
-                                defaultValue={f.value}
-                                fullWidth
-                            />
-                        </StyledKeyValue>
-                        <TextField placeholder="Description"></TextField>
-                    </StyledPropContainer>
-                );
-            })}
+            {!editMode ? (
+                <Grid container spacing={1}>
+                    {fields.map((f, i) => {
+                        return (
+                            <Grid item xs={12} key={i}>
+                                <Card>
+                                    <Card.Content>
+                                        <StyledKeyValue>
+                                            <Card.Header
+                                                title={f.label}
+                                                subheader={'Description'}
+                                            />
+                                            <Card.Content>
+                                                {f.value}
+                                            </Card.Content>
+                                        </StyledKeyValue>
+                                    </Card.Content>
+                                </Card>
+                            </Grid>
+                        );
+                    })}
+                </Grid>
+            ) : (
+                fields.map((f, i) => {
+                    return (
+                        <StyledPropContainer key={i}>
+                            <StyledKeyValue>
+                                <TextField
+                                    label="key"
+                                    defaultValue={f.label}
+                                    variant="outlined"
+                                    sx={{ marginRight: '12px' }}
+                                    fullWidth
+                                />
+                                <TextField
+                                    label="value"
+                                    defaultValue={f.value}
+                                    fullWidth
+                                />
+                            </StyledKeyValue>
+                            <TextField placeholder="Description"></TextField>
+                        </StyledPropContainer>
+                    );
+                })
+            )}
         </StyledForm>
     );
 };
