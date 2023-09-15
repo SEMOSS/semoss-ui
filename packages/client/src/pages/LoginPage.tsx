@@ -246,6 +246,7 @@ export const LoginPage = observer(() => {
                         .loginOTP(data.USERNAME, data.PASSWORD)
                         .then(() => {
                             // noop
+                            setShowOTPCodeField(true);
                         })
                         .catch((error) => {
                             setError(error.message);
@@ -254,7 +255,6 @@ export const LoginPage = observer(() => {
                             // turn off loading
                             setIsLoading(false);
                         });
-                    setShowOTPCodeField(true);
                 }
             }
             if (showOTPCodeField) {
@@ -382,6 +382,14 @@ export const LoginPage = observer(() => {
     // get the proviers
     const providers = [...configStore.store.config.providers, 'ms'];
 
+    // Will need to display the oAuth types here -> Will have to remove native, registration, linotp, ldap
+    // const providersToDisplay = []
+
+    // Different Authorization Types / Endpoints that are Semoss Specific
+    // const semossAuthorization =
+
+    console.log(providers);
+
     return (
         <>
             <Snackbar
@@ -414,7 +422,9 @@ export const LoginPage = observer(() => {
                                                 filter: 'invert(0.5) sepia(1) saturate(5) hue-rotate(175deg)',
                                             }}
                                         />{' '}
-                                        <StyledLogoText>SeMOSS</StyledLogoText>
+                                        <StyledLogoText>
+                                            {THEME.name}
+                                        </StyledLogoText>
                                     </StyledLogoBox>
                                     <Typography variant="h4">
                                         Welcome!
@@ -428,9 +438,11 @@ export const LoginPage = observer(() => {
                                 {!register && (
                                     <StyledButtonGroup variant="outlined">
                                         <ButtonGroup.Item
-                                            onClick={() =>
-                                                setLoginType('Native')
-                                            }
+                                            onClick={() => {
+                                                setLoginType('Native');
+                                                setSuccess('');
+                                                setError('');
+                                            }}
                                             sx={{
                                                 backgroundColor:
                                                     loginType === 'Native'
@@ -456,7 +468,11 @@ export const LoginPage = observer(() => {
                                             Native
                                         </ButtonGroup.Item>
                                         <ButtonGroup.Item
-                                            onClick={() => setLoginType('LDAP')}
+                                            onClick={() => {
+                                                setLoginType('LDAP');
+                                                setSuccess('');
+                                                setError('');
+                                            }}
                                             sx={{
                                                 backgroundColor:
                                                     loginType === 'LDAP'
@@ -482,9 +498,11 @@ export const LoginPage = observer(() => {
                                             LDAP
                                         </ButtonGroup.Item>
                                         <ButtonGroup.Item
-                                            onClick={() =>
-                                                setLoginType('LinOTP')
-                                            }
+                                            onClick={() => {
+                                                setLoginType('LinOTP');
+                                                setSuccess('');
+                                                setError('');
+                                            }}
                                             sx={{
                                                 backgroundColor:
                                                     loginType === 'LinOTP'
