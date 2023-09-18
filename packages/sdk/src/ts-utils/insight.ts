@@ -1,6 +1,4 @@
-import axios from 'axios';
-
-import { ENV } from './config';
+import { Env } from './env';
 import {
     getSystemConfig,
     login,
@@ -10,6 +8,7 @@ import {
     upload,
     download,
 } from './api';
+import { UnauthorizedError } from './error';
 
 interface InsightStoreInterface {
     /** Id of the app */
@@ -32,7 +31,6 @@ interface InsightStoreInterface {
         /** Config information */
         config: {
             logins: Record<string, unknown>;
-            security: boolean;
             providers: string[];
             [key: string]: unknown;
         };
@@ -50,6 +48,19 @@ export class Insight {
     };
 
     /** Getters */
+    /**
+     * App Id
+     */
+    get appId() {
+        return this._store.appId;
+    }
+
+    /**
+     * Insight Id
+     */
+    get insightId() {
+        return this._store.insightId;
+    }
     /**
      * If the insight is initialied
      */
@@ -78,7 +89,7 @@ export class Insight {
         return this._store.system;
     }
 
-    /** Helpers */
+    /** Methods */
     /**
      * Initialize the insight
      *
@@ -88,23 +99,20 @@ export class Insight {
         // reset it
         this._store.isInitialized = false;
 
-        // try to set the env from the window
+        // Set from the document
         try {
             const env = JSON.parse(
-                document.getElementById('semoss-env').textContent,
+                document.getElementById('semoss-env')?.textContent || '',
             ) as {
                 APP: string;
                 MODULE: string;
             };
 
             if (env) {
-                if (env.APP) {
-                    ENV.APP = env.APP;
-                }
-
-                if (env.MODULE) {
-                    ENV.MODULE = env.MODULE;
-                }
+                Env.updateVariables({
+                    APP: env.APP,
+                    MODULE: env.MODULE,
+                });
             }
         } catch (e) {
             console.error(e);
@@ -112,22 +120,24 @@ export class Insight {
 
         try {
             // validate
-            if (!ENV.MODULE) {
+            if (!Env.variables.MODULE) {
                 throw new Error('module is required');
             }
 
-            if (!ENV.APP) {
+            if (!Env.variables.APP) {
                 throw new Error(`appId is required`);
             }
 
             // get the system information
             await this.initializeSystem();
 
+            // skip if the system doesn't initialize correctly
+            if (!this._store.system) {
+                return;
+            }
+
             // if security is not enabled or the user is logged in, load the app
-            if (
-                !this._store.system.config.security ||
-                Object.keys(this._store.system.config.logins).length > 0
-            ) {
+            if (Object.keys(this._store.system.config.logins).length > 0) {
                 // initialize the app
                 await this.initializeApp();
 
@@ -142,7 +152,7 @@ export class Insight {
             console.error(error);
 
             // store the error
-            this._store.error = error;
+            this._store.error = error as Error;
         }
     };
 
@@ -167,10 +177,11 @@ export class Insight {
             console.error(error);
 
             // store the error
-            this._store.error = error;
+            this._store.error = error as Error;
         }
     };
 
+    /** Helpers */
     /**
      * Initialize the system wide information
      */
@@ -184,7 +195,6 @@ export class Insight {
             system = {
                 config: {
                     logins: {},
-                    security: false,
                     providers: [],
                 },
             };
@@ -221,7 +231,7 @@ export class Insight {
      */
     private initializeApp = async (id?: string): Promise<void> => {
         const { insightId, errors } = await runPixel<[Record<string, unknown>]>(
-            `SetContext("${ENV.APP}")`,
+            `SetContext("${Env.variables.APP}")`,
             id || 'new',
         );
 
@@ -262,11 +272,9 @@ export class Insight {
      */
     private processActionError = (error: Error) => {
         // ignore 302 errors
-        if (axios.isAxiosError(error)) {
-            if (error.response.status === 302) {
-                this._store.isAuthorized = false;
-                return;
-            }
+        if (error instanceof UnauthorizedError) {
+            this._store.isAuthorized = false;
+            return;
         }
 
         // propagate it forward
@@ -301,6 +309,7 @@ export class Insight {
                         credentials.username,
                         credentials.password,
                     );
+
                     if (response) {
                         loggedIn = true;
                     }
@@ -322,8 +331,10 @@ export class Insight {
                 // success
                 return loggedIn;
             } catch (error) {
-                this.processActionError(error);
+                this.processActionError(error as Error);
             }
+
+            return false;
         },
 
         /**
@@ -333,14 +344,16 @@ export class Insight {
             try {
                 const response = await logout();
                 if (!response) {
-                    return;
+                    return false;
                 }
 
                 // success
                 return true;
             } catch (error) {
-                this.processActionError(error);
+                this.processActionError(error as Error);
             }
+
+            return false;
         },
 
         /**
@@ -359,7 +372,7 @@ export class Insight {
                 // success
                 return response;
             } catch (error) {
-                this.processActionError(error);
+                this.processActionError(error as Error);
             }
         },
 
@@ -376,7 +389,7 @@ export class Insight {
                 // success
                 return response;
             } catch (error) {
-                this.processActionError(error);
+                this.processActionError(error as Error);
             }
         },
 
@@ -405,10 +418,13 @@ export class Insight {
                     projectId,
                     path,
                 );
+
                 return response;
             } catch (error) {
-                this.processActionError(error);
+                this.processActionError(error as Error);
             }
+
+            return [];
         },
 
         /**
@@ -421,7 +437,7 @@ export class Insight {
             try {
                 await download(insightID, fileKey);
             } catch (error) {
-                this.processActionError(error);
+                this.processActionError(error as Error);
             }
         },
     };
