@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
-import { useNotification } from '@semoss/components';
+import { useNotification } from '@semoss/ui';
 
 import { useRootStore } from './useRootStore';
 
@@ -7,7 +7,7 @@ interface PixelState<D> {
     /** Status of the pixel call */
     status: 'INITIAL' | 'LOADING' | 'SUCCESS' | 'ERROR';
     /** Data returned from the pixel call */
-    data?: any;
+    data?: D;
     /** Error returned from the pixel call */
     error?: Error;
 }
@@ -115,7 +115,7 @@ export function usePixel<D>(
 
                     notification.add({
                         color: 'error',
-                        content: error,
+                        message: error,
                     });
 
                     setState({
@@ -140,7 +140,7 @@ export function usePixel<D>(
 
                 notification.add({
                     color: 'error',
-                    content: error.message,
+                    message: error.message,
                 });
 
                 setState({

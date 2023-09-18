@@ -1,14 +1,13 @@
-import { useState } from "react";
+import React, { useState } from "react";
 import type { Meta, StoryObj } from "@storybook/react";
-import { Table } from "../Table/index";
-import { Box } from "../Box/index";
-import { IconButton } from "../IconButton/index";
-import { tableCellClasses } from "@mui/material/TableCell";
-import { styled } from "@mui/material/styles";
+import { KeyboardArrowDown, KeyboardArrowUp } from "@mui/icons-material";
+import { Box, IconButton, Typography, styled } from "../../";
+import { Table } from "./";
+
+// Export these in library rather directly from material
 import Collapse from "@mui/material/Collapse";
-import KeyboardArrowDownIcon from "@mui/icons-material/KeyboardArrowDown";
-import KeyboardArrowUpIcon from "@mui/icons-material/KeyboardArrowUp";
-import Typography from "@mui/material/Typography";
+import { tableCellClasses } from "@mui/material/TableCell";
+// ^^^
 
 const meta: Meta<typeof Table> = {
     title: "Components/Table",
@@ -77,7 +76,7 @@ const rows = [
         "555-555-5555",
     ),
     createData(
-        "Jane Smith",
+        "Janes Smith",
         23,
         "Denver, CO",
         "ne.smith@deloitte.com",
@@ -86,6 +85,8 @@ const rows = [
 ];
 
 function BasicTable(args) {
+    const [page, setPage] = useState<number>(0);
+
     return (
         <Table.Container>
             <Table sx={{ minWidth: 650 }} aria-label="simple table" {...args}>
@@ -120,6 +121,19 @@ function BasicTable(args) {
                         </Table.Row>
                     ))}
                 </Table.Body>
+                <Table.Footer>
+                    <Table.Row>
+                        <Table.Pagination
+                            rowsPerPageOptions={[5, 10, 25]}
+                            onPageChange={(e, v) => {
+                                setPage(v);
+                            }}
+                            page={page}
+                            rowsPerPage={5}
+                            count={10}
+                        />
+                    </Table.Row>
+                </Table.Footer>
             </Table>
         </Table.Container>
     );
@@ -209,11 +223,7 @@ function Row(props) {
                         size="small"
                         onClick={() => setOpen(!open)}
                     >
-                        {open ? (
-                            <KeyboardArrowUpIcon />
-                        ) : (
-                            <KeyboardArrowDownIcon />
-                        )}
+                        {open ? <KeyboardArrowUp /> : <KeyboardArrowDown />}
                     </IconButton>
                 </Table.Cell>
                 <Table.Cell>{row.name}</Table.Cell>
@@ -224,7 +234,7 @@ function Row(props) {
             </Table.Row>
             <Table.Row>
                 <Table.Cell
-                    style={{ paddingBottom: 0, paddingTop: 0 }}
+                    sx={{ paddingBottom: 0, paddingTop: 0 }}
                     colSpan={6}
                 >
                     <Collapse in={open} timeout="auto" unmountOnExit>

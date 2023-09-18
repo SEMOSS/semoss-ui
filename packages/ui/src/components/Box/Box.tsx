@@ -1,14 +1,16 @@
 import { ReactNode } from "react";
-import MuiBox from "@mui/material/Box";
-import { SxProps } from "@mui/system";
-import { BoxProps as MuiBoxProps } from "@mui/material";
+import { Box as MuiBox, SxProps } from "@mui/material";
 
-export interface BoxProps extends MuiBoxProps {
+export interface BoxProps {
     /** children to be rendered */
     children?: ReactNode;
 
+    //** onClick function */
+    onClick?: () => void;
+
     /** custom style object */
     sx?: SxProps;
+    title?: string;
 }
 export const Box = (props: BoxProps) => {
     const { children, sx } = props;

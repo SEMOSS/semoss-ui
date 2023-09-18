@@ -1,18 +1,18 @@
 import { useMemo } from "react";
-import { DatePicker as MuiDatePicker } from "@mui/x-date-pickers/DatePicker";
-import { SxProps } from "@mui/system";
-import { DatePickerProps } from "@mui/x-date-pickers";
-import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
-import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
 import {
+    DatePicker as MuiDatePicker,
+    LocalizationProvider,
     PickersDay,
     pickersDayClasses,
     PickersDayProps,
-} from "@mui/x-date-pickers/PickersDay";
-import { DayCalendarSkeleton } from "@mui/x-date-pickers/DayCalendarSkeleton";
+    DayCalendarSkeleton,
+} from "@mui/x-date-pickers";
+import { SxProps } from "@mui/material";
+import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
+
 import * as dayjs from "dayjs";
 
-export interface _DatePickerProps extends DatePickerProps<any> {
+export interface DatePickerProps {
     /** custom style object */
     sx?: SxProps;
 
@@ -21,6 +21,12 @@ export interface _DatePickerProps extends DatePickerProps<any> {
 
     //** onChange function for datepicket to intercept dayjs object */
     onChange: (e: string, c: unknown) => void;
+
+    /**
+     * Years rendered per row.
+     * @default 4 on desktop, 3 on mobile
+     */
+    yearsPerRow?: 3 | 4;
 }
 
 const DayPicker = (props: PickersDayProps<dayjs.Dayjs>) => {
@@ -36,7 +42,7 @@ const DayPicker = (props: PickersDayProps<dayjs.Dayjs>) => {
     );
 };
 
-export const DatePicker = (props: _DatePickerProps) => {
+export const DatePicker = (props: DatePickerProps) => {
     const { sx, value, onChange = () => null } = props;
 
     const memoValue = useMemo(() => dayjs(value), [value]);

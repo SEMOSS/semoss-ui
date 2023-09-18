@@ -1,17 +1,33 @@
-import { styled, Grid, Textarea } from '@semoss/components';
+import { useState } from 'react';
+import { Container, styled, ToggleTabsGroup } from '@semoss/ui';
+import Editor from '@monaco-editor/react';
 
 import { Markdown } from '../Markdown';
 
-import { theme } from '@/theme';
+const StyledContainer = styled(Container)(({ theme }) => ({
+    height: theme.spacing(38),
+    marginBottom: theme.spacing(5),
+    width: '100%',
+}));
 
-const StyledGridItem = styled(Grid.Item, {
-    height: theme.space['96'],
+const StyledTabPanel = styled('div')(({ theme }) => ({
+    height: '100%',
+    width: '100%',
     overflow: 'auto',
-});
+    borderLeft: `solid ${theme.palette.grey['100']}`,
+    borderRight: `solid ${theme.palette.grey['100']}`,
+    borderTop: `solid ${theme.palette.grey['100']}`,
+    borderRadius: theme.shape.borderRadius,
+}));
 
-const StyledTextarea = styled(Textarea, {
-    height: '100% !important',
-});
+const StyledEditor = styled(Editor)(({ theme }) => ({
+    height: '100%',
+    width: '900px',
+}));
+
+const StyledMarkdownContainer = styled('div')(({ theme }) => ({
+    width: '900px',
+}));
 
 interface MarkdownEditorProps {
     /** Value of the input */
@@ -23,20 +39,41 @@ interface MarkdownEditorProps {
 
 export const MarkdownEditor = (props: MarkdownEditorProps) => {
     const { value, onChange = () => null } = props;
+    const [view, setView] = useState<number>(0);
 
     return (
-        <Grid>
-            <StyledGridItem span={6}>
-                <StyledTextarea
-                    value={value}
-                    onChange={(v) => {
-                        onChange(v);
-                    }}
-                ></StyledTextarea>
-            </StyledGridItem>
-            <StyledGridItem span={6}>
-                <Markdown content={value}></Markdown>
-            </StyledGridItem>
-        </Grid>
+        <StyledContainer disableGutters={true}>
+            <ToggleTabsGroup
+                boxSx={{
+                    borderRadius: '12px 12px 0px 0px',
+                    width: '100%',
+                }}
+                value={view}
+                onChange={(e: React.SyntheticEvent, val: number) => {
+                    setView(val);
+                }}
+            >
+                <ToggleTabsGroup.Item label="Edit"></ToggleTabsGroup.Item>
+                <ToggleTabsGroup.Item label="View"></ToggleTabsGroup.Item>
+            </ToggleTabsGroup>
+            <StyledTabPanel>
+                {view === 0 ? (
+                    <StyledEditor
+                        width={900}
+                        defaultValue={value}
+                        value={value}
+                        language={'markdown'}
+                        onChange={(newValue, e) => {
+                            // Handle changes in the editor's content.
+                            onChange(newValue);
+                        }}
+                    />
+                ) : (
+                    <StyledMarkdownContainer>
+                        <Markdown content={value}></Markdown>
+                    </StyledMarkdownContainer>
+                )}
+            </StyledTabPanel>
+        </StyledContainer>
     );
 };

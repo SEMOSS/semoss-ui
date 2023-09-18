@@ -1,22 +1,25 @@
-import { Card as _Card, CardProps } from "./Card";
-import { _CardContent, _CardContentProps } from "./CardContent";
-import { _CardHeader, _CardHeaderProps } from "./CardHeader";
-import { _CardActions, _CardActionsProps } from "./CardActions";
-import { _CardMedia, _CardMediaProps } from "./CardMedia";
+import { Card, CardProps } from "./Card";
+import { CardContent, CardContentProps } from "./CardContent";
+import { CardHeader, CardHeaderProps } from "./CardHeader";
+import { CardActionArea, CardActionAreaProps } from "./CardActionArea";
+import { CardActions, CardActionsProps } from "./CardActions";
+import { CardMedia, CardMediaProps } from "./CardMedia";
 
-const CardNameSpace = Object.assign(_Card, {
-    Content: _CardContent,
-    Header: _CardHeader,
-    Actions: _CardActions,
-    Media: _CardMedia,
+const CardNameSpace = Object.assign(Card, {
+    Content: CardContent,
+    Header: CardHeader,
+    ActionsArea: CardActionArea,
+    Actions: CardActions,
+    Media: CardMedia,
 });
 
 export type {
     CardProps,
-    _CardContentProps,
-    _CardHeaderProps,
-    _CardActionsProps,
-    _CardMediaProps,
+    CardContentProps,
+    CardHeaderProps,
+    CardActionAreaProps,
+    CardActionsProps,
+    CardMediaProps,
 };
 
 export { CardNameSpace as Card };

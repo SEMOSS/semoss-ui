@@ -1,13 +1,50 @@
-import CardHeader from "@mui/material/CardHeader";
-import { SxProps } from "@mui/system";
-import { CardHeaderProps } from "@mui/material";
+import {
+    CardHeader as MuiCardHeader,
+    TypographyProps,
+    SxProps,
+} from "@mui/material";
 
-export interface _CardHeaderProps extends CardHeaderProps {
+export interface CardHeaderProps {
+    /**
+     * The action to display in the card header.
+     */
+    action?: React.ReactNode;
+
+    /**
+     * The Avatar element to display.
+     */
+    avatar?: React.ReactNode;
+
+    /**
+     * The content of the component.
+     */
+    subheader?: React.ReactNode;
+
+    /**
+      * 
     /** custom style object */
     sx?: SxProps;
+
+    /**
+     * The content of the component.
+     */
+    title?: React.ReactNode;
+
+    /**
+     * These props will be forwarded to the title
+     * (as long as disableTypography is not `true`).
+     */
+    titleTypographyProps?: TypographyProps;
 }
 
-export const _CardHeader = (props: _CardHeaderProps) => {
+export const CardHeader = (props: CardHeaderProps) => {
     const { sx } = props;
-    return <CardHeader sx={sx} {...props} />;
+    return (
+        <MuiCardHeader
+            sx={sx}
+            subheaderTypographyProps={{ variant: "caption" }}
+            titleTypographyProps={{ variant: "body1" }}
+            {...props}
+        />
+    );
 };

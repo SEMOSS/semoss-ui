@@ -1,9 +1,7 @@
 import axios from 'axios';
 import { HashRouter } from 'react-router-dom';
-import { Theme, Notification } from '@semoss/components';
-import { ThemeProvider } from '@semoss/ui';
+import { ThemeProvider, Notification } from '@semoss/ui';
 
-import { theme } from './theme';
 import { RootStore } from '@/stores';
 import { RootStoreContext } from '@/contexts';
 import { Router } from '@/pages';
@@ -31,19 +29,25 @@ axios.interceptors.response.use(
 // create a new root store
 const _store = new RootStore();
 
+// const CFG_THEME = {
+//     primary: {
+//         main: 'red',
+//         light: 'yellow',
+//         dark: 'blue',
+//     },
+// };
+
 export const App = () => {
     return (
         <RootStoreContext.Provider value={_store}>
-            <ThemeProvider>
-                <Theme reset={true} theme={theme}>
-                    <Notification>
-                        <LoadingScreen delay={300}>
-                            <HashRouter>
-                                <Router />
-                            </HashRouter>
-                        </LoadingScreen>
-                    </Notification>
-                </Theme>
+            <ThemeProvider reset={true}>
+                <Notification>
+                    <LoadingScreen>
+                        <HashRouter>
+                            <Router />
+                        </HashRouter>
+                    </LoadingScreen>
+                </Notification>
             </ThemeProvider>
         </RootStoreContext.Provider>
     );

@@ -1,14 +1,7 @@
 import type { Meta, StoryObj } from "@storybook/react";
-import IconButton from "@mui/material/IconButton";
-import MoreVertIcon from "@mui/icons-material/MoreVert";
-import PersonIcon from "@mui/icons-material/Person";
-import AccessTimeIcon from "@mui/icons-material/AccessTime";
-import StarBorderIcon from "@mui/icons-material/StarBorder";
-import Icon from "@mui/material/Icon";
-
-import { Avatar } from "../Avatar/index";
-import { Card } from "./index";
-import { Chip } from "../Chip/index";
+import { MoreVert, Person, AccessTime, StarBorder } from "@mui/icons-material";
+import { IconButton, Icon, Chip, Avatar, Typography } from "../../";
+import { Card } from "./";
 import img from "./placeholder.png";
 
 const meta: Meta<typeof Card> = {
@@ -26,56 +19,60 @@ type Story = StoryObj<typeof Card>;
 
 export const Primary: Story = {
     render: () => (
-        <Card sx={{ width: "35%", height: "480px" }}>
+        <Card sx={{ width: "35%" }}>
             <Card.Media image={img} sx={{ height: "250px" }} />
             <Card.Header
                 title="AHLTA MILESTONES"
+                // titleTypographyProps={{variant:'h1' }}
                 subheader={
-                    <>
-                        <div
-                            style={{
-                                display: "flex",
-                                gap: 10,
-                                marginTop: "12px",
-                            }}
+                    <div
+                        style={{
+                            display: "flex",
+                            gap: 10,
+                            marginTop: "12px",
+                        }}
+                    >
+                        <Avatar
+                            aria-label="avatar"
+                            sx={{ width: "24px", height: "24px" }}
                         >
-                            <Avatar
-                                aria-label="avatar"
-                                sx={{ width: "24px", height: "24px" }}
-                            >
-                                <Icon>
-                                    <PersonIcon />
-                                </Icon>
-                            </Avatar>
-                            <span
-                                style={{
-                                    opacity: 0.7,
-                                    fontSize: "12px",
-                                    marginTop: 4,
-                                }}
-                            >
-                                Published by: j.smith
-                            </span>
-                        </div>
-                    </>
+                            <Icon>
+                                <Person />
+                            </Icon>
+                        </Avatar>
+                        <span
+                        // style={{
+                        //     opacity: 0.7,
+                        //     fontSize: "12px",
+                        //     marginTop: 4,
+                        // }}
+                        >
+                            Publishes by: j.smith
+                        </span>
+                    </div>
                 }
                 action={
                     <IconButton aria-label="settings">
-                        <StarBorderIcon />
+                        <StarBorder />
                     </IconButton>
                 }
             />
-            <Card.Content sx={{ marginTop: -2 }}>
-                <div>Card Content</div>
-                <Chip
-                    label="Chip"
-                    variant="outlined"
-                    sx={{ marginTop: 1 }}
-                    size="small"
-                    clickable={true}
-                />
+            <Card.Content>
+                <div>s PageMaker includ</div>
+                <div style={{ width: "20px" }}>
+                    <Chip
+                        label="Chip"
+                        variant="outlined"
+                        sx={{ marginTop: 1 }}
+                        size="small"
+                        clickable={true}
+                    />
+                </div>
             </Card.Content>
             <Card.Actions>
+                <Typography sx={{ color: "red" }} variant="caption">
+                    Hey
+                </Typography>
                 <div
                     style={{
                         display: "flex",
@@ -86,7 +83,7 @@ export const Primary: Story = {
                 >
                     <div>
                         <IconButton aria-label="action">
-                            <AccessTimeIcon />
+                            <AccessTime />
                         </IconButton>
                         <span
                             style={{
@@ -100,7 +97,7 @@ export const Primary: Story = {
                     </div>
                     <div>
                         <IconButton>
-                            <MoreVertIcon />
+                            <MoreVert />
                         </IconButton>
                     </div>
                 </div>

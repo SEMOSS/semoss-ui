@@ -53,6 +53,7 @@ function workspaceService(
                 const { insightID } = payload;
 
                 if (
+                    $state.current.name === 'embed-terminal' ||
                     $state.current.name === 'insight' ||
                     $state.current.name === 'html'
                 ) {

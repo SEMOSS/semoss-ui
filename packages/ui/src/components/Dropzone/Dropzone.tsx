@@ -1,27 +1,37 @@
-import React from "react";
+import React, { useRef } from "react";
 import {
     useDropzone,
     DropzoneOptions as MuiDropzoneOptions,
 } from "react-dropzone";
-import { Container } from "../Container/index";
-import { Input } from "../Input/index";
-import { Link } from "../Link/index";
-import { Typography } from "../Typography/index";
-import { Avatar } from "../Avatar/index";
-import Icons from "../Icons/index";
+import { styled, SxProps } from "@mui/material";
+import { FileUploadOutlined } from "@mui/icons-material";
+import { Avatar } from "../Avatar";
+import { Container } from "../Container";
+import { IconButton } from "../IconButton";
+import { TextField } from "../TextField";
+import { Typography } from "../Typography";
+
+const StyledLink = styled("button")(({ theme }) => ({
+    display: "inline-block",
+    color: theme.palette.primary.main,
+    cursor: "pointer",
+}));
 
 export interface DropzoneAreaProps extends MuiDropzoneOptions {
     /** custom style object */
-    sx?: any;
+    sx?: SxProps;
 }
 
-export function DropzoneArea(props: DropzoneAreaProps) {
-    const { sx } = props;
-    const { getRootProps, getInputProps, acceptedFiles } = useDropzone({
+interface GetInputPropsOptionsRef {
+    ref?: React.RefObject<HTMLInputElement>;
+}
+
+export function DropzoneArea() {
+    const { getRootProps, getInputProps } = useDropzone({
         noClick: true,
     });
 
-    const fileInput = React.useRef();
+    const fileInput = useRef<HTMLInputElement>();
 
     return (
         <Container
@@ -36,14 +46,27 @@ export function DropzoneArea(props: DropzoneAreaProps) {
                 style={{ paddingTop: "36px", paddingBottom: "36px" }}
                 {...getRootProps({ className: "dropzone" })}
             >
-                <input {...getInputProps()} />
+                <input {...(getInputProps() as GetInputPropsOptionsRef)} />
 
                 <label>
-                    <Input
-                        ref={fileInput}
-                        type="file"
-                        disableUnderline
+                    <TextField
+                        variant="outlined"
+                        type="text"
                         sx={{ display: "none" }}
+                        InputProps={{
+                            endAdornment: (
+                                <IconButton>
+                                    <FileUploadOutlined />
+                                    <input
+                                        ref={fileInput}
+                                        style={{ display: "none" }}
+                                        type="file"
+                                        hidden
+                                        name="[licenseFile]"
+                                    />
+                                </IconButton>
+                            ),
+                        }}
                     />
                     <Typography
                         variant="body1"
@@ -52,19 +75,15 @@ export function DropzoneArea(props: DropzoneAreaProps) {
                         <Avatar
                             sx={{ bgcolor: "#E1F5FE", marginRight: "16px" }}
                         >
-                            <Icons.FileUploadOutlined
-                                sx={{ color: "#40a0ff" }}
-                            />
+                            <FileUploadOutlined sx={{ color: "#40a0ff" }} />
                         </Avatar>
                         <span>
                             {
-                                <Link
-                                    color="inherit"
+                                <StyledLink
                                     onClick={() => fileInput.current.click()}
-                                    sx={{ cursor: "pointer" }}
                                 >
                                     Click to Upload
-                                </Link>
+                                </StyledLink>
                             }
                             &nbsp;or drag and drop
                             <Typography variant="subtitle2">

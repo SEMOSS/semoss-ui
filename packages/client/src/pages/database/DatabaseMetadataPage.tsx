@@ -1,111 +1,49 @@
 import React, { useMemo, useState } from 'react';
 import { observer } from 'mobx-react-lite';
 import {
+    Button,
     styled,
-    Select,
+    Chip,
+    Stack,
+    Typography,
     Table,
-    Scroll,
+    IconButton,
     Icon,
-    Pill,
-    Form,
-} from '@semoss/components';
-import { mdiPencil } from '@mdi/js';
+} from '@semoss/ui';
+import { ArrowCircleDown, Create } from '@mui/icons-material';
 
-import { theme } from '@/theme';
-import { usePixel, useDatabase } from '@/hooks';
+import { usePixel, useDatabase, useRootStore } from '@/hooks';
 import { Section } from '@/components/ui';
-import { Metamodel, MetamodelNode } from '@/components/metamodel';
+import { Metamodel } from '@/components/metamodel';
 
-const StyledPage = styled('div', {
+const StyledPage = styled('div')(() => ({
     position: 'relative',
     zIndex: '0',
-});
+}));
 
-const StyledMetamodelContainer = styled('div', {
+const StyledMetamodelContainer = styled('section')(({ theme }) => ({
     height: '55vh',
     width: '100%',
-    borderWidth: theme.borderWidths.default,
-    borderColor: theme.colors['grey-4'],
-});
+    borderWidth: '1px',
+    borderStyle: 'solid',
+    // borderColor: theme.palette.outline, // TODO: create a theme variable
+    borderRadius: theme.shape.borderRadius,
+}));
 
-const StyledAction = styled('div', {
-    marginBottom: theme.space[2],
-});
-
-const StyledSelect = styled(Select, {
-    maxWidth: '200px',
-});
-
-const StyledItem = styled('div', {
-    display: 'flex',
-    gap: theme.space['2'],
-    marginBottom: theme.space['4'],
-});
-
-const StyledKey = styled('div', {
-    width: theme.space['40'],
-    fontWeight: theme.fontWeights.semibold,
-    fontSize: theme.fontSizes.sm,
-    whiteSpace: 'nowrap',
-    overflow: 'hidden',
-    textOverflow: 'ellipsis',
-});
-
-const StyledValue = styled('div', {
-    flex: 1,
-    flexWrap: 'wrap',
-    fontSize: theme.fontSizes.sm,
-});
-
-const StyledTableScroll = styled(Scroll, {
-    height: '250px',
-    width: '100%',
-    borderColor: theme.colors['grey-4'],
-    borderWidth: theme.borderWidths.default,
-    borderRadius: theme.radii.default,
-});
-
-const StyledTableCell = styled(Table.Cell, {
-    variants: {
-        type: {
-            icon: {
-                width: theme.space['8'],
-            },
-            name: {
-                width: theme.space['40'],
-                whiteSpace: 'nowrap',
-                overflow: 'hidden',
-                textOverflow: 'ellipsis',
-            },
-            description: {
-                fontSize: theme.fontSizes.sm,
-                width: theme.space['80'],
-                overflow: 'hidden',
-            },
-        },
-    },
-});
-
-const StyledTableDescription = styled('div', {
-    fontSize: theme.fontSizes.sm,
-    display: '-webkit-box',
-    overflow: 'hidden',
-    '-webkit-box-orient': 'vertical',
-    '-webkit-line-clamp': 3,
-});
-
-const StyledPillContainer = styled('div', {
-    display: 'flex',
-    flexWrap: 'wrap',
-    gap: theme.space['2'],
-});
+const StyledTableContainer = styled(Table.Container)(() => ({
+    height: '396px',
+}));
 
 export const DatabaseMetadataPage = observer(() => {
     const { id } = useDatabase();
 
+    const { monolithStore } = useRootStore();
+
     // track the selected node
     const [selectedNode, setSelectedNode] =
         useState<React.ComponentProps<typeof Metamodel>['selectedNode']>(null);
+    const [columnPage, setColumnPage] = useState<number>(0);
+    const [columnVisibleRows, setColumnVisibleRows] = useState<number>(5);
 
     // get the metadata
     const getDatabaseMetamodel = usePixel<{
@@ -225,6 +163,23 @@ export const DatabaseMetadataPage = observer(() => {
             });
         }, [getDatabaseMetamodel.status, getDatabaseMetamodel.data]);
 
+    // format the column rows
+    const columnRows = useMemo(() => {
+        if (
+            !selectedNode ||
+            !selectedNode.data ||
+            !selectedNode.data.properties ||
+            selectedNode.data.properties.length === 0
+        ) {
+            return [];
+        }
+
+        return selectedNode.data.properties.slice(
+            columnPage * columnVisibleRows,
+            (columnPage + 1) * columnVisibleRows,
+        );
+    }, [selectedNode, columnPage, columnVisibleRows]);
+
     // get the description + logical names if possible
     const description =
         selectedNode &&
@@ -234,7 +189,7 @@ export const DatabaseMetadataPage = observer(() => {
             ? getDatabaseMetamodel.data.descriptions[selectedNode.id]
             : '';
 
-    const logical =
+    const logical: string[] =
         selectedNode &&
         getDatabaseMetamodel.data &&
         getDatabaseMetamodel.data.logicalNames &&
@@ -242,180 +197,211 @@ export const DatabaseMetadataPage = observer(() => {
             ? getDatabaseMetamodel.data.logicalNames[selectedNode.id]
             : [];
 
+    /**
+     * @name printMeta
+     * @desc export DB pixel
+     */
+    const printMeta = () => {
+        const pixel = `META|DatabaseMetadataToPdf(database=["${id}"] );`;
+        monolithStore.runQuery(pixel).then((response) => {
+            const output = response.pixelReturn[0].output,
+                insightID = response.insightID;
+
+            monolithStore.download(insightID, output);
+        });
+    };
+
     return (
         <StyledPage>
             <Section>
-                <Section.Header>Metamodel</Section.Header>
-                <StyledAction>
-                    <Form>
-                        <Form.Field
-                            label={'Select a Node to View Details:'}
-                            layout="horizontal"
+                <Section.Header
+                    actions={
+                        <Button
+                            startIcon={<ArrowCircleDown />}
+                            variant="outlined"
+                            onClick={() => printMeta()}
                         >
-                            <StyledSelect
-                                value={selectedNode}
-                                options={nodes}
-                                getDisplay={(o: MetamodelNode) => o.data.name}
-                                getKey={(o: MetamodelNode) => o.id}
-                                onChange={(o: MetamodelNode) =>
-                                    setSelectedNode(o)
-                                }
-                            />
-                        </Form.Field>
-                    </Form>
-                </StyledAction>
-                <StyledMetamodelContainer>
-                    <Metamodel
-                        nodes={nodes}
-                        edges={edges}
-                        selectedNode={selectedNode}
-                        onSelectNode={(n) => {
-                            setSelectedNode(n);
+                            Print Metadata
+                        </Button>
+                    }
+                >
+                    Metamodel
+                </Section.Header>
+                <Stack spacing={2}>
+                    {/* <StyledSelect
+                        value={selectedNode || ''}
+                        onChange={(e) => {
+                            setSelectedNode(e.target.value as MetamodelNode);
                         }}
-                    />
-                </StyledMetamodelContainer>
+                        renderValue={(n: MetamodelNode) => n.data.name}
+                        multiple={false}
+                    >
+                        {nodes.map((n) => {
+                            return (
+                                //@ts-expect-error This is an error in the component
+                                <MenuItem key={n.id} value={n}>
+                                    {n.data.name}
+                                </MenuItem>
+                            );
+                        })}
+                    </StyledSelect> */}
+                    <StyledMetamodelContainer>
+                        <Metamodel
+                            nodes={nodes}
+                            edges={edges}
+                            selectedNode={selectedNode}
+                            onSelectNode={(n) => {
+                                setSelectedNode(n);
+                            }}
+                            isInteractive={true}
+                        />
+                    </StyledMetamodelContainer>
+                </Stack>
             </Section>
 
             {selectedNode && (
                 <Section>
-                    <Section.Header>Information</Section.Header>
+                    <Section.Header>Description</Section.Header>
+                    <Typography variant="body2">{description}</Typography>
+                </Section>
+            )}
 
-                    <StyledItem>
-                        <StyledKey>Description</StyledKey>
-                        <StyledValue>{description}</StyledValue>
-                    </StyledItem>
-                    <StyledItem>
-                        <StyledKey>Logical Names</StyledKey>
-                        <StyledValue>
-                            <StyledPillContainer>
-                                {logical.map((logicalName) => {
-                                    return (
-                                        <Pill
-                                            title={logicalName}
-                                            key={logicalName}
-                                            closeable={false}
-                                            color={'primary'}
-                                        >
-                                            {logicalName}
-                                        </Pill>
-                                    );
-                                })}
-                            </StyledPillContainer>
-                        </StyledValue>
-                    </StyledItem>
+            {selectedNode && (
+                <Section>
+                    <Section.Header>Logical Names</Section.Header>
+                    <Stack direction={'row'} spacing={1} flexWrap={'wrap'}>
+                        {logical.map((logicalName) => {
+                            return (
+                                <Chip
+                                    key={logicalName}
+                                    label={logicalName}
+                                    color={'primary'}
+                                    variant={'outlined'}
+                                    size={'small'}
+                                ></Chip>
+                            );
+                        })}
+                    </Stack>
                 </Section>
             )}
 
             {selectedNode && (
                 <Section>
                     <Section.Header>Columns</Section.Header>
-                    <StyledTableScroll>
-                        <Table sticky={true} border={false} layout="fixed">
+                    <StyledTableContainer>
+                        <Table stickyHeader>
                             <Table.Head>
                                 <Table.Row>
-                                    <StyledTableCell type={'icon'}>
-                                        &nbsp;
-                                    </StyledTableCell>
-                                    <StyledTableCell type={'name'}>
-                                        Name
-                                    </StyledTableCell>
-                                    <StyledTableCell type={'description'}>
-                                        Description
-                                    </StyledTableCell>
+                                    <Table.Cell>&nbsp;</Table.Cell>
+                                    <Table.Cell>Name</Table.Cell>
+                                    <Table.Cell>Description</Table.Cell>
                                     <Table.Cell>Logical Names</Table.Cell>
                                 </Table.Row>
                             </Table.Head>
                             <Table.Body>
-                                {selectedNode.data.properties.map(
-                                    (property, idx) => {
-                                        const { id, name, type } = property;
+                                {columnRows.map((property, idx) => {
+                                    const { id, name } = property;
 
-                                        const description =
-                                            getDatabaseMetamodel.data &&
-                                            getDatabaseMetamodel.data
-                                                .descriptions &&
-                                            getDatabaseMetamodel.data
-                                                .descriptions[id]
-                                                ? getDatabaseMetamodel.data
-                                                      .descriptions[id]
-                                                : '';
+                                    const description =
+                                        getDatabaseMetamodel.data &&
+                                        getDatabaseMetamodel.data
+                                            .descriptions &&
+                                        getDatabaseMetamodel.data.descriptions[
+                                            id
+                                        ]
+                                            ? getDatabaseMetamodel.data
+                                                  .descriptions[id]
+                                            : '';
 
-                                        const logical =
-                                            getDatabaseMetamodel.data &&
-                                            getDatabaseMetamodel.data
-                                                .logicalNames &&
-                                            getDatabaseMetamodel.data
-                                                .logicalNames[id]
-                                                ? getDatabaseMetamodel.data
-                                                      .logicalNames[id]
-                                                : [];
+                                    const logical: string[] =
+                                        getDatabaseMetamodel.data &&
+                                        getDatabaseMetamodel.data
+                                            .logicalNames &&
+                                        getDatabaseMetamodel.data.logicalNames[
+                                            id
+                                        ]
+                                            ? getDatabaseMetamodel.data
+                                                  .logicalNames[id]
+                                            : [];
 
-                                        return (
-                                            <Table.Row key={idx}>
-                                                <StyledTableCell
-                                                    title={type}
-                                                    type={'icon'}
+                                    return (
+                                        <Table.Row key={idx}>
+                                            <Table.Cell>
+                                                <IconButton disabled={true}>
+                                                    <Create />
+                                                </IconButton>
+                                            </Table.Cell>
+                                            <Table.Cell>{name}</Table.Cell>
+                                            <Table.Cell>
+                                                <Typography variant={'caption'}>
+                                                    {description}
+                                                </Typography>
+                                            </Table.Cell>
+                                            <Table.Cell>
+                                                <Stack
+                                                    direction={'row'}
+                                                    spacing={1}
+                                                    flexWrap={'wrap'}
                                                 >
-                                                    <Icon
-                                                        path={mdiPencil}
-                                                    ></Icon>
-                                                </StyledTableCell>
-                                                <StyledTableCell
-                                                    title={name}
-                                                    type={'name'}
-                                                >
-                                                    {name}
-                                                </StyledTableCell>
-                                                <StyledTableCell
-                                                    type={'description'}
-                                                    title={description}
-                                                >
-                                                    <StyledTableDescription>
-                                                        {description}
-                                                    </StyledTableDescription>
-                                                </StyledTableCell>
-                                                <StyledTableCell>
-                                                    <StyledPillContainer>
-                                                        {logical.map(
-                                                            (logicalName) => {
-                                                                return (
-                                                                    <Pill
-                                                                        title={
-                                                                            logicalName
-                                                                        }
-                                                                        key={
-                                                                            logicalName
-                                                                        }
-                                                                        closeable={
-                                                                            false
-                                                                        }
-                                                                        color={
-                                                                            'primary'
-                                                                        }
-                                                                    >
-                                                                        {
-                                                                            logicalName
-                                                                        }
-                                                                    </Pill>
-                                                                );
-                                                            },
-                                                        )}
-                                                    </StyledPillContainer>
-                                                </StyledTableCell>
-                                            </Table.Row>
-                                        );
-                                    },
-                                )}
+                                                    {logical.map(
+                                                        (logicalName) => {
+                                                            return (
+                                                                <Chip
+                                                                    key={
+                                                                        logicalName
+                                                                    }
+                                                                    label={
+                                                                        logicalName
+                                                                    }
+                                                                    color={
+                                                                        'primary'
+                                                                    }
+                                                                    variant={
+                                                                        'outlined'
+                                                                    }
+                                                                    size={
+                                                                        'small'
+                                                                    }
+                                                                ></Chip>
+                                                            );
+                                                        },
+                                                    )}
+                                                </Stack>
+                                            </Table.Cell>
+                                        </Table.Row>
+                                    );
+                                })}
                             </Table.Body>
+                            <Table.Footer>
+                                <Table.Row>
+                                    <Table.Pagination
+                                        onPageChange={(e, v) => {
+                                            setColumnPage(v);
+                                        }}
+                                        page={columnPage}
+                                        rowsPerPage={columnVisibleRows}
+                                        onRowsPerPageChange={(e) => {
+                                            setColumnVisibleRows(
+                                                e.target
+                                                    .value as unknown as number,
+                                            );
+                                        }}
+                                        count={
+                                            selectedNode.data.properties.length
+                                        }
+                                        rowsPerPageOptions={[7, 10, 25]}
+                                    />
+                                </Table.Row>
+                            </Table.Footer>
                         </Table>
-                    </StyledTableScroll>
+                    </StyledTableContainer>
                 </Section>
             )}
             {selectedNode && getData.status === 'SUCCESS' && (
                 <Section>
                     <Section.Header>Data</Section.Header>
-                    <StyledTableScroll>
-                        <Table sticky={true} border={false} layout="fixed">
+                    <StyledTableContainer>
+                        <Table stickyHeader>
                             <Table.Head>
                                 <Table.Row>
                                     {getData.data.data.headers.map((h) => {
@@ -447,7 +433,7 @@ export const DatabaseMetadataPage = observer(() => {
                                 })}
                             </Table.Body>
                         </Table>
-                    </StyledTableScroll>
+                    </StyledTableContainer>
                 </Section>
             )}
         </StyledPage>

@@ -1,7 +1,5 @@
 'use strict';
 
-import { react2angular } from 'react2angular';
-
 /**
  * @name app.config
  * @desc app configuration
@@ -209,41 +207,6 @@ function config(
                 )
                     .then((module) => {
                         $ocLazyLoad.load(module.default);
-                    })
-                    .catch((err) => {
-                        console.error('Error: ', err);
-                    });
-            },
-        })
-        .state('home.react-test', {
-            url: '/test',
-            template: '<react-test></react-test>',
-            lazyLoad: ($transition$) => {
-                const $ocLazyLoad = $transition$.injector().get('$ocLazyLoad');
-
-                return import(
-                    /* webpackChunkName: "react/test" */ '@client/exports'
-                )
-                    .then(({ Test }) => {
-                        // angularize the component
-                        const mod = angular
-                            .module('react.test', [])
-                            // Counterfeit
-                            .component(
-                                'reactTest',
-                                react2angular(
-                                    Test,
-                                    [],
-                                    [
-                                        'semossCoreService',
-                                        '$stateParams',
-                                        'CONFIG',
-                                    ]
-                                )
-                            );
-
-                        // load it in
-                        $ocLazyLoad.load(mod);
                     })
                     .catch((err) => {
                         console.error('Error: ', err);
@@ -458,6 +421,41 @@ function config(
         .state('terminal', {
             url: '/terminal',
             template: '<viewer-terminal></viewer-terminal>',
+            resolve: {
+                checkConfig: [
+                    '$q',
+                    '$state',
+                    'CONFIG',
+                    'semossCoreService',
+                    'monolithService',
+                    function (
+                        $q,
+                        $state,
+                        CONFIG,
+                        semossCoreService,
+                        monolithService
+                    ) {
+                        if (CONFIG.security && !CONFIG.loggedIn) {
+                            $state.go('login');
+                            return true;
+                        }
+                        if (!CONFIG.version) {
+                            return securityConfig(
+                                $q,
+                                semossCoreService,
+                                monolithService,
+                                CONFIG
+                            );
+                        }
+
+                        return true;
+                    },
+                ],
+            },
+        })
+        .state('embed-terminal', {
+            url: '/embed-terminal',
+            template: '<embed-terminal></embed-terminal>',
             resolve: {
                 checkConfig: [
                     '$q',

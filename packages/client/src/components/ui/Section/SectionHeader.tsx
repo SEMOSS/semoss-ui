@@ -1,21 +1,18 @@
 import { ComponentPropsWithRef, forwardRef, ForwardedRef } from 'react';
-import { styled } from '@semoss/components';
+import { styled, Typography } from '@semoss/ui';
 
-import { theme } from '@/theme';
-
-const StyledSectionHeader = styled('div', {
+const StyledSectionHeader = styled('div')(({ theme }) => ({
     display: 'flex',
     alignItems: 'center',
-    marginBottom: theme.space['4'],
-    gap: theme.space['2'],
-});
+    justifyContent: 'space-between',
+    width: '100%',
+    marginBottom: theme.spacing(2),
+    gap: theme.spacing(1),
+}));
 
-const StyledSectionTitle = styled('h4', {
-    color: theme.colors['grey-2'],
-    fontSize: theme.fontSizes.md,
-    fontWeight: theme.fontWeights.semibold,
-    textTransform: 'uppercase',
-});
+const StyledSectionTitle = styled(Typography)(() => ({
+    // textTransform: 'uppercase',
+}));
 
 export interface SectionHeaderProps extends ComponentPropsWithRef<'div'> {
     /** Actions to Append after the title */
@@ -30,7 +27,7 @@ const _SectionHeader = (
 
     return (
         <StyledSectionHeader ref={ref} {...otherProps}>
-            <StyledSectionTitle>{children}</StyledSectionTitle>
+            <StyledSectionTitle variant={'h6'}>{children}</StyledSectionTitle>
             {actions}
         </StyledSectionHeader>
     );

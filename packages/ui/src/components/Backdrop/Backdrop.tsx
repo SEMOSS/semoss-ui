@@ -1,14 +1,17 @@
 import { ReactNode } from "react";
-import MuiBackdrop from "@mui/material/Backdrop";
-import { SxProps } from "@mui/system";
-import { BackdropProps as MuiBackdropProps } from "@mui/material";
+import { Backdrop as MuiBackdrop, SxProps } from "@mui/material";
 
-export interface BackdropProps extends MuiBackdropProps {
+export interface BackdropProps {
     /** children to be rendered */
     children?: ReactNode;
 
     /** custom style object */
     sx?: SxProps;
+
+    /**
+     * If `true`, the component is shown.
+     */
+    open: boolean;
 }
 
 export const Backdrop = (props: BackdropProps) => {

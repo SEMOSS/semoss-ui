@@ -15,7 +15,7 @@ const preview = {
 export default preview;
 
 // .storybook/preview.js
-import { CssBaseline, createTheme } from "@mui/material";
+// import { CssBaseline, createTheme } from "@mui/material";
 import { withThemeFromJSXProvider } from "@storybook/addon-styling";
 import { ThemeProvider, lightTheme, darkTheme } from "../src";
 
@@ -27,8 +27,16 @@ export const decorators = [
         },
         defaultTheme: "light",
         Provider: ({ children, theme }) => {
-            return <ThemeProvider theme={theme}>{children} </ThemeProvider>;
+            return (
+                <ThemeProvider theme={theme} reset={true}>
+                    {children}
+                    {/* Load in Inter Font for Storybook */}
+                    <link
+                        rel="stylesheet"
+                        href="https://fonts.googleapis.com/css2?family=Inter:wght@100;200;300;400;500;600;700&display=swap"
+                    ></link>
+                </ThemeProvider>
+            );
         },
-        GlobalStyles: CssBaseline,
     }),
 ];

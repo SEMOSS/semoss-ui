@@ -155,11 +155,14 @@ import './components/catalog/catalog.directive';
 import './components/build/build.directive';
 import './components/project/project.directive';
 import './components/document-qa/document-qa.directive';
+import './components/embed-terminal/embed-terminal.directive';
 
 // markdown
 import './components/markdown/markdown.directive';
 
 import './components/rewrite/rewrite.directive';
+
+import '../custom/override.scss';
 
 angular.module('app', [
     /** angular libs **/
@@ -292,11 +295,12 @@ angular.module('app', [
     'app.edit-assisted-query.directive',
     'app.document-qa.directive',
     'app.rewrite.directive',
+    'app.embed-terminal.directive',
     'react',
 ]);
 
 import { react2angular } from 'react2angular';
-import { Moose } from '@client/exports';
+import { Moose } from '@/react/';
 
 angular
     .module('react', [])

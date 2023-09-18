@@ -1,10 +1,13 @@
 node_modules
+.vscode
 .DS_Store
 dist
 *.local
 .project
 .history
 .eslintcache
+*.rollup.cache
+tsconfig.tsbuildinfo
 
 # Only ignore the top level
 index.html

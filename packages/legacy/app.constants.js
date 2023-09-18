@@ -1,4 +1,4 @@
-'use strict';
+('use strict');
 
 /**
  * @name app.config
@@ -374,7 +374,7 @@ angular
         ],
     })
     // Add new visualizations to visualization section at bottom of this arrayok
-    .constant('WIDGETS', ['anthem-map-control'])
+    .constant('WIDGETS', [])
     .constant('SHARED_TOOLS', {
         // NEW THEME TOOLS
         grid: {

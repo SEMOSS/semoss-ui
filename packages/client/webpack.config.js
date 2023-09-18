@@ -18,20 +18,15 @@ const config = {
     },
     output: {
         path: path.resolve(__dirname, 'dist'),
-        // publicPath: '/',
+        clean: true,
     },
     plugins: [
         new HtmlWebpackPlugin({
-            favicon: './src/assets/favicon.ico',
+            title: process.env.THEME_TITLE,
+            favicon: process.env.THEME_FAVICON,
             scriptLoading: 'module',
-            templateContent: `
-                <html>
-                <body>
-                    <div id="root"></div>
-                </body>
-                </html>
-            `,
-            name: 'index.html',
+            template: './src/template.html',
+            filename: 'index.html',
         }),
         // importMetaEnv.webpack({ example: '.env.local' }),
         new webpack.ProvidePlugin({
@@ -39,7 +34,9 @@ const config = {
             ReactDOM: 'react-dom',
         }),
         new webpack.DefinePlugin({
-            'process.env': JSON.stringify(process.env),
+            'process.env': JSON.stringify({
+                ...process.env,
+            }),
         }),
         new MiniCssExtractPlugin({
             filename: '[name].css',

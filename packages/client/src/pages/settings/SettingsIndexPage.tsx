@@ -1,204 +1,197 @@
 import { useState, useEffect } from 'react';
-import { styled, Input, Grid, Card, Typography } from '@semoss/ui';
 import {
-    mdiAccountGroup,
-    mdiClipboardTextOutline,
-    mdiDatabase,
-    mdiDatabaseSearch,
-    mdiTabletCellphone,
-    mdiTextBoxMultipleOutline,
-    mdiClock,
-} from '@mdi/js';
+    Card,
+    Grid,
+    IconButton,
+    MenuItem,
+    Select,
+    Search,
+    styled,
+    Typography,
+} from '@semoss/ui';
+
+import { Search as SearchIcon, MoreVert } from '@mui/icons-material';
+
 import { useNavigate } from 'react-router-dom';
+
+import { AdminPanel } from '@/assets/img/AdminPanel';
+import { ArchiveBox } from '@/assets/img/ArchiveBox';
+import { Construction } from '@/assets/img/Construction';
+import { DatabaseLayers } from '@/assets/img/DatabaseLayers';
+import { Folder } from '@/assets/img/Folder';
+import { Group } from '@/assets/img/Group';
+import { GroupRounded } from '@/assets/img/GroupRounded';
+import { Jobs } from '@/assets/img/Jobs';
+import { Link } from '@/assets/img/Link';
+import { ModelBrain } from '@/assets/img/ModelBrain';
+import { PaintRounded } from '@/assets/img/PaintRounded';
+import { PersonRounded } from '@/assets/img/PersonRounded';
+import { SEMOSS } from '@/assets/img/SEMOSS';
 import { useSettings } from '@/hooks';
-import { LoadingScreen } from '@/components/ui';
 
-const StyledSearch = styled('div')({
-    width: '50%',
-});
+import { SETTINGS_ROUTES } from './settings.constants';
 
-const StyledSetHeader = styled('div')(({ theme }) => ({
+const StyledContainer = styled('div')(({ theme }) => ({
     display: 'flex',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: theme.spacing(4),
+    width: 'auto',
+    flexDirection: 'column',
+    alignItems: 'flex-start',
+    gap: theme.spacing(3),
 }));
 
-const cardsArr = [
-    {
-        title: 'Database Settings',
-        route: '/settings/database-permissions',
-        description: 'View and edit settings for databases',
-        pendingRequests: 15,
-        icon: mdiDatabase,
-        adminPortal: false,
+const StyledCard = styled(Card)(() => ({
+    '&:hover': {
+        cursor: 'pointer',
     },
-    {
-        title: 'Project Settings',
-        route: '/settings/project-permissions',
-        description: 'View and edit settings for projects',
-        pendingRequests: 15,
-        icon: mdiClipboardTextOutline,
-        adminPortal: false,
-    },
-    {
-        title: 'Insight Settings',
-        route: '/settings/insight-permissions',
-        description: 'View and edit settings for project insights',
-        pendingRequests: 15,
-        icon: mdiTextBoxMultipleOutline,
-        adminPortal: false,
-    },
-    {
-        title: 'Member Settings',
-        route: '/settings/members',
-        description:
-            'Add new members, reset passwords, and edit member-based permissions.',
-        pendingRequests: 15,
-        icon: mdiAccountGroup,
-        adminPortal: true,
-    },
-    {
-        title: 'Admin Query',
-        route: '/settings/admin-query',
-        description: 'Query on SEMOSS based databases',
-        pendingRequests: 3,
-        icon: mdiDatabaseSearch,
-        adminPortal: true,
-    },
-    {
-        title: 'Social Properties',
-        route: '/settings/social-properties',
-        description: 'Edit social properties',
-        pendingRequests: 3,
-        icon: mdiTabletCellphone,
-        adminPortal: true,
-    },
-    {
-        title: 'Jobs',
-        route: '/settings/jobs',
-        description: 'View, add, and edit scheduled jobs',
-        pendingRequests: 3,
-        icon: mdiClock,
-        adminPortal: false,
-    },
-    // {
-    //     title: 'External Connections',
-    //     route: '/settings/external-connections',
-    //     description:
-    //         'Integrate with external services like Dropbox, Google, Github, and more.',
-    //     pendingRequests: 15,
-    //     icon: mdiDatabase,
-    // },
-    // {
-    //     title: 'Teams',
-    //     route: '/settings/teams',
-    //     description: 'Create and manage teams and set team level permissions.',
-    //     pendingRequests: 15,
-    //     icon: mdiDatabase,
-    // },
-    // {
-    //     title: 'Teams Management',
-    //     route: '/settings/teams-management',
-    //     description: 'Create teams and manage members.',
-    //     pendingRequests: 15,
-    //     icon: mdiDatabase,
-    // },
-    // {
-    //     title: 'Teams Permissions',
-    //     route: '/settings/teams-permissions',
-    //     description: 'Edit permission roles of teams.',
-    //     pendingRequests: 15,
-    //     icon: mdiDatabase,
-    // },
-    // {
-    //     title: 'My Profile',
-    //     route: '/settings/my-profile',
-    //     description: 'Update profile settings.',
-    //     pendingRequests: 15,
-    //     icon: mdiDatabase,
-    // },
-    // {
-    //     title: 'Theming',
-    //     route: '/settings/theme',
-    //     description: 'Update theme, this is an admin process.',
-    //     pendingRequests: 15,
-    //     icon: mdiDatabase,
-    // },
-];
+}));
+
+const StyledCardHeader = styled(Card.Header)(({ theme }) => ({
+    height: theme.spacing(7.75),
+    margin: '0px 0px 0px 0px',
+}));
+
+const StyledCardContent = styled(Card.Content)(({ theme }) => ({
+    height: theme.spacing(5),
+    margin: '0px 0px 0px 0px',
+}));
+
+const StyledSearchbarContainer = styled('div')(({ theme }) => ({
+    display: 'flex',
+    width: '100%',
+    alignItems: 'flex-start',
+    gap: theme.spacing(3),
+}));
+
+const StyledSort = styled(Select)(() => ({
+    width: '20%',
+}));
+
+const CardActionsLeft = styled('div')({
+    display: 'flex',
+    width: '100%',
+    alignItems: 'flex-start',
+});
+
+const CardActionsRight = styled('div')({
+    display: 'flex',
+    marginLeft: 'auto',
+});
+
+const DEFAULT_CARDS = SETTINGS_ROUTES.filter(
+    (r) => !!r.path && r.history.length < 2,
+);
+
+const IconMapper = {
+    'Database Settings': <DatabaseLayers />,
+    'Model Settings': (
+        <ModelBrain color={'#0471F0'} width={'50'} height={'50'} />
+    ),
+    'Storage Settings': <ArchiveBox />,
+    'App Settings': <Folder />,
+    'Insight Settings': <SEMOSS />,
+    'Member Settings': <Group />,
+    Configuration: <Construction />,
+    'Admin Query': <AdminPanel />,
+    'External Connections': <Link />,
+    Teams: <GroupRounded />,
+    'Teams Management': <GroupRounded />,
+    'Teams Permissions': <GroupRounded />,
+    'My Profile': <PersonRounded />,
+    Theming: <PaintRounded />,
+    Jobs: <Jobs />,
+};
 
 export const SettingsIndexPage = () => {
     const navigate = useNavigate();
-    const [cards, setCards] = useState(cardsArr);
-    const [search, setSearch] = useState<string>('');
-
-    // load while it filters admin
-    const [loading, setLoading] = useState(true);
-
     const { adminMode } = useSettings();
+    const [cards, setCards] = useState(DEFAULT_CARDS);
+    const [search, setSearch] = useState<string>('');
+    const [sort, setSort] = useState('Name');
+
+    // const { adminMode } = useSettings();
 
     useEffect(() => {
+        // reset the options if there is no search value
         if (!search) {
-            // reset the options if there is no search value
-            setCards(cardsArr);
-        } else {
-            const filtered = cardsArr.filter((c) => {
-                return c.title.toLowerCase().includes(search.toLowerCase());
-            });
-            setCards(filtered);
+            setCards(DEFAULT_CARDS);
+            return;
         }
 
-        if (loading) {
-            setTimeout(() => {
-                setLoading(false);
-            }, 500);
-        }
+        const cleanedSearch = search.toLowerCase();
+
+        const filtered = DEFAULT_CARDS.filter((c) => {
+            return c.title.toLowerCase().includes(cleanedSearch);
+        });
+
+        setCards(filtered);
     }, [search]);
 
-    if (loading) {
-        return (
-            <LoadingScreen.Trigger description="Retrieving Settings"></LoadingScreen.Trigger>
-        );
-    }
-
     return (
-        <>
-            <Typography variant="subtitle1">
-                View and make changes to settings at the database, project, and
-                insight level.
-                {adminMode
-                    ? ' As an admin conduct queries on SEMOSS specific databases as well as view and edit existing social properties'
-                    : ''}
-            </Typography>
-            <StyledSetHeader>
-                <StyledSearch>
-                    <Input
-                        onChange={(e) => {
-                            setSearch(e.target.value);
-                        }}
-                        placeholder={'Search....'}
-                        // Move to Header
-                    ></Input>
-                </StyledSearch>
-            </StyledSetHeader>
+        <StyledContainer>
+            <StyledSearchbarContainer>
+                <Search
+                    label={'Search'}
+                    size={'small'}
+                    onChange={(e) => {
+                        setSearch(e.target.value);
+                    }}
+                    placeholder={'Search'}
+                    InputProps={{
+                        startAdornment: <SearchIcon />,
+                    }}
+                    sx={{ width: '80%' }}
+                />
+                <StyledSort
+                    size={'small'}
+                    label={'Sort'}
+                    value={sort}
+                    onChange={(e) => setSort(e.target.value)}
+                >
+                    <MenuItem value="Name">Name</MenuItem>
+                </StyledSort>
+            </StyledSearchbarContainer>
+
             <Grid container spacing={2}>
                 {cards.map((c, i) => {
-                    return c.adminPortal && !adminMode ? (
-                        <div key={i}></div>
-                    ) : (
-                        <Grid item key={i} sm={12} md={6} lg={4} xl={3}>
-                            <Card onClick={() => navigate(c.route)}>
-                                <Card.Header title={c.title} />
-                                <Card.Content sx={{ marginTop: -2 }}>
-                                    <Typography variant="caption">
-                                        {c.description}
-                                    </Typography>
-                                </Card.Content>
-                            </Card>
-                        </Grid>
-                    );
+                    if (c.admin && !adminMode) {
+                        return;
+                    } else {
+                        return (
+                            <Grid item key={i} sm={12} md={6} lg={4} xl={3}>
+                                <StyledCard onClick={() => navigate(c.path)}>
+                                    <StyledCardHeader
+                                        title={c.title}
+                                        titleTypographyProps={{
+                                            variant: 'body1',
+                                        }}
+                                        avatar={IconMapper[c.title]}
+                                    />
+                                    <StyledCardContent>
+                                        <Typography variant="body2">
+                                            {c.description}
+                                        </Typography>
+                                    </StyledCardContent>
+                                    {/* disabled for now */}
+                                    <Card.Actions>
+                                        <CardActionsLeft>
+                                            {' '}
+                                            {/* <AccessTime fontSize="small" />
+                                            <Typography variant="caption">
+                                                7/19/2023 10:00AM
+                                            </Typography> */}
+                                        </CardActionsLeft>
+                                        <CardActionsRight>
+                                            <IconButton disabled={true}>
+                                                <MoreVert />
+                                            </IconButton>
+                                        </CardActionsRight>
+                                    </Card.Actions>
+                                </StyledCard>
+                            </Grid>
+                        );
+                    }
                 })}
             </Grid>
-        </>
+        </StyledContainer>
     );
 };

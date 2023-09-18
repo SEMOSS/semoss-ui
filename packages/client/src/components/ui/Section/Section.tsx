@@ -1,18 +1,19 @@
+import React from 'react';
 import { ComponentPropsWithRef, forwardRef, ForwardedRef } from 'react';
-import { styled } from '@semoss/components';
 
-import { theme } from '@/theme';
+import { styled } from '@semoss/ui';
 
-const StyledSection = styled('section', {
-    borderBottomWidth: theme.borderWidths.default,
-    borderBottomColor: theme.colors['grey-4'],
-    paddingBottom: theme.space[4],
-    marginBottom: theme.space[2],
+const StyledSection = styled('section')(({ theme }) => ({
+    paddingBottom: theme.spacing(2),
+    marginBottom: theme.spacing(1),
+    borderBottomWidth: '1px',
+    borderBottomStyle: 'solid',
+    borderBottomColor: theme.palette.divider,
     '&:last-child': {
         borderBottom: 'none',
         marginBottom: 0,
     },
-});
+}));
 
 export type SectionProps = ComponentPropsWithRef<'section'>;
 

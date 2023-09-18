@@ -149,7 +149,7 @@ module.exports = {
             '@': path.resolve(__dirname, './'),
             '@client': path.resolve(__dirname, '../client'),
             images: path.resolve(__dirname, './core/resources/img'),
-            theme$: path.resolve(__dirname, './style/src/theme.scss'),
+            theme$: path.resolve(__dirname, './custom/theme.scss'),
         },
         extensions: [
             '.*',
@@ -163,6 +163,7 @@ module.exports = {
         ],
         modules: [
             'react',
+            'custom',
             'core',
             'style',
             'widget',

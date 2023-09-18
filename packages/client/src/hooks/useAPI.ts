@@ -1,8 +1,8 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
-import { useNotification } from '@semoss/components';
+import { useNotification } from '@semoss/ui';
 
 import { useRootStore } from './useRootStore';
-import { MonolithStore } from '@/stores/monolith';
+import { MonolithStore } from '@/stores';
 
 interface APIState<A extends keyof MonolithStore> {
     /** Status of the api call */
@@ -124,7 +124,7 @@ export function useAPI<A extends keyof MonolithStore>(
 
                 notification.add({
                     color: 'error',
-                    content: error.message,
+                    message: error.message,
                 });
 
                 setState({

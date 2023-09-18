@@ -1,24 +1,54 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Outlet, Link, useLocation, matchPath } from 'react-router-dom';
-import { styled, Typography } from '@semoss/ui';
+import {
+    Outlet,
+    Link,
+    useLocation,
+    matchPath,
+    useParams,
+} from 'react-router-dom';
+import {
+    styled,
+    Typography,
+    Breadcrumbs,
+    Stack,
+    Container,
+    ToggleButton,
+    Tooltip,
+    Paper,
+} from '@semoss/ui';
 
 import { useRootStore } from '@/hooks';
 import { SettingsContext } from '@/contexts';
 import { Page } from '@/components/ui/';
 import { SETTINGS_ROUTES } from './settings.constants';
+import { observer } from 'mobx-react-lite';
+import { AdminPanelSettingsOutlined } from '@mui/icons-material';
 
-const Stack = styled('div')(({ theme }) => ({
-    display: 'flex',
-    flexDirection: 'column',
-    gap: theme.spacing(1),
+const StyledAdminContainer = styled(Paper)(({ theme }) => ({
+    position: 'absolute',
+    top: theme.spacing(1),
+    right: theme.spacing(1),
+    zIndex: 1,
 }));
 
-export const SettingsLayout = () => {
-    const { monolithStore } = useRootStore();
-    const { pathname } = useLocation();
+const StyledLink = {
+    textDecoration: 'none',
+    color: 'inherit',
+};
+export const SettingsLayout = observer(() => {
+    const { configStore } = useRootStore();
+    const { id } = useParams();
+    const { pathname, state } = useLocation();
 
     // track the active breadcrumbs
     const [adminMode, setAdminMode] = useState(false);
+
+    // if the user is not an admin turn it off
+    useEffect(() => {
+        if (!configStore.store.user.admin) {
+            setAdminMode(false);
+        }
+    }, [configStore.store.user.admin]);
 
     const matchedRoute = useMemo(() => {
         for (const r of SETTINGS_ROUTES) {
@@ -29,38 +59,6 @@ export const SettingsLayout = () => {
 
         return null;
     }, [pathname]);
-
-    // check if the user is an admin on load
-    useEffect(() => {
-        monolithStore
-            .isAdminUser()
-            .then((response) => {
-                if (response) {
-                    setAdminMode(true);
-                } else {
-                    setAdminMode(false);
-                }
-            })
-            .catch(() => {
-                setAdminMode(false);
-            });
-    }, []);
-
-    // const showAdminToggle = () => {
-    //     let bool = false;
-
-    //     if (admin) {
-    //         bool = true;
-    //     }
-
-    //     if (isActive('/settings/social-properties')) {
-    //         bool = false;
-    //     } else if (isActive('/settings/admin-query')) {
-    //         bool = false;
-    //     }
-
-    //     return bool;
-    // };
 
     if (!matchedRoute) {
         return null;
@@ -75,18 +73,104 @@ export const SettingsLayout = () => {
             <Page
                 header={
                     <Stack>
-                        <div>
-                            {matchedRoute.path ? (
-                                <>
-                                    <Link to={'.'}>Settings</Link>
-                                    <Link to={matchedRoute.path}>
-                                        {matchedRoute.title}
+                        {matchedRoute.path ? (
+                            <div
+                                style={{
+                                    display: 'flex',
+                                    justifyContent: 'space-between',
+                                }}
+                            >
+                                <Breadcrumbs separator="/">
+                                    <Link to={'.'} style={StyledLink}>
+                                        Settings
                                     </Link>
-                                </>
-                            ) : null}
-                        </div>
+                                    {matchedRoute.history.map((link, i) => {
+                                        return (
+                                            <Link
+                                                style={StyledLink}
+                                                to={link.replace('<id>', id)}
+                                                key={i + link}
+                                                state={...state}
+                                            >
+                                                {link.includes('<id>')
+                                                    ? id
+                                                    : matchedRoute.title}
+                                            </Link>
+                                        );
+                                    })}
+                                </Breadcrumbs>
+                                {configStore.store.user.admin ? (
+                                    <StyledAdminContainer>
+                                        <Tooltip
+                                            title={
+                                                !adminMode
+                                                    ? 'Enable Admin Mode'
+                                                    : 'Disable Admin Mode'
+                                            }
+                                        >
+                                            <div>
+                                                <ToggleButton
+                                                    size="small"
+                                                    color={'primary'}
+                                                    value={'adminMode'}
+                                                    selected={adminMode}
+                                                    onClick={() =>
+                                                        setAdminMode(!adminMode)
+                                                    }
+                                                >
+                                                    <AdminPanelSettingsOutlined />
+                                                </ToggleButton>
+                                            </div>
+                                        </Tooltip>
+                                    </StyledAdminContainer>
+                                ) : null}
+                            </div>
+                        ) : (
+                            <div
+                                style={{
+                                    height: '24px',
+                                    display: 'flex',
+                                    justifyContent: 'flex-end',
+                                }}
+                            >
+                                {configStore.store.user.admin ? (
+                                    <StyledAdminContainer>
+                                        <Tooltip
+                                            title={
+                                                !adminMode
+                                                    ? 'Enable Admin Mode'
+                                                    : 'Disable Admin Mode'
+                                            }
+                                        >
+                                            <div>
+                                                <ToggleButton
+                                                    size="small"
+                                                    color={'primary'}
+                                                    value={'adminMode'}
+                                                    selected={adminMode}
+                                                    onClick={() =>
+                                                        setAdminMode(!adminMode)
+                                                    }
+                                                >
+                                                    <AdminPanelSettingsOutlined />
+                                                </ToggleButton>
+                                            </div>
+                                        </Tooltip>
+                                    </StyledAdminContainer>
+                                ) : null}
+                            </div>
+                        )}
                         <Typography variant="h4">
-                            {matchedRoute.title}
+                            {matchedRoute.history.length < 2
+                                ? matchedRoute.title
+                                : state
+                                ? state.name
+                                : matchedRoute.title}
+                        </Typography>
+                        <Typography variant="body1">
+                            {!adminMode || matchedRoute.path !== ''
+                                ? matchedRoute.description
+                                : matchedRoute.adminDescription}
                         </Typography>
                     </Stack>
                 }
@@ -95,4 +179,4 @@ export const SettingsLayout = () => {
             </Page>
         </SettingsContext.Provider>
     );
-};
+});

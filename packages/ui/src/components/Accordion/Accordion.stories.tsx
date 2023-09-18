@@ -1,4 +1,4 @@
-import { useState } from "react";
+import React, { useState } from "react";
 import type { Meta, StoryObj } from "@storybook/react";
 import { Accordion } from "./index";
 
@@ -7,8 +7,6 @@ const meta: Meta<typeof Accordion> = {
     component: Accordion,
     args: {
         square: false,
-        elevation: 1,
-        variant: "elevation",
         disabled: false,
         disableGutters: false,
         expanded: false,
@@ -26,6 +24,7 @@ const AccordionExample = (args) => {
             {...args}
             expanded={expanded}
             onChange={() => setExpanded(!expanded)}
+            variant="outlined"
         >
             <Accordion.Trigger>Summary 1</Accordion.Trigger>
             <Accordion.Content>Details 1</Accordion.Content>

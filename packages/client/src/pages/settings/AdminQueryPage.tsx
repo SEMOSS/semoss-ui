@@ -1,89 +1,37 @@
 import { useEffect, useState } from 'react';
 
 import {
-    theme,
-    Button,
     styled,
-    Form,
-    Table,
-    Alert,
     useNotification,
-    Scroll,
-} from '@semoss/components';
+    Alert,
+    Button,
+    Table,
+    TextField,
+    Select,
+    Stack,
+    TextArea,
+} from '@semoss/ui';
 
-import { useRootStore } from '@/hooks';
+import { useRootStore, useSettings } from '@/hooks';
 
-import { useForm } from 'react-hook-form';
-import { Field } from '../../components/form';
+import { Controller, useForm } from 'react-hook-form';
+import { Navigate } from 'react-router-dom';
 
-const StyledContainer = styled('div', {
-    margin: '0 auto',
-    paddingLeft: theme.space[8],
-    paddingRight: theme.space[8],
-    paddingBottom: theme.space[8],
-    '@sm': {
-        maxWidth: '640px',
-    },
-    '@md': {
-        maxWidth: '768px',
-    },
-    '@lg': {
-        maxWidth: '1024px',
-    },
-    '@xl': {
-        maxWidth: '1280px',
-    },
-    '@xxl': {
-        maxWidth: '1536px',
-    },
-});
-
-const StyledDescription = styled('div', {
-    color: theme.colors['grey-1'],
-    fontSize: theme.fontSizes.md,
-    width: theme.space['full'],
-    marginBottom: theme.space['6'],
-    maxWidth: '50%',
-});
-
-const StyledAdminQuery = styled('div', {
+const StyledContainer = styled('div')(() => ({
     display: 'flex',
-    justifyContent: 'flex-start',
-    gap: theme.space['16'],
-});
+    width: '100%',
+    gap: '24px',
+}));
 
-const StyledLeft = styled('div', {
+const StyledLeft = styled('div')(() => ({
     display: 'flex',
     flexDirection: 'column',
     width: '40%',
-});
+}));
 
-const StyledMarginedFields = styled('div', {
-    display: 'flex',
-    flexDirection: 'column',
-    gap: theme.space['4'],
-});
-
-const StyledRight = styled('div', {
-    minHeight: '50%',
-    minWidth: '60%',
-});
-
-const StyledRow = styled(Table.Row, {
-    height: 'calc( 1.75em + 0.25em + 1px)',
-});
-
-const StyledCell = styled(Table.Cell, {
-    minWidth: '15em',
-    padding: '0.125em 0.5em',
-    overflow: 'hidden',
-    textOverflow: 'ellipsis',
-    whiteSpace: 'nowrap',
-});
-
-const StyledAlertDiv = styled('div', {
-    minWidth: '100%',
-});
+const StyledRight = styled('div')(() => ({
+    flex: '1',
+}));
 
 const DATABASE_OPTIONS = [
     'LocalMasterDatabase',
@@ -93,10 +41,20 @@ const DATABASE_OPTIONS = [
     'UserTrackingDatabase',
 ];
 
+interface TypeDbQuery {
+    SELECTED_DATABASE: string;
+    QUERY: string;
+    ROWS: number;
+}
+
 export const AdminQueryPage = () => {
     const { monolithStore } = useRootStore();
+    const { adminMode } = useSettings();
     const notification = useNotification();
 
+    if (!adminMode) {
+        return <Navigate to={'/settings'} />;
+    }
     const [output, setOutput] = useState<{
         type: string;
         value: any;
@@ -150,7 +108,7 @@ export const AdminQueryPage = () => {
      * @name submitQuery
      * @desc make runQuery API call based on submitted fields
      */
-    const submitQuery = handleSubmit((data) => {
+    const submitQuery = handleSubmit((data: TypeDbQuery) => {
         let pixelString = `META | AdminDatabase("${data.SELECTED_DATABASE}") | Query("<encode>${data.QUERY}</encode>")`;
 
         if (showRowsField) {
@@ -176,7 +134,7 @@ export const AdminQueryPage = () => {
                     });
                     notification.add({
                         color: 'error',
-                        content: output,
+                        message: output,
                     });
 
                     return;
@@ -203,13 +161,13 @@ export const AdminQueryPage = () => {
 
                 notification.add({
                     color: 'success',
-                    content: 'Successfully submitted query',
+                    message: 'Successfully submitted query',
                 });
             })
             .catch((error) => {
                 notification.add({
                     color: 'error',
-                    content: error,
+                    message: error,
                 });
             });
     });
@@ -221,45 +179,35 @@ export const AdminQueryPage = () => {
      */
     const displayQueryOutput = (): JSX.Element => {
         if (output.type === 'success') {
-            return (
-                <Alert color={'success'} closeable={false}>
-                    Successful query!
-                </Alert>
-            );
+            return <Alert color={'success'}>Successful query!</Alert>;
         } else if (output.type === 'error') {
-            return (
-                <StyledAlertDiv>
-                    <Alert color={'error'} closeable={false}>
-                        {output.value}
-                    </Alert>
-                </StyledAlertDiv>
-            );
+            return <Alert color={'error'}>{output.value}</Alert>;
         } else if (output.type === 'table') {
             return (
                 <Table>
                     <Table.Head>
-                        <StyledRow>
+                        <Table.Row>
                             {output.value.headers.map((header, index) => {
                                 return (
-                                    <StyledCell key={index}>
+                                    <Table.Cell key={index}>
                                         {header}
-                                    </StyledCell>
+                                    </Table.Cell>
                                 );
                             })}
-                        </StyledRow>
+                        </Table.Row>
                     </Table.Head>
                     <Table.Body>
                         {output.value.values.map((row, index) => {
                             return (
-                                <StyledRow key={index}>
+                                <Table.Row key={index}>
                                     {row.map((column, i) => {
                                         return (
-                                            <StyledCell key={i}>
+                                            <Table.Cell key={i}>
                                                 {column}
-                                            </StyledCell>
+                                            </Table.Cell>
                                         );
                                     })}
-                                </StyledRow>
+                                </Table.Row>
                             );
                         })}
                     </Table.Body>
@@ -270,70 +218,91 @@ export const AdminQueryPage = () => {
 
     return (
         <StyledContainer>
-            <StyledDescription>
-                Query on Semoss based databases
-            </StyledDescription>
-            <StyledAdminQuery>
-                <StyledLeft>
-                    <Form>
-                        <StyledMarginedFields>
-                            <Field
-                                label="Database"
-                                name={'SELECTED_DATABASE'}
+            <StyledLeft>
+                <form>
+                    <Stack spacing={2}>
+                        <Controller
+                            name={'SELECTED_DATABASE'}
+                            control={control}
+                            rules={{ required: true }}
+                            render={({ field }) => {
+                                return (
+                                    <Select
+                                        label="Database"
+                                        value={field.value ? field.value : ''}
+                                        onChange={(e) =>
+                                            field.onChange(e.target.value)
+                                        }
+                                    >
+                                        {DATABASE_OPTIONS.map((option, i) => {
+                                            return (
+                                                <Select.Item
+                                                    value={option}
+                                                    key={i}
+                                                >
+                                                    {option}
+                                                </Select.Item>
+                                            );
+                                        })}
+                                    </Select>
+                                );
+                            }}
+                        />
+
+                        <Controller
+                            name={'QUERY'}
+                            control={control}
+                            rules={{ required: true }}
+                            render={({ field }) => {
+                                return (
+                                    <TextArea
+                                        label="Enter query to run on database"
+                                        value={field.value ? field.value : ''}
+                                        onChange={(e) =>
+                                            field.onChange(e.target.value)
+                                        }
+                                        minRows={4}
+                                        maxRows={12}
+                                    ></TextArea>
+                                );
+                            }}
+                        />
+                        {showRowsField && (
+                            <Controller
+                                name={'ROWS'}
                                 control={control}
-                                rules={{ required: true }}
-                                options={{
-                                    component: 'select',
-                                    options: DATABASE_OPTIONS,
-                                    placeholder: 'Select...',
+                                rules={{ min: 1 }}
+                                render={({ field }) => {
+                                    return (
+                                        <TextField
+                                            label="Max # Rows to Collect"
+                                            value={
+                                                field.value ? field.value : ''
+                                            }
+                                            onChange={(e) =>
+                                                field.onChange(e.target.value)
+                                            }
+                                            type={'number'}
+                                        ></TextField>
+                                    );
                                 }}
-                                error="You must select a database in order to query on."
-                                description=""
-                            ></Field>
-                            <Field
-                                label="Query"
-                                name={'QUERY'}
-                                control={control}
-                                rules={{ required: true }}
-                                options={{
-                                    component: 'textarea',
-                                    placeholder:
-                                        'Enter query to run on database.',
-                                    size: 'lg',
-                                }}
-                                error="Query is required"
-                                description="Query will be executed on selected admin level database."
-                            ></Field>
-                            {showRowsField && (
-                                <Field
-                                    label="Max # Rows to Collect"
-                                    name={'ROWS'}
-                                    control={control}
-                                    rules={{ min: 1 }}
-                                    options={{
-                                        component: 'numberpicker',
-                                    }}
-                                    description=""
-                                ></Field>
-                            )}
-                            <Button
-                                variant={!disableButton ? 'outline' : 'filled'}
-                                onClick={() => submitQuery()}
-                                disabled={!disableButton}
-                            >
-                                Execute Query
-                            </Button>
-                        </StyledMarginedFields>
-                    </Form>
-                </StyledLeft>
-                <Scroll>
-                    <StyledRight>
-                        {!output.type
-                            ? 'Execute a query to display the results here.'
-                            : displayQueryOutput()}
-                    </StyledRight>
-                </Scroll>
-            </StyledAdminQuery>
+                            />
+                        )}
+                        <Button
+                            variant={'contained'}
+                            onClick={() => submitQuery()}
+                            disabled={!disableButton}
+                        >
+                            Execute Query
+                        </Button>
+                    </Stack>
+                </form>
+            </StyledLeft>
+            <StyledRight>
+                {!output.type
+                    ? 'Execute a query to display the results here.'
+                    : displayQueryOutput()}
+            </StyledRight>
         </StyledContainer>
     );
 };

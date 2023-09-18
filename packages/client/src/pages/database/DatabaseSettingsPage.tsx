@@ -1,25 +1,47 @@
-import React from 'react';
-import { Permissions } from '@/components/database';
+import { styled } from '@semoss/ui';
+import { useNavigate } from 'react-router-dom';
+
+import { SettingsContext } from '@/contexts';
+import { UpdateSMSS } from '@/components/database';
+import {
+    MembersTable,
+    PendingMembersTable,
+    SettingsTiles,
+} from '@/components/settings';
 import { useDatabase } from '@/hooks';
 
-export const DatabaseSettingsPage = () => {
-    const { id } = useDatabase();
+const StyledContainer = styled('div')(({ theme }) => ({
+    width: '100%',
+    display: 'flex',
+    alignSelf: 'stretch',
+    flexDirection: 'column',
+    alignItems: 'flex-start',
+    gap: theme.spacing(3),
+    // padding: `${theme.spacing(3)} ${theme.spacing(2)}`,
+}));
 
-    return null;
-    // <SettingsIndex>
-    //     <div>Permissions file below</div>
-    //     <p>
-    //         We need the global, visibility, and name passed to the config
-    //         prop. Unless you want me to make that net call in the
-    //         Permissions file
-    //     </p>
-    //     <Permissions
-    //         config={{
-    //             id: id,
-    //             name: 'get name',
-    //             global: false,
-    //             visibility: true,
-    //         }}
-    //     />
-    // </SettingsIndex>
+export const DatabaseSettingsPage = () => {
+    const { id, type } = useDatabase();
+    const navigate = useNavigate();
+
+    return (
+        <SettingsContext.Provider
+            value={{
+                adminMode: false,
+            }}
+        >
+            <StyledContainer>
+                <SettingsTiles
+                    type={type}
+                    id={id}
+                    onDelete={() => {
+                        navigate('/catalog');
+                    }}
+                />
+                <PendingMembersTable type={type} id={id} />
+                <MembersTable type={type} id={id} />
+                <UpdateSMSS id={id} />
+            </StyledContainer>
+        </SettingsContext.Provider>
+    );
 };

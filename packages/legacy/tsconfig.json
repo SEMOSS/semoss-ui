@@ -2,7 +2,6 @@
     "compilerOptions": {
         "paths": {
             "@/*": ["./*"],
-            "@client/*": ["../client/*"],
             "images/*": ["./core/resources/img/*"]
         },
         // Target latest version of ECMAScript.
@@ -25,6 +24,6 @@
         // compile react
         "jsx": "react-jsx"
     },
-    "include": ["./core", "./widgets", "./typings/"],
+    "include": ["./core", "./custom", "./widgets", "./typings/"],
     "exclude": ["./core/resources/", "./node_modules/", "./widget-resources"]
 }

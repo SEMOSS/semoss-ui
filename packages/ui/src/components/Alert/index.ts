@@ -1,10 +1,10 @@
-import { Alert as _Alert, AlertProps } from "./Alert";
+import { Alert, AlertProps } from "./Alert";
 import { AlertTitle, AlertTitleProps } from "./AlertTitle";
 
-const AlertNameSpace = Object.assign(_Alert, {
+const AlertNameSpace = Object.assign(Alert, {
     Title: AlertTitle,
 });
 
 export type { AlertProps, AlertTitleProps };
 
-export { AlertNameSpace as Alert };
+export { AlertNameSpace as Alert, AlertTitle };

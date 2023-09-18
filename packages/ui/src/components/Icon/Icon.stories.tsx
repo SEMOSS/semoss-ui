@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from "@storybook/react";
-import { Icon } from "./index";
-import MoreVertIcon from "@mui/icons-material/MoreVert";
+import { MoreVert } from "@mui/icons-material";
+import { Icon } from "./";
 
 const meta: Meta<typeof Icon> = {
     title: "Components/Icon",
@@ -33,7 +33,7 @@ type Story = StoryObj<typeof Icon>;
 export const Primary: Story = {
     render: (args) => (
         <Icon {...args}>
-            <MoreVertIcon />
+            <MoreVert />
         </Icon>
     ),
 };

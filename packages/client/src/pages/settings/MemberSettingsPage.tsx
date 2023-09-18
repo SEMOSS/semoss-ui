@@ -1,134 +1,58 @@
 import { useEffect, useState } from 'react';
-import { useRootStore, useAPI } from '@/hooks';
-import { useSettings } from '@/hooks/useSettings';
+import {
+    Delete,
+    Add,
+    Edit,
+    Close,
+    LocalPoliceRounded,
+    CloudUploadRounded,
+    DownloadForOfflineRounded,
+} from '@mui/icons-material';
 import {
     styled,
-    theme,
+    useNotification,
+    List,
     Modal,
     Button,
-    Form,
-    Icon,
-    Popover,
-    Select,
-    useNotification,
-    Switch,
-    Grid,
+    Checkbox,
+    Typography,
+    AvatarGroup,
+    Avatar,
+    Table,
     IconButton,
-} from '@semoss/components';
-import { Card } from '@/components/ui';
+    Stack,
+    TextField,
+    Select,
+    Switch,
+} from '@semoss/ui';
+import { useForm, useFormState, Controller } from 'react-hook-form';
+import { Navigate, useNavigate } from 'react-router-dom';
+import { useRootStore, useAPI, useSettings } from '@/hooks';
 import { LoadingScreen } from '@/components/ui';
-import { useForm, useFormState } from 'react-hook-form';
-import {
-    mdiTextBoxMultipleOutline,
-    mdiDelete,
-    mdiAccountPlus,
-    mdiPlusThick,
-    mdiInformation,
-} from '@mdi/js';
-import { Field } from '@/components/form';
 
-const StyledContainer = styled('div', {
-    margin: '0 auto',
-    paddingLeft: theme.space[8],
-    paddingRight: theme.space[8],
-    paddingBottom: theme.space[8],
-    '@sm': {
-        maxWidth: '640px',
-    },
-    '@md': {
-        maxWidth: '768px',
-    },
-    '@lg': {
-        maxWidth: '1024px',
-    },
-    '@xl': {
-        maxWidth: '1280px',
-    },
-    '@xxl': {
-        maxWidth: '1536px',
-    },
-});
+const StyledContainer = styled('div')(({ theme }) => ({
+    width: '100%',
+}));
 
-const StyledLoadWorkflowContainer = styled('div', {
-    display: 'flex',
-    flexDirection: 'column',
-    justifyContent: 'center',
-    alignItems: 'center',
-    color: theme.colors['grey-2'],
-    backgroundColor: theme.colors.base,
-    marginTop: theme.space[4],
-    border: `${theme.borderWidths.default} solid ${theme.colors['grey-4']}`,
-    '@sm': {
-        minHeight: '5rem',
-    },
-    '@md': {
-        minHeight: '8rem',
-    },
-    '@lg': {
-        minHeight: '10rem',
-    },
-    '@xl': {
-        minHeight: '15rem',
-    },
-    '@xxl': {
-        minHeight: '30rem',
-    },
-});
-
-const StyledIcon = styled(Icon, {
-    fontSize: '4rem',
-});
-
-const StyledHeaderIcon = styled(Icon, {
-    height: '2rem',
-    width: '2rem',
-    marginRight: '.5rem',
-    display: 'flex',
-    alignItems: 'center',
-});
-
-const StyledButtonIcon = styled(Icon, {
-    fontSize: '1rem',
-});
-
-const StyledSelectedApp = styled('div', {
-    marginTop: theme.space[4],
-});
-
-const StyledSettings = styled('div', {
-    marginBottom: theme.space[4],
-});
-
-const StyledCardHeader = styled(Card.Header, {
+const StyledEnd = styled('div')(({ theme }) => ({
     display: 'flex',
     justifyContent: 'space-between',
-    alignItems: 'flex-start',
-    paddingTop: theme.space['2'],
-    paddingBottom: theme.space['0'],
-});
+    paddingBottom: theme.spacing(1),
+}));
 
-const StyledLeft = styled('div', {
+const StyledMemberTypography = styled(Typography)(({ theme }) => ({
+    paddingTop: theme.spacing(1),
+    color: theme.palette.grey['500'],
+}));
+
+const StyledTitle = styled('div')({
     display: 'flex',
-    alignItems: 'center',
 });
 
-const StyledRight = styled('div', {
-    display: 'flex',
-    alignItems: 'center',
-});
-
-const StyledEnd = styled('div', {
-    float: 'right',
-    paddingBottom: theme.space['1'],
-});
-
-const StyledCardContent = styled(Card.Content, {
-    fontSize: theme.fontSizes.sm,
-    minHeight: '5rem',
-});
-
-const StyledCheckbox = styled('div', {
-    paddingTop: theme.space['4'],
+const StyledModal = styled('div')({
+    width: '606px',
+    height: '854px',
+    padding: '16px',
 });
 
 interface Member {
@@ -150,6 +74,9 @@ interface PendingMember {
     admin: boolean;
     username: string;
     email: string;
+    countrycode: string;
+    phone: string;
+    extension: string;
     id: string;
     name: string;
     type: string;
@@ -186,15 +113,22 @@ const passwordValidate = (password: string) => {
 
 export const MemberSettingsPage = () => {
     const { adminMode } = useSettings();
+    const { configStore, monolithStore } = useRootStore();
     const notification = useNotification();
+    const navigate = useNavigate();
+
+    if (!adminMode) {
+        navigate('/settings');
+        // return;
+    }
+
     const [members, setMembers] = useState([]);
     const [addMemberModal, setAddMemberModal] = useState(false);
+    const [memberInfoModal, setMemberInfoModal] = useState(false);
     const [activeMember, setActiveMember] = useState<Member>(null);
-    const [pendingMember, setPendingMember] = useState<PendingMember>(null);
+    const [page, setPage] = useState<number>(0);
 
-    const { configStore, monolithStore } = useRootStore();
-
-    const { control, reset, handleSubmit, getValues } = useForm<{
+    const { control, reset, handleSubmit, getValues, watch } = useForm<{
         // edit existing member fields
         id: string;
         username: string;
@@ -209,15 +143,6 @@ export const MemberSettingsPage = () => {
         publisher: boolean;
         type: string;
         // add pending member fields
-        pendingId: string;
-        pendingUsername: string;
-        pendingName: string;
-        pendingEmail: string;
-        pendingType: string;
-        pendingAdmin: boolean;
-        pendingPublisher: boolean;
-        pendingExporter: boolean;
-        pendingPassword: string;
     }>({
         defaultValues: {
             id: activeMember?.id,
@@ -234,41 +159,53 @@ export const MemberSettingsPage = () => {
         },
     });
 
+    const countrycode = watch('countrycode');
+    const phone = watch('phone');
+    const type = watch('type', '');
+    const withPhone = `Phone Number: 
+    \n ${countrycode}-${phone} \n`;
+
     const { dirtyFields } = useFormState({
         control,
     });
-
-    // const { toggle, pendingMember.type } = watch();
 
     const providers = configStore.store.config.providers.map((val) =>
         capitalize(val),
     );
 
-    const updateAdmin = () => {
-        monolithStore['editMemberInfo'](adminMode, activeMember).then(() => {
-            const message = `You have successfully updated user information`;
-            notification.add({
-                color: 'success',
-                content: message,
-            });
-            getMembers.refresh();
-        });
-    };
-
-    const updateActiveMember = handleSubmit(() => {
-        monolithStore['editMemberInfo'](adminMode, activeMember)
+    const updateMemberInfo = (member: Member) => {
+        monolithStore['editMemberInfo'](adminMode, member)
             .then(() => {
-                const message = `You have successfully updated user information`;
+                const message =
+                    'You have successfully updated user information';
                 notification.add({
                     color: 'success',
-                    content: message,
+                    message: message,
                 });
                 getMembers.refresh();
             })
             .catch((error) => {
                 notification.add({
                     color: 'error',
-                    content: error,
+                    message: error,
+                });
+            });
+    };
+
+    const updateActiveMember = handleSubmit((data) => {
+        monolithStore['editMemberInfo'](adminMode, data)
+            .then(() => {
+                const message = `You have successfully updated user information`;
+                notification.add({
+                    color: 'success',
+                    message: message,
+                });
+                getMembers.refresh();
+            })
+            .catch((error) => {
+                notification.add({
+                    color: 'error',
+                    message: error,
                 });
             });
     });
@@ -282,43 +219,23 @@ export const MemberSettingsPage = () => {
         );
     };
 
-    const createUser = (member: PendingMember) => {
-        monolithStore['createUser'](adminMode, member).then((resp) => {
-            console.log(resp);
+    const createUser = handleSubmit((data: PendingMember) => {
+        monolithStore['createUser'](adminMode, data).then((resp) => {
             if (resp.data) {
                 const message = `You have successfully added new user(s)`;
                 notification.add({
                     color: 'success',
-                    content: message,
+                    message: message,
                 });
                 getMembers.refresh();
                 const newMember = members.find((m) => {
-                    m.id == member.id;
+                    m.id == data.id;
                 });
                 setActiveMember(newMember);
-                setPendingMember({
-                    id: '',
-                    username: '',
-                    name: '',
-                    email: '',
-                    type: null,
-                    admin: false,
-                    publisher: false,
-                    exporter: false,
-                });
                 setAddMemberModal(false);
             }
         });
-    };
-
-    /**
-     * @name getDisplay
-     * @desc gets display options for the Insight dropdown
-     * @param option - the object that is specified for the option
-     */
-    const getDisplay = (option) => {
-        return `${option.id} - ${option.name} - ${option.email}`;
-    };
+    });
 
     const getMembers = useAPI(['getAllUsers', adminMode]);
 
@@ -335,495 +252,696 @@ export const MemberSettingsPage = () => {
             setMembers([]);
         };
     }, [getMembers.status, getMembers.data]);
-
     // show a loading screen when getProjects is pending
     if (getMembers.status !== 'SUCCESS') {
         return (
             <LoadingScreen.Trigger description="Retrieving member information" />
         );
     }
-    return (
-        <div>
-            <StyledContainer>
+
+    const buildMemberModal = () => {
+        return (
+            <StyledModal>
                 <StyledEnd>
-                    <Button
-                        variant="outline"
-                        prepend={<StyledButtonIcon path={mdiPlusThick} />}
-                        style={{ textAlign: 'right', marginRight: 0 }}
+                    <Typography variant="h6">
+                        <strong>Edit Member</strong>
+                    </Typography>
+                    <IconButton
                         onClick={() => {
-                            setAddMemberModal(true);
-                            setPendingMember({
-                                id: '',
-                                username: '',
-                                name: '',
-                                email: '',
-                                type: null,
-                                admin: false,
-                                publisher: false,
-                                exporter: false,
-                            });
+                            setActiveMember(null);
+                            setMemberInfoModal(false);
                         }}
                     >
-                        Add New Member
-                    </Button>
+                        <Close />
+                    </IconButton>
                 </StyledEnd>
-                <div>
-                    <Select
-                        value={activeMember}
-                        options={members}
-                        getDisplay={getDisplay}
-                        onChange={(opt: Member) => {
-                            // Set selected Member
-                            setActiveMember(opt);
-                            reset(opt);
-                        }}
-                        placeholder="Select an option to view member specific settings"
-                    ></Select>
-                    {activeMember ? (
-                        <div>
-                            <StyledSelectedApp>
-                                <StyledSettings>
-                                    <Grid>
-                                        <Grid.Item
-                                            responsive={{
-                                                sm: 12,
-                                                md: 6,
-                                                lg: 5,
-                                                xl: 4,
+                {activeMember && (
+                    <div style={{ padding: '0px' }}>
+                        <Modal.Title>
+                            <Typography variant="subtitle1">
+                                <strong>Details</strong>
+                            </Typography>
+                        </Modal.Title>
+                        <Modal.Content>
+                            <form>
+                                <Stack gap={2}>
+                                    <Controller
+                                        name={'name'}
+                                        control={control}
+                                        rules={{
+                                            required: getValues('type'),
+                                        }}
+                                        render={({ field }) => {
+                                            return (
+                                                <TextField
+                                                    label="Name"
+                                                    value={
+                                                        field.value
+                                                            ? field.value
+                                                            : ''
+                                                    }
+                                                    onChange={(e) =>
+                                                        field.onChange(
+                                                            e.target.value,
+                                                        )
+                                                    }
+                                                ></TextField>
+                                            );
+                                        }}
+                                    />
+                                    <Controller
+                                        name={'email'}
+                                        control={control}
+                                        rules={{
+                                            required: true,
+                                        }}
+                                        render={({ field }) => {
+                                            return (
+                                                <TextField
+                                                    label="Email"
+                                                    value={
+                                                        field.value
+                                                            ? field.value
+                                                            : ''
+                                                    }
+                                                    onChange={(e) =>
+                                                        field.onChange(
+                                                            e.target.value,
+                                                        )
+                                                    }
+                                                    type="email"
+                                                ></TextField>
+                                            );
+                                        }}
+                                    />
+
+                                    <Stack direction={'row'} gap={1}>
+                                        <Controller
+                                            name={'countrycode'}
+                                            control={control}
+                                            rules={{
+                                                pattern: /^[+0-9]{0,6}$/,
                                             }}
-                                        >
-                                            <Card>
-                                                <StyledCardHeader>
-                                                    <StyledLeft>
-                                                        <StyledHeaderIcon
-                                                            path={
-                                                                mdiAccountPlus
-                                                            }
-                                                        ></StyledHeaderIcon>
-                                                        <div>Admin</div>
-                                                    </StyledLeft>
-                                                    <StyledRight>
-                                                        <Switch
-                                                            title={`Make Admin`}
+                                            render={({ field }) => {
+                                                return (
+                                                    <TextField
+                                                        label="Country Code"
+                                                        value={
+                                                            field.value
+                                                                ? field.value
+                                                                : ''
+                                                        }
+                                                        onChange={(e) =>
+                                                            field.onChange(
+                                                                e.target.value,
+                                                            )
+                                                        }
+                                                        sx={{
+                                                            width: '32px',
+                                                        }}
+                                                    ></TextField>
+                                                );
+                                            }}
+                                        />
+                                        <Controller
+                                            name="phone"
+                                            control={control}
+                                            rules={{
+                                                pattern: /^[()-.\s0-9]{8,}$/,
+                                            }}
+                                            render={({ field }) => {
+                                                return (
+                                                    <TextField
+                                                        label="Phone Number"
+                                                        value={
+                                                            field.value
+                                                                ? field.value
+                                                                : ''
+                                                        }
+                                                        onChange={(e) =>
+                                                            field.onChange(
+                                                                e.target.value,
+                                                            )
+                                                        }
+                                                        sx={{
+                                                            flex: 1,
+                                                        }}
+                                                    ></TextField>
+                                                );
+                                            }}
+                                        />
+                                        <Controller
+                                            name="phoneextension"
+                                            control={control}
+                                            rules={{
+                                                pattern: /^[+0-9]{0,6}$/,
+                                            }}
+                                            render={({ field }) => {
+                                                return (
+                                                    <TextField
+                                                        label="Ext"
+                                                        value={
+                                                            field.value
+                                                                ? field.value
+                                                                : ''
+                                                        }
+                                                        onChange={(e) =>
+                                                            field.onChange(
+                                                                e.target.value,
+                                                            )
+                                                        }
+                                                        sx={{
+                                                            width: '48px',
+                                                        }}
+                                                    ></TextField>
+                                                );
+                                            }}
+                                        />
+                                    </Stack>
+
+                                    <Typography
+                                        sx={{ padding: '25px 0' }}
+                                        variant="subtitle1"
+                                    >
+                                        <strong>Credentials</strong>
+                                    </Typography>
+
+                                    <Controller
+                                        name="type"
+                                        control={control}
+                                        rules={{}}
+                                        render={({ field }) => {
+                                            return (
+                                                <Select
+                                                    label="Type"
+                                                    value={
+                                                        field.value
+                                                            ? field.value
+                                                            : ''
+                                                    }
+                                                    onChange={(e) =>
+                                                        field.onChange(
+                                                            e.target.value,
+                                                        )
+                                                    }
+                                                >
+                                                    {providers.map(
+                                                        (option, i) => {
+                                                            return (
+                                                                <Select.Item
+                                                                    value={
+                                                                        option
+                                                                    }
+                                                                    key={i}
+                                                                >
+                                                                    {option}
+                                                                </Select.Item>
+                                                            );
+                                                        },
+                                                    )}
+                                                </Select>
+                                            );
+                                        }}
+                                    />
+
+                                    <Controller
+                                        name="id"
+                                        control={control}
+                                        rules={{}}
+                                        render={({ field }) => {
+                                            return (
+                                                <TextField
+                                                    label="User Id"
+                                                    value={
+                                                        field.value
+                                                            ? field.value
+                                                            : ''
+                                                    }
+                                                    onChange={(e) => {
+                                                        field.onChange(
+                                                            e.target.value,
+                                                        );
+
+                                                        activeMember['newId'] =
+                                                            e.target.value;
+                                                    }}
+                                                ></TextField>
+                                            );
+                                        }}
+                                    />
+
+                                    <Controller
+                                        name="username"
+                                        control={control}
+                                        rules={{}}
+                                        render={({ field }) => {
+                                            return (
+                                                <TextField
+                                                    label="Username"
+                                                    value={
+                                                        field.value
+                                                            ? field.value
+                                                            : ''
+                                                    }
+                                                    onChange={(e) => {
+                                                        field.onChange(
+                                                            e.target.value,
+                                                        );
+                                                    }}
+                                                ></TextField>
+                                            );
+                                        }}
+                                    />
+
+                                    {type === 'Native' && (
+                                        <>
+                                            <Controller
+                                                name="password"
+                                                control={control}
+                                                rules={{
+                                                    required:
+                                                        dirtyFields.password,
+                                                    minLength: 8,
+                                                    validate: (value) =>
+                                                        passwordValidate(value),
+                                                }}
+                                                render={({ field }) => {
+                                                    return (
+                                                        <TextField
+                                                            label="Password"
+                                                            type="password"
                                                             value={
-                                                                activeMember.admin
+                                                                field.value
+                                                                    ? field.value
+                                                                    : ''
                                                             }
-                                                            onClick={() => {
-                                                                activeMember.admin =
-                                                                    activeMember.admin !=
-                                                                    null
-                                                                        ? !activeMember.admin
-                                                                        : true;
-                                                                updateAdmin();
-                                                            }}
-                                                        ></Switch>
-                                                    </StyledRight>
-                                                </StyledCardHeader>
-                                                <StyledCardContent>
-                                                    Toggle whether{' '}
-                                                    {activeMember.name} is
-                                                    admin.
-                                                </StyledCardContent>
-                                            </Card>
-                                        </Grid.Item>
-                                        <Grid.Item
-                                            responsive={{
-                                                sm: 12,
-                                                md: 6,
-                                                lg: 5,
-                                                xl: 4,
-                                            }}
-                                        >
-                                            <Card>
-                                                <StyledCardHeader>
-                                                    <StyledLeft>
-                                                        <StyledHeaderIcon
-                                                            path={mdiDelete}
-                                                        ></StyledHeaderIcon>
-                                                        <div>Delete User</div>
-                                                    </StyledLeft>
-                                                    <StyledRight>
-                                                        <Button
-                                                            color={'error'}
-                                                            title={`Delete User`}
-                                                            onClick={() => {
-                                                                deleteActiveMember(
-                                                                    activeMember,
+                                                            onChange={(e) => {
+                                                                field.onChange(
+                                                                    e.target
+                                                                        .value,
                                                                 );
                                                             }}
+                                                        ></TextField>
+                                                    );
+                                                }}
+                                            />
+
+                                            {dirtyFields.password && (
+                                                <Typography variant={'caption'}>
+                                                    Note: Password must have one
+                                                    letter, one capital, one
+                                                    number, one special
+                                                    character, and be a minimum
+                                                    of 8 characters.
+                                                </Typography>
+                                            )}
+                                        </>
+                                    )}
+
+                                    <Typography
+                                        sx={{ padding: '25px 0' }}
+                                        variant="subtitle1"
+                                    >
+                                        <strong>Permissions</strong>
+                                    </Typography>
+
+                                    <List>
+                                        <List.Item
+                                            secondaryAction={
+                                                <Controller
+                                                    name={'admin'}
+                                                    control={control}
+                                                    render={({ field }) => {
+                                                        return (
+                                                            <Switch
+                                                                value={
+                                                                    field.value
+                                                                }
+                                                                onChange={() =>
+                                                                    field.onChange(
+                                                                        !field.value,
+                                                                    )
+                                                                }
+                                                            />
+                                                        );
+                                                    }}
+                                                />
+                                            }
+                                        >
+                                            <List.Icon>
+                                                <LocalPoliceRounded />
+                                            </List.Icon>
+                                            <List.ItemText
+                                                primary={<strong>Admin</strong>}
+                                                secondary="All-Access pass to app information"
+                                            />
+                                        </List.Item>
+
+                                        <List.Item
+                                            secondaryAction={
+                                                <Controller
+                                                    name={'publisher'}
+                                                    control={control}
+                                                    render={({ field }) => {
+                                                        return (
+                                                            <Switch
+                                                                value={
+                                                                    field.value
+                                                                }
+                                                                onChange={() =>
+                                                                    field.onChange(
+                                                                        !field.value,
+                                                                    )
+                                                                }
+                                                            />
+                                                        );
+                                                    }}
+                                                />
+                                            }
+                                        >
+                                            <List.Icon>
+                                                <CloudUploadRounded />
+                                            </List.Icon>
+                                            <List.ItemText
+                                                primary={
+                                                    <strong>Publisher</strong>
+                                                }
+                                                secondary="Anyone on the platform can access"
+                                            />
+                                        </List.Item>
+
+                                        <List.Item
+                                            secondaryAction={
+                                                <Controller
+                                                    name={'exporter'}
+                                                    control={control}
+                                                    render={({ field }) => {
+                                                        return (
+                                                            <Switch
+                                                                value={
+                                                                    field.value
+                                                                }
+                                                                onChange={() =>
+                                                                    field.onChange(
+                                                                        !field.value,
+                                                                    )
+                                                                }
+                                                            />
+                                                        );
+                                                    }}
+                                                />
+                                            }
+                                        >
+                                            <List.Icon>
+                                                <DownloadForOfflineRounded />
+                                            </List.Icon>
+                                            <List.ItemText
+                                                primary={
+                                                    <strong>Exporter</strong>
+                                                }
+                                                secondary="Anyone on the platform can access"
+                                            />
+                                        </List.Item>
+                                    </List>
+                                </Stack>
+                            </form>
+                        </Modal.Content>
+                        <Modal.Actions>
+                            <Button
+                                variant="outlined"
+                                onClick={() => {
+                                    setActiveMember(null);
+                                    setMemberInfoModal(false);
+                                }}
+                            >
+                                Cancel
+                            </Button>
+                            <Button
+                                variant="contained"
+                                onClick={() => {
+                                    updateActiveMember();
+                                    setMemberInfoModal(false);
+                                }}
+                            >
+                                Save
+                            </Button>
+                        </Modal.Actions>
+                    </div>
+                )}
+            </StyledModal>
+        );
+    };
+
+    const buildNewMemberModal = () => {
+        return (
+            <StyledModal>
+                <StyledEnd>
+                    <Typography variant="h6">
+                        <strong>Add Member</strong>
+                    </Typography>
+                    <IconButton
+                        onClick={() => {
+                            reset();
+                            setAddMemberModal(false);
+                        }}
+                    >
+                        <Close />
+                    </IconButton>
+                </StyledEnd>
+                <div style={{ padding: '0px' }}>
+                    <Modal.Title>
+                        <Typography variant="subtitle1">
+                            <strong>Details</strong>
+                        </Typography>
+                    </Modal.Title>
+                    <Modal.Content>
+                        <form>
+                            <Stack gap={2}>
+                                <Controller
+                                    name={'name'}
+                                    control={control}
+                                    rules={{
+                                        required: getValues('type'),
+                                    }}
+                                    render={({ field }) => {
+                                        return (
+                                            <TextField
+                                                label="Name"
+                                                value={
+                                                    field.value
+                                                        ? field.value
+                                                        : ''
+                                                }
+                                                onChange={(e) =>
+                                                    field.onChange(
+                                                        e.target.value,
+                                                    )
+                                                }
+                                            ></TextField>
+                                        );
+                                    }}
+                                />
+                                <Controller
+                                    name={'email'}
+                                    control={control}
+                                    rules={{
+                                        required: true,
+                                    }}
+                                    render={({ field }) => {
+                                        return (
+                                            <TextField
+                                                label="Email"
+                                                value={
+                                                    field.value
+                                                        ? field.value
+                                                        : ''
+                                                }
+                                                onChange={(e) =>
+                                                    field.onChange(
+                                                        e.target.value,
+                                                    )
+                                                }
+                                                type="email"
+                                            ></TextField>
+                                        );
+                                    }}
+                                />
+
+                                <Stack direction={'row'} gap={1}>
+                                    <Controller
+                                        name={'countrycode'}
+                                        control={control}
+                                        rules={{
+                                            pattern: /^[+0-9]{0,6}$/,
+                                        }}
+                                        render={({ field }) => {
+                                            return (
+                                                <TextField
+                                                    label="Country Code"
+                                                    value={
+                                                        field.value
+                                                            ? field.value
+                                                            : ''
+                                                    }
+                                                    onChange={(e) =>
+                                                        field.onChange(
+                                                            e.target.value,
+                                                        )
+                                                    }
+                                                    sx={{
+                                                        width: '32px',
+                                                    }}
+                                                ></TextField>
+                                            );
+                                        }}
+                                    />
+                                    <Controller
+                                        name="phone"
+                                        control={control}
+                                        rules={{
+                                            pattern: /^[()-.\s0-9]{8,}$/,
+                                        }}
+                                        render={({ field }) => {
+                                            return (
+                                                <TextField
+                                                    label="Phone Number"
+                                                    value={
+                                                        field.value
+                                                            ? field.value
+                                                            : ''
+                                                    }
+                                                    onChange={(e) =>
+                                                        field.onChange(
+                                                            e.target.value,
+                                                        )
+                                                    }
+                                                    sx={{
+                                                        flex: 1,
+                                                    }}
+                                                ></TextField>
+                                            );
+                                        }}
+                                    />
+                                    <Controller
+                                        name="phoneextension"
+                                        control={control}
+                                        rules={{
+                                            pattern: /^[+0-9]{0,6}$/,
+                                        }}
+                                        render={({ field }) => {
+                                            return (
+                                                <TextField
+                                                    label="Ext"
+                                                    value={
+                                                        field.value
+                                                            ? field.value
+                                                            : ''
+                                                    }
+                                                    onChange={(e) =>
+                                                        field.onChange(
+                                                            e.target.value,
+                                                        )
+                                                    }
+                                                    sx={{
+                                                        width: '48px',
+                                                    }}
+                                                ></TextField>
+                                            );
+                                        }}
+                                    />
+                                </Stack>
+
+                                <Typography
+                                    sx={{ padding: '25px 0' }}
+                                    variant="subtitle1"
+                                >
+                                    <strong>Credentials</strong>
+                                </Typography>
+                                <Controller
+                                    name="type"
+                                    control={control}
+                                    rules={{}}
+                                    render={({ field }) => {
+                                        return (
+                                            <Select
+                                                label="Type"
+                                                value={
+                                                    field.value
+                                                        ? field.value
+                                                        : ''
+                                                }
+                                                onChange={(e) =>
+                                                    field.onChange(
+                                                        e.target.value,
+                                                    )
+                                                }
+                                            >
+                                                {providers.map((option, i) => {
+                                                    return (
+                                                        <Select.Item
+                                                            value={option}
+                                                            key={i}
                                                         >
-                                                            Delete
-                                                        </Button>
-                                                    </StyledRight>
-                                                </StyledCardHeader>
-                                                <StyledCardContent>
-                                                    Delete user
-                                                    {activeMember.name
-                                                        ? ` ${activeMember.name}.`
-                                                        : `.`}
-                                                </StyledCardContent>
-                                            </Card>
-                                        </Grid.Item>
-                                        <Grid.Item span={12}>
-                                            <Card>
-                                                <StyledCardContent>
-                                                    <Form>
-                                                        <Field
-                                                            name="id"
-                                                            control={control}
-                                                            rules={{}}
-                                                            options={{
-                                                                component:
-                                                                    'input',
-                                                                placeholder:
-                                                                    'User ID',
-                                                            }}
-                                                            label="User ID"
-                                                            onChange={(val) => {
-                                                                activeMember[
-                                                                    'newId'
-                                                                ] = val;
-                                                            }}
-                                                        />
-                                                        <Field
-                                                            name="username"
-                                                            control={control}
-                                                            rules={{}}
-                                                            options={{
-                                                                component:
-                                                                    'input',
-                                                                placeholder:
-                                                                    'Username',
-                                                            }}
-                                                            label="Username"
-                                                        />
-                                                        <Field
-                                                            name="name"
-                                                            control={control}
-                                                            rules={{
-                                                                required:
-                                                                    getValues(
-                                                                        'type',
-                                                                    ),
-                                                            }}
-                                                            options={{
-                                                                component:
-                                                                    'input',
-                                                                placeholder:
-                                                                    'Name',
-                                                            }}
-                                                            error="Name is required"
-                                                            label="Name"
-                                                        />
-                                                        <Field
-                                                            name="password"
-                                                            control={control}
-                                                            rules={{
-                                                                required:
-                                                                    dirtyFields.password,
-                                                                minLength: 8,
-                                                                validate: (
-                                                                    value,
-                                                                ) =>
-                                                                    passwordValidate(
-                                                                        value,
-                                                                    ),
-                                                            }}
-                                                            options={{
-                                                                component:
-                                                                    'input',
-                                                                type: 'password',
-                                                                placeholder:
-                                                                    '********',
-                                                            }}
-                                                            error="Please enter a valid password"
-                                                            label="Password"
-                                                        />
-                                                        {dirtyFields.password && (
-                                                            <Popover>
-                                                                <Popover.Trigger>
-                                                                    <IconButton size="sm">
-                                                                        <StyledIcon
-                                                                            path={
-                                                                                mdiInformation
-                                                                            }
-                                                                        ></StyledIcon>
-                                                                    </IconButton>
-                                                                </Popover.Trigger>
-                                                                <Popover.Content
-                                                                    side="right"
-                                                                    align="end"
-                                                                >
-                                                                    <div>
-                                                                        <span>
-                                                                            Password
-                                                                            must:
-                                                                        </span>
-                                                                    </div>
-                                                                    <ul>
-                                                                        <li id="letter">
-                                                                            have{' '}
-                                                                            <b>
-                                                                                one
-                                                                                letter
-                                                                            </b>
-                                                                        </li>
-                                                                        <li id="capital">
-                                                                            have{' '}
-                                                                            <b>
-                                                                                one
-                                                                                capital
-                                                                            </b>
-                                                                        </li>
-                                                                        <li id="number">
-                                                                            have{' '}
-                                                                            <b>
-                                                                                one
-                                                                                number
-                                                                            </b>
-                                                                        </li>
-                                                                        <li id="special">
-                                                                            have
-                                                                            <b>
-                                                                                {' '}
-                                                                                one
-                                                                                special
-                                                                                character
-                                                                            </b>
-                                                                        </li>
-                                                                        <li id="length">
-                                                                            be a
-                                                                            minimum
-                                                                            of
-                                                                            <b>
-                                                                                {' '}
-                                                                                8
-                                                                                characters
-                                                                            </b>
-                                                                        </li>
-                                                                    </ul>
-                                                                </Popover.Content>
-                                                            </Popover>
-                                                        )}
+                                                            {option}
+                                                        </Select.Item>
+                                                    );
+                                                })}
+                                            </Select>
+                                        );
+                                    }}
+                                />
 
-                                                        <Field
-                                                            name="email"
-                                                            control={control}
-                                                            rules={{
-                                                                required: true,
-                                                            }}
-                                                            options={{
-                                                                component:
-                                                                    'input',
-                                                                placeholder:
-                                                                    'Email',
-                                                            }}
-                                                            error="Email is required"
-                                                            label="Email"
-                                                        />
-                                                        <Field
-                                                            name="phone"
-                                                            control={control}
-                                                            rules={{
-                                                                pattern:
-                                                                    /^[()-.\s0-9]{8,}$/,
-                                                            }}
-                                                            options={{
-                                                                component:
-                                                                    'input',
-                                                                placeholder:
-                                                                    'Phone Number',
-                                                            }}
-                                                            error="Please enter a valid phone number"
-                                                            label="Phone Number"
-                                                        />
-                                                        <Field
-                                                            name="phoneextension"
-                                                            control={control}
-                                                            rules={{
-                                                                pattern:
-                                                                    /^[+0-9]{0,6}$/,
-                                                            }}
-                                                            options={{
-                                                                component:
-                                                                    'input',
-                                                                placeholder:
-                                                                    'Phone Extension',
-                                                            }}
-                                                            error="Please enter a valid phone extension"
-                                                            label="Phone Extension"
-                                                        />
-                                                        <Field
-                                                            name="countrycode"
-                                                            control={control}
-                                                            rules={{
-                                                                pattern:
-                                                                    /^[+0-9]{0,6}$/,
-                                                            }}
-                                                            options={{
-                                                                component:
-                                                                    'input',
-                                                                placeholder:
-                                                                    'Country Code',
-                                                            }}
-                                                            error="Please enter a valid country code"
-                                                            label="Country Code"
-                                                        />
-                                                        <Field
-                                                            name="type"
-                                                            control={control}
-                                                            rules={{}}
-                                                            options={{
-                                                                component:
-                                                                    'select',
-                                                                options:
-                                                                    providers,
-                                                                placeholder:
-                                                                    'Type',
-                                                            }}
-                                                            label="Type"
-                                                        />
-                                                        <StyledCheckbox>
-                                                            <Field
-                                                                name="publisher"
-                                                                control={
-                                                                    control
-                                                                }
-                                                                rules={{}}
-                                                                options={{
-                                                                    component:
-                                                                        'checkbox',
-                                                                    children:
-                                                                        'Publisher',
-                                                                }}
-                                                            />
-                                                        </StyledCheckbox>
-                                                        <StyledCheckbox>
-                                                            <Field
-                                                                name="exporter"
-                                                                control={
-                                                                    control
-                                                                }
-                                                                rules={{}}
-                                                                options={{
-                                                                    component:
-                                                                        'checkbox',
-                                                                    children:
-                                                                        'Exporter',
-                                                                }}
-                                                            />
-                                                        </StyledCheckbox>
-                                                        <StyledSelectedApp>
-                                                            <Button
-                                                                onClick={() =>
-                                                                    updateActiveMember()
-                                                                }
-                                                            >
-                                                                Update
-                                                            </Button>
-                                                            <Button
-                                                                onClick={() => {
-                                                                    setActiveMember(
-                                                                        null,
-                                                                    );
-                                                                }}
-                                                                variant="text"
-                                                            >
-                                                                Cancel
-                                                            </Button>
-                                                        </StyledSelectedApp>
-                                                    </Form>
-                                                </StyledCardContent>
-                                            </Card>
-                                        </Grid.Item>
-                                    </Grid>
-                                </StyledSettings>
-                            </StyledSelectedApp>
-                        </div>
-                    ) : (
-                        <StyledLoadWorkflowContainer>
-                            <StyledIcon
-                                size="xl"
-                                path={mdiTextBoxMultipleOutline}
-                            ></StyledIcon>
-                            <p>SEMOSS is waiting on your selection</p>
-                        </StyledLoadWorkflowContainer>
-                    )}{' '}
-                </div>
-            </StyledContainer>
+                                <Controller
+                                    name="id"
+                                    control={control}
+                                    rules={{}}
+                                    render={({ field }) => {
+                                        return (
+                                            <TextField
+                                                label="User Id"
+                                                value={
+                                                    field.value
+                                                        ? field.value
+                                                        : ''
+                                                }
+                                                onChange={(e) => {
+                                                    field.onChange(
+                                                        e.target.value,
+                                                    );
 
-            {/* Add New User Modal */}
-            <Modal
-                open={addMemberModal}
-                onOpen={(open) => {
-                    setAddMemberModal(open);
-                }}
-                onClose={() => {
-                    setAddMemberModal(false);
-                }}
-            >
-                <Modal.Content size={'lg'}>
-                    <Modal.Header description="Enter the data of the members you would like to add:">
-                        Add Member
-                    </Modal.Header>
-                    <Modal.Body>
-                        <Form>
-                            <div>
-                                <Field
-                                    name="pendingId"
-                                    control={control}
-                                    rules={{}}
-                                    options={{
-                                        component: 'input',
-                                        placeholder: 'User ID',
-                                    }}
-                                    label="User ID"
-                                    onChange={(val) => {
-                                        pendingMember.id = val;
+                                                    activeMember['newId'] =
+                                                        e.target.value;
+                                                }}
+                                            ></TextField>
+                                        );
                                     }}
                                 />
-                                <Field
-                                    name="pendingUsername"
+
+                                <Controller
+                                    name="username"
                                     control={control}
                                     rules={{}}
-                                    options={{
-                                        component: 'input',
-                                        placeholder: 'Username',
-                                    }}
-                                    label="Username"
-                                    onChange={(val) => {
-                                        pendingMember.username = val;
-                                    }}
-                                />
-                                <Field
-                                    name="pendingName"
-                                    control={control}
-                                    rules={{}}
-                                    options={{
-                                        component: 'input',
-                                        placeholder: 'Name',
-                                    }}
-                                    label="Name"
-                                    onChange={(val) => {
-                                        pendingMember.name = val;
+                                    render={({ field }) => {
+                                        return (
+                                            <TextField
+                                                label="Username"
+                                                value={
+                                                    field.value
+                                                        ? field.value
+                                                        : ''
+                                                }
+                                                onChange={(e) => {
+                                                    field.onChange(
+                                                        e.target.value,
+                                                    );
+                                                }}
+                                            ></TextField>
+                                        );
                                     }}
                                 />
-                                <Field
-                                    name="pendingEmail"
-                                    control={control}
-                                    rules={{}}
-                                    options={{
-                                        component: 'input',
-                                        placeholder: 'Email',
-                                    }}
-                                    label="Email"
-                                    onChange={(val) => {
-                                        pendingMember.email = val;
-                                    }}
-                                />
-                                {pendingMember?.type == 'Native' && (
-                                    <div>
-                                        <Field
+                                {type === 'Native' && (
+                                    <>
+                                        <Controller
                                             name="password"
                                             control={control}
                                             rules={{
@@ -832,146 +950,320 @@ export const MemberSettingsPage = () => {
                                                 validate: (value) =>
                                                     passwordValidate(value),
                                             }}
-                                            options={{
-                                                component: 'input',
-                                                type: 'password',
-                                                placeholder: '********',
+                                            render={({ field }) => {
+                                                return (
+                                                    <TextField
+                                                        label="Password"
+                                                        type="password"
+                                                        value={
+                                                            field.value
+                                                                ? field.value
+                                                                : ''
+                                                        }
+                                                        onChange={(e) => {
+                                                            field.onChange(
+                                                                e.target.value,
+                                                            );
+                                                        }}
+                                                    ></TextField>
+                                                );
                                             }}
-                                            error="Please enter a valid password"
-                                            label="Password"
                                         />
+
                                         {dirtyFields.password && (
-                                            <Popover>
-                                                <Popover.Trigger>
-                                                    <IconButton size="sm">
-                                                        <StyledIcon
-                                                            path={
-                                                                mdiInformation
-                                                            }
-                                                        ></StyledIcon>
-                                                    </IconButton>
-                                                </Popover.Trigger>
-                                                <Popover.Content
-                                                    side="right"
-                                                    align="end"
-                                                >
-                                                    <div>
-                                                        <span>
-                                                            Password must:
-                                                        </span>
-                                                    </div>
-                                                    <ul>
-                                                        <li id="letter">
-                                                            have{' '}
-                                                            <b>one letter</b>
-                                                        </li>
-                                                        <li id="capital">
-                                                            have{' '}
-                                                            <b>one capital</b>
-                                                        </li>
-                                                        <li id="number">
-                                                            have{' '}
-                                                            <b>one number</b>
-                                                        </li>
-                                                        <li id="special">
-                                                            have
-                                                            <b>
-                                                                {' '}
-                                                                one special
-                                                                character
-                                                            </b>
-                                                        </li>
-                                                        <li id="length">
-                                                            be a minimum of
-                                                            <b> 8 characters</b>
-                                                        </li>
-                                                    </ul>
-                                                </Popover.Content>
-                                            </Popover>
+                                            <Typography variant={'caption'}>
+                                                Note: Password must have one
+                                                letter, one capital, one number,
+                                                one special character, and be a
+                                                minimum of 8 characters.
+                                            </Typography>
                                         )}
-                                    </div>
+                                    </>
                                 )}
-                                <Field
-                                    name="pendingType"
-                                    control={control}
-                                    rules={{}}
-                                    options={{
-                                        component: 'select',
-                                        options: providers,
-                                        placeholder: 'Type',
-                                    }}
-                                    label="Type"
-                                    onChange={(val) => {
-                                        pendingMember.type = val;
-                                    }}
-                                />
-                                <StyledCheckbox>
-                                    <Field
-                                        name="pendingAdmin"
-                                        control={control}
-                                        rules={{}}
-                                        options={{
-                                            component: 'checkbox',
-                                            children: 'Admin',
-                                        }}
-                                        onChange={(val) => {
-                                            pendingMember.admin = val;
-                                        }}
-                                    />
-                                </StyledCheckbox>
-                                <StyledCheckbox>
-                                    <Field
-                                        name="pendingPublisher"
-                                        control={control}
-                                        rules={{}}
-                                        options={{
-                                            component: 'checkbox',
-                                            children: 'Publisher',
-                                        }}
-                                        onChange={(val) => {
-                                            pendingMember.publisher = val;
-                                        }}
-                                    />
-                                </StyledCheckbox>
-                                <StyledCheckbox>
-                                    <Field
-                                        name="pendingExporter"
-                                        control={control}
-                                        rules={{}}
-                                        options={{
-                                            component: 'checkbox',
-                                            children: 'Exporter',
-                                        }}
-                                        onChange={(val) => {
-                                            pendingMember.exporter = val;
-                                        }}
-                                    />
-                                </StyledCheckbox>
-                                <StyledSelectedApp>
-                                    <Button
-                                        onClick={() => {
-                                            createUser(pendingMember);
-                                        }}
-                                        color="primary"
+                                <Typography
+                                    sx={{ padding: '25px 0' }}
+                                    variant="subtitle1"
+                                >
+                                    <strong>Permissions</strong>
+                                </Typography>
+
+                                <List>
+                                    <List.Item
+                                        secondaryAction={
+                                            <Controller
+                                                name={'admin'}
+                                                control={control}
+                                                render={({ field }) => {
+                                                    return (
+                                                        <Switch
+                                                            color="primary"
+                                                            value={field.value}
+                                                            onChange={() =>
+                                                                field.onChange(
+                                                                    !field.value,
+                                                                )
+                                                            }
+                                                        />
+                                                    );
+                                                }}
+                                            />
+                                        }
                                     >
-                                        Add
-                                    </Button>
-                                    <Button
-                                        onClick={() => {
-                                            setPendingMember(null);
-                                            reset();
-                                            setAddMemberModal(false);
-                                        }}
-                                        variant="text"
+                                        <List.Icon>
+                                            <LocalPoliceRounded />
+                                        </List.Icon>
+                                        <List.ItemText
+                                            primary={<strong>Admin</strong>}
+                                            secondary="All-Access pass to app information"
+                                        />
+                                    </List.Item>
+
+                                    <List.Item
+                                        secondaryAction={
+                                            <Controller
+                                                name={'publisher'}
+                                                control={control}
+                                                render={({ field }) => {
+                                                    return (
+                                                        <Switch
+                                                            color="primary"
+                                                            value={field.value}
+                                                            onChange={() =>
+                                                                field.onChange(
+                                                                    !field.value,
+                                                                )
+                                                            }
+                                                        />
+                                                    );
+                                                }}
+                                            />
+                                        }
                                     >
-                                        Cancel
-                                    </Button>
-                                </StyledSelectedApp>
-                            </div>
-                        </Form>
-                    </Modal.Body>
-                </Modal.Content>
-            </Modal>
-        </div>
+                                        <List.Icon>
+                                            <CloudUploadRounded />
+                                        </List.Icon>
+                                        <List.ItemText
+                                            primary={<strong>Publisher</strong>}
+                                            secondary="Anyone on the platform can access"
+                                        />
+                                    </List.Item>
+
+                                    <List.Item
+                                        secondaryAction={
+                                            <Controller
+                                                name={'exporter'}
+                                                control={control}
+                                                render={({ field }) => {
+                                                    return (
+                                                        <Switch
+                                                            color="primary"
+                                                            value={field.value}
+                                                            onChange={() =>
+                                                                field.onChange(
+                                                                    !field.value,
+                                                                )
+                                                            }
+                                                        />
+                                                    );
+                                                }}
+                                            />
+                                        }
+                                    >
+                                        <List.Icon>
+                                            <DownloadForOfflineRounded />
+                                        </List.Icon>
+                                        <List.ItemText
+                                            primary={<strong>Exporter</strong>}
+                                            secondary="Anyone on the platform can access"
+                                        />
+                                    </List.Item>
+                                </List>
+                            </Stack>
+                        </form>
+                    </Modal.Content>
+                    <Modal.Actions>
+                        <Button
+                            variant="outlined"
+                            onClick={() => {
+                                reset();
+                                setAddMemberModal(false);
+                            }}
+                        >
+                            Cancel
+                        </Button>
+                        <Button
+                            variant="contained"
+                            onClick={() => {
+                                createUser();
+                            }}
+                            color="primary"
+                        >
+                            Save
+                        </Button>
+                    </Modal.Actions>
+                </div>
+            </StyledModal>
+        );
+    };
+
+    return (
+        <>
+            <StyledContainer>
+                <StyledEnd>
+                    <StyledTitle>
+                        <Typography variant="h6" sx={{ marginRight: '16px' }}>
+                            <strong>Members</strong>
+                        </Typography>
+                        {members && (
+                            <>
+                                <AvatarGroup
+                                    variant="circular"
+                                    max={3}
+                                    sx={{ marginRight: '8px' }}
+                                >
+                                    {members.map((mem, i) => {
+                                        return (
+                                            <Avatar
+                                                key={i}
+                                                sx={{ height: 32, width: 32 }}
+                                            >
+                                                {mem.name[0]}
+                                            </Avatar>
+                                        );
+                                    })}
+                                </AvatarGroup>
+                                {members.length > 1 ? (
+                                    <StyledMemberTypography variant="body1">
+                                        {members.length} members
+                                    </StyledMemberTypography>
+                                ) : (
+                                    <StyledMemberTypography
+                                        variant="body1"
+                                        sx={{ paddingTop: '6px' }}
+                                    >
+                                        {members.length} member
+                                    </StyledMemberTypography>
+                                )}
+                            </>
+                        )}
+                    </StyledTitle>
+
+                    <Button
+                        variant="contained"
+                        startIcon={<Add />}
+                        sx={{ textAlign: 'right' }}
+                        onClick={() => {
+                            setAddMemberModal(true);
+                        }}
+                    >
+                        Add New
+                    </Button>
+                </StyledEnd>
+
+                {members && (
+                    <Table.Container>
+                        <Table>
+                            <Table.Head>
+                                <Table.Row>
+                                    <Table.Cell>
+                                        <strong>Name</strong>
+                                    </Table.Cell>
+                                    <Table.Cell>
+                                        <strong>Email</strong>
+                                    </Table.Cell>
+                                    <Table.Cell>
+                                        <strong>Type</strong>
+                                    </Table.Cell>
+                                    <Table.Cell>
+                                        <strong>Role</strong>
+                                    </Table.Cell>
+                                    <Table.Cell>
+                                        <strong>Action</strong>
+                                    </Table.Cell>
+                                </Table.Row>
+                            </Table.Head>
+                            <Table.Body>
+                                {members.map((mem) => (
+                                    <Table.Row key={mem.name}>
+                                        <Table.Cell>{mem.name}</Table.Cell>
+                                        <Table.Cell>{mem.email}</Table.Cell>
+                                        <Table.Cell>{mem.type}</Table.Cell>
+                                        <Table.Cell>
+                                            <Checkbox
+                                                label="Publisher"
+                                                checked={mem.publisher}
+                                                onChange={() => {
+                                                    updateMemberInfo({
+                                                        ...mem,
+                                                        publisher:
+                                                            !mem.publisher,
+                                                    });
+                                                }}
+                                            />
+                                            <Checkbox
+                                                label="Exporter"
+                                                checked={mem.exporter}
+                                                onChange={() => {
+                                                    updateMemberInfo({
+                                                        ...mem,
+                                                        exporter: !mem.exporter,
+                                                    });
+                                                }}
+                                            />
+                                            <Checkbox
+                                                label="Admin"
+                                                checked={mem.admin}
+                                                onChange={() => {
+                                                    updateMemberInfo({
+                                                        ...mem,
+                                                        exporter: !mem.admin,
+                                                    });
+                                                }}
+                                            />
+                                        </Table.Cell>
+                                        <Table.Cell>
+                                            <IconButton
+                                                onClick={() => {
+                                                    setActiveMember(mem);
+                                                    reset(mem);
+                                                    setMemberInfoModal(true);
+                                                }}
+                                            >
+                                                <Edit />
+                                            </IconButton>
+                                            <IconButton
+                                                onClick={() => {
+                                                    deleteActiveMember(mem);
+                                                }}
+                                            >
+                                                <Delete />
+                                            </IconButton>
+                                        </Table.Cell>
+                                    </Table.Row>
+                                ))}
+                            </Table.Body>
+                            <Table.Footer>
+                                <Table.Row>
+                                    <Table.Pagination
+                                        rowsPerPageOptions={[5, 10, 25]}
+                                        rowsPerPage={5}
+                                        onPageChange={(e, v) => {
+                                            setPage(v);
+                                        }}
+                                        page={page}
+                                        count={Math.ceil(members.length / 5)}
+                                    />
+                                </Table.Row>
+                            </Table.Footer>
+                        </Table>
+                    </Table.Container>
+                )}
+            </StyledContainer>
+
+            {/* MemberInfoModal */}
+            <Modal open={memberInfoModal}>{buildMemberModal()}</Modal>
+            {/* Add New User Modal */}
+            <Modal open={addMemberModal}>{buildNewMemberModal()}</Modal>
+        </>
     );
 };

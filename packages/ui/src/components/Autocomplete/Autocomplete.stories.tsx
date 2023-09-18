@@ -58,24 +58,26 @@ const films2 = [
 ];
 
 const Example = () => {
-    const [selected, setSelected] = useState<any>(films[0].label);
+    const [selected, setSelected] = useState<string>(films[0].label);
     const [inputValue, setInputValue] = useState("");
 
-    const [values, setValue] = useState<any>([films[2]]);
+    const [values, setValue] = useState<{ label: string; year: number }[]>([
+        films[2],
+    ]);
 
     return (
         <Stack spacing={2}>
             <Autocomplete
                 label="Select Movie"
                 id="combo-box-demo"
-                options={films}
+                options={films.map((val) => val.label)}
                 value={selected}
-                onChange={(event, newValue) => {
-                    setSelected(newValue.label);
+                onChange={(event, value) => {
+                    setSelected(value ? value : "");
                 }}
                 inputValue={inputValue}
                 isOptionEqualToValue={(option, value) => {
-                    return option.label === value;
+                    return option === value;
                 }}
                 onInputChange={(event, newInputValue) => {
                     setInputValue(newInputValue);
@@ -86,15 +88,17 @@ const Example = () => {
                 label="Select Movies"
                 multiple
                 id="fixed-tags-demo"
-                value={values}
+                value={[...values]}
                 defaultValue={[...values]}
-                getOptionLabel={(option: any) => option.label}
-                onChange={(event, newValue: any) => {
-                    setValue([...newValue]);
+                onChange={(event, newValue) => {
+                    setValue([...newValue] as {
+                        label: string;
+                        year: number;
+                    }[]);
                 }}
                 options={films2}
                 isOptionEqualToValue={(option, value) => {
-                    return option.label === value.label;
+                    return option === value;
                 }}
                 style={{ width: 500 }}
             />

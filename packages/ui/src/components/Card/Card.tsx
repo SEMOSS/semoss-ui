@@ -1,9 +1,7 @@
-import { ReactNode } from "react";
-import MuiCard from "@mui/material/Card";
-import { SxProps } from "@mui/system";
-import { CardProps as MuiCardProps } from "@mui/material";
+import { ReactNode, HTMLAttributes } from "react";
+import { Card as MuiCard, SxProps } from "@mui/material";
 
-export interface CardProps extends MuiCardProps {
+export interface CardProps extends HTMLAttributes<HTMLDivElement> {
     /** children to be rendered */
     children: ReactNode;
 

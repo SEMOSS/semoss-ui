@@ -1,12 +1,22 @@
-import { SxProps } from "@mui/system";
-import MuiAccordionSummary, {
-    AccordionSummaryProps as MuiAccordionSummaryProps,
-} from "@mui/material/AccordionSummary";
+import {
+    AccordionSummary as MuiAccordionSummary,
+    SxProps,
+} from "@mui/material";
 
 export type AccordionSummaryProps = {
+    /**
+     * The content of the component.
+     */
+    children?: React.ReactNode;
+
+    /**
+     * The icon to display as the expand indicator.
+     */
+    expandIcon?: React.ReactNode;
+
     /** custom style object */
     sx?: SxProps;
-} & MuiAccordionSummaryProps;
+};
 
 export const AccordionSummary = (props: AccordionSummaryProps) => {
     return <MuiAccordionSummary>{props.children}</MuiAccordionSummary>;

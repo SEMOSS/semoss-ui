@@ -1,14 +1,21 @@
-import { ReactNode } from "react";
-import { DialogActions as MuiModalActions } from "@mui/material";
-import { SxProps } from "@mui/system";
-import { DialogActionsProps as MuiModalActionsProps } from "@mui/material";
+import { DialogActions as MuiModalActions, SxProps } from "@mui/material";
 
-export interface ModalActionsProps extends MuiModalActionsProps {
-    /** custom style object */
+export interface ModalActionsProps {
+    /**
+     * The content of the component.
+     */
+    children?: React.ReactNode;
+
+    /**
+     * The system prop that allows defining system overrides as well as additional CSS styles.
+     */
     sx?: SxProps;
 
-    /** children to be rendered */
-    children: ReactNode;
+    /**
+     * If `true`, the actions do not have additional margin.
+     * @default false
+     */
+    disableSpacing?: boolean;
 }
 
 export const ModalActions = (props: ModalActionsProps) => {

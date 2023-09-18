@@ -1,20 +1,43 @@
 import React, { useState } from "react";
 import type { Meta, StoryObj } from "@storybook/react";
-import { Select } from "../Select/index";
-import { Checkbox } from "../Checkbox/index";
-import { Input } from "../Input/index";
-import MenuItem from "@mui/material/MenuItem";
-import Stack from "@mui/material/Stack";
+import { Select, Stack, Box } from "../../";
 
 const meta: Meta<typeof Select> = {
     title: "Components/Select",
     component: Select,
     args: {
-        variant: "standard",
+        variant: "outlined",
+        size: "medium",
+        color: "primary",
+        disabled: false,
+        error: false,
     },
     argTypes: {
         variant: {
             options: ["filled", "standard", "outlined"],
+            control: { type: "select" },
+        },
+        size: {
+            options: ["small", "medium"],
+            control: { type: "radio" },
+        },
+        disabled: {
+            options: [true, false],
+            control: { type: "radio" },
+        },
+        error: {
+            options: [true, false],
+            control: { type: "radio" },
+        },
+        color: {
+            options: [
+                "primary",
+                "secondary",
+                "error",
+                "info",
+                "success",
+                "warning",
+            ],
             control: { type: "select" },
         },
     },
@@ -33,64 +56,74 @@ const SelectComponent = (args) => {
 
     return (
         <Stack spacing={2}>
-            <Input.Label color="primary" variant="standard">
-                Select
-            </Input.Label>
-            <Select
-                {...args}
-                sx={{ width: "100%" }}
-                onChange={onChange}
-                value={selected}
-            >
-                <MenuItem value={1}>1</MenuItem>
-                <MenuItem value={2}>2</MenuItem>
-            </Select>
+            <div style={{}}>
+                <div style={{ width: "70%" }}>Hey</div>
+                <div style={{ width: "10%" }}>
+                    <Select
+                        {...args}
+                        sx={{ width: "100%" }}
+                        onChange={onChange}
+                        value={selected}
+                        helperText="Select helper text"
+                        placeholder="Select placeholder"
+                        label="Select Label"
+                    >
+                        <Select.Item value={1}>1</Select.Item>
+                        <Select.Item value={2}>2</Select.Item>
+                        <Select.Item value={3}>3</Select.Item>
+                        <Select.Item value={4}>4</Select.Item>
+                        <Select.Item value={5}>5</Select.Item>
+                    </Select>
+                </div>
+
+                <div style={{ width: "20%" }}>Hello</div>
+            </div>
+            <Box>Value: {selected}</Box>
         </Stack>
     );
 };
 
-const SelectMultiple = () => {
-    const [selected, setSelected] = useState([]);
+const SelectMultipleComponent = () => {
+    const [formState, setFormState] = React.useState({
+        userRoles: [],
+    });
 
-    const selectValues = [1, 2, 3, 4, 5];
-
-    const handleChange = (event) => {
-        const {
-            target: { value },
-        } = event;
-        setSelected(
-            // On autofill we get a stringified value.
-            typeof value === "string" ? value.split(",") : value,
-        );
+    const handleFieldChange = (event) => {
+        console.log(event);
+        setFormState((formState) => ({
+            ...formState,
+            [event.target.name]: event.target.value,
+        }));
     };
 
+    console.log(formState);
     return (
-        <>
-            <Input.Label color="primary" variant="standard">
-                Select multiple items
-            </Input.Label>
+        <Stack spacing={2}>
             <Select
                 sx={{ width: "100%" }}
-                onChange={handleChange}
-                value={selected}
-                renderValue={(selected: any) => selected.join(", ")}
-                multiple
+                name="userRoles"
+                id="userRoles"
+                variant="outlined"
+                label="userRoles"
+                SelectProps={{
+                    multiple: true,
+                    value: formState.userRoles,
+                    onChange: handleFieldChange,
+                }}
             >
-                {selectValues.map((val) => (
-                    <MenuItem key={val} value={val}>
-                        <Checkbox checked={selected.indexOf(val) > -1} />
-                        {val}
-                    </MenuItem>
-                ))}
+                <Select.Item value="admin">Admin</Select.Item>
+                <Select.Item value="user1">User1</Select.Item>
+                <Select.Item value="user2">User2</Select.Item>
             </Select>
-        </>
+            <Box>Value: {formState.userRoles.map((val) => `${val} `)}</Box>
+        </Stack>
     );
+};
+
+export const Multiple: Story = {
+    render: () => <SelectMultipleComponent />,
 };
 
 export const Default: Story = {
     render: (args) => <SelectComponent {...args} />,
-};
-
-export const MultipleSelect: Story = {
-    render: () => <SelectMultiple />,
 };

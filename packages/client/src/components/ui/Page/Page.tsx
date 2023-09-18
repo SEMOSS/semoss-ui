@@ -1,11 +1,15 @@
 import React, { useEffect, useState } from 'react';
 import { styled, Container } from '@semoss/ui';
 
-const StyledPage = styled('div')(() => ({
+const StyledPage = styled('div')(({ theme }) => ({
     height: '100%',
     width: '100%',
-    overflowX: 'hidden',
-    overflowY: 'auto',
+    overflow: 'scroll',
+    backgroundColor: theme.palette.background.paper,
+    paddingBottom: theme.spacing(2.5),
+    display: 'flex',
+    flexDirection: 'column',
+    gap: theme.spacing(2),
 }));
 
 const StyledPageHeader = styled('div', {
@@ -16,12 +20,13 @@ const StyledPageHeader = styled('div', {
 }>(({ theme, stuck }) => ({
     position: 'sticky',
     top: '-1px',
-    paddingTop: '1px',
+    paddingTop: theme.spacing(5),
+    paddingBottom: theme.spacing(1),
     // Checkout user permissions, and the stacked avatars
-    zIndex: '10',
-    borderBottom: stuck ? 1 : 'none',
-    borderBottomColor: theme.palette.grey['500'],
-    marginBottom: theme.spacing(2),
+    zIndex: 10,
+    borderBottom: stuck ? `solid ${theme.palette.divider}` : 'none',
+    // Set this in Theme
+    backgroundColor: theme.palette.background.paper,
 }));
 
 export interface PageProps {
@@ -58,16 +63,16 @@ export const Page = (props: PageProps): JSX.Element => {
     }, [headerElement]);
 
     return (
-        <StyledPage>
+        <StyledPage id="home__content">
             {header && (
                 <StyledPageHeader
                     ref={(node) => setHeaderElement(node)}
                     stuck={stuck}
                 >
-                    <Container maxWidth="md">{header}</Container>
+                    <Container maxWidth={'xl'}>{header}</Container>
                 </StyledPageHeader>
             )}
-            <Container maxWidth="md">{children}</Container>
+            <Container maxWidth={'xl'}>{children}</Container>
         </StyledPage>
     );
 };

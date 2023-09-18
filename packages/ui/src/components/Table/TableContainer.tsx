@@ -1,11 +1,9 @@
 import { ReactNode } from "react";
-import MuiTableContainer from "@mui/material/TableContainer";
-import { SxProps } from "@mui/system";
-import { TableContainerProps as MuiTableContainerProps } from "@mui/material";
+import { TableContainer as MuiTableContainer, SxProps } from "@mui/material";
 
-export interface TableContainerProps extends MuiTableContainerProps {
+export interface TableContainerProps {
     /** children to be rendered */
-    children: ReactNode;
+    children?: ReactNode;
 
     /** custom style object */
     sx?: SxProps;

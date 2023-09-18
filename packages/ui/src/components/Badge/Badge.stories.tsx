@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from "@storybook/react";
 import { Badge } from "../Badge/index";
-import MailIcon from "@mui/icons-material/Mail";
+import { Mail } from "@mui/icons-material";
 
 const meta: Meta<typeof Badge> = {
     title: "Components/Badge",
@@ -31,7 +31,7 @@ type Story = StoryObj<typeof Badge>;
 export const Default: Story = {
     render: (args) => (
         <Badge {...args}>
-            <MailIcon color="action" />
+            <Mail color="action" />
         </Badge>
     ),
 };

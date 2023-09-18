@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from "@storybook/react";
-import { IconButton } from "../IconButton/index";
-import MoreVertIcon from "@mui/icons-material/MoreVert";
+import { MoreVert } from "@mui/icons-material";
+import { IconButton } from "./";
 
 const meta: Meta<typeof IconButton> = {
     title: "Components/IconButton",
@@ -8,7 +8,6 @@ const meta: Meta<typeof IconButton> = {
     args: {
         color: "secondary",
         disabled: false,
-        disableFocusRipple: false,
     },
     argTypes: {
         color: {
@@ -35,7 +34,7 @@ type Story = StoryObj<typeof IconButton>;
 export const Enabled: Story = {
     render: (args) => (
         <IconButton {...args}>
-            <MoreVertIcon />
+            <MoreVert />
         </IconButton>
     ),
 };
@@ -43,7 +42,7 @@ export const Enabled: Story = {
 export const EdgeEnd: Story = {
     render: () => (
         <IconButton edge="end">
-            <MoreVertIcon />
+            <MoreVert />
         </IconButton>
     ),
 };

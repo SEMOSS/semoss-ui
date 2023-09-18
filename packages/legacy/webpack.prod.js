@@ -4,6 +4,8 @@ const { merge } = require('webpack-merge'),
     CompressionPlugin = require('compression-webpack-plugin'),
     HtmlWebpackPlugin = require('html-webpack-plugin');
 
+const { CUSTOMIZATION } = require('./custom/theme.js');
+
 module.exports = () => {
     return merge(common, {
         mode: 'production',
@@ -24,11 +26,12 @@ module.exports = () => {
             }),
             new HtmlWebpackPlugin({
                 scriptLoading: 'blocking',
-                title: 'Semoss',
                 template: './core/template.ejs',
                 filename: '../../../index.html',
                 hash: true,
                 inject: false,
+                title: CUSTOMIZATION.page.title,
+                favicon:CUSTOMIZATION.page.favicon
             }),
         ],
     });
