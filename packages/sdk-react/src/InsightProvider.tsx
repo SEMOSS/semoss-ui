@@ -1,7 +1,7 @@
 import { createContext, useState, useEffect, useMemo } from 'react';
 import { unstable_batchedUpdates } from 'react-dom';
 
-import { Insight } from '@/ts-utils';
+import { Insight } from '@semoss/sdk';
 
 /**
  * Context of the react data
