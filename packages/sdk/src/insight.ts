@@ -1,13 +1,5 @@
 import { Env } from './env';
-import {
-    getSystemConfig,
-    login,
-    logout,
-    oauth,
-    runPixel,
-    upload,
-    download,
-} from './api';
+import { getSystemConfig, login, logout, oauth, runPixel } from './api';
 import { UnauthorizedError } from './error';
 
 interface InsightStoreInterface {
@@ -393,52 +385,48 @@ export class Insight {
             }
         },
 
-        /**
-         * Upload a file
-         *
-         * @param files- file objects to upload
-         * @param project - project to upload file to
-         * @param path - relative path
-         */
-        uploadFile: async (
-            files: File[],
-            insightId: string,
-            projectId: string,
-            path: string | null,
-        ): Promise<
-            {
-                fileName: string;
-                fileLocation: string;
-            }[]
-        > => {
-            try {
-                const response = await upload(
-                    files,
-                    insightId || this._store.insightId,
-                    projectId,
-                    path,
-                );
+        //     /**
+        //      * Upload a file to the project space
+        //      *
+        //      * @param files- file objects to upload
+        //      * @param path - relative path
+        //      */
+        //     upload: async (
+        //         files: File[],
+        //         path: string | null,
+        //     ): Promise<
+        //         {
+        //             fileName: string;
+        //             fileLocation: string;
+        //         }[]
+        //     > => {
+        //         try {
+        //             const response = await upload(
+        //                 files,
+        //                 this._store.insightId,
+        //                 this._store.appId,
+        //                 path,
+        //             );
 
-                return response;
-            } catch (error) {
-                this.processActionError(error as Error);
-            }
+        //             return response;
+        //         } catch (error) {
+        //             this.processActionError(error as Error);
+        //         }
 
-            return [];
-        },
+        //         return [];
+        //     },
 
-        /**
-         * Download a file by using a unique key
-         *
-         * @param insightID - insightID to download the file
-         * @param fileKey - id for the file to download
-         */
-        download: async (insightID: string, fileKey: string): Promise<void> => {
-            try {
-                await download(insightID, fileKey);
-            } catch (error) {
-                this.processActionError(error as Error);
-            }
-        },
+        //     /**
+        //      * Download a file from the project space
+        //      *
+        //      * @param path - relative path
+        //      */
+        //     download: async (fileKey: string): Promise<void> => {
+        //         try {
+        //             await download(this._store.insightId, fileKey);
+        //         } catch (error) {
+        //             this.processActionError(error as Error);
+        //         }
+        //     },
     };
 }

@@ -8,7 +8,6 @@ import { Insight } from '@semoss/sdk';
  */
 export const InsightContext = createContext<
     | {
-          insight: Insight;
           isInitialized: Insight['isInitialized'];
           isAuthorized: Insight['isAuthorized'];
           error: Insight['error'];
@@ -58,7 +57,9 @@ export const InsightProvider = (props: InsightProviderProps) => {
             acc[val] = async (...args: unknown[]) => {
                 // wait for the action to complete
                 //@ts-expect-error TODO Fix Typing
-                const response = await acc[val].call(acc[val], [...args]);
+                const response = await insight.actions[val].apply(null, [
+                    ...args,
+                ]);
 
                 // sync it
                 syncInsight();
@@ -91,7 +92,6 @@ export const InsightProvider = (props: InsightProviderProps) => {
     return (
         <InsightContext.Provider
             value={{
-                insight: insight,
                 isInitialized: isInitialized,
                 isAuthorized: isAuthorized,
                 error: error,

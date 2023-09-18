@@ -32,7 +32,7 @@ export const get = async <O>(path: string, options: RequestInit = {}) => {
     const response = await fetch(`${path}`, options);
 
     // get the data
-    const data = response.json();
+    const data = await response.json();
 
     // handle the response
     if (interceptors.response) {
@@ -95,7 +95,7 @@ export const post = async <O>(
     const response = await fetch(`${path}`, options);
 
     // get the data
-    const data = response.json();
+    const data = await response.json();
 
     // handle the response
     if (interceptors.response) {

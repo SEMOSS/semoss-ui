@@ -350,12 +350,11 @@ importers:
       tsc-alias: ^1.8.7
       tslib: ^2.4.0
       typescript: ^4.7.4
-    dependencies:
-      '@semoss/sdk': link:../sdk
     devDependencies:
       '@rollup/plugin-commonjs': 25.0.4_rollup@3.29.1
       '@rollup/plugin-node-resolve': 15.2.1_rollup@3.29.1
       '@rollup/plugin-typescript': 11.1.3_fc877e9263e5b9d82fd4d8584448d4d4
+      '@semoss/sdk': link:../sdk
       '@types/node': 16.18.39
       '@types/react': 17.0.63
       '@types/react-dom': 17.0.20
