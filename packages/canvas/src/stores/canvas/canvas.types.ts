@@ -1,17 +1,5 @@
 import { Actions } from './canvas.actions';
 import React from 'react';
-import { CanvasStore } from './canvas.store';
-
-/**
- * Initial config to pass into the canvas
- */
-export interface CanvasConfig<R extends WidgetRegistry> {
-    /** Blocks that will be loaded into the canvas */
-    blocks: Record<string, Block<WidgetRegistryUnwrap<R>>>;
-
-    /** Queries that will be loaed into the canvas */
-    queries?: Record<string, Query>;
-}
 
 /**
  * Block
@@ -147,22 +135,4 @@ export type Query = {
 
     /** Current data of the Query */
     data: unknown;
-};
-
-export type Callbacks = {
-    /**
-     * onChange Callback that is triggered after an action is fired
-     */
-    onChange: (event: {
-        action: Actions;
-        store: CanvasStore;
-        error: Error | null;
-    }) => void;
-
-    /**
-     * onQuery callback that is triggered after a query has been ran
-     */
-    onQuery: (event: { query: string; store: CanvasStore }) => Promise<{
-        data: unknown;
-    }>;
 };

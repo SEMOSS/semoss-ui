@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useLayoutEffect, useState } from 'react';
 import { observer } from 'mobx-react-lite';
 import { Typography, styled } from '@semoss/ui';
-import { ActionMessages, useCanvas } from '@semoss/canvas';
+import { ActionMessages } from '@semoss/canvas';
 
 import { getRelativeSize, getRootElement, getBlockElement } from '@/stores';
 import { useDesigner } from '@/hooks';
@@ -38,7 +38,7 @@ const StyledTitle = styled('div')(({ theme }) => ({
 /**
  * Show the information of a selected block
  */
-export const DesignerSelectedMask = observer(() => {
+export const SelectedMask = observer(() => {
     // create the state
     const [size, setSize] = useState<{
         top: number;
@@ -49,11 +49,10 @@ export const DesignerSelectedMask = observer(() => {
     const [local, setLocal] = useState(false);
 
     // get the store
-    const { canvas } = useCanvas();
     const { designer } = useDesigner();
 
     // get the block
-    const block = canvas.getBlock(designer.selected);
+    const block = designer.canvas.getBlock(designer.selected);
 
     /**
      * Handle the mousedown on the block.
@@ -62,7 +61,7 @@ export const DesignerSelectedMask = observer(() => {
         // set the dragged
         designer.activateDrag(block.widget, (parent) => {
             // if the parent block is a child of the selected, we cannot add
-            if (canvas.containsBlock(designer.selected, parent)) {
+            if (designer.canvas.containsBlock(designer.selected, parent)) {
                 return false;
             }
 
@@ -91,10 +90,12 @@ export const DesignerSelectedMask = observer(() => {
                 placeholderAction.type === 'before' ||
                 placeholderAction.type === 'after'
             ) {
-                const siblingWidget = canvas.getBlock(placeholderAction.id);
+                const siblingWidget = designer.canvas.getBlock(
+                    placeholderAction.id,
+                );
 
                 if (siblingWidget.parent) {
-                    canvas.dispatch({
+                    designer.canvas.dispatch({
                         message: ActionMessages.MOVE_BLOCK,
                         payload: {
                             id: designer.selected,
@@ -108,7 +109,7 @@ export const DesignerSelectedMask = observer(() => {
                     });
                 }
             } else if (placeholderAction.type === 'replace') {
-                canvas.dispatch({
+                designer.canvas.dispatch({
                     message: ActionMessages.MOVE_BLOCK,
                     payload: {
                         id: designer.selected,
@@ -133,8 +134,8 @@ export const DesignerSelectedMask = observer(() => {
         designer.selected,
         designer.drag.active,
         designer.drag.placeholderAction,
+        designer.canvas,
         designer,
-        canvas,
     ]);
 
     // get the root, watch changes, and reposition the mask

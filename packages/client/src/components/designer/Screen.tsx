@@ -1,7 +1,7 @@
 import { useEffect, useRef, useCallback } from 'react';
 import { observer } from 'mobx-react-lite';
 import { styled } from '@semoss/ui';
-import { Canvas, useCanvas } from '@semoss/canvas';
+import { Renderer as CanvasRenderer } from '@semoss/canvas';
 import { useDesigner } from '@/hooks';
 
 import {
@@ -12,10 +12,10 @@ import {
     getNearestSlotElement,
 } from '@/stores';
 
-import { DesignerSelectedMask } from './DesignerSelectedMask';
-import { DesignerHoveredMask } from './DesignerHoveredMask';
-import { DesignerPlaceholder } from './DesignerPlaceholder';
-import { DesignerGhost } from './DesignerGhost';
+import { SelectedMask } from './SelectedMask';
+import { HoveredMask } from './HoveredMask';
+import { Placeholder } from './Placeholder';
+import { Ghost } from './Ghost';
 
 const StyledContainer = styled('div')(({ theme }) => ({
     position: 'relative',
@@ -48,19 +48,18 @@ const StyledContentSpacer = styled('div')(({ theme }) => ({
     width: '100%',
 }));
 
-interface DesignerRendererProps {
-    /** Id of the block to render */
-    blockId: string;
+interface ScreenProps {
+    /** Children to render */
+    children: React.ReactNode;
 }
 
-export const DesignerRenderer = observer((props: DesignerRendererProps) => {
-    const { blockId } = props;
+export const Screen = observer((props: ScreenProps) => {
+    const { children } = props;
 
     // save the ref
     const rootRef = useRef<HTMLDivElement | null>(null);
 
     // get the canvas and designer
-    const { canvas } = useCanvas();
     const { designer } = useDesigner();
 
     /**
@@ -171,7 +170,7 @@ export const DesignerRenderer = observer((props: DesignerRendererProps) => {
             }
 
             // get the block
-            const block = canvas.getBlock(id);
+            const block = designer.canvas.getBlock(id);
 
             // if there is no parent, we cannot add
             if (!block.parent) {
@@ -209,7 +208,12 @@ export const DesignerRenderer = observer((props: DesignerRendererProps) => {
                 );
             }
         },
-        [designer.drag.active, designer.drag.canDrop, designer, canvas],
+        [
+            designer.drag.active,
+            designer.drag.canDrop,
+            designer,
+            designer.canvas,
+        ],
     );
 
     // add the mouse up listener when dragged
@@ -227,10 +231,10 @@ export const DesignerRenderer = observer((props: DesignerRendererProps) => {
 
     return (
         <StyledContainer data-block="root" ref={rootRef}>
-            {designer.selected && <DesignerSelectedMask />}
-            {designer.hovered && <DesignerHoveredMask />}
-            {designer.drag.active && <DesignerPlaceholder />}
-            {designer.drag.active && <DesignerGhost />}
+            {designer.selected && <SelectedMask />}
+            {designer.hovered && <HoveredMask />}
+            {designer.drag.active && <Placeholder />}
+            {designer.drag.active && <Ghost />}
 
             <StyledContent off={designer.drag.active ? true : false}>
                 <StyledContentSpacer onMouseLeave={handleMouseLeave}>
@@ -238,7 +242,7 @@ export const DesignerRenderer = observer((props: DesignerRendererProps) => {
                         onMouseDown={handleMouseDown}
                         onMouseOver={handleMouseOver}
                     >
-                        <Canvas.Renderer id={blockId} />
+                        {children}
                     </div>
                 </StyledContentSpacer>
             </StyledContent>

@@ -13,10 +13,10 @@ export interface RendererProps {
  */
 export const Renderer = observer(({ id }: RendererProps): JSX.Element => {
     // get the store and mode
-    const { canvas: store, widgets } = useCanvas();
+    const { canvas, widgets } = useCanvas();
 
     // get the block
-    const block = store.getBlock(id);
+    const block = canvas.getBlock(id);
 
     // get block
     if (!block) {

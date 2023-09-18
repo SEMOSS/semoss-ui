@@ -20,7 +20,7 @@ const StyledContentInner = styled('div')(({ theme }) => ({
     width: '100%',
 }));
 
-export const DesignerSelectedMenu = observer(() => {
+export const SelectedMenu = observer(() => {
     const { designer } = useDesigner();
 
     return (

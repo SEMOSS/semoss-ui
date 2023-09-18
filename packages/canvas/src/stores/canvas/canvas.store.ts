@@ -9,15 +9,7 @@ import {
     MoveBlockAction,
     RemoveBlockAction,
 } from './canvas.actions';
-import {
-    Query,
-    Block,
-    WidgetDef,
-    WidgetJSON,
-    Callbacks,
-    CanvasConfig,
-    WidgetRegistry,
-} from './canvas.types';
+import { Query, Block, WidgetJSON } from './canvas.types';
 
 export interface CanvasStoreInterface {
     /** Queries rendered in the insight */
@@ -51,23 +43,35 @@ export class CanvasStore {
         /**
          * Track callbacks
          */
-        callbacks: Callbacks;
+        callbacks: {
+            /**
+             * onQuery callback that is triggered after a query has been ran
+             */
+            onQuery: (event: { query: string }) => Promise<{
+                data: unknown;
+            }>;
+        };
     } = {
         queryPromises: {},
         callbacks: {
-            onChange: () => null,
             onQuery: async () => ({
                 data: undefined,
-                error: Error('Define onQuery'),
             }),
         },
     };
 
     constructor(
-        config: CanvasConfig<WidgetRegistry>,
+        config: {
+            /** Queries that will be loaed into the canvas */
+            queries?: Record<string, Query>;
+
+            /** Blocks that will be loaded into the canvas */
+            blocks?: Record<string, Block>;
+        },
         callbacks: {
-            onChange: Callbacks['onChange'];
-            onQuery: Callbacks['onQuery'];
+            onQuery: (event: { query: string }) => Promise<{
+                data: unknown;
+            }>;
         },
     ) {
         // set the callbacks
@@ -130,9 +134,9 @@ export class CanvasStore {
      * @param id - id of the block to get
      * @returns the specific block information
      */
-    getBlock<W extends WidgetDef = WidgetDef>(id: string): Block<W> | null {
+    getBlock(id: string) {
         if (this._store.blocks[id]) {
-            return this._store.blocks[id] as Block<W>;
+            return this._store.blocks[id];
         }
 
         return null;
@@ -166,8 +170,6 @@ export class CanvasStore {
             JSON.parse(JSON.stringify(action.message)),
             JSON.parse(JSON.stringify(action.payload)),
         );
-
-        let error: Error | null = null;
 
         try {
             // apply the action
@@ -214,15 +216,6 @@ export class CanvasStore {
             }
         } catch (e) {
             console.error(e);
-
-            error = e as Error;
-        } finally {
-            // call the on change with the previous action
-            this._utils.callbacks.onChange({
-                action: action,
-                store: this,
-                error: error,
-            });
         }
     };
 
@@ -458,7 +451,6 @@ export class CanvasStore {
             // call the callback
             return this._utils.callbacks.onQuery({
                 query: filled,
-                store: this,
             });
         });
 

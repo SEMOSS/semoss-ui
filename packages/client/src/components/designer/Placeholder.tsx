@@ -67,7 +67,7 @@ function getPlaceholderStyle(
 /**
  * Rendered Placeholder for the view
  */
-export const DesignerPlaceholder = observer(() => {
+export const Placeholder = observer(() => {
     // get the store
     const { designer } = useDesigner();
 

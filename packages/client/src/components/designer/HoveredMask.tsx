@@ -37,7 +37,7 @@ const StyledTitle = styled('div')(({ theme }) => ({
 /**
  * Show the information of a hovered block
  */
-export const DesignerHoveredMask = observer(() => {
+export const HoveredMask = observer(() => {
     // create the state
     const [size, setSize] = useState<{
         top: number;

@@ -44,7 +44,7 @@ function getGhostStyle(
 /**
  * Rendered Dragged Item
  */
-export const DesignerGhost = observer(() => {
+export const Ghost = observer(() => {
     // get the store
     const { designer } = useDesigner();
 
