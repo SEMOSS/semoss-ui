@@ -91,6 +91,14 @@ export const NavigatorLayout = observer(() => {
                 </StyledSidebarItem>
                 <StyledSidebarDivider />
                 <StyledSidebarItem
+                    to={'catalog?type=model'}
+                    selected={location.search.includes('?type=model')}
+                >
+                    <Icon>
+                        <ModelBrain />
+                    </Icon>
+                </StyledSidebarItem>
+                <StyledSidebarItem
                     to={'catalog?type=database'}
                     selected={location.search.includes('?type=database')}
                 >
@@ -106,18 +114,10 @@ export const NavigatorLayout = observer(() => {
                         <Inventory2Outlined />
                     </Icon>
                 </StyledSidebarItem>
-                <StyledSidebarItem
-                    to={'catalog?type=model'}
-                    selected={location.search.includes('?type=model')}
-                >
-                    <Icon>
-                        <ModelBrain />
-                    </Icon>
-                </StyledSidebarItem>
                 <Stack flex={1}>&nbsp;</Stack>
                 <StyledSidebarItem
                     to={'settings'}
-                    selected={location.pathname.includes('settings')}
+                    selected={location.pathname === '/settings'}
                 >
                     <Icon>
                         <Settings />

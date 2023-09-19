@@ -1,143 +1,99 @@
-import { useState, useEffect } from 'react';
+/**
+ * ---------------------------*------------------------------------
+ * This will be your app page, what this component does is
+ * really is to handle the layout and switching between the
+ * different { editor mode } nav items.
+ *
+ * - We have a Resizable Bottom Panel for the structure of the page.
+ * - The Bigger Components that get consumed here are:
+ *      - AppEditorPanel (also resizable), AppConsole, AppRenderer
+ * ---------------------------*------------------------------------
+ *
+ */
+import React, { useState, useEffect } from 'react';
+import { useParams } from 'react-router-dom';
 import { observer } from 'mobx-react-lite';
-import { useParams, Navigate } from 'react-router-dom';
-import { Controller, useForm } from 'react-hook-form';
-import {
-    styled,
-    useNotification,
-    Button,
-    IconButton,
-    Stack,
-    FileDropzone,
-    Typography,
-} from '@semoss/ui';
-import { Code, Download } from '@mui/icons-material';
-import { Navbar } from '@/components/ui';
-import { useRootStore, useAPI } from '@/hooks';
-import { AppRenderer } from '@/components/app';
+import { AppContext, AppContextType } from '@/contexts';
+import { useRootStore } from '@/hooks';
+import { AppEditorActions, Navbar } from '@/components/ui';
+import { AppRenderer, AppConsole, AppEditorPanel } from '@/components/app';
+import { styled } from '@semoss/ui';
 
+// Styles --------------------------------------*
 const NAV_HEIGHT = '48px';
 const NAV_FOOTER = '24px';
+const SIDEBAR_WIDTH = '56px';
 
-// background: var(--light-text-primary, rgba(0, 0, 0, 0.87));
-const StyledContent = styled('div')(() => ({
+const StyledViewport = styled('div')(({ theme }) => ({
+    height: '100vh',
+    width: '100vw',
+    overflow: 'hidden',
+}));
+
+const StyledTopPanel = styled('div')(({ theme }) => ({
     display: 'flex',
     flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    position: 'absolute',
-    paddingTop: NAV_HEIGHT,
-    paddingBottom: NAV_FOOTER,
-    height: '100%',
     width: '100%',
-    overflow: 'hidden',
+    paddingTop: NAV_HEIGHT,
 }));
 
-const StyledNavbarChildren = styled('div')(({ theme }) => ({
+const StyledLeftPanel = styled('div')(({ theme }) => ({
     display: 'flex',
-    justifyContent: 'flex-end',
-    gap: theme.spacing(2),
+    flexDirection: 'row',
+    justifyContent: 'space-between',
 }));
 
-const StyledLeft = styled('div')(({ theme }) => ({
-    height: '100%',
-    width: '50%',
-    maxWidth: '400px',
+const StyledRightPanel = styled('div')(({ theme }) => ({}));
+
+const StyledVertDivider = styled('div')(({ theme }) => ({
+    width: theme.spacing(0.25),
+    background: theme.palette.divider,
+    '&:hover': {
+        cursor: 'ew-resize',
+    },
+}));
+
+const StyledHorizDivider = styled('div')(({ theme }) => ({
+    height: theme.spacing(0.25),
+    background: theme.palette.divider,
+    '&:hover': {
+        cursor: 'ns-resize',
+    },
+}));
+
+const StyledBottomPanel = styled('div')(({ theme }) => ({
+    display: 'flex',
+    flexDirection: 'column',
     overflow: 'hidden',
+    position: 'absolute',
+    bottom: '0',
+    width: '100%',
+    gap: theme.spacing(1),
+    paddingLeft: theme.spacing(1),
+    paddingRight: theme.spacing(1),
     background: theme.palette.background.paper,
-    padding: theme.spacing(2),
+    zIndex: 9999, // App Editor scroll bar hovers over this
 }));
 
-const StyledRight = styled('div')(() => ({
-    flex: '1',
-    height: '100%',
-    overflow: 'hidden',
-}));
-
-const StyledTrack = styled('div', {
-    shouldForwardProp: (prop) => prop !== 'active',
-})<{
-    /** Track if dev mode is enabled */
-    active: boolean;
-}>(({ theme, active }) => ({
-    display: 'flex',
-    alignItems: 'center',
-    flexShrink: '0',
-    width: '52px',
-    height: '32px',
-    padding: '2px 4px',
-    borderRadius: '100px',
-    borderWidth: '2px',
-    borderStyle: 'solid',
-    borderColor: active
-        ? theme.palette.primary.light
-        : theme.palette.grey['500'],
-    backgroundColor: active
-        ? theme.palette.primary.light
-        : theme.palette.action.active,
-    '&:hover': {
-        borderColor: active
-            ? `rgba(255, 255, 255, ${theme.palette.action.hoverOpacity})`
-            : theme.palette.grey['400'],
-    },
-}));
-
-const StyledHandle = styled(IconButton, {
-    shouldForwardProp: (prop) => prop !== 'active',
-})<{
-    /** Track if dev mode is enabled */
-    active: boolean;
-}>(({ theme, active }) => ({
-    left: active ? '16px' : '0px',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    width: '24px',
-    height: '24px',
-    borderRadius: '23px',
-    color: active ? theme.palette.common.white : theme.palette.common.black,
-    backgroundColor: active
-        ? theme.palette.primary.main
-        : theme.palette.grey['500'],
-    '&:hover': {
-        backgroundColor: active
-            ? `rgba(255, 255, 255, ${theme.palette.action.hoverOpacity})`
-            : theme.palette.grey['400'],
-    },
-    transition: theme.transitions.create(['left'], {
-        duration: theme.transitions.duration.standard,
-    }),
-}));
-
-type EditAppForm = {
-    PROJECT_UPLOAD: File;
-};
-
-/**
- * Layout for the app
- */
 export const AppPage = observer(() => {
-    const notification = useNotification();
-
     const { monolithStore, configStore } = useRootStore();
 
-    // get the app id from the url
+    // App ID Needed for pixel calls
     const { appId } = useParams();
 
     const [appPermission, setAppPermission] = useState('READ_ONLY');
     const [editMode, setEditMode] = useState<boolean>(false);
     const [isLoading, setIsLoading] = useState(false);
     const [counter, setCounter] = useState(0);
+    const [view, setView] = useState<
+        'code-editor' | 'settings' | 'permissions' | ''
+    >('');
 
-    const { handleSubmit, control } = useForm<EditAppForm>({
-        defaultValues: {
-            PROJECT_UPLOAD: null,
-        },
-    });
-
+    /**
+     * Effects
+     */
     useEffect(() => {
         getAppPermission();
-
         return () => {
             // disable edit
             setAppPermission('READ_ONLY');
@@ -145,102 +101,67 @@ export const AppPage = observer(() => {
     }, []);
 
     /**
-     * Determines whether user is allowed to edit or export
+     * @desc Determines whether user is allowed to edit or export the app in view
      */
     const getAppPermission = async () => {
         const response = await monolithStore.getUserProjectPermission(appId);
 
         setAppPermission(response.permission);
     };
-    /**
-     * Method that is called to create the app
-     */
-    const editApp = handleSubmit(async (data: EditAppForm) => {
-        // turn on loading
-        setIsLoading(true);
-
-        try {
-            const path = 'version/assets/';
-
-            // upnzip the file in the new app
-            await monolithStore.runQuery(
-                `DeleteAsset(filePath=["${path}"], space=["${appId}"]);`,
-            );
-
-            // upload the file
-            const upload = await monolithStore.uploadFile(
-                [data.PROJECT_UPLOAD],
-                configStore.store.insightID,
-                appId,
-                path,
-            );
-
-            // upnzip the file in the new app
-            await monolithStore.runQuery(
-                `UnzipFile(filePath=["${`${path}${upload[0].fileName}`}"], space=["${appId}"]);`,
-            );
-
-            // Load the insight classes
-            await monolithStore.runQuery(`ReloadInsightClasses('${appId}');`);
-
-            // set the app portal
-            await monolithStore.setProjectPortal(false, appId, true, 'public');
-
-            // Publish the app the insight classes
-            await monolithStore.runQuery(
-                `PublishProject('${appId}', release=true);`,
-            );
-
-            // close it
-            refreshOutlet();
-        } catch (e) {
-            console.error(e);
-
-            notification.add({
-                color: 'error',
-                message: e.message,
-            });
-        } finally {
-            // turn of loading
-            setIsLoading(false);
-        }
-    });
 
     /**
-     * Method that is called to download the app
+     * Turns Edit Mode off and handles layout
+     * @param mode
      */
-    const downloadApp = async () => {
-        // turn on loading
-        setIsLoading(true);
-
-        try {
-            const path = 'version/assets/';
-
-            // upnzip the file in the new app
-            const response = await monolithStore.runQuery(
-                `DownloadAsset(filePath=["${path}"], space=["${appId}"]);`,
-            );
-            const key = response.pixelReturn[0].output;
-            if (!key) {
-                throw new Error('Error Downloading Asset');
+    const switchEditorMode = (mode: boolean) => {
+        setEditMode(mode);
+        if (mode) {
+            // setTopPanelHeight('96.5%');
+            if (configStore.store.user.admin) {
+                setEditorView('code-editor');
+            } else {
+                setEditorView('settings');
             }
-
-            await monolithStore.download(configStore.store.insightID, key);
-        } catch (e) {
-            console.error(e);
-
-            notification.add({
-                color: 'error',
-                message: e.message,
-            });
-        } finally {
-            // turn of loading
-            setIsLoading(false);
+        } else {
+            // setTopPanelHeight('100%');
+            setEditorView('');
         }
     };
 
     /**
-     * Refresh the view
+     * @desc handle changes for navigation in editor mode (setting, editor, access)
+     * @param event
+     * @param newValue
+     * @desc changes tab group
+     */
+    const setEditorView = (
+        newValue: 'code-editor' | 'settings' | 'permissions' | '',
+    ) => {
+        if (newValue === 'code-editor') {
+            if (!configStore.store.user.admin) {
+                return;
+            }
+            setLeftPanelWidth('55%');
+            setRightPanelWidth('45%');
+        } else {
+            setLeftPanelWidth('25%');
+            setRightPanelWidth('75%');
+        }
+        setView(newValue);
+    };
+
+    const setConsoleHeight = () => {
+        if (bottomPanelHeight === '3.5%') {
+            setShowConsole(true);
+            setBottomPanelHeight('25%');
+        } else {
+            setShowConsole(false);
+            setBottomPanelHeight('3.5%');
+        }
+    };
+
+    /**
+     * @desc Refreshes the inner Iframe/Application
      */
     const refreshOutlet = () => {
         setCounter((c) => {
@@ -248,90 +169,137 @@ export const AppPage = observer(() => {
         });
     };
 
-    // navigate home if there is not app id
-    if (!appId) {
-        return <Navigate to="/" replace />;
-    }
+    /**
+     * Resizing of Panels Code
+     */
+    const [topPanelHeight, setTopPanelHeight] = useState('100%');
+    const [bottomPanelHeight, setBottomPanelHeight] = useState('3.5%');
+
+    const [leftPanelWidth, setLeftPanelWidth] = useState('50%');
+    const [rightPanelWidth, setRightPanelWidth] = useState('45%');
+
+    const [showConsole, setShowConsole] = useState(false);
+
+    const handleVerticalResize = (e) => {
+        const bottomPanelHeight =
+            (window.innerHeight - e.clientY) / window.innerHeight;
+        const newBottomPanelHeight = `${bottomPanelHeight * 100}%`;
+        const newTopPanelHeight = `${(e.clientY / window.innerHeight) * 100}%`;
+
+        if (bottomPanelHeight < 0.035) {
+            setShowConsole(false);
+        } else {
+            // Since position is absolute on the bottom panel we do not have to reset Top panel height
+            // setTopPanelHeight(newTopPanelHeight);
+            setBottomPanelHeight(newBottomPanelHeight);
+            setShowConsole(true);
+        }
+    };
+
+    const handleHorizontalResize = (e) => {
+        const containerWidth = window.innerWidth;
+        const rightContainerWidth =
+            ((containerWidth - e.clientX) / containerWidth) * 100;
+        const leftContainerWidth = (e.clientX / containerWidth) * 100;
+
+        const newRightPanelWidthPercentage = `${rightContainerWidth}%`;
+        const newLeftPanelWidthPercentage = `${leftContainerWidth}%`;
+
+        setLeftPanelWidth(newLeftPanelWidthPercentage);
+        setRightPanelWidth(newRightPanelWidthPercentage);
+    };
+
+    /**
+     * Value to pass for App Context
+     */
+    const value: AppContextType = {
+        /** App Id */
+        appId: appId,
+        /** Current Permission */
+        permission: appPermission,
+        /** Needed for panels in view and navigation */
+        editorMode: editMode,
+        /** Editor View (code-editor, settings, permissions) */
+        editorView: view,
+        /** Is our App Console Open */
+        openConsole: showConsole,
+        /** Loading */
+        isLoading: isLoading,
+        /** Turns edit mode on/off */
+        setEditorMode: switchEditorMode,
+        /** Changes Layout */
+        setEditorView: setEditorView,
+        /** Opens and closes console */
+        setOpenConsole: setConsoleHeight,
+        /** Set Loading */
+        setIsLoading: setIsLoading,
+        /** Refreshes App */
+        refreshApp: refreshOutlet,
+    };
 
     return (
-        <>
-            <Navbar>
-                {appPermission === 'OWNER' && (
-                    <StyledNavbarChildren>
-                        <StyledTrack
-                            active={editMode}
-                            onClick={() => {
-                                if (appPermission === 'OWNER') {
-                                    setEditMode(!editMode);
-                                } else {
-                                    notification.add({
-                                        color: 'error',
-                                        message:
-                                            'Currently you do not have access to edit this application.',
-                                    });
-                                }
-                            }}
-                        >
-                            <StyledHandle active={editMode}>
-                                <Code />
-                            </StyledHandle>
-                        </StyledTrack>
-                        <Button
-                            size={'small'}
-                            color={'primary'}
-                            variant={'outlined'}
-                            onClick={() => {
-                                downloadApp();
-                            }}
-                        >
-                            <Download />
-                        </Button>
-                    </StyledNavbarChildren>
-                )}
-            </Navbar>
-            <StyledContent>
-                {editMode && (
-                    <StyledLeft>
-                        <form onSubmit={editApp}>
-                            <Stack direction="column" spacing={1}>
-                                <Typography variant="subtitle2">
-                                    Update Project
-                                </Typography>
-                                <Controller
-                                    name={'PROJECT_UPLOAD'}
-                                    control={control}
-                                    rules={{}}
-                                    render={({ field }) => {
-                                        console.log(field.value);
-                                        return (
-                                            <FileDropzone
-                                                multiple={false}
-                                                value={field.value}
-                                                disabled={isLoading}
-                                                onChange={(newValues) => {
-                                                    field.onChange(newValues);
-                                                }}
-                                            />
+        <StyledViewport>
+            <AppContext.Provider value={value}>
+                <Navbar>
+                    {/* Actions to Open Editor Mode */}
+                    {appPermission === 'OWNER' && <AppEditorActions />}
+                </Navbar>
+
+                {/* Top Panel: Contains Editor and Renderer */}
+                <StyledTopPanel sx={{ height: topPanelHeight }}>
+                    {editMode && (
+                        <StyledLeftPanel sx={{ width: leftPanelWidth }}>
+                            {/* Left Panel for Editor Mode */}
+                            <AppEditorPanel />
+                            <StyledVertDivider
+                                onMouseDown={(e) => {
+                                    e.preventDefault();
+                                    window.addEventListener(
+                                        'mousemove',
+                                        handleHorizontalResize,
+                                    );
+                                    window.addEventListener('mouseup', () => {
+                                        window.removeEventListener(
+                                            'mousemove',
+                                            handleHorizontalResize,
                                         );
-                                    }}
-                                />
-                                <Stack alignItems={'center'}>
-                                    <Button
-                                        type="submit"
-                                        variant={'contained'}
-                                        disabled={isLoading}
-                                    >
-                                        Update
-                                    </Button>
-                                </Stack>
-                            </Stack>
-                        </form>
-                    </StyledLeft>
-                )}
-                <StyledRight>
-                    <AppRenderer key={counter} appId={appId}></AppRenderer>
-                </StyledRight>
-            </StyledContent>
-        </>
+                                    });
+                                }}
+                            />
+                        </StyledLeftPanel>
+                    )}
+
+                    <StyledRightPanel
+                        sx={{ width: !editMode ? '100%' : rightPanelWidth }}
+                    >
+                        {/* Right Panel that Renders our App */}
+                        <AppRenderer key={counter} appId={appId}></AppRenderer>
+                    </StyledRightPanel>
+                </StyledTopPanel>
+
+                {/* Only when in Editor Mode: Resizable Bottom Panel  */}
+                {editMode ? (
+                    <StyledBottomPanel sx={{ height: bottomPanelHeight }}>
+                        <StyledHorizDivider
+                            onMouseDown={(e) => {
+                                e.preventDefault();
+                                window.addEventListener(
+                                    'mousemove',
+                                    handleVerticalResize,
+                                );
+                                window.addEventListener('mouseup', () => {
+                                    window.removeEventListener(
+                                        'mousemove',
+                                        handleVerticalResize,
+                                    );
+                                });
+                            }}
+                        ></StyledHorizDivider>
+                        {/* App Console */}
+                        <AppConsole />
+                    </StyledBottomPanel>
+                ) : null}
+            </AppContext.Provider>
+        </StyledViewport>
     );
 });

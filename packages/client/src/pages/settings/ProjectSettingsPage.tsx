@@ -1,8 +1,8 @@
 import { useEffect, useState, useRef, useReducer } from 'react';
 
-import { useRootStore, usePixel, useSettings } from '../../hooks';
+import { useRootStore, usePixel, useSettings, useAPI } from '../../hooks';
 import { useNavigate } from 'react-router-dom';
-import { ProjectTileCard } from '@/components/project';
+import { ProjectTileCard } from '@/components/app';
 
 import {
     Grid,
@@ -12,6 +12,10 @@ import {
     ToggleButton,
     ToggleButtonGroup,
     styled,
+    Backdrop,
+    CircularProgress,
+    Stack,
+    Typography,
 } from '@semoss/ui';
 
 import {
@@ -71,9 +75,13 @@ export const ProjectSettingsPage = () => {
     const [view, setView] = useState('tile');
     const [search, setSearch] = useState('');
     const [sort, setSort] = useState('Name');
-
+    const [canCollect, setCanCollect] = useState(true);
+    const [offset, setOffset] = useState(0);
     const [selectedProject, setSelectedProject] =
         useState<ProjectInterface>(null);
+
+    //** amount of items to be loaded */
+    const limit = 15;
 
     // To focus when getting new results
     const searchbarRef = useRef(null);
@@ -97,33 +105,14 @@ export const ProjectSettingsPage = () => {
     const metaKeys = projectMetaKeys.map((k) => {
         return k.metakey;
     });
-    // const getProjects = useAPI(['getProjects', adminMode]);
-    const getProjects = usePixel(`
-        MyProjects(metaKeys = ${JSON.stringify(
-            metaKeys,
-        )}, filterWord=["${search}"]);
-    `);
 
-    useEffect(() => {
-        // REST call to get all apps
-        if (getProjects.status !== 'SUCCESS' || !getProjects.data) {
-            return;
-        }
-
-        dispatch({
-            type: 'field',
-            field: 'projects',
-            value: getProjects.data,
-        });
-
-        setSelectedProject(null);
-        searchbarRef.current?.focus();
-
-        () => {
-            console.warn('Cleaning up getProjects');
-            // setProjects([]);
-        };
-    }, [getProjects.status, getProjects.data]);
+    const getProjects = useAPI([
+        'getProjects',
+        adminMode,
+        search,
+        offset,
+        limit,
+    ]);
 
     const formatProjectName = (str) => {
         let i;
@@ -134,6 +123,16 @@ export const ProjectSettingsPage = () => {
         return frags.join(' ');
     };
 
+    //** reset dataMode if adminMode is toggled */
+    useEffect(() => {
+        setOffset(0);
+        dispatch({
+            type: 'field',
+            field: 'projects',
+            value: [],
+        });
+    }, [adminMode, search]);
+
     // // show a loading screen when getProjects is pending
     // if (getProjects.status !== 'SUCCESS') {
     //     return (
@@ -141,106 +140,206 @@ export const ProjectSettingsPage = () => {
     //     );
     // }
 
-    return (
-        <StyledContainer>
-            <StyledSearchbarContainer>
-                <Search
-                    value={search}
-                    onChange={(e) => {
-                        setSearch(e.target.value);
-                    }}
-                    label="Project"
-                    size="small"
-                    enableEndAdornment={true}
-                    ref={searchbarRef}
-                    sx={{ width: '80%' }}
-                />
-                <StyledSort
-                    size={'small'}
-                    value={sort}
-                    onChange={(e) => setSort(e.target.value)}
-                >
-                    <MenuItem value="Name">Name</MenuItem>
-                    <MenuItem value="Date Created">Date Created</MenuItem>
-                    <MenuItem value="Views">Views</MenuItem>
-                    <MenuItem value="Trending">Trending</MenuItem>
-                    <MenuItem value="Upvotes">Upvotes</MenuItem>
-                </StyledSort>
+    //** append data through infinite scroll */
+    useEffect(() => {
+        if (getProjects.status !== 'SUCCESS') {
+            return;
+        }
 
-                <ToggleButtonGroup size={'small'} value={view}>
-                    <ToggleButton<string>
-                        onClick={(e, v) => setView(v)}
-                        value={'tile'}
+        if (getProjects.data.length < limit) {
+            setCanCollect(false);
+        } else {
+            if (!canCollectRef.current) {
+                setCanCollect(true);
+            }
+        }
+
+        const mutateListWithVotes = projects;
+
+        getProjects.data.forEach((proj, i) => {
+            mutateListWithVotes.push({
+                ...proj,
+                project_global: proj.project_global,
+                project_id: proj.project_id,
+                project_name: proj.project_name,
+                project_permission: proj.project_permission,
+                project_visibility: proj.project_visibility,
+            });
+        });
+
+        dispatch({
+            type: 'field',
+            field: 'projects',
+            value: mutateListWithVotes,
+        });
+
+        searchbarRef.current?.focus();
+    }, [getProjects.status, getProjects.data]);
+
+    //** infinite sroll variables */
+    let scrollEle, scrollTimeout, currentScroll, previousScroll;
+    const offsetRef = useRef(0);
+    offsetRef.current = offset;
+    const canCollectRef = useRef(true);
+    canCollectRef.current = canCollect;
+
+    const scrollAll = () => {
+        currentScroll = scrollEle.scrollTop + scrollEle.offsetHeight;
+        if (
+            currentScroll > scrollEle.scrollHeight * 0.75 &&
+            currentScroll > previousScroll
+        ) {
+            if (scrollTimeout) {
+                clearTimeout(scrollTimeout);
+            }
+
+            scrollTimeout = setTimeout(() => {
+                if (!canCollectRef.current) {
+                    return;
+                }
+
+                setOffset(offsetRef.current + limit);
+            }, 500);
+        }
+
+        previousScroll = currentScroll;
+    };
+
+    /**
+     * @desc infinite scroll
+     */
+    useEffect(() => {
+        scrollEle = document.querySelector('#home__content');
+
+        scrollEle.addEventListener('scroll', scrollAll);
+        return () => {
+            scrollEle.removeEventListener('scroll', scrollAll);
+        };
+    }, [scrollEle]);
+
+    return (
+        <>
+            <Backdrop
+                open={getProjects.status !== 'SUCCESS'}
+                sx={{
+                    backgroundColor: 'rgba(255, 255, 255, 0.5)',
+                    zIndex: 1501,
+                }}
+            >
+                <Stack
+                    direction={'column'}
+                    alignItems={'center'}
+                    justifyContent={'center'}
+                    spacing={1}
+                >
+                    <CircularProgress />
+                    <Typography variant="body2">Loading</Typography>
+                    <Typography variant="caption">Projects</Typography>
+                </Stack>
+            </Backdrop>
+            <StyledContainer>
+                <StyledSearchbarContainer>
+                    <Search
+                        value={search}
+                        onChange={(e) => {
+                            setSearch(e.target.value);
+                        }}
+                        label="Project"
+                        size="small"
+                        enableEndAdornment={true}
+                        ref={searchbarRef}
+                        sx={{ width: '80%' }}
+                    />
+                    <StyledSort
+                        size={'small'}
+                        value={sort}
+                        onChange={(e) => setSort(e.target.value)}
                     >
-                        <SpaceDashboardOutlined />
-                    </ToggleButton>
-                    <ToggleButton onClick={(e, v) => setView(v)} value={'list'}>
-                        <FormatListBulletedOutlined />
-                    </ToggleButton>
-                </ToggleButtonGroup>
-            </StyledSearchbarContainer>
-            <Grid container spacing={3}>
-                {projects.length
-                    ? projects.map((project, i) => {
-                          return (
-                              <Grid
-                                  item
-                                  key={i}
-                                  sm={view === 'list' ? 12 : 12}
-                                  md={view === 'list' ? 12 : 6}
-                                  lg={view === 'list' ? 12 : 4}
-                                  xl={view === 'list' ? 12 : 3}
-                              >
-                                  {view === 'list' ? (
-                                      <ProjectTileCard
-                                          name={formatProjectName(
-                                              project.project_name,
-                                          )}
-                                          id={project.project_id}
-                                          description={project.description}
-                                          onClick={(id) => {
-                                              navigate(
-                                                  `${project.project_id}`,
-                                                  {
-                                                      state: {
-                                                          name: formatProjectName(
-                                                              project.project_name,
-                                                          ),
-                                                          global: false,
-                                                          permission: 3,
+                        <MenuItem value="Name">Name</MenuItem>
+                        <MenuItem value="Date Created">Date Created</MenuItem>
+                        <MenuItem value="Views">Views</MenuItem>
+                        <MenuItem value="Trending">Trending</MenuItem>
+                        <MenuItem value="Upvotes">Upvotes</MenuItem>
+                    </StyledSort>
+
+                    <ToggleButtonGroup size={'small'} value={view}>
+                        <ToggleButton<string>
+                            onClick={(e, v) => setView(v)}
+                            value={'tile'}
+                        >
+                            <SpaceDashboardOutlined />
+                        </ToggleButton>
+                        <ToggleButton
+                            onClick={(e, v) => setView(v)}
+                            value={'list'}
+                        >
+                            <FormatListBulletedOutlined />
+                        </ToggleButton>
+                    </ToggleButtonGroup>
+                </StyledSearchbarContainer>
+                <Grid container spacing={3}>
+                    {projects.length
+                        ? projects.map((project, i) => {
+                              return (
+                                  <Grid
+                                      item
+                                      key={i}
+                                      sm={view === 'list' ? 12 : 12}
+                                      md={view === 'list' ? 12 : 6}
+                                      lg={view === 'list' ? 12 : 4}
+                                      xl={view === 'list' ? 12 : 3}
+                                  >
+                                      {view === 'list' ? (
+                                          <ProjectTileCard
+                                              name={formatProjectName(
+                                                  project.project_name,
+                                              )}
+                                              id={project.project_id}
+                                              description={project.description}
+                                              onClick={(id) => {
+                                                  navigate(
+                                                      `${project.project_id}`,
+                                                      {
+                                                          state: {
+                                                              name: formatProjectName(
+                                                                  project.project_name,
+                                                              ),
+                                                              global: false,
+                                                              permission: 3,
+                                                          },
                                                       },
-                                                  },
-                                              );
-                                          }}
-                                      />
-                                  ) : (
-                                      <ProjectTileCard
-                                          name={formatProjectName(
-                                              project.project_name,
-                                          )}
-                                          id={project.project_id}
-                                          description={project.description}
-                                          onClick={(id) => {
-                                              navigate(
-                                                  `${project.project_id}`,
-                                                  {
-                                                      state: {
-                                                          name: formatProjectName(
-                                                              project.project_name,
-                                                          ),
-                                                          global: false,
-                                                          permission: 3,
+                                                  );
+                                              }}
+                                          />
+                                      ) : (
+                                          <ProjectTileCard
+                                              name={formatProjectName(
+                                                  project.project_name,
+                                              )}
+                                              id={project.project_id}
+                                              description={project.description}
+                                              onClick={(id) => {
+                                                  navigate(
+                                                      `${project.project_id}`,
+                                                      {
+                                                          state: {
+                                                              name: formatProjectName(
+                                                                  project.project_name,
+                                                              ),
+                                                              global: false,
+                                                              permission: 3,
+                                                          },
                                                       },
-                                                  },
-                                              );
-                                          }}
-                                      />
-                                  )}
-                              </Grid>
-                          );
-                      })
-                    : 'No apps to choose from'}
-            </Grid>
-        </StyledContainer>
+                                                  );
+                                              }}
+                                          />
+                                      )}
+                                  </Grid>
+                              );
+                          })
+                        : 'No apps to choose from'}
+                </Grid>
+            </StyledContainer>
+        </>
     );
 };

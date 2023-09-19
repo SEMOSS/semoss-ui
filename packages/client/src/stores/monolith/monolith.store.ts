@@ -165,6 +165,170 @@ export class MonolithStore {
         return true;
     }
 
+    /**
+     * Allow the user to login with lin otp
+     *
+     * @param username - username to login with
+     * @param password - password to login with
+     * @returns true if successful
+     */
+    async loginOTP(
+        username: string,
+        password: string,
+    ): Promise<'success' | 'change-password'> {
+        const postData = `username=${encodeURIComponent(
+            username,
+        )}&pin=${encodeURIComponent(password)}&disableRedirect=true`;
+
+        // track the status
+        let status: 'success' | 'change-password' = 'success';
+
+        await axios
+            .post(`${MODULE}/api/auth/loginLinOTP`, postData, {
+                headers: {
+                    'content-type': 'application/x-www-form-urlencoded',
+                },
+            })
+            .catch((error) => {
+                if (
+                    error.response &&
+                    error.response.status === 401 &&
+                    error.response.data &&
+                    error.response.data.requirePwdChange
+                ) {
+                    status = 'change-password';
+                    return;
+                }
+
+                // throw the message
+                throw Error(error);
+            });
+
+        return status;
+    }
+
+    /**
+     * Confirm the OTP from LinOTP
+     *
+     * @param otp - otp to login with
+     * @returns true if successful
+     */
+    async confirmOTP(otp: string): Promise<boolean> {
+        const postData = `otp=${encodeURIComponent(otp)}&disableRedirect=true`;
+
+        await axios
+            .post(`${MODULE}/api/auth/loginLinOTP`, postData, {
+                headers: {
+                    'content-type': 'application/x-www-form-urlencoded',
+                },
+            })
+            .catch((error) => {
+                // throw the message
+                throw Error(error.response.data.errorMessage);
+            });
+
+        return true;
+    }
+
+    /**
+     * Allow the user to login with lin otp
+     *
+     * @param username - username to login with
+     * @param password - password to login with
+     * @returns true if successful
+     */
+    async loginLDAP(
+        username: string,
+        password: string,
+    ): Promise<'success' | 'change-password'> {
+        const postData = `username=${encodeURIComponent(
+            username,
+        )}&pin=${encodeURIComponent(password)}&disableRedirect=true`;
+
+        // track the status
+        let status: 'success' | 'change-password' = 'success';
+
+        await axios
+            .post(`${MODULE}/api/auth/loginLDAP`, postData, {
+                headers: {
+                    'content-type': 'application/x-www-form-urlencoded',
+                },
+            })
+            .catch((error) => {
+                if (
+                    error.response &&
+                    error.response.status === 401 &&
+                    error.response.data &&
+                    error.response.data.requirePwdChange
+                ) {
+                    status = 'change-password';
+                    return;
+                }
+
+                // throw the message
+                throw Error(error);
+            });
+
+        return status;
+    }
+
+    /**
+     * @name createUser
+     * @desc this call will run createUser endpoint
+     * @param name, name of new user
+     * @param username, username of new user
+     * @param email, email of new user
+     * @param password, password of new user
+     * @param phone, phone of new user
+     * @param phoneextension, phoneextension of new user
+     * @param countrycode, countrycode of new user
+     * @returns $http promise
+     */
+    async registerUser(
+        name: string,
+        username: string,
+        email: string,
+        password: string,
+        phone: string,
+        phoneextension: string,
+        countrycode: string,
+    ) {
+        const create: string =
+            'name=' +
+            encodeURIComponent(name) +
+            '&username=' +
+            encodeURIComponent(username) +
+            '&email=' +
+            encodeURIComponent(email) +
+            '&password=' +
+            encodeURIComponent(password);
+        '&phone=' +
+            encodeURIComponent(phone) +
+            '&phoneextension=' +
+            encodeURIComponent(phoneextension) +
+            '&countrycode=' +
+            encodeURIComponent(countrycode);
+        return await axios
+            .post(`${MODULE}/api/auth/createUser`, create, {
+                headers: {
+                    'content-type': 'application/x-www-form-urlencoded',
+                },
+            })
+            .catch((error) => {
+                if (
+                    error.response &&
+                    error.response.status === 401 &&
+                    error.response.data &&
+                    error.response.data.requirePwdChange
+                ) {
+                    return;
+                }
+
+                // throw the message
+                throw Error(error);
+            });
+    }
+
     /**     *
      * @returns true if successful
      */
@@ -294,6 +458,52 @@ export class MonolithStore {
     // Engine
     // ----------------------------------------------------------------------
     /**
+     * @name getEngines
+     * @param admin - is admin user
+     * @returns AppInterface[]
+     */
+    async getEngines(
+        admin: boolean,
+        search: string,
+        engineType: string,
+        offset?: number,
+        limit?: number,
+    ) {
+        let url = `${MODULE}/api/auth/`;
+
+        if (admin) {
+            url += 'admin/';
+        }
+
+        url += 'engine/getEngines';
+
+        const params = {};
+
+        params['engineTypes'] = engineType;
+        search && (params['filterWord'] = search);
+
+        offset && (params['offset'] = offset);
+
+        limit && (params['limit'] = limit);
+
+        // get the response
+        const response = await axios
+            .get(url, {
+                params: params,
+            })
+            .catch((error) => {
+                throw Error(error);
+            });
+
+        // there was no response, that is an error
+        if (!response) {
+            throw Error('No Response to get Apps');
+        }
+
+        return response.data;
+    }
+
+    /**
      * @name getUserEnginePermission
      * @desc Get a user's role for the engine
      * @param id - id of engine (db, storage, model)
@@ -319,7 +529,7 @@ export class MonolithStore {
     }
 
     /**
-     * @name getDatabaseUsers
+     * @name getEngineUsers
      * @param admin
      * @param appId
      * @returns MemberInterface[]
@@ -773,13 +983,17 @@ export class MonolithStore {
     // ----------------------------------------------------------------------
     // Project Level
     // ----------------------------------------------------------------------
-
     /**
      * @name getProjects
      * @param admin - is admin user
      * @returns Projects retrieved from Promise
      */
-    async getProjects(admin: boolean) {
+    async getProjects(
+        admin: boolean,
+        search?: string,
+        offset?: number,
+        limit?: number,
+    ) {
         let url = `${MODULE}/api/auth/`;
 
         if (admin) {
@@ -787,6 +1001,14 @@ export class MonolithStore {
         }
 
         url += 'project/getProjects';
+
+        const params = {};
+
+        search && (params['filterWord'] = search);
+
+        offset && (params['offset'] = offset);
+
+        limit && (params['limit'] = limit);
 
         const response = await axios
             .get<
@@ -797,7 +1019,9 @@ export class MonolithStore {
                     project_permission: string;
                     project_visibility: boolean;
                 }[]
-            >(url)
+            >(url, {
+                params: params,
+            })
             .catch((error) => {
                 throw Error(error);
             });
@@ -1132,15 +1356,14 @@ export class MonolithStore {
         let url = `${MODULE}/api/auth/`,
             postData = '';
 
-        // if (admin) {
-        //     url += 'admin/';
-        // }
+        if (admin) {
+            url += 'admin/';
+        }
 
-        // change to database
-        url += 'project/setProjectVisibility';
+        url += 'project/setProjectDiscoverable';
 
         postData += 'projectId=' + encodeURIComponent(appId);
-        postData += '&visibility=' + encodeURIComponent(visible);
+        postData += '&discoverable=' + encodeURIComponent(visible);
 
         const response = await axios.post<{ success: boolean }>(url, postData, {
             headers: {
@@ -1618,6 +1841,8 @@ export class MonolithStore {
 
         if (admin) {
             url += 'admin/';
+        } else {
+            return;
         }
 
         url += 'user/getAllUsers';

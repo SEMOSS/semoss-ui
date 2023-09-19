@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 
 import { Stack, styled } from '@semoss/ui';
 import { usePixel } from '@/hooks';
-import { PlainDatabaseCard } from './GenericDatabaseCards';
+import { PlainEngineCard } from '../engine/GenericEngineCards';
 import { LoadingScreen } from '@/components/ui';
 
 interface SimilarDatabasesProps {
@@ -39,7 +39,7 @@ export const SimilarDatabases = (props: SimilarDatabasesProps) => {
                 {data.map((db, i) => {
                     return (
                         <StyledCardContainer key={i}>
-                            <PlainDatabaseCard
+                            <PlainEngineCard
                                 id={db.database_id}
                                 name={db.database_name}
                                 onClick={() => {

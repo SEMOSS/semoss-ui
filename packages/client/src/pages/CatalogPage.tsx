@@ -25,7 +25,7 @@ import {
 
 import { useNavigate, useLocation } from 'react-router-dom';
 
-import { DatabaseLandscapeCard, DatabaseTileCard } from '@/components/database';
+import { EngineLandscapeCard, EngineTileCard } from '@/components/engine';
 import { usePixel, useRootStore } from '@/hooks';
 import { Page } from '@/components/ui';
 
@@ -734,70 +734,6 @@ export const CatalogPage = observer((): JSX.Element => {
         >
             <StyledContainer>
                 <StyledFilter>
-                    {/* <StyledFilterList dense={true}>
-                        <List.Item>
-                            <List.ItemButton
-                                sx={{ borderRadius: 8 }}
-                                selected={catalogType === 'database'}
-                                onClick={() => {
-                                    navigate(`/catalog?type=database`);
-                                }}
-                            >
-                                <List.Icon>
-                                    <svg
-                                        xmlns="http://www.w3.org/2000/svg"
-                                        width="20"
-                                        height="20"
-                                        viewBox="0 0 20 20"
-                                        fill="none"
-                                    >
-                                        <path
-                                            fillRule="evenodd"
-                                            clipRule="evenodd"
-                                            d="M8 0C3.58 0 0 1.79 0 4V14C0 16.21 3.59 18 8 18C12.41 18 16 16.21 16 14V4C16 1.79 12.42 0 8 0ZM14 14C14 14.5 11.87 16 8 16C4.13 16 2 14.5 2 14V11.77C3.61 12.55 5.72 13 8 13C10.28 13 12.39 12.55 14 11.77V14ZM14 9.45C12.7 10.4 10.42 11 8 11C5.58 11 3.3 10.4 2 9.45V6.64C3.47 7.47 5.61 8 8 8C10.39 8 12.53 7.47 14 6.64V9.45ZM8 6C4.13 6 2 4.5 2 4C2 3.5 4.13 2 8 2C11.87 2 14 3.5 14 4C14 4.5 11.87 6 8 6Z"
-                                            fill="#5C5C5C"
-                                        />
-                                    </svg>
-                                </List.Icon>
-                                <List.ItemText primary={'Data Catalog'} />
-                            </List.ItemButton>
-                        </List.Item>
-                        <List.Item>
-                            <List.ItemButton
-                                sx={{ borderRadius: 8 }}
-                                disabled={true}
-                                selected={catalogType === 'storage'}
-                                onClick={() => {
-                                    navigate(`/catalog?type=storage`);
-                                }}
-                            >
-                                <List.Icon>
-                                    <Inventory2Outlined />
-                                </List.Icon>
-                                <List.ItemText primary={'Storage Catalog'} />
-                            </List.ItemButton>
-                        </List.Item>
-                        <List.Item>
-                            <List.ItemButton
-                                sx={
-                                    {
-                                        // borderRadius: 4
-                                    }
-                                }
-                                disabled={true}
-                                selected={catalogType === 'model'}
-                                onClick={() => {
-                                    navigate(`/catalog?type=model`);
-                                }}
-                            >
-                                <List.Icon>
-                                    <MenuBookOutlined />
-                                </List.Icon>
-                                <List.ItemText primary={'Model Catalog'} />
-                            </List.ItemButton>
-                        </List.Item>
-                    </StyledFilterList> */}
-
                     <StyledFilterList dense={true}>
                         <List.Item
                             secondaryAction={
@@ -1076,7 +1012,7 @@ export const CatalogPage = observer((): JSX.Element => {
                                         xl={view === 'list' ? 12 : 4}
                                     >
                                         {view === 'list' ? (
-                                            <DatabaseLandscapeCard
+                                            <EngineLandscapeCard
                                                 name={formatDBName(
                                                     db.database_name,
                                                 )}
@@ -1114,7 +1050,7 @@ export const CatalogPage = observer((): JSX.Element => {
                                                 }
                                             />
                                         ) : (
-                                            <DatabaseTileCard
+                                            <EngineTileCard
                                                 name={formatDBName(
                                                     db.database_name,
                                                 )}

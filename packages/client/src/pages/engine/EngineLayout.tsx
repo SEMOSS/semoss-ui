@@ -117,28 +117,35 @@ export const EngineLayout = () => {
             label: 'Overview',
             path: '',
         },
-        {
-            label: 'Usage',
-            path: '/usage',
-        },
     ];
 
-    if (engineType === 'database') {
-        tabs.push({
-            label: 'Metadata',
-            path: '/metadata',
-        });
-    }
+    if (getUserEnginePermission.status === 'SUCCESS') {
+        if (
+            getUserEnginePermission.data.permission === 'EDIT' ||
+            getUserEnginePermission.data.permission === 'OWNER' ||
+            getUserEnginePermission.data.permission === 'READ_ONLY'
+        ) {
+            if (engineType === 'database') {
+                tabs.push({
+                    label: 'Metadata',
+                    path: '/metadata',
+                });
+            }
 
-    if (
-        getUserEnginePermission.status === 'SUCCESS' &&
-        (getUserEnginePermission.data.permission === 'EDITOR' ||
-            getUserEnginePermission.data.permission === 'OWNER')
-    ) {
-        tabs.push({
-            label: 'Settings',
-            path: '/settings',
-        });
+            tabs.push({
+                label: 'Usage',
+                path: '/usage',
+            });
+        }
+        if (
+            getUserEnginePermission.data.permission === 'EDIT' ||
+            getUserEnginePermission.data.permission === 'OWNER'
+        ) {
+            tabs.push({
+                label: 'Settings',
+                path: '/settings',
+            });
+        }
     }
 
     /**

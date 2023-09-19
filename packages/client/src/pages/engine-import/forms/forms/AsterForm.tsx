@@ -192,6 +192,7 @@ export const AsterForm: ImportFormComponent = (props) => {
                             <TextField
                                 fullWidth
                                 label="Password"
+                                type="password"
                                 value={field.value ? field.value : ''}
                                 onChange={(value) => field.onChange(value)}
                             ></TextField>

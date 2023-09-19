@@ -69,7 +69,7 @@ const StyledDescription = styled(Typography)(() => ({
 const StyledActionButton = styled(IconButton)(({ theme }) => ({
     background: theme.palette.text.primary,
     color: theme.palette.primary.contrastText,
-    ':hover': {
+    '&:hover': {
         background: theme.palette.text.secondary,
     },
 }));

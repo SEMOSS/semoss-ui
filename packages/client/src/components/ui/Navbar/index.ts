@@ -1,3 +1,4 @@
 import { Navbar, NavbarProps } from './Navbar';
+import { AppEditorActions } from './AppEditorActions';
 
-export * from './Navbar';
+export { Navbar, AppEditorActions };

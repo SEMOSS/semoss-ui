@@ -59,3 +59,4 @@ export * from "./components/Typography";
 export * from "./components/ThemeProvider";
 export * from "./components/TextArea";
 export * from "./components/TextField";
+export * from "./components/TreeView";
