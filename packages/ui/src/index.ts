@@ -29,6 +29,7 @@ export * from "./components/FormControl";
 export * from "./components/Grid";
 export * from "./components/Icon";
 export * from "./components/IconButton";
+export * from "./components/ImageSelector";
 export * from "./components/InputAdornment";
 export * from "./components/LinearProgress";
 export * from "./components/Link";

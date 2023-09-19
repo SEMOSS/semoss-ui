@@ -5,8 +5,7 @@ import {
     Stack,
     TextField,
     Autocomplete,
-    List,
-    Box,
+    ImageSelector,
     useNotification,
     styled,
 } from '@semoss/ui';
@@ -18,6 +17,11 @@ import { MarkdownEditor } from '@/components/common';
 
 const StyledEditorContainer = styled('div')(({ theme }) => ({
     marginBottom: theme.spacing(1),
+}));
+
+const StyledEditorContainerImages = styled('div')(({ theme }) => ({
+    marginBottom: theme.spacing(10),
+    height: '430px',
 }));
 
 const StyledStack = styled(Stack)(({ theme }) => ({
@@ -36,6 +40,9 @@ interface EditDatabaseDetailsProps {
 
     /** Current image src */
     currentImageSrc?: string;
+
+    /** Type of modal; db/storage/model */
+    type: string;
 }
 
 /**
@@ -48,6 +55,7 @@ export const EditDatabaseDetails = observer(
             onClose = () => null,
             values = {},
             currentImageSrc,
+            type,
         } = props;
 
         // get the notification
@@ -56,25 +64,7 @@ export const EditDatabaseDetails = observer(
         // get the configStore
         const { configStore, monolithStore } = useRootStore();
 
-        //image options
-        const imageOptions = [
-            { label: 'Default', src: currentImageSrc },
-            { label: 'test', src: 'https://via.placeholder.com/180x150/200' },
-            { label: 'test 1', src: 'https://via.placeholder.com/180x150/200' },
-            { label: 'test 2', src: 'https://via.placeholder.com/180x150/200' },
-        ];
-
-        //get and set image label and source
-        const [newImageLabel, setNewImageLabel] = useState('Default');
-        const [newImageSrc, setNewImageSrc] = useState(currentImageSrc);
-
-        useEffect(() => {
-            imageOptions.filter((obj) => {
-                if (obj.label === newImageLabel) {
-                    setNewImageSrc(obj.src);
-                }
-            });
-        }, [newImageLabel]);
+        const [isLoading, setIsLoading] = useState(false);
 
         // get a list of the keys
         const databaseMetaKeys =
@@ -136,6 +126,77 @@ export const EditDatabaseDetails = observer(
         const { handleSubmit, control } = useForm<Record<string, unknown>>({
             defaultValues: values,
         });
+
+        /** Images Options */
+        const imageOptions: { title: string; src: string }[] = [
+            { title: 'Default', src: currentImageSrc },
+            {
+                title: 'Blue Default',
+                src: require('@/assets/img/BlueDefault.png'),
+            },
+            {
+                title: 'Orange Default',
+                src: require('@/assets/img/OrangeDefault.png'),
+            },
+            {
+                title: 'Purple Default',
+                src: require('@/assets/img/PurpleDefault.png'),
+            },
+            {
+                title: 'Red Default',
+                src: require('@/assets/img/RedDefault.png'),
+            },
+        ];
+
+        //get and set image label and source
+        const [newImageLabel, setNewImageLabel] = useState('Default');
+        const [newImageSrc, setNewImageSrc] = useState(currentImageSrc);
+
+        useEffect(() => {
+            imageOptions.filter((obj) => {
+                if (obj.title === newImageLabel) {
+                    setNewImageSrc(obj.src);
+                }
+            });
+        }, [newImageLabel]);
+        /** */
+
+        /**
+         * @name handleAddNewImage
+         * @desc
+         * @param value
+         */
+        const handleAddNewImage = async (value) => {
+            // turn on loading
+            setIsLoading(true);
+
+            try {
+                const path = 'version/assets/';
+
+                // upload the file
+                const upload = await monolithStore.uploadFile(
+                    value,
+                    id,
+                    configStore.store.insightID,
+                    path,
+                );
+
+                // upnzip the file in the new project
+                await monolithStore.runQuery(
+                    `UnzipFile(filePath=["${`${path}${upload[0].fileName}`}"], space=["${id}"])`,
+                );
+
+                imageOptions.push({
+                    title: upload[0].fileName,
+                    src: require(upload[0].fileLocation),
+                });
+            } catch (e) {
+                console.error(e);
+            } finally {
+                // turn of loading
+                setIsLoading(false);
+            }
+        };
 
         /**
          * @name onSubmit
@@ -208,56 +269,28 @@ export const EditDatabaseDetails = observer(
                     onClose(false);
                 }}
             >
-                <Modal.Title>Edit Database Details TEST</Modal.Title>
+                <Modal.Title>Edit {type} Details</Modal.Title>
                 <Modal.Content>
                     <StyledStack spacing={4}>
-                        <Controller
-                            name={'image'}
-                            control={control}
-                            render={({ field }) => {
-                                return (
-                                    <Autocomplete
-                                        disableClearable
-                                        label={'Image'}
-                                        options={imageOptions}
-                                        value={newImageLabel}
-                                        isOptionEqualToValue={(option, value) =>
-                                            option.label === value.label
-                                        }
-                                        onChange={(event, newValue) => {
-                                            field.onChange(newValue.src);
-                                            setNewImageLabel(newValue.label);
-                                        }}
-                                        renderInput={(params) => (
-                                            <TextField
-                                                {...params}
-                                                label="Image"
-                                                InputProps={{
-                                                    ...params.InputProps,
-                                                    startAdornment: (
-                                                        <img
-                                                            src={newImageSrc}
-                                                        />
-                                                    ),
-                                                }}
-                                            />
-                                        )}
-                                        renderOption={(props, option) => (
-                                            <Box component="li" {...props}>
-                                                <img
-                                                    loading="lazy"
-                                                    width="20"
-                                                    height="20"
-                                                    src={option.src}
-                                                    alt=""
-                                                />
-                                                {option.label}
-                                            </Box>
-                                        )}
-                                    />
-                                );
-                            }}
-                        />
+                        <StyledEditorContainerImages>
+                            <Controller
+                                name={'image'}
+                                control={control}
+                                render={({ field }) => {
+                                    return (
+                                        <ImageSelector
+                                            images={imageOptions}
+                                            onChange={(newValues) => {
+                                                field.onChange(newValues);
+                                            }}
+                                            handleAddNewImage={(value) =>
+                                                handleAddNewImage(value)
+                                            }
+                                        />
+                                    );
+                                }}
+                            />
+                        </StyledEditorContainerImages>
 
                         {databaseMetaKeys.map((key) => {
                             const { metakey, display_options } = key;

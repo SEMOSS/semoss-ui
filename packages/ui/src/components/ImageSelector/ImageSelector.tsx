@@ -1,3 +1,4 @@
+import { useState, useEffect } from "react";
 import { styled } from "@mui/material";
 
 import { Box } from "../../";
@@ -6,17 +7,39 @@ import { FileDropzone } from "../../";
 import { ImageList } from "./ImageList";
 import { ImageListItem } from "./ImageListItem";
 import { ImageListItemBar } from "./ImageListItemBar";
+import { Typography } from "../../";
 
 const StyledBox = styled(Box)({
-    width: 600,
-    height: 340,
+    width: "600px",
+    height: "282px",
 });
 
 const StyledImageList = styled(ImageList)({
-    width: 600,
-    height: 340,
+    width: "600px",
+    height: "282px",
     // Promote the list into its own layer in Chrome. This costs memory, but helps keeping high FPS.
     transform: "translateZ(0)",
+    padding: "16px, 0px, 16px, 0px",
+});
+
+const StyledImageListItem = styled(ImageListItem)({
+    width: "126px",
+    height: "117px",
+    border: "solid 1px #0000003B",
+    borderRadius: "8px",
+    "&:hover": {
+        border: "solid 2px #0471F0",
+        opacity: ".5",
+    },
+    "&.isChecked": {
+        border: "solid 2px #0471F0",
+    },
+});
+
+const StyledDragAndDrop = styled(ImageListItem)({
+    width: "126px",
+    height: "117px",
+    borderRadius: "8px",
 });
 
 const StyledFileDropzone = styled(FileDropzone)({
@@ -37,47 +60,91 @@ const StyledImageListItemBar = styled(ImageListItemBar)({
 
 const StyledImage = styled("img")({
     borderRadius: "8px",
+    height: "116px",
+    width: "124px",
+    objectFit: "cover",
+    "&.isChecked": {
+        backgroundColor: "rgba(236, 236, 236, 0.7)",
+    },
 });
 
-interface ImageSelectorProps {
+const StyledCheckbox = styled(Checkbox)({
+    "&:hover": {
+        color: "#0471F0",
+    },
+});
+
+export interface ImageSelectorProps {
     /** array of displayed images */
     images: Array<{ src: string; title: string }>;
 
     /** Callback triggered on selecting image TODO*/
-    onChange?: () => void;
+    // onChange?: () => void;
+
+    /** Function for new images*/
+    handleAddNewImage?: (value) => void;
 }
 
 export const ImageSelector = (props: ImageSelectorProps): JSX.Element => {
-    const { images, onChange } = props;
+    const { images, handleAddNewImage, ...otherProps } = props;
+
+    const [checked, setCheckbox] = useState("");
+
+    const checkImage = (imageSrc) => {
+        setCheckbox(imageSrc);
+    };
+
+    //set the default check
+    useEffect(() => {
+        const findSrc = images.find(
+            (defaultSrc) => defaultSrc.title === "Default",
+        );
+        findSrc ? checkImage(findSrc.src) : checkImage("");
+    }, [images]);
 
     return (
-        <StyledBox>
+        <StyledBox {...otherProps}>
+            <Typography variant="subtitle1">Select Image</Typography>
+            <Typography variant="caption">
+                Select a default image or upload your own
+            </Typography>
             <StyledImageList
-                rowHeight={164}
-                gap={8}
+                rowHeight={117}
+                gap={16}
                 cols={4}
                 variant="standard"
             >
-                <ImageListItem key={0}>
-                    <StyledFileDropzone description="Drag and Drop Image(s)" />
-                </ImageListItem>
+                <StyledDragAndDrop key={0}>
+                    <StyledFileDropzone
+                        description="Browse"
+                        onChange={(value) => handleAddNewImage(value)}
+                    />
+                </StyledDragAndDrop>
 
-                {images.map((item) => (
-                    <ImageListItem key={item.src}>
+                {images.map((item, id) => (
+                    <StyledImageListItem
+                        key={id}
+                        className={`${checked === item.src ? "isChecked" : ""}`}
+                    >
                         <StyledImage
-                            src={`${item.src}?w=164&h=164&fit=crop&auto=format`}
-                            srcSet={`${item.src}?w=164&h=164&fit=crop&auto=format&dpr=2 2x`}
+                            className={`${
+                                checked === item.src ? "isChecked" : ""
+                            }`}
+                            src={item.src}
                             alt={item.title}
                             loading="lazy"
                         />
                         <StyledImageListItemBar
                             position={"top"}
                             actionIcon={
-                                <Checkbox checked={false} onChange={onChange} />
+                                <StyledCheckbox
+                                    checked={checked === item.src}
+                                    onChange={() => checkImage(item.src)}
+                                />
                             }
                             actionPosition={"left"}
                         />
-                    </ImageListItem>
+                    </StyledImageListItem>
                 ))}
             </StyledImageList>
         </StyledBox>

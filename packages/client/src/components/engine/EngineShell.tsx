@@ -187,6 +187,10 @@ export const EngineShell = (props: EngineShellProps) => {
                                             values={metaVals}
                                             open={edit}
                                             currentImageSrc={`${MODULE}/api/app-${id}/appImage/download`}
+                                            type={
+                                                type.charAt(0).toUpperCase() +
+                                                type.slice(1)
+                                            }
                                             onClose={(success) => {
                                                 // reload if successfully submitted
                                                 if (success) {
