@@ -23,16 +23,20 @@ const StyledImageList = styled(ImageList)({
 });
 
 const StyledImageListItem = styled(ImageListItem)({
-    width: "126px",
+    width: "100%",
     height: "117px",
     border: "solid 1px #0000003B",
+    zIndex: 998,
     borderRadius: "8px",
+    backgroundSize: "cover",
+    backgroundRepeat: "no-repeat",
     "&:hover": {
         border: "solid 2px #0471F0",
         opacity: ".5",
     },
     "&.isChecked": {
         border: "solid 2px #0471F0",
+        opacity: ".5",
     },
 });
 
@@ -56,16 +60,6 @@ const StyledImageListItemBar = styled(ImageListItemBar)({
     height: "20px",
     top: "8px",
     borderRadius: "2px",
-});
-
-const StyledImage = styled("img")({
-    borderRadius: "8px",
-    height: "116px",
-    width: "124px",
-    objectFit: "cover",
-    "&.isChecked": {
-        backgroundColor: "rgba(236, 236, 236, 0.7)",
-    },
 });
 
 const StyledCheckbox = styled(Checkbox)({
@@ -125,15 +119,8 @@ export const ImageSelector = (props: ImageSelectorProps): JSX.Element => {
                     <StyledImageListItem
                         key={id}
                         className={`${checked === item.src ? "isChecked" : ""}`}
+                        sx={{ backgroundImage: `url(${item.src})` }}
                     >
-                        <StyledImage
-                            className={`${
-                                checked === item.src ? "isChecked" : ""
-                            }`}
-                            src={item.src}
-                            alt={item.title}
-                            loading="lazy"
-                        />
                         <StyledImageListItemBar
                             position={"top"}
                             actionIcon={

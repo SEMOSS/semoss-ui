@@ -193,7 +193,7 @@ export const EditDatabaseDetails = observer(
             } catch (e) {
                 console.error(e);
             } finally {
-                // turn of loading
+                // turn off loading
                 setIsLoading(false);
             }
         };
