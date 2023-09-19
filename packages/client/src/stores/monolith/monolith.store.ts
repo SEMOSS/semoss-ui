@@ -1961,4 +1961,85 @@ export class MonolithStore {
 
         return response;
     }
+
+    // api/auth/user/getUserAccessKeys
+
+    /**
+     * Get access keys related to a user
+     */
+    async getUserAccessKeys() {
+        const url = `${MODULE}/api/auth/user/getUserAccessKeys`;
+
+        const response = await axios
+            .get<
+                {
+                    ACCESSKEY: string;
+                    DATECREATED: string;
+                    TOKENNAME: string;
+                    LASTUSED?: string;
+                    TOKENDESCRIPTION?: string;
+                }[]
+            >(url)
+            .catch((error) => {
+                throw Error(error);
+            });
+
+        return response.data;
+    }
+
+    /**
+     * Get access keys related to a user
+     */
+    async createUserAccessKey(tokenName: string, tokenDescription = '') {
+        const url = `${MODULE}/api/auth/user/createUserAccessKey`;
+
+        let body = 'tokenName=' + encodeURIComponent(tokenName);
+        if (tokenDescription) {
+            body += '&tokenDescription=' + encodeURIComponent(tokenDescription);
+        }
+
+        console.log('hello', body);
+
+        const response = await axios
+            .post<{
+                ACCESSKEY: string;
+                SECRETKEY: string;
+                DATECREATED: string;
+                LASTUSED: string;
+                TOKENNAME: string;
+                TOKENDESCRIPTION?: string;
+            }>(url, body, {
+                headers: {
+                    'content-type': 'application/x-www-form-urlencoded',
+                },
+            })
+            .catch((error) => {
+                throw Error(error);
+            });
+
+        console.log('hi', response);
+
+        return response.data;
+    }
+
+    /**
+     * Get access keys related to a user
+     */
+    async deleteUserAccessKeys(accessKey: string) {
+        const url = `${MODULE}/api/auth/user/deleteUserAccessKey`;
+
+        const body = 'accessKey=' + encodeURIComponent(accessKey);
+
+        const response = await axios
+            .post<boolean>(url, body, {
+                headers: {
+                    'content-type': 'application/x-www-form-urlencoded',
+                },
+            })
+            .catch((error) => {
+                throw Error(error);
+            });
+
+        return response.data;
+    }
 }
