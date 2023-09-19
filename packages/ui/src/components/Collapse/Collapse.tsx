@@ -1,5 +1,5 @@
 import React from "react";
-import { Collapse as MuiCollapse } from "@mui/material";
+import { Collapse as MuiCollapse, SxProps } from "@mui/material";
 
 export interface CollapseProps {
     /**
@@ -32,6 +32,11 @@ export interface CollapseProps {
      * If `true`, the component will transition in.
      */
     in?: boolean;
+
+    /**
+     * The system prop that allows defining system overrides as well as additional CSS styles.
+     */
+    sx?: SxProps;
 }
 export const Collapse = (props: CollapseProps) => {
     return <MuiCollapse {...props}>{props.children}</MuiCollapse>;

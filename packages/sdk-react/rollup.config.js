@@ -32,12 +32,6 @@ const config = [
                 format: 'esm',
                 sourcemap: true,
             },
-            {
-                file: 'dist/index.umd.js',
-                format: 'umd',
-                name: 'semoss',
-                sourcemap: true,
-            },
         ],
         plugins: [
             del({ targets: 'dist' }),

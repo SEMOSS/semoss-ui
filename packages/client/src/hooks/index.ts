@@ -1,4 +1,5 @@
 import { useAPI } from './useAPI';
+import { useApp } from './useApp';
 import { useDatabase } from './useDatabase';
 import { useImport } from './useImport';
 import { useMetamodel } from './useMetamodel';
@@ -9,6 +10,7 @@ import { useDesigner } from './useDesigner';
 
 export {
     useAPI,
+    useApp,
     useDatabase,
     useImport,
     useMetamodel,

@@ -1,7 +1,13 @@
-import { ThemeOptions, styled, PaletteOptions, useTheme } from "@mui/material";
-// import { useTheme } from
+import {
+    ThemeOptions,
+    styled,
+    PaletteOptions,
+    useTheme,
+    keyframes,
+} from "@mui/material";
+
 // export specifics from the library
-export { styled, useTheme };
+export { styled, useTheme, keyframes };
 export type { ThemeOptions };
 
 export interface CustomPaletteColor {

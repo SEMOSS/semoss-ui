@@ -1,6 +1,71 @@
-import axios from 'axios';
+import { get, post, interceptors } from './fetch';
 
-import { ENV } from './config';
+import { Env } from './env';
+import { UnauthorizedError } from './error';
+
+const CSRF = {
+    isEnabled: false,
+    token: '',
+};
+
+// set up the request interceptor
+interceptors.request = async (options) => {
+    if (Env.variables.ACCESS_KEY && Env.variables.SECRET_KEY) {
+        // create the headeres
+        if (!options.headers) {
+            options.headers = {};
+        }
+
+        // add the authorization tokens
+        options.headers = {
+            ...options.headers,
+            authorization: `Basic ${btoa(
+                `${Env.variables.ACCESS_KEY}:${Env.variables.SECRET_KEY}`,
+            )}`,
+        };
+    }
+
+    // only set if enabled
+    if (CSRF.isEnabled) {
+        if (options.method === 'POST') {
+            // use the token if it is there
+            if (!CSRF.token) {
+                const { response } = await get(
+                    `${Env.variables.MODULE}/api/config/fetchCsrf`,
+                    {
+                        headers: {
+                            'Content-Type': 'application/x-www-form-urlencoded',
+                            'X-CSRF-Token': 'fetch',
+                        },
+                    },
+                );
+
+                // not sure why the proxy server is sending it as lowercase, preserving headers doesn't fix it
+                CSRF.token =
+                    response.headers.get('X-CSRF-Token') ||
+                    response.headers.get('x-csrf-token') ||
+                    '';
+            }
+
+            // add the token
+            if (options.headers) {
+                options.headers = {
+                    ...options.headers,
+                    'X-CSRF-Token': CSRF.token,
+                };
+            }
+        }
+    }
+
+    return options;
+};
+
+// setup the reseponse interceptor
+interceptors.response = async ({ response }) => {
+    if (response.status === 302) {
+        throw new UnauthorizedError('Unauthorized');
+    }
+};
 
 /**
  * Get the System's configuration information
@@ -11,58 +76,18 @@ export const getSystemConfig = async (): Promise<{
     [key: string]: unknown;
 }> => {
     // get the response
-    const response = await axios
-        .get<{
-            logins: { [key: string]: unknown };
-            loginsAllowed: { [key: string]: boolean };
-            [key: string]: unknown;
-        }>(`${ENV.MODULE}/api/config`)
-        .catch((error) => {
-            throw Error(error);
-        });
-
-    // there was an error, no response
-    if (!response) {
-        throw Error('No Config Response');
-    }
+    const response = await get<{
+        logins: { [key: string]: unknown };
+        loginsAllowed: { [key: string]: boolean };
+        [key: string]: unknown;
+    }>(`${Env.variables.MODULE}/api/config`);
 
     if (response.data && response.data.csrf) {
-        let token = response.data['X-CSRF-Token'] as string;
+        const token = response.data['X-CSRF-Token'] as string;
 
-        axios.interceptors.request.use(
-            async (config) => {
-                if (config.method === 'post') {
-                    // use the token if it is there
-
-                    if (!token) {
-                        const tokenResponse = await axios.get(
-                            `${ENV.MODULE}/api/config/fetchCsrf`,
-                            {
-                                headers: {
-                                    'Content-Type':
-                                        'application/x-www-form-urlencoded',
-                                    'X-CSRF-Token': 'fetch',
-                                },
-                            },
-                        );
-
-                        // not sure why the proxy server is sending it as lowercase, preserving headers doesn't fix it
-                        token =
-                            tokenResponse.headers['X-CSRF-Token'] ||
-                            tokenResponse.headers['x-csrf-token'];
-                    }
-
-                    if (config.headers) {
-                        config.headers['X-CSRF-Token'] = token;
-                    }
-                }
-
-                return config;
-            },
-            (error) => {
-                Promise.reject(error);
-            },
-        );
+        // enable and store the token
+        CSRF.isEnabled = true;
+        CSRF.token = token;
     }
 
     // save the config data
@@ -82,13 +107,15 @@ export const runPixel = async <O extends unknown[] | []>(
         throw new Error('Missing Pixel');
     }
 
-    let postData = '';
-    postData += 'expression=' + encodeURIComponent(pixel);
+    const body: Record<string, unknown> = {
+        expression: pixel,
+    };
+
     if (insightId) {
-        postData += '&insightId=' + encodeURIComponent(insightId);
+        body.insightId = insightId;
     }
 
-    const response = await axios.post<{
+    const response = await post<{
         insightID: string;
         pixelReturn: {
             isMeta: boolean;
@@ -98,7 +125,7 @@ export const runPixel = async <O extends unknown[] | []>(
             pixelId: string;
             additionalOutput?: unknown;
         }[];
-    }>(`${ENV.MODULE}/api/engine/runPixel`, postData, {
+    }>(`${Env.variables.MODULE}/api/engine/runPixel`, body, {
         headers: {
             'content-type': 'application/x-www-form-urlencoded',
         },
@@ -132,20 +159,11 @@ export const login = async (
     username: string,
     password: string,
 ): Promise<boolean> => {
-    let postData = '';
-    postData += 'username=' + encodeURIComponent(username);
-    postData += '&password=' + encodeURIComponent(password);
-    postData += '&disableRedirect=true';
-
-    await axios
-        .post(`${ENV.MODULE}/api/auth/login`, postData, {
-            headers: {
-                'content-type': 'application/x-www-form-urlencoded',
-            },
-        })
-        .catch((error) => {
-            throw Error(error);
-        });
+    await post(`${Env.variables.MODULE}/api/auth/login`, {
+        username: username,
+        password: password,
+        disableRedirect: true,
+    });
 
     return true;
 };
@@ -158,11 +176,7 @@ export const login = async (
  */
 export const oauth = async (provider: string): Promise<boolean> => {
     // try to login via oauth
-    await axios
-        .get<true>(`${ENV.MODULE}/api/auth/userinfo/${provider}`)
-        .catch((error) => {
-            throw Error(error);
-        });
+    await get(`${Env.variables.MODULE}/api/auth/userinfo/${provider}`);
 
     return true;
 };
@@ -174,11 +188,7 @@ export const oauth = async (provider: string): Promise<boolean> => {
  */
 export const logout = async (): Promise<boolean> => {
     // try to logout
-    await axios
-        .get<true>(`${ENV.MODULE}/api/auth/logout/all`)
-        .catch((error) => {
-            throw Error(error);
-        });
+    await get(`${Env.variables.MODULE}/api/auth/logout/all`);
 
     return true;
 };
@@ -230,7 +240,7 @@ export const upload = async (
         param = `?${param}`;
     }
 
-    const url = `${ENV.MODULE}/api/uploadFile/baseUpload${param}`,
+    const url = `${Env.variables.MODULE}${Env.variables.MODULE}/api/uploadFile/baseUpload${param}`,
         fd: FormData = new FormData();
 
     if (Array.isArray(files)) {
@@ -242,7 +252,7 @@ export const upload = async (
         fd.append('file', files);
     }
 
-    const response = await axios.post<
+    const response = await post<
         {
             fileName: string;
             fileLocation: string;
@@ -268,8 +278,8 @@ export const download = async (insightId: string, fileKey: string) => {
             throw Error('No Insight ID provided for download.');
         }
         // create the download url
-        const url = `${
-            ENV.MODULE
+        const url = `${Env.variables.MODULE}${
+            Env.variables.MODULE
         }/api/engine/downloadFile?insightId=${insightId}&fileKey=${encodeURIComponent(
             fileKey,
         )}`;

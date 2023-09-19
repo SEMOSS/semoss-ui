@@ -1,3 +1,4 @@
+import { AppContextType, AppContext } from './AppContext';
 import { DesignerContextType, DesignerContext } from './DesignerContext';
 import { EngineContextType, EngineContext } from './EngineContext';
 import { MetamodelContextType, MetamodelContext } from './MetamodelContext';
@@ -6,6 +7,7 @@ import { RootStoreContextType, RootStoreContext } from './RootStoreContext';
 import { ImportContext, ImportContextType } from './ImportContext';
 
 export type {
+    AppContextType,
     DesignerContextType,
     EngineContextType,
     ImportContextType,
@@ -15,6 +17,7 @@ export type {
 };
 
 export {
+    AppContext,
     DesignerContext,
     EngineContext,
     ImportContext,
