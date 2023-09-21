@@ -203,8 +203,9 @@ export class InsightStore {
 
             // if security is not enabled or the user is logged in, load the app
             if (
-                this._store.system &&
-                Object.keys(this._store.system.config.logins).length > 0
+                (this._store.system &&
+                    Object.keys(this._store.system.config.logins).length > 0) ||
+                (Env.ACCESS_KEY && Env.SECRET_KEY)
             ) {
                 // track that the user is authorized
                 this._store.isAuthorized = true;
