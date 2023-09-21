@@ -6,10 +6,18 @@ export class Env {
      * Variables that are loaded into the enviornment
      */
     private static _store = {
+        APP: '',
         MODULE: '',
         ACCESS_KEY: '',
         SECRET_KEY: '',
     };
+
+    /**
+     * Get the APP ID
+     */
+    static get APP() {
+        return this._store.APP;
+    }
 
     /**
      * Ready only getter

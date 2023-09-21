@@ -3,7 +3,6 @@ import { Space, Script } from '@/types';
 import { getSystemConfig, login, logout, oauth, runPixel } from '@/api';
 import { UnauthorizedError } from '@/utility';
 
-
 interface InsightStoreInterface {
     /** insightId of the app */
     insightId: string;
@@ -128,7 +127,7 @@ export class InsightStore {
                       },
         };
 
-        // save the appId
+        // save the initial appId
         this._store.options.appId = '';
         if (merged.app) {
             this._store.options.appId = merged.app;
@@ -151,7 +150,7 @@ export class InsightStore {
             }
         }
 
-        // load variables from the document
+        // load the environment from the document (production)
         try {
             const env = JSON.parse(
                 document.getElementById('semoss-env')?.textContent || '',
@@ -163,17 +162,20 @@ export class InsightStore {
             // update the enviornment variables with the module
             if (env) {
                 Env.update({
+                    APP: env.APP,
                     MODULE: env.MODULE,
                 });
             }
-
-            // set the app based on the element
-            this._store.options.appId = env.APP;
         } catch (e) {
-            console.error(e);
+            console.warn(e);
         }
 
         try {
+            // reset the id based on the Environment if set
+            if (Env.APP) {
+                this._store.options.appId = Env.APP;
+            }
+
             // validate that the module is available
             if (!Env.MODULE) {
                 throw new Error('module is required');

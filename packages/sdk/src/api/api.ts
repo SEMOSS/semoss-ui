@@ -296,3 +296,21 @@ export const download = async (insightId: string, fileKey: string) => {
         resolve();
     });
 };
+
+/**
+ * Get a partial result from the insight
+ * @param insightId - id of the insight to run
+ */
+export const partial = async (insightId: string) => {
+    const response = await post<{
+        message: {
+            new: string;
+            total: string;
+        };
+        status: string;
+    }>(`${Env.MODULE}/api/engine/partial`, {
+        jobId: insightId,
+    });
+
+    return response.data;
+};

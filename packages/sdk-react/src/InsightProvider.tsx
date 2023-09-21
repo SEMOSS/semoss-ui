@@ -26,11 +26,11 @@ interface InsightProviderProps {
     /**
      * Options to load into the app
      */
-    options: Parameters<Insight['initialize']>[0];
+    options?: Parameters<Insight['initialize']>[0];
 }
 
 export const InsightProvider = (props: InsightProviderProps) => {
-    const { children, options = {} } = props;
+    const { children, options } = props;
 
     // create the new insight on load
     const insight = useMemo(() => {
