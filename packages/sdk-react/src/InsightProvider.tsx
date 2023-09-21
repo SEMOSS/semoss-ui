@@ -22,10 +22,15 @@ interface InsightProviderProps {
      * Content to render with the insight
      */
     children: React.ReactNode;
+
+    /**
+     * Options to load into the app
+     */
+    options: Parameters<Insight['initialize']>[0];
 }
 
 export const InsightProvider = (props: InsightProviderProps) => {
-    const { children } = props;
+    const { children, options = {} } = props;
 
     // create the new insight on load
     const insight = useMemo(() => {
@@ -70,12 +75,12 @@ export const InsightProvider = (props: InsightProviderProps) => {
 
             return acc;
         }, {} as Insight['actions']);
-    }, [insight.actions]);
+    }, [insight, insight.actions]);
 
     // initialize the insight / destroy
     useEffect(() => {
         // initialize the insight
-        insight.initialize().finally(() => {
+        insight.initialize(options).finally(() => {
             // update the state
             syncInsight();
         });
@@ -87,7 +92,7 @@ export const InsightProvider = (props: InsightProviderProps) => {
                 syncInsight();
             });
         };
-    }, [insight]);
+    }, [insight, options]);
 
     return (
         <InsightContext.Provider
