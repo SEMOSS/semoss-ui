@@ -175,13 +175,14 @@ export const SETTINGS_ROUTES: {
     //     icon: mdiDatabase,
     //     history: ['settings/'],
     // },
-    // {
-    //     title: 'My Profile',
-    //     path: 'my-profile',
-    //     description: 'Update profile settings.',
-    //     icon: mdiDatabase,
-    //     history: ['settings/'],
-    // },
+    {
+        title: 'My Profile',
+        path: 'my-profile',
+        description: 'Update settings related to your profile.',
+        icon: mdiDatabase,
+        history: ['settings/'],
+        admin: false,
+    },
     // {
     //     title: 'Theming',
     //     path: 'theme',
