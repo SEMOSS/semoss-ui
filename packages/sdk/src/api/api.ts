@@ -1,7 +1,5 @@
-import { get, post, interceptors } from './fetch';
-
-import { Env } from './env';
-import { UnauthorizedError } from './error';
+import { Env } from '@/env';
+import { get, post, interceptors, UnauthorizedError } from '@/utility';
 
 const CSRF = {
     isEnabled: false,
@@ -10,7 +8,7 @@ const CSRF = {
 
 // set up the request interceptor
 interceptors.request = async (options) => {
-    if (Env.variables.ACCESS_KEY && Env.variables.SECRET_KEY) {
+    if (Env.ACCESS_KEY && Env.SECRET_KEY) {
         // create the headeres
         if (!options.headers) {
             options.headers = {};
@@ -20,7 +18,7 @@ interceptors.request = async (options) => {
         options.headers = {
             ...options.headers,
             authorization: `Basic ${btoa(
-                `${Env.variables.ACCESS_KEY}:${Env.variables.SECRET_KEY}`,
+                `${Env.ACCESS_KEY}:${Env.SECRET_KEY}`,
             )}`,
         };
     }
@@ -31,7 +29,7 @@ interceptors.request = async (options) => {
             // use the token if it is there
             if (!CSRF.token) {
                 const { response } = await get(
-                    `${Env.variables.MODULE}/api/config/fetchCsrf`,
+                    `${Env.MODULE}/api/config/fetchCsrf`,
                     {
                         headers: {
                             'Content-Type': 'application/x-www-form-urlencoded',
@@ -80,7 +78,7 @@ export const getSystemConfig = async (): Promise<{
         logins: { [key: string]: unknown };
         loginsAllowed: { [key: string]: boolean };
         [key: string]: unknown;
-    }>(`${Env.variables.MODULE}/api/config`);
+    }>(`${Env.MODULE}/api/config`);
 
     if (response.data && response.data.csrf) {
         const token = response.data['X-CSRF-Token'] as string;
@@ -125,7 +123,7 @@ export const runPixel = async <O extends unknown[] | []>(
             pixelId: string;
             additionalOutput?: unknown;
         }[];
-    }>(`${Env.variables.MODULE}/api/engine/runPixel`, body, {
+    }>(`${Env.MODULE}/api/engine/runPixel`, body, {
         headers: {
             'content-type': 'application/x-www-form-urlencoded',
         },
@@ -159,7 +157,7 @@ export const login = async (
     username: string,
     password: string,
 ): Promise<boolean> => {
-    await post(`${Env.variables.MODULE}/api/auth/login`, {
+    await post(`${Env.MODULE}/api/auth/login`, {
         username: username,
         password: password,
         disableRedirect: true,
@@ -176,7 +174,7 @@ export const login = async (
  */
 export const oauth = async (provider: string): Promise<boolean> => {
     // try to login via oauth
-    await get(`${Env.variables.MODULE}/api/auth/userinfo/${provider}`);
+    await get(`${Env.MODULE}/api/auth/userinfo/${provider}`);
 
     return true;
 };
@@ -188,7 +186,7 @@ export const oauth = async (provider: string): Promise<boolean> => {
  */
 export const logout = async (): Promise<boolean> => {
     // try to logout
-    await get(`${Env.variables.MODULE}/api/auth/logout/all`);
+    await get(`${Env.MODULE}/api/auth/logout/all`);
 
     return true;
 };
@@ -240,7 +238,7 @@ export const upload = async (
         param = `?${param}`;
     }
 
-    const url = `${Env.variables.MODULE}${Env.variables.MODULE}/api/uploadFile/baseUpload${param}`,
+    const url = `${Env.MODULE}${Env.MODULE}/api/uploadFile/baseUpload${param}`,
         fd: FormData = new FormData();
 
     if (Array.isArray(files)) {
@@ -278,8 +276,8 @@ export const download = async (insightId: string, fileKey: string) => {
             throw Error('No Insight ID provided for download.');
         }
         // create the download url
-        const url = `${Env.variables.MODULE}${
-            Env.variables.MODULE
+        const url = `${Env.MODULE}${
+            Env.MODULE
         }/api/engine/downloadFile?insightId=${insightId}&fileKey=${encodeURIComponent(
             fileKey,
         )}`;
