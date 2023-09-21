@@ -132,31 +132,6 @@ You can setup a development environment and use access keys to authenticate with
 import { Env } from '@semoss/sdk';
 
 // update the environment
-if (process.env.NODE_ENV !== 'production') {
-    Env.update({
-        // url pointing to the app server
-        MODULE: '',
-        // access key generated on the app server
-        ACCESS_KEY: '',
-        // secret key generated on the app server
-        SECRET_KEY: '',
-    });
-}
-```
-
-> Note: Please **do not** commit your keys. Instead externalize your keys to a `.env` and load them in as environment variables during development
-
-### Development Environment
-
-> Note: We recommend manually setting the environment only in `development` mode.
-
-You can setup a development environment and use access keys to authenticate with the app server. Generate the keys on the server and then update the `Env` module. See:
-
-```js
-// import the module
-import { Env } from '@semoss/sdk';
-
-// update the environment
 Env.update({
     /**
      * Url pointing to the app server
