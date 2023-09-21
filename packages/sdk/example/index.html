@@ -48,7 +48,12 @@ def sayHello(name):
         </main>
     </body>
     <script type="module">
-        import { Insight } from '../dist/index.js';
+        import { Insight, Env } from '../dist/index.js';
+
+        Env.update({
+            ACCESS_KEY: '',
+            SECRET_KEY: '',
+        })
 
         // Engine we are working with
         const ENGINE = '5b0c6586-4ab8-4905-83e4-1bab3b6a1966';
