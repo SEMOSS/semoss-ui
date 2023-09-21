@@ -89,7 +89,7 @@ def sayHello(name):
                 // set the variables
                 const command = data.get('command');
 
-                if (insight.isInitialized && insight.isAuthorized) {
+                if (insight.isReady) {
                     const { errors, pixelReturn } = await insight.actions.run(
                         `LLM(engine=["${ENGINE}"], command=["<encode>${command}</encode>"]);`,
                     );
@@ -131,7 +131,7 @@ def sayHello(name):
                 pyEle.disabled = true;
                 pyEle.innerHTML = 'Loading';
 
-                if (insight.isInitialized && insight.isAuthorized) {
+                if (insight.isReady) {
                     const { errors, pixelReturn } = await insight.actions.runPy(
                         `test.sayHello('neel')`,
                     );
@@ -184,7 +184,7 @@ def sayHello(name):
                     throw new Error(insight.error);
                 } else if (!insight.isAuthorized) {
                     throw new Error('User is not Authorized');
-                } else if (!insight.isInitialized) {
+                } else if (!insight.isReady) {
                     throw new Error('Error initializing model');
                 }
             } catch (e) {

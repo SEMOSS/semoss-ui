@@ -7,11 +7,14 @@ interface InsightStoreInterface {
     /** insightId of the app */
     insightId: string;
 
-    /** Track if initialized */
+    /** Track if the insight is loaded */
     isInitialized: boolean;
 
-    /** Track if authorized */
+    /** Track if the user is authorized */
     isAuthorized: boolean;
+
+    /** Track if the insight is ready for user input */
+    isReady: boolean;
 
     /** Error if in the error state */
     error: Error | null;
@@ -41,6 +44,7 @@ export class InsightStore {
         insightId: '',
         isInitialized: false,
         isAuthorized: false,
+        isReady: false,
         error: null,
         system: null,
         options: {
@@ -70,6 +74,12 @@ export class InsightStore {
         return this._store.isAuthorized;
     }
 
+    /**
+     * Track if the insight is ready for user input
+     */
+    get isReady() {
+        return this._store.isReady;
+    }
     /**
      * Error if the status is set to "ERROR"
      */
@@ -116,6 +126,8 @@ export class InsightStore {
     }): Promise<void> => {
         // reset it
         this._store.isInitialized = false;
+        this._store.isAuthorized = false;
+        this._store.isReady = false;
 
         const merged: NonNullable<typeof options> = {
             app: options && options.app ? options.app : '',
@@ -182,28 +194,27 @@ export class InsightStore {
             }
 
             // get the system information
-            await this.initializeSystem();
+            await this.setupSystem();
 
-            // skip if the system doesn't initialize correctly
-            if (!this._store.system) {
-                return;
+            // break if no system
+            if (!this._store.isInitialized) {
+                throw new Error('Error loading system');
             }
 
             // if security is not enabled or the user is logged in, load the app
-            if (Object.keys(this._store.system.config.logins).length > 0) {
-                // initialize the app
-                await this.initializeInsight();
-
+            if (
+                this._store.system &&
+                Object.keys(this._store.system.config.logins).length > 0
+            ) {
                 // track that the user is authorized
                 this._store.isAuthorized = true;
+
+                // setup the insight
+                await this.setupInsight();
             } else {
                 // track that the user is unauthorized
                 this._store.isAuthorized = false;
-                return;
             }
-
-            // track if it is initialized
-            this._store.isInitialized = true;
         } catch (error) {
             // log it
             console.error(error);
@@ -223,18 +234,17 @@ export class InsightStore {
 
             // destroy the system
             this.destroySystem();
-
-            // track that the user is authorized
-            this._store.isAuthorized = false;
-
-            // track if it is initialized
-            this._store.isInitialized = false;
         } catch (error) {
             // log it
             console.error(error);
 
             // store the error
             this._store.error = error as Error;
+        } finally {
+            // reset it
+            this._store.isInitialized = false;
+            this._store.isAuthorized = false;
+            this._store.isReady = false;
         }
     };
 
@@ -242,7 +252,10 @@ export class InsightStore {
     /**
      * Initialize the system wide information
      */
-    private initializeSystem = async (): Promise<void> => {
+    private setupSystem = async (): Promise<void> => {
+        // reset it
+        this._store.isInitialized = false;
+
         // get the response
         const data = await getSystemConfig();
 
@@ -269,8 +282,12 @@ export class InsightStore {
             }
         }
 
-        // update the system
         this._store.system = system;
+        if (this._store.system) {
+            this._store.isInitialized = true;
+        } else {
+            this._store.isInitialized = false;
+        }
     };
 
     /**
@@ -282,9 +299,12 @@ export class InsightStore {
     };
 
     /**
-     * Initialize the insight
+     * Setup the insight after login
      */
-    private initializeInsight = async (): Promise<void> => {
+    private setupInsight = async (): Promise<void> => {
+        // set as not ready
+        this._store.isReady = false;
+
         // load the app reactors (if they exist)
         let pixel = '';
         if (this._store.options.appId) {
@@ -324,6 +344,9 @@ LoadPyFromFile(alias="${alias}", filePath="temp.py");
 
         // set the insight ID
         this._store.insightId = insightId;
+
+        // set as ready
+        this._store.isReady = true;
     };
 
     /**
@@ -463,11 +486,14 @@ LoadPyFromFile(alias="${alias}", filePath="temp.py");
                 }
 
                 if (loggedIn) {
-                    // get the new insight with the new user
-                    await this.initializeInsight();
-
                     // track that the user is now authorized
                     this._store.isAuthorized = true;
+
+                    // get the new insight with the new user
+                    await this.setupInsight();
+                } else {
+                    // track that the user is unauthorized
+                    this._store.isAuthorized = false;
                 }
 
                 // success

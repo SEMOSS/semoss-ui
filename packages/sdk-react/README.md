@@ -39,7 +39,8 @@ const Child = (props) => {
     const {
         /** Track if it is initialized **/
         isInitialized,
-        /** Track if the user is authorized **/ isAuthorized,
+        /** Track if the user is authorized **/
+        isAuthorized,
         /** Any Insight Errors **/
         error,
         /** System information **/
