@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <meta http-equiv="CACHE-CONTROL" content="NO-CACHE" />
+        <meta http-equiv="PRAGMA" content="NO-CACHE" />
+        <title>Example</title>
+
+        <!-- Pico.css -->
+        <link
+            rel="stylesheet"
+            href="https://cdn.jsdelivr.net/npm/@picocss/pico@1/css/pico.min.css"
+        />
+        <script src="https://cdn.jsdelivr.net/npm/showdown@2.1.0/dist/showdown.min.js"></script>
+
+        <script id="semoss-env" type="application/json">
+            { "MODULE": "/MonolithDev" }
+        </script>
+    </head>
+
+    <body>
+        <pre data-semoss-py data-alias="test" hidden="true">
+def sayHello(name):
+    print(f'Hello {name}')
+</pre
+        >
+        <main class="container">
+            <section>
+                <h2>Ask LLM</h2>
+                <p>Enter a command below and see the output</p>
+                <form id="form">
+                    <textarea
+                        type="text"
+                        name="command"
+                        placeholder="Command"
+                        aria-label="Command"
+                        required
+                    ></textarea>
+                    <button id="submit" type="submit" disabled="true">
+                        Ask
+                    </button>
+                </form>
+                <h5>Response</h5>
+                <div id="content">Nothing Submitted</div>
+                <button id="py" type="button" disabled="true">Hello Py</button>
+            </section>
+        </main>
+    </body>
+    <script type="module">
+        import { Insight, Env } from '../dist/index.js';
+
+        Env.update({
+            ACCESS_KEY: '',
+            SECRET_KEY: '',
+        })
+
+        // Engine we are working with
+        const ENGINE = '5b0c6586-4ab8-4905-83e4-1bab3b6a1966';
+
+        // get the element
+        const formEle = document.querySelector('#form');
+        const contentEle = document.querySelector('#content');
+        const submitEle = document.querySelector('#submit');
+        const pyEle = document.querySelector('#py');
+
+        // create a markdown coverter
+        const converter = new showdown.Converter();
+
+        // make a new insight
+        const insight = new Insight();
+
+        /**
+         * Ask the Model
+         * @param {SubmitEvent} e - submit event fired by the form
+         */
+        const askModel = async (e) => {
+            try {
+                // prevent the default refresh
+                e.preventDefault();
+
+                // disable it
+                submitEle.disabled = true;
+                submitEle.innerHTML = 'Loading';
+
+                // extract the data from the element
+                const data = new FormData(e.target);
+
+                // set the variables
+                const command = data.get('command');
+
+                if (insight.isInitialized && insight.isAuthorized) {
+                    const { errors, pixelReturn } = await insight.actions.run(
+                        `LLM(engine=["${ENGINE}"], command=["<encode>${command}</encode>"]);`,
+                    );
+
+                    if (errors.length > 0) {
+                        throw errors.join('');
+                    }
+
+                    // get the message from the response
+                    const message = pixelReturn[0].output.response;
+                    if (!message) {
+                        contentEle.innerHTML = 'No response recieved';
+                    }
+
+                    // set the method
+                    contentEle.innerHTML = converter.makeHtml(message);
+                }
+            } catch (e) {
+                contentEle.innerHTML = 'Error retrieving response';
+
+                console.error(e);
+            } finally {
+                // disable it
+                submitEle.disabled = false;
+                submitEle.innerHTML = 'Ask';
+            }
+        };
+
+        /**
+         * Run a python command
+         * @param {SubmitEvent} e - submit event fired by the form
+         */
+        const runPy = async (e) => {
+            try {
+                // prevent the default refresh
+                e.preventDefault();
+
+                // disable it
+                pyEle.disabled = true;
+                pyEle.innerHTML = 'Loading';
+
+                if (insight.isInitialized && insight.isAuthorized) {
+                    const { errors, pixelReturn } = await insight.actions.runPy(
+                        `test.sayHello('neel')`,
+                    );
+                    if (errors.length > 0) {
+                        throw errors.join('');
+                    }
+
+                    // get the message from the response
+                    const output = pixelReturn[0].output;
+
+                    // display the message
+                    console.log(output);
+                }
+            } catch (e) {
+                console.error(e);
+            } finally {
+                // disable it
+                pyEle.disabled = false;
+                pyEle.innerHTML = 'Hello Py';
+            }
+        };
+
+        /**
+         * Ask the Model
+         * @param {SubmitEvent} e - submit event fired by the form
+         */
+        const initializeModel = async () => {
+            try {
+                // disable it
+                submitEle.disabled = true;
+                submitEle.innerHTML = 'Loading';
+
+                // disable it
+                pyEle.disabled = true;
+                pyEle.innerHTML = 'Loading';
+
+                // try to initialize it by reading the html
+                await insight.initialize();
+
+                // // try to initialize by file
+                // await insight.initialize({
+                //     python: {
+                //         type: 'file',
+                //         path: './test.py',
+                //         alias: 'test',
+                //     },
+                // });
+
+                if (insight.error) {
+                    throw new Error(insight.error);
+                } else if (!insight.isAuthorized) {
+                    throw new Error('User is not Authorized');
+                } else if (!insight.isInitialized) {
+                    throw new Error('Error initializing model');
+                }
+            } catch (e) {
+                contentEle.innerHTML = 'Error initializing model';
+
+                console.error(e);
+            } finally {
+                // enable it
+                submitEle.disabled = false;
+                submitEle.innerHTML = 'Ask';
+
+                // enable it
+                pyEle.disabled = false;
+                pyEle.innerHTML = 'Hello Py';
+            }
+        };
+
+        // add listeners
+        formEle.addEventListener('submit', askModel);
+        pyEle.addEventListener('click', runPy);
+
+        initializeModel();
+    </script>
+</html>

@@ -1,11 +1,9 @@
-import { Env } from './env';
-import { getSystemConfig, login, logout, oauth, runPixel } from './api';
-import { UnauthorizedError } from './error';
+import { Env } from '@/env';
+import { Space, Script } from '@/types';
+import { getSystemConfig, login, logout, oauth, runPixel } from '@/api';
+import { UnauthorizedError } from '@/utility';
 
 interface InsightStoreInterface {
-    /** Id of the app */
-    appId: string;
-
     /** insightId of the app */
     insightId: string;
 
@@ -27,26 +25,31 @@ interface InsightStoreInterface {
             [key: string]: unknown;
         };
     } | null;
+
+    /** Options assocaited with the insight */
+    options: {
+        /** Id of an app if associated with the insight */
+        appId: string;
+
+        /** Python code associated with the insight */
+        python: Script | null;
+    };
 }
 
-export class Insight {
+export class InsightStore {
     private _store: InsightStoreInterface = {
-        appId: '',
         insightId: '',
         isInitialized: false,
         isAuthorized: false,
         error: null,
         system: null,
+        options: {
+            appId: '',
+            python: null,
+        },
     };
 
     /** Getters */
-    /**
-     * App Id
-     */
-    get appId() {
-        return this._store.appId;
-    }
-
     /**
      * Insight Id
      */
@@ -87,11 +90,67 @@ export class Insight {
      *
      * options - options to initialize with
      */
-    initialize = async (): Promise<void> => {
+    initialize = async (options?: {
+        /**
+         * App to load into the insight
+         */
+        app?: string;
+
+        /**
+         * Python file to load into an insight
+         */
+        python?:
+            | {
+                  type: 'detect';
+              }
+            | {
+                  type: 'file';
+                  path: string;
+                  alias: string;
+              }
+            | {
+                  type: 'script';
+                  script: string;
+                  alias: string;
+              };
+    }): Promise<void> => {
         // reset it
         this._store.isInitialized = false;
 
-        // Set from the document
+        const merged: NonNullable<typeof options> = {
+            app: options && options.app ? options.app : '',
+            python:
+                options && options.python
+                    ? options.python
+                    : {
+                          type: 'detect',
+                      },
+        };
+
+        // save the initial appId
+        this._store.options.appId = '';
+        if (merged.app) {
+            this._store.options.appId = merged.app;
+        }
+
+        // save the python
+        this._store.options.python = null;
+        if (merged.python) {
+            if (merged.python.type === 'detect') {
+                this._store.options.python = await this.detectScript();
+            } else if (merged.python.type === 'file') {
+                this._store.options.python = await this.loadScript(
+                    merged.python,
+                );
+            } else if (merged.python.type === 'script') {
+                this._store.options.python = {
+                    script: merged.python.script,
+                    alias: merged.python.alias,
+                };
+            }
+        }
+
+        // load the environment from the document (production)
         try {
             const env = JSON.parse(
                 document.getElementById('semoss-env')?.textContent || '',
@@ -100,24 +159,26 @@ export class Insight {
                 MODULE: string;
             };
 
+            // update the enviornment variables with the module
             if (env) {
-                Env.updateVariables({
+                Env.update({
                     APP: env.APP,
                     MODULE: env.MODULE,
                 });
             }
         } catch (e) {
-            console.error(e);
+            console.warn(e);
         }
 
         try {
-            // validate
-            if (!Env.variables.MODULE) {
-                throw new Error('module is required');
+            // reset the id based on the Environment if set
+            if (Env.APP) {
+                this._store.options.appId = Env.APP;
             }
 
-            if (!Env.variables.APP) {
-                throw new Error(`appId is required`);
+            // validate that the module is available
+            if (!Env.MODULE) {
+                throw new Error('module is required');
             }
 
             // get the system information
@@ -131,10 +192,14 @@ export class Insight {
             // if security is not enabled or the user is logged in, load the app
             if (Object.keys(this._store.system.config.logins).length > 0) {
                 // initialize the app
-                await this.initializeApp();
+                await this.initializeInsight();
 
                 // track that the user is authorized
                 this._store.isAuthorized = true;
+            } else {
+                // track that the user is unauthorized
+                this._store.isAuthorized = false;
+                return;
             }
 
             // track if it is initialized
@@ -153,8 +218,8 @@ export class Insight {
      */
     destroy = async () => {
         try {
-            // destroy the app
-            await this.destroyApp();
+            // destroy the insight
+            await this.destroyInsight();
 
             // destroy the system
             this.destroySystem();
@@ -217,14 +282,39 @@ export class Insight {
     };
 
     /**
-     * Initialize the app
-     *
-     * @param id? - id to initialize the app with
+     * Initialize the insight
      */
-    private initializeApp = async (id?: string): Promise<void> => {
+    private initializeInsight = async (): Promise<void> => {
+        // load the app reactors (if they exist)
+        let pixel = '';
+        if (this._store.options.appId) {
+            pixel += `SetContext("${this._store.options.appId}");`;
+        }
+
+        // load the python code int
+        if (this._store.options.python && this._store.options.python.script) {
+            // validate the alias
+            let alias = this._store.options.python.alias;
+            if (!alias) {
+                alias = 'smss';
+                console.warn(`Alias not found. Loading python as ${alias}`);
+            }
+
+            pixel += `
+WriteObjectToFile(value="${this._store.options.python.script}", filePath = "temp.py");
+LoadPyFromFile(alias="${alias}", filePath="temp.py");    
+            `;
+        }
+
+        // default if there is no command to preload
+        if (!pixel) {
+            pixel = '1+1;';
+        }
+
+        // create the new insight
         const { insightId, errors } = await runPixel<[Record<string, unknown>]>(
-            `SetContext("${Env.variables.APP}")`,
-            id || 'new',
+            pixel,
+            'new',
         );
 
         // log errors if it exists
@@ -237,9 +327,9 @@ export class Insight {
     };
 
     /**
-     * Destroy the app
+     * Destroy the insight
      */
-    private destroyApp = async (): Promise<void> => {
+    private destroyInsight = async (): Promise<void> => {
         if (!this._store.insightId) {
             return;
         }
@@ -271,6 +361,66 @@ export class Insight {
 
         // propagate it forward
         throw error;
+    };
+
+    /**
+     * Detect a script from the html
+     */
+    private detectScript = async (): Promise<Script | null> => {
+        const output = {
+            script: '',
+            alias: '',
+        };
+        try {
+            const scriptEle = document.querySelector('[data-semoss-py]');
+            const content = scriptEle?.textContent;
+            if (!content) {
+                return null;
+            }
+
+            // get the script
+            output.script = content;
+
+            // get the alias
+            output.alias = scriptEle?.getAttribute('data-alias') || '';
+        } catch (e) {
+            console.error(e);
+            return null;
+        }
+
+        return output;
+    };
+
+    /**
+     * Load an external script
+     */
+    private loadScript = async (config: {
+        path: string;
+        alias: string;
+    }): Promise<Script | null> => {
+        const output = {
+            script: '',
+            alias: config.alias,
+        };
+        try {
+            // get the script
+            const response = await fetch(config.path);
+
+            const text = await response.text();
+            if (!text) {
+                throw new Error('No Text');
+            }
+
+            // set the text if it exists
+            output.script = text;
+        } catch (e) {
+            console.error(e);
+
+            // don't load anything
+            return null;
+        }
+
+        return output;
     };
 
     /** Actions */
@@ -313,8 +463,8 @@ export class Insight {
                 }
 
                 if (loggedIn) {
-                    // get the new app with the new user
-                    await this.initializeApp();
+                    // get the new insight with the new user
+                    await this.initializeInsight();
 
                     // track that the user is now authorized
                     this._store.isAuthorized = true;
@@ -349,14 +499,30 @@ export class Insight {
         },
 
         /**
-         * Run a pixel and save it the recipe
+         * Run a pixel against the insight
+         * @param pixel - pixel command to run
+         * @param space - where to run it
          */
-        run: async <O extends unknown[] | []>(pixel: string) => {
+        run: async <O extends unknown[] | []>(
+            pixel: string,
+            space: Space = 'insight',
+        ) => {
             try {
-                const response = await runPixel<O>(
-                    pixel,
-                    this._store.insightId,
-                );
+                let id = '';
+                if (space === 'insight') {
+                    id = this._store.insightId;
+                } else if (space === 'app') {
+                    if (!this._store.options.appId) {
+                        throw new Error(
+                            'An app is required to run in the app space',
+                        );
+                    }
+
+                    // set it
+                    id = this._store.options.appId;
+                }
+
+                const response = await runPixel<O>(pixel, id);
                 if (!response) {
                     return;
                 }
@@ -369,20 +535,18 @@ export class Insight {
         },
 
         /**
-         * Query the application with pixel
+         * Run a pixel against the insight
+         * @param pixel - pixel command to run
+         * @param space - where to run it
          */
-        query: async <O extends unknown[] | []>(pixel: string) => {
-            try {
-                const response = await runPixel<O>(pixel);
-                if (!response) {
-                    return;
-                }
-
-                // success
-                return response;
-            } catch (error) {
-                this.processActionError(error as Error);
-            }
+        runPy: async <O extends unknown[] | []>(
+            python: string,
+            space: Space = 'insight',
+        ) => {
+            return this.actions.run<O>(
+                `Py("<encode>${python}</encode>")`,
+                space,
+            );
         },
 
         //     /**
