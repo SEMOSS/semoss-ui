@@ -1,4 +1,4 @@
-# @semoss\sdk
+# @semoss\sdk-react
 
 @semoss\sdk-react is a small react package that accelerates the process of building an deploying an app.
 
@@ -185,13 +185,6 @@ initialize({
 ```
 
 2. Loading via `js`
-
-The sdk will load `python` via an external file.
-
-```py
-# ./hello.py
-
-```
 
 Set the option on initialize:
 
