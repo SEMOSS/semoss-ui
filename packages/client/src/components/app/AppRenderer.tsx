@@ -56,7 +56,6 @@ export const AppRenderer = (props: AppRendererProps) => {
         setSrc(`${MODULE}/public_home/${appId}/portals/?counter=${counter}`);
     }, [appId, counter]);
 
-    console.log('han');
     if (!src) {
         return null;
     }
