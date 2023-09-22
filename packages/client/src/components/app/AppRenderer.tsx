@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 
-import { MODULE } from '@/constants';
+import { Env } from '@/env';
 
 interface AppRendererProps {
     /** appId of the app to render */
@@ -19,7 +19,7 @@ export const AppRenderer = (props: AppRendererProps) => {
 
     useEffect(() => {
         // set the src
-        setSrc(`${MODULE}/public_home/${appId}/portals/`);
+        setSrc(`${Env.MODULE}/public_home/${appId}/portals/`);
     }, [appId]);
 
     if (!src) {
