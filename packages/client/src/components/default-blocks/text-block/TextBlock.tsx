@@ -1,9 +1,9 @@
 import { CSSProperties } from 'react';
 
 import { useBlock } from '@/hooks';
-import { Widget, WidgetDef } from '@/stores';
+import { BlockComponent, BlockDef } from '@/stores';
 
-export interface TextWidgetDef extends WidgetDef<'text'> {
+export interface TextBlockDef extends BlockDef<'text'> {
     widget: 'text';
     data: {
         style: CSSProperties;
@@ -12,8 +12,8 @@ export interface TextWidgetDef extends WidgetDef<'text'> {
     slots: never;
 }
 
-export const TextWidget: Widget<TextWidgetDef> = ({ id }) => {
-    const { attrs, data } = useBlock<TextWidgetDef>(id);
+export const TextBlock: BlockComponent<TextBlockDef> = ({ id }) => {
+    const { attrs, data } = useBlock<TextBlockDef>(id);
 
     return (
         <span style={data.style} {...attrs}>
@@ -22,9 +22,9 @@ export const TextWidget: Widget<TextWidgetDef> = ({ id }) => {
     );
 };
 
-TextWidget.widget = 'text';
+TextBlock.widget = 'text';
 
-TextWidget.config = {
+TextBlock.config = {
     data: {
         style: {},
         text: 'Hello world',

@@ -8,22 +8,22 @@ import {
     AddBlockAction,
     MoveBlockAction,
     RemoveBlockAction,
-} from './canvas.actions';
-import { Query, Block, WidgetJSON } from './canvas.types';
+} from './state.actions';
+import { Query, Block, BlockJSON } from './state.types';
 
-export interface CanvasStoreInterface {
+interface StateStoreInterface {
     /** Queries rendered in the insight */
     queries: Record<string, Query>;
 
-    /** blocks rendered in the insight */
+    /** Blocks rendered in the insight */
     blocks: Record<string, Block>;
 }
 
 /**
  * Block store that helps users build a view
  */
-export class CanvasStore {
-    private _store: CanvasStoreInterface = {
+export class StateStore {
+    private _store: StateStoreInterface = {
         queries: {},
         blocks: {},
     };
@@ -62,10 +62,10 @@ export class CanvasStore {
 
     constructor(
         config: {
-            /** Queries that will be loaed into the canvas */
+            /** Queries that will be loaed into the view */
             queries?: Record<string, Query>;
 
-            /** Blocks that will be loaded into the canvas */
+            /** Blocks that will be loaded into the view */
             blocks?: Record<string, Block>;
         },
         callbacks: {
@@ -281,7 +281,7 @@ export class CanvasStore {
      * @param json - json of the block that we are generating
      * @returns block
      */
-    private generateBlock = (json: WidgetJSON) => {
+    private generateBlock = (json: BlockJSON) => {
         // generate a new id
         const id = `${json.widget}--${Math.floor(Math.random() * 10000)}`;
 
@@ -493,8 +493,8 @@ export class CanvasStore {
      * @param pixel - pixel to execute
      */
     private setState = (
-        blocks?: CanvasStoreInterface['blocks'],
-        queries?: CanvasStoreInterface['queries'],
+        blocks?: StateStoreInterface['blocks'],
+        queries?: StateStoreInterface['queries'],
     ) => {
         // add the blocks and queries
         this._store.blocks = blocks || {};
@@ -507,7 +507,7 @@ export class CanvasStore {
      * @param position - where is the block going
      */
     private addBlock = (
-        json: WidgetJSON,
+        json: BlockJSON,
         position?: AddBlockAction['payload']['position'],
     ): void => {
         // generate the block

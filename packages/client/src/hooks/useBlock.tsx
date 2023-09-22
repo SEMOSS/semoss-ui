@@ -2,19 +2,19 @@ import { useCallback, useMemo } from 'react';
 import { toJS, computed } from 'mobx';
 
 import { Paths, PathValue } from '@/types';
-import { Actions, ActionMessages, Block, WidgetDef } from '@/stores';
+import { Actions, ActionMessages, Block, BlockDef } from '@/stores';
 import { copy } from '@/utility';
 
-import { useCanvas } from './useCanvas';
+import { useBlocks } from './useBlocks';
 
 /**
  * Widget Props
  */
-interface useBlockReturn<W extends WidgetDef> {
-    /** Data for the widget  */
+interface useBlockReturn<W extends BlockDef> {
+    /** Data for the block  */
     data: Block<W>['data'];
 
-    /** Listeners on the widget  */
+    /** Listeners on the block  */
     listeners: Record<
         keyof Block<W>['listeners'],
         (intercept?: (action: Actions) => Actions | null) => void
@@ -23,9 +23,9 @@ interface useBlockReturn<W extends WidgetDef> {
     /** Slots */
     slots: Block<W>['slots'];
 
-    /** Attributes to add to the widget */
+    /** Attributes to add to the block */
     attrs: {
-        /** block id of the widget */
+        /** block id of the block */
         'data-block': string;
     };
 
@@ -49,14 +49,12 @@ interface useBlockReturn<W extends WidgetDef> {
 /**
  * Access methods for the block
  */
-export const useBlock = <W extends WidgetDef>(
-    id: string,
-): useBlockReturn<W> => {
+export const useBlock = <W extends BlockDef>(id: string): useBlockReturn<W> => {
     // get the store
-    const { canvas } = useCanvas();
+    const { state } = useBlocks();
 
     // get the block
-    const block = canvas.getBlock(id);
+    const block = state.getBlock(id);
 
     // get block
     if (!block) {
@@ -69,11 +67,11 @@ export const useBlock = <W extends WidgetDef>(
      * @param value - value of the data to set
      */
     const setData = useCallback(
-        <P extends Paths<Block<WidgetDef>['data'], 4>>(
+        <P extends Paths<Block<BlockDef>['data'], 4>>(
             path: P | null,
-            value: PathValue<Block<WidgetDef>['data'], P>,
+            value: PathValue<Block<BlockDef>['data'], P>,
         ): void => {
-            canvas.dispatch({
+            state.dispatch({
                 message: ActionMessages.SET_BLOCK_DATA,
                 payload: {
                     id: id,
@@ -90,10 +88,8 @@ export const useBlock = <W extends WidgetDef>(
      * @param path - path of the data to delete
      */
     const deleteData = useCallback(
-        <P extends Paths<Block<WidgetDef>['data'], 4>>(
-            path: P | null,
-        ): void => {
-            canvas.dispatch({
+        <P extends Paths<Block<BlockDef>['data'], 4>>(path: P | null): void => {
+            state.dispatch({
                 message: ActionMessages.DELETE_BLOCK_DATA,
                 payload: {
                     id: id,
@@ -129,7 +125,7 @@ export const useBlock = <W extends WidgetDef>(
                     return;
                 }
 
-                canvas.dispatch(action);
+                state.dispatch(action);
             });
         };
 
@@ -148,7 +144,7 @@ export const useBlock = <W extends WidgetDef>(
     const data = computed(() => {
         return copy(block.data, (instance) => {
             if (typeof instance === 'string') {
-                return canvas.calculateParameter(instance);
+                return state.calculateParameter(instance);
             }
 
             return instance;

@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { observer } from 'mobx-react-lite';
 import { styled } from '@semoss/ui';
 
-import { ActionMessages, WidgetJSON } from '@semoss/canvas';
+import { ActionMessages, BlockJSON } from '@/stores';
 import { useDesigner } from '@/hooks';
 
 const StyledMenuItem = styled('div')(({ theme }) => ({
@@ -25,7 +25,7 @@ interface AddMenuItemProps {
     name: string;
 
     /** Data of the Widget */
-    json: WidgetJSON;
+    json: BlockJSON;
 }
 
 export const AddMenuItem = observer((props: AddMenuItemProps) => {
@@ -70,12 +70,12 @@ export const AddMenuItem = observer((props: AddMenuItemProps) => {
                 placeholderAction.type === 'before' ||
                 placeholderAction.type === 'after'
             ) {
-                const siblingWidget = designer.canvas.getBlock(
+                const siblingWidget = designer.blocks.getBlock(
                     placeholderAction.id,
                 );
 
                 if (siblingWidget.parent) {
-                    designer.canvas.dispatch({
+                    designer.blocks.dispatch({
                         message: ActionMessages.ADD_BLOCK,
                         payload: {
                             json: json,
@@ -89,7 +89,7 @@ export const AddMenuItem = observer((props: AddMenuItemProps) => {
                     });
                 }
             } else if (placeholderAction.type === 'replace') {
-                designer.canvas.dispatch({
+                designer.blocks.dispatch({
                     message: ActionMessages.ADD_BLOCK,
                     payload: {
                         json: json,
@@ -118,7 +118,7 @@ export const AddMenuItem = observer((props: AddMenuItemProps) => {
         designer.drag.active,
         designer.drag.placeholderAction,
         designer,
-        designer.canvas,
+        designer.blocks,
     ]);
 
     // add the mouse up listener when dragged

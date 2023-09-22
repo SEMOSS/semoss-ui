@@ -1,5 +1,5 @@
-import { WidgetJSON } from './canvas.types';
-import { CanvasStoreInterface } from './canvas.store';
+import { BlockJSON } from './state.types';
+import { StateStore } from './state.store';
 
 export enum ActionMessages {
     SET_STATE = 'SET_STATE',
@@ -34,15 +34,15 @@ export interface Action {
 export interface SetStateAction extends Action {
     message: ActionMessages.SET_STATE;
     payload: {
-        blocks?: CanvasStoreInterface['blocks'];
-        queries?: CanvasStoreInterface['queries'];
+        blocks?: StateStore['blocks'];
+        queries?: StateStore['queries'];
     };
 }
 
 export interface AddBlockAction extends Action {
     message: ActionMessages.ADD_BLOCK;
     payload: {
-        json: WidgetJSON;
+        json: BlockJSON;
         position?:
             | null
             | { parent: string; slot: string }

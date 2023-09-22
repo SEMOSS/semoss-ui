@@ -1,7 +1,10 @@
-import { CanvasStore } from '@semoss/canvas';
 import { makeAutoObservable } from 'mobx';
 
+import { StateStore } from '../state';
+
 export interface DesignerStoreInterface {
+    /** Blocks state information */
+    state: StateStore;
     /** Current selected widget */
     selected: string;
     /** Current hovered widget */
@@ -45,8 +48,8 @@ export interface DesignerStoreInterface {
  * Internal state management of the designer object
  */
 export class DesignerStore {
-    private _canvas: CanvasStore;
     private _store: DesignerStoreInterface = {
+        state: undefined,
         selected: '',
         hovered: '',
         drag: {
@@ -59,9 +62,9 @@ export class DesignerStore {
         },
     };
 
-    constructor(canvas: CanvasStore) {
-        // register the canvas
-        this._canvas = canvas;
+    constructor(state: StateStore) {
+        // register the blocks
+        this._store.state = state;
 
         // make it observable
         makeAutoObservable(this);
@@ -71,11 +74,11 @@ export class DesignerStore {
      * Getters
      */
     /**
-     * Get the canvas
-     * @returns the canvas
+     * Get the blocks
+     * @returns the blocks
      */
-    get canvas() {
-        return this._canvas;
+    get blocks() {
+        return this._store.state;
     }
 
     /**

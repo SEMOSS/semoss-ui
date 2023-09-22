@@ -1,15 +1,15 @@
 import { observer } from 'mobx-react-lite';
 
-import { Block, WidgetDef } from '@/stores';
+import { Block, BlockDef } from '@/stores';
 
 import { Renderer } from './Renderer';
 
-export interface SlotProps<W extends WidgetDef> {
+export interface SlotProps<W extends BlockDef> {
     /** Slot to Fill */
     slot: Block<W>['slots'][keyof Block<W>['slots']];
 }
 
-export const Slot = observer(<W extends WidgetDef>({ slot }: SlotProps<W>) => {
+export const Slot = observer(<W extends BlockDef>({ slot }: SlotProps<W>) => {
     // check if the slot is correct
     if (!slot) {
         throw Error(`Slot is invalid`);

@@ -1,7 +1,6 @@
 import { useEffect, useRef, useCallback } from 'react';
 import { observer } from 'mobx-react-lite';
 import { styled } from '@semoss/ui';
-import { Renderer as CanvasRenderer } from '@semoss/canvas';
 import { useDesigner } from '@/hooks';
 
 import {
@@ -59,7 +58,7 @@ export const Screen = observer((props: ScreenProps) => {
     // save the ref
     const rootRef = useRef<HTMLDivElement | null>(null);
 
-    // get the canvas and designer
+    // get the designer
     const { designer } = useDesigner();
 
     /**
@@ -170,7 +169,7 @@ export const Screen = observer((props: ScreenProps) => {
             }
 
             // get the block
-            const block = designer.canvas.getBlock(id);
+            const block = designer.blocks.getBlock(id);
 
             // if there is no parent, we cannot add
             if (!block.parent) {
@@ -212,7 +211,7 @@ export const Screen = observer((props: ScreenProps) => {
             designer.drag.active,
             designer.drag.canDrop,
             designer,
-            designer.canvas,
+            designer.blocks,
         ],
     );
 

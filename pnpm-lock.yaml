@@ -18,7 +18,7 @@ importers:
       lint-staged: 13.2.3
       npm-run-all: 4.1.5
 
-  packages/canvas:
+  packages/blocks:
     specifiers:
       '@rollup/plugin-commonjs': 25.0.4
       '@rollup/plugin-node-resolve': 15.2.1
@@ -81,7 +81,6 @@ importers:
       '@monaco-editor/react': ^4.5.1
       '@mui/icons-material': ^5.11.16
       '@mui/material': ^5.13.5
-      '@semoss/canvas': workspace:*
       '@semoss/ui': workspace:*
       '@types/node': ^16.11.47
       '@types/react': ^17.0.48
@@ -127,7 +126,6 @@ importers:
       '@monaco-editor/react': 4.5.1_5bba415b42a87dc11155927ef4f5da58
       '@mui/icons-material': 5.14.3_4f90e9dfc5c73fb4904576d208f600be
       '@mui/material': 5.14.4_0915c20a846dc1f1e157b09ce585fa44
-      '@semoss/canvas': link:../canvas
       '@semoss/ui': link:../ui
       axios: 1.5.0
       dayjs: 1.11.9
@@ -4312,8 +4310,8 @@ packages:
     dependencies:
       '@babel/runtime': 7.22.15
       '@emotion/cache': 11.11.0
-      '@emotion/react': 11.11.1_977aa966de7c3a8831d15e06219f9a78
-      '@emotion/styled': 11.11.0_6bbff2e9948d82d0217f957d5cd73f52
+      '@emotion/react': 11.11.1_7a30a420946de3203f357fe957d1f856
+      '@emotion/styled': 11.11.0_ab77819c780d5d5e77cb6a885f8796b8
       csstype: 3.1.2
       prop-types: 15.8.1
       react: 17.0.2

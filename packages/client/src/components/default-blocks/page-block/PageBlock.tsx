@@ -1,10 +1,10 @@
 import { CSSProperties } from 'react';
 
 import { useBlock } from '@/hooks';
-import { Widget, WidgetDef } from '@/stores';
-import { Slot } from '@/components/canvas';
+import { BlockComponent, BlockDef } from '@/stores';
+import { Slot } from '@/components/blocks';
 
-export interface PageWidgetDef extends WidgetDef<'page'> {
+export interface PageBlockDef extends BlockDef<'page'> {
     widget: 'page';
     data: {
         style: CSSProperties;
@@ -12,8 +12,8 @@ export interface PageWidgetDef extends WidgetDef<'page'> {
     slots: 'content';
 }
 
-export const PageWidget: Widget<PageWidgetDef> = ({ id }) => {
-    const { attrs, data, slots } = useBlock<PageWidgetDef>(id);
+export const PageBlock: BlockComponent<PageBlockDef> = ({ id }) => {
+    const { attrs, data, slots } = useBlock<PageBlockDef>(id);
 
     return (
         <div style={data.style} {...attrs}>
@@ -22,9 +22,9 @@ export const PageWidget: Widget<PageWidgetDef> = ({ id }) => {
     );
 };
 
-PageWidget.widget = 'page';
+PageBlock.widget = 'page';
 
-PageWidget.config = {
+PageBlock.config = {
     data: {
         style: {},
     },

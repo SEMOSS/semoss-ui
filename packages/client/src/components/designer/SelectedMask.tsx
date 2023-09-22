@@ -1,9 +1,13 @@
 import { useCallback, useEffect, useLayoutEffect, useState } from 'react';
 import { observer } from 'mobx-react-lite';
 import { Typography, styled } from '@semoss/ui';
-import { ActionMessages } from '@semoss/canvas';
 
-import { getRelativeSize, getRootElement, getBlockElement } from '@/stores';
+import {
+    ActionMessages,
+    getRelativeSize,
+    getRootElement,
+    getBlockElement,
+} from '@/stores';
 import { useDesigner } from '@/hooks';
 
 const StyledContainer = styled('div')(({ theme }) => ({
@@ -52,7 +56,7 @@ export const SelectedMask = observer(() => {
     const { designer } = useDesigner();
 
     // get the block
-    const block = designer.canvas.getBlock(designer.selected);
+    const block = designer.blocks.getBlock(designer.selected);
 
     /**
      * Handle the mousedown on the block.
@@ -61,7 +65,7 @@ export const SelectedMask = observer(() => {
         // set the dragged
         designer.activateDrag(block.widget, (parent) => {
             // if the parent block is a child of the selected, we cannot add
-            if (designer.canvas.containsBlock(designer.selected, parent)) {
+            if (designer.blocks.containsBlock(designer.selected, parent)) {
                 return false;
             }
 
@@ -90,12 +94,12 @@ export const SelectedMask = observer(() => {
                 placeholderAction.type === 'before' ||
                 placeholderAction.type === 'after'
             ) {
-                const siblingWidget = designer.canvas.getBlock(
+                const siblingWidget = designer.blocks.getBlock(
                     placeholderAction.id,
                 );
 
                 if (siblingWidget.parent) {
-                    designer.canvas.dispatch({
+                    designer.blocks.dispatch({
                         message: ActionMessages.MOVE_BLOCK,
                         payload: {
                             id: designer.selected,
@@ -109,7 +113,7 @@ export const SelectedMask = observer(() => {
                     });
                 }
             } else if (placeholderAction.type === 'replace') {
-                designer.canvas.dispatch({
+                designer.blocks.dispatch({
                     message: ActionMessages.MOVE_BLOCK,
                     payload: {
                         id: designer.selected,
@@ -134,7 +138,7 @@ export const SelectedMask = observer(() => {
         designer.selected,
         designer.drag.active,
         designer.drag.placeholderAction,
-        designer.canvas,
+        designer.blocks,
         designer,
     ]);
 

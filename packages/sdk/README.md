@@ -4,7 +4,7 @@
 
 ## Getting Started:
 
-First, install the sdk using a package manager:
+First, install the sdk using a package manager (or your favorite cdn):
 
 ```sh
 npm install @semoss/sdk

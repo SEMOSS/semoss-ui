@@ -1,4 +1,5 @@
 import { AppContextType, AppContext } from './AppContext';
+import { BlocksContext } from './Blocks.context';
 import { DesignerContextType, DesignerContext } from './DesignerContext';
 import { EngineContextType, EngineContext } from './EngineContext';
 import { MetamodelContextType, MetamodelContext } from './MetamodelContext';
@@ -18,6 +19,7 @@ export type {
 
 export {
     AppContext,
+    BlocksContext,
     DesignerContext,
     EngineContext,
     ImportContext,

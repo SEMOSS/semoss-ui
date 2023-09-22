@@ -1,16 +1,16 @@
-import { Actions } from './canvas.actions';
 import React from 'react';
+import { Actions } from './state.actions';
 
 /**
  * Block
  */
-export type Block<W extends WidgetDef = WidgetDef> = W extends W
+export type Block<D extends BlockDef = BlockDef> = D extends D
     ? {
           /** ID of the Block */
           id: string;
 
-          /** Widget type of the Block */
-          widget: W['widget'];
+          /** Unique widget name */
+          widget: D['widget'];
 
           /** Parent of the block */
           parent: {
@@ -22,17 +22,17 @@ export type Block<W extends WidgetDef = WidgetDef> = W extends W
           } | null;
 
           /** Data associated with the block */
-          data: W['data'];
+          data: D['data'];
 
           /** Event listeners associated with the block */
-          listeners: Record<keyof W['listeners'], Actions[]>;
+          listeners: Record<keyof D['listeners'], Actions[]>;
 
           /** Slots associated with the block */
           slots: Record<
-              W['slots'],
+              D['slots'],
               {
                   /** Name of the slot */
-                  name: W['slots'];
+                  name: D['slots'];
                   /** Children IDs of the slot */
                   children: string[];
               }
@@ -41,11 +41,11 @@ export type Block<W extends WidgetDef = WidgetDef> = W extends W
     : never;
 
 /**
- * Widget Definition
+ * Block Definition
  */
-export interface WidgetDef<W extends string = string> {
+export interface BlockDef<D extends string = string> {
     /** Unique widget name */
-    widget: W;
+    widget: D;
 
     /** Data associated with the widget */
     data: Record<string, unknown>;
@@ -60,33 +60,33 @@ export interface WidgetDef<W extends string = string> {
 /**
  * Component Innformation
  */
-export type Widget<W extends WidgetDef> = React.FunctionComponent<{
+export type BlockComponent<D extends BlockDef> = React.FunctionComponent<{
     /** Id of the block */
     id: string;
 }> & {
     /** Unique widget name */
-    widget: W['widget'];
+    widget: D['widget'];
 
     /** Default settings */
     config: {
         /** Data associated with the widget */
-        data: W['data'];
+        data: D['data'];
 
         /** Listeners associated with the widget */
-        listeners: W['listeners'];
+        listeners: D['listeners'];
 
         /** Children associated with the widget */
-        slots: Record<W['slots'], WidgetJSON[]>;
+        slots: Record<D['slots'], BlockJSON[]>;
     };
 };
 
 /**
- * WidgetJSON
+ * JSON
  */
-export type WidgetJSON<
-    T extends WidgetDef = WidgetDef,
-    A extends WidgetDef = WidgetDef,
-> = T extends WidgetDef
+export type BlockJSON<
+    T extends BlockDef = BlockDef,
+    A extends BlockDef = BlockDef,
+> = T extends BlockDef
     ? {
           /** Type of the widget */
           widget: T['widget'];
@@ -98,21 +98,25 @@ export type WidgetJSON<
           listeners: Record<keyof T['listeners'], Actions[]>;
 
           /** Slot information */
-          slots: Record<keyof T['slots'], WidgetJSON<A, A>[]>;
+          slots: Record<keyof T['slots'], BlockJSON<A, A>[]>;
       }
     : never;
 
 /**
- * WidgetRegistry
+ * Registry
  */
-export type WidgetRegistry<W extends WidgetDef = WidgetDef> =
-    W extends WidgetDef ? Record<W['widget'], Widget<W>> : never;
+export type Registry<W extends BlockDef = BlockDef> = W extends BlockDef
+    ? Record<W['widget'], BlockComponent<W>>
+    : never;
 
 /**
- * Unwrap the WidgetRegistry
+ * Unwrap the Registry
  */
-export type WidgetRegistryUnwrap<R extends WidgetRegistry<WidgetDef>> =
-    R extends WidgetRegistry<infer W> ? W : never;
+export type RegistryUnwrap<R extends Registry<BlockDef>> = R extends Registry<
+    infer W
+>
+    ? W
+    : never;
 
 /**
  * Query

@@ -1,5 +1,5 @@
 import { observer } from 'mobx-react-lite';
-import { WidgetJSON } from '@semoss/canvas';
+import { BlockJSON } from '@/stores';
 
 import { AddMenuItem } from './AddMenuItem';
 
@@ -19,7 +19,7 @@ export const AddMenu = observer(() => {
                                 },
                                 text: `Add ${idx}`,
                             },
-                            slots: {} as WidgetJSON['slots'],
+                            slots: {} as BlockJSON['slots'],
                             listeners: {},
                         }}
                     />

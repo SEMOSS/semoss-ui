@@ -1,4 +1,4 @@
-export * from './Canvas';
+export * from './Blocks';
 export * from './Error';
 export * from './Loading';
 export * from './Unauthorized';

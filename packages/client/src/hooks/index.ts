@@ -1,5 +1,7 @@
 import { useAPI } from './useAPI';
 import { useApp } from './useApp';
+import { useBlock } from './useBlock';
+import { useBlocks } from './useBlocks';
 import { useDatabase } from './useDatabase';
 import { useImport } from './useImport';
 import { useMetamodel } from './useMetamodel';
@@ -11,6 +13,8 @@ import { useDesigner } from './useDesigner';
 export {
     useAPI,
     useApp,
+    useBlock,
+    useBlocks,
     useDatabase,
     useImport,
     useMetamodel,

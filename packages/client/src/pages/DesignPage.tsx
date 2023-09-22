@@ -1,9 +1,10 @@
 import { useMemo } from 'react';
-import { Canvas, CanvasStore, Widgets, Block, Renderer } from '@semoss/canvas';
 
-import { DesignerStore } from '@/stores';
+import { DesignerStore, StateStore, Block } from '@/stores';
 import { runPixel } from '@/api';
 import { Designer } from '@/components/designer';
+import { Blocks, Renderer } from '@/components/blocks';
+import { DefaultBlocks } from '@/components/default-blocks';
 
 const BLOCKS: Record<string, Block> = {
     'page-1': {
@@ -97,9 +98,9 @@ const BLOCKS: Record<string, Block> = {
 };
 
 export const DesignPage = () => {
-    // create a new canvas store
-    const canvas = useMemo(() => {
-        return new CanvasStore(
+    // create a new blocks store
+    const state = useMemo(() => {
+        return new StateStore(
             { blocks: BLOCKS },
             {
                 onQuery: async ({ query }) => {
@@ -121,16 +122,16 @@ export const DesignPage = () => {
      * Have the designer control the blocks
      */
     const designer = useMemo(() => {
-        return new DesignerStore(canvas);
-    }, [canvas]);
+        return new DesignerStore(state);
+    }, [state]);
 
     return (
         // TODO: Fix
         <div style={{ height: '100vh', width: '100vw' }}>
             <Designer designer={designer}>
-                <Canvas canvas={canvas} widgets={Widgets}>
+                <Blocks state={state} registry={DefaultBlocks}>
                     <Renderer id="page-1" />
-                </Canvas>
+                </Blocks>
             </Designer>
         </div>
     );
