@@ -273,7 +273,11 @@ export const AppPage = observer(() => {
                         sx={{ width: !editMode ? '100%' : rightPanelWidth }}
                     >
                         {/* Right Panel that Renders our App */}
-                        <AppRenderer key={counter} appId={appId}></AppRenderer>
+                        <AppRenderer
+                            key={counter}
+                            counter={counter}
+                            appId={appId}
+                        ></AppRenderer>
                     </StyledRightPanel>
                 </StyledTopPanel>
 
