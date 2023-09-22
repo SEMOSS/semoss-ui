@@ -4,7 +4,7 @@
  * really is to handle the layout and switching between the
  * different { editor mode } nav items.
  *
- * - We have a Resizable Bottom Panel for the structure of the page.
+ * - We have a Resizable Bottom Panel for the console.
  * - The Bigger Components that get consumed here are:
  *      - AppEditorPanel (also resizable), AppConsole, AppRenderer
  * ---------------------------*------------------------------------
@@ -71,7 +71,7 @@ const StyledBottomPanel = styled('div')(({ theme }) => ({
     gap: theme.spacing(1),
     paddingLeft: theme.spacing(1),
     paddingRight: theme.spacing(1),
-    background: theme.palette.background.paper,
+    background: theme.palette.secondary.main,
     zIndex: 9999, // App Editor scroll bar hovers over this
 }));
 
