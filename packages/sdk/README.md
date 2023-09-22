@@ -182,13 +182,6 @@ insight.initialize({
 
 3. Loading via `js`
 
-The sdk will load `python` via an external file.
-
-```py
-# ./hello.py
-
-```
-
 Set the option on initialize:
 
 ```js

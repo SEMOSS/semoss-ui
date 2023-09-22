@@ -1,7 +1,9 @@
+import { useEffect } from 'react';
 import axios from 'axios';
 import { HashRouter } from 'react-router-dom';
 import { ThemeProvider, Notification } from '@semoss/ui';
 
+import { Env } from '@/env';
 import { RootStore } from '@/stores';
 import { RootStoreContext } from '@/contexts';
 import { Router } from '@/pages';
@@ -29,15 +31,28 @@ axios.interceptors.response.use(
 // create a new root store
 const _store = new RootStore();
 
-// const CFG_THEME = {
-//     primary: {
-//         main: 'red',
-//         light: 'yellow',
-//         dark: 'blue',
-//     },
-// };
-
 export const App = () => {
+    useEffect(() => {
+        console.log('hi');
+        // load the environment from the document (production)
+        try {
+            const env = JSON.parse(
+                document.getElementById('semoss-env')?.textContent || '',
+            ) as {
+                MODULE: string;
+            };
+
+            // update the enviornment variables with the module
+            if (env) {
+                Env.update({
+                    MODULE: env.MODULE,
+                });
+            }
+        } catch (e) {
+            // noop
+        }
+    }, []);
+
     return (
         <RootStoreContext.Provider value={_store}>
             <ThemeProvider reset={true}>

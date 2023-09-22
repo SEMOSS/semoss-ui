@@ -1,6 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
 
-import { MODULE } from '@/constants';
 import { Refresh, OpenInNew } from '@mui/icons-material';
 import { IconButton, Button, styled } from '@semoss/ui';
 
@@ -12,6 +11,7 @@ const StyledAppRendererActions = styled('div')(({ theme }) => ({
     boxShadow: '5px 5px 5px -2px rgba(0, 0, 0, 0.04)',
     justifyContent: 'flex-end',
 }));
+import { Env } from '@/env';
 
 interface AppRendererProps {
     /** appId of the app to render */
@@ -44,17 +44,21 @@ export const AppRenderer = (props: AppRendererProps) => {
     const [src, setSrc] = useState('');
 
     useEffect(() => {
+        // set the src
+        // setSrc(`${Env.MODULE}/public_home/${appId}/portals/`);
         // Cache Busting:
         // Additionally, you can use cache-busting techniques when serving the content.
         // This involves appending a unique query parameter or a timestamp to the URL of
         // the content each time it is requested. This forces the browser to consider it
         // a new request and fetch the latest version from the server.
-
-        // Anytime the Counter we need to hit a new url to get new version instead of cache
-
-        // set the src
-        setSrc(`${MODULE}/public_home/${appId}/portals/?counter=${counter}`);
-    }, [appId, counter]);
+        // Anytime the counter changes we need to hit a new url to get new version instead of cache
+        // setSrc(
+        //     `${
+        //         Env.MODULE
+        //     }/public_home/${appId}/portals/?timestamp=${Date.now()}`,
+        // );
+        // [appId, counter]
+    }, [appId]);
 
     if (!src) {
         return null;
