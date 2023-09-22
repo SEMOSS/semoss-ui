@@ -5,13 +5,18 @@ import { Env } from '@/env';
 interface AppRendererProps {
     /** appId of the app to render */
     appId: string;
+
+    /**
+     * refresh Iframe based on editted changes
+     */
+    counter: number;
 }
 
 /**
  * Render an app based on an id
  */
 export const AppRenderer = (props: AppRendererProps) => {
-    const { appId } = props;
+    const { appId, counter } = props;
 
     // track the iframe
     const iframeRef = useRef<HTMLIFrameElement>(null);
@@ -39,6 +44,7 @@ export const AppRenderer = (props: AppRendererProps) => {
             }}
         >
             <iframe
+                key={counter}
                 ref={iframeRef}
                 src={src}
                 style={{
