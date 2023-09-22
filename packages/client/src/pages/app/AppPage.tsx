@@ -17,7 +17,7 @@ import { AppContext, AppContextType } from '@/contexts';
 import { useRootStore } from '@/hooks';
 import { AppEditorActions, Navbar } from '@/components/ui';
 import { AppRenderer, AppConsole, AppEditorPanel } from '@/components/app';
-import { styled } from '@semoss/ui';
+import { styled, Button } from '@semoss/ui';
 
 // Styles --------------------------------------*
 const NAV_HEIGHT = '48px';
@@ -275,8 +275,10 @@ export const AppPage = observer(() => {
                         {/* Right Panel that Renders our App */}
                         <AppRenderer
                             key={counter}
-                            counter={counter}
                             appId={appId}
+                            counter={counter}
+                            editMode={editMode}
+                            refreshApp={refreshOutlet}
                         ></AppRenderer>
                     </StyledRightPanel>
                 </StyledTopPanel>
