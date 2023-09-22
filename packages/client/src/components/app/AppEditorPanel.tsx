@@ -22,7 +22,7 @@ import { useApp, useRootStore } from '@/hooks';
 import { SettingsContext } from '@/contexts';
 import { SettingsTiles } from '@/components/settings';
 import { AppSettings } from '@/components/app';
-import { AppEditor } from '@/components/app';
+import { AppEditor } from '@/components/common';
 import { MembersTable } from '@/components/settings/MembersTable';
 
 const StyledContainer = styled('div')(({ theme }) => ({
@@ -31,12 +31,13 @@ const StyledContainer = styled('div')(({ theme }) => ({
     justifyContent: 'space-between',
     width: '100%',
     height: '100%',
+    // height: 'calc(100% - 42px)',
 }));
 
 const StyledTopLeft = styled('div')(({ theme }) => ({
     display: 'flex',
     overflowX: 'hidden',
-    background: theme.palette.background.paper,
+    backgroundColor: theme.palette.secondary.light,
     justifyContent: 'space-between',
     paddingLeft: theme.spacing(2),
     paddingTop: theme.spacing(2),
@@ -124,6 +125,41 @@ export const AppEditorPanel = (props) => {
             setIsLoading(false);
         }
     });
+
+    /**
+     * TODO Reusability
+     * but first see if this is the order of operations that is needed to refresh app with new changes
+     */
+    const reloadAndPublish = async () => {
+        // turn on loading
+        setIsLoading(true);
+
+        try {
+            // Load the insight classes
+            await monolithStore.runQuery(`ReloadInsightClasses('${appId}');`);
+
+            // set the app portal
+            await monolithStore.setProjectPortal(false, appId, true, 'public');
+
+            // Publish the app the insight classes
+            await monolithStore.runQuery(
+                `PublishProject('${appId}', release=true);`,
+            );
+
+            // close it
+            refreshApp();
+        } catch (e) {
+            console.error(e);
+
+            notification.add({
+                color: 'error',
+                message: e.message,
+            });
+        } finally {
+            // turn of loading
+            setIsLoading(false);
+        }
+    };
 
     return (
         <StyledContainer>
@@ -243,7 +279,17 @@ export const AppEditorPanel = (props) => {
                     </StyledTopLeftContent>
                 </StyledTopLeft>
             )}
-            {editorView === 'code-editor' && <AppEditor appId={appId} />}
+            {editorView === 'code-editor' && (
+                <AppEditor
+                    appId={appId}
+                    onSave={(success: boolean) => {
+                        // Succesfully Saved Asset, refresh portal
+                        if (success) {
+                            reloadAndPublish();
+                        }
+                    }}
+                />
+            )}
         </StyledContainer>
     );
 };
