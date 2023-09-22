@@ -549,16 +549,19 @@ LoadPyFromFile(alias="${alias}", filePath="temp.py");
                     id = this._store.options.appId;
                 }
 
-                const response = await runPixel<O>(pixel, id);
-                if (!response) {
-                    return;
+                const { errors, pixelReturn } = await runPixel<O>(pixel, id);
+
+                if (errors) {
+                    throw errors.join('');
                 }
 
-                // success
-                return response;
+                return { errors, pixelReturn };
             } catch (error) {
                 this.processActionError(error as Error);
             }
+
+            // throw an error
+            throw new Error('No response');
         },
 
         /**
@@ -566,14 +569,76 @@ LoadPyFromFile(alias="${alias}", filePath="temp.py");
          * @param pixel - pixel command to run
          * @param space - where to run it
          */
-        runPy: async <O extends unknown[] | []>(
-            python: string,
-            space: Space = 'insight',
-        ) => {
-            return this.actions.run<O>(
+        runPy: async <O>(python: string, space: Space = 'insight') => {
+            const { pixelReturn } = await this.actions.run<[O]>(
                 `Py("<encode>${python}</encode>")`,
                 space,
             );
+
+            return {
+                output: pixelReturn[0].output,
+            };
+        },
+
+        /**
+         * Ask a model a question
+         * @param engineId - engine to ask
+         * @param command - command to ask
+         * @param space - where to run it
+         */
+        askModel: async (
+            engineId: string,
+            command: string,
+            space: Space = 'insight',
+        ) => {
+            const { pixelReturn } = await this.actions.run<
+                [{ response: string }]
+            >(
+                `LLM(engine=["${engineId}"], command=["<encode>${command}</encode>"]);`,
+                space,
+            );
+
+            return {
+                output: pixelReturn[0].output,
+            };
+        },
+
+        /**
+         * Query a database
+         * @param databaseId - database to query
+         * @param query - command to query
+         * @param options - options to query with
+         * @param space - where to run it
+         */
+        queryDatabase: async (
+            databaseId: string,
+            query: string,
+            options: {
+                collect: number;
+            } = {
+                collect: -1,
+            },
+            space: Space = 'insight',
+        ) => {
+            const { pixelReturn } = await this.actions.run<
+                [
+                    data: {
+                        values: unknown[][];
+                        headers: string[];
+                    },
+                    numCollected: number,
+                    taskId: string,
+                ]
+            >(
+                `Database(database=["${databaseId}"]) | Query("<encode>${query}</encode>") | Collect(${
+                    typeof options.collect === 'number' ? options.collect : -1
+                });;`,
+                space,
+            );
+
+            return {
+                output: pixelReturn[0].output,
+            };
         },
 
         //     /**

@@ -49,7 +49,7 @@ const Child = (props) => {
         actions,
     } = useInsight();
 
-    return <InsightProvider>{children}</InsightProvider>;
+    return <div>{children}</div>;
 };
 ```
 
@@ -59,7 +59,7 @@ Now you are ready to go. You can do things like
 
 ```js
 const login = (username, password) => {
-    const success = await insight.actions.login({
+    const success = await actions.login({
         type: 'native',
         username: username,
         password: password,
@@ -69,7 +69,7 @@ const login = (username, password) => {
 };
 
 const logout = (username, password) => {
-    const success = await insight.actions.logout();
+    const success = await actions.logout();
 
     console.log(success);
 };
@@ -79,13 +79,10 @@ const logout = (username, password) => {
 
 ```js
 const ask = (question) => {
-    const { pixelReturn } = await insight.actions.run(
-        `LLM(engine=["${ENGINE}"], command=["<encode>${question}</encode>"]);`,
-    );
+    const { output } = await actions.askModel(MODEL_ID, question);
 
-    // get the message
-    const message = pixelReturn[0].output.response;
-    console.log(message);
+    // log the output
+    console.log(output);
 };
 ```
 
@@ -93,14 +90,13 @@ const ask = (question) => {
 
 ```js
 const getMovies = () => {
-    const { pixelReturn } = await insight.actions.query(
-        `Database(engine=["${ENGINE}"]) | Query("select * from movie") | Collect(10)`,
+    const { output } = await actions.queryDatabase(
+        DATABASE_ID,
+        'select * from movie',
     );
 
-    // get the data
-    const data = pixelReturn[0].output;
-
-    console.log(data);
+    // log the output
+    console.log(output);
 };
 ```
 
@@ -108,12 +104,10 @@ const getMovies = () => {
 
 ```js
 const sum = (num1, num2) => {
-    const { pixelReturn } = await insight.actions.runPy(`${num1} + ${num2}`);
+    const { output } = await actions.runPy(`${num1} + ${num2}`);
 
-    // get the data
-    const data = pixelReturn[0].output;
-
-    console.log(data);
+    // log the output
+    console.log(output);
 };
 ```
 
@@ -171,11 +165,8 @@ def sayHello(name):
 Set the option on initialize:
 
 ```js
-// import the module
-import { Env } from '@semoss/sdk';
-
 // update the environment
-insight.initialize({
+initialize({
     python: {
         /**
          *  Load the python via an external file
@@ -205,9 +196,6 @@ The sdk will load `python` via an external file.
 Set the option on initialize:
 
 ```js
-// import the module
-import { Env } from '@semoss/sdk';
-
 // define it int he js
 const py = `
 def sayHello(name):
@@ -215,7 +203,7 @@ def sayHello(name):
 `;
 
 // update the environment
-insight.initialize({
+initialize({
     python: {
         /**
          *  Load the python via js
@@ -237,13 +225,11 @@ Next you can the preloaded `python` methods by calling the `runPy` action. See
 
 ```js
 const hello = (name) => {
-    const { pixelReturn } = await insight.actions.runPy(
+    const { output } = await actions.runPy(
         `smss.sayHello(${name})`,
     );
 
-    // get the data
-    const data = pixelReturn[0].output;
-
-    console.log(data);
+    // log the output
+    console.log(output);
 };
 ```
