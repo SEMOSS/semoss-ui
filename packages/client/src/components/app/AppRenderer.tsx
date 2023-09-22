@@ -45,7 +45,7 @@ export const AppRenderer = (props: AppRendererProps) => {
 
     useEffect(() => {
         // set the src
-        // setSrc(`${Env.MODULE}/public_home/${appId}/portals/`);
+        setSrc(`${Env.MODULE}/public_home/${appId}/portals/`);
         // Cache Busting:
         // Additionally, you can use cache-busting techniques when serving the content.
         // This involves appending a unique query parameter or a timestamp to the URL of
