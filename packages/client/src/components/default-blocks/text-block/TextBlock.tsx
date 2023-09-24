@@ -1,7 +1,8 @@
 import { CSSProperties } from 'react';
+import { observer } from 'mobx-react-lite';
 
 import { useBlock } from '@/hooks';
-import { BlockComponent, BlockDef } from '@/stores';
+import { BlockDef, BlockComponent } from '@/stores';
 
 export interface TextBlockDef extends BlockDef<'text'> {
     widget: 'text';
@@ -12,25 +13,12 @@ export interface TextBlockDef extends BlockDef<'text'> {
     slots: never;
 }
 
-export const TextBlock: BlockComponent<TextBlockDef> = ({ id }) => {
-    const { attrs, data } = useBlock<TextBlockDef>(id);
+export const TextBlock: BlockComponent = observer(({ id }) => {
+    const { attrs, data } = useBlock(id);
 
     return (
         <span style={data.style} {...attrs}>
             {data.text}
         </span>
     );
-};
-
-TextBlock.widget = 'text';
-
-TextBlock.config = {
-    data: {
-        style: {},
-        text: 'Hello world',
-    },
-    listeners: {},
-    slots: {
-        test: [],
-    },
-};
+});

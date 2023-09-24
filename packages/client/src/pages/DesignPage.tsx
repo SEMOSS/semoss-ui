@@ -128,11 +128,11 @@ export const DesignPage = () => {
     return (
         // TODO: Fix
         <div style={{ height: '100vh', width: '100vw' }}>
-            <Designer designer={designer}>
-                <Blocks state={state} registry={DefaultBlocks}>
+            <Blocks state={state} registry={DefaultBlocks}>
+                <Designer designer={designer}>
                     <Renderer id="page-1" />
-                </Blocks>
-            </Designer>
+                </Designer>
+            </Blocks>
         </div>
     );
 };

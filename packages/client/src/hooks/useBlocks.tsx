@@ -9,7 +9,7 @@ import { BlocksContext } from '@/contexts';
 export const useBlocks = () => {
     const context = useContext(BlocksContext);
     if (context === undefined) {
-        throw new Error('useInsight must be used within Blocks');
+        throw new Error('useBlocks must be used within Blocks');
     }
 
     return context;

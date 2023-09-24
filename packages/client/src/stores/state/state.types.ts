@@ -1,4 +1,5 @@
-import React from 'react';
+import { Paths, PathValue } from '@/types';
+
 import { Actions } from './state.actions';
 
 /**
@@ -43,9 +44,9 @@ export type Block<D extends BlockDef = BlockDef> = D extends D
 /**
  * Block Definition
  */
-export interface BlockDef<D extends string = string> {
+export interface BlockDef<W extends string = string> {
     /** Unique widget name */
-    widget: D;
+    widget: W;
 
     /** Data associated with the widget */
     data: Record<string, unknown>;
@@ -60,25 +61,49 @@ export interface BlockDef<D extends string = string> {
 /**
  * Component Innformation
  */
-export type BlockComponent<D extends BlockDef> = React.FunctionComponent<{
-    /** Id of the block */
-    id: string;
-}> & {
+export interface BlockConfig<D extends BlockDef = BlockDef> {
     /** Unique widget name */
     widget: D['widget'];
 
-    /** Default settings */
-    config: {
-        /** Data associated with the widget */
-        data: D['data'];
+    /** Data associated with the block */
+    data: D['data'];
 
-        /** Listeners associated with the widget */
-        listeners: D['listeners'];
+    /** Listeners associated with the block */
+    listeners: D['listeners'];
 
-        /** Children associated with the widget */
-        slots: Record<D['slots'], BlockJSON[]>;
-    };
-};
+    /** Children associated with the block */
+    slots: Record<D['slots'], BlockJSON[]>;
+
+    /** Render the block */
+    render: BlockComponent;
+
+    /** Settings Menu */
+    menu: {
+        name: string;
+        children: {
+            /** Description for the setting */
+            description: string;
+            /** Render the setting */
+            render: BlockSettingsComponent;
+        }[];
+    }[];
+}
+
+/**
+ * Component Innformation
+ */
+export type BlockComponent = (props: {
+    /** Id of the block */
+    id: string;
+}) => JSX.Element;
+
+/**
+ * Block Settings Information
+ */
+export type BlockSettingsComponent = (props: {
+    /** Id of the block */
+    id: string;
+}) => JSX.Element;
 
 /**
  * JSON
@@ -105,8 +130,8 @@ export type BlockJSON<
 /**
  * Registry
  */
-export type Registry<W extends BlockDef = BlockDef> = W extends BlockDef
-    ? Record<W['widget'], BlockComponent<W>>
+export type Registry<D extends BlockDef = BlockDef> = D extends BlockDef
+    ? Record<D['widget'], BlockConfig<D>>
     : never;
 
 /**

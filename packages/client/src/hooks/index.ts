@@ -2,6 +2,7 @@ import { useAPI } from './useAPI';
 import { useApp } from './useApp';
 import { useBlock } from './useBlock';
 import { useBlocks } from './useBlocks';
+import { useBlockSettings } from './useBlockSettings';
 import { useDatabase } from './useDatabase';
 import { useImport } from './useImport';
 import { useMetamodel } from './useMetamodel';
@@ -15,6 +16,7 @@ export {
     useApp,
     useBlock,
     useBlocks,
+    useBlockSettings,
     useDatabase,
     useImport,
     useMetamodel,

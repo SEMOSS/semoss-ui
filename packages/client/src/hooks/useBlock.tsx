@@ -8,20 +8,20 @@ import { copy } from '@/utility';
 import { useBlocks } from './useBlocks';
 
 /**
- * Widget Props
+ * useBlockReturn
  */
-interface useBlockReturn<W extends BlockDef> {
+interface useBlockReturn<D extends BlockDef = BlockDef> {
     /** Data for the block  */
-    data: Block<W>['data'];
+    data: Block<D>['data'];
 
     /** Listeners on the block  */
     listeners: Record<
-        keyof Block<W>['listeners'],
+        keyof Block<D>['listeners'],
         (intercept?: (action: Actions) => Actions | null) => void
     >;
 
     /** Slots */
-    slots: Block<W>['slots'];
+    slots: Block<D>['slots'];
 
     /** Attributes to add to the block */
     attrs: {
@@ -34,22 +34,24 @@ interface useBlockReturn<W extends BlockDef> {
      * @param path - path of the data to set
      * @param value - value of the data to set
      */
-    setData: <P extends Paths<Block<W>['data'], 4>>(
+    setData: <P extends Paths<Block<D>['data'], 4>>(
         path: P,
-        value: PathValue<W['data'], P>,
+        value: PathValue<D['data'], P>,
     ) => void;
 
     /**
      * Dispatch a message to delete data
      * @param path - path of the data to delete
      */
-    deleteData: <P extends Paths<Block<W>['data'], 4>>(path: P) => void;
+    deleteData: <P extends Paths<Block<D>['data'], 4>>(path: P) => void;
 }
 
 /**
  * Access methods for the block
  */
-export const useBlock = <W extends BlockDef>(id: string): useBlockReturn<W> => {
+export const useBlock = <D extends BlockDef = BlockDef>(
+    id: string,
+): useBlockReturn<D> => {
     // get the store
     const { state } = useBlocks();
 
@@ -67,9 +69,9 @@ export const useBlock = <W extends BlockDef>(id: string): useBlockReturn<W> => {
      * @param value - value of the data to set
      */
     const setData = useCallback(
-        <P extends Paths<Block<BlockDef>['data'], 4>>(
+        <P extends Paths<Block<D>['data'], 4>>(
             path: P | null,
-            value: PathValue<Block<BlockDef>['data'], P>,
+            value: PathValue<Block<D>['data'], P>,
         ): void => {
             state.dispatch({
                 message: ActionMessages.SET_BLOCK_DATA,
@@ -88,7 +90,7 @@ export const useBlock = <W extends BlockDef>(id: string): useBlockReturn<W> => {
      * @param path - path of the data to delete
      */
     const deleteData = useCallback(
-        <P extends Paths<Block<BlockDef>['data'], 4>>(path: P | null): void => {
+        <P extends Paths<Block<D>['data'], 4>>(path: P | null): void => {
             state.dispatch({
                 message: ActionMessages.DELETE_BLOCK_DATA,
                 payload: {
@@ -131,13 +133,13 @@ export const useBlock = <W extends BlockDef>(id: string): useBlockReturn<W> => {
 
         // create the listeners
         return Object.keys(block.listeners).reduce((acc, val) => {
-            acc[val as keyof Block<W>['listeners']] = dispatchAction.bind(
+            acc[val as keyof Block<D>['listeners']] = dispatchAction.bind(
                 null,
                 block.listeners[val],
             );
 
             return acc;
-        }, {} as useBlockReturn<W>['listeners']);
+        }, {} as useBlockReturn<D>['listeners']);
     }, [JSON.stringify(block.listeners)]);
 
     // render the data. It is wrapped in a computed, so it's cached

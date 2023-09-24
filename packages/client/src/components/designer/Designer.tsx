@@ -13,7 +13,7 @@ import { AddMenu } from './AddMenu';
 import { SelectedMenu } from './SelectedMenu';
 import { Screen } from './Screen';
 
-const StyledContent = styled('div')(() => ({
+const StyledLeftMenu = styled('div')(() => ({
     display: 'flex',
     height: '100%',
     flexDirection: 'row',
@@ -83,6 +83,14 @@ const StyledSidebarContentInner = styled('div')(({ theme }) => ({
     width: '100%',
 }));
 
+const StyledRightMenu = styled(Paper)(({ theme }) => ({
+    display: 'flex',
+    height: '100%',
+    width: theme.spacing(43),
+    flexDirection: 'row',
+    borderRadius: '0',
+}));
+
 interface DesignerProps {
     /** Content to render in the designer */
     children: React.ReactNode;
@@ -119,7 +127,7 @@ export const Designer = (props: DesignerProps) => {
             }}
         >
             <Stack height="100%" width={'100%'} direction="row" spacing={0}>
-                <StyledContent>
+                <StyledLeftMenu>
                     <StyledSidebar>
                         <StyledSidebarItem
                             selected={view === 'outline'}
@@ -156,11 +164,13 @@ export const Designer = (props: DesignerProps) => {
                             </StyledSidebarContentInner>
                         </StyledSidebarContent>
                     ) : null}
-                </StyledContent>
+                </StyledLeftMenu>
                 <Stack flex="1">
                     <Screen>{children}</Screen>
                 </Stack>
-                <SelectedMenu />
+                <StyledRightMenu elevation={7}>
+                    <SelectedMenu />
+                </StyledRightMenu>
             </Stack>
         </DesignerContext.Provider>
     );

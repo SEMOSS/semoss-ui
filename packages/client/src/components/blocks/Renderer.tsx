@@ -24,13 +24,13 @@ export const Renderer = observer(({ id }: RendererProps): JSX.Element => {
     }
 
     // get the widget
-    const component = registry[block.widget];
-    if (!component) {
-        throw Error(`Widget ${component} for block ${id} is not registered`);
+    const b = registry[block.widget];
+    if (!b) {
+        throw Error(`Widget ${b} for block ${id} is not registered`);
     }
 
-    // return the element
-    return createElement(observer(component), {
+    // render the view
+    return createElement(b.render, {
         key: id,
         id: id,
     });

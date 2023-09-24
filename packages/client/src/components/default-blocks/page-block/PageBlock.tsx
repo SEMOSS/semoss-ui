@@ -1,7 +1,8 @@
 import { CSSProperties } from 'react';
+import { observer } from 'mobx-react-lite';
 
 import { useBlock } from '@/hooks';
-import { BlockComponent, BlockDef } from '@/stores';
+import { BlockDef, BlockComponent } from '@/stores';
 import { Slot } from '@/components/blocks';
 
 export interface PageBlockDef extends BlockDef<'page'> {
@@ -12,24 +13,12 @@ export interface PageBlockDef extends BlockDef<'page'> {
     slots: 'content';
 }
 
-export const PageBlock: BlockComponent<PageBlockDef> = ({ id }) => {
-    const { attrs, data, slots } = useBlock<PageBlockDef>(id);
+export const PageBlock: BlockComponent = observer(({ id }) => {
+    const { attrs, data, slots } = useBlock(id);
 
     return (
         <div style={data.style} {...attrs}>
             <Slot slot={slots.content}></Slot>
         </div>
     );
-};
-
-PageBlock.widget = 'page';
-
-PageBlock.config = {
-    data: {
-        style: {},
-    },
-    listeners: {},
-    slots: {
-        content: [],
-    },
-};
+});
