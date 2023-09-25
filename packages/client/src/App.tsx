@@ -50,6 +50,9 @@ export const App = () => {
         } catch (e) {
             // noop
         }
+
+        // intialize it
+        _store.configStore.initialize();
     }, []);
 
     return (
