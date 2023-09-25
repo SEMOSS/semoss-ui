@@ -45,20 +45,20 @@ export const AppRenderer = (props: AppRendererProps) => {
 
     useEffect(() => {
         // set the src
-        setSrc(`${Env.MODULE}/public_home/${appId}/portals/`);
+        // setSrc(`${Env.MODULE}/public_home/${appId}/portals/`);
         // Cache Busting:
         // Additionally, you can use cache-busting techniques when serving the content.
         // This involves appending a unique query parameter or a timestamp to the URL of
         // the content each time it is requested. This forces the browser to consider it
         // a new request and fetch the latest version from the server.
         // Anytime the counter changes we need to hit a new url to get new version instead of cache
-        // setSrc(
-        //     `${
-        //         Env.MODULE
-        //     }/public_home/${appId}/portals/?timestamp=${Date.now()}`,
-        // );
+        setSrc(
+            `${
+                Env.MODULE
+            }/public_home/${appId}/portals/?timestamp=${Date.now()}`,
+        );
         // [appId, counter]
-    }, [appId]);
+    }, [appId, counter]);
 
     if (!src) {
         return null;

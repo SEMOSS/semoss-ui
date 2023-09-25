@@ -172,7 +172,7 @@ export const AppPage = observer(() => {
     /**
      * Resizing of Panels Code
      */
-    const [topPanelHeight, setTopPanelHeight] = useState('100%');
+    const [topPanelHeight, setTopPanelHeight] = useState('96.5%');
     const [bottomPanelHeight, setBottomPanelHeight] = useState('3.5%');
 
     const [leftPanelWidth, setLeftPanelWidth] = useState('50%');
@@ -237,6 +237,7 @@ export const AppPage = observer(() => {
         refreshApp: refreshOutlet,
     };
 
+    console.log(topPanelHeight);
     return (
         <StyledViewport>
             <AppContext.Provider value={value}>
@@ -246,7 +247,12 @@ export const AppPage = observer(() => {
                 </Navbar>
 
                 {/* Top Panel: Contains Editor and Renderer */}
-                <StyledTopPanel sx={{ height: topPanelHeight }}>
+                <StyledTopPanel
+                    sx={{
+                        height: editMode ? '96.5%' : '100%',
+                        border: 'solid yellow',
+                    }}
+                >
                     {editMode && (
                         <StyledLeftPanel sx={{ width: leftPanelWidth }}>
                             {/* Left Panel for Editor Mode */}
