@@ -203,7 +203,7 @@ export const upload = async (
     files: File | File[],
     insightId: string | null,
     projectId: string | null,
-    path: string | null,
+    path: string,
 ): Promise<
     {
         fileName: string;

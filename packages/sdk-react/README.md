@@ -111,6 +111,28 @@ const sum = (num1, num2) => {
 };
 ```
 
+-   Upload a File
+
+```js
+const upload = (file, path) => {
+    const { output } = await actions.upload(file, path);
+
+    // log the output
+    console.log(output);
+};
+```
+
+-   Download a File
+
+```js
+const download = (path) => {
+    const { output } = await actions.download(path);
+
+    // log the output
+    console.log(output);
+};
+```
+
 ## Tips and Tricks
 
 Here are a few tips and tricks that can help streamline the development process.

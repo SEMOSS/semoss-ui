@@ -33,7 +33,6 @@ const _store = new RootStore();
 
 export const App = () => {
     useEffect(() => {
-        console.log('hi');
         // load the environment from the document (production)
         try {
             const env = JSON.parse(

@@ -1,6 +1,14 @@
 import { Env } from '@/env';
 import { Space, Script } from '@/types';
-import { getSystemConfig, login, logout, oauth, runPixel } from '@/api';
+import {
+    getSystemConfig,
+    login,
+    logout,
+    oauth,
+    runPixel,
+    upload,
+    download,
+} from '@/api';
 import { UnauthorizedError } from '@/utility';
 
 interface InsightStoreInterface {
@@ -447,6 +455,27 @@ LoadPyFromFile(alias="${alias}", filePath="temp.py");
         return output;
     };
 
+    /**
+     * Get the id of the space
+     * @param space - where to get it
+     * @returns id of the space
+     */
+    private getSpaceId(space: Space) {
+        let id = '';
+        if (space === 'insight') {
+            id = this._store.insightId;
+        } else if (space === 'app') {
+            if (!this._store.options.appId) {
+                throw new Error('An app is required to run in the app space');
+            }
+
+            // set it
+            id = this._store.options.appId;
+        }
+
+        return id;
+    }
+
     /** Actions */
     /** Accessible by the end user */
     actions = {
@@ -641,48 +670,70 @@ LoadPyFromFile(alias="${alias}", filePath="temp.py");
             };
         },
 
-        //     /**
-        //      * Upload a file to the project space
-        //      *
-        //      * @param files- file objects to upload
-        //      * @param path - relative path
-        //      */
-        //     upload: async (
-        //         files: File[],
-        //         path: string | null,
-        //     ): Promise<
-        //         {
-        //             fileName: string;
-        //             fileLocation: string;
-        //         }[]
-        //     > => {
-        //         try {
-        //             const response = await upload(
-        //                 files,
-        //                 this._store.insightId,
-        //                 this._store.appId,
-        //                 path,
-        //             );
+        /**
+         * Upload a file to the project space
+         *
+         * @param files- file objects to upload
+         * @param path - relative path
+         * @param space - where to run it
+         */
+        upload: async (
+            files: File | File[],
+            path: string,
+            space: Space = 'insight',
+        ): Promise<
+            {
+                fileName: string;
+                fileLocation: string;
+            }[]
+        > => {
+            try {
+                const response = await upload(
+                    files,
+                    space === 'insight' ? this._store.insightId : '',
+                    space === 'app' ? this._store.options.appId : '',
+                    path,
+                );
 
-        //             return response;
-        //         } catch (error) {
-        //             this.processActionError(error as Error);
-        //         }
+                return response;
+            } catch (error) {
+                this.processActionError(error as Error);
+            }
 
-        //         return [];
-        //     },
+            // throw an error
+            throw new Error('No upload');
+        },
 
-        //     /**
-        //      * Download a file from the project space
-        //      *
-        //      * @param path - relative path
-        //      */
-        //     download: async (fileKey: string): Promise<void> => {
-        //         try {
-        //             await download(this._store.insightId, fileKey);
-        //         } catch (error) {
-        //             this.processActionError(error as Error);
-        //         }
-        //     },
+        /**
+         * Download a file from the app
+         *
+         * @param path - relative path to the file
+         * @param space - where to det it
+         */
+        download: async (
+            path: string | null,
+            space: Space = 'insight',
+        ): Promise<boolean> => {
+            const id = this.getSpaceId(space);
+
+            const { pixelReturn } = await this.actions.run<[string]>(
+                `DownloadAsset(filePath=["${path}"], space=["${id}"]);`,
+                'insight',
+            );
+
+            // get the file key
+            const fileKey = pixelReturn[0].output;
+
+            try {
+                await download(this._store.insightId, fileKey);
+
+                return true;
+            } catch (error) {
+                this.processActionError(error as Error);
+            }
+
+            // throw an error
+            throw new Error('No download');
+        },
     };
 }
