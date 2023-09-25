@@ -4,7 +4,7 @@ import { DesignerStore, StateStore, Block } from '@/stores';
 import { runPixel } from '@/api';
 import { Designer } from '@/components/designer';
 import { Blocks, Renderer } from '@/components/blocks';
-import { DefaultBlocks } from '@/components/default-blocks';
+import { DefaultBlocks } from '@/components/block-defaults';
 
 const BLOCKS: Record<string, Block> = {
     'page-1': {
@@ -13,36 +13,41 @@ const BLOCKS: Record<string, Block> = {
         parent: null,
         data: {
             style: {
-                background: 'lightblue',
-                padding: '16px 0',
+                fontFamily: 'serif',
             },
         },
         listeners: {},
         slots: {
             content: {
                 name: 'content',
-                children: ['text-1', 'text-2', 'page-2', 'text-3'],
+                children: ['container-1'],
             },
         },
     },
-    'page-2': {
-        id: 'page-2',
-        widget: 'page',
+    'container-1': {
+        id: 'container-1',
+        widget: 'container',
         parent: {
             id: 'page-1',
             slot: 'content',
         },
         data: {
             style: {
-                background: 'lightgreen',
-                padding: '16px 0',
+                background: 'white',
+                boxShadow: 'rgba(100, 100, 111, 0.2) 0px 7px 29px 0px',
+                flexDirection: 'column',
+                gap: '16px',
+                padding: '32px',
+                width: '100%',
+                maxWidth: '900px',
+                margin: '0 auto',
             },
         },
         listeners: {},
         slots: {
-            content: {
-                name: 'content',
-                children: [],
+            children: {
+                name: 'children',
+                children: ['text-1', 'text-2', 'input-3', 'text-4', 'text-5'],
             },
         },
     },
@@ -50,14 +55,15 @@ const BLOCKS: Record<string, Block> = {
         id: 'text-1',
         widget: 'text',
         parent: {
-            id: 'page-1',
-            slot: 'content',
+            id: 'container-1',
+            slot: 'children',
         },
         data: {
             style: {
                 display: 'block',
+                fontSize: '2.125rem',
             },
-            text: 'Text 1',
+            text: 'Title',
         },
         listeners: {},
         slots: {},
@@ -66,31 +72,66 @@ const BLOCKS: Record<string, Block> = {
         id: 'text-2',
         widget: 'text',
         parent: {
-            id: 'page-1',
-            slot: 'content',
+            id: 'container-1',
+            slot: 'children',
         },
         data: {
             style: {
                 display: 'block',
+                fontSize: '1.25rem',
             },
-            text: 'Text 2',
+            text: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur.',
         },
         listeners: {},
         slots: {},
     },
-    'text-3': {
-        id: 'text-3',
-        widget: 'text',
+    'input-3': {
+        id: 'input-3',
+        widget: 'input',
         parent: {
-            id: 'page-1',
-            slot: 'content',
+            id: 'container-1',
+            slot: 'children',
         },
         data: {
             style: {
-                marginTop: '200px',
                 display: 'block',
             },
-            text: 'Text 3',
+            value: '',
+        },
+        listeners: {
+            onChange: [],
+        },
+        slots: {},
+    },
+    'text-4': {
+        id: 'text-4',
+        widget: 'text',
+        parent: {
+            id: 'container-1',
+            slot: 'children',
+        },
+        data: {
+            style: {
+                display: 'block',
+                fontWeight: 'bold',
+            },
+            text: 'Answer:',
+        },
+        listeners: {},
+        slots: {},
+    },
+    'text-5': {
+        id: 'text-5',
+        widget: 'text',
+        parent: {
+            id: 'container-1',
+            slot: 'children',
+        },
+        data: {
+            style: {
+                display: 'block',
+            },
+            text: '{{input-3.value}}',
         },
         listeners: {},
         slots: {},

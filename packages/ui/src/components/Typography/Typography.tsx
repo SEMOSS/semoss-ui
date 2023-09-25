@@ -41,9 +41,10 @@ export interface TypographyProps {
         | "error"
         | "info"
         | "warning";
+    noWrap?: boolean;
 }
 
 export const Typography = (props: TypographyProps) => {
-    const { sx } = props;
-    return <MuiTypography sx={sx} {...props} />;
+    const { sx, ...otherProps } = props;
+    return <MuiTypography sx={sx} {...otherProps} />;
 };

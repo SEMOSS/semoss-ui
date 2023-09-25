@@ -14,10 +14,15 @@ export interface TextBlockDef extends BlockDef<'text'> {
 }
 
 export const TextBlock: BlockComponent = observer(({ id }) => {
-    const { attrs, data } = useBlock(id);
+    const { attrs, data } = useBlock<TextBlockDef>(id);
 
     return (
-        <span style={data.style} {...attrs}>
+        <span
+            style={{
+                ...data.style,
+            }}
+            {...attrs}
+        >
             {data.text}
         </span>
     );

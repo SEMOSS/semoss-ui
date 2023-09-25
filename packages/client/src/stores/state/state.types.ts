@@ -69,7 +69,7 @@ export interface BlockConfig<D extends BlockDef = BlockDef> {
     data: D['data'];
 
     /** Listeners associated with the block */
-    listeners: D['listeners'];
+    listeners: Record<keyof D['listeners'], Actions[]>;
 
     /** Children associated with the block */
     slots: Record<D['slots'], BlockJSON[]>;
@@ -84,7 +84,10 @@ export interface BlockConfig<D extends BlockDef = BlockDef> {
             /** Description for the setting */
             description: string;
             /** Render the setting */
-            render: BlockSettingsComponent;
+            render: (props: {
+                /** Id of the block */
+                id: string;
+            }) => JSX.Element;
         }[];
     }[];
 }
@@ -93,14 +96,6 @@ export interface BlockConfig<D extends BlockDef = BlockDef> {
  * Component Innformation
  */
 export type BlockComponent = (props: {
-    /** Id of the block */
-    id: string;
-}) => JSX.Element;
-
-/**
- * Block Settings Information
- */
-export type BlockSettingsComponent = (props: {
     /** Id of the block */
     id: string;
 }) => JSX.Element;

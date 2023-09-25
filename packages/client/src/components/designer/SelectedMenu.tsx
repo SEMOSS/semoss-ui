@@ -46,9 +46,20 @@ const StyledMenuScroll = styled('div')(({ theme }) => ({
     overflowY: 'auto',
 }));
 
-const StyledMenuSection = styled(Accordion)(() => ({
+const StyledMenuSection = styled(Accordion)(({ theme }) => ({
     boxShadow: 'none',
-    borderRadius: '0',
+    borderRadius: '0 !important',
+    border: '0px',
+    borderBottom: `1px solid ${theme.palette.divider}`,
+    '&:before': {
+        display: 'none',
+    },
+    '&.Mui-expanded': {
+        margin: '0',
+        '&:last-child': {
+            borderBottom: '0px',
+        },
+    },
 }));
 
 const StyledMenuSectionTitle = styled(Accordion.Trigger)(({ theme }) => ({
@@ -137,18 +148,18 @@ export const SelectedMenu = observer(() => {
                                 </StyledMenuSectionTitle>
                                 <Accordion.Content>
                                     {s.children.length > 0 ? (
-                                        <>
+                                        <Stack direction="column" spacing={1}>
                                             {s.children.map((c, cIdx) => {
                                                 return createElement(c.render, {
                                                     key: cIdx,
                                                     id: block.id,
                                                 });
                                             })}
-                                        </>
+                                        </Stack>
                                     ) : null}
                                 </Accordion.Content>
                             </StyledMenuSection>
-                            <Divider />
+                            {/* <Divider /> */}
                         </React.Fragment>
                     );
                 })}

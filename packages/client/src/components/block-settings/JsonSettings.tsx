@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react';
+import { observer } from 'mobx-react-lite';
 import Editor from '@monaco-editor/react';
 import { styled, Stack, Button } from '@semoss/ui';
 
-import { BlockSettingsComponent } from '@/stores';
 import { useBlockSettings } from '@/hooks';
 
 const StyledEditor = styled('div')(({ theme }) => ({
@@ -11,7 +11,14 @@ const StyledEditor = styled('div')(({ theme }) => ({
     border: `1px solid ${theme.palette.divider}`,
 }));
 
-export const JsonSettings: BlockSettingsComponent = ({ id }) => {
+interface JsonSettingsProps {
+    /**
+     * Id of the block that is being worked with
+     */
+    id: string;
+}
+
+export const JsonSettings = observer(({ id }: JsonSettingsProps) => {
     const { data, setData } = useBlockSettings(id);
 
     const [value, setValue] = useState('');
@@ -63,4 +70,4 @@ export const JsonSettings: BlockSettingsComponent = ({ id }) => {
             </Stack>
         </Stack>
     );
-};
+});

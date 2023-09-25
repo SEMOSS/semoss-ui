@@ -20,11 +20,11 @@ const StyledContainer = styled('div')(({ theme }) => ({
     position: 'relative',
     height: '100%',
     width: '100%',
-    overflow: 'auto',
     paddingTop: theme.spacing(1),
     paddingLeft: theme.spacing(2),
     paddingBottom: theme.spacing(1),
     paddingRight: theme.spacing(2),
+    overflow: 'auto',
 }));
 
 const StyledContent = styled('div', {
@@ -37,14 +37,23 @@ const StyledContent = styled('div', {
     flexDirection: 'column',
     alignItems: 'center',
     userSelect: off ? 'none' : 'auto',
-    height: '100%',
-    width: '100%',
+    minWidth: '100%',
+    minHeight: '100%',
 }));
 
-const StyledContentSpacer = styled('div')(({ theme }) => ({
+const StyledContentOuter = styled('div')(({ theme }) => ({
     padding: theme.spacing(1),
-    height: '100%',
-    width: '100%',
+    display: 'flex',
+    flex: 1,
+    minWidth: '100%',
+    minHeight: '100%',
+}));
+
+const StyledContentInner = styled('div')(() => ({
+    flex: 1,
+    position: 'relative',
+    minWidth: '100%',
+    minHeight: '100%',
 }));
 
 interface ScreenProps {
@@ -236,14 +245,14 @@ export const Screen = observer((props: ScreenProps) => {
             {designer.drag.active && <Ghost />}
 
             <StyledContent off={designer.drag.active ? true : false}>
-                <StyledContentSpacer onMouseLeave={handleMouseLeave}>
-                    <div
+                <StyledContentOuter onMouseLeave={handleMouseLeave}>
+                    <StyledContentInner
                         onMouseDown={handleMouseDown}
                         onMouseOver={handleMouseOver}
                     >
                         {children}
-                    </div>
-                </StyledContentSpacer>
+                    </StyledContentInner>
+                </StyledContentOuter>
             </StyledContent>
         </StyledContainer>
     );

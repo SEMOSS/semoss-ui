@@ -1,5 +1,12 @@
 import { BlockConfig } from '@/stores';
-import { JsonSettings } from '@/components/default-settings';
+
+import {
+    buildLayoutSection,
+    buildSpacingSection,
+    buildDimensionsSection,
+    buildStyleSection,
+    buildTypographySection,
+} from '../block-defaults.shared';
 
 import { PageBlockDef, PageBlock } from './PageBlock';
 
@@ -15,14 +22,10 @@ export const config: BlockConfig<PageBlockDef> = {
     },
     render: PageBlock,
     menu: [
-        {
-            name: 'Editor',
-            children: [
-                {
-                    description: 'Default editor to edit the underlying json',
-                    render: JsonSettings,
-                },
-            ],
-        },
+        buildLayoutSection(),
+        buildSpacingSection(),
+        buildDimensionsSection(),
+        buildStyleSection(),
+        buildTypographySection(),
     ],
 };
