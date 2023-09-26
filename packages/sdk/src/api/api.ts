@@ -32,7 +32,6 @@ interceptors.request = async (options) => {
                     `${Env.MODULE}/api/config/fetchCsrf`,
                     {
                         headers: {
-                            'Content-Type': 'application/x-www-form-urlencoded',
                             'X-CSRF-Token': 'fetch',
                         },
                     },
@@ -123,11 +122,7 @@ export const runPixel = async <O extends unknown[] | []>(
             pixelId: string;
             additionalOutput?: unknown;
         }[];
-    }>(`${Env.MODULE}/api/engine/runPixel`, body, {
-        headers: {
-            'content-type': 'application/x-www-form-urlencoded',
-        },
-    });
+    }>(`${Env.MODULE}/api/engine/runPixel`, body, {});
 
     // collect the errors
     const errors: string[] = [];
@@ -238,9 +233,9 @@ export const upload = async (
         param = `?${param}`;
     }
 
-    const url = `${Env.MODULE}${Env.MODULE}/api/uploadFile/baseUpload${param}`,
-        fd: FormData = new FormData();
+    const url = `${Env.MODULE}/api/uploadFile/baseUpload${param}`;
 
+    const fd: FormData = new FormData();
     if (Array.isArray(files)) {
         for (let i = 0; i < files.length; i++) {
             fd.append('file', files[i]);
@@ -255,11 +250,7 @@ export const upload = async (
             fileName: string;
             fileLocation: string;
         }[]
-    >(url, fd, {
-        headers: {
-            'content-type': 'application/x-www-form-urlencoded',
-        },
-    });
+    >(url, fd, {});
 
     return response.data;
 };
@@ -276,7 +267,7 @@ export const download = async (insightId: string, fileKey: string) => {
             throw Error('No Insight ID provided for download.');
         }
         // create the download url
-        const url = `${Env.MODULE}${
+        const url = `${
             Env.MODULE
         }/api/engine/downloadFile?insightId=${insightId}&fileKey=${encodeURIComponent(
             fileKey,

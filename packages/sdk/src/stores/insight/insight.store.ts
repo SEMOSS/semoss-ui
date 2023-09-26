@@ -580,7 +580,7 @@ LoadPyFromFile(alias="${alias}", filePath="temp.py");
 
                 const { errors, pixelReturn } = await runPixel<O>(pixel, id);
 
-                if (errors) {
+                if (errors.length) {
                     throw errors.join('');
                 }
 
