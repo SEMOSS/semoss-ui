@@ -158,6 +158,7 @@ export const Metamodel = (props: MetamodelProps) => {
         selectedNodeId: selectedNode ? selectedNode.id : null,
         onSelectNodeId: useCallback(
             (id) => {
+                console.log('onselecnodeid: ', id);
                 let node = null;
 
                 if (id) {
@@ -266,12 +267,13 @@ export const Metamodel = (props: MetamodelProps) => {
         <>
             <MetamodelContext.Provider value={metamodelContext}>
                 <div
-                    style={{ display: 'flex', height: '100vh', width: '100vw' }}
+                    style={{ display: 'flex', height: '60vh', width: '100vw' }}
                 >
                     <div
                         style={{
                             width: '245px',
-                            height: '100%',
+                            // height: '100%',
+                            height: '60%',
                             // flexShrink: 0,
                             overflow: 'auto',
                         }}
@@ -294,7 +296,7 @@ export const Metamodel = (props: MetamodelProps) => {
                                 top: '0',
                                 width: reactFlowWidth,
                                 minWidth: reactFlowWidth,
-                                height: '100%',
+                                height: '60%',
                                 overflow: 'auto',
                             }}
                         >

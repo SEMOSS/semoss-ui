@@ -480,7 +480,7 @@ const _MetamodelNode = (props: MetamodelNodeProps) => {
         }
     });
 
-    const StyledEditMetamodelCard = styled('div')(({ theme }) => ({
+    const StyledEditMetamodelCard = styled('div')(() => ({
         display: 'inline-flex',
         flexDirection: 'column',
         padding: '0px',
@@ -631,10 +631,7 @@ const _MetamodelNode = (props: MetamodelNodeProps) => {
                         {fields.map((col, idx) => {
                             return (
                                 <>
-                                    <StyledEditRow
-                                        key={col.id}
-                                        // isPrimary={idx === 0 ? true : false}
-                                    >
+                                    <StyledEditRow key={col.id}>
                                         <StyledDragIconCell>
                                             <StyledDragIconContainer>
                                                 <StyledDragIconInnerContainer>
@@ -668,14 +665,6 @@ const _MetamodelNode = (props: MetamodelNodeProps) => {
                                                         onBlur={(e) => {
                                                             const tempNodeData =
                                                                 nodeData;
-                                                            console.log(
-                                                                'field: ',
-                                                                field,
-                                                            );
-                                                            console.log(
-                                                                'e: ',
-                                                                e,
-                                                            );
                                                             tempNodeData.properties[
                                                                 idx
                                                             ].name =

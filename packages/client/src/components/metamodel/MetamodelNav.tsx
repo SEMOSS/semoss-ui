@@ -3,6 +3,7 @@ import { Handle, Position } from 'react-flow-renderer';
 import { useForm } from 'react-hook-form';
 import { MetamodelNode } from './MetamodelNode';
 import {
+    ChevronRight,
     ExpandMore,
     ExpandMoreRounded,
     Keyboard,
@@ -19,10 +20,12 @@ import {
     Button,
     Icon,
     IconButton,
+    Tooltip,
 } from '@semoss/ui';
 
 import { useMetamodel } from '@/hooks';
 import { MetamodelContext, MetamodelContextType } from '@/contexts';
+import { table } from 'console';
 
 export const MetamodelNav = ({ nodes }) => {
     console.log('nodes are: ', nodes);
@@ -48,6 +51,30 @@ export const MetamodelNav = ({ nodes }) => {
     const searchFilter = watch('SEARCH_FILTER');
 
     const [expandTable, setExpandTable] = useState(false);
+    const [expandedNodes, setExpandedNodes] = useState([]); // track expended nodes
+
+    // handle expand
+    const handleExpand = (
+        event: React.SyntheticEvent,
+        newExpanded: boolean,
+        key: string,
+    ) => {
+        event.preventDefault();
+        console.log('event: ', event);
+        console.log('newExpand: ', newExpanded);
+        console.log('tableName: ', key);
+        const temp = expandedNodes;
+
+        if (newExpanded) {
+            // add
+            temp.push(key);
+        } else {
+            // remove
+            temp.splice(temp.indexOf(key), 1);
+        }
+        console.log('temp to expand: ', temp);
+        setExpandedNodes(temp);
+    };
 
     // get the metamodel nodes
 
@@ -63,7 +90,7 @@ export const MetamodelNav = ({ nodes }) => {
         };
         return {
             display: 'flex',
-            width: '245px',
+            width: '255px',
             height: '100%',
             padding: '16px',
             flexDirection: 'column',
@@ -73,7 +100,6 @@ export const MetamodelNav = ({ nodes }) => {
             borderRadius: shape.borderRadiusNone,
             background: theme.palette.background.paper,
             boxShadow: '0px 5px 22px 0px rgba(0, 0, 0, 0.06);',
-            // opacity: '100%',
         };
     });
     const StyledSearchContainer = styled('div')(({ theme }) => {
@@ -109,7 +135,6 @@ export const MetamodelNav = ({ nodes }) => {
             maxHeight: '28px',
             width: '213px',
             display: 'flex',
-            // padding: '8px 16px',
             flexDirection: 'column',
             alignItems: 'center',
             alignSelf: 'stretch',
@@ -117,7 +142,7 @@ export const MetamodelNav = ({ nodes }) => {
             boxShadow: 'none !important',
         };
     });
-    const StyledAccordionContent = styled('div')(({ theme }) => {
+    const StyledAccordionContent = styled('div')(() => {
         return {
             display: 'flex',
             flexDirection: 'column',
@@ -126,16 +151,25 @@ export const MetamodelNav = ({ nodes }) => {
         };
     });
 
-    const ApplyNesting = styled('div')(({ theme }) => {
+    const ApplyNesting = styled('div')(() => {
         return {
             display: 'flex',
-            padding: 'var(--shape-border-radius-none, 0px) 16px',
+            padding: 'var(--shape-border-radius-none, 0px) 12px',
             alignItems: 'center',
             gap: 'var(--shape-border-radius-none, 0px)',
             alignSelf: 'stretch',
         };
     });
-    const StyledItemContainer = styled('div')(({ theme }) => {
+    const TableApplyNesting = styled('div')(() => {
+        return {
+            display: 'flex',
+            padding: 'var(--shape-border-radius-none, 0px) 12px',
+            alignItems: 'center',
+            gap: 'var(--shape-border-radius-none, 0px)',
+            alignSelf: 'stretch',
+        };
+    });
+    const StyledItemContainer = styled('div')(() => {
         return {
             display: 'flex',
             alignItems: 'center',
@@ -145,9 +179,16 @@ export const MetamodelNav = ({ nodes }) => {
             maxHeight: '24px',
             borderRadius: 'var(--shape-border-radius-none, 0px);',
             border: 0,
+            '&:hover': {
+                backgroundColor: 'var(--alt-purple-alt-purple-50, #F1E9FB)',
+                cursor: 'pointer',
+            },
+            '&.active': {
+                backgroundColor: 'var(--alt-purple-alt-purple-50, #F1E9FB)',
+            },
         };
     });
-    const StyledItem = styled('div')(({ theme }) => {
+    const StyledItem = styled('div')(() => {
         return {
             display: 'flex',
             alignItems: 'center',
@@ -155,27 +196,30 @@ export const MetamodelNav = ({ nodes }) => {
             border: 0,
         };
     });
-    const StyledItemText = styled('div')(({ theme }) => {
+    const StyledItemText = styled('div')(() => {
         return {
             display: 'flex',
             height: '24px',
-            flexDirection: 'column',
+            maxWidth: '96px',
             alignItems: 'center',
         };
     });
-    const StyledItemTextTypography = styled(Typography)(({ theme }) => {
+    const StyledItemTextTypography = styled(Typography)(() => {
         return {
+            maxWidth: '96px',
             fontFamily: 'Inter',
-            fontSize: '12px',
             fontStyle: 'normal',
             fontWeight: 400,
             lineHeight: '100%',
-            letterSpacing: '0.15px%',
+            letterSpacing: '0.15px',
             color: 'var(--light-text-secondary, rgba(0, 0, 0, 0.60))',
             fontFeatureSettings: 'clig off, liga off',
+            overflow: 'hidden',
+            textOverflow: 'ellipsis',
+            whiteSpace: 'nowrap',
         };
     });
-    const StyledExpandIconContainer = styled('div')(({ theme }) => {
+    const StyledExpandIconContainer = styled('div')(() => {
         return {
             display: 'flex',
             paddingRight: '0px',
@@ -185,17 +229,26 @@ export const MetamodelNav = ({ nodes }) => {
         };
     });
 
-    const handleTableClick = (table, idx) => {
-        console.log('table: ', table);
-        // focusTableNode(table);
+    const handleTableClick = (table) => {
+        onSelectNodeId(table.id);
+    };
+
+    const handleColumnClick = (column) => {
+        // set active column
+        // set table
+        // set column
+        console.log('column: ', column);
     };
 
     /** Reset Draggable */
     console.log('tablesRef: ', tablesRef);
+    useEffect(() => {
+        console.log('nodeexpanded: ', expandedNodes);
+    }, [expandedNodes]);
 
     return (
         <>
-            <StyledNavContainer>
+            <StyledNavContainer className="nodrag">
                 <List.Item>
                     <ApplyNesting />
                     <List.ItemText>
@@ -217,6 +270,7 @@ export const MetamodelNav = ({ nodes }) => {
                     />
                 </StyledSearchContainer>
                 <Accordion
+                    className="nodrag"
                     ref={tablesRef}
                     defaultExpanded={true}
                     disableGutters={true}
@@ -224,15 +278,16 @@ export const MetamodelNav = ({ nodes }) => {
                         width: '235px',
                         border: 'none !important',
                         boxShadow: 'none !important',
+                        padding: '0px',
                     }}
                 >
-                    <StyledAccordionTrigger>
+                    <StyledAccordionTrigger className="nodrag">
                         <StyledItem>
                             <StyledExpandIconContainer>
                                 <ExpandMoreRounded />
                             </StyledExpandIconContainer>
                             <StyledItemText>
-                                <Typography variant="body1"> Tables</Typography>
+                                <Typography variant="body1">Tables</Typography>
                             </StyledItemText>
                         </StyledItem>
                     </StyledAccordionTrigger>
@@ -251,6 +306,7 @@ export const MetamodelNav = ({ nodes }) => {
                         {nodes.map((table, tableIdx) => {
                             return (
                                 <Accordion
+                                    className="nodrag"
                                     key={tableIdx}
                                     defaultExpanded={false}
                                     disableGutters={true}
@@ -259,30 +315,50 @@ export const MetamodelNav = ({ nodes }) => {
                                         border: 'none !important',
                                         boxShadow: 'none !important',
                                     }}
+                                    onChange={(event, newExpanded) =>
+                                        handleExpand(
+                                            event,
+                                            newExpanded,
+                                            table.data.name,
+                                        )
+                                    }
                                 >
-                                    <StyledAccordionTrigger>
+                                    <StyledAccordionTrigger className="nodrag">
                                         <StyledItemContainer
+                                            className="nodrag"
                                             sx={{ width: '213px' }}
                                         >
-                                            <StyledItem>
-                                                <ApplyNesting />
-                                                <StyledExpandIconContainer>
-                                                    <ExpandMoreRounded
-                                                        sx={{
-                                                            color: 'var(--light-text-secondary, rgba(0, 0, 0, 0.60))',
-                                                        }}
-                                                    />
-                                                </StyledExpandIconContainer>
-                                                <StyledItemText>
-                                                    <StyledItemTextTypography
-                                                        variant="body1"
-                                                        sx={{
-                                                            fontSize: '12px',
-                                                        }}
-                                                    >
-                                                        {table.data.name}
-                                                    </StyledItemTextTypography>
-                                                </StyledItemText>
+                                            <StyledItem className="nodrag">
+                                                <TableApplyNesting />
+                                                {expandedNodes.indexOf(
+                                                    table.data.name,
+                                                ) >= 0 ? (
+                                                    <StyledExpandIconContainer>
+                                                        <ExpandMoreRounded
+                                                            sx={{
+                                                                color: 'var(--light-text-secondary, rgba(0, 0, 0, 0.60))',
+                                                            }}
+                                                        />
+                                                    </StyledExpandIconContainer>
+                                                ) : (
+                                                    <StyledExpandIconContainer>
+                                                        <ChevronRight
+                                                            sx={{
+                                                                color: 'var(--light-text-secondary, rgba(0, 0, 0, 0.60))',
+                                                            }}
+                                                        />
+                                                    </StyledExpandIconContainer>
+                                                )}
+                                                <Tooltip
+                                                    title={table.data.name}
+                                                    placement="top-end"
+                                                >
+                                                    <StyledItemText>
+                                                        <StyledItemTextTypography variant="body1">
+                                                            {table.data.name}
+                                                        </StyledItemTextTypography>
+                                                    </StyledItemText>
+                                                </Tooltip>
                                             </StyledItem>
                                             <IconButton
                                                 sx={{
@@ -296,37 +372,47 @@ export const MetamodelNav = ({ nodes }) => {
                                                     sx={{
                                                         color: 'var(--light-text-secondary, rgba(0, 0, 0, 0.60))',
                                                     }}
+                                                    onClick={() =>
+                                                        handleTableClick(
+                                                            table,
+                                                            tableIdx,
+                                                        )
+                                                    }
                                                 />
                                             </IconButton>
                                         </StyledItemContainer>
                                     </StyledAccordionTrigger>
                                     <Accordion.Content>
-                                        <StyledAccordionContent>
-                                            {table.data.properties.map(
-                                                (column, colIdx) => (
-                                                    <StyledItemContainer
-                                                        key={`${tableIdx}_${colIdx}`}
-                                                    >
-                                                        <StyledItem>
-                                                            <ApplyNesting />
-                                                            <StyledItemText>
-                                                                <StyledItemTextTypography
-                                                                    variant="body1"
-                                                                    sx={{
-                                                                        fontSize:
-                                                                            '11px',
-                                                                    }}
-                                                                >
-                                                                    {
-                                                                        column.name
-                                                                    }
-                                                                </StyledItemTextTypography>
-                                                            </StyledItemText>
-                                                        </StyledItem>
-                                                    </StyledItemContainer>
-                                                ),
-                                            )}
-                                        </StyledAccordionContent>
+                                        {/* <StyledAccordionContent> */}
+                                        {table.data.properties.map(
+                                            (column, colIdx) => (
+                                                <StyledItemContainer
+                                                    key={`${tableIdx}_${colIdx}`}
+                                                    onClick={() =>
+                                                        handleColumnClick(
+                                                            column,
+                                                            colIdx,
+                                                        )
+                                                    }
+                                                >
+                                                    <StyledItem>
+                                                        <ApplyNesting />
+                                                        <StyledItemText>
+                                                            <StyledItemTextTypography
+                                                                variant="body1"
+                                                                sx={{
+                                                                    fontSize:
+                                                                        '11px',
+                                                                }}
+                                                            >
+                                                                {column.name}
+                                                            </StyledItemTextTypography>
+                                                        </StyledItemText>
+                                                    </StyledItem>
+                                                </StyledItemContainer>
+                                            ),
+                                        )}
+                                        {/* </StyledAccordionContent> */}
                                     </Accordion.Content>
                                 </Accordion>
                             );

@@ -169,6 +169,8 @@ export const MetamodelEditMenu = ({ node }) => {
         return {
             display: 'flex',
             // flexDirection: 'column',
+            height: '48px',
+            maxHeight: '48px',
             width: '100%',
             alignItems: 'flex-start',
             alignSelf: 'stretch',
@@ -329,6 +331,12 @@ export const MetamodelEditMenu = ({ node }) => {
         alignSelf: 'stretch',
         border: '1px solid var(--light-other-divider, rgba(0, 0, 0, 0.10))',
     }));
+
+    /**
+     * EDIT LOGIC
+     *
+     * update the data using context
+     */
 
     /** Reset Draggable */
     return (
