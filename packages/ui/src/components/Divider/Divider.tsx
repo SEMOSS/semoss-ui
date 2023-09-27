@@ -1,6 +1,10 @@
-import { Divider as MuiDivider, SxProps } from "@mui/material";
+import {
+    Divider as MuiDivider,
+    SxProps,
+    DividerProps as MuiDividerProps,
+} from "@mui/material";
 
-export interface DividerProps {
+export interface DividerProps extends MuiDividerProps {
     /**
      * Absolutely position the element.
      * @default false

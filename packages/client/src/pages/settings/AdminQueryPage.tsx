@@ -12,9 +12,10 @@ import {
     TextArea,
 } from '@semoss/ui';
 
-import { useRootStore } from '@/hooks';
+import { useRootStore, useSettings } from '@/hooks';
 
 import { Controller, useForm } from 'react-hook-form';
+import { Navigate } from 'react-router-dom';
 
 const StyledContainer = styled('div')(() => ({
     display: 'flex',
@@ -48,8 +49,12 @@ interface TypeDbQuery {
 
 export const AdminQueryPage = () => {
     const { monolithStore } = useRootStore();
+    const { adminMode } = useSettings();
     const notification = useNotification();
 
+    if (!adminMode) {
+        return <Navigate to={'/settings'} />;
+    }
     const [output, setOutput] = useState<{
         type: string;
         value: any;

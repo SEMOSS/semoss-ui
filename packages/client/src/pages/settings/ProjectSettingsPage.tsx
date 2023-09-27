@@ -2,7 +2,7 @@ import { useEffect, useState, useRef, useReducer } from 'react';
 
 import { useRootStore, usePixel, useSettings, useAPI } from '../../hooks';
 import { useNavigate } from 'react-router-dom';
-import { ProjectTileCard } from '@/components/project';
+import { ProjectTileCard } from '@/components/app';
 
 import {
     Grid,

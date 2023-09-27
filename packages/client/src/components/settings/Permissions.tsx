@@ -1,9 +1,9 @@
-import { useState, SyntheticEvent } from 'react';
+import { useState, useEffect, SyntheticEvent } from 'react';
 import { styled, ToggleTabsGroup } from '@semoss/ui';
 
-import { useSettings } from '@/hooks';
+import { useSettings, useAPI } from '@/hooks';
 
-import { AppSettings } from '../project';
+import { AppSettings } from '../app';
 
 import { SETTINGS_TYPE } from './settings.types';
 import { PendingMembersTable } from './PendingMembersTable';
@@ -13,14 +13,15 @@ interface PermissionConfig {
     id: string;
     name: string;
     global: boolean;
+    permission: number;
     visibility?: boolean;
     projectid?: string;
-    // permission?: number;
 }
 
 export interface PermissionsProps {
     type: SETTINGS_TYPE;
     config: PermissionConfig;
+    refreshPermission?: () => void;
 }
 
 const StyledContent = styled('div')(({ theme }) => ({
@@ -33,17 +34,13 @@ const StyledContent = styled('div')(({ theme }) => ({
 }));
 
 export const Permissions = (props: PermissionsProps) => {
-    const { type, config } = props;
-    const { id, name, projectid } = config;
+    const { type, config, refreshPermission } = props;
+    const { id, name, projectid, permission } = config;
 
-    // Helper hooks
-    const { adminMode } = useSettings();
+    console.log('perm', permission);
 
     // New Design State Items
     const [view, setView] = useState(0);
-
-    // Actually see if user is an owner or editor, quick fix
-    const permission = adminMode ? 1 : 3;
 
     /**
      * @name handleChange
@@ -67,9 +64,20 @@ export const Permissions = (props: PermissionsProps) => {
                     label="Pending Requests"
                     disabled={permission === 3}
                 />
-                {type === 'app' && <ToggleTabsGroup.Item label="Data Apps" />}
+                {type === 'app' && (
+                    <ToggleTabsGroup.Item
+                        label="Data Apps"
+                        disabled={permission === 3}
+                    />
+                )}
             </ToggleTabsGroup>
-            {view === 0 && <MembersTable type={type} id={id} />}
+            {view === 0 && (
+                <MembersTable
+                    type={type}
+                    id={id}
+                    refreshPermission={refreshPermission}
+                />
+            )}
             {view === 1 && <PendingMembersTable type={type} id={id} />}
             {view === 2 && <AppSettings id={id} />}
         </StyledContent>

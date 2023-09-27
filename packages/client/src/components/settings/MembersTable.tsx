@@ -210,10 +210,17 @@ interface MembersTableProps {
      * Condensed view
      */
     condensed?: boolean;
+
+    refreshPermission?: () => void;
 }
 
 export const MembersTable = (props: MembersTableProps) => {
-    const { type, id, condensed } = props;
+    const {
+        type,
+        id,
+        condensed,
+        refreshPermission = () => console.log('pass refresh function'),
+    } = props;
 
     const { monolithStore } = useRootStore();
     const notification = useNotification();
@@ -371,6 +378,8 @@ export const MembersTable = (props: MembersTableProps) => {
                     color: 'success',
                     message: 'Succesfully updated user permissions',
                 });
+
+                refreshPermission();
             } else {
                 notification.add({
                     color: 'error',

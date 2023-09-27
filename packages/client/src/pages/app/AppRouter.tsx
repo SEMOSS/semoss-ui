@@ -1,6 +1,5 @@
 import { observer } from 'mobx-react-lite';
 import { Routes, Route, Navigate } from 'react-router-dom';
-
 import { AppPage } from './AppPage';
 
 export const AppRouter = observer(() => {

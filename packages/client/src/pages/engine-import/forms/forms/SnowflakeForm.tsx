@@ -212,7 +212,7 @@ export const SnowflakeForm: ImportFormComponent = () => {
                             <TextField
                                 required
                                 fullWidth
-                                label="DATABASE"
+                                label="Database"
                                 value={field.value ? field.value : ''}
                                 onChange={(value) => field.onChange(value)}
                             ></TextField>
@@ -261,6 +261,7 @@ export const SnowflakeForm: ImportFormComponent = () => {
                         return (
                             <TextField
                                 fullWidth
+                                type="password"
                                 label="Password"
                                 value={field.value ? field.value : ''}
                                 onChange={(value) => field.onChange(value)}
