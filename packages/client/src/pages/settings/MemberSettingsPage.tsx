@@ -26,7 +26,7 @@ import {
     Switch,
 } from '@semoss/ui';
 import { useForm, useFormState, Controller } from 'react-hook-form';
-
+import { Navigate, useNavigate } from 'react-router-dom';
 import { useRootStore, useAPI, useSettings } from '@/hooks';
 import { LoadingScreen } from '@/components/ui';
 
@@ -113,14 +113,20 @@ const passwordValidate = (password: string) => {
 
 export const MemberSettingsPage = () => {
     const { adminMode } = useSettings();
+    const { configStore, monolithStore } = useRootStore();
     const notification = useNotification();
+    const navigate = useNavigate();
+
+    if (!adminMode) {
+        navigate('/settings');
+        // return;
+    }
+
     const [members, setMembers] = useState([]);
     const [addMemberModal, setAddMemberModal] = useState(false);
     const [memberInfoModal, setMemberInfoModal] = useState(false);
     const [activeMember, setActiveMember] = useState<Member>(null);
     const [page, setPage] = useState<number>(0);
-
-    const { configStore, monolithStore } = useRootStore();
 
     const { control, reset, handleSubmit, getValues, watch } = useForm<{
         // edit existing member fields
@@ -230,12 +236,6 @@ export const MemberSettingsPage = () => {
             }
         });
     });
-
-    /**
-     * @name getDisplay
-     * @desc gets display options for the Insight dropdown
-     * @param option - the object that is specified for the option
-     */
 
     const getMembers = useAPI(['getAllUsers', adminMode]);
 

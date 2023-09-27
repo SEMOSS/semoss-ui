@@ -26,6 +26,8 @@ export const SETTINGS_ROUTES: {
 
     /** Prior Links to nav to */
     history?: string[];
+
+    admin?: boolean;
 }[] = [
     {
         title: 'Settings',
@@ -118,6 +120,7 @@ export const SETTINGS_ROUTES: {
             'Add new members, reset passwords, and edit member-based permissions.',
         icon: mdiAccountGroup,
         history: ['settings/'],
+        admin: true,
     },
 
     {
@@ -126,6 +129,7 @@ export const SETTINGS_ROUTES: {
         description: 'Use this portal to change configuration settings.',
         icon: mdiTabletCellphone,
         history: ['settings/'],
+        admin: true,
     },
     {
         title: 'Jobs',
@@ -140,6 +144,7 @@ export const SETTINGS_ROUTES: {
         description: 'Query on SEMOSS based databases',
         icon: mdiDatabaseSearch,
         history: ['settings/'],
+        admin: true,
     },
     // {
     //     title: 'External Connections',
@@ -170,13 +175,14 @@ export const SETTINGS_ROUTES: {
     //     icon: mdiDatabase,
     //     history: ['settings/'],
     // },
-    // {
-    //     title: 'My Profile',
-    //     path: 'my-profile',
-    //     description: 'Update profile settings.',
-    //     icon: mdiDatabase,
-    //     history: ['settings/'],
-    // },
+    {
+        title: 'My Profile',
+        path: 'my-profile',
+        description: 'Update settings related to your profile.',
+        icon: mdiDatabase,
+        history: ['settings/'],
+        admin: false,
+    },
     // {
     //     title: 'Theming',
     //     path: 'theme',

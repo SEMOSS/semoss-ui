@@ -7,7 +7,7 @@ import React, {
 } from 'react';
 import { useForm } from 'react-hook-form';
 
-import { useAPI, useRootStore } from '@/hooks';
+import { useAPI, useRootStore, useSettings } from '@/hooks';
 import { LoadingScreen } from '@/components/ui';
 import {
     Divider,
@@ -26,6 +26,8 @@ import ms from '../../assets/img/ms.png';
 import dropbox from '../../assets/img/dropbox.png';
 import github from '../../assets/img/github.png';
 import other from '../../assets/img/other.png';
+
+import { useNavigate } from 'react-router-dom';
 
 const SOCIAL = {
     google: {
@@ -117,7 +119,7 @@ const StyledPropContainer = styled('div')(({ theme }) => ({
     padding: '24px',
     borderRadius: '15px',
     backgroundColor: 'rgba(255, 255, 255, 1)',
-    boxShadow: '0px 5px 5px rgba(0, 0, 0, 0.03)',
+    boxShadow: '0px 5px 22px 0px rgba(0, 0, 0, 0.06)',
 }));
 
 const initialState = {
@@ -139,6 +141,13 @@ const reducer = (state, action) => {
 export const SocialPropertiesPage = () => {
     // useStateChange doesn't play well with Accordion
     // const [socialProps, setSocialProps] = useState({});
+    const { adminMode } = useSettings();
+
+    const navigate = useNavigate();
+
+    if (!adminMode) {
+        navigate('/settings');
+    }
 
     const [state, dispatch] = useReducer(reducer, initialState);
     const { socialProps } = state;
@@ -316,20 +325,12 @@ export const SocialPropertiesPage = () => {
                 )}
             </div>
         ) : (
-            <div> No social props</div>
+            <div> No socials props</div>
         );
     };
 
     const fileContentsPage = () => {
-        const defaultTyping = `this is a line of code
-        that will result
-        in something happening
-        once saved
-        you can also use
-        the reset button to clear this space
-        and start over
-        if you desire
-        `;
+        const defaultTyping = ``;
         return (
             <StyledPropContainer>
                 <StyledTitle>
@@ -365,8 +366,6 @@ export const SocialPropertiesPage = () => {
     return (
         <>
             <StyledContainer>
-                <Divider sx={{ marginBottom: '16px' }} />
-
                 <ToggleTabsGroup
                     sx={{ marginBottom: '16px' }}
                     value={tabValue}

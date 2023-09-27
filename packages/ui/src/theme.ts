@@ -1,7 +1,13 @@
-import { ThemeOptions, styled, PaletteOptions, useTheme } from "@mui/material";
-// import { useTheme } from
+import {
+    ThemeOptions,
+    styled,
+    PaletteOptions,
+    useTheme,
+    keyframes,
+} from "@mui/material";
+
 // export specifics from the library
-export { styled, useTheme };
+export { styled, useTheme, keyframes };
 export type { ThemeOptions };
 
 export interface CustomPaletteColor {
@@ -418,6 +424,19 @@ export const lightTheme: CustomThemeOptions = {
                     margin: "0px 0px 16px 0px",
                     padding: "0px 8px 0px 16px",
                 }),
+            },
+        },
+        MuiPaper: {
+            styleOverrides: {
+                root: ({ theme }) => {
+                    const shape = theme.shape as CustomShapeOptions;
+                    const palette = theme.palette as CustomPaletteOptions;
+                    return {
+                        boxShadow:
+                            "0px 5px 22px 0px rgba(0, 0, 0, 0.04), 0px 4px 4px 0.5px rgba(0, 0, 0, 0.03)",
+                        borderRadius: shape.borderRadiusLg,
+                    };
+                },
             },
         },
     },

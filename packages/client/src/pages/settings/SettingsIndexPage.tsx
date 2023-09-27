@@ -27,6 +27,7 @@ import { ModelBrain } from '@/assets/img/ModelBrain';
 import { PaintRounded } from '@/assets/img/PaintRounded';
 import { PersonRounded } from '@/assets/img/PersonRounded';
 import { SEMOSS } from '@/assets/img/SEMOSS';
+import { useSettings } from '@/hooks';
 
 import { SETTINGS_ROUTES } from './settings.constants';
 
@@ -102,6 +103,7 @@ const IconMapper = {
 
 export const SettingsIndexPage = () => {
     const navigate = useNavigate();
+    const { adminMode } = useSettings();
     const [cards, setCards] = useState(DEFAULT_CARDS);
     const [search, setSearch] = useState<string>('');
     const [sort, setSort] = useState('Name');
@@ -151,37 +153,43 @@ export const SettingsIndexPage = () => {
 
             <Grid container spacing={2}>
                 {cards.map((c, i) => {
-                    return (
-                        <Grid item key={i} sm={12} md={6} lg={4} xl={3}>
-                            <StyledCard onClick={() => navigate(c.path)}>
-                                <StyledCardHeader
-                                    title={c.title}
-                                    titleTypographyProps={{ variant: 'body1' }}
-                                    avatar={IconMapper[c.title]}
-                                />
-                                <StyledCardContent>
-                                    <Typography variant="body2">
-                                        {c.description}
-                                    </Typography>
-                                </StyledCardContent>
-                                {/* disabled for now */}
-                                <Card.Actions>
-                                    <CardActionsLeft>
-                                        {' '}
-                                        {/* <AccessTime fontSize="small" />
-                                        <Typography variant="caption">
-                                            7/19/2023 10:00AM
-                                        </Typography> */}
-                                    </CardActionsLeft>
-                                    <CardActionsRight>
-                                        <IconButton disabled={true}>
-                                            <MoreVert />
-                                        </IconButton>
-                                    </CardActionsRight>
-                                </Card.Actions>
-                            </StyledCard>
-                        </Grid>
-                    );
+                    if (c.admin && !adminMode) {
+                        return;
+                    } else {
+                        return (
+                            <Grid item key={i} sm={12} md={6} lg={4} xl={3}>
+                                <StyledCard onClick={() => navigate(c.path)}>
+                                    <StyledCardHeader
+                                        title={c.title}
+                                        titleTypographyProps={{
+                                            variant: 'body1',
+                                        }}
+                                        avatar={IconMapper[c.title]}
+                                    />
+                                    <StyledCardContent>
+                                        <Typography variant="body2">
+                                            {c.description}
+                                        </Typography>
+                                    </StyledCardContent>
+                                    {/* disabled for now */}
+                                    <Card.Actions>
+                                        <CardActionsLeft>
+                                            {' '}
+                                            {/* <AccessTime fontSize="small" />
+                                            <Typography variant="caption">
+                                                7/19/2023 10:00AM
+                                            </Typography> */}
+                                        </CardActionsLeft>
+                                        <CardActionsRight>
+                                            <IconButton disabled={true}>
+                                                <MoreVert />
+                                            </IconButton>
+                                        </CardActionsRight>
+                                    </Card.Actions>
+                                </StyledCard>
+                            </Grid>
+                        );
+                    }
                 })}
             </Grid>
         </StyledContainer>
