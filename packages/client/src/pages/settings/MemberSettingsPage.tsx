@@ -574,7 +574,7 @@ export const MemberSettingsPage = () => {
                                                     render={({ field }) => {
                                                         return (
                                                             <Switch
-                                                                value={
+                                                                checked={
                                                                     field.value
                                                                 }
                                                                 onChange={() =>
@@ -605,7 +605,7 @@ export const MemberSettingsPage = () => {
                                                     render={({ field }) => {
                                                         return (
                                                             <Switch
-                                                                value={
+                                                                checked={
                                                                     field.value
                                                                 }
                                                                 onChange={() =>
@@ -638,7 +638,7 @@ export const MemberSettingsPage = () => {
                                                     render={({ field }) => {
                                                         return (
                                                             <Switch
-                                                                value={
+                                                                checked={
                                                                     field.value
                                                                 }
                                                                 onChange={() =>
@@ -1216,7 +1216,7 @@ export const MemberSettingsPage = () => {
                                                 onChange={() => {
                                                     updateMemberInfo({
                                                         ...mem,
-                                                        exporter: !mem.admin,
+                                                        admin: !mem.admin,
                                                     });
                                                 }}
                                             />
@@ -1224,6 +1224,10 @@ export const MemberSettingsPage = () => {
                                         <Table.Cell>
                                             <IconButton
                                                 onClick={() => {
+                                                    console.log(
+                                                        'mem edit',
+                                                        mem,
+                                                    );
                                                     setActiveMember(mem);
                                                     reset(mem);
                                                     setMemberInfoModal(true);
