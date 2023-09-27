@@ -42,20 +42,7 @@ const StyledActiveFilePath = styled('div')(({ theme }) => ({
     padding: theme.spacing(1),
 }));
 
-// Define keyframes for the text color transition
-const colorTransition = keyframes`
-  0% {
-    color: #1e1e1e;
-  }
-  100% {
-    color: #F3F3F3;
-  }
-`;
-
-const StyledTypography = styled(Typography)(({ theme }) => ({
-    animation: `${colorTransition} 4s infinite alternate`,
-    background: 'transparent',
-}));
+const StyledTypography = styled(Typography)(({ theme }) => ({}));
 
 interface TextEditorProps {
     /**
