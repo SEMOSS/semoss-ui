@@ -38,6 +38,7 @@ import {
     ChevronRight,
     KeyboardDoubleArrowLeft,
     KeyboardDoubleArrowRight,
+    ExpandLess,
 } from '@mui/icons-material/';
 import { Dependency } from 'webpack';
 
@@ -857,34 +858,45 @@ export const AppEditor = (props: AppEditorProps) => {
                             >
                                 <StyledRow>
                                     <StyledIcon>
-                                        <ExpandMore />
+                                        {openAccordion.indexOf('file') > -1 ? (
+                                            <ExpandMore />
+                                        ) : (
+                                            <ChevronRight />
+                                        )}
                                     </StyledIcon>
                                     <Typography variant="body1">
-                                        Files
+                                        App Directory
                                     </Typography>
                                 </StyledRow>
-                                <StyledRow sx={{ gap: '0px' }}>
-                                    <IconButton
-                                        size={'small'}
-                                        onClick={() => {
-                                            console.log(
-                                                'Add a directory to App',
-                                            );
-                                            addPlaceholderNode('directory');
-                                        }}
-                                    >
-                                        <CreateNewFolder />
-                                    </IconButton>
-                                    <IconButton
-                                        size={'small'}
-                                        onClick={() => {
-                                            console.log('Add a file to App');
-                                            addPlaceholderNode('file');
-                                        }}
-                                    >
-                                        <NoteAdd />
-                                    </IconButton>
-                                </StyledRow>
+                                {openAccordion.indexOf('file') > -1 ? (
+                                    <StyledRow sx={{ gap: '0px' }}>
+                                        <IconButton
+                                            size={'small'}
+                                            onClick={(e) => {
+                                                console.log(
+                                                    'Add a directory to App',
+                                                );
+
+                                                e.stopPropagation();
+                                                addPlaceholderNode('directory');
+                                            }}
+                                        >
+                                            <CreateNewFolder />
+                                        </IconButton>
+                                        <IconButton
+                                            size={'small'}
+                                            onClick={(e) => {
+                                                console.log(
+                                                    'Add a file to App',
+                                                );
+                                                e.stopPropagation();
+                                                addPlaceholderNode('file');
+                                            }}
+                                        >
+                                            <NoteAdd />
+                                        </IconButton>
+                                    </StyledRow>
+                                ) : null}
                             </CustomAccordionTrigger>
 
                             <Collapse in={openAccordion.indexOf('file') > -1}>
@@ -932,7 +944,12 @@ export const AppEditor = (props: AppEditorProps) => {
                             >
                                 <StyledRow>
                                     <StyledIcon>
-                                        <ExpandMore />
+                                        {openAccordion.indexOf('dependency') >
+                                        -1 ? (
+                                            <ExpandMore />
+                                        ) : (
+                                            <ChevronRight />
+                                        )}
                                     </StyledIcon>
                                     <Typography variant="body1">
                                         Dependencies
@@ -944,7 +961,7 @@ export const AppEditor = (props: AppEditorProps) => {
                             >
                                 <div style={{ padding: '8px' }}>
                                     <Typography>
-                                        Currently in Progress
+                                        Currently in Progress ...
                                     </Typography>
                                 </div>
                             </Collapse>
