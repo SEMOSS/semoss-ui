@@ -109,7 +109,7 @@ export const SettingsTiles = (props: SettingsTilesProps) => {
         try {
             let pixel = '';
             if (type === 'database' || type === 'model' || type === 'storage') {
-                pixel = `DeleteEngine(engineId=['${id}']);`;
+                pixel = `DeleteEngine(engine=['${id}']);`;
             } else {
                 pixel = `DeleteProject(project=['${id}']);`;
             }

@@ -52,7 +52,7 @@ const StyledEditorPanel = styled('div')(({ theme }) => ({
 const StyledCollapseTrigger = styled('div')(({ theme }) => ({
     height: '100%',
     width: '42px',
-    backgroundColor: theme.palette.secondary.main,
+    backgroundColor: theme.palette.secondary.light,
     zIndex: 9998,
 }));
 
@@ -73,7 +73,7 @@ const StyledCollapseContainer = styled('div')(({ theme }) => ({
     paddingLeft: theme.spacing(2),
     paddingRight: theme.spacing(2),
     boxShadow: '5px 0 5px -2px rgba(0, 0, 0, 0.04)',
-    border: 'solid green',
+    // border: 'solid green',
 }));
 
 const StyleAppExplorerHeader = styled('div')(({ theme }) => ({
@@ -161,6 +161,12 @@ export const AppEditor = (props: AppEditorProps) => {
     const [expanded, setExpanded] = React.useState<string[]>([]);
     const [selected, setSelected] = React.useState<string[]>([]);
 
+    // Dummy state for refreshing with updated state
+    const [counter, setCounter] = useState(0);
+
+    // When we gather input from add new file/folder
+    const newDirectoryRefs = useRef<HTMLInputElement[]>([]);
+
     // Props necessary for TextEditor component
     const [filesToView, setFilesToView] = useState([]);
     const [activeFileIndex, setActiveFileIndex] = useState(null);
@@ -229,9 +235,9 @@ export const AppEditor = (props: AppEditorProps) => {
      * @param event
      * @param nodeIds
      */
-    const handleSelect = async (
-        event: React.SyntheticEvent,
+    const viewAsset = async (
         nodeIds: string[],
+        event?: React.SyntheticEvent,
     ) => {
         debugger;
         console.log('here again', nodeIds);
@@ -468,7 +474,7 @@ export const AppEditor = (props: AppEditorProps) => {
      * Tree View
      * removes a node by its id
      */
-    const removeNodeById = (nodes, targetId) => {
+    const removeNodeById = async (nodes, targetId) => {
         for (let i = 0; i < nodes.length; i++) {
             const node = nodes[i];
             if (node.id === targetId) {
@@ -477,13 +483,16 @@ export const AppEditor = (props: AppEditorProps) => {
                 return true; // Node was found and removed
             }
             if (node.children && node.children.length > 0) {
-                const nodeRemoved = removeNodeById(node.children, targetId);
+                const nodeRemoved = await removeNodeById(
+                    node.children,
+                    targetId,
+                );
                 if (nodeRemoved) {
-                    return nodes; // Node was found and removed from children
+                    return true; // Node was found and removed from children
                 }
             }
         }
-        return nodes; // Node with the specified ID not found
+        return false; // Node with the specified ID not found
     };
 
     /**
@@ -560,6 +569,9 @@ export const AppEditor = (props: AppEditorProps) => {
     // ----------------------------
     /**
      * Recursively render Tree Nodes based on nodes children
+     * Different Types of TreeNodes
+     * - Defined In Project Node
+     * - New file/dir added input Node
      */
     const renderTreeNodes = (nodes) => {
         return nodes.map((node, i) => {
@@ -576,20 +588,30 @@ export const AppEditor = (props: AppEditorProps) => {
                         label={
                             <TextField
                                 size="small"
-                                onBlur={(e) => {
+                                onBlur={async (e) => {
+                                    console.log('Directory of nodes:', nodes);
                                     console.log(
-                                        'Hit The on MakeDirectory or createNewFile Function',
+                                        'AppDirectory with Placeholder node?',
+                                        appDirectory,
                                     );
                                     e.stopPropagation();
                                     // 1. if name is still an empty string remove placeholder node
-
                                     if (e.target.value === '') {
-                                        const cleanedAppDirectory =
-                                            removeNodeById(
+                                        console.warn(
+                                            'onBlur without new file/folder name present',
+                                        );
+                                        notification.add({
+                                            color: 'error',
+                                            message: `Please provide a ${node.type} name`,
+                                        });
+                                        const { parent } =
+                                            await findNodeAndParentById(
                                                 appDirectory,
                                                 node.id,
                                             );
-                                        debugger;
+
+                                        await viewAsset([parent.id]);
+                                        setSelected([parent.id]);
                                         return;
                                     }
                                     // 2. save the asset and change interface accordingly
@@ -638,7 +660,7 @@ export const AppEditor = (props: AppEditorProps) => {
     /**
      * @desc
      * This really needs to just set a placeholder Node in our Tree view.
-     * To help us gather input for file/folder name or contents
+     * To help us gather input for new file/folder name or contents
      */
     const addPlaceholderNode = (type: 'directory' | 'file') => {
         console.log(appDirectory);
@@ -651,6 +673,15 @@ export const AppEditor = (props: AppEditorProps) => {
         }
 
         const indexOfSelectedDirectory = expanded.indexOf(selected[0]);
+
+        if (indexOfSelectedDirectory < 0) {
+            notification.add({
+                color: 'error',
+                content: "Can't find Node on FE",
+            });
+            console.error('Error finding node');
+            return;
+        }
 
         const foundNode = findNodeById(
             appDirectory,
@@ -697,7 +728,6 @@ export const AppEditor = (props: AppEditorProps) => {
             },
         );
         setAppDirectory(updatedTreeData);
-        debugger;
     };
 
     const addAssetToApp = async (
@@ -713,15 +743,18 @@ export const AppEditor = (props: AppEditorProps) => {
         nodeReplacement.name = newNodeName;
         nodeReplacement.lastModified = Date.now();
 
+        // debugger
         if (assetType === 'directory') {
             pixel += `
             MakeDirectory(filePath=["${nodeReplacement.id}"], space=["${appId}"]);
             `;
         } else {
             pixel += `
-                SaveAsset(fileName=["${newNodeName}"], content=["<encode></encode>"], space=["${appId}"]);
+            SaveAsset(fileName=["${nodeReplacement.id}"], content=["<encode></encode>"], space=["${appId}"]);
             `;
         }
+
+        const { parent } = await findNodeAndParentById(appDirectory, node.id);
 
         const response = await monolithStore.runQuery(pixel);
         const output = response.pixelReturn[0].output,
@@ -733,27 +766,18 @@ export const AppEditor = (props: AppEditorProps) => {
                 message: output,
             });
 
-            // remove node by id
-            const directoryCopy = appDirectory;
-            debugger;
-
-            const cleanedAppDirectory = removeNodeById(
-                directoryCopy,
-                nodeReplacement.id,
-            );
-            debugger;
+            await viewAsset([parent.id]);
+            setSelected([parent.id]);
             return;
         }
 
         // save nodeReplacement in tree
         if (assetType === 'directory') {
-            // 1. find nodes parent by it's old id
-            const { parent } = findNodeAndParentById(appDirectory, node.id);
-
-            debugger;
+            setExpanded([...expanded, nodeReplacement.id]);
+            setSelected([nodeReplacement.id]);
+            await viewAsset([parent.id]);
         } else {
-            // set this file as the active file in the editor
-            let commitAssetPixel = `
+            const commitAssetPixel = `
             CommitAsset(filePath=["${nodeReplacement.id}"], comment=["Added Asset from App Editor: path='${nodeReplacement.id}' "], space=["${appId}"])
             `;
 
@@ -763,9 +787,14 @@ export const AppEditor = (props: AppEditorProps) => {
             const commitAssetOutput = commitAssetResponse.pixelReturn[0].output,
                 commitAssetOperationType =
                     commitAssetResponse.pixelReturn[0].operationType;
+
+            // TODO: FE code for commit asset
+            console.log('Committing the Asset, FE code has');
         }
 
-        setSelected([nodeReplacement.id]);
+        // set this file as the active file in the editor
+        // setSelected([nodeReplacement.id]);
+        setCounter(counter + 1);
     };
 
     return (
@@ -866,7 +895,9 @@ export const AppEditor = (props: AppEditorProps) => {
                                     expanded={expanded}
                                     selected={selected}
                                     onNodeToggle={handleToggle}
-                                    onNodeSelect={handleSelect}
+                                    onNodeSelect={(e, v) => {
+                                        viewAsset(v, e);
+                                    }}
                                     defaultCollapseIcon={
                                         <StyledIcon>
                                             <ExpandMore />
@@ -879,6 +910,9 @@ export const AppEditor = (props: AppEditorProps) => {
                                     }
                                 >
                                     {renderTreeNodes(appDirectory)}
+                                    {/* {renderTreeNodes(appDirectory).then(() => {
+                                            put last InputRef into focus
+                                    })} */}
                                 </TreeView>
                             </StyledScrollableTreeView>
                             <Divider />
