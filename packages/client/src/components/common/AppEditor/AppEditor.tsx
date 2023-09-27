@@ -152,7 +152,7 @@ export const AppEditor = (props: AppEditorProps) => {
 
     const [openAppAssetsPanel, setOpenAppAssetsPanel] = useState(true);
 
-    const [openAccordion, setOpenAccordion] = useState(['file']);
+    const [openAccordion, setOpenAccordion] = useState([]);
 
     /**
      * FILE EXPLORER START OF CODE
@@ -417,12 +417,13 @@ export const AppEditor = (props: AppEditorProps) => {
     const handleAccordionChange = (type: 'dependency' | 'file') => {
         const newOpenAccords = openAccordion;
         if (openAccordion.indexOf(type) > -1) {
-            //remove it from open accordions
+            newOpenAccords.splice(openAccordion.indexOf(type), 1);
         } else {
             newOpenAccords.push(type);
         }
-        // debugger;
         setOpenAccordion(newOpenAccords);
+        // Band aid fix: refresh ui state change is a step behind
+        setCounter(counter + 1);
     };
 
     /**
@@ -663,9 +664,7 @@ export const AppEditor = (props: AppEditorProps) => {
      * To help us gather input for new file/folder name or contents
      */
     const addPlaceholderNode = (type: 'directory' | 'file') => {
-        console.log(appDirectory);
-        console.log(expanded);
-        console.log(selected);
+        // console.log(appDirectory, expanded, selected);
         // 1. See where we are in app directory, needed to know where to add file/dir
         if (!expanded.length) {
             console.log('Handle top level dir addition');
@@ -677,7 +676,7 @@ export const AppEditor = (props: AppEditorProps) => {
         if (indexOfSelectedDirectory < 0) {
             notification.add({
                 color: 'error',
-                content: "Can't find Node on FE",
+                message: "Can't find Node on FE",
             });
             console.error('Error finding node');
             return;
@@ -851,7 +850,7 @@ export const AppEditor = (props: AppEditorProps) => {
                             <CustomAccordionTrigger
                                 tabIndex={0}
                                 role="button"
-                                aria-expaned={true}
+                                aria-expanded={true}
                                 onClick={() => {
                                     handleAccordionChange('file');
                                 }}
@@ -888,33 +887,35 @@ export const AppEditor = (props: AppEditorProps) => {
                                 </StyledRow>
                             </CustomAccordionTrigger>
 
-                            <StyledScrollableTreeView>
-                                <TreeView
-                                    multiSelect
-                                    sx={{ width: '100%' }}
-                                    expanded={expanded}
-                                    selected={selected}
-                                    onNodeToggle={handleToggle}
-                                    onNodeSelect={(e, v) => {
-                                        viewAsset(v, e);
-                                    }}
-                                    defaultCollapseIcon={
-                                        <StyledIcon>
-                                            <ExpandMore />
-                                        </StyledIcon>
-                                    }
-                                    defaultExpandIcon={
-                                        <StyledIcon>
-                                            <ChevronRight />
-                                        </StyledIcon>
-                                    }
-                                >
-                                    {renderTreeNodes(appDirectory)}
-                                    {/* {renderTreeNodes(appDirectory).then(() => {
-                                            put last InputRef into focus
-                                    })} */}
-                                </TreeView>
-                            </StyledScrollableTreeView>
+                            <Collapse in={openAccordion.indexOf('file') > -1}>
+                                <StyledScrollableTreeView>
+                                    <TreeView
+                                        multiSelect
+                                        sx={{ width: '100%' }}
+                                        expanded={expanded}
+                                        selected={selected}
+                                        onNodeToggle={handleToggle}
+                                        onNodeSelect={(e, v) => {
+                                            viewAsset(v, e);
+                                        }}
+                                        defaultCollapseIcon={
+                                            <StyledIcon>
+                                                <ExpandMore />
+                                            </StyledIcon>
+                                        }
+                                        defaultExpandIcon={
+                                            <StyledIcon>
+                                                <ChevronRight />
+                                            </StyledIcon>
+                                        }
+                                    >
+                                        {renderTreeNodes(appDirectory)}
+                                        {/* {renderTreeNodes(appDirectory).then(() => {
+                                                put last InputRef into focus
+                                        })} */}
+                                    </TreeView>
+                                </StyledScrollableTreeView>
+                            </Collapse>
                             <Divider />
                         </div>
 
@@ -923,7 +924,8 @@ export const AppEditor = (props: AppEditorProps) => {
                             <CustomAccordionTrigger
                                 tabIndex={0}
                                 role="button"
-                                aria-expaned={true}
+                                aria-expanded={true}
+                                sx={{ height: '32px' }}
                                 onClick={() => {
                                     handleAccordionChange('dependency');
                                 }}
@@ -940,7 +942,11 @@ export const AppEditor = (props: AppEditorProps) => {
                             <Collapse
                                 in={openAccordion.indexOf('dependency') > -1}
                             >
-                                <span>Dependencies</span>
+                                <div style={{ padding: '8px' }}>
+                                    <Typography>
+                                        Currently in Progress
+                                    </Typography>
+                                </div>
                             </Collapse>
                             <Divider />
                         </div>
