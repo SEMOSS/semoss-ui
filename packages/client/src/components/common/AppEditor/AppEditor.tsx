@@ -960,7 +960,7 @@ export const AppEditor = (props: AppEditorProps) => {
                                 in={openAccordion.indexOf('dependency') > -1}
                             >
                                 <div style={{ padding: '8px' }}>
-                                    <Typography>
+                                    <Typography variant="body1">
                                         Currently in Progress ...
                                     </Typography>
                                 </div>
