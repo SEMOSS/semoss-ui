@@ -17,7 +17,7 @@ import { AppContext, AppContextType } from '@/contexts';
 import { useRootStore } from '@/hooks';
 import { AppEditorActions, Navbar } from '@/components/ui';
 import { AppRenderer, AppConsole, AppEditorPanel } from '@/components/app';
-import { styled, Button } from '@semoss/ui';
+import { styled, Button, ThemeProvider } from '@semoss/ui';
 
 // Styles --------------------------------------*
 const NAV_HEIGHT = '48px';
@@ -250,28 +250,32 @@ export const AppPage = observer(() => {
                 <StyledTopPanel
                     sx={{
                         height: editMode ? '96.5%' : '100%',
-                        border: 'solid yellow',
                     }}
                 >
                     {editMode && (
                         <StyledLeftPanel sx={{ width: leftPanelWidth }}>
-                            {/* Left Panel for Editor Mode */}
-                            <AppEditorPanel />
-                            <StyledVertDivider
-                                onMouseDown={(e) => {
-                                    e.preventDefault();
-                                    window.addEventListener(
-                                        'mousemove',
-                                        handleHorizontalResize,
-                                    );
-                                    window.addEventListener('mouseup', () => {
-                                        window.removeEventListener(
+                            {/* Left Panel for Editor Mode, should be Dark Mode */}
+                            <ThemeProvider reset={true} type={'light'}>
+                                <AppEditorPanel />
+                                <StyledVertDivider
+                                    onMouseDown={(e) => {
+                                        e.preventDefault();
+                                        window.addEventListener(
                                             'mousemove',
                                             handleHorizontalResize,
                                         );
-                                    });
-                                }}
-                            />
+                                        window.addEventListener(
+                                            'mouseup',
+                                            () => {
+                                                window.removeEventListener(
+                                                    'mousemove',
+                                                    handleHorizontalResize,
+                                                );
+                                            },
+                                        );
+                                    }}
+                                />
+                            </ThemeProvider>
                         </StyledLeftPanel>
                     )}
 

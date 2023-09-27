@@ -477,7 +477,7 @@ export const darkTheme: CustomThemeOptions = {
         },
         background: {
             default: "#FAFAFA",
-            paper: "#FFF",
+            paper: "#121212",
         },
         primaryContrast: {
             // SEMOSS BLUE
@@ -548,6 +548,7 @@ export const darkTheme: CustomThemeOptions = {
         borderRadiusCircle: 64,
         borderRadiusChip: 64,
     },
+    spacing: 8,
     typography: {
         fontFamily: '"Inter", sans-serif',
         body1: {
@@ -651,24 +652,152 @@ export const darkTheme: CustomThemeOptions = {
             letterSpacing: "0.15px",
             textTransform: "none",
         },
+        button: {
+            textTransform: "none",
+        },
     },
-    space: {
-        auto: "auto",
-        full: "100%",
-        none: "0px",
-        "01": "2px",
-        "02": "4px",
-        "03": "8px",
-        "04": "12px",
-        "05": "16px",
-        "06": "24px",
-        "07": "32px",
-        "08": "40px",
-        "09": "48px",
-        "10": "64px",
-        "11": "80px",
-        "12": "96px",
-        "13": "160px",
+    components: {
+        MuiCssBaseline: {
+            styleOverrides: (themeParam) => ({
+                "*::-webkit-scrollbar": {
+                    width: "8px",
+                    height: "8px",
+                    background: "transparent",
+                },
+
+                "*::-webkit-scrollbar-thumb": {
+                    // -webkit-border-radius: '4px',
+                    borderRadius: "4px",
+                    height: "18px",
+                    background: "#bdbdbd",
+                    backgroundClip: "padding-box",
+                },
+
+                "*::-webkit-scrollbar-thumb:hover": {
+                    background: "#e0e0e0",
+                },
+
+                "*::-webkit-scrollbar-thumb:active": {
+                    background: "#bdbdbd",
+                },
+
+                "*::-webkit-scrollbar-button": {
+                    width: "0",
+                    height: "0",
+                    display: "none",
+                },
+
+                "*::-webkit-scrollbar-corner": {
+                    backgroundColor: "transparent",
+                },
+            }),
+        },
+        MuiAlertTitle: {
+            styleOverrides: {
+                root: ({ theme }) => ({
+                    // color: "rgba(0, 0, 0, 0.87)",
+                    /* Components/Alert Title */
+                    fontSize: "16px",
+                    fontStyle: "normal",
+                    fontWeight: "500",
+                    lineHeight: "150%",
+                    letterSpacing: "0.15px",
+                }),
+            },
+        },
+        MuiContainer: {
+            styleOverrides: {
+                maxWidthSm: {
+                    maxWidth: 200,
+                },
+                maxWidthMd: {
+                    maxWidth: 320,
+                },
+                maxWidthLg: {
+                    maxWidth: 500,
+                },
+                maxWidthXl: {
+                    maxWidth: 1271,
+                },
+            },
+        },
+        // https://www.figma.com/file/kZwcxDBSMJbOcFaCin2xbd/MUI-Core-v5.4.0-(Revised)?node-id=454%3A101831&mode=dev
+        MuiCard: {
+            styleOverrides: {
+                root: ({ theme }) => {
+                    const shape = theme.shape as CustomShapeOptions;
+                    const palette = theme.palette as CustomPaletteOptions;
+                    return {
+                        display: "flex",
+                        flexDirection: "column",
+                        boxShadow:
+                            "0px 5px 22px 0px rgba(0, 0, 0, 0.04), 0px 4px 4px 0.5px rgba(0, 0, 0, 0.03)",
+                        borderRadius: shape.borderRadiusLg,
+
+                        "&:hover": {
+                            boxShadow: `0px 5px 22px 0px ${palette.primaryContrast["shadow"]}`,
+                        },
+                    };
+                },
+            },
+        },
+        MuiCardHeader: {
+            styleOverrides: {
+                root: ({ theme }) => ({
+                    width: "100%",
+                    margin: "16px 0px 16px 0px",
+                    padding: "0px 16px 0px 16px",
+                }),
+                content: ({ theme }) => ({
+                    width: "80%",
+                    display: "flex",
+                    flexDirection: "column",
+                    gap: theme.spacing(1),
+                }),
+                action: ({ theme }) => ({}),
+                title: ({ theme }) => ({
+                    width: "100%",
+                    overflow: "hidden",
+                    whiteSpace: "nowrap",
+                    textOverflow: "ellipsis",
+                }),
+            },
+        },
+        MuiCardContent: {
+            styleOverrides: {
+                root: ({ theme }) => ({
+                    width: "100%",
+                    display: "flex",
+                    flexDirection: "column",
+                    gap: theme.spacing(1),
+                    margin: "0px 0px 16px 0px",
+                    padding: "0px 16px 0px 16px",
+                }),
+            },
+        },
+        MuiCardActions: {
+            styleOverrides: {
+                root: ({ theme }) => ({
+                    width: "100%",
+                    display: "flex",
+                    gap: theme.spacing(1),
+                    margin: "0px 0px 16px 0px",
+                    padding: "0px 8px 0px 16px",
+                }),
+            },
+        },
+        MuiPaper: {
+            styleOverrides: {
+                root: ({ theme }) => {
+                    const shape = theme.shape as CustomShapeOptions;
+                    const palette = theme.palette as CustomPaletteOptions;
+                    return {
+                        boxShadow:
+                            "0px 5px 22px 0px rgba(0, 0, 0, 0.04), 0px 4px 4px 0.5px rgba(0, 0, 0, 0.03)",
+                        borderRadius: shape.borderRadiusLg,
+                    };
+                },
+            },
+        },
     },
-    spacing: 8,
 };

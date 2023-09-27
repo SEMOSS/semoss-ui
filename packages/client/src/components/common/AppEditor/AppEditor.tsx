@@ -1,3 +1,11 @@
+// --------------------
+// Notes:
+// This should get moved to Context.  Think through this more.
+// - what callbacks are needed and what held in state
+
+// Handles the View of or Text Editor alongside the App Explorer (Dir struct, Dependencies)
+// This needs to handle Adding of Folders and Files to projects, and editting contents of existing
+// --------------------
 import React, {
     useEffect,
     useState,
@@ -9,11 +17,13 @@ import { useRootStore, useAPI } from '@/hooks';
 import { TextEditor, ControlledFile } from '../';
 
 import {
-    Button,
     Accordion,
+    Button,
     Collapse,
+    Divider,
     IconButton,
     TreeView,
+    TextField,
     Icon,
     Skeleton,
     useNotification,
@@ -22,11 +32,14 @@ import {
 } from '@semoss/ui';
 
 import {
+    CreateNewFolder,
+    NoteAdd,
     ExpandMore,
     ChevronRight,
     KeyboardDoubleArrowLeft,
     KeyboardDoubleArrowRight,
 } from '@mui/icons-material/';
+import { Dependency } from 'webpack';
 
 const StyledEditorPanel = styled('div')(({ theme }) => ({
     display: 'flex',
@@ -58,7 +71,9 @@ const StyledCollapseContainer = styled('div')(({ theme }) => ({
     width: '250px',
     height: '100%',
     paddingLeft: theme.spacing(2),
+    paddingRight: theme.spacing(2),
     boxShadow: '5px 0 5px -2px rgba(0, 0, 0, 0.04)',
+    border: 'solid green',
 }));
 
 const StyleAppExplorerHeader = styled('div')(({ theme }) => ({
@@ -68,20 +83,47 @@ const StyleAppExplorerHeader = styled('div')(({ theme }) => ({
     overflow: 'hidden',
     textOverflow: 'ellipsis',
     whiteSpace: 'nowrap',
+    height: '5%',
     paddingTop: '2px',
     alignItems: 'center',
 }));
 
 const CustomAccordionTrigger = styled('div')(({ theme }) => ({
     display: 'flex',
-    // border: 'solid red',
     flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    // border: 'solid red',
     '&:hover': {
         cursor: 'pointer',
     },
     '&:focus': {
         cursor: 'pointer',
     },
+}));
+
+const StyledAppDirectoryLabel = styled('div')(({ theme }) => ({
+    display: 'flex',
+    justifyContent: 'space-between',
+    width: '100%',
+}));
+
+const StyledScrollableTreeView = styled('div')(({ theme }) => ({
+    width: '100%',
+    display: 'flex',
+    gap: '16px',
+    overflowX: 'scroll',
+    paddingLeft: '-8px',
+}));
+
+const StyledRow = styled('div')(({ theme }) => ({
+    display: 'flex',
+    flexDirection: 'row',
+    gap: theme.spacing(1),
+}));
+
+const StyledIcon = styled(Icon)(({ theme }) => ({
+    color: 'rgba(0, 0, 0, .5)',
 }));
 
 interface AppEditorProps {
@@ -191,6 +233,13 @@ export const AppEditor = (props: AppEditorProps) => {
         event: React.SyntheticEvent,
         nodeIds: string[],
     ) => {
+        debugger;
+        console.log('here again', nodeIds);
+        if (nodeIds[0].indexOf('<>') > -1) {
+            return;
+        }
+        console.log('hem');
+        // debugger
         // Gets the Selected Node in Tree View
         const foundNode = findNodeById(appDirectory, nodeIds[0]);
 
@@ -220,24 +269,34 @@ export const AppEditor = (props: AppEditorProps) => {
         if (selectionType === 'directory') {
             const newNodeChildren = [];
 
-            folderContents.forEach((fc, i) => {
-                newNodeChildren.push({
-                    ...fc,
-                    id: fc.path,
-                    children:
-                        fc.type !== 'directory'
-                            ? undefined
-                            : [
-                                  {
-                                      id: `${fc.apth}/${i}`,
-                                      lastModified: '',
-                                      name: '',
-                                      path: '',
-                                      type: '',
-                                  },
-                              ],
+            if (folderContents.length) {
+                folderContents.forEach((fc, i) => {
+                    newNodeChildren.push({
+                        ...fc,
+                        id: fc.path,
+                        children:
+                            fc.type !== 'directory'
+                                ? undefined
+                                : [
+                                      {
+                                          id: `${fc.path}/${i}`,
+                                          lastModified: '',
+                                          name: '',
+                                          path: '',
+                                          type: '',
+                                      },
+                                  ],
+                    });
                 });
-            });
+            } else {
+                newNodeChildren.push({
+                    id: '',
+                    lastModified: '',
+                    name: '',
+                    path: '',
+                    type: '',
+                });
+            }
 
             const formattedDirectoryNodes = sortArrayOfObjects(
                 newNodeChildren,
@@ -404,6 +463,52 @@ export const AppEditor = (props: AppEditorProps) => {
     // ----------------------------
     // Node Helpers ---------------
     // ----------------------------
+
+    /**
+     * Tree View
+     * removes a node by its id
+     */
+    const removeNodeById = (nodes, targetId) => {
+        for (let i = 0; i < nodes.length; i++) {
+            const node = nodes[i];
+            if (node.id === targetId) {
+                // Remove the node from its parent's children array
+                nodes.splice(i, 1);
+                return true; // Node was found and removed
+            }
+            if (node.children && node.children.length > 0) {
+                const nodeRemoved = removeNodeById(node.children, targetId);
+                if (nodeRemoved) {
+                    return nodes; // Node was found and removed from children
+                }
+            }
+        }
+        return nodes; // Node with the specified ID not found
+    };
+
+    /**
+     * Tree View add Asset
+     * finds parent and node
+     */
+    const findNodeAndParentById = (nodes, targetId, parent = null) => {
+        for (const node of nodes) {
+            if (node.id === targetId) {
+                return { node, parent }; // Found the node with the specified ID and its parent
+            }
+            if (node.children && node.children.length > 0) {
+                const result = findNodeAndParentById(
+                    node.children,
+                    targetId,
+                    node,
+                );
+                if (result.node) {
+                    return result; // Found the node within children, along with its parent
+                }
+            }
+        }
+        return { node: null, parent: null }; // Node with the specified ID not found in the subtree
+    };
+
     /**
      * Tree View
      * Recursive function to find a node by its ID
@@ -456,15 +561,212 @@ export const AppEditor = (props: AppEditorProps) => {
     /**
      * Recursively render Tree Nodes based on nodes children
      */
-    function renderTreeNodes(nodes) {
-        return nodes.map((node, i) => (
-            <TreeView.Item key={node.id} nodeId={node.id} label={node.name}>
-                {node.children && node.children.length > 0
-                    ? renderTreeNodes(node.children)
-                    : null}
-            </TreeView.Item>
-        ));
-    }
+    const renderTreeNodes = (nodes) => {
+        return nodes.map((node, i) => {
+            if (node.name === '' && node.id.includes('<>')) {
+                if (!node.id) return <></>; // empty directory
+
+                // 1. New nodes that need a name
+                return (
+                    <TreeView.Item
+                        sx={{ overflow: 'hidden' }}
+                        key={node.id}
+                        nodeId={node.id}
+                        title={'placeholder'}
+                        label={
+                            <TextField
+                                size="small"
+                                onBlur={(e) => {
+                                    console.log(
+                                        'Hit The on MakeDirectory or createNewFile Function',
+                                    );
+                                    e.stopPropagation();
+                                    // 1. if name is still an empty string remove placeholder node
+
+                                    if (e.target.value === '') {
+                                        const cleanedAppDirectory =
+                                            removeNodeById(
+                                                appDirectory,
+                                                node.id,
+                                            );
+                                        debugger;
+                                        return;
+                                    }
+                                    // 2. save the asset and change interface accordingly
+                                    addAssetToApp(
+                                        node,
+                                        e.target.value,
+                                        node.type,
+                                    );
+                                }}
+                                onClick={(e) => {
+                                    console.log(
+                                        'removed event bubbling on TreeItem',
+                                    );
+                                    e.stopPropagation();
+                                }}
+                            />
+                        }
+                    >
+                        {node.children && node.children.length > 0
+                            ? renderTreeNodes(node.children)
+                            : null}
+                    </TreeView.Item>
+                );
+            } else {
+                // 2. Node that is defined in tree
+                return (
+                    <TreeView.Item
+                        sx={{ overflow: 'hidden' }}
+                        key={node.id}
+                        nodeId={node.id}
+                        title={node.id}
+                        label={
+                            // File svg pack? (Js, html, etc)
+                            node.name
+                        }
+                    >
+                        {node.children && node.children.length > 0
+                            ? renderTreeNodes(node.children)
+                            : null}
+                    </TreeView.Item>
+                );
+            }
+        });
+    };
+
+    /**
+     * @desc
+     * This really needs to just set a placeholder Node in our Tree view.
+     * To help us gather input for file/folder name or contents
+     */
+    const addPlaceholderNode = (type: 'directory' | 'file') => {
+        console.log(appDirectory);
+        console.log(expanded);
+        console.log(selected);
+        // 1. See where we are in app directory, needed to know where to add file/dir
+        if (!expanded.length) {
+            console.log('Handle top level dir addition');
+            return;
+        }
+
+        const indexOfSelectedDirectory = expanded.indexOf(selected[0]);
+
+        const foundNode = findNodeById(
+            appDirectory,
+            expanded[indexOfSelectedDirectory],
+        );
+
+        // 2. Add new NodeInterface to the chidren of that directory
+        const nodeChildrenCopy = foundNode.children;
+
+        const newNode = {
+            id: `${foundNode.id}<>`,
+            lastModified: '',
+            name: '',
+            path: '',
+            type: type,
+        };
+
+        if (type === 'directory') {
+            newNode['children'] = [
+                {
+                    id: `${foundNode.id}<>/`,
+                    lastModified: '',
+                    name: 'placeholder',
+                    path: `${foundNode.id}<>/`,
+                    type: '',
+                },
+            ];
+        }
+
+        nodeChildrenCopy.push(newNode);
+
+        const formattedDirectoryNodes = sortArrayOfObjects(
+            nodeChildrenCopy,
+            'type',
+        );
+
+        // 3. Update it in state
+        const updatedTreeData = updateNodeRecursively(
+            appDirectory,
+            foundNode.id,
+            {
+                ...foundNode,
+                children: formattedDirectoryNodes,
+            },
+        );
+        setAppDirectory(updatedTreeData);
+        debugger;
+    };
+
+    const addAssetToApp = async (
+        node,
+        newNodeName: string,
+        assetType: 'directory' | 'file',
+    ) => {
+        let pixel = '';
+        const nodeReplacement = node;
+        nodeReplacement.id = node.id.replace(/</g, '').replace(/>/g, '');
+        nodeReplacement.id = nodeReplacement.id + newNodeName;
+        nodeReplacement.path = nodeReplacement.id;
+        nodeReplacement.name = newNodeName;
+        nodeReplacement.lastModified = Date.now();
+
+        if (assetType === 'directory') {
+            pixel += `
+            MakeDirectory(filePath=["${nodeReplacement.id}"], space=["${appId}"]);
+            `;
+        } else {
+            pixel += `
+                SaveAsset(fileName=["${newNodeName}"], content=["<encode></encode>"], space=["${appId}"]);
+            `;
+        }
+
+        const response = await monolithStore.runQuery(pixel);
+        const output = response.pixelReturn[0].output,
+            operationType = response.pixelReturn[0].operationType;
+
+        if (operationType.indexOf('ERROR') > -1) {
+            notification.add({
+                color: 'error',
+                message: output,
+            });
+
+            // remove node by id
+            const directoryCopy = appDirectory;
+            debugger;
+
+            const cleanedAppDirectory = removeNodeById(
+                directoryCopy,
+                nodeReplacement.id,
+            );
+            debugger;
+            return;
+        }
+
+        // save nodeReplacement in tree
+        if (assetType === 'directory') {
+            // 1. find nodes parent by it's old id
+            const { parent } = findNodeAndParentById(appDirectory, node.id);
+
+            debugger;
+        } else {
+            // set this file as the active file in the editor
+            let commitAssetPixel = `
+            CommitAsset(filePath=["${nodeReplacement.id}"], comment=["Added Asset from App Editor: path='${nodeReplacement.id}' "], space=["${appId}"])
+            `;
+
+            const commitAssetResponse = await monolithStore.runQuery(
+                commitAssetPixel,
+            );
+            const commitAssetOutput = commitAssetResponse.pixelReturn[0].output,
+                commitAssetOperationType =
+                    commitAssetResponse.pixelReturn[0].operationType;
+        }
+
+        setSelected([nodeReplacement.id]);
+    };
 
     return (
         <StyledEditorPanel>
@@ -497,83 +799,118 @@ export const AppEditor = (props: AppEditorProps) => {
                 )}
             </StyledCollapseTrigger>
 
-            {/* If Open: displays App Explorer */}
+            {/* If Open: Displays App Explorer */}
             <StyledCollapse
                 in={openAppAssetsPanel}
                 timeout="auto"
                 orientation={'horizontal'}
             >
+                {/* <AppExplorer
+                    directory={appDirectory}
+                    packages={[]}
+                    onSelect={handleSelect}
+                /> */}
+
                 {/* Move into smaller component */}
                 <StyledCollapseContainer>
                     <StyleAppExplorerHeader>
                         <Typography variant="h6">Explorer</Typography>
                     </StyleAppExplorerHeader>
-                    {/* <AppExplorer
-                        directory={appDirectory}
-                        packages={[]}
-                        onSelect={handleSelect}
-                    /> */}
-                    {/* Files Accordion */}
-                    <div>
-                        {/* <CustomAccordionTrigger
-                            tabIndex={0}
-                            role="button"
-                            aria-expaned={true}
-                            onClick={() => {
-                                handleAccordionChange('file');
-                            }}
-                        >
-                            <Icon>
-                                <ExpandMore />
-                            </Icon>
-                            <Typography variant="body1">Files</Typography>
-                        </CustomAccordionTrigger> */}
-
-                        <Collapse in={openAccordion.indexOf('file') > -1}>
-                            <div
-                                style={{
-                                    width: '100%',
-                                    height: '100%',
-                                    overflowX: 'scroll',
-                                    paddingLeft: '-8px',
+                    <div style={{ height: '95%', overflow: 'hidden' }}>
+                        {/* Files Accordion */}
+                        <div>
+                            <CustomAccordionTrigger
+                                tabIndex={0}
+                                role="button"
+                                aria-expaned={true}
+                                onClick={() => {
+                                    handleAccordionChange('file');
                                 }}
                             >
+                                <StyledRow>
+                                    <StyledIcon>
+                                        <ExpandMore />
+                                    </StyledIcon>
+                                    <Typography variant="body1">
+                                        Files
+                                    </Typography>
+                                </StyledRow>
+                                <StyledRow sx={{ gap: '0px' }}>
+                                    <IconButton
+                                        size={'small'}
+                                        onClick={() => {
+                                            console.log(
+                                                'Add a directory to App',
+                                            );
+                                            addPlaceholderNode('directory');
+                                        }}
+                                    >
+                                        <CreateNewFolder />
+                                    </IconButton>
+                                    <IconButton
+                                        size={'small'}
+                                        onClick={() => {
+                                            console.log('Add a file to App');
+                                            addPlaceholderNode('file');
+                                        }}
+                                    >
+                                        <NoteAdd />
+                                    </IconButton>
+                                </StyledRow>
+                            </CustomAccordionTrigger>
+
+                            <StyledScrollableTreeView>
                                 <TreeView
+                                    multiSelect
                                     sx={{ width: '100%' }}
                                     expanded={expanded}
                                     selected={selected}
                                     onNodeToggle={handleToggle}
                                     onNodeSelect={handleSelect}
-                                    defaultCollapseIcon={<ExpandMore />}
-                                    defaultExpandIcon={<ChevronRight />}
-                                    multiSelect
+                                    defaultCollapseIcon={
+                                        <StyledIcon>
+                                            <ExpandMore />
+                                        </StyledIcon>
+                                    }
+                                    defaultExpandIcon={
+                                        <StyledIcon>
+                                            <ChevronRight />
+                                        </StyledIcon>
+                                    }
                                 >
                                     {renderTreeNodes(appDirectory)}
                                 </TreeView>
-                            </div>
-                        </Collapse>
+                            </StyledScrollableTreeView>
+                            <Divider />
+                        </div>
+
+                        {/* Dependencies */}
+                        <div>
+                            <CustomAccordionTrigger
+                                tabIndex={0}
+                                role="button"
+                                aria-expaned={true}
+                                onClick={() => {
+                                    handleAccordionChange('dependency');
+                                }}
+                            >
+                                <StyledRow>
+                                    <StyledIcon>
+                                        <ExpandMore />
+                                    </StyledIcon>
+                                    <Typography variant="body1">
+                                        Dependencies
+                                    </Typography>
+                                </StyledRow>
+                            </CustomAccordionTrigger>
+                            <Collapse
+                                in={openAccordion.indexOf('dependency') > -1}
+                            >
+                                <span>Dependencies</span>
+                            </Collapse>
+                            <Divider />
+                        </div>
                     </div>
-                    {/* Dependencies Accordion*/}
-                    {/* <div>
-                        <CustomAccordionTrigger
-                            tabIndex={0}
-                            role="button"
-                            aria-expaned={true}
-                            onClick={() => {
-                                handleAccordionChange('dependency');
-                            }}
-                        >
-                            <Icon>
-                                <ExpandMore />
-                            </Icon>
-                            <Typography variant="body1">
-                                Dependencies
-                            </Typography>
-                        </CustomAccordionTrigger>
-                        <Collapse in={openAccordion.indexOf('dependency') > -1}>
-                            <span>Dependencies</span>
-                        </Collapse>
-                    </div> */}
                 </StyledCollapseContainer>
             </StyledCollapse>
 
