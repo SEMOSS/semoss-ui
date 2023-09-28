@@ -141,9 +141,9 @@ export const AppPage = observer(() => {
         newValue: 'code-editor' | 'settings' | 'permissions' | '',
     ) => {
         if (newValue === 'code-editor') {
-            if (!configStore.store.user.admin) {
-                return;
-            }
+            // if (!configStore.store.user.admin) {
+            //     return;
+            // }
             setLeftPanelWidth('55%');
             setRightPanelWidth('45%');
         } else {

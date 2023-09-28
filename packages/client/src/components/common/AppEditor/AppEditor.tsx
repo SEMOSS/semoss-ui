@@ -167,7 +167,7 @@ export const AppEditor = (props: AppEditorProps) => {
     const [counter, setCounter] = useState(0);
 
     // When we gather input from add new file/folder
-    const newDirectoryRefs = useRef({});
+    const newDirectoryRefs = useRef(null);
 
     // const newDirectoryRefs = useRef<HTMLInputElement[]>([]);
 
@@ -180,14 +180,17 @@ export const AppEditor = (props: AppEditorProps) => {
     }, []);
 
     useEffect(() => {
-        console.log('focus your placeholderRefs :)');
-
-        // if (newDirectoryRefs.current.length > 0) {
-        //     const newDirectoryRef =
-        //         newDirectoryRefs.current[newDirectoryRefs.current.length - 1];
-        //     newDirectoryRef.focus();
-        // }
-    }, [Object.entries(newDirectoryRefs.current).length]);
+        console.log('focus your placeholderRefs :)', newDirectoryRefs.current);
+        if (newDirectoryRefs.current) {
+            if (newDirectoryRefs.current.current) {
+                newDirectoryRefs.current.current.scrollIntoView({
+                    behavior: 'smooth', // You can choose 'auto' for immediate scrolling
+                    block: 'center', // You can choose 'end' or 'center' as well
+                    inline: 'nearest', // You can choose 'start' or 'end' as well
+                });
+            }
+        }
+    }, [newDirectoryRefs.current]);
 
     /**
      * Get the App Structure, first on mount
@@ -600,7 +603,7 @@ export const AppEditor = (props: AppEditorProps) => {
             if (node.name === '' && node.id.includes('<>')) {
                 if (!node.id) return <></>; // empty directory
 
-                newDirectoryRefs.current[node.id] = React.createRef();
+                newDirectoryRefs.current = React.createRef();
 
                 // 1a. While we are rendering tree nodes we need to set a ref for the placeholders
                 return (
@@ -612,18 +615,14 @@ export const AppEditor = (props: AppEditorProps) => {
                                 overflow: 'none',
                             },
                         }}
-                        // ref={(element) => {
-                        //     if (element) {
-                        //         newDirectoryRefs.current[node.id] = element;
-                        //     }
-                        // }}
-                        ref={newDirectoryRefs.current[node.id]}
+                        ref={newDirectoryRefs.current}
                         key={node.id}
                         nodeId={node.id}
                         title={'placeholder'}
                         label={
                             <TextField
                                 size="small"
+                                autoFocus={true}
                                 onBlur={async (e) => {
                                     console.log('Directory of nodes:', nodes);
                                     console.log(
@@ -646,7 +645,11 @@ export const AppEditor = (props: AppEditorProps) => {
                                                 node.id,
                                             );
 
-                                        await viewAsset([parent.id]);
+                                        await viewAsset([
+                                            !parent
+                                                ? ['version/assets/']
+                                                : parent.id,
+                                        ]);
                                         setSelected([parent.id]);
                                         return;
                                     }
