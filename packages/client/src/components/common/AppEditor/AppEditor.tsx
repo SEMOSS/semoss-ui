@@ -240,24 +240,24 @@ export const AppEditor = (props: AppEditorProps) => {
         nodeIds: string[],
         event?: React.SyntheticEvent,
     ) => {
-        debugger;
-        console.log('here again', nodeIds);
         if (nodeIds[0].indexOf('<>') > -1) {
             return;
         }
-        console.log('hem');
-        // debugger
-        // Gets the Selected Node in Tree View
+
+        // Gets the Selected Node in Tree View if present
         const foundNode = findNodeById(appDirectory, nodeIds[0]);
 
         let pixel = '',
-            selectionType = 'asset';
+            selectionType = 'directory';
 
-        if (foundNode.type === 'directory') {
+        if (!foundNode) {
+            pixel += `BrowseAsset(filePath=["version/assets"], space=["${appId}"]);`;
+        } else if (foundNode.type === 'directory') {
             pixel += `BrowseAsset(filePath=["${foundNode.path}"], space=["${appId}"]);`;
             selectionType = 'directory';
         } else {
             pixel += `GetAsset(filePath=["${foundNode.path}"], space=["${appId}"]);`;
+            selectionType = 'asset';
         }
 
         const response = await monolithStore.runQuery(pixel);
@@ -310,16 +310,22 @@ export const AppEditor = (props: AppEditorProps) => {
                 'type',
             );
 
-            const updatedTreeData = updateNodeRecursively(
-                appDirectory,
-                foundNode.id,
-                {
-                    ...foundNode,
-                    children: formattedDirectoryNodes,
-                },
-            );
+            let updatedTreeData = [];
 
-            setAppDirectory(updatedTreeData);
+            if (foundNode) {
+                updatedTreeData = updateNodeRecursively(
+                    appDirectory,
+                    foundNode.id,
+                    {
+                        ...foundNode,
+                        children: formattedDirectoryNodes,
+                    },
+                );
+            }
+
+            setAppDirectory(
+                foundNode ? updatedTreeData : formattedDirectoryNodes,
+            );
         } else {
             const fileToAdd = {
                 id: foundNode.id,
@@ -665,69 +671,98 @@ export const AppEditor = (props: AppEditorProps) => {
      * To help us gather input for new file/folder name or contents
      */
     const addPlaceholderNode = (type: 'directory' | 'file') => {
-        // console.log(appDirectory, expanded, selected);
-        // 1. See where we are in app directory, needed to know where to add file/dir
-        if (!expanded.length) {
-            console.log('Handle top level dir addition');
-            return;
-        }
-
-        const indexOfSelectedDirectory = expanded.indexOf(selected[0]);
-
-        if (indexOfSelectedDirectory < 0) {
-            notification.add({
-                color: 'error',
-                message: "Can't find Node on FE",
-            });
-            console.error('Error finding node');
-            return;
-        }
-
-        const foundNode = findNodeById(
-            appDirectory,
-            expanded[indexOfSelectedDirectory],
-        );
-
-        // 2. Add new NodeInterface to the chidren of that directory
-        const nodeChildrenCopy = foundNode.children;
-
         const newNode = {
-            id: `${foundNode.id}<>`,
+            id: '',
             lastModified: '',
             name: '',
             path: '',
             type: type,
+            // id: `${foundNode.id}<>`,
         };
 
-        if (type === 'directory') {
-            newNode['children'] = [
+        // 1. See where we are in app directory, needed to know where to add file/dir
+        if (!expanded.length) {
+            console.log('Handle top level dir addition', appDirectory);
+
+            const appDirCopy = appDirectory;
+            newNode.id = 'version/assets/<>';
+
+            if (type === 'directory') {
+                newNode['children'] = [
+                    {
+                        id: `version/assets/<>/`,
+                        lastModified: '',
+                        name: 'placeholder',
+                        path: `version/assets/<>/`,
+                        type: '',
+                    },
+                ];
+            }
+
+            appDirCopy.push(newNode);
+
+            const formattedDirectoryNodes = sortArrayOfObjects(
+                appDirCopy,
+                'type',
+            );
+
+            setAppDirectory(formattedDirectoryNodes);
+            // Band Aid fix update UI with state change
+            setCounter(counter + 1);
+        } else {
+            console.log('Handles nodes that have a parent');
+            const indexOfSelectedDirectory = expanded.indexOf(selected[0]);
+
+            if (indexOfSelectedDirectory < 0) {
+                notification.add({
+                    color: 'error',
+                    message: "Can't find Node on FE",
+                });
+                console.error('Error finding node');
+                return;
+            }
+
+            const foundNode = findNodeById(
+                appDirectory,
+                !expanded.length ? '' : expanded[indexOfSelectedDirectory],
+            );
+
+            // 2. Add new NodeInterface to the chidren of that directory
+            const nodeChildrenCopy = foundNode.children;
+
+            newNode.id = `${foundNode.id}<>`;
+
+            if (type === 'directory') {
+                newNode['children'] = [
+                    {
+                        id: `${foundNode.id}<>/`,
+                        lastModified: '',
+                        name: 'placeholder',
+                        path: `${foundNode.id}<>/`,
+                        type: '',
+                    },
+                ];
+            }
+
+            nodeChildrenCopy.push(newNode);
+
+            const formattedDirectoryNodes = sortArrayOfObjects(
+                nodeChildrenCopy,
+                'type',
+            );
+
+            const updatedTreeData = updateNodeRecursively(
+                appDirectory,
+                foundNode.id,
                 {
-                    id: `${foundNode.id}<>/`,
-                    lastModified: '',
-                    name: 'placeholder',
-                    path: `${foundNode.id}<>/`,
-                    type: '',
+                    ...foundNode,
+                    children: formattedDirectoryNodes,
                 },
-            ];
+            );
+
+            // 3. Update it in state
+            setAppDirectory(updatedTreeData);
         }
-
-        nodeChildrenCopy.push(newNode);
-
-        const formattedDirectoryNodes = sortArrayOfObjects(
-            nodeChildrenCopy,
-            'type',
-        );
-
-        // 3. Update it in state
-        const updatedTreeData = updateNodeRecursively(
-            appDirectory,
-            foundNode.id,
-            {
-                ...foundNode,
-                children: formattedDirectoryNodes,
-            },
-        );
-        setAppDirectory(updatedTreeData);
     };
 
     const addAssetToApp = async (
@@ -736,9 +771,10 @@ export const AppEditor = (props: AppEditorProps) => {
         assetType: 'directory' | 'file',
     ) => {
         let pixel = '';
+
         const nodeReplacement = node;
         nodeReplacement.id = node.id.replace(/</g, '').replace(/>/g, '');
-        nodeReplacement.id = nodeReplacement.id + newNodeName;
+        nodeReplacement.id = nodeReplacement.id + newNodeName + '/';
         nodeReplacement.path = nodeReplacement.id;
         nodeReplacement.name = newNodeName;
         nodeReplacement.lastModified = Date.now();
@@ -766,14 +802,14 @@ export const AppEditor = (props: AppEditorProps) => {
                 message: output,
             });
 
-            await viewAsset([parent.id]);
+            await viewAsset(!parent ? ['version/assets/'] : [parent.id]);
             setSelected([parent.id]);
             return;
         }
 
         // save nodeReplacement in tree
         if (assetType === 'directory') {
-            setExpanded([...expanded, nodeReplacement.id]);
+            // setExpanded([...expanded, nodeReplacement.id]);
             setSelected([nodeReplacement.id]);
             await viewAsset([parent.id]);
         } else {
@@ -793,6 +829,7 @@ export const AppEditor = (props: AppEditorProps) => {
         }
 
         // set this file as the active file in the editor
+
         // setSelected([nodeReplacement.id]);
         setCounter(counter + 1);
     };
@@ -853,6 +890,8 @@ export const AppEditor = (props: AppEditorProps) => {
                                 role="button"
                                 aria-expanded={true}
                                 onClick={() => {
+                                    setExpanded([]);
+                                    setSelected([]);
                                     handleAccordionChange('file');
                                 }}
                             >

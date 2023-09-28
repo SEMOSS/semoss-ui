@@ -193,6 +193,7 @@ export const MemberSettingsPage = () => {
     };
 
     const updateActiveMember = handleSubmit((data) => {
+        setMemberInfoModal(false);
         monolithStore['editMemberInfo'](adminMode, data)
             .then(() => {
                 const message = `You have successfully updated user information`;
@@ -679,8 +680,8 @@ export const MemberSettingsPage = () => {
                             <Button
                                 variant="contained"
                                 onClick={() => {
+                                    console.log('saving info');
                                     updateActiveMember();
-                                    setMemberInfoModal(false);
                                 }}
                             >
                                 Save
@@ -1224,10 +1225,6 @@ export const MemberSettingsPage = () => {
                                         <Table.Cell>
                                             <IconButton
                                                 onClick={() => {
-                                                    console.log(
-                                                        'mem edit',
-                                                        mem,
-                                                    );
                                                     setActiveMember(mem);
                                                     reset(mem);
                                                     setMemberInfoModal(true);

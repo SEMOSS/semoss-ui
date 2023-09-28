@@ -1878,7 +1878,6 @@ export class MonolithStore {
         }
         url += 'user/editUser';
 
-        debugger;
         postData += 'user=' + encodeURIComponent(JSON.stringify(user));
 
         const response = await axios.post<{ success: boolean }>(url, postData, {
