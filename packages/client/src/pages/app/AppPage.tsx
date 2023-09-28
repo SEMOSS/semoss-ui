@@ -7,6 +7,9 @@
  * - We have a Resizable Bottom Panel for the console.
  * - The Bigger Components that get consumed here are:
  *      - AppEditorPanel (also resizable), AppConsole, AppRenderer
+ *
+ * Update: 9/28/2023 -
+ * Bottom Debug Console commented out so no horizontal bottom panel resize
  * ---------------------------*------------------------------------
  *
  */
@@ -249,7 +252,8 @@ export const AppPage = observer(() => {
                 {/* Top Panel: Contains Editor and Renderer */}
                 <StyledTopPanel
                     sx={{
-                        height: editMode ? '96.5%' : '100%',
+                        // height: editMode ? '96.5%' : '100%',
+                        height: '100%',
                     }}
                 >
                     {editMode && (
@@ -294,27 +298,29 @@ export const AppPage = observer(() => {
                 </StyledTopPanel>
 
                 {/* Only when in Editor Mode: Resizable Bottom Panel  */}
-                {editMode ? (
-                    <StyledBottomPanel sx={{ height: bottomPanelHeight }}>
-                        <StyledHorizDivider
-                            onMouseDown={(e) => {
-                                e.preventDefault();
-                                window.addEventListener(
-                                    'mousemove',
-                                    handleVerticalResize,
-                                );
-                                window.addEventListener('mouseup', () => {
-                                    window.removeEventListener(
-                                        'mousemove',
-                                        handleVerticalResize,
-                                    );
-                                });
-                            }}
-                        ></StyledHorizDivider>
-                        {/* App Console */}
-                        <AppConsole />
-                    </StyledBottomPanel>
-                ) : null}
+                {
+                    // editMode ? (
+                    //     <StyledBottomPanel sx={{ height: bottomPanelHeight }}>
+                    //         <StyledHorizDivider
+                    //             onMouseDown={(e) => {
+                    //                 e.preventDefault();
+                    //                 window.addEventListener(
+                    //                     'mousemove',
+                    //                     handleVerticalResize,
+                    //                 );
+                    //                 window.addEventListener('mouseup', () => {
+                    //                     window.removeEventListener(
+                    //                         'mousemove',
+                    //                         handleVerticalResize,
+                    //                     );
+                    //                 });
+                    //             }}
+                    //         ></StyledHorizDivider>
+                    //         {/* App Console */}
+                    //         <AppConsole />
+                    //     </StyledBottomPanel>
+                    // ) : null
+                }
             </AppContext.Provider>
         </StyledViewport>
     );

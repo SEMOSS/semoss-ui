@@ -28,6 +28,7 @@ import {
     Skeleton,
     useNotification,
     styled,
+    // makeStyles,
     Typography,
 } from '@semoss/ui';
 
@@ -94,7 +95,7 @@ const CustomAccordionTrigger = styled('div')(({ theme }) => ({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    // border: 'solid red',
+    height: '32px',
     '&:hover': {
         cursor: 'pointer',
     },
@@ -589,7 +590,13 @@ export const AppEditor = (props: AppEditorProps) => {
                 // 1. New nodes that need a name
                 return (
                     <TreeView.Item
-                        sx={{ overflow: 'hidden' }}
+                        sx={{
+                            overflow: 'hidden',
+                            '.MuiCollapse-wrapperInner': {
+                                height: 'auto',
+                                overflow: 'none',
+                            },
+                        }}
                         key={node.id}
                         nodeId={node.id}
                         title={'placeholder'}
@@ -647,7 +654,13 @@ export const AppEditor = (props: AppEditorProps) => {
                 // 2. Node that is defined in tree
                 return (
                     <TreeView.Item
-                        sx={{ overflow: 'hidden' }}
+                        sx={{
+                            overflow: 'hidden',
+                            '.MuiCollapse-wrapperInner': {
+                                height: 'auto',
+                                overflow: 'none',
+                            },
+                        }}
                         key={node.id}
                         nodeId={node.id}
                         title={node.id}
@@ -825,7 +838,9 @@ export const AppEditor = (props: AppEditorProps) => {
                     commitAssetResponse.pixelReturn[0].operationType;
 
             // TODO: FE code for commit asset
-            console.log('Committing the Asset, FE code has');
+            console.log(
+                'TODO: Committing the Asset, view parent directory to refresh app structure after?',
+            );
         }
 
         // set this file as the active file in the editor
@@ -882,9 +897,20 @@ export const AppEditor = (props: AppEditorProps) => {
                     <StyleAppExplorerHeader>
                         <Typography variant="h6">Explorer</Typography>
                     </StyleAppExplorerHeader>
-                    <div style={{ height: '95%', overflow: 'hidden' }}>
+                    <div
+                        style={{
+                            height: '95%',
+                            overflow: 'hidden',
+                            // border: 'solid yellow',
+                        }}
+                    >
                         {/* Files Accordion */}
-                        <div>
+                        <div
+                            style={{
+                                maxHeight: '85%',
+                                //  border: 'solid yellow'
+                            }}
+                        >
                             <CustomAccordionTrigger
                                 tabIndex={0}
                                 role="button"
@@ -938,35 +964,57 @@ export const AppEditor = (props: AppEditorProps) => {
                                 ) : null}
                             </CustomAccordionTrigger>
 
-                            <Collapse in={openAccordion.indexOf('file') > -1}>
-                                <StyledScrollableTreeView>
-                                    <TreeView
-                                        multiSelect
-                                        sx={{ width: '100%' }}
-                                        expanded={expanded}
-                                        selected={selected}
-                                        onNodeToggle={handleToggle}
-                                        onNodeSelect={(e, v) => {
-                                            viewAsset(v, e);
-                                        }}
-                                        defaultCollapseIcon={
-                                            <StyledIcon>
-                                                <ExpandMore />
-                                            </StyledIcon>
-                                        }
-                                        defaultExpandIcon={
-                                            <StyledIcon>
-                                                <ChevronRight />
-                                            </StyledIcon>
-                                        }
-                                    >
-                                        {renderTreeNodes(appDirectory)}
-                                        {/* {renderTreeNodes(appDirectory).then(() => {
+                            {openAccordion.indexOf('file') > -1 && (
+                                <Collapse
+                                    in={openAccordion.indexOf('file') > -1}
+                                    sx={{
+                                        overflow: 'hidden',
+                                        maxHeight: 'calc(100% - 32px)',
+                                        // border: 'solid red',
+                                        // height: 'auto',
+                                        '.MuiCollapse-wrapperInner': {
+                                            maxHeight: '256px',
+                                            overflow: 'scroll',
+                                        },
+                                    }}
+                                >
+                                    <StyledScrollableTreeView>
+                                        <TreeView
+                                            multiSelect
+                                            sx={{
+                                                width: '100%',
+                                                maxHeight: '100%',
+                                                overflow: 'hidden',
+                                                '.MuiCollapse-wrapperInner': {
+                                                    height: 'auto',
+                                                    overflow: 'none',
+                                                },
+                                            }}
+                                            expanded={expanded}
+                                            selected={selected}
+                                            onNodeToggle={handleToggle}
+                                            onNodeSelect={(e, v) => {
+                                                viewAsset(v, e);
+                                            }}
+                                            defaultCollapseIcon={
+                                                <StyledIcon>
+                                                    <ExpandMore />
+                                                </StyledIcon>
+                                            }
+                                            defaultExpandIcon={
+                                                <StyledIcon>
+                                                    <ChevronRight />
+                                                </StyledIcon>
+                                            }
+                                        >
+                                            {renderTreeNodes(appDirectory)}
+                                            {/* {renderTreeNodes(appDirectory).then(() => {
                                                 put last InputRef into focus
                                         })} */}
-                                    </TreeView>
-                                </StyledScrollableTreeView>
-                            </Collapse>
+                                        </TreeView>
+                                    </StyledScrollableTreeView>
+                                </Collapse>
+                            )}
                             <Divider />
                         </div>
 
