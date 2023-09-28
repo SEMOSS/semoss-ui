@@ -964,57 +964,58 @@ export const AppEditor = (props: AppEditorProps) => {
                                 ) : null}
                             </CustomAccordionTrigger>
 
-                            {openAccordion.indexOf('file') > -1 && (
-                                <Collapse
-                                    in={openAccordion.indexOf('file') > -1}
-                                    sx={{
-                                        overflow: 'hidden',
-                                        maxHeight: 'calc(100% - 32px)',
-                                        // border: 'solid red',
-                                        // height: 'auto',
-                                        '.MuiCollapse-wrapperInner': {
-                                            maxHeight: '256px',
-                                            overflow: 'scroll',
-                                        },
-                                    }}
-                                >
-                                    <StyledScrollableTreeView>
-                                        <TreeView
-                                            multiSelect
-                                            sx={{
-                                                width: '100%',
-                                                maxHeight: '100%',
-                                                overflow: 'hidden',
-                                                '.MuiCollapse-wrapperInner': {
-                                                    height: 'auto',
-                                                    overflow: 'none',
-                                                },
-                                            }}
-                                            expanded={expanded}
-                                            selected={selected}
-                                            onNodeToggle={handleToggle}
-                                            onNodeSelect={(e, v) => {
-                                                viewAsset(v, e);
-                                            }}
-                                            defaultCollapseIcon={
-                                                <StyledIcon>
-                                                    <ExpandMore />
-                                                </StyledIcon>
-                                            }
-                                            defaultExpandIcon={
-                                                <StyledIcon>
-                                                    <ChevronRight />
-                                                </StyledIcon>
-                                            }
-                                        >
-                                            {renderTreeNodes(appDirectory)}
-                                            {/* {renderTreeNodes(appDirectory).then(() => {
+                            <Collapse
+                                in={openAccordion.indexOf('file') > -1}
+                                sx={{
+                                    overflow: 'hidden',
+                                    height:
+                                        openAccordion.indexOf('file') > -1
+                                            ? 'calc(100% - 32px)'
+                                            : '0px',
+                                    // border: 'solid red',
+                                    // height: 'auto',
+                                    '.MuiCollapse-wrapperInner': {
+                                        maxHeight: '256px',
+                                        overflow: 'scroll',
+                                    },
+                                }}
+                            >
+                                <StyledScrollableTreeView>
+                                    <TreeView
+                                        multiSelect
+                                        sx={{
+                                            width: '100%',
+                                            maxHeight: '100%',
+                                            overflow: 'hidden',
+                                            '.MuiCollapse-wrapperInner': {
+                                                height: 'auto',
+                                                overflow: 'none',
+                                            },
+                                        }}
+                                        expanded={expanded}
+                                        selected={selected}
+                                        onNodeToggle={handleToggle}
+                                        onNodeSelect={(e, v) => {
+                                            viewAsset(v, e);
+                                        }}
+                                        defaultCollapseIcon={
+                                            <StyledIcon>
+                                                <ExpandMore />
+                                            </StyledIcon>
+                                        }
+                                        defaultExpandIcon={
+                                            <StyledIcon>
+                                                <ChevronRight />
+                                            </StyledIcon>
+                                        }
+                                    >
+                                        {renderTreeNodes(appDirectory)}
+                                        {/* {renderTreeNodes(appDirectory).then(() => {
                                                 put last InputRef into focus
                                         })} */}
-                                        </TreeView>
-                                    </StyledScrollableTreeView>
-                                </Collapse>
-                            )}
+                                    </TreeView>
+                                </StyledScrollableTreeView>
+                            </Collapse>
                             <Divider />
                         </div>
 
