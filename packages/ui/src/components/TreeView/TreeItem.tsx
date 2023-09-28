@@ -1,3 +1,4 @@
+import { forwardRef } from "react";
 import { SxProps } from "@mui/material";
 import {
     TreeItem as MuiTreeItem,
@@ -11,6 +12,10 @@ export interface TreeItemProps extends MuiTreeItemProps {
     sx?: SxProps;
 }
 
-export const TreeItem = (props: TreeItemProps) => {
-    return <MuiTreeItem {...props} />;
-};
+export const TreeItem = forwardRef<HTMLLIElement, TreeItemProps>(
+    (props, ref) => {
+        return <MuiTreeItem {...props} ref={ref} />;
+    },
+);
+
+TreeItem.displayName = "TreeItem";

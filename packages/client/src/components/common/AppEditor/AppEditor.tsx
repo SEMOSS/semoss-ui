@@ -167,7 +167,9 @@ export const AppEditor = (props: AppEditorProps) => {
     const [counter, setCounter] = useState(0);
 
     // When we gather input from add new file/folder
-    const newDirectoryRefs = useRef<HTMLInputElement[]>([]);
+    const newDirectoryRefs = useRef({});
+
+    // const newDirectoryRefs = useRef<HTMLInputElement[]>([]);
 
     // Props necessary for TextEditor component
     const [filesToView, setFilesToView] = useState([]);
@@ -176,6 +178,16 @@ export const AppEditor = (props: AppEditorProps) => {
     useEffect(() => {
         getInitialAppStructure();
     }, []);
+
+    useEffect(() => {
+        console.log('focus your placeholderRefs :)');
+
+        // if (newDirectoryRefs.current.length > 0) {
+        //     const newDirectoryRef =
+        //         newDirectoryRefs.current[newDirectoryRefs.current.length - 1];
+        //     newDirectoryRef.focus();
+        // }
+    }, [Object.entries(newDirectoryRefs.current).length]);
 
     /**
      * Get the App Structure, first on mount
@@ -584,10 +596,13 @@ export const AppEditor = (props: AppEditorProps) => {
      */
     const renderTreeNodes = (nodes) => {
         return nodes.map((node, i) => {
+            // 1. New nodes that need a name
             if (node.name === '' && node.id.includes('<>')) {
                 if (!node.id) return <></>; // empty directory
 
-                // 1. New nodes that need a name
+                newDirectoryRefs.current[node.id] = React.createRef();
+
+                // 1a. While we are rendering tree nodes we need to set a ref for the placeholders
                 return (
                     <TreeView.Item
                         sx={{
@@ -597,6 +612,12 @@ export const AppEditor = (props: AppEditorProps) => {
                                 overflow: 'none',
                             },
                         }}
+                        // ref={(element) => {
+                        //     if (element) {
+                        //         newDirectoryRefs.current[node.id] = element;
+                        //     }
+                        // }}
+                        ref={newDirectoryRefs.current[node.id]}
                         key={node.id}
                         nodeId={node.id}
                         title={'placeholder'}

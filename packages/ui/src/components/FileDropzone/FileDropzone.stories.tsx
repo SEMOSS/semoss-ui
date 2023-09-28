@@ -18,6 +18,10 @@ const Template: Story<ComponentProps<typeof FileDropzone>> = (args) => {
         setSelectedValues(value);
     }, [value]);
 
+    // useEffect(() => {
+
+    // }, [])
+
     return (
         <FileDropzone
             value={selectedValues}
