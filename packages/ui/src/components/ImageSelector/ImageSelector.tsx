@@ -78,41 +78,48 @@ export interface ImageSelectorProps {
     value: string;
 
     /** Callback for handling when an image is selected*/
-    onChange?: () => void;
+    onChange?: (val) => void;
 
-    //image options
+    // image options
     options: { title: string; src: string; fileContents?: unknown }[];
 }
 
 export const ImageSelector = (props: ImageSelectorProps): JSX.Element => {
     const { value, options, onChange, ...otherProps } = props;
 
-    // get the configStore
-    // const { configStore, monolithStore } = useRootStore();
-
-    //set checked image to the default value
+    // set checked image to the default value
     const [checked, setCheckbox] = useState(value);
-
-    const [controlledImages, setControlledImages] =
-        useState<{ title: string; src: string; fileContents?: unknown }[]>(
-            options,
-        );
-
-    const checkImage = (imageSrc) => {
-        setCheckbox(imageSrc);
-    };
+    const [controlledImages, setControlledImages] = useState<
+        { title: string; src: string; fileContents?: unknown }[]
+    >([]);
 
     useEffect(() => {
-        console.log("all controlled images", controlledImages);
-    }, [controlledImages.length]);
+        const contImages = [];
+        options.forEach((opt) => {
+            contImages.push(opt);
+        });
+
+        setControlledImages(options);
+
+        return () => {
+            setControlledImages([]);
+        };
+    }, [options.length, options]);
+
+    const checkImage = (image) => {
+        setCheckbox(image.src);
+
+        // Pass image to parent
+        onChange(image);
+    };
 
     /**
      * @name handleAddNewImage
      * @desc add new image, compare it to default list
      * @param value
      */
-    const handleAddNewImage = async (value) => {
-        console.log("test upload", value);
+    const handleAddNewImage = (value) => {
+        // 1. Add File to controlledImages, but first create interface to hold new image url;
         const imageurl = URL.createObjectURL(value);
 
         console.log("img url", imageurl);
@@ -123,43 +130,15 @@ export const ImageSelector = (props: ImageSelectorProps): JSX.Element => {
             fileContents: value,
         };
 
-        console.log("new con image", newControlledImage);
-
         const newControlledImages = controlledImages;
-
         newControlledImages.push(newControlledImage);
 
-        debugger;
-
+        // Set new controlled images in state
         setControlledImages(newControlledImages);
+        setCheckbox(newControlledImage.src);
 
-        console.log("img url", imageurl);
-
-        // try {
-        //     const path = "version/assets/";
-
-        //     // // upload the file
-        //     // const upload = await monolithStore.upload(
-        //     //     configStore.store.insightID,
-        //     //     value.name,
-        //     // );
-
-        //     // // upnzip the file in the new project
-        //     // await monolithStore.runQuery(
-        //     //     `UnzipFile(filePath=["${`${path}${upload[0].fileName}`}"], space=["${id}"])`,
-        //     // );
-
-        //     //have check first
-        //     // imageOptions.push({
-        //     //     title: upload[0].fileName,
-        //     //     src: require(upload[0].fileLocation),
-        //     // });
-        // } catch (e) {
-        //     console.error(e);
-        // } finally {
-        //     // turn off loading
-        //     // setIsLoading(false);
-        // }
+        // Pass new file to parent
+        onChange(newControlledImage);
     };
 
     return (
@@ -180,28 +159,29 @@ export const ImageSelector = (props: ImageSelectorProps): JSX.Element => {
                         onChange={(value) => handleAddNewImage(value)}
                     />
                 </StyledDragAndDrop>
-
-                {controlledImages.map((image, id) => (
-                    <StyledImageListItem
-                        key={id}
-                        value={image.src}
-                        className={`${
-                            checked === image.src ? "isChecked" : ""
-                        }`}
-                        sx={{ backgroundImage: `url(${image.src})` }}
-                    >
-                        <StyledImageListItemBar
-                            position={"top"}
-                            actionIcon={
-                                <StyledCheckbox
-                                    checked={checked === image.src}
-                                    onChange={() => checkImage(image.src)}
-                                />
-                            }
-                            actionPosition={"left"}
-                        />
-                    </StyledImageListItem>
-                ))}
+                {controlledImages.map((image, id) => {
+                    return (
+                        <StyledImageListItem
+                            key={id}
+                            value={image.src}
+                            className={`${
+                                checked === image.src ? "isChecked" : ""
+                            }`}
+                            sx={{ backgroundImage: `url(${image.src})` }}
+                        >
+                            <StyledImageListItemBar
+                                position={"top"}
+                                actionIcon={
+                                    <StyledCheckbox
+                                        checked={checked === image.src}
+                                        onChange={() => checkImage(image)}
+                                    />
+                                }
+                                actionPosition={"left"}
+                            />
+                        </StyledImageListItem>
+                    );
+                })}
             </StyledImageList>
         </StyledBox>
     );
