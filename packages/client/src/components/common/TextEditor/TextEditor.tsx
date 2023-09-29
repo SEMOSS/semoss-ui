@@ -95,7 +95,7 @@ interface TextEditorProps {
     /**
      * Closes indexed file tab in files
      */
-    onClose: (index) => void;
+    onClose?: (index) => void;
 }
 
 export const TextEditor = (props: TextEditorProps) => {
@@ -253,7 +253,7 @@ export const TextEditor = (props: TextEditorProps) => {
                             value={activeIndex}
                             variant="scrollable"
                             scrollButtons={false}
-                            indicatorColor={'transparent'}
+                            // indicatorColor={'transparent'}
                             onChange={(
                                 event: SyntheticEvent,
                                 newValue: number,
