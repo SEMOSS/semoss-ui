@@ -33,13 +33,13 @@ import {
 } from '@semoss/ui';
 
 import {
-    CreateNewFolder,
-    NoteAdd,
     ExpandMore,
     ChevronRight,
     KeyboardDoubleArrowLeft,
     KeyboardDoubleArrowRight,
     ExpandLess,
+    CreateNewFolderOutlined,
+    NoteAddOutlined,
 } from '@mui/icons-material/';
 import { Dependency } from 'webpack';
 
@@ -970,7 +970,7 @@ export const AppEditor = (props: AppEditorProps) => {
                                                 addPlaceholderNode('directory');
                                             }}
                                         >
-                                            <CreateNewFolder />
+                                            <CreateNewFolderOutlined />
                                         </IconButton>
                                         <IconButton
                                             size={'small'}
@@ -982,7 +982,7 @@ export const AppEditor = (props: AppEditorProps) => {
                                                 addPlaceholderNode('file');
                                             }}
                                         >
-                                            <NoteAdd />
+                                            <NoteAddOutlined />
                                         </IconButton>
                                     </StyledRow>
                                 ) : null}
