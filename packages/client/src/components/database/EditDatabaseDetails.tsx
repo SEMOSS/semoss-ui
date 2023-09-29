@@ -127,77 +127,6 @@ export const EditDatabaseDetails = observer(
             defaultValues: values,
         });
 
-        /** Images Options */
-        const imageOptions: { title: string; src: string }[] = [
-            { title: 'Default', src: currentImageSrc },
-            {
-                title: 'Blue Default',
-                src: require('@/assets/img/BlueDefault.png'),
-            },
-            {
-                title: 'Orange Default',
-                src: require('@/assets/img/OrangeDefault.png'),
-            },
-            {
-                title: 'Purple Default',
-                src: require('@/assets/img/PurpleDefault.png'),
-            },
-            {
-                title: 'Red Default',
-                src: require('@/assets/img/RedDefault.png'),
-            },
-        ];
-
-        //get and set image label and source
-        const [newImageLabel, setNewImageLabel] = useState('Default');
-        const [newImageSrc, setNewImageSrc] = useState(currentImageSrc);
-
-        useEffect(() => {
-            imageOptions.filter((obj) => {
-                if (obj.title === newImageLabel) {
-                    setNewImageSrc(obj.src);
-                }
-            });
-        }, [newImageLabel]);
-        /** */
-
-        /**
-         * @name handleAddNewImage
-         * @desc
-         * @param value
-         */
-        const handleAddNewImage = async (value) => {
-            // turn on loading
-            setIsLoading(true);
-
-            try {
-                const path = 'version/assets/';
-
-                // upload the file
-                const upload = await monolithStore.uploadFile(
-                    value,
-                    id,
-                    configStore.store.insightID,
-                    path,
-                );
-
-                // upnzip the file in the new project
-                await monolithStore.runQuery(
-                    `UnzipFile(filePath=["${`${path}${upload[0].fileName}`}"], space=["${id}"])`,
-                );
-
-                imageOptions.push({
-                    title: upload[0].fileName,
-                    src: require(upload[0].fileLocation),
-                });
-            } catch (e) {
-                console.error(e);
-            } finally {
-                // turn off loading
-                setIsLoading(false);
-            }
-        };
-
         /**
          * @name onSubmit
          * @desc approve, deny, delete selected members/users
@@ -279,13 +208,32 @@ export const EditDatabaseDetails = observer(
                                 render={({ field }) => {
                                     return (
                                         <ImageSelector
-                                            images={imageOptions}
+                                            value={currentImageSrc}
+                                            options={[
+                                                {
+                                                    title: 'Default',
+                                                    src: currentImageSrc,
+                                                },
+                                                {
+                                                    title: 'Blue Default',
+                                                    src: require('@/assets/img/BlueDefault.png'),
+                                                },
+                                                {
+                                                    title: 'Orange Default',
+                                                    src: require('@/assets/img/OrangeDefault.png'),
+                                                },
+                                                {
+                                                    title: 'Purple Default',
+                                                    src: require('@/assets/img/PurpleDefault.png'),
+                                                },
+                                                {
+                                                    title: 'Red Default',
+                                                    src: require('@/assets/img/RedDefault.png'),
+                                                },
+                                            ]}
                                             onChange={(newValues) => {
                                                 field.onChange(newValues);
                                             }}
-                                            handleAddNewImage={(value) =>
-                                                handleAddNewImage(value)
-                                            }
                                         />
                                     );
                                 }}

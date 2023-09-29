@@ -1,6 +1,5 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect } from "react";
 import { styled } from "@mui/material";
-// import { usePixel, useRootStore, useDatabase } from "@/hooks";
 
 import { Box } from "../../";
 import { Checkbox } from "../../";
@@ -27,19 +26,27 @@ const StyledImageList = styled(ImageList)({
 const StyledImageListItem = styled(ImageListItem)({
     width: "120px",
     height: "120px",
-    // border: "solid 1px #0000003B",
     zIndex: 998,
     borderRadius: "8px",
     backgroundSize: "cover",
     backgroundRepeat: "no-repeat",
+    border: "solid 1px #0000003B",
     "&:hover": {
-        border: "solid 2px #0471F0",
-        // opacity: ".5",
+        border: "solid 1px #0471F0",
+        opacity: ".7",
+        span: {
+            opacity: "1",
+            color: "#0471F0",
+        },
     },
-    // "&.isChecked": {
-    //     border: "solid 2px #0471F0",
-    //     opacity: ".5",
-    // },
+    "&.isChecked": {
+        border: "solid 1px #0471F0",
+        opacity: ".7",
+        span: {
+            opacity: "1",
+            accentColor: "white",
+        },
+    },
 });
 
 const StyledDragAndDrop = styled(ImageListItem)({
@@ -62,22 +69,14 @@ const StyledImageListItemBar = styled(ImageListItemBar)({
     height: "20px",
     top: "8px",
     borderRadius: "2px",
-});
-
-const StyledCheckbox = styled(Checkbox)({
-    "&:hover": {
-        color: "#0471F0",
-    },
-    "&.isChecked": {
-        opacity: "1",
-    },
+    color: "pink",
 });
 
 export interface ImageSelectorProps {
     /** src value of selected image */
     value: string;
 
-    /** Callback for handling when an image is selected*/
+    /** changes the value of the component*/
     onChange?: (val) => void;
 
     // image options
@@ -121,8 +120,6 @@ export const ImageSelector = (props: ImageSelectorProps): JSX.Element => {
     const handleAddNewImage = (value) => {
         // 1. Add File to controlledImages, but first create interface to hold new image url;
         const imageurl = URL.createObjectURL(value);
-
-        console.log("img url", imageurl);
 
         const newControlledImage = {
             title: value.name,
@@ -172,7 +169,7 @@ export const ImageSelector = (props: ImageSelectorProps): JSX.Element => {
                             <StyledImageListItemBar
                                 position={"top"}
                                 actionIcon={
-                                    <StyledCheckbox
+                                    <Checkbox
                                         checked={checked === image.src}
                                         onChange={() => checkImage(image)}
                                     />
