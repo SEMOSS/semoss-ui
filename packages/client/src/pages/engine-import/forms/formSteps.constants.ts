@@ -60,6 +60,7 @@ import DOLLY from '@/assets/img/DOLLY_AI.jpg';
 import FLAN from '@/assets/img/FLAN.jpg';
 import BERT from '@/assets/img/BERT.png';
 import ELEUTHER from '@/assets/img/ELEUTHER_AI.png';
+import NEMO from '@/assets/img/NEMO.png';
 
 //Embedded Models
 import ORCA from '@/assets/img/ORCA.png';
@@ -369,6 +370,10 @@ export const stepsTwo = {
             name: 'Wizard Coder',
             disable: false,
         },
+        {
+            name: 'NeMo',
+            disable: true,
+        },
     ],
     ['Embedded Models']: [
         {
@@ -381,6 +386,10 @@ export const stepsTwo = {
         },
         {
             name: 'Replit Code Model',
+            disable: true,
+        },
+        {
+            name: 'NeMo',
             disable: true,
         },
     ],
@@ -452,7 +461,7 @@ export const IconDBMapper = {
     Bert: BERT,
     'Eleuther GPTJ': ELEUTHER,
     'Wizard Coder': BRAIN,
-
+    NeMo: NEMO,
     Orca: ORCA,
     'Stablity AI': STABILITY_AI,
     'Replit Code Model': REPLIT,
