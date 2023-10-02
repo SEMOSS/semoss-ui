@@ -201,7 +201,6 @@ export const TextEditor = (props: TextEditorProps) => {
      */
     const activeFile = useMemo<ControlledFile | null>(() => {
         const af = controlledFiles[activeIndex];
-        debugger;
         if (af) return af;
         return null;
     }, [activeIndex, files.length, controlledFiles.length, counter]);
