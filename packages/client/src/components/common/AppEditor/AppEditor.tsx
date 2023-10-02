@@ -134,6 +134,10 @@ interface AppEditorProps {
      */
     appId: string;
     /**
+     * Width of AppEditor Panel, anytime this changes we may have to close AppExplorer
+     */
+    width: string;
+    /**
      * On Save of edits in the text editor, I would use the hook no need for extra dependency
      */
     onSave: (success: boolean) => void;
@@ -148,7 +152,7 @@ interface NodeInterface {
     children?: unknown;
 }
 export const AppEditor = (props: AppEditorProps) => {
-    const { appId, onSave } = props;
+    const { appId, width, onSave } = props;
     const { monolithStore, configStore } = useRootStore();
     const notification = useNotification();
 
@@ -191,6 +195,18 @@ export const AppEditor = (props: AppEditorProps) => {
             }
         }
     }, [newDirectoryRefs.current]);
+
+    /**
+     * Anytime Panel resizes we want to close/open explorer
+     */
+    useEffect(() => {
+        const w = parseInt(width.replaceAll('%', ''));
+        if (w < 35) {
+            setOpenAppAssetsPanel(false);
+        } else {
+            setOpenAppAssetsPanel(true);
+        }
+    }, [width]);
 
     /**
      * Get the App Structure, first on mount
@@ -802,6 +818,10 @@ export const AppEditor = (props: AppEditorProps) => {
         }
     };
 
+    /**
+     *
+     * @desc This adds the placeholder node to your app directory
+     */
     const addAssetToApp = async (
         node,
         newNodeName: string,
@@ -809,14 +829,15 @@ export const AppEditor = (props: AppEditorProps) => {
     ) => {
         let pixel = '';
 
+        // We may not have to do below --
         const nodeReplacement = node;
         nodeReplacement.id = node.id.replace(/</g, '').replace(/>/g, '');
         nodeReplacement.id = nodeReplacement.id + newNodeName + '/';
         nodeReplacement.path = nodeReplacement.id;
         nodeReplacement.name = newNodeName;
         nodeReplacement.lastModified = Date.now();
+        // --
 
-        // debugger
         if (assetType === 'directory') {
             pixel += `
             MakeDirectory(filePath=["${nodeReplacement.id}"], space=["${appId}"]);
@@ -871,6 +892,26 @@ export const AppEditor = (props: AppEditorProps) => {
 
         // setSelected([nodeReplacement.id]);
         setCounter(counter + 1);
+    };
+
+    /**
+     * @desc will remove the indexed file, in files to view,
+     * Should trigger the useEffect in TextEditor
+     */
+    const removeFileToView = (index: number) => {
+        const newFilesToView = filesToView;
+        newFilesToView.splice(index, 1);
+
+        if (activeFileIndex > index) {
+            // Selected index is less than active
+            setActiveFileIndex(activeFileIndex - 1);
+        } else if (activeFileIndex > newFilesToView.length - 1) {
+            // If Active File Index is out of bounds we have to subract 1
+            setActiveFileIndex(newFilesToView.length - 1);
+        }
+
+        setFilesToView(newFilesToView);
+        return true;
     };
 
     return (
@@ -1101,10 +1142,14 @@ export const AppEditor = (props: AppEditorProps) => {
                     onSave={(asset: ControlledFile) => {
                         console.log(
                             'App Editor onSave callback, hit Save Asset reactor and Refresh AppRenderer',
-                            asset,
+                            // asset,
                         );
                         // Hit Save Asset Reactor for App
                         return saveApplicationAsset(asset);
+                    }}
+                    onClose={(index: number) => {
+                        console.log('remove activeFileIndex from filesToView');
+                        removeFileToView(index);
                     }}
                 />
             </div>

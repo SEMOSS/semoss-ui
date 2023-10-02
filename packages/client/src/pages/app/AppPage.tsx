@@ -208,6 +208,12 @@ export const AppPage = observer(() => {
         const newRightPanelWidthPercentage = `${rightContainerWidth}%`;
         const newLeftPanelWidthPercentage = `${leftContainerWidth}%`;
 
+        const parsedLeftPanelWidth = Math.floor(leftContainerWidth);
+        // Prevent Code Editor from being resized to small
+        if (view === 'code-editor' && parsedLeftPanelWidth < 15) {
+            return;
+        }
+
         setLeftPanelWidth(newLeftPanelWidthPercentage);
         setRightPanelWidth(newRightPanelWidthPercentage);
     };
@@ -240,7 +246,6 @@ export const AppPage = observer(() => {
         refreshApp: refreshOutlet,
     };
 
-    console.log(topPanelHeight);
     return (
         <StyledViewport>
             <AppContext.Provider value={value}>
@@ -260,7 +265,7 @@ export const AppPage = observer(() => {
                         <StyledLeftPanel sx={{ width: leftPanelWidth }}>
                             {/* Left Panel for Editor Mode, should be Dark Mode */}
                             <ThemeProvider reset={true} type={'light'}>
-                                <AppEditorPanel />
+                                <AppEditorPanel width={leftPanelWidth} />
                                 <StyledVertDivider
                                     onMouseDown={(e) => {
                                         e.preventDefault();

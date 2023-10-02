@@ -115,26 +115,7 @@ export const TextEditor = (props: TextEditorProps) => {
             if ((e.ctrlKey || e.metaKey) && e.key === 's') {
                 e.preventDefault(); // Prevent the default browser save dialog
                 console.log('Ctrl + S pressed');
-
-                // 1. Save Asset with reactor
-                // 2. Save the controlled files new original to content
-                // 3. Trigger Memoized Val: Set New Counter to refresh active file based on new controlled files
-
-                const saveSuccessful: boolean = await onSave(
-                    controlledFiles[activeIndex],
-                );
-
-                if (saveSuccessful) {
-                    const updatedControlledFiles = controlledFiles;
-                    updatedControlledFiles[activeIndex] = {
-                        ...updatedControlledFiles[activeIndex],
-                        original: updatedControlledFiles[activeIndex].content,
-                    };
-                    setControlledFiles(updatedControlledFiles);
-
-                    let newCounter = counter;
-                    setCounter((newCounter += 1));
-                }
+                saveFile();
             }
         };
 
@@ -150,6 +131,8 @@ export const TextEditor = (props: TextEditorProps) => {
      * Adds new files to Controlled structure
      */
     useEffect(() => {
+        console.log('files', files);
+        console.log('contfiles', controlledFiles);
         if (controlledFiles.length === files.length) return;
 
         const newControlledFiles = controlledFiles;
@@ -159,7 +142,7 @@ export const TextEditor = (props: TextEditorProps) => {
         });
 
         setControlledFiles(newControlledFiles);
-    }, [files.length]);
+    }, [files.length, activeIndex, controlledFiles.length]);
 
     /**
      * Handles change with editor
@@ -182,6 +165,32 @@ export const TextEditor = (props: TextEditorProps) => {
         setCounter((newCounter += 1));
     };
 
+    /**
+     * Saves Asset
+     *
+     */
+    const saveFile = async () => {
+        // 1. Save Asset with reactor
+        // 2. Save the controlled files new original to content
+        // 3. Trigger Memoized Val: Set New Counter to refresh active file based on new controlled files
+
+        const saveSuccessful: boolean = await onSave(
+            controlledFiles[activeIndex],
+        );
+
+        if (saveSuccessful) {
+            const updatedControlledFiles = controlledFiles;
+            updatedControlledFiles[activeIndex] = {
+                ...updatedControlledFiles[activeIndex],
+                original: updatedControlledFiles[activeIndex].content,
+            };
+            setControlledFiles(updatedControlledFiles);
+
+            let newCounter = counter;
+            setCounter((newCounter += 1));
+        }
+    };
+
     /** ------------------
      * Memoized Values
      *  ------------------
@@ -192,9 +201,10 @@ export const TextEditor = (props: TextEditorProps) => {
      */
     const activeFile = useMemo<ControlledFile | null>(() => {
         const af = controlledFiles[activeIndex];
+        debugger;
         if (af) return af;
         return null;
-    }, [activeIndex, controlledFiles.length, counter]);
+    }, [activeIndex, files.length, controlledFiles.length, counter]);
 
     /**
      * @returns language to interpet in editor based on the Active File
@@ -227,6 +237,10 @@ export const TextEditor = (props: TextEditorProps) => {
         }
         return interpretedLanguage;
     }, [activeIndex, files.length, counter]);
+
+    // const memoizedFiles = useMemo(() => {
+
+    // })
 
     if (!files.length) {
         return (
@@ -304,11 +318,29 @@ export const TextEditor = (props: TextEditorProps) => {
                                                         // height: '50px',
                                                         fontSize: '16px',
                                                     }}
-                                                    onClick={(e) => {
+                                                    onClick={async (e) => {
                                                         e.stopPropagation();
                                                         console.warn(
-                                                            ' close tab',
+                                                            ' closing tab',
+                                                            controlledFiles,
                                                         );
+
+                                                        const newControlledFiles =
+                                                            controlledFiles;
+                                                        newControlledFiles.splice(
+                                                            i,
+                                                            1,
+                                                        );
+
+                                                        setControlledFiles(
+                                                            newControlledFiles,
+                                                        );
+
+                                                        // close this index, set state of files in parent
+                                                        await onClose(i);
+
+                                                        // Refresh Active File Memoized value
+                                                        setCounter(counter + 1);
                                                     }}
                                                 >
                                                     <Clear
@@ -324,7 +356,11 @@ export const TextEditor = (props: TextEditorProps) => {
                                 );
                             })}
                         </Tabs>
-                        <IconButton>
+                        <IconButton
+                            onClick={() => {
+                                saveFile();
+                            }}
+                        >
                             <SaveOutlined />
                         </IconButton>
                     </StyledFileTabs>
