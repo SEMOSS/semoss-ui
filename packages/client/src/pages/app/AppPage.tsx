@@ -1,12 +1,15 @@
 /**
  * ---------------------------*------------------------------------
- * This will be your app page, what this component does is
- * really is to handle the layout and switching between the
+ * This will be your app page, what this component
+ * really does is handle the layout and switching between the
  * different { editor mode } nav items.
  *
- * - We have a Resizable Bottom Panel for the console.
+ * - We have a Resizable Bottom Panel for the console. (Removed)
+ *      - AppConsole
+ * - Resizable Left Right Panel
+ *      - AppEditorPanel (also resizable),
  * - The Bigger Components that get consumed here are:
- *      - AppEditorPanel (also resizable), AppConsole, AppRenderer
+ *      - AppEditorPanel, AppConsole, AppRenderer
  *
  * Update: 9/28/2023 -
  * Bottom Debug Console commented out so no horizontal bottom panel resize
