@@ -2688,7 +2688,7 @@ export const STORAGE_FORMS: EngineFields = [
             {
                 fieldName: 'STORAGE_TYPE',
                 label: 'Storage Type',
-                defaultValue: '',
+                defaultValue: 'DROPBOX',
                 options: {
                     component: 'text-field',
                 },
