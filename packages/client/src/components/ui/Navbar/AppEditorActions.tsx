@@ -285,8 +285,8 @@ export const AppEditorActions = () => {
                         }}
                     >
                         <Tabs.Item label="URL"></Tabs.Item>
-                        <Tabs.Item disabled label="REST API"></Tabs.Item>
-                        <Tabs.Item disabled label="iframe"></Tabs.Item>
+                        {/* <Tabs.Item disabled label="REST API"></Tabs.Item>
+                        <Tabs.Item disabled label="iframe"></Tabs.Item> */}
                     </Tabs>
                     {shareModalTab === 0 && (
                         <StyledTabsContent>

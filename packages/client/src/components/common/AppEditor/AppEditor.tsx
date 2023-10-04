@@ -57,14 +57,19 @@ const StyledEditorPanel = styled('div')(({ theme }) => ({
 
 const StyledCollapseTrigger = styled('div')(({ theme }) => ({
     height: '100%',
-    width: '42px',
+    width: '50px',
     backgroundColor: theme.palette.secondary.light,
-    paddingTop: theme.spacing(0.5),
-    paddingLeft: theme.spacing(0.5),
+    padding: theme.spacing(1),
+    // paddingLeft: theme.spacing(0.5),
     // zIndex: 9998,
 }));
 
 const StyledCollapse = styled(Collapse)(({ theme }) => ({
+    padding: theme.spacing(1),
+    // '.MuiCollapse-root': {
+    //     padding: '0px',
+    //     margin: '0px',
+    // },
     // zIndex: 9998,
     // display: 'flex',
     // flexDirection: 'column',
@@ -78,9 +83,11 @@ const StyledCollapseContainer = styled('div')(({ theme }) => ({
     flexDirection: 'column',
     width: '250px',
     height: '100%',
+    paddingTop: '0px',
     paddingLeft: theme.spacing(2),
     paddingRight: theme.spacing(2),
     boxShadow: '5px 0 5px -2px rgba(0, 0, 0, 0.04)',
+    // border: 'solid',
     // border: 'solid green',
 }));
 
@@ -91,8 +98,8 @@ const StyleAppExplorerHeader = styled('div')(({ theme }) => ({
     overflow: 'hidden',
     textOverflow: 'ellipsis',
     whiteSpace: 'nowrap',
-    height: '5%',
-    paddingTop: '2px',
+    // height: '5%',
+    // paddingTop: '2px',
     alignItems: 'center',
 }));
 
@@ -113,7 +120,8 @@ const StyledScrollableTreeView = styled('div')(({ theme }) => ({
 const StyledRow = styled('div')(({ theme }) => ({
     display: 'flex',
     flexDirection: 'row',
-    gap: theme.spacing(1),
+    alignItems: 'center',
+    gap: theme.spacing(0.5),
 }));
 
 const StyledIcon = styled(Icon)(({ theme }) => ({
@@ -124,14 +132,14 @@ const CustomAccordion = styled(Accordion)(({ theme }) => ({
     background: 'inherit',
     boxShadow: 'none',
     padding: '0',
-    // flexGrow: 1,
-    // maxHeight: '85%',
-    '&:not(:last-child)': {
-        borderBottom: 0,
-    },
+    borderRadius: '0px',
+    borderBottom: `1px solid ${theme.palette.divider}`,
     '&:before': {
         display: 'none',
     },
+    // '&:not(:last-child)': {
+    //     borderBottom: 0,
+    // },
 }));
 
 const CustomAccordionTrigger = styled(Accordion.Trigger)(({ theme }) => ({
@@ -145,15 +153,27 @@ const CustomAccordionTrigger = styled(Accordion.Trigger)(({ theme }) => ({
     '& .MuiAccordionSummary-content': {
         marginLeft: theme.spacing(1),
     },
+    '& .MuiAccordionDetails-root': {
+        padding: '0px',
+    },
+}));
+
+const CustomAccordionTriggerContent = styled('div')(({ theme }) => ({
+    display: 'flex',
+    flexDirection: 'row',
+    gap: theme.spacing(1),
+    // Icon Button Size
+    height: `calc(1.125rem + 5px)`,
 }));
 
 const CustomAccordionContent = styled(Accordion.Content)(({ theme }) => ({
     maxHeight: '300px',
-    // alignItems: 'center',
-    // padding: '0px',
-    // paddingTop: '8px',
     display: 'flex',
     overflow: 'scroll',
+    padding: '0px',
+    // paddingTop: '8px',
+    // paddingTop: '0px',
+    // alignItems: 'center',
 }));
 
 interface AppEditorProps {
@@ -1021,25 +1041,27 @@ export const AppEditor = (props: AppEditorProps) => {
                         : 'none',
                 }}
             >
-                {openAppAssetsPanel ? (
-                    <IconButton
-                        size="small"
-                        onClick={() => {
-                            setOpenAppAssetsPanel(false);
-                        }}
-                    >
-                        <KeyboardDoubleArrowLeft />
-                    </IconButton>
-                ) : (
-                    <IconButton
-                        size="small"
-                        onClick={() => {
-                            setOpenAppAssetsPanel(true);
-                        }}
-                    >
-                        <KeyboardDoubleArrowRight />
-                    </IconButton>
-                )}
+                <div style={{ height: '5%' }}>
+                    {openAppAssetsPanel ? (
+                        <IconButton
+                            size="small"
+                            onClick={() => {
+                                setOpenAppAssetsPanel(false);
+                            }}
+                        >
+                            <KeyboardDoubleArrowLeft />
+                        </IconButton>
+                    ) : (
+                        <IconButton
+                            size="small"
+                            onClick={() => {
+                                setOpenAppAssetsPanel(true);
+                            }}
+                        >
+                            <KeyboardDoubleArrowRight />
+                        </IconButton>
+                    )}
+                </div>
             </StyledCollapseTrigger>
 
             {/* If Open: Displays App Explorer */}
@@ -1084,6 +1106,7 @@ export const AppEditor = (props: AppEditorProps) => {
                         >
                             <CustomAccordion
                                 disableGutters
+                                square={true}
                                 expanded={
                                     openAccordion.indexOf('file') > -1
                                         ? true
@@ -1098,40 +1121,55 @@ export const AppEditor = (props: AppEditorProps) => {
                                 <CustomAccordionTrigger
                                     expandIcon={<ChevronRight />}
                                 >
-                                    <Typography variant="body1">
-                                        App Directory
-                                    </Typography>
-                                    {openAccordion.indexOf('file') > -1 ? (
-                                        <StyledRow sx={{ gap: '0px' }}>
-                                            <IconButton
-                                                size={'small'}
-                                                onClick={(e) => {
-                                                    console.log(
-                                                        'Add a directory to App',
-                                                    );
+                                    <CustomAccordionTriggerContent>
+                                        <div
+                                            style={{
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                overflow: 'hidden',
+                                                whiteSpace: 'nowrap',
+                                                textOverflow:
+                                                    'ellipsis ellipsis',
+                                            }}
+                                        >
+                                            <Typography variant="body1">
+                                                App Directory
+                                            </Typography>
+                                        </div>
+                                        {openAccordion.indexOf('file') > -1 ? (
+                                            <StyledRow>
+                                                <IconButton
+                                                    size={'small'}
+                                                    onClick={(e) => {
+                                                        console.log(
+                                                            'Add a directory to App',
+                                                        );
 
-                                                    e.stopPropagation();
-                                                    addPlaceholderNode(
-                                                        'directory',
-                                                    );
-                                                }}
-                                            >
-                                                <CreateNewFolderOutlined />
-                                            </IconButton>
-                                            <IconButton
-                                                size={'small'}
-                                                onClick={(e) => {
-                                                    console.log(
-                                                        'Add a file to App',
-                                                    );
-                                                    e.stopPropagation();
-                                                    addPlaceholderNode('file');
-                                                }}
-                                            >
-                                                <NoteAddOutlined />
-                                            </IconButton>
-                                        </StyledRow>
-                                    ) : null}
+                                                        e.stopPropagation();
+                                                        addPlaceholderNode(
+                                                            'directory',
+                                                        );
+                                                    }}
+                                                >
+                                                    <CreateNewFolderOutlined />
+                                                </IconButton>
+                                                <IconButton
+                                                    size={'small'}
+                                                    onClick={(e) => {
+                                                        console.log(
+                                                            'Add a file to App',
+                                                        );
+                                                        e.stopPropagation();
+                                                        addPlaceholderNode(
+                                                            'file',
+                                                        );
+                                                    }}
+                                                >
+                                                    <NoteAddOutlined />
+                                                </IconButton>
+                                            </StyledRow>
+                                        ) : null}
+                                    </CustomAccordionTriggerContent>
                                 </CustomAccordionTrigger>
                                 <CustomAccordionContent>
                                     {/* <StyledScrollableTreeView> */}
@@ -1174,6 +1212,7 @@ export const AppEditor = (props: AppEditorProps) => {
                         >
                             <CustomAccordion
                                 disableGutters
+                                square={true}
                                 expanded={
                                     openAccordion.indexOf('dependency') > -1
                                         ? true
@@ -1209,8 +1248,8 @@ export const AppEditor = (props: AppEditorProps) => {
                 style={{
                     // 100% - collapseCont - appEditorCont
                     width: openAppAssetsPanel
-                        ? 'calc(100% - 42px - 250px)'
-                        : 'calc(100% - 42px)',
+                        ? 'calc(100% - 50px - 250px)'
+                        : 'calc(100% - 50px)',
                 }}
             >
                 <TextEditor
