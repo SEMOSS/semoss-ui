@@ -12,6 +12,9 @@ import React, {
     useRef,
     useCallback,
     useMemo,
+    SyntheticEvent,
+    ChangeEvent,
+    HtmlHTMLAttributes,
 } from 'react';
 import { useRootStore, useAPI } from '@/hooks';
 import { TextEditor, ControlledFile } from '../';
@@ -144,7 +147,7 @@ const CustomAccordionTrigger = styled(Accordion.Trigger)(({ theme }) => ({
 }));
 
 const CustomAccordionContent = styled(Accordion.Content)(({ theme }) => ({
-    maxHeight: '700px',
+    maxHeight: '300px',
     // alignItems: 'center',
     // padding: '0px',
     // paddingTop: '8px',
@@ -704,11 +707,15 @@ export const AppEditor = (props: AppEditorProps) => {
                                 onKeyDown={async (e) => {
                                     e.stopPropagation();
                                     // listen for on enter on Input
-                                    if (
-                                        e.code === 'Enter' ||
-                                        e.keyCode === 13
-                                    ) {
-                                        if (e.target.value === '') {
+                                    if (e.code === 'Enter') {
+                                        const value =
+                                            (
+                                                e.target as unknown as {
+                                                    value?: string;
+                                                }
+                                            )?.value || '';
+
+                                        if (!value) {
                                             console.warn(
                                                 'onBlur without new file/folder name present',
                                             );
@@ -728,15 +735,15 @@ export const AppEditor = (props: AppEditorProps) => {
                                                     ? ['version/assets/']
                                                     : parent.id,
                                             ]);
-                                            setSelected([parent.id]);
+                                            setSelected(
+                                                !parent
+                                                    ? ['version/assets/']
+                                                    : [parent.id],
+                                            );
                                             return;
                                         }
                                         // 2. save the asset and change interface accordingly
-                                        addAssetToApp(
-                                            node,
-                                            e.target.value,
-                                            node.type,
-                                        );
+                                        addAssetToApp(node, value, node.type);
                                     }
                                 }}
                             />
