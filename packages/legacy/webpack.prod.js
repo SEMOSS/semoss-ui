@@ -23,6 +23,7 @@ module.exports = () => {
             new CompressionPlugin({
                 algorithm: 'gzip',
                 test: /\.js$|\.css$|\.html$/,
+                exclude: /index.html/,
             }),
             new HtmlWebpackPlugin({
                 scriptLoading: 'blocking',
