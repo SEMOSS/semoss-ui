@@ -36,6 +36,7 @@ import {
 } from '@semoss/ui';
 
 import {
+    Download,
     ExpandMore,
     ChevronRight,
     KeyboardDoubleArrowLeft,
@@ -58,13 +59,13 @@ const StyledCollapseTrigger = styled('div')(({ theme }) => ({
     height: '100%',
     width: '42px',
     backgroundColor: theme.palette.secondary.light,
-    zIndex: 9998,
     paddingTop: theme.spacing(0.5),
     paddingLeft: theme.spacing(0.5),
+    // zIndex: 9998,
 }));
 
 const StyledCollapse = styled(Collapse)(({ theme }) => ({
-    zIndex: 9998,
+    // zIndex: 9998,
     // display: 'flex',
     // flexDirection: 'column',
     // width: open ? 'calc(20% + 42px)' : '0%',
@@ -977,6 +978,39 @@ export const AppEditor = (props: AppEditorProps) => {
         return true;
     };
 
+    /**
+     * Method that is called to download the app
+     */
+    const downloadApp = async () => {
+        // turn on loading
+        // setIsLoading(true);
+
+        try {
+            const path = 'version/assets/';
+
+            // upnzip the file in the new app
+            const response = await monolithStore.runQuery(
+                `DownloadAsset(filePath=["${path}"], space=["${appId}"]);`,
+            );
+            const key = response.pixelReturn[0].output;
+            if (!key) {
+                throw new Error('Error Downloading Asset');
+            }
+
+            await monolithStore.download(configStore.store.insightID, key);
+        } catch (e) {
+            console.error(e);
+
+            notification.add({
+                color: 'error',
+                message: e.message,
+            });
+        } finally {
+            // turn of loading
+            // setIsLoading(false);
+        }
+    };
+
     return (
         <StyledEditorPanel>
             {/* Collapse Trigger Container */}
@@ -1024,6 +1058,16 @@ export const AppEditor = (props: AppEditorProps) => {
                 <StyledCollapseContainer>
                     <StyleAppExplorerHeader>
                         <Typography variant="h6">Explorer</Typography>
+                        <IconButton
+                            size={'small'}
+                            // color={'primary'}
+                            // variant={'text'}
+                            onClick={() => {
+                                downloadApp();
+                            }}
+                        >
+                            <Download />
+                        </IconButton>
                     </StyleAppExplorerHeader>
                     <div
                         style={{
