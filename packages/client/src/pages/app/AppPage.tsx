@@ -122,12 +122,7 @@ export const AppPage = observer(() => {
     const switchEditorMode = (mode: boolean) => {
         setEditMode(mode);
         if (mode) {
-            // setTopPanelHeight('96.5%');
-            if (configStore.store.user.admin) {
-                setEditorView('code-editor');
-            } else {
-                setEditorView('settings');
-            }
+            setEditorView('code-editor');
         } else {
             // setTopPanelHeight('100%');
             setEditorView('');
@@ -254,7 +249,9 @@ export const AppPage = observer(() => {
             <AppContext.Provider value={value}>
                 <Navbar>
                     {/* Actions to Open Editor Mode */}
-                    {appPermission === 'OWNER' && <AppEditorActions />}
+                    {(configStore.store.user.admin ||
+                        appPermission === 'OWNER' ||
+                        appPermission === 'EDIT') && <AppEditorActions />}
                 </Navbar>
 
                 {/* Top Panel: Contains Editor and Renderer */}
