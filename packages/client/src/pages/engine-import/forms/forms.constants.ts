@@ -101,21 +101,11 @@ export const MODEL_FORMS: EngineFields = [
         name: 'Open AI',
         fields: [
             {
-                fieldName: 'MODEL',
-                label: 'Model',
+                fieldName: 'NAME',
+                label: 'Name',
                 defaultValue: '',
                 options: {
-                    component: 'select',
-                    options: [
-                        {
-                            display: 'gpt-3.5-turbo',
-                            value: 'gpt-3.5-turbo',
-                        },
-                        {
-                            display: 'gpt-4-32k',
-                            value: 'gpt-4-32k',
-                        },
-                    ],
+                    component: 'text-field',
                 },
                 disabled: false,
                 rules: { required: true },
@@ -137,6 +127,101 @@ export const MODEL_FORMS: EngineFields = [
                 rules: { required: true },
             },
             {
+                fieldName: 'OPEN_AI_KEY',
+                label: 'Open AI Key',
+                defaultValue: '',
+                options: {
+                    component: 'password',
+                },
+                disabled: false,
+                rules: { required: true },
+            },
+            {
+                fieldName: 'MODEL',
+                label: 'Model',
+                defaultValue: '',
+                options: {
+                    component: 'select',
+                    options: [
+                        {
+                            display: 'gpt-3.5-turbo',
+                            value: 'gpt-3.5-turbo',
+                        },
+                        {
+                            display: 'gpt-4-32k',
+                            value: 'gpt-4-32k',
+                        },
+                    ],
+                },
+                disabled: false,
+                rules: { required: true },
+            },
+            {
+                fieldName: 'VAR_NAME',
+                label: 'Variable Name',
+                defaultValue: '',
+                options: {
+                    component: 'text-field',
+                },
+                disabled: false,
+                rules: { required: true },
+            },
+            {
+                fieldName: 'INIT_MODEL_ENGINE',
+                label: 'Init Script',
+                defaultValue: '',
+                options: {
+                    component: 'text-field',
+                },
+                disabled: false,
+                rules: { required: true },
+            },
+            {
+                fieldName: 'KEEP_CONVERSATION_HISTORY',
+                label: 'Keep Conversation History',
+                defaultValue: 'false',
+                options: {
+                    component: 'select',
+                    options: [
+                        {
+                            display: 'true',
+                            value: 'true',
+                        },
+                        {
+                            display: 'false',
+                            value: 'false',
+                        },
+                    ],
+                },
+                disabled: false,
+                rules: { required: true },
+            },
+            {
+                fieldName: 'KEEP_INPUT_OUTPUT',
+                label: 'Record Questions and Responses',
+                defaultValue: 'false',
+                options: {
+                    component: 'select',
+                    options: [
+                        {
+                            display: 'true',
+                            value: 'true',
+                        },
+                        {
+                            display: 'false',
+                            value: 'false',
+                        },
+                    ],
+                },
+                disabled: false,
+                rules: { required: true },
+            },
+        ],
+    },
+    {
+        name: 'Azure Open AI',
+        fields: [
+            {
                 fieldName: 'NAME',
                 label: 'Name',
                 defaultValue: '',
@@ -147,11 +232,47 @@ export const MODEL_FORMS: EngineFields = [
                 rules: { required: true },
             },
             {
+                fieldName: 'MODEL_TYPE',
+                label: 'Type',
+                defaultValue: 'OPEN_AI',
+                options: {
+                    component: 'select',
+                    options: [
+                        {
+                            display: 'Open AI',
+                            value: 'OPEN_AI',
+                        },
+                    ],
+                },
+                disabled: false,
+                rules: { required: true },
+            },
+            {
                 fieldName: 'OPEN_AI_KEY',
-                label: 'Open AI Key',
+                label: 'Azure Open AI Key',
                 defaultValue: '',
                 options: {
                     component: 'password',
+                },
+                disabled: false,
+                rules: { required: true },
+            },
+            {
+                fieldName: 'MODEL',
+                label: 'Deployment Name',
+                defaultValue: '',
+                options: {
+                    component: 'text-field',
+                },
+                disabled: false,
+                rules: { required: true },
+            },
+            {
+                fieldName: 'ENDPOINT',
+                label: 'Azure Endpoint',
+                defaultValue: '',
+                options: {
+                    component: 'text-field',
                 },
                 disabled: false,
                 rules: { required: true },
@@ -222,6 +343,16 @@ export const MODEL_FORMS: EngineFields = [
         name: 'Claude',
         fields: [
             {
+                fieldName: 'NAME',
+                label: 'Name',
+                defaultValue: '',
+                options: {
+                    component: 'text-field',
+                },
+                disabled: false,
+                rules: { required: true },
+            },
+            {
                 fieldName: 'MODEL',
                 label: 'Model',
                 defaultValue: 'Claude',
@@ -243,16 +374,6 @@ export const MODEL_FORMS: EngineFields = [
                             value: 'OPEN_AI',
                         },
                     ],
-                },
-                disabled: false,
-                rules: { required: true },
-            },
-            {
-                fieldName: 'NAME',
-                label: 'Name',
-                defaultValue: '',
-                options: {
-                    component: 'text-field',
                 },
                 disabled: false,
                 rules: { required: true },
@@ -333,6 +454,16 @@ export const MODEL_FORMS: EngineFields = [
         name: 'Wizard 13B',
         fields: [
             {
+                fieldName: 'NAME',
+                label: 'Name',
+                defaultValue: '',
+                options: {
+                    component: 'text-field',
+                },
+                disabled: false,
+                rules: { required: true },
+            },
+            {
                 fieldName: 'MODEL',
                 label: 'Model',
                 defaultValue: 'Wizard 13B',
@@ -354,16 +485,6 @@ export const MODEL_FORMS: EngineFields = [
                             value: 'TEXT_GENERATION',
                         },
                     ],
-                },
-                disabled: false,
-                rules: { required: true },
-            },
-            {
-                fieldName: 'NAME',
-                label: 'Name',
-                defaultValue: '',
-                options: {
-                    component: 'text-field',
                 },
                 disabled: false,
                 rules: { required: true },
@@ -444,6 +565,16 @@ export const MODEL_FORMS: EngineFields = [
         name: 'Llama2 7B',
         fields: [
             {
+                fieldName: 'NAME',
+                label: 'Name',
+                defaultValue: '',
+                options: {
+                    component: 'text-field',
+                },
+                disabled: false,
+                rules: { required: true },
+            },
+            {
                 fieldName: 'MODEL',
                 label: 'Model',
                 defaultValue: 'lmsys/vicuna-7b-v1.5',
@@ -465,16 +596,6 @@ export const MODEL_FORMS: EngineFields = [
                             value: 'TEXT_GENERATION',
                         },
                     ],
-                },
-                disabled: false,
-                rules: { required: true },
-            },
-            {
-                fieldName: 'NAME',
-                label: 'Name',
-                defaultValue: '',
-                options: {
-                    component: 'text-field',
                 },
                 disabled: false,
                 rules: { required: true },
@@ -555,6 +676,16 @@ export const MODEL_FORMS: EngineFields = [
         name: 'Llama2 13B',
         fields: [
             {
+                fieldName: 'NAME',
+                label: 'Name',
+                defaultValue: '',
+                options: {
+                    component: 'text-field',
+                },
+                disabled: false,
+                rules: { required: true },
+            },
+            {
                 fieldName: 'MODEL',
                 label: 'Model',
                 defaultValue: 'Llama2 13B',
@@ -576,16 +707,6 @@ export const MODEL_FORMS: EngineFields = [
                             value: 'TEXT_GENERATION',
                         },
                     ],
-                },
-                disabled: false,
-                rules: { required: true },
-            },
-            {
-                fieldName: 'NAME',
-                label: 'Name',
-                defaultValue: '',
-                options: {
-                    component: 'text-field',
                 },
                 disabled: false,
                 rules: { required: true },
@@ -666,6 +787,16 @@ export const MODEL_FORMS: EngineFields = [
         name: 'Llama2 70B',
         fields: [
             {
+                fieldName: 'NAME',
+                label: 'Name',
+                defaultValue: '',
+                options: {
+                    component: 'text-field',
+                },
+                disabled: false,
+                rules: { required: true },
+            },
+            {
                 fieldName: 'MODEL',
                 label: 'Model',
                 defaultValue: 'Llama2 70B',
@@ -687,16 +818,6 @@ export const MODEL_FORMS: EngineFields = [
                             value: 'TEXT_GENERATION',
                         },
                     ],
-                },
-                disabled: false,
-                rules: { required: true },
-            },
-            {
-                fieldName: 'NAME',
-                label: 'Name',
-                defaultValue: '',
-                options: {
-                    component: 'text-field',
                 },
                 disabled: false,
                 rules: { required: true },
@@ -777,6 +898,16 @@ export const MODEL_FORMS: EngineFields = [
         name: 'Falcon',
         fields: [
             {
+                fieldName: 'NAME',
+                label: 'Name',
+                defaultValue: '',
+                options: {
+                    component: 'text-field',
+                },
+                disabled: false,
+                rules: { required: true },
+            },
+            {
                 fieldName: 'MODEL',
                 label: 'Model',
                 defaultValue: 'Falcon',
@@ -798,16 +929,6 @@ export const MODEL_FORMS: EngineFields = [
                             value: 'TEXT_GENERATION',
                         },
                     ],
-                },
-                disabled: false,
-                rules: { required: true },
-            },
-            {
-                fieldName: 'NAME',
-                label: 'Name',
-                defaultValue: '',
-                options: {
-                    component: 'text-field',
                 },
                 disabled: false,
                 rules: { required: true },
@@ -888,6 +1009,16 @@ export const MODEL_FORMS: EngineFields = [
         name: 'StableBeluga2',
         fields: [
             {
+                fieldName: 'NAME',
+                label: 'Name',
+                defaultValue: '',
+                options: {
+                    component: 'text-field',
+                },
+                disabled: false,
+                rules: { required: true },
+            },
+            {
                 fieldName: 'MODEL',
                 label: 'Model',
                 defaultValue: 'StableBeluga2',
@@ -909,16 +1040,6 @@ export const MODEL_FORMS: EngineFields = [
                             value: 'TEXT_GENERATION',
                         },
                     ],
-                },
-                disabled: false,
-                rules: { required: true },
-            },
-            {
-                fieldName: 'NAME',
-                label: 'Name',
-                defaultValue: '',
-                options: {
-                    component: 'text-field',
                 },
                 disabled: false,
                 rules: { required: true },
@@ -999,6 +1120,16 @@ export const MODEL_FORMS: EngineFields = [
         name: 'Guanaco',
         fields: [
             {
+                fieldName: 'NAME',
+                label: 'Name',
+                defaultValue: '',
+                options: {
+                    component: 'text-field',
+                },
+                disabled: false,
+                rules: { required: true },
+            },
+            {
                 fieldName: 'MODEL',
                 label: 'Model',
                 defaultValue: 'Guanaco',
@@ -1020,16 +1151,6 @@ export const MODEL_FORMS: EngineFields = [
                             value: 'TEXT_GENERATION',
                         },
                     ],
-                },
-                disabled: false,
-                rules: { required: true },
-            },
-            {
-                fieldName: 'NAME',
-                label: 'Name',
-                defaultValue: '',
-                options: {
-                    component: 'text-field',
                 },
                 disabled: false,
                 rules: { required: true },
@@ -1110,6 +1231,16 @@ export const MODEL_FORMS: EngineFields = [
         name: 'Vicuna',
         fields: [
             {
+                fieldName: 'NAME',
+                label: 'Name',
+                defaultValue: '',
+                options: {
+                    component: 'text-field',
+                },
+                disabled: false,
+                rules: { required: true },
+            },
+            {
                 fieldName: 'MODEL',
                 label: 'Model',
                 defaultValue: 'Vicuna',
@@ -1131,16 +1262,6 @@ export const MODEL_FORMS: EngineFields = [
                             value: 'TEXT_GENERATION',
                         },
                     ],
-                },
-                disabled: false,
-                rules: { required: true },
-            },
-            {
-                fieldName: 'NAME',
-                label: 'Name',
-                defaultValue: '',
-                options: {
-                    component: 'text-field',
                 },
                 disabled: false,
                 rules: { required: true },
@@ -1221,6 +1342,16 @@ export const MODEL_FORMS: EngineFields = [
         name: 'Mosaic ML',
         fields: [
             {
+                fieldName: 'NAME',
+                label: 'Name',
+                defaultValue: '',
+                options: {
+                    component: 'text-field',
+                },
+                disabled: false,
+                rules: { required: true },
+            },
+            {
                 fieldName: 'MODEL',
                 label: 'Model',
                 defaultValue: 'Mosaic ML',
@@ -1242,16 +1373,6 @@ export const MODEL_FORMS: EngineFields = [
                             value: 'TEXT_GENERATION',
                         },
                     ],
-                },
-                disabled: false,
-                rules: { required: true },
-            },
-            {
-                fieldName: 'NAME',
-                label: 'Name',
-                defaultValue: '',
-                options: {
-                    component: 'text-field',
                 },
                 disabled: false,
                 rules: { required: true },
@@ -1332,6 +1453,16 @@ export const MODEL_FORMS: EngineFields = [
         name: 'Dolly',
         fields: [
             {
+                fieldName: 'NAME',
+                label: 'Name',
+                defaultValue: '',
+                options: {
+                    component: 'text-field',
+                },
+                disabled: false,
+                rules: { required: true },
+            },
+            {
                 fieldName: 'MODEL',
                 label: 'Model',
                 defaultValue: 'Dolly',
@@ -1353,16 +1484,6 @@ export const MODEL_FORMS: EngineFields = [
                             value: 'TEXT_GENERATION',
                         },
                     ],
-                },
-                disabled: false,
-                rules: { required: true },
-            },
-            {
-                fieldName: 'NAME',
-                label: 'Name',
-                defaultValue: '',
-                options: {
-                    component: 'text-field',
                 },
                 disabled: false,
                 rules: { required: true },
@@ -1443,6 +1564,16 @@ export const MODEL_FORMS: EngineFields = [
         name: 'Replit code model – 3b',
         fields: [
             {
+                fieldName: 'NAME',
+                label: 'Name',
+                defaultValue: '',
+                options: {
+                    component: 'text-field',
+                },
+                disabled: false,
+                rules: { required: true },
+            },
+            {
                 fieldName: 'MODEL',
                 label: 'Model',
                 defaultValue: 'Replit code model – 3b',
@@ -1464,16 +1595,6 @@ export const MODEL_FORMS: EngineFields = [
                             value: 'TEXT_GENERATION',
                         },
                     ],
-                },
-                disabled: false,
-                rules: { required: true },
-            },
-            {
-                fieldName: 'NAME',
-                label: 'Name',
-                defaultValue: '',
-                options: {
-                    component: 'text-field',
                 },
                 disabled: false,
                 rules: { required: true },
@@ -1554,6 +1675,16 @@ export const MODEL_FORMS: EngineFields = [
         name: 'Flan T5 Large',
         fields: [
             {
+                fieldName: 'NAME',
+                label: 'Name',
+                defaultValue: '',
+                options: {
+                    component: 'text-field',
+                },
+                disabled: false,
+                rules: { required: true },
+            },
+            {
                 fieldName: 'MODEL',
                 label: 'Model',
                 defaultValue: 'Flan T5 Large',
@@ -1575,16 +1706,6 @@ export const MODEL_FORMS: EngineFields = [
                             value: 'TEXT_GENERATION',
                         },
                     ],
-                },
-                disabled: false,
-                rules: { required: true },
-            },
-            {
-                fieldName: 'NAME',
-                label: 'Name',
-                defaultValue: '',
-                options: {
-                    component: 'text-field',
                 },
                 disabled: false,
                 rules: { required: true },
@@ -1665,6 +1786,16 @@ export const MODEL_FORMS: EngineFields = [
         name: 'Flan T5 XXL',
         fields: [
             {
+                fieldName: 'NAME',
+                label: 'Name',
+                defaultValue: '',
+                options: {
+                    component: 'text-field',
+                },
+                disabled: false,
+                rules: { required: true },
+            },
+            {
                 fieldName: 'MODEL',
                 label: 'Model',
                 defaultValue: 'Flan T5 XXL',
@@ -1686,16 +1817,6 @@ export const MODEL_FORMS: EngineFields = [
                             value: 'TEXT_GENERATION',
                         },
                     ],
-                },
-                disabled: false,
-                rules: { required: true },
-            },
-            {
-                fieldName: 'NAME',
-                label: 'Name',
-                defaultValue: '',
-                options: {
-                    component: 'text-field',
                 },
                 disabled: false,
                 rules: { required: true },
@@ -1776,6 +1897,16 @@ export const MODEL_FORMS: EngineFields = [
         name: 'Bert',
         fields: [
             {
+                fieldName: 'NAME',
+                label: 'Name',
+                defaultValue: '',
+                options: {
+                    component: 'text-field',
+                },
+                disabled: false,
+                rules: { required: true },
+            },
+            {
                 fieldName: 'MODEL',
                 label: 'Model',
                 defaultValue: 'Bert',
@@ -1797,16 +1928,6 @@ export const MODEL_FORMS: EngineFields = [
                             value: 'TEXT_GENERATION',
                         },
                     ],
-                },
-                disabled: false,
-                rules: { required: true },
-            },
-            {
-                fieldName: 'NAME',
-                label: 'Name',
-                defaultValue: '',
-                options: {
-                    component: 'text-field',
                 },
                 disabled: false,
                 rules: { required: true },
@@ -1887,6 +2008,16 @@ export const MODEL_FORMS: EngineFields = [
         name: 'Eleuther GPTJ',
         fields: [
             {
+                fieldName: 'NAME',
+                label: 'Name',
+                defaultValue: '',
+                options: {
+                    component: 'text-field',
+                },
+                disabled: false,
+                rules: { required: true },
+            },
+            {
                 fieldName: 'MODEL',
                 label: 'Model',
                 defaultValue: 'Eleuther GPTJ',
@@ -1908,16 +2039,6 @@ export const MODEL_FORMS: EngineFields = [
                             value: 'TEXT_GENERATION',
                         },
                     ],
-                },
-                disabled: false,
-                rules: { required: true },
-            },
-            {
-                fieldName: 'NAME',
-                label: 'Name',
-                defaultValue: '',
-                options: {
-                    component: 'text-field',
                 },
                 disabled: false,
                 rules: { required: true },
@@ -1998,6 +2119,16 @@ export const MODEL_FORMS: EngineFields = [
         name: 'Wizard Coder',
         fields: [
             {
+                fieldName: 'NAME',
+                label: 'Name',
+                defaultValue: '',
+                options: {
+                    component: 'text-field',
+                },
+                disabled: false,
+                rules: { required: true },
+            },
+            {
                 fieldName: 'MODEL',
                 label: 'Model',
                 defaultValue: 'WizardLM/WizardCoder-15B-V1.0',
@@ -2019,16 +2150,6 @@ export const MODEL_FORMS: EngineFields = [
                             value: 'TEXT_GENERATION',
                         },
                     ],
-                },
-                disabled: false,
-                rules: { required: true },
-            },
-            {
-                fieldName: 'NAME',
-                label: 'Name',
-                defaultValue: '',
-                options: {
-                    component: 'text-field',
                 },
                 disabled: false,
                 rules: { required: true },
@@ -2109,6 +2230,16 @@ export const MODEL_FORMS: EngineFields = [
         name: 'Orca',
         fields: [
             {
+                fieldName: 'NAME',
+                label: 'Name',
+                defaultValue: '',
+                options: {
+                    component: 'text-field',
+                },
+                disabled: false,
+                rules: { required: true },
+            },
+            {
                 fieldName: 'MODEL',
                 label: 'Model',
                 defaultValue: 'Orca',
@@ -2130,16 +2261,6 @@ export const MODEL_FORMS: EngineFields = [
                             value: 'EMBEDDED',
                         },
                     ],
-                },
-                disabled: false,
-                rules: { required: true },
-            },
-            {
-                fieldName: 'NAME',
-                label: 'Name',
-                defaultValue: '',
-                options: {
-                    component: 'text-field',
                 },
                 disabled: false,
                 rules: { required: true },
@@ -2220,6 +2341,16 @@ export const MODEL_FORMS: EngineFields = [
         name: 'Stablity AI',
         fields: [
             {
+                fieldName: 'NAME',
+                label: 'Name',
+                defaultValue: '',
+                options: {
+                    component: 'text-field',
+                },
+                disabled: false,
+                rules: { required: true },
+            },
+            {
                 fieldName: 'MODEL',
                 label: 'Model',
                 defaultValue: '',
@@ -2241,16 +2372,6 @@ export const MODEL_FORMS: EngineFields = [
                             value: 'EMBEDDED',
                         },
                     ],
-                },
-                disabled: false,
-                rules: { required: true },
-            },
-            {
-                fieldName: 'NAME',
-                label: 'Name',
-                defaultValue: '',
-                options: {
-                    component: 'text-field',
                 },
                 disabled: false,
                 rules: { required: true },
@@ -2331,6 +2452,16 @@ export const MODEL_FORMS: EngineFields = [
         name: 'Replit Code Model',
         fields: [
             {
+                fieldName: 'NAME',
+                label: 'Name',
+                defaultValue: '',
+                options: {
+                    component: 'text-field',
+                },
+                disabled: false,
+                rules: { required: true },
+            },
+            {
                 fieldName: 'MODEL',
                 label: 'Model',
                 defaultValue: '',
@@ -2352,16 +2483,6 @@ export const MODEL_FORMS: EngineFields = [
                             value: 'EMBEDDED',
                         },
                     ],
-                },
-                disabled: false,
-                rules: { required: true },
-            },
-            {
-                fieldName: 'NAME',
-                label: 'Name',
-                defaultValue: '',
-                options: {
-                    component: 'text-field',
                 },
                 disabled: false,
                 rules: { required: true },

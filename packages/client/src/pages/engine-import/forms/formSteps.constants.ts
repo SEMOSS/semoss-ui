@@ -48,6 +48,7 @@ import SFTP from '@/assets/img/SFTP.png';
 
 //Commercial Models
 import OPEN_AI from '@/assets/img/OPEN_AI.png';
+import AZURE_OPEN_AI from '@/assets/img/OPEN_AI.png';
 import CLAUDE from '@/assets/img/CLAUDE_AI.png';
 
 //Local Models
@@ -301,6 +302,10 @@ export const stepsTwo = {
             disable: false,
         },
         {
+            name: 'Azure Open AI',
+            disable: false,
+        },
+        {
             name: 'Claude',
             disable: true,
         },
@@ -443,6 +448,7 @@ export const IconDBMapper = {
     SFTP: SFTP,
 
     'Open AI': OPEN_AI,
+    'Azure Open AI': AZURE_OPEN_AI,
     Claude: CLAUDE,
 
     'Wizard 13B': BRAIN,
