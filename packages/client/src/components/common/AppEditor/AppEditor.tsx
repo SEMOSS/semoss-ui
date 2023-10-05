@@ -65,17 +65,8 @@ const StyledCollapseTrigger = styled('div')(({ theme }) => ({
 }));
 
 const StyledCollapse = styled(Collapse)(({ theme }) => ({
-    padding: theme.spacing(1),
-    // '.MuiCollapse-root': {
-    //     padding: '0px',
-    //     margin: '0px',
-    // },
-    // zIndex: 9998,
-    // display: 'flex',
-    // flexDirection: 'column',
-    // width: open ? 'calc(20% + 42px)' : '0%',
-    // height: '100%',
-    // border: 'solid',
+    paddingTop: theme.spacing(1),
+    paddingBottom: theme.spacing(1),
 }));
 
 const StyledCollapseContainer = styled('div')(({ theme }) => ({
@@ -87,12 +78,9 @@ const StyledCollapseContainer = styled('div')(({ theme }) => ({
     paddingLeft: theme.spacing(2),
     paddingRight: theme.spacing(2),
     boxShadow: '5px 0 5px -2px rgba(0, 0, 0, 0.04)',
-    // border: 'solid',
-    // border: 'solid green',
 }));
 
 const StyleAppExplorerHeader = styled('div')(({ theme }) => ({
-    // border: 'solid green',
     display: 'flex',
     justifyContent: 'space-between',
     overflow: 'hidden',

@@ -49,13 +49,15 @@ const StyledLeftPanel = styled('div')(({ theme }) => ({
     justifyContent: 'space-between',
 }));
 
-const StyledRightPanel = styled('div')(({ theme }) => ({}));
+const StyledRightPanel = styled('div')(({ theme }) => ({
+    position: 'relative',
+}));
 
 const StyledVertDivider = styled('div')(({ theme }) => ({
-    width: theme.spacing(0.25),
+    width: theme.spacing(0.5),
     background: theme.palette.divider,
     '&:hover': {
-        cursor: 'ew-resize',
+        cursor: 'col-resize',
     },
 }));
 
@@ -94,6 +96,7 @@ export const AppPage = observer(() => {
     const [view, setView] = useState<
         'code-editor' | 'settings' | 'permissions' | ''
     >('');
+    const [transparentOverlay, setTransparentOverlay] = useState(false);
 
     /**
      * Effects
@@ -208,6 +211,8 @@ export const AppPage = observer(() => {
         if (view === 'code-editor' && parsedLeftPanelWidth < 15) {
             return;
         }
+        // Transparency Overlay allows dragging over iframe and removal of event listener
+        setTransparentOverlay(true);
 
         setLeftPanelWidth(newLeftPanelWidthPercentage);
         setRightPanelWidth(newRightPanelWidthPercentage);
@@ -277,6 +282,7 @@ export const AppPage = observer(() => {
                                                     'mousemove',
                                                     handleHorizontalResize,
                                                 );
+                                                setTransparentOverlay(false);
                                             },
                                         );
                                     }}
@@ -284,11 +290,24 @@ export const AppPage = observer(() => {
                             </ThemeProvider>
                         </StyledLeftPanel>
                     )}
-
+                    {/* Right Panel that Renders our App */}
                     <StyledRightPanel
                         sx={{ width: !editMode ? '100%' : rightPanelWidth }}
                     >
-                        {/* Right Panel that Renders our App */}
+                        {/* Allows you to drag over the iframe, if you remove this resizing is buggy */}
+                        {transparentOverlay ? (
+                            <div
+                                style={{
+                                    width: '100%',
+                                    height: '100%',
+                                    position: 'absolute',
+                                    top: '0',
+                                    left: '0',
+                                    opacity: '0.8',
+                                    zIndex: 9999,
+                                }}
+                            ></div>
+                        ) : null}
                         <AppRenderer
                             key={counter}
                             appId={appId}
