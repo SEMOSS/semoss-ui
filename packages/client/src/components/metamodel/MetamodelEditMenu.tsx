@@ -2,6 +2,8 @@ import React, { useState, useRef, useEffect } from 'react';
 import { Node } from 'react-flow-renderer';
 import { MetamodelNode } from './MetamodelNode';
 import { Close, ExpandMore, KeyRounded } from '@mui/icons-material';
+import { useForm, Controller, useFieldArray, useWatch } from 'react-hook-form';
+import { getDefaultOptions } from './utility';
 
 import {
     styled,
@@ -9,10 +11,17 @@ import {
     Typography,
     IconButton,
     TextField,
+    Table,
+    Paper,
+    Button,
+    Switch,
+    FormControlLabel,
+    Select,
 } from '@semoss/ui';
 
 import { useMetamodel } from '@/hooks';
 import { MetamodelContext, MetamodelContextType } from '@/contexts';
+import { TableContainer } from '@mui/material';
 
 // type MetamodelNode = Node<React.ComponentProps<typeof MetamodelNode>['data']>;
 
@@ -30,7 +39,11 @@ import { MetamodelContext, MetamodelContextType } from '@/contexts';
  */
 
 export const MetamodelEditMenu = ({ node }) => {
-    // const nodeData = watch('NODE');
+    const [dataTypeOptions, setDataTypeOptions] = useState([]);
+
+    const { selectedNodeId, onSelectNodeId, isInteractive, updateData } =
+        useMetamodel();
+
     const [nodeData, setNodeData] = useState({
         data: {
             name: '',
@@ -41,14 +54,48 @@ export const MetamodelEditMenu = ({ node }) => {
                     physicalType: '',
                     specificFormat: '',
                     type: '',
+                    isPrimary: '',
+                    allowNull: '',
+                    isForeign: '',
                 },
             ],
         },
     });
 
+    const [canEdit, setCanEdit] = useState(false);
+
+    const {
+        control,
+        watch,
+        setValue,
+        getValues,
+        formState: { isDirty, dirtyFields },
+    } = useForm({
+        defaultValues: {
+            name: node?.data.name,
+            COLUMNS: node?.data.properties,
+        },
+    });
+    console.log('nodeData inside metamodel edit: ', nodeData);
+    const { fields } = useFieldArray({
+        control,
+        name: 'COLUMNS',
+    });
+
     useEffect(() => {
         setNodeData(node);
+        if (node?.data) {
+            setValue('COLUMNS', node.data.properties);
+        }
     }, [node]);
+
+    useEffect(() => {
+        const temp = getDefaultOptions();
+        setDataTypeOptions(temp);
+    }, []);
+
+    console.log('fields are: ', fields);
+    // const nodeData = watch('NODE');
 
     // get the metamodel nodes
 
@@ -332,6 +379,34 @@ export const MetamodelEditMenu = ({ node }) => {
         border: '1px solid var(--light-other-divider, rgba(0, 0, 0, 0.10))',
     }));
 
+    const StyledEditTextCell = styled('div')(() => ({
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'flex-start',
+        alignSelf: 'stretch',
+        gap: '3px',
+    }));
+
+    const StyledEditTextField = styled(TextField)(() => ({
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'flex-start',
+        gap: '3px',
+        alignSelf: 'stretch',
+    }));
+
+    const StyledSelect = styled(Select)(() => ({
+        // minWidth: '126px',
+        // width: '126px',
+        // alignmentSelf: 'stretch',
+    }));
+
+    // const StyledSelect = styled(Select)(() => ({
+    //     minWidth: '126px',
+    //     // width: '126px',
+    //     alignmentSelf: 'stretch',
+    // }));
+
     /**
      * EDIT LOGIC
      *
@@ -340,135 +415,320 @@ export const MetamodelEditMenu = ({ node }) => {
 
     /** Reset Draggable */
     return (
-        <StyledContainer>
-            <StyledHeaderContainer>
-                <StyledHeader>
-                    <StyledHeaderText>
-                        <StyledHeaderTitle variant="body1">
-                            Properties
-                        </StyledHeaderTitle>
-                        <StyledHeaderInstruction variant="body2">
-                            Update table and column properties
-                        </StyledHeaderInstruction>
-                    </StyledHeaderText>
-                    <StyledHeaderIconContainer>
-                        <StyledHeaderIconButton>
-                            <Close />
-                        </StyledHeaderIconButton>
-                    </StyledHeaderIconContainer>
-                </StyledHeader>
-            </StyledHeaderContainer>
-            <StyledAccordion>
-                <StyledAccordionTrigger>
-                    <StyledAccordionTriggerText>
-                        <StyledAccordionTriggerLabel>
-                            <StyledAccordionTriggerTypography variant="subtitle2">
-                                Table
-                            </StyledAccordionTriggerTypography>
-                        </StyledAccordionTriggerLabel>
-                        <StyledEndIconContainer>
-                            <StyledHeaderIconButton>
-                                <ExpandMore />
-                            </StyledHeaderIconButton>
-                        </StyledEndIconContainer>
-                    </StyledAccordionTriggerText>
-                </StyledAccordionTrigger>
-            </StyledAccordion>
-            <StyledMenuItem>
-                <TextField variant={'outlined'} value={'Schema'}></TextField>
-            </StyledMenuItem>
-            <StyledMenuItem>
-                <TextField
-                    variant={'outlined'}
-                    label="Name"
-                    value={nodeData && nodeData.data ? nodeData.data.name : ''}
-                ></TextField>
-            </StyledMenuItem>
-            <StyledMenuItem>
-                <TextField
-                    variant={'outlined'}
-                    label="Description"
-                    value={'description'}
-                ></TextField>
-            </StyledMenuItem>
-            <StyledAccordion>
-                <StyledAccordionTrigger>
-                    <StyledAccordionTriggerText>
-                        <StyledAccordionTriggerLabel>
-                            <StyledAccordionTriggerTypography variant="subtitle2">
-                                Columns
-                            </StyledAccordionTriggerTypography>
-                        </StyledAccordionTriggerLabel>
-                        <StyledEndIconContainer>
-                            <StyledHeaderIconButton>
-                                <ExpandMore />
-                            </StyledHeaderIconButton>
-                        </StyledEndIconContainer>
-                    </StyledAccordionTriggerText>
-                </StyledAccordionTrigger>
-            </StyledAccordion>
-            <StyledMenuItem>
-                {nodeData && nodeData.data ? (
-                    nodeData.data.properties.map((p, idx) => {
-                        return (
-                            <>
-                                <StyledMetamodelCardItem
-                                    key={p.id}
-                                    isPrimary={idx === 0 ? true : false}
-                                >
-                                    <StyledMetamodelCardItemCell cellPosition="first">
-                                        <StyledMetamodelCardItemCellText variant="body2">
-                                            {p.name
-                                                .toLowerCase()
-                                                .replaceAll(' ', '_')}
-                                        </StyledMetamodelCardItemCellText>
-                                    </StyledMetamodelCardItemCell>
+        <TableContainer sx={{ width: '1100px' }} component={Paper}>
+            <FormControlLabel
+                sx={{ marginLeft: '9px', marginTop: '9px' }}
+                control={<Switch onChange={() => setCanEdit(!canEdit)} />}
+                label="Edit"
+            />
+            <Button
+                variant="contained"
+                sx={{ marginLeft: '9px', marginTop: '9px' }}
+                disabled={!isDirty}
+            >
+                Save Changes
+            </Button>
+            <Table>
+                <Table.Head>
+                    <Table.Row>
+                        <Table.Cell>ID</Table.Cell>
+                        <Table.Cell>Name</Table.Cell>
+                        {/* <Table.Cell>Alias</Table.Cell> */}
+                        {/* <Table.Cell>Description</Table.Cell> */}
+                        <Table.Cell>Data Type</Table.Cell>
+                        <Table.Cell>Primary Key</Table.Cell>
+                        <Table.Cell>Allow null</Table.Cell>
+                        <Table.Cell>Foreign Key</Table.Cell>
+                    </Table.Row>
+                </Table.Head>
+                <Table.Body>
+                    {fields.length
+                        ? fields.map((col, colIdx) => (
+                              <Table.Row key={col.name}>
+                                  <Table.Cell>{colIdx}</Table.Cell>
+                                  <Table.Cell component="th" scope="row">
+                                      {/* <StyledEditTextCell> */}
+                                      <Controller
+                                          name={`COLUMNS.${colIdx}.name`}
+                                          control={control}
+                                          render={({ field }) => {
+                                              return (
+                                                  <StyledEditTextField
+                                                      size="small"
+                                                      sx={{
+                                                          styleOverrides: {
+                                                              root: {
+                                                                  borderRadius:
+                                                                      '8px',
+                                                                  border: '1px solid var(--light-other-outlined-border-23-p, rgba(0, 0, 0, 0.23))',
+                                                              },
+                                                          },
+                                                      }}
+                                                      key={field.id}
+                                                      variant="outlined"
+                                                      disabled={!canEdit}
+                                                      value={
+                                                          field.value
+                                                              ? field.value
+                                                              : ''
+                                                      }
+                                                      onChange={(event) =>
+                                                          field.onChange(event)
+                                                      }
+                                                      onBlur={(e) => {
+                                                          const tempNodeData =
+                                                              nodeData;
 
-                                    <StyledMetamodelCardItemCell cellPosition="second">
-                                        <StyledColumnTypeText
-                                            variant="body2"
-                                            columnDataType={
-                                                p.type ? p.type : ''
-                                            }
-                                        >
-                                            {p.type ? p.type.toLowerCase() : ''}
-                                        </StyledColumnTypeText>
-                                    </StyledMetamodelCardItemCell>
+                                                          tempNodeData.data.name =
+                                                              e.target.value;
+                                                          setNodeData({
+                                                              ...tempNodeData,
+                                                          });
+                                                      }}
+                                                  />
+                                              );
+                                          }}
+                                      />
+                                      {/* </StyledEditTextCell> */}
+                                      {/* {col.name} */}
+                                  </Table.Cell>
+                                  <Table.Cell>
+                                      <Controller
+                                          control={control}
+                                          name={`COLUMNS.${colIdx}.type`}
+                                          render={({ field }) => (
+                                              <StyledSelect
+                                                  key={`${col.id}_type`}
+                                                  fullWidth
+                                                  className="nodrag"
+                                                  disabled={!canEdit}
+                                                  value={
+                                                      field.value
+                                                          ? field.value
+                                                          : ''
+                                                  }
+                                                  onChange={(event) => {
+                                                      field.onChange(event);
 
-                                    {idx === 0 || idx === 1 ? (
-                                        <StyledMetamodelCardItemCell cellPosition="third">
-                                            <StyledKeyIconContainer>
-                                                <StyledKeyIcon
-                                                    isPrimary={idx === 0}
-                                                />
-                                            </StyledKeyIconContainer>
-                                        </StyledMetamodelCardItemCell>
-                                    ) : null}
-                                </StyledMetamodelCardItem>
-                                {idx === 0 ? <StyledDivider /> : null}
-                            </>
-                        );
-                    })
-                ) : (
-                    <div>Select a table</div>
-                )}
-            </StyledMenuItem>
-            <StyledAccordion>
-                <StyledAccordionTrigger>
-                    <StyledAccordionTriggerText>
-                        <StyledAccordionTriggerLabel>
-                            <StyledAccordionTriggerTypography variant="subtitle2">
-                                Relationships
-                            </StyledAccordionTriggerTypography>
-                        </StyledAccordionTriggerLabel>
-                        <StyledEndIconContainer>
-                            <StyledHeaderIconButton>
-                                <ExpandMore />
-                            </StyledHeaderIconButton>
-                        </StyledEndIconContainer>
-                    </StyledAccordionTriggerText>
-                </StyledAccordionTrigger>
-            </StyledAccordion>
-        </StyledContainer>
+                                                      const tempNodeData =
+                                                          nodeData;
+                                                      tempNodeData.data.properties[
+                                                          colIdx
+                                                      ].type =
+                                                          event.target.value;
+                                                      setNodeData({
+                                                          ...tempNodeData,
+                                                      });
+                                                  }}
+                                              >
+                                                  {dataTypeOptions.map(
+                                                      (option, idx) => (
+                                                          <Select.Item
+                                                              key={`${idx}_first`}
+                                                              value={
+                                                                  option.value
+                                                              }
+                                                          >
+                                                              {option.display}
+                                                          </Select.Item>
+                                                      ),
+                                                  )}
+                                              </StyledSelect>
+                                          )}
+                                      />
+
+                                      {/* {col.type} */}
+                                  </Table.Cell>
+                                  <Table.Cell>
+                                      <Controller
+                                          control={control}
+                                          name={`COLUMNS.${colIdx}.isPrimary`}
+                                          render={({ field }) => (
+                                              <StyledSelect
+                                                  key={`${col.id}_isPrimary`}
+                                                  fullWidth
+                                                  className="nodrag"
+                                                  disabled={!canEdit}
+                                                  value={
+                                                      field.value
+                                                          ? field.value
+                                                          : ''
+                                                  }
+                                                  onChange={(event) => {
+                                                      field.onChange(event);
+
+                                                      const tempNodeData =
+                                                          nodeData;
+                                                      tempNodeData.data.properties[
+                                                          colIdx
+                                                      ].isPrimary =
+                                                          event.target.value;
+                                                      setNodeData({
+                                                          ...tempNodeData,
+                                                      });
+                                                  }}
+                                              >
+                                                  {[
+                                                      {
+                                                          value: 'true',
+                                                          display: 'True',
+                                                      },
+                                                      {
+                                                          value: 'false',
+                                                          display: 'False',
+                                                      },
+                                                  ].map((option, idx) => (
+                                                      <Select.Item
+                                                          key={`${idx}_first`}
+                                                          value={option.value}
+                                                      >
+                                                          {option.display}
+                                                      </Select.Item>
+                                                  ))}
+                                              </StyledSelect>
+                                          )}
+                                      />
+
+                                      {/* {col.type} */}
+                                  </Table.Cell>
+                                  {/* <Table.Cell>True</Table.Cell> */}
+                                  <Table.Cell>False</Table.Cell>
+                                  <Table.Cell>NA</Table.Cell>
+                              </Table.Row>
+                          ))
+                        : null}
+                </Table.Body>
+            </Table>
+        </TableContainer>
+        // <StyledContainer>
+        //     <StyledHeaderContainer>
+        //         <StyledHeader>
+        //             <StyledHeaderText>
+        //                 <StyledHeaderTitle variant="body1">
+        //                     Properties
+        //                 </StyledHeaderTitle>
+        //                 <StyledHeaderInstruction variant="body2">
+        //                     Update table and column properties
+        //                 </StyledHeaderInstruction>
+        //             </StyledHeaderText>
+        //             <StyledHeaderIconContainer>
+        //                 <StyledHeaderIconButton>
+        //                     <Close />
+        //                 </StyledHeaderIconButton>
+        //             </StyledHeaderIconContainer>
+        //         </StyledHeader>
+        //     </StyledHeaderContainer>
+        //     <StyledAccordion>
+        //         <StyledAccordionTrigger>
+        //             <StyledAccordionTriggerText>
+        //                 <StyledAccordionTriggerLabel>
+        //                     <StyledAccordionTriggerTypography variant="subtitle2">
+        //                         Table
+        //                     </StyledAccordionTriggerTypography>
+        //                 </StyledAccordionTriggerLabel>
+        //                 <StyledEndIconContainer>
+        //                     <StyledHeaderIconButton>
+        //                         <ExpandMore />
+        //                     </StyledHeaderIconButton>
+        //                 </StyledEndIconContainer>
+        //             </StyledAccordionTriggerText>
+        //         </StyledAccordionTrigger>
+        //     </StyledAccordion>
+        //     <StyledMenuItem>
+        //         <TextField variant={'outlined'} value={'Schema'}></TextField>
+        //     </StyledMenuItem>
+        //     <StyledMenuItem>
+        //         <TextField
+        //             variant={'outlined'}
+        //             label="Name"
+        //             value={nodeData && nodeData.data ? nodeData.data.name : ''}
+        //         ></TextField>
+        //     </StyledMenuItem>
+        //     <StyledMenuItem>
+        //         <TextField
+        //             variant={'outlined'}
+        //             label="Description"
+        //             value={'description'}
+        //         ></TextField>
+        //     </StyledMenuItem>
+        //     <StyledAccordion>
+        //         <StyledAccordionTrigger>
+        //             <StyledAccordionTriggerText>
+        //                 <StyledAccordionTriggerLabel>
+        //                     <StyledAccordionTriggerTypography variant="subtitle2">
+        //                         Columns
+        //                     </StyledAccordionTriggerTypography>
+        //                 </StyledAccordionTriggerLabel>
+        //                 <StyledEndIconContainer>
+        //                     <StyledHeaderIconButton>
+        //                         <ExpandMore />
+        //                     </StyledHeaderIconButton>
+        //                 </StyledEndIconContainer>
+        //             </StyledAccordionTriggerText>
+        //         </StyledAccordionTrigger>
+        //     </StyledAccordion>
+        //     <StyledMenuItem>
+        //         {nodeData && nodeData.data ? (
+        //             nodeData.data.properties.map((p, idx) => {
+        //                 return (
+        //                     <>
+        //                         <StyledMetamodelCardItem
+        //                             key={p.id}
+        //                             isPrimary={idx === 0 ? true : false}
+        //                         >
+        //                             <StyledMetamodelCardItemCell cellPosition="first">
+        //                                 <StyledMetamodelCardItemCellText variant="body2">
+        //                                     {p.name
+        //                                         .toLowerCase()
+        //                                         .replaceAll(' ', '_')}
+        //                                 </StyledMetamodelCardItemCellText>
+        //                             </StyledMetamodelCardItemCell>
+
+        //                             <StyledMetamodelCardItemCell cellPosition="second">
+        //                                 <StyledColumnTypeText
+        //                                     variant="body2"
+        //                                     columnDataType={
+        //                                         p.type ? p.type : ''
+        //                                     }
+        //                                 >
+        //                                     {p.type ? p.type.toLowerCase() : ''}
+        //                                 </StyledColumnTypeText>
+        //                             </StyledMetamodelCardItemCell>
+
+        //                             {idx === 0 || idx === 1 ? (
+        //                                 <StyledMetamodelCardItemCell cellPosition="third">
+        //                                     <StyledKeyIconContainer>
+        //                                         <StyledKeyIcon
+        //                                             isPrimary={idx === 0}
+        //                                         />
+        //                                     </StyledKeyIconContainer>
+        //                                 </StyledMetamodelCardItemCell>
+        //                             ) : null}
+        //                         </StyledMetamodelCardItem>
+        //                         {idx === 0 ? <StyledDivider /> : null}
+        //                     </>
+        //                 );
+        //             })
+        //         ) : (
+        //             <div>Select a table</div>
+        //         )}
+        //     </StyledMenuItem>
+        //     <StyledAccordion>
+        //         <StyledAccordionTrigger>
+        //             <StyledAccordionTriggerText>
+        //                 <StyledAccordionTriggerLabel>
+        //                     <StyledAccordionTriggerTypography variant="subtitle2">
+        //                         Relationships
+        //                     </StyledAccordionTriggerTypography>
+        //                 </StyledAccordionTriggerLabel>
+        //                 <StyledEndIconContainer>
+        //                     <StyledHeaderIconButton>
+        //                         <ExpandMore />
+        //                     </StyledHeaderIconButton>
+        //                 </StyledEndIconContainer>
+        //             </StyledAccordionTriggerText>
+        //         </StyledAccordionTrigger>
+        //     </StyledAccordion>
+        // </StyledContainer>
     );
 };

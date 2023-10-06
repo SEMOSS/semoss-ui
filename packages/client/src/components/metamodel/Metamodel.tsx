@@ -261,66 +261,80 @@ export const Metamodel = (props: MetamodelProps) => {
         color: 'var(--light-primary-contrast, #FFF)',
     }));
 
-    const reactFlowWidth = `calc(1456px - 245px - 345px)`;
+    /** Need to make the state of the nav (open/closed) available to this Metamodel component to determine width of the reactFlow */
+
+    const reactFlowWidth = `calc(1191px - 300px)`;
 
     return (
         <>
             <MetamodelContext.Provider value={metamodelContext}>
-                <div
-                    style={{ display: 'flex', height: '60vh', width: '100vw' }}
-                >
+                <div style={{ height: '100vh', width: '100vw' }}>
                     <div
                         style={{
-                            width: '245px',
-                            // height: '100%',
-                            height: '60%',
-                            // flexShrink: 0,
-                            overflow: 'auto',
-                        }}
-                    >
-                        <MetamodelNav nodes={formattedNodes} />
-                    </div>
-                    <div
-                        style={{
-                            // flex: 1,
-                            position: 'relative',
-                            width: reactFlowWidth,
-                            minWidth: reactFlowWidth,
-                            overflow: 'hidden',
+                            display: 'flex',
+                            height: '60vh',
+                            width: '100vw',
                         }}
                     >
                         <div
                             style={{
-                                position: 'absolute',
-                                left: '0',
-                                top: '0',
-                                width: reactFlowWidth,
-                                minWidth: reactFlowWidth,
+                                width: '300px',
+                                // height: '100%',
                                 height: '60%',
-                                overflow: 'auto',
+                                // flexShrink: 0,
+                                // overflow: 'auto',
                             }}
                         >
-                            <ReactFlow
-                                defaultNodes={formattedNodes}
-                                defaultEdges={edges}
-                                nodeTypes={nodeTypes}
-                                edgeTypes={edgeTypes}
-                                defaultPosition={[-245, 0]}
-                                fitView={true}
-                                // defaultZoom={10}
+                            <MetamodelNav nodes={formattedNodes} />
+                        </div>
+                        <div
+                            style={{
+                                // flex: 1,
+                                position: 'relative',
+                                width: reactFlowWidth,
+                                minWidth: reactFlowWidth,
+                                overflow: 'hidden',
+                            }}
+                        >
+                            <div
+                                style={{
+                                    position: 'absolute',
+                                    left: '0',
+                                    top: '0',
+                                    width: reactFlowWidth,
+                                    minWidth: reactFlowWidth,
+                                    height: '60%',
+                                    overflow: 'auto',
+                                }}
                             >
-                                <Background variant={BackgroundVariant.Dots} />
-                                <MiniMap />
-                                <Controls />
-                            </ReactFlow>
+                                <ReactFlow
+                                    defaultNodes={formattedNodes}
+                                    defaultEdges={edges}
+                                    nodeTypes={nodeTypes}
+                                    edgeTypes={edgeTypes}
+                                    defaultPosition={[-300, 0]}
+                                    fitView={true}
+                                    // defaultZoom={10}
+                                >
+                                    <Background
+                                        variant={BackgroundVariant.Dots}
+                                    />
+                                    <MiniMap
+                                        nodeStrokeWidth={3}
+                                        // zoomable={true}
+                                        // pannable={true}
+                                    />
+                                    <Controls />
+                                </ReactFlow>
+                            </div>
                         </div>
                     </div>
                     <div
                         style={{
                             width: '345px',
-                            height: '100%',
+                            height: '300px',
                             // flexShrink: 0,
-                            overflow: 'auto',
+                            // overflow: 'auto',
                         }}
                     >
                         <MetamodelEditMenu

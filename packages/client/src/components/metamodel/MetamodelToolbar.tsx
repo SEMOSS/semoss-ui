@@ -50,7 +50,7 @@ const StyledComponent = styled('div')(({ theme }) => {
         height: '64px',
         alignItems: 'center',
         alignSelf: 'stretch',
-        borderRadius: shape.borderRadiusLg,
+        borderRadius: shape.borderRadiusNone,
         background: theme.palette.background.paper,
         boxShadow: '0px 5px 22px 0px rgba(0, 0, 0, 0.06)',
     };
