@@ -16,13 +16,18 @@
  * ---------------------------*------------------------------------
  *
  */
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useParams } from 'react-router-dom';
 import { observer } from 'mobx-react-lite';
 import { AppContext, AppContextType } from '@/contexts';
 import { useRootStore } from '@/hooks';
 import { AppEditorActions, Navbar } from '@/components/ui';
-import { AppRenderer, AppConsole, AppEditorPanel } from '@/components/app';
+import {
+    AppRenderer,
+    AppConsole,
+    AppPortal,
+    AppEditorPanel,
+} from '@/components/app';
 import { styled, Button, ThemeProvider } from '@semoss/ui';
 
 // Styles --------------------------------------*
@@ -84,7 +89,7 @@ const StyledBottomPanel = styled('div')(({ theme }) => ({
 }));
 
 export const AppPage = observer(() => {
-    const { monolithStore, configStore } = useRootStore();
+    const { monolithStore } = useRootStore();
 
     // App ID Needed for pixel calls
     const { appId } = useParams();
@@ -93,6 +98,7 @@ export const AppPage = observer(() => {
     const [editMode, setEditMode] = useState<boolean>(false);
     const [isLoading, setIsLoading] = useState(false);
     const [counter, setCounter] = useState(0);
+    const [showPortal, setShowPortal] = useState(false);
     const [view, setView] = useState<
         'code-editor' | 'settings' | 'permissions' | ''
     >('');
@@ -218,6 +224,18 @@ export const AppPage = observer(() => {
         setRightPanelWidth(newRightPanelWidthPercentage);
     };
 
+    const open = useCallback(() => {
+        setShowPortal(true);
+
+        // Minimize App view in traditional view
+        setLeftPanelWidth('80%');
+        setRightPanelWidth('20%');
+    }, []);
+
+    const close = useCallback(() => {
+        setShowPortal(false);
+    }, []);
+
     /**
      * Value to pass for App Context
      */
@@ -251,8 +269,7 @@ export const AppPage = observer(() => {
             <AppContext.Provider value={value}>
                 <Navbar>
                     {/* Actions to Open Editor Mode */}
-                    {(configStore.store.user.admin ||
-                        appPermission === 'OWNER' ||
+                    {(appPermission === 'OWNER' ||
                         appPermission === 'EDIT') && <AppEditorActions />}
                 </Navbar>
 
@@ -314,7 +331,15 @@ export const AppPage = observer(() => {
                             counter={counter}
                             editMode={editMode}
                             refreshApp={refreshOutlet}
+                            open={open}
                         ></AppRenderer>
+                        {showPortal ? (
+                            <AppPortal
+                                counter={counter}
+                                appId={appId}
+                                close={close}
+                            />
+                        ) : null}
                     </StyledRightPanel>
                 </StyledTopPanel>
 

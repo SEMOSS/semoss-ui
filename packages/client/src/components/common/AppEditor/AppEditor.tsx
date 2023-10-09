@@ -24,6 +24,7 @@ import {
     Button,
     Collapse,
     Divider,
+    Modal,
     IconButton,
     TreeView,
     TextField,
@@ -36,6 +37,8 @@ import {
 } from '@semoss/ui';
 
 import {
+    AutoAwesome,
+    ContentCopyOutlined,
     Download,
     ExpandMore,
     ChevronRight,
@@ -45,7 +48,6 @@ import {
     CreateNewFolderOutlined,
     NoteAddOutlined,
 } from '@mui/icons-material/';
-import { Dependency } from 'webpack';
 
 const StyledEditorPanel = styled('div')(({ theme }) => ({
     display: 'flex',
@@ -90,6 +92,37 @@ const StyleAppExplorerHeader = styled('div')(({ theme }) => ({
     // paddingTop: '2px',
     alignItems: 'center',
 }));
+
+const CustomGenerateButton = styled(Button)(({ theme }) => {
+    const palette = theme.palette as unknown as {
+        purple: Record<string, string>;
+    };
+
+    return {
+        backgroundColor: palette.purple['400'],
+        color: theme.palette.background.paper,
+        gap: theme.spacing(1),
+        '&:hover': {
+            backgroundColor: palette.purple['200'],
+        },
+    };
+});
+
+const CustomButton = styled(Button)(({ theme }) => {
+    const palette = theme.palette as unknown as {
+        purple: Record<string, string>;
+    };
+
+    return {
+        backgroundColor: palette.purple['400'],
+        color: theme.palette.background.paper,
+        gap: theme.spacing(1),
+        width: '100%',
+        '&:hover': {
+            backgroundColor: palette.purple['200'],
+        },
+    };
+});
 
 const StyledAppDirectoryLabel = styled('div')(({ theme }) => ({
     display: 'flex',
@@ -164,6 +197,31 @@ const CustomAccordionContent = styled(Accordion.Content)(({ theme }) => ({
     // alignItems: 'center',
 }));
 
+const StyledExpandCode = styled('div')(({ theme }) => ({
+    width: '100%',
+    height: '100%',
+    display: 'flex',
+    justifyContent: 'space-between',
+    padding: theme.spacing(1),
+    background: theme.palette.secondary.main,
+    borderRadius: `${theme.shape.borderRadius}px ${theme.shape.borderRadius}px 0px 0px`,
+}));
+
+const StyledCodeBlock = styled('pre')(({ theme }) => ({
+    display: 'flex',
+    alignItems: 'flex-start',
+    gap: '40px',
+    background: theme.palette.secondary.light,
+    borderRadius: `0px 0px ${theme.shape.borderRadius}px ${theme.shape.borderRadius}px`,
+    padding: theme.spacing(2),
+    margin: '0px',
+    overflowX: 'scroll',
+}));
+
+const StyledCodeContent = styled('code')(() => ({
+    flex: 1,
+}));
+
 interface AppEditorProps {
     /**
      * Id of App to get Directory
@@ -209,18 +267,21 @@ export const AppEditor = (props: AppEditorProps) => {
     // When we gather input from add new file/folder
     const newDirectoryRefs = useRef(null);
 
-    // const newDirectoryRefs = useRef<HTMLInputElement[]>([]);
-
     // Props necessary for TextEditor component
     const [filesToView, setFilesToView] = useState([]);
     const [activeFileIndex, setActiveFileIndex] = useState(null);
+
+    // Generate Code assistant
+    const [generateCodeModal, setGenerateCodeModal] = useState(false);
+    const [generatedCode, setGeneratedCode] = useState('');
+    const [generatePrompt, setGeneratePrompt] = useState('');
+    const [loadCodeSnippet, setLoadCodeSnippet] = useState(false);
 
     useEffect(() => {
         getInitialAppStructure();
     }, []);
 
     useEffect(() => {
-        console.log('focus your placeholderRefs :)', newDirectoryRefs.current);
         if (newDirectoryRefs.current) {
             if (newDirectoryRefs.current.current) {
                 newDirectoryRefs.current.current.scrollIntoView({
@@ -487,6 +548,151 @@ export const AppEditor = (props: AppEditorProps) => {
     };
 
     /**
+     *
+     * @desc This adds the placeholder node to your app directory
+     */
+    const addAssetToApp = async (
+        node,
+        newNodeName: string,
+        assetType: 'directory' | 'file',
+    ) => {
+        let pixel = '';
+
+        // We may not have to do below --
+        const nodeReplacement = node;
+        nodeReplacement.id = node.id.replace(/</g, '').replace(/>/g, '');
+        nodeReplacement.id = nodeReplacement.id + newNodeName + '/';
+        nodeReplacement.path = nodeReplacement.id;
+        nodeReplacement.name = newNodeName;
+        nodeReplacement.lastModified = Date.now();
+        // --
+
+        if (assetType === 'directory') {
+            pixel += `
+            MakeDirectory(filePath=["${nodeReplacement.id}"], space=["${appId}"]);
+            `;
+        } else {
+            pixel += `
+            SaveAsset(fileName=["${nodeReplacement.id}"], content=["<encode></encode>"], space=["${appId}"]);
+            `;
+        }
+
+        const { parent } = await findNodeAndParentById(appDirectory, node.id);
+
+        const response = await monolithStore.runQuery(pixel);
+        const output = response.pixelReturn[0].output,
+            operationType = response.pixelReturn[0].operationType;
+
+        if (operationType.indexOf('ERROR') > -1) {
+            notification.add({
+                color: 'error',
+                message: output,
+            });
+
+            await viewAsset(!parent ? ['version/assets/'] : [parent.id]);
+            setSelected(parent ? [parent.id] : []);
+            return;
+        }
+
+        // save nodeReplacement in tree
+        if (assetType === 'directory') {
+            await viewAsset([parent ? parent.id : ['version/assets']]);
+            setSelected([nodeReplacement.id]);
+        } else {
+            const commitAssetPixel = `
+            CommitAsset(filePath=["${nodeReplacement.id}"], comment=["Added Asset from App Editor: path='${nodeReplacement.id}' "], space=["${appId}"])
+            `;
+
+            const commitAssetResponse = await monolithStore.runQuery(
+                commitAssetPixel,
+            );
+            const commitAssetOutput = commitAssetResponse.pixelReturn[0].output,
+                commitAssetOperationType =
+                    commitAssetResponse.pixelReturn[0].operationType;
+
+            // TODO: FE code for commit asset
+            console.log(
+                'TODO: Committing the Asset, view parent directory to refresh app structure after?',
+            );
+        }
+
+        // set this file as the active file in the editor
+
+        // setSelected([nodeReplacement.id]);
+        setCounter(counter + 1);
+    };
+
+    /**
+     * Method that is called to download the app
+     */
+    const downloadApp = async () => {
+        try {
+            const path = 'version/assets/';
+
+            // upnzip the file in the new app
+            const response = await monolithStore.runQuery(
+                `DownloadAsset(filePath=["${path}"], space=["${appId}"]);`,
+            );
+            const key = response.pixelReturn[0].output;
+            if (!key) {
+                throw new Error('Error Downloading Asset');
+            }
+
+            await monolithStore.download(configStore.store.insightID, key);
+        } catch (e) {
+            console.error(e);
+
+            notification.add({
+                color: 'error',
+                message: e.message,
+            });
+        }
+    };
+
+    const generateCode = async () => {
+        let pixel = '';
+
+        // Project owner pays for these queries or should this come from Semoss.
+        pixel += `LLM(engine=["${'EMB_5b0c6586-4ab8-4905-83e4-1bab3b6a1966'}"], command=["${generatePrompt}"])`;
+
+        notification.add({
+            color: 'warning',
+            message: 'Please set LLM to use in RDF_MAP',
+        });
+
+        const response = await monolithStore.runQuery(pixel);
+        const output = response.pixelReturn[0].output,
+            operationType = response.pixelReturn[0].operationType;
+
+        setLoadCodeSnippet(false);
+
+        if (operationType.indexOf('ERROR') > -1) {
+            notification.add({
+                color: 'error',
+                message: output,
+            });
+            return;
+        }
+
+        // Regex anything between the 3 backticks
+        const codeMatch = output.response.match(/```[\s\S]*?\n([\s\S]*)\n```/);
+
+        // TO-DO: Figure out if there is a particular LLM that will have a consistent response structure
+        if (!codeMatch) {
+            notification.add({
+                color: 'error',
+                message: 'Unable to parse generated code',
+            });
+            return;
+        }
+
+        // Will this be multiple indexes
+        if (codeMatch.length > 1) {
+            setGeneratedCode(codeMatch[1]);
+        }
+    };
+
+    /**
      * Accordion for Dependencies and Files
      */
     const handleAccordionChange = (type: 'dependency' | 'file') => {
@@ -543,8 +749,126 @@ export const AppEditor = (props: AppEditorProps) => {
     };
 
     // ----------------------------
-    // Node Helpers ---------------
+    // Node Functions -------------
     // ----------------------------
+    /**
+     * @desc
+     * This really needs to just set a placeholder Node in our Tree view.
+     * To help us gather input for new file/folder name or contents
+     */
+    const addPlaceholderNode = (type: 'directory' | 'file') => {
+        const newNode = {
+            id: '',
+            lastModified: '',
+            name: '',
+            path: '',
+            type: type,
+            // id: `${foundNode.id}<>`,
+        };
+
+        // 1. See where we are in app directory, needed to know where to add file/dir
+        if (!expanded.length) {
+            console.log('Handle top level dir addition', appDirectory);
+            const appDirCopy = appDirectory;
+            newNode.id = 'version/assets/<>';
+
+            if (type === 'directory') {
+                newNode['children'] = [
+                    {
+                        id: `version/assets/<>/`,
+                        lastModified: '',
+                        name: 'placeholder',
+                        path: `version/assets/<>/`,
+                        type: '',
+                    },
+                ];
+            }
+
+            appDirCopy.push(newNode);
+
+            const formattedDirectoryNodes = sortArrayOfObjects(
+                appDirCopy,
+                'type',
+            );
+
+            setAppDirectory(formattedDirectoryNodes);
+            // Band Aid fix update UI with state change
+            setCounter(counter + 1);
+        } else {
+            console.log('Handles nodes that have a parent');
+            const indexOfSelectedDirectory = expanded.indexOf(selected[0]);
+
+            if (indexOfSelectedDirectory < 0) {
+                notification.add({
+                    color: 'error',
+                    message: "Can't find Node on FE",
+                });
+                console.error('Error finding node');
+                return;
+            }
+
+            const foundNode = findNodeById(
+                appDirectory,
+                !expanded.length ? '' : expanded[indexOfSelectedDirectory],
+            );
+
+            // 2. Add new NodeInterface to the chidren of that directory
+            const nodeChildrenCopy = foundNode.children;
+
+            newNode.id = `${foundNode.id}<>`;
+
+            if (type === 'directory') {
+                newNode['children'] = [
+                    {
+                        id: `${foundNode.id}<>/`,
+                        lastModified: '',
+                        name: 'placeholder',
+                        path: `${foundNode.id}<>/`,
+                        type: '',
+                    },
+                ];
+            }
+
+            nodeChildrenCopy.push(newNode);
+
+            const formattedDirectoryNodes = sortArrayOfObjects(
+                nodeChildrenCopy,
+                'type',
+            );
+
+            const updatedTreeData = updateNodeRecursively(
+                appDirectory,
+                foundNode.id,
+                {
+                    ...foundNode,
+                    children: formattedDirectoryNodes,
+                },
+            );
+
+            // 3. Update it in state
+            setAppDirectory(updatedTreeData);
+        }
+    };
+
+    /**
+     * @desc will remove the indexed file, in files to view,
+     * Should trigger the useEffect in TextEditor
+     */
+    const removeFileToView = (index: number) => {
+        const newFilesToView = filesToView;
+        newFilesToView.splice(index, 1);
+
+        if (activeFileIndex > index) {
+            // Selected index is less than active
+            setActiveFileIndex(activeFileIndex - 1);
+        } else if (activeFileIndex > newFilesToView.length - 1) {
+            // If Active File Index is out of bounds we have to subract 1
+            setActiveFileIndex(newFilesToView.length - 1);
+        }
+
+        setFilesToView(newFilesToView);
+        return true;
+    };
 
     /**
      * Tree View
@@ -792,230 +1116,22 @@ export const AppEditor = (props: AppEditorProps) => {
     };
 
     /**
-     * @desc
-     * This really needs to just set a placeholder Node in our Tree view.
-     * To help us gather input for new file/folder name or contents
+     * Copy text and add it to the clipboard
+     * @param text - text to copy
      */
-    const addPlaceholderNode = (type: 'directory' | 'file') => {
-        const newNode = {
-            id: '',
-            lastModified: '',
-            name: '',
-            path: '',
-            type: type,
-            // id: `${foundNode.id}<>`,
-        };
-
-        // 1. See where we are in app directory, needed to know where to add file/dir
-        if (!expanded.length) {
-            console.log('Handle top level dir addition', appDirectory);
-
-            const appDirCopy = appDirectory;
-            newNode.id = 'version/assets/<>';
-
-            if (type === 'directory') {
-                newNode['children'] = [
-                    {
-                        id: `version/assets/<>/`,
-                        lastModified: '',
-                        name: 'placeholder',
-                        path: `version/assets/<>/`,
-                        type: '',
-                    },
-                ];
-            }
-
-            appDirCopy.push(newNode);
-
-            const formattedDirectoryNodes = sortArrayOfObjects(
-                appDirCopy,
-                'type',
-            );
-
-            setAppDirectory(formattedDirectoryNodes);
-            // Band Aid fix update UI with state change
-            setCounter(counter + 1);
-        } else {
-            console.log('Handles nodes that have a parent');
-            const indexOfSelectedDirectory = expanded.indexOf(selected[0]);
-
-            if (indexOfSelectedDirectory < 0) {
-                notification.add({
-                    color: 'error',
-                    message: "Can't find Node on FE",
-                });
-                console.error('Error finding node');
-                return;
-            }
-
-            const foundNode = findNodeById(
-                appDirectory,
-                !expanded.length ? '' : expanded[indexOfSelectedDirectory],
-            );
-
-            // 2. Add new NodeInterface to the chidren of that directory
-            const nodeChildrenCopy = foundNode.children;
-
-            newNode.id = `${foundNode.id}<>`;
-
-            if (type === 'directory') {
-                newNode['children'] = [
-                    {
-                        id: `${foundNode.id}<>/`,
-                        lastModified: '',
-                        name: 'placeholder',
-                        path: `${foundNode.id}<>/`,
-                        type: '',
-                    },
-                ];
-            }
-
-            nodeChildrenCopy.push(newNode);
-
-            const formattedDirectoryNodes = sortArrayOfObjects(
-                nodeChildrenCopy,
-                'type',
-            );
-
-            const updatedTreeData = updateNodeRecursively(
-                appDirectory,
-                foundNode.id,
-                {
-                    ...foundNode,
-                    children: formattedDirectoryNodes,
-                },
-            );
-
-            // 3. Update it in state
-            setAppDirectory(updatedTreeData);
-        }
-    };
-
-    /**
-     *
-     * @desc This adds the placeholder node to your app directory
-     */
-    const addAssetToApp = async (
-        node,
-        newNodeName: string,
-        assetType: 'directory' | 'file',
-    ) => {
-        let pixel = '';
-
-        // We may not have to do below --
-        const nodeReplacement = node;
-        nodeReplacement.id = node.id.replace(/</g, '').replace(/>/g, '');
-        nodeReplacement.id = nodeReplacement.id + newNodeName + '/';
-        nodeReplacement.path = nodeReplacement.id;
-        nodeReplacement.name = newNodeName;
-        nodeReplacement.lastModified = Date.now();
-        // --
-
-        if (assetType === 'directory') {
-            pixel += `
-            MakeDirectory(filePath=["${nodeReplacement.id}"], space=["${appId}"]);
-            `;
-        } else {
-            pixel += `
-            SaveAsset(fileName=["${nodeReplacement.id}"], content=["<encode></encode>"], space=["${appId}"]);
-            `;
-        }
-
-        const { parent } = await findNodeAndParentById(appDirectory, node.id);
-
-        const response = await monolithStore.runQuery(pixel);
-        const output = response.pixelReturn[0].output,
-            operationType = response.pixelReturn[0].operationType;
-
-        if (operationType.indexOf('ERROR') > -1) {
-            notification.add({
-                color: 'error',
-                message: output,
-            });
-
-            await viewAsset(!parent ? ['version/assets/'] : [parent.id]);
-            setSelected(parent ? [parent.id] : []);
-            return;
-        }
-
-        // save nodeReplacement in tree
-        if (assetType === 'directory') {
-            await viewAsset([parent ? parent.id : ['version/assets']]);
-            setSelected([nodeReplacement.id]);
-        } else {
-            const commitAssetPixel = `
-            CommitAsset(filePath=["${nodeReplacement.id}"], comment=["Added Asset from App Editor: path='${nodeReplacement.id}' "], space=["${appId}"])
-            `;
-
-            const commitAssetResponse = await monolithStore.runQuery(
-                commitAssetPixel,
-            );
-            const commitAssetOutput = commitAssetResponse.pixelReturn[0].output,
-                commitAssetOperationType =
-                    commitAssetResponse.pixelReturn[0].operationType;
-
-            // TODO: FE code for commit asset
-            console.log(
-                'TODO: Committing the Asset, view parent directory to refresh app structure after?',
-            );
-        }
-
-        // set this file as the active file in the editor
-
-        // setSelected([nodeReplacement.id]);
-        setCounter(counter + 1);
-    };
-
-    /**
-     * @desc will remove the indexed file, in files to view,
-     * Should trigger the useEffect in TextEditor
-     */
-    const removeFileToView = (index: number) => {
-        const newFilesToView = filesToView;
-        newFilesToView.splice(index, 1);
-
-        if (activeFileIndex > index) {
-            // Selected index is less than active
-            setActiveFileIndex(activeFileIndex - 1);
-        } else if (activeFileIndex > newFilesToView.length - 1) {
-            // If Active File Index is out of bounds we have to subract 1
-            setActiveFileIndex(newFilesToView.length - 1);
-        }
-
-        setFilesToView(newFilesToView);
-        return true;
-    };
-
-    /**
-     * Method that is called to download the app
-     */
-    const downloadApp = async () => {
-        // turn on loading
-        // setIsLoading(true);
-
+    const copy = async (text: string) => {
         try {
-            const path = 'version/assets/';
-
-            // upnzip the file in the new app
-            const response = await monolithStore.runQuery(
-                `DownloadAsset(filePath=["${path}"], space=["${appId}"]);`,
-            );
-            const key = response.pixelReturn[0].output;
-            if (!key) {
-                throw new Error('Error Downloading Asset');
-            }
-
-            await monolithStore.download(configStore.store.insightID, key);
-        } catch (e) {
-            console.error(e);
+            await navigator.clipboard.writeText(text);
 
             notification.add({
-                color: 'error',
-                message: e.message,
+                color: 'success',
+                message: 'Successfully copied code',
             });
-        } finally {
-            // turn of loading
-            // setIsLoading(false);
+        } catch (e) {
+            notification.add({
+                color: 'error',
+                message: 'Unable to copy code',
+            });
         }
     };
 
@@ -1092,6 +1208,28 @@ export const AppEditor = (props: AppEditorProps) => {
                                 // border: 'solid red',
                             }}
                         >
+                            {process.env.NODE_ENV === 'development' && (
+                                <CustomButton
+                                    sx={{ marginTop: '16px' }}
+                                    variant="contained"
+                                    color="secondary"
+                                    onClick={() => {
+                                        console.log(
+                                            'Open Generate Code Modal and App Directory',
+                                        );
+                                        if (openAccordion.indexOf('file') < 0) {
+                                            setOpenAccordion([
+                                                ...openAccordion,
+                                                'file',
+                                            ]);
+                                        }
+                                        setGenerateCodeModal(true);
+                                    }}
+                                >
+                                    <AutoAwesome />
+                                    Generate Code
+                                </CustomButton>
+                            )}
                             <CustomAccordion
                                 disableGutters
                                 square={true}
@@ -1260,6 +1398,100 @@ export const AppEditor = (props: AppEditorProps) => {
                     }}
                 />
             </div>
+
+            {/* Generate Code Modal */}
+            <Modal open={generateCodeModal} maxWidth="xl">
+                <Modal.Title
+                    sx={{
+                        display: 'flex',
+                        flexDirection: 'column',
+                        gap: '8px',
+                    }}
+                >
+                    <Typography variant="h5">Code Generation</Typography>
+                    <TextField
+                        sx={{ width: '100%', marginTop: '8px' }}
+                        label="Prompt"
+                        helperText={
+                            'Example prompt: "Write me a html form that intakes patient information"'
+                        }
+                        onKeyDown={(e) => {
+                            if (e.code === 'Enter') {
+                                // Remove Old Code
+                                setGeneratedCode('');
+
+                                // Load Skeleton for code
+                                setLoadCodeSnippet(true);
+
+                                // Generate code based on prompt
+                                generateCode();
+                            }
+                        }}
+                        onChange={(e) => {
+                            setGeneratePrompt(e.target.value);
+                        }}
+                    ></TextField>
+                </Modal.Title>
+                <Modal.Content sx={{ width: '800px' }}>
+                    {generatedCode ? (
+                        <div>
+                            <StyledExpandCode>
+                                <IconButton>
+                                    <ExpandMore />
+                                </IconButton>
+                                <Button
+                                    size={'medium'}
+                                    variant="outlined"
+                                    startIcon={
+                                        <ContentCopyOutlined
+                                            color={'inherit'}
+                                        />
+                                    }
+                                    onClick={() => copy(generatedCode)}
+                                >
+                                    Copy
+                                </Button>
+                            </StyledExpandCode>
+                            <StyledCodeBlock>
+                                <StyledCodeContent>
+                                    {generatedCode}
+                                </StyledCodeContent>
+                            </StyledCodeBlock>
+                        </div>
+                    ) : loadCodeSnippet ? (
+                        <div style={{ height: '200px' }}>
+                            <Skeleton
+                                variant={'rectangular'}
+                                width={'100%'}
+                                height={'100%'}
+                            />
+                        </div>
+                    ) : null}
+                </Modal.Content>
+                <Modal.Actions>
+                    <Button
+                        onClick={() => {
+                            setGenerateCodeModal(false);
+                        }}
+                    >
+                        Cancel
+                    </Button>
+                    <CustomGenerateButton
+                        onClick={() => {
+                            // Remove Old Code
+                            setGeneratedCode('');
+
+                            // Load Skeleton for code
+                            setLoadCodeSnippet(true);
+
+                            // Generate code based on prompt
+                            generateCode();
+                        }}
+                    >
+                        Generate
+                    </CustomGenerateButton>
+                </Modal.Actions>
+            </Modal>
         </StyledEditorPanel>
     );
 };
