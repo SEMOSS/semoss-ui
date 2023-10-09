@@ -6,6 +6,8 @@ import { Designer } from '@/components/designer';
 import { Blocks, Renderer } from '@/components/blocks';
 import { DefaultBlocks } from '@/components/block-defaults';
 
+const ACTIVE = 'page-1';
+
 const BLOCKS: Record<string, Block> = {
     'page-1': {
         id: 'page-1',
@@ -163,7 +165,13 @@ export const DesignPage = () => {
      * Have the designer control the blocks
      */
     const designer = useMemo(() => {
-        return new DesignerStore(state);
+        const d = new DesignerStore(state);
+
+        // set the rendered one
+        d.setRendered(ACTIVE);
+
+        // return the store
+        return d;
     }, [state]);
 
     return (
@@ -171,7 +179,7 @@ export const DesignPage = () => {
         <div style={{ height: '100vh', width: '100vw' }}>
             <Blocks state={state} registry={DefaultBlocks}>
                 <Designer designer={designer}>
-                    <Renderer id="page-1" />
+                    <Renderer id={ACTIVE} />
                 </Designer>
             </Blocks>
         </div>

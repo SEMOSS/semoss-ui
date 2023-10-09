@@ -23,7 +23,11 @@ export const TextBlock: BlockComponent = observer(({ id }) => {
             }}
             {...attrs}
         >
-            {data.text}
+            {data.text
+                ? typeof data.text === 'string'
+                    ? data.text
+                    : JSON.stringify(data.text)
+                : null}
         </span>
     );
 });

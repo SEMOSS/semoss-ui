@@ -5,9 +5,11 @@ import { StateStore } from '../state';
 export interface DesignerStoreInterface {
     /** Blocks state information */
     state: StateStore;
-    /** Current selected widget */
+    /** Current rendered block */
+    rendered: string;
+    /** Current selected block */
     selected: string;
-    /** Current hovered widget */
+    /** Current hovered block */
     hovered: string;
     /** drag information */
     drag: {
@@ -42,6 +44,15 @@ export interface DesignerStoreInterface {
             width: number;
         } | null;
     };
+
+    /** overlay information */
+    overlay: {
+        /** track if the overlay is open or closed */
+        open: boolean;
+
+        /** content to display in the overlay */
+        render: () => JSX.Element;
+    };
 }
 
 /**
@@ -50,6 +61,7 @@ export interface DesignerStoreInterface {
 export class DesignerStore {
     private _store: DesignerStoreInterface = {
         state: undefined,
+        rendered: '',
         selected: '',
         hovered: '',
         drag: {
@@ -59,6 +71,10 @@ export class DesignerStore {
             ghostPosition: null,
             placeholderSize: null,
             placeholderAction: null,
+        },
+        overlay: {
+            open: false,
+            render: null,
         },
     };
 
@@ -82,16 +98,24 @@ export class DesignerStore {
     }
 
     /**
-     * Get the selected widget
-     * @returns the selected widget
+     * Get the selected block
+     * @returns the selected block
      */
     get selected() {
         return this._store.selected;
     }
 
     /**
-     * Get the hovered widget
-     * @returns the hovered widget
+     * Get the rendered block
+     * @returns the rendered block
+     */
+    get rendered() {
+        return this._store.rendered;
+    }
+
+    /**
+     * Get the hovered block
+     * @returns the hovered block
      */
     get hovered() {
         return this._store.hovered;
@@ -106,11 +130,19 @@ export class DesignerStore {
     }
 
     /**
+     * Get the overlay information
+     * @returns the overlay information
+     */
+    get overlay() {
+        return this._store.overlay;
+    }
+
+    /**
      * Actions
      */
     /**
-     * Set the selected widget
-     * @param id - id of the widget that is selected
+     * Set the selected block
+     * @param id - id of the block that is selected
      */
     setSelected(id: string) {
         // if was previously hovered, cancel it
@@ -122,8 +154,17 @@ export class DesignerStore {
     }
 
     /**
-     * Set the hovered widget
-     * @param id - id of the widget that is hovered
+     * Set the rendered block
+     * @param id - id of the block that is rendered
+     */
+    setRendered(id: string) {
+        // set the rendered block
+        this._store.rendered = id;
+    }
+
+    /**
+     * Set the hovered block
+     * @param id - id of the block that is hovered
      */
     setHovered(id: string) {
         // if it is selected ignore it
@@ -138,7 +179,7 @@ export class DesignerStore {
     /**
      * Activate the drag
      * @param title - title of the dragged item
-     * @param canDrop - check if the widget can be dropped onto the parent and slot
+     * @param canDrop - check if the block can be dropped onto the parent and slot
      */
     activateDrag(
         title: DesignerStoreInterface['drag']['ghostTitle'],
@@ -147,7 +188,7 @@ export class DesignerStore {
         // activate the drag
         this._store.drag.active = true;
 
-        // set the widget
+        // set the block
         this._store.drag.canDrop = canDrop;
 
         // initialize the ghost
@@ -225,5 +266,27 @@ export class DesignerStore {
 
         // update the size for the placeholder
         this._store.drag.placeholderSize = size;
+    }
+
+    /**
+     * Open the overlay
+     */
+    openOverlay(content: DesignerStoreInterface['overlay']['render']) {
+        // open the overlay
+        this._store.overlay.open = true;
+
+        // set the content
+        this._store.overlay.render = content;
+    }
+
+    /**
+     * Close the overlay
+     */
+    closeOverlay() {
+        // close the overlay
+        this._store.overlay.open = false;
+
+        // clear the content
+        this._store.overlay.render = null;
     }
 }

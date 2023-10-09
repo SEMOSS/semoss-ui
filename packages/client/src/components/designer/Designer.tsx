@@ -1,4 +1,4 @@
-import { styled, Stack, Icon, Divider, Paper } from '@semoss/ui';
+import { styled, Stack, Icon, Divider, Paper, Modal } from '@semoss/ui';
 import {
     DesktopWindowsRounded,
     SpaceDashboardOutlined,
@@ -9,8 +9,11 @@ import { useState } from 'react';
 import { DesignerContext } from '@/contexts';
 import { DesignerStore } from '@/stores';
 
+import { Overlay } from './Overlay';
 import { AddMenu } from './AddMenu';
 import { SelectedMenu } from './SelectedMenu';
+import { OutlineMenu } from './OutlineMenu';
+import { QueryMenu } from './QueryMenu';
 import { Screen } from './Screen';
 
 const StyledLeftMenu = styled('div')(() => ({
@@ -126,6 +129,7 @@ export const Designer = (props: DesignerProps) => {
                 designer: designer,
             }}
         >
+            <Overlay />
             <Stack height="100%" width={'100%'} direction="row" spacing={0}>
                 <StyledLeftMenu>
                     <StyledSidebar>
@@ -158,8 +162,8 @@ export const Designer = (props: DesignerProps) => {
                     {view ? (
                         <StyledSidebarContent elevation={7}>
                             <StyledSidebarContentInner>
-                                {view === 'outline' ? 'Outline' : null}
-                                {view === 'query' ? 'Query' : null}
+                                {view === 'outline' ? <OutlineMenu /> : null}
+                                {view === 'query' ? <QueryMenu /> : null}
                                 {view === 'add' ? <AddMenu /> : null}
                             </StyledSidebarContentInner>
                         </StyledSidebarContent>

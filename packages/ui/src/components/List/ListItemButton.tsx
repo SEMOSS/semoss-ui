@@ -1,4 +1,8 @@
-import { ListItemButton as MuiListItemButton, SxProps } from "@mui/material";
+import {
+    ListItemButton as MuiListItemButton,
+    ListItemButtonProps as MuiListItemButtonProps,
+    SxProps,
+} from "@mui/material";
 
 export interface ListItemButtonProps {
     /**
@@ -45,9 +49,6 @@ export interface ListItemButtonProps {
      */
     divider?: boolean;
 
-    //** function to fire onClick */
-    onClick?: () => void;
-
     /**
      * Use to apply selected styling.
      * @default false
@@ -58,6 +59,10 @@ export interface ListItemButtonProps {
      * The system prop that allows defining system overrides as well as additional CSS styles.
      */
     sx?: SxProps;
+
+    onClick?: MuiListItemButtonProps["onClick"];
+    onMouseOver?: MuiListItemButtonProps["onMouseOver"];
+    onMouseLeave?: MuiListItemButtonProps["onMouseLeave"];
 }
 
 export const ListItemButton = (props: ListItemButtonProps) => {
