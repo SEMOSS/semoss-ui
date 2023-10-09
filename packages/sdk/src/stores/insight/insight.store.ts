@@ -1,6 +1,14 @@
 import { Env } from '@/env';
 import { Space, Script } from '@/types';
-import { getSystemConfig, login, logout, oauth, runPixel } from '@/api';
+import {
+    getSystemConfig,
+    login,
+    logout,
+    oauth,
+    runPixel,
+    upload,
+    download,
+} from '@/api';
 import { UnauthorizedError } from '@/utility';
 
 interface InsightStoreInterface {
@@ -447,6 +455,27 @@ LoadPyFromFile(alias="${alias}", filePath="temp.py");
         return output;
     };
 
+    /**
+     * Get the id of the space
+     * @param space - where to get it
+     * @returns id of the space
+     */
+    private getSpaceId(space: Space) {
+        let id = '';
+        if (space === 'insight') {
+            id = this._store.insightId;
+        } else if (space === 'app') {
+            if (!this._store.options.appId) {
+                throw new Error('An app is required to run in the app space');
+            }
+
+            // set it
+            id = this._store.options.appId;
+        }
+
+        return id;
+    }
+
     /** Actions */
     /** Accessible by the end user */
     actions = {
@@ -549,16 +578,19 @@ LoadPyFromFile(alias="${alias}", filePath="temp.py");
                     id = this._store.options.appId;
                 }
 
-                const response = await runPixel<O>(pixel, id);
-                if (!response) {
-                    return;
+                const { errors, pixelReturn } = await runPixel<O>(pixel, id);
+
+                if (errors.length) {
+                    throw errors.join('');
                 }
 
-                // success
-                return response;
+                return { errors, pixelReturn };
             } catch (error) {
                 this.processActionError(error as Error);
             }
+
+            // throw an error
+            throw new Error('No response');
         },
 
         /**
@@ -566,58 +598,142 @@ LoadPyFromFile(alias="${alias}", filePath="temp.py");
          * @param pixel - pixel command to run
          * @param space - where to run it
          */
-        runPy: async <O extends unknown[] | []>(
-            python: string,
-            space: Space = 'insight',
-        ) => {
-            return this.actions.run<O>(
+        runPy: async <O>(python: string, space: Space = 'insight') => {
+            const { pixelReturn } = await this.actions.run<[O]>(
                 `Py("<encode>${python}</encode>")`,
                 space,
             );
+
+            return {
+                output: pixelReturn[0].output,
+            };
         },
 
-        //     /**
-        //      * Upload a file to the project space
-        //      *
-        //      * @param files- file objects to upload
-        //      * @param path - relative path
-        //      */
-        //     upload: async (
-        //         files: File[],
-        //         path: string | null,
-        //     ): Promise<
-        //         {
-        //             fileName: string;
-        //             fileLocation: string;
-        //         }[]
-        //     > => {
-        //         try {
-        //             const response = await upload(
-        //                 files,
-        //                 this._store.insightId,
-        //                 this._store.appId,
-        //                 path,
-        //             );
+        /**
+         * Ask a model a question
+         * @param engineId - engine to ask
+         * @param command - command to ask
+         * @param space - where to run it
+         */
+        askModel: async (
+            engineId: string,
+            command: string,
+            space: Space = 'insight',
+        ) => {
+            const { pixelReturn } = await this.actions.run<
+                [{ response: string }]
+            >(
+                `LLM(engine=["${engineId}"], command=["<encode>${command}</encode>"]);`,
+                space,
+            );
 
-        //             return response;
-        //         } catch (error) {
-        //             this.processActionError(error as Error);
-        //         }
+            return {
+                output: pixelReturn[0].output,
+            };
+        },
 
-        //         return [];
-        //     },
+        /**
+         * Query a database
+         * @param databaseId - database to query
+         * @param query - command to query
+         * @param options - options to query with
+         * @param space - where to run it
+         */
+        queryDatabase: async (
+            databaseId: string,
+            query: string,
+            options: {
+                collect: number;
+            } = {
+                collect: -1,
+            },
+            space: Space = 'insight',
+        ) => {
+            const { pixelReturn } = await this.actions.run<
+                [
+                    data: {
+                        values: unknown[][];
+                        headers: string[];
+                    },
+                    numCollected: number,
+                    taskId: string,
+                ]
+            >(
+                `Database(database=["${databaseId}"]) | Query("<encode>${query}</encode>") | Collect(${
+                    typeof options.collect === 'number' ? options.collect : -1
+                });;`,
+                space,
+            );
 
-        //     /**
-        //      * Download a file from the project space
-        //      *
-        //      * @param path - relative path
-        //      */
-        //     download: async (fileKey: string): Promise<void> => {
-        //         try {
-        //             await download(this._store.insightId, fileKey);
-        //         } catch (error) {
-        //             this.processActionError(error as Error);
-        //         }
-        //     },
+            return {
+                output: pixelReturn[0].output,
+            };
+        },
+
+        /**
+         * Upload a file to the project space
+         *
+         * @param files- file objects to upload
+         * @param path - relative path
+         * @param space - where to run it
+         */
+        upload: async (
+            files: File | File[],
+            path: string,
+            space: Space = 'insight',
+        ): Promise<
+            {
+                fileName: string;
+                fileLocation: string;
+            }[]
+        > => {
+            try {
+                const response = await upload(
+                    files,
+                    space === 'insight' ? this._store.insightId : '',
+                    space === 'app' ? this._store.options.appId : '',
+                    path,
+                );
+
+                return response;
+            } catch (error) {
+                this.processActionError(error as Error);
+            }
+
+            // throw an error
+            throw new Error('No upload');
+        },
+
+        /**
+         * Download a file from the app
+         *
+         * @param path - relative path to the file
+         * @param space - where to det it
+         */
+        download: async (
+            path: string | null,
+            space: Space = 'insight',
+        ): Promise<boolean> => {
+            const id = this.getSpaceId(space);
+
+            const { pixelReturn } = await this.actions.run<[string]>(
+                `DownloadAsset(filePath=["${path}"], space=["${id}"]);`,
+                'insight',
+            );
+
+            // get the file key
+            const fileKey = pixelReturn[0].output;
+
+            try {
+                await download(this._store.insightId, fileKey);
+
+                return true;
+            } catch (error) {
+                this.processActionError(error as Error);
+            }
+
+            // throw an error
+            throw new Error('No download');
+        },
     };
 }

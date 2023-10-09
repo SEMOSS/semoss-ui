@@ -85,9 +85,6 @@ export class ConfigStore {
 
         // make it observable
         makeAutoObservable(this);
-
-        // initialize the store
-        this.initialize();
     }
 
     // *********************************************************
@@ -106,7 +103,7 @@ export class ConfigStore {
     /**
      * Initialize the data
      */
-    private async initialize(): Promise<void> {
+    async initialize(): Promise<void> {
         // set the config
         await this.setConfig();
 

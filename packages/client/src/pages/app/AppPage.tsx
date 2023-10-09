@@ -4,7 +4,7 @@
  * really is to handle the layout and switching between the
  * different { editor mode } nav items.
  *
- * - We have a Resizable Bottom Panel for the structure of the page.
+ * - We have a Resizable Bottom Panel for the console.
  * - The Bigger Components that get consumed here are:
  *      - AppEditorPanel (also resizable), AppConsole, AppRenderer
  * ---------------------------*------------------------------------
@@ -17,7 +17,7 @@ import { AppContext, AppContextType } from '@/contexts';
 import { useRootStore } from '@/hooks';
 import { AppEditorActions, Navbar } from '@/components/ui';
 import { AppRenderer, AppConsole, AppEditorPanel } from '@/components/app';
-import { styled } from '@semoss/ui';
+import { styled, Button } from '@semoss/ui';
 
 // Styles --------------------------------------*
 const NAV_HEIGHT = '48px';
@@ -71,7 +71,7 @@ const StyledBottomPanel = styled('div')(({ theme }) => ({
     gap: theme.spacing(1),
     paddingLeft: theme.spacing(1),
     paddingRight: theme.spacing(1),
-    background: theme.palette.background.paper,
+    background: theme.palette.secondary.main,
     zIndex: 9999, // App Editor scroll bar hovers over this
 }));
 
@@ -273,7 +273,13 @@ export const AppPage = observer(() => {
                         sx={{ width: !editMode ? '100%' : rightPanelWidth }}
                     >
                         {/* Right Panel that Renders our App */}
-                        <AppRenderer key={counter} appId={appId}></AppRenderer>
+                        <AppRenderer
+                            key={counter}
+                            appId={appId}
+                            counter={counter}
+                            editMode={editMode}
+                            refreshApp={refreshOutlet}
+                        ></AppRenderer>
                     </StyledRightPanel>
                 </StyledTopPanel>
 

@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-import { MODULE } from '@/constants';
+import { Env } from '@/env';
 
 /**
  * Run a pixel string
@@ -34,7 +34,7 @@ export const runPixel = async <O extends unknown[] | []>(
                 pixelExpression: string;
                 pixelId: string;
             }[];
-        }>(`${MODULE}/api/engine/runPixel`, postData, {
+        }>(`${Env.MODULE}/api/engine/runPixel`, postData, {
             headers: {
                 'content-type': 'application/x-www-form-urlencoded',
             },

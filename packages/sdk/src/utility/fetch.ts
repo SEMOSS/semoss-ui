@@ -17,9 +17,7 @@ export const interceptors: {
 export const get = async <O>(path: string, options: RequestInit = {}) => {
     options = {
         method: 'GET',
-        headers: {
-            'content-type': 'application/x-www-form-urlencoded',
-        },
+
         ...options,
     };
 
@@ -62,13 +60,21 @@ export const post = async <O>(
 ) => {
     const isFormData = body instanceof FormData;
 
+    // create a new headers object or use the option
+    let headers: HeadersInit = {};
+    if (options.headers) {
+        headers = options.headers;
+    }
+
+    // add headers if not a form
+    if (!isFormData) {
+        (headers as Record<string, string>)['Content-Type'] =
+            'application/x-www-form-urlencoded';
+    }
+
     options = {
         method: 'POST',
-        headers: {
-            'content-type': isFormData
-                ? 'multipart/form-data'
-                : 'application/x-www-form-urlencoded',
-        },
+        headers: headers,
         body: isFormData
             ? body
             : Object.keys(body)

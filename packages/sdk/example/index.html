@@ -53,7 +53,7 @@ def sayHello(name):
         Env.update({
             ACCESS_KEY: '',
             SECRET_KEY: '',
-        })
+        });
 
         // Engine we are working with
         const ENGINE = '5b0c6586-4ab8-4905-83e4-1bab3b6a1966';
@@ -90,16 +90,13 @@ def sayHello(name):
                 const command = data.get('command');
 
                 if (insight.isReady) {
-                    const { errors, pixelReturn } = await insight.actions.run(
-                        `LLM(engine=["${ENGINE}"], command=["<encode>${command}</encode>"]);`,
+                    const { output } = await insight.actions.askModel(
+                        ENGINE,
+                        command,
                     );
 
-                    if (errors.length > 0) {
-                        throw errors.join('');
-                    }
-
                     // get the message from the response
-                    const message = pixelReturn[0].output.response;
+                    const message = output.response;
                     if (!message) {
                         contentEle.innerHTML = 'No response recieved';
                     }
@@ -132,15 +129,9 @@ def sayHello(name):
                 pyEle.innerHTML = 'Loading';
 
                 if (insight.isReady) {
-                    const { errors, pixelReturn } = await insight.actions.runPy(
+                    const { output } = await insight.actions.runPy(
                         `test.sayHello('neel')`,
                     );
-                    if (errors.length > 0) {
-                        throw errors.join('');
-                    }
-
-                    // get the message from the response
-                    const output = pixelReturn[0].output;
 
                     // display the message
                     console.log(output);

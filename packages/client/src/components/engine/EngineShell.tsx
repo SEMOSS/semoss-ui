@@ -8,7 +8,7 @@ import {
     Typography,
 } from '@semoss/ui';
 
-import { MODULE } from '@/constants';
+import { Env } from '@/env';
 import { useRootStore, useDatabase, usePixel } from '@/hooks';
 
 import { EditDatabaseDetails } from '@/components/database';
@@ -232,7 +232,7 @@ export const EngineShell = (props: EngineShellProps) => {
                 </StyledInfoLeft>
                 <StyledInfoRight>
                     <StyledDatabaseImage
-                        src={`${MODULE}/api/e-${id}/image/download`}
+                        src={`${Env.MODULE}/api/e-${id}/image/download`}
                     />
                     <Stack
                         alignItems={'flex-end'}
