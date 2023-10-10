@@ -40,20 +40,6 @@ export const Router = observer(() => {
                     <Route index element={<HomePage />} />
                     <Route path="import" element={<ImportRouter />} />
                     <Route path="catalog" element={<CatalogPage />} />
-                    <Route path="storage" element={<Outlet />}>
-                        <Route path=":id" element={<EngineLayout />}>
-                            <Route index element={<EngineIndexPage />} />
-                            <Route
-                                path="metadata"
-                                element={<DatabaseMetadataPage />}
-                            />
-                            <Route path="usage" element={<EngineUsagePage />} />
-                            <Route
-                                path="settings"
-                                element={<DatabaseSettingsPage />}
-                            />
-                        </Route>
-                    </Route>
 
                     <Route path="model" element={<Outlet />}>
                         <Route path=":id" element={<EngineLayout />}>
@@ -68,6 +54,54 @@ export const Router = observer(() => {
                                 element={<DatabaseSettingsPage />}
                             />
                         </Route>
+                        <Route
+                            index
+                            element={
+                                <Navigate to="/catalog?type=model" replace />
+                            }
+                        />
+                    </Route>
+
+                    <Route path="function" element={<Outlet />}>
+                        <Route path=":id" element={<EngineLayout />}>
+                            <Route index element={<EngineIndexPage />} />
+                            <Route
+                                path="metadata"
+                                element={<DatabaseMetadataPage />}
+                            />
+                            <Route path="usage" element={<EngineUsagePage />} />
+                            <Route
+                                path="settings"
+                                element={<DatabaseSettingsPage />}
+                            />
+                        </Route>
+                        <Route
+                            index
+                            element={
+                                <Navigate to="/catalog?type=function" replace />
+                            }
+                        />
+                    </Route>
+
+                    <Route path="vector" element={<Outlet />}>
+                        <Route path=":id" element={<EngineLayout />}>
+                            <Route index element={<EngineIndexPage />} />
+                            <Route
+                                path="metadata"
+                                element={<DatabaseMetadataPage />}
+                            />
+                            <Route path="usage" element={<EngineUsagePage />} />
+                            <Route
+                                path="settings"
+                                element={<DatabaseSettingsPage />}
+                            />
+                        </Route>
+                        <Route
+                            index
+                            element={
+                                <Navigate to="/catalog?type=vector" replace />
+                            }
+                        />
                     </Route>
 
                     <Route path="database" element={<Outlet />}>
@@ -93,9 +127,33 @@ export const Router = observer(() => {
                         </Route>
                         <Route
                             index
-                            element={<Navigate to="/catalog" replace />}
+                            element={
+                                <Navigate to="/catalog?type=database" replace />
+                            }
                         />
                     </Route>
+
+                    <Route path="storage" element={<Outlet />}>
+                        <Route path=":id" element={<EngineLayout />}>
+                            <Route index element={<EngineIndexPage />} />
+                            <Route
+                                path="metadata"
+                                element={<DatabaseMetadataPage />}
+                            />
+                            <Route path="usage" element={<EngineUsagePage />} />
+                            <Route
+                                path="settings"
+                                element={<DatabaseSettingsPage />}
+                            />
+                        </Route>
+                        <Route
+                            index
+                            element={
+                                <Navigate to="/catalog?type=storage" replace />
+                            }
+                        />
+                    </Route>
+
                     <Route path="settings/*" element={<SettingsRouter />} />
                 </Route>
                 <Route path="*" element={<Navigate to="/" replace />} />

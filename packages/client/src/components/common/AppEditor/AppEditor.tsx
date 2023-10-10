@@ -649,6 +649,10 @@ export const AppEditor = (props: AppEditorProps) => {
         }
     };
 
+    /**
+     * Assitant for adding code
+     *
+     */
     const generateCode = async () => {
         let pixel = '';
 

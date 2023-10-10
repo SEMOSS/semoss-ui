@@ -3,9 +3,11 @@ import { Outlet, Link, useLocation } from 'react-router-dom';
 import { styled, Stack, Icon, Divider } from '@semoss/ui';
 
 import {
-    Settings,
+    Functions,
     Inventory2Outlined,
     LibraryBooksOutlined,
+    Polyline,
+    Settings,
 } from '@mui/icons-material';
 
 import { Navbar } from '@/components/ui';
@@ -96,6 +98,22 @@ export const NavigatorLayout = observer(() => {
                 >
                     <Icon>
                         <ModelBrain />
+                    </Icon>
+                </StyledSidebarItem>
+                <StyledSidebarItem
+                    to={'catalog?type=function'}
+                    selected={location.pathname === '/function'}
+                >
+                    <Icon>
+                        <Functions />
+                    </Icon>
+                </StyledSidebarItem>
+                <StyledSidebarItem
+                    to={'catalog?type=vector'}
+                    selected={location.pathname === '/?type=vector'}
+                >
+                    <Icon>
+                        <Polyline />
                     </Icon>
                 </StyledSidebarItem>
                 <StyledSidebarItem
