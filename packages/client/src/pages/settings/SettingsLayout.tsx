@@ -41,7 +41,7 @@ export const SettingsLayout = observer(() => {
     const { pathname, state } = useLocation();
 
     // track the active breadcrumbs
-    const [adminMode, setAdminMode] = useState(false);
+    const [adminMode, setAdminMode] = useState(true);
 
     // if the user is not an admin turn it off
     useEffect(() => {
@@ -63,6 +63,8 @@ export const SettingsLayout = observer(() => {
     if (!matchedRoute) {
         return null;
     }
+    console.log(adminMode);
+    console.log(configStore.store.user.admin);
 
     return (
         <SettingsContext.Provider

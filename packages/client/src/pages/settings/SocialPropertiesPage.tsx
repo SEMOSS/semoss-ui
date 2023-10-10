@@ -5,7 +5,7 @@ import React, {
     useRef,
     SyntheticEvent,
 } from 'react';
-import { useForm } from 'react-hook-form';
+import { useForm, Controller, useFieldArray } from 'react-hook-form';
 
 import { useAPI, useRootStore, useSettings } from '@/hooks';
 import { EditRounded, GridOff } from '@mui/icons-material';
@@ -142,8 +142,6 @@ const reducer = (state, action) => {
 };
 
 export const SocialPropertiesPage = () => {
-    // useStateChange doesn't play well with Accordion
-    // const [socialProps, setSocialProps] = useState({});
     const { adminMode } = useSettings();
 
     const navigate = useNavigate();
@@ -154,9 +152,7 @@ export const SocialPropertiesPage = () => {
 
     const [state, dispatch] = useReducer(reducer, initialState);
     const { socialProps } = state;
-
     const [accordionValue, setAccordionValue] = useState<string>();
-
     const [authentication, setAuthentication] = useState(
         Object.keys(socialProps),
     );
@@ -382,18 +378,26 @@ interface PropertyProps {
 }
 
 const SocialProperty = (props) => {
-    const { fieldName, fields, onChange } = props;
+    const { fieldName, fields: defaultFields, onChange } = props;
     const [editMode, setEditMode] = useState<boolean>(false);
-
+    const [newKey, setNewKey] = useState<[]>([]);
     const { monolithStore } = useRootStore();
     const notification = useNotification();
 
     // used for reset
     const [defaultValues, setDefaultValues] = useState<FieldProps[]>();
 
-    const { control, handleSubmit, reset } = useForm({
-        defaultValues: mapDefaultValues(fields),
+    const { handleSubmit, reset, control, register, getValues } = useForm({
+        defaultValues: {
+            properties: defaultFields,
+        },
     });
+
+    const { fields, append, prepend, remove, swap, move, insert } =
+        useFieldArray({
+            name: 'properties',
+            control,
+        });
 
     /**
      * @name onSubmit
@@ -477,85 +481,95 @@ const SocialProperty = (props) => {
 
             {!editMode ? (
                 <Grid container spacing={1}>
+                    {console.log('this is fields', fields)}
                     {fields.map((f, i) => {
                         return (
                             <Grid item xs={12} key={i}>
                                 <Card>
-                                    <Card.Content>
-                                        <StyledKeyValue>
-                                            <Card.Header
-                                                title={f.label}
-                                                subheader={'Description'}
-                                            />
-                                            <Card.Content>
-                                                {f.value}
-                                            </Card.Content>
-                                        </StyledKeyValue>
-                                    </Card.Content>
+                                    <StyledKeyValue>
+                                        <Card.Header title={f.label} />
+                                        <Card.Content
+                                            sx={{
+                                                padding: '0px',
+                                                marginTop: '20px',
+                                                marginBottom: '0px',
+                                            }}
+                                        >
+                                            {f.value}
+                                        </Card.Content>
+                                    </StyledKeyValue>
                                 </Card>
                             </Grid>
                         );
                     })}
                 </Grid>
             ) : (
-                fields.map((f, i) => {
-                    return (
-                        <StyledPropContainer key={i}>
-                            <StyledKeyValue>
+                <Grid container spacing={1}>
+                    {fields.map((f, i) => {
+                        return (
+                            <Grid item xs={12} key={i}>
+                                <Card>
+                                    <Card.Content sx={{ paddingTop: '16px' }}>
+                                        <StyledKeyValue>
+                                            <input
+                                                placeholder="label"
+                                                {...register(
+                                                    `properties[${i}].label`,
+                                                    { required: true },
+                                                )}
+                                            />
+                                            <input type="text" />
+                                        </StyledKeyValue>
+                                    </Card.Content>
+                                </Card>
+                            </Grid>
+                        );
+                    })}
+                    <Grid item xs={12}>
+                        <Card>
+                            <Card.Content sx={{ paddingTop: '16px' }}>
                                 <TextField
                                     label="key"
-                                    defaultValue={f.label}
+                                    value={''}
+                                    onChange={(e) =>
+                                        field.onChange(e.target.value)
+                                    }
                                     variant="outlined"
                                     sx={{ marginRight: '12px' }}
                                     fullWidth
                                 />
-                                <TextField
-                                    label="value"
-                                    defaultValue={f.value}
-                                    fullWidth
-                                />
-                            </StyledKeyValue>
-                            <TextField placeholder="Description"></TextField>
-                        </StyledPropContainer>
-                    );
-                })
+                                <StyledKeyValue>
+                                    <Controller
+                                        name=""
+                                        control={control}
+                                        rules={{}}
+                                        render={({ field }) => {
+                                            return (
+                                                <>
+                                                    <TextField
+                                                        label="value"
+                                                        value={
+                                                            field.value
+                                                                ? field.value
+                                                                : ''
+                                                        }
+                                                        onChange={(e) => {
+                                                            field.onChange(
+                                                                e.target.value,
+                                                            );
+                                                        }}
+                                                        fullWidth
+                                                    />
+                                                </>
+                                            );
+                                        }}
+                                    />
+                                </StyledKeyValue>
+                            </Card.Content>
+                        </Card>
+                    </Grid>
+                </Grid>
             )}
         </StyledForm>
     );
 };
-
-{
-    /* <Table>
-<Table.Head>
-    <Table.Row>
-        <Table.Cell colSpan={1}>Property</Table.Cell>
-        <Table.Cell colSpan={1}>
-            {fieldName.charAt(0).toUpperCase() +
-                fieldName.slice(1)}{' '}
-            Value
-        </Table.Cell>
-    </Table.Row>
-</Table.Head>
-<Table.Body>
-    {fields.map((f, i) => {
-        return (
-            <Table.Row key={i}>
-                <Table.Cell colSpan={1}>{f.label}</Table.Cell>
-                <Table.Cell colSpan={1}>
-                    <Field
-                        name={f.label}
-                        control={control}
-                        rules={{ required: true }}
-                        options={{
-                            component: 'input',
-                        }}
-                        error="All properties must be provided with a value"
-                        description=""
-                    ></Field>
-                </Table.Cell>
-            </Table.Row>
-        );
-    })}
-</Table.Body>
-</Table> */
-}
