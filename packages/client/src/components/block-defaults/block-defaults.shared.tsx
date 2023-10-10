@@ -1,4 +1,9 @@
-import { InputSettings, JsonSettings } from '@/components/block-settings';
+import { BlockDef } from '@/stores';
+import {
+    InputSettings,
+    JsonSettings,
+    ListenerSettings,
+} from '@/components/block-settings';
 
 /**
  * Build the Editor Section
@@ -178,5 +183,21 @@ export const buildTypographySection = () => ({
                 />
             ),
         },
+    ],
+});
+
+/**
+ * Build the Listeners Section
+ * @returns the Listener Section
+ */
+export const buildListenersSection = <D extends BlockDef = BlockDef>(
+    triggers: Extract<keyof D['listeners'], string>[] = [],
+) => ({
+    name: 'Listeners',
+    children: [
+        ...triggers.map((t) => ({
+            description: t,
+            render: ({ id }) => <ListenerSettings id={id} listener={t} />,
+        })),
     ],
 });

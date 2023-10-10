@@ -1,5 +1,6 @@
 import { Registry } from '@/stores';
 
+import { config as ButtonBlockConfig, ButtonBlockDef } from './button-block';
 import {
     config as ContainerBlockConfig,
     ContainerBlockDef,
@@ -9,12 +10,14 @@ import { config as PageBlockConfig, PageBlockDef } from './page-block';
 import { config as TextBlockConfig, TextBlockDef } from './text-block';
 
 export type DefaultBlockDefinitions =
+    | ButtonBlockDef
     | ContainerBlockDef
     | InputBlockDef
     | PageBlockDef
     | TextBlockDef;
 
 export const DefaultBlocks: Registry<DefaultBlockDefinitions> = {
+    [ButtonBlockConfig.widget]: ButtonBlockConfig,
     [ContainerBlockConfig.widget]: ContainerBlockConfig,
     [InputBlockConfig.widget]: InputBlockConfig,
     [PageBlockConfig.widget]: PageBlockConfig,

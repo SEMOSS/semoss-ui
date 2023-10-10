@@ -1,6 +1,12 @@
 import { useMemo } from 'react';
 
-import { DesignerStore, StateStore, Block } from '@/stores';
+import {
+    DesignerStore,
+    StateStore,
+    Block,
+    ActionMessages,
+    Query,
+} from '@/stores';
 import { runPixel } from '@/api';
 import { Designer } from '@/components/designer';
 import { Blocks, Renderer } from '@/components/blocks';
@@ -8,6 +14,17 @@ import { DefaultBlocks } from '@/components/block-defaults';
 
 const ACTIVE = 'page-1';
 
+const QUERIES: Record<string, Query> = {
+    'query-1': {
+        id: 'query-1',
+        isInitialized: false,
+        isLoading: false,
+        error: null,
+        query: `LLM(engine=["f5f7fd76-a3e5-4dba-8cbb-ededf0f612b4"], command=["<encode>{{input-3.value}}</encode>"]);`,
+        data: undefined,
+        mode: 'manual',
+    },
+};
 const BLOCKS: Record<string, Block> = {
     'page-1': {
         id: 'page-1',
@@ -49,7 +66,15 @@ const BLOCKS: Record<string, Block> = {
         slots: {
             children: {
                 name: 'children',
-                children: ['text-1', 'text-2', 'input-3', 'text-4', 'text-5'],
+                children: [
+                    'text-1',
+                    'text-2',
+                    'input-3',
+                    'text-4',
+                    'text-5',
+                    'button-6',
+                    'text-8',
+                ],
             },
         },
     },
@@ -138,16 +163,82 @@ const BLOCKS: Record<string, Block> = {
         listeners: {},
         slots: {},
     },
+    'button-6': {
+        id: 'button-6',
+        widget: 'button',
+        parent: {
+            id: 'container-1',
+            slot: 'children',
+        },
+        data: {
+            style: {
+                display: 'block',
+                padding: '16px',
+                background: 'lightblue',
+            },
+        },
+        listeners: {
+            onClick: [
+                {
+                    message: ActionMessages.RUN_QUERY,
+                    payload: {
+                        id: 'query-1',
+                    },
+                },
+            ],
+        },
+        slots: {
+            text: {
+                name: 'text',
+                children: ['text-7'],
+            },
+        },
+    },
+    'text-7': {
+        id: 'text-7',
+        widget: 'text',
+        parent: {
+            id: 'button-6',
+            slot: 'text',
+        },
+        data: {
+            style: {
+                display: 'block',
+            },
+            text: 'Submit',
+        },
+        listeners: {},
+        slots: {},
+    },
+    'text-8': {
+        id: 'text-8',
+        widget: 'text',
+        parent: {
+            id: 'container-1',
+            slot: 'children',
+        },
+        data: {
+            style: {
+                display: 'block',
+                fontSize: '1.125rem',
+            },
+            text: '{{query-1.data.response}}',
+        },
+        listeners: {},
+        slots: {},
+    },
 };
 
 export const DesignPage = () => {
     // create a new blocks store
     const state = useMemo(() => {
         return new StateStore(
-            { blocks: BLOCKS },
+            { blocks: BLOCKS, queries: QUERIES },
             {
                 onQuery: async ({ query }) => {
+                    console.log('running', query);
                     const response = await runPixel('', query);
+                    console.log(response);
 
                     if (response.errors.length) {
                         throw new Error(response.errors.join(''));

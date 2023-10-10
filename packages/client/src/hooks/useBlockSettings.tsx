@@ -1,7 +1,7 @@
 import { useCallback } from 'react';
 
 import { Paths, PathValue } from '@/types';
-import { Actions, ActionMessages, Block, BlockDef } from '@/stores';
+import { ActionMessages, Block, BlockDef, ListenerActions } from '@/stores';
 
 import { useBlocks } from './useBlocks';
 
@@ -37,7 +37,7 @@ interface useBlockSettingsReturn<D extends BlockDef = BlockDef> {
      */
     setListener: (
         listener: keyof Block<D>['listeners'],
-        actions: Actions[],
+        actions: ListenerActions[],
     ) => void;
 }
 
@@ -104,7 +104,10 @@ export const useBlockSettings = <D extends BlockDef = BlockDef>(
      *
      */
     const setListener = useCallback(
-        (listener: keyof Block<D>['listeners'], actions: Actions[]): void => {
+        (
+            listener: keyof Block<D>['listeners'],
+            actions: ListenerActions[],
+        ): void => {
             state.dispatch({
                 message: ActionMessages.SET_LISTENER,
                 payload: {

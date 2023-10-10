@@ -9,7 +9,7 @@ import {
     MoveBlockAction,
     RemoveBlockAction,
 } from './state.actions';
-import { Query, Block, BlockJSON } from './state.types';
+import { Query, Block, BlockJSON, ListenerActions } from './state.types';
 
 interface StateStoreInterface {
     /** Queries rendered in the insight */
@@ -80,7 +80,7 @@ export class StateStore {
         // make it observable
         makeAutoObservable(this);
 
-        // auto update when a query's input changes
+        // auto update when a query or mode changes
         reaction(
             () => {
                 return Object.keys(this._store.queries).reduce<
@@ -89,16 +89,28 @@ export class StateStore {
                     const q = this._store.queries[val];
 
                     // map id -> actual
-                    acc[q.id] = this.flattenParameter(q.query);
+                    acc[q.id] = `${this.flattenParameter(q.query)}--${q.mode}`;
 
                     return acc;
                 }, {});
             },
             (curr, prev) => {
                 for (const id in curr) {
-                    if (curr[id] !== prev[id]) {
-                        this.runQuery(id);
+                    // get the query
+                    const q = this._store.queries[id];
+
+                    // if they are the same ignore
+                    if (!q || curr[id] === prev[id]) {
+                        return;
                     }
+
+                    // ignore if not automatic
+                    if (q.mode !== 'automatic') {
+                        return;
+                    }
+
+                    // run the query
+                    this.runQuery(id);
                 }
             },
         );
@@ -209,10 +221,14 @@ export class StateStore {
                 const { id } = action.payload;
 
                 this.deleteQuery(id);
-            } else if (ActionMessages.DISPATCH_EVENT === action.message) {
-                const { name, payload } = action.payload;
+            } else if (ActionMessages.RUN_QUERY === action.message) {
+                const { id } = action.payload;
 
-                this.dispatchEvent(name, payload);
+                this.runQuery(id);
+            } else if (ActionMessages.DISPATCH_EVENT === action.message) {
+                const { name, detail } = action.payload;
+
+                this.dispatchEvent(name, detail);
             }
         } catch (e) {
             console.error(e);
@@ -422,66 +438,6 @@ export class StateStore {
 
         // update the child
         block.parent = null;
-    };
-
-    /**
-     * Run a query
-     * @param id - id of the query
-     * @param filled - filled query
-     */
-    private runQuery = (id: string): void => {
-        const q = this._store.queries[id];
-
-        // set the state to show it is initialized and loading
-        q.isInitialized = false;
-        q.isLoading = true;
-        q.error = null;
-
-        // reset
-        q.data = undefined;
-
-        // cancel a previous command
-        this._utils.queryPromises[id]?.cancel();
-
-        // setup the promise
-        const p = cancellablePromise(() => {
-            // fill the query
-            const filled = this.flattenParameter(q.query);
-
-            // call the callback
-            return this._utils.callbacks.onQuery({
-                query: filled,
-            });
-        });
-
-        p.promise
-            .then(({ data }) => {
-                runInAction(() => {
-                    console.log('hi');
-                    // set the data
-                    q.data = data;
-                });
-            })
-            .catch((e) => {
-                runInAction(() => {
-                    // set in the error state
-                    q.error = e;
-
-                    console.error('ERROR:', e);
-                });
-            })
-            .finally(() => {
-                runInAction(() => {
-                    // set it is initialized
-                    q.isInitialized = true;
-
-                    // turn off the loading screen
-                    q.isLoading = false;
-                });
-            });
-
-        // save the promise
-        this._utils.queryPromises[id] = p;
     };
 
     /**
@@ -726,7 +682,7 @@ export class StateStore {
     private setListener = (
         id: string,
         listener: string,
-        actions: Actions[],
+        actions: ListenerActions[],
     ): void => {
         this._store.blocks[id].listeners[listener] = actions;
     };
@@ -744,6 +700,7 @@ export class StateStore {
             error: null,
             query: query,
             data: undefined,
+            mode: 'manual',
         };
     };
 
@@ -756,16 +713,77 @@ export class StateStore {
     };
 
     /**
-     * Dispatch a custom event
-     * @param name - name of the event
-     * @param payload - payload associated with event
+     * Run a query
+     * @param id - name of the query that we are running
      */
-    private dispatchEvent = (name: string, payload: unknown): void => {
-        const event = new CustomEvent(name, {
-            detail: payload,
+    private runQuery = (id: string): void => {
+        const q = this._store.queries[id];
+
+        // set the state to show it is initialized and loading
+        q.isInitialized = false;
+        q.isLoading = true;
+        q.error = null;
+
+        // reset
+        q.data = undefined;
+
+        // cancel a previous command
+        this._utils.queryPromises[id]?.cancel();
+
+        // setup the promise
+        const p = cancellablePromise(() => {
+            // fill the query
+            const filled = this.flattenParameter(q.query);
+
+            // call the callback
+            return this._utils.callbacks.onQuery({
+                query: filled,
+            });
         });
 
-        // dispatch the event
+        p.promise
+            .then(({ data }) => {
+                runInAction(() => {
+                    // set the data
+                    q.data = data;
+                });
+            })
+            .catch((e) => {
+                runInAction(() => {
+                    // set in the error state
+                    q.error = e;
+
+                    console.error('ERROR:', e);
+                });
+            })
+            .finally(() => {
+                runInAction(() => {
+                    // set it is initialized
+                    q.isInitialized = true;
+
+                    // turn off the loading screen
+                    q.isLoading = false;
+                });
+            });
+
+        // save the promise
+        this._utils.queryPromises[id] = p;
+    };
+
+    /**
+     * Dispatch a custom event
+     * @param name - name of the event
+     * @param detail - payload associated with event
+     */
+    private dispatchEvent = (
+        name: string,
+        detail: Record<string, unknown> = {},
+    ): void => {
+        const event = new CustomEvent(name, {
+            detail: detail,
+        });
+
+        // dispatch the event to the window
         window.dispatchEvent(event);
     };
 }

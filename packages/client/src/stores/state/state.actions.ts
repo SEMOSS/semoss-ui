@@ -1,4 +1,4 @@
-import { BlockJSON } from './state.types';
+import { BlockJSON, ListenerActions } from './state.types';
 import { StateStore } from './state.store';
 
 export enum ActionMessages {
@@ -11,6 +11,7 @@ export enum ActionMessages {
     SET_LISTENER = 'SET_LISTENER',
     SET_QUERY = 'SET_QUERY',
     DELETE_QUERY = 'DELETE_QUERY',
+    RUN_QUERY = 'RUN_QUERY',
     DISPATCH_EVENT = 'DISPATCH_EVENT',
 }
 
@@ -24,6 +25,7 @@ export type Actions =
     | SetListenerAction
     | SetQueryAction
     | DeleteQueryAction
+    | RunQueryAction
     | DispatchEventAction;
 
 export interface Action {
@@ -113,7 +115,7 @@ export interface SetListenerAction extends Action {
     payload: {
         id: string;
         listener: string;
-        actions: Actions[];
+        actions: ListenerActions[];
     };
 }
 
@@ -132,10 +134,17 @@ export interface DeleteQueryAction extends Action {
     };
 }
 
+export interface RunQueryAction extends Action {
+    message: ActionMessages.RUN_QUERY;
+    payload: {
+        id: string;
+    };
+}
+
 export interface DispatchEventAction extends Action {
     message: ActionMessages.DISPATCH_EVENT;
     payload: {
         name: string;
-        payload?: unknown;
+        detail?: Record<string, unknown>;
     };
 }

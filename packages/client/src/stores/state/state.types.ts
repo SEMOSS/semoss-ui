@@ -1,7 +1,4 @@
-import { Paths, PathValue } from '@/types';
-
-import { Actions } from './state.actions';
-
+import { RunQueryAction, DispatchEventAction } from './state.actions';
 /**
  * Block
  */
@@ -26,7 +23,7 @@ export type Block<D extends BlockDef = BlockDef> = D extends D
           data: D['data'];
 
           /** Event listeners associated with the block */
-          listeners: Record<keyof D['listeners'], Actions[]>;
+          listeners: Record<keyof D['listeners'], ListenerActions[]>;
 
           /** Slots associated with the block */
           slots: Record<
@@ -59,7 +56,7 @@ export interface BlockDef<W extends string = string> {
 }
 
 /**
- * Component Innformation
+ * Block configuration
  */
 export interface BlockConfig<D extends BlockDef = BlockDef> {
     /** Unique widget name */
@@ -69,7 +66,7 @@ export interface BlockConfig<D extends BlockDef = BlockDef> {
     data: D['data'];
 
     /** Listeners associated with the block */
-    listeners: Record<keyof D['listeners'], Actions[]>;
+    listeners: Record<keyof D['listeners'], ListenerActions[]>;
 
     /** Children associated with the block */
     slots: Record<D['slots'], BlockJSON[]>;
@@ -115,7 +112,7 @@ export type BlockJSON<
           data: T['data'];
 
           /** Event listeners associated with the widget */
-          listeners: Record<keyof T['listeners'], Actions[]>;
+          listeners: Record<keyof T['listeners'], ListenerActions[]>;
 
           /** Slot information */
           slots: Record<keyof T['slots'], BlockJSON<A, A>[]>;
@@ -159,4 +156,12 @@ export type Query = {
 
     /** Current data of the Query */
     data: unknown;
+
+    /** Is the query automatically run or manully */
+    mode: 'automatic' | 'manual';
 };
+
+/**
+ * Listener Actions
+ */
+export type ListenerActions = RunQueryAction | DispatchEventAction;

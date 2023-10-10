@@ -1,8 +1,8 @@
 import { useCallback, useMemo } from 'react';
-import { toJS, computed } from 'mobx';
+import { computed } from 'mobx';
 
 import { Paths, PathValue } from '@/types';
-import { Actions, ActionMessages, Block, BlockDef } from '@/stores';
+import { ActionMessages, Block, BlockDef, ListenerActions } from '@/stores';
 import { copy } from '@/utility';
 
 import { useBlocks } from './useBlocks';
@@ -17,7 +17,9 @@ interface useBlockReturn<D extends BlockDef = BlockDef> {
     /** Listeners on the block  */
     listeners: Record<
         keyof Block<D>['listeners'],
-        (intercept?: (action: Actions) => Actions | null) => void
+        (
+            intercept?: (action: ListenerActions) => ListenerActions | null,
+        ) => void
     >;
 
     /** Slots */
@@ -110,13 +112,13 @@ export const useBlock = <D extends BlockDef = BlockDef>(
          * @param intercept - Intercept and modify an action
          */
         const dispatchAction = (
-            actions: Actions[],
-            intercept?: (action: Actions) => Actions | null,
+            actions: ListenerActions[],
+            intercept?: (action: ListenerActions) => ListenerActions | null,
         ) => {
             // go through each one and trigger it
             actions.forEach((a) => {
                 // convert back to a normal action
-                let action: Actions | null = toJS(a);
+                let action: ListenerActions | null = a;
 
                 // allow the action to be intercepted before dispatch
                 if (intercept) {

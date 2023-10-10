@@ -2,7 +2,7 @@ import { CSSProperties } from 'react';
 import { observer } from 'mobx-react-lite';
 
 import { useBlock } from '@/hooks';
-import { BlockDef, BlockComponent, ActionMessages } from '@/stores';
+import { BlockDef, BlockComponent } from '@/stores';
 
 export interface InputBlockDef extends BlockDef<'input'> {
     widget: 'input';
@@ -12,14 +12,11 @@ export interface InputBlockDef extends BlockDef<'input'> {
         required: boolean | string;
         value: string;
     };
-    listeners: {
-        onChange: true;
-    };
     slots: never;
 }
 
 export const InputBlock: BlockComponent = observer(({ id }) => {
-    const { attrs, data, setData, listeners } = useBlock<InputBlockDef>(id);
+    const { attrs, data, setData } = useBlock<InputBlockDef>(id);
 
     return (
         <input
@@ -32,16 +29,6 @@ export const InputBlock: BlockComponent = observer(({ id }) => {
 
                 // update the value
                 setData('value', value);
-
-                // trigger the listeners
-                listeners.onChange((action) => {
-                    if (action.message === ActionMessages.SET_BLOCK_DATA) {
-                        // update the value
-                        action.payload.value = e.target.value;
-                    }
-
-                    return action;
-                });
             }}
             {...attrs}
         />
