@@ -48,6 +48,7 @@ import SFTP from '@/assets/img/SFTP.png';
 
 //Commercial Models
 import OPEN_AI from '@/assets/img/OPEN_AI.png';
+import AZURE_OPEN_AI from '@/assets/img/OPEN_AI.png';
 import CLAUDE from '@/assets/img/CLAUDE_AI.png';
 
 //Local Models
@@ -60,6 +61,7 @@ import DOLLY from '@/assets/img/DOLLY_AI.jpg';
 import FLAN from '@/assets/img/FLAN.jpg';
 import BERT from '@/assets/img/BERT.png';
 import ELEUTHER from '@/assets/img/ELEUTHER_AI.png';
+import NEMO from '@/assets/img/NEMO.png';
 
 //Embedded Models
 import ORCA from '@/assets/img/ORCA.png';
@@ -300,6 +302,10 @@ export const stepsTwo = {
             disable: false,
         },
         {
+            name: 'Azure Open AI',
+            disable: false,
+        },
+        {
             name: 'Claude',
             disable: true,
         },
@@ -369,6 +375,10 @@ export const stepsTwo = {
             name: 'Wizard Coder',
             disable: false,
         },
+        {
+            name: 'NeMo',
+            disable: true,
+        },
     ],
     ['Embedded Models']: [
         {
@@ -381,6 +391,10 @@ export const stepsTwo = {
         },
         {
             name: 'Replit Code Model',
+            disable: true,
+        },
+        {
+            name: 'NeMo',
             disable: true,
         },
     ],
@@ -434,6 +448,7 @@ export const IconDBMapper = {
     SFTP: SFTP,
 
     'Open AI': OPEN_AI,
+    'Azure Open AI': AZURE_OPEN_AI,
     Claude: CLAUDE,
 
     'Wizard 13B': BRAIN,
@@ -452,7 +467,7 @@ export const IconDBMapper = {
     Bert: BERT,
     'Eleuther GPTJ': ELEUTHER,
     'Wizard Coder': BRAIN,
-
+    NeMo: NEMO,
     Orca: ORCA,
     'Stablity AI': STABILITY_AI,
     'Replit Code Model': REPLIT,

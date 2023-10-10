@@ -652,9 +652,9 @@ export const MembersTable = (props: MembersTableProps) => {
         return <LoadingScreen.Trigger description="Getting members" />;
     }
 
-    if (!condensed) {
-        return (
-            <StyledMemberContent>
+    return (
+        <StyledMemberContent>
+            {!condensed ? (
                 <StyledMemberInnerContent>
                     {membersCount > 0 ? (
                         <StyledTableContainer>
@@ -956,523 +956,99 @@ export const MembersTable = (props: MembersTableProps) => {
                         </StyledNoMembersContainer>
                     )}
                 </StyledMemberInnerContent>
-                <Modal open={deleteMembersModal}>
-                    <Modal.Title>Are you sure?</Modal.Title>
-                    <Modal.Content>
-                        Would you like to delete all selected members
-                    </Modal.Content>
-                    <Modal.Actions>
-                        <Button
-                            variant="text"
-                            onClick={() => setDeleteMembersModal(false)}
-                        >
-                            Close
-                        </Button>
-                        <Button
-                            variant={'contained'}
-                            color="error"
-                            onClick={() => {
-                                deleteSelectedMembers(selectedMembers);
-                            }}
-                        >
-                            Confirm
-                        </Button>
-                    </Modal.Actions>
-                </Modal>
-                <Modal open={deleteMemberModal} maxWidth="md">
-                    <Modal.Title>
-                        <Typography variant="h6">Are you sure?</Typography>
-                    </Modal.Title>
-                    <Modal.Content>
-                        <Modal.ContentText>
-                            {userToDelete && (
-                                <Typography variant="body1">
-                                    This will remove <b>{userToDelete.name}</b>{' '}
-                                    from the {type}
-                                </Typography>
-                            )}
-                        </Modal.ContentText>
-                    </Modal.Content>
-                    <Modal.Actions>
-                        <Button
-                            variant="text"
-                            onClick={() => setDeleteMemberModal(false)}
-                        >
-                            Close
-                        </Button>
-                        <Button
-                            color="error"
-                            variant={'contained'}
-                            onClick={() => {
-                                if (!userToDelete) {
-                                    console.error('No user to delete');
-                                }
-                                deleteSelectedMembers([userToDelete]);
-                            }}
-                        >
-                            Confirm
-                        </Button>
-                    </Modal.Actions>
-                </Modal>
-
-                <Modal open={addMembersModal} maxWidth="lg">
-                    <Modal.Title>Add Members</Modal.Title>
-                    <Modal.Content sx={{ width: '50rem' }}>
-                        <StyledModalContentText>
-                            <Autocomplete
-                                label="Search"
-                                multiple={true}
-                                options={nonCredentialedUsers}
-                                limitTags={2}
-                                getLimitTagsText={() =>
-                                    ` +${
-                                        selectedNonCredentialedUsers.length - 2
-                                    }`
-                                }
-                                value={[...selectedNonCredentialedUsers]}
-                                getOptionLabel={(option: any) => {
-                                    return `${option.name}`;
-                                }}
-                                isOptionEqualToValue={(option, value) => {
-                                    return option.name === value.name;
-                                }}
-                                onChange={(event, newValue: any) => {
-                                    setSelectedNonCredentialedUsers([
-                                        ...newValue,
-                                    ]);
-                                }}
-                            />
-
-                            {selectedNonCredentialedUsers &&
-                                selectedNonCredentialedUsers.map(
-                                    (user, idx) => {
-                                        const space = user.name.indexOf(' ');
-                                        const initial = user.name
-                                            ? space > -1
-                                                ? `${user.name[0].toUpperCase()}${user.name[
-                                                      space + 1
-                                                  ].toUpperCase()}`
-                                                : user.name[0].toUpperCase()
-                                            : user.id[0].toUpperCase();
-                                        return (
-                                            <Box
-                                                key={idx}
-                                                sx={{
-                                                    display: 'flex',
-                                                    justifyContent: 'left',
-                                                    align: 'center',
-                                                    backgroundColor:
-                                                        idx % 2 !== 0
-                                                            ? 'rgba(0, 0, 0, .03)'
-                                                            : '',
-                                                }}
-                                            >
-                                                <Box
-                                                    sx={{
-                                                        display: 'flex',
-                                                        justifyContent:
-                                                            'center',
-                                                        marginTop: '6px',
-                                                        marginLeft: '8px',
-                                                        marginRight: '8px',
-                                                    }}
-                                                >
-                                                    <Box
-                                                        sx={{
-                                                            display: 'flex',
-                                                            height: '80px',
-                                                            width: '80px',
-                                                            justifyContent:
-                                                                'center',
-                                                            alignItems:
-                                                                'center',
-                                                            border: '0.5px solid rgba(0, 0, 0, .05)',
-                                                            borderRadius: '50%',
-                                                        }}
-                                                    >
-                                                        <Avatar
-                                                            aria-label="avatar"
-                                                            sx={{
-                                                                display: 'flex',
-                                                                width: '60px',
-                                                                height: '60px',
-                                                                fontSize:
-                                                                    '24px',
-                                                                backgroundColor:
-                                                                    user.color,
-                                                            }}
-                                                        >
-                                                            {initial}
-                                                        </Avatar>
-                                                    </Box>
-                                                </Box>
-                                                <Card.Header
-                                                    title={
-                                                        <Typography variant="h5">
-                                                            {user.name}
-                                                        </Typography>
-                                                    }
-                                                    sx={{
-                                                        color: '#000',
-                                                        width: '100%',
-                                                    }}
-                                                    subheader={
-                                                        <Box
-                                                            sx={{
-                                                                display: 'flex',
-                                                                gap: 2,
-                                                                marginTop:
-                                                                    '4px',
-                                                            }}
-                                                        >
-                                                            <span
-                                                                style={{
-                                                                    opacity: 0.9,
-                                                                    fontSize:
-                                                                        '14px',
-                                                                }}
-                                                            >
-                                                                {`User ID: `}
-                                                                <Chip
-                                                                    label={
-                                                                        user.id
-                                                                    }
-                                                                    size="small"
-                                                                />
-                                                            </span>
-                                                            {`• `}
-                                                            <span>
-                                                                {`Email: `}
-                                                                <Link
-                                                                    href={`mailto:${user.email}`}
-                                                                    underline="none"
-                                                                >
-                                                                    {user.email}
-                                                                </Link>
-                                                            </span>
-                                                        </Box>
-                                                    }
-                                                    action={
-                                                        <IconButton
-                                                            sx={{
-                                                                mt: '16px',
-                                                                color: 'rgba( 0, 0, 0, .7)',
-                                                                mr: '24px',
-                                                            }}
-                                                            onClick={() => {
-                                                                const filtered =
-                                                                    selectedNonCredentialedUsers.filter(
-                                                                        (val) =>
-                                                                            val.id !==
-                                                                            user.id,
-                                                                    );
-                                                                setSelectedNonCredentialedUsers(
-                                                                    filtered,
-                                                                );
-                                                            }}
-                                                        >
-                                                            <ClearRounded />
-                                                        </IconButton>
-                                                    }
-                                                />
-                                            </Box>
-                                        );
-                                    },
-                                )}
-
-                            <Typography
-                                variant="subtitle1"
-                                sx={{
-                                    pt: '12px',
-                                    pb: '12px',
-                                    fontWeight: 'bold',
-                                    fontSize: '16',
-                                }}
-                            >
-                                Permissions
-                            </Typography>
-                            <Box
-                                sx={{
-                                    backgroundColor: 'rgba(0,0,0,.03)',
-                                    padding: '10px',
-                                    borderRadius: '8px',
-                                }}
-                            >
-                                <RadioGroup
-                                    label={''}
-                                    onChange={(e) => {
-                                        const val = e.target.value;
-                                        if (val) {
-                                            setAddMemberRole(
-                                                val as SETTINGS_ROLE,
-                                            );
-                                        }
-                                    }}
-                                >
-                                    <Stack spacing={1}>
-                                        <StyledCard>
-                                            <Card.Header
-                                                title={
-                                                    <Box
-                                                        sx={{
-                                                            display: 'flex',
-                                                            fontSize: '16px',
-                                                        }}
-                                                    >
-                                                        <Avatar
-                                                            sx={{
-                                                                width: '20px',
-                                                                height: '20px',
-                                                                mt: '6px',
-                                                                marginRight:
-                                                                    '12px',
-                                                                fontSize:
-                                                                    '12px',
-                                                                fontWeight:
-                                                                    'bold',
-                                                                backgroundColor:
-                                                                    'rgba(0, 0, 0, .5)',
-                                                            }}
-                                                        >
-                                                            A
-                                                        </Avatar>
-                                                        Author
-                                                    </Box>
-                                                }
-                                                sx={{ color: '#000' }}
-                                                subheader={
-                                                    <Box
-                                                        sx={{
-                                                            marginLeft: '30px',
-                                                        }}
-                                                    >
-                                                        Ability to provision
-                                                        other users, edit
-                                                        database details and
-                                                        hide or delete the
-                                                        database.
-                                                    </Box>
-                                                }
-                                                action={
-                                                    <RadioGroup.Item
-                                                        value="Author"
-                                                        label=""
-                                                    />
-                                                }
-                                            />
-                                        </StyledCard>
-                                        <StyledCard>
-                                            <Card.Header
-                                                title={
-                                                    <Box
-                                                        sx={{
-                                                            display: 'flex',
-                                                            fontSize: '16px',
-                                                        }}
-                                                    >
-                                                        <Icon
-                                                            sx={{
-                                                                width: '20px',
-                                                                height: '20px',
-                                                                mt: '6px',
-                                                                marginRight:
-                                                                    '12px',
-                                                                fontSize:
-                                                                    '12px',
-                                                                fontWeight:
-                                                                    'bold',
-                                                                color: 'rgba(0, 0, 0, .5)',
-                                                            }}
-                                                        >
-                                                            <EditRounded />
-                                                        </Icon>
-                                                        Editor
-                                                    </Box>
-                                                }
-                                                sx={{ color: '#000' }}
-                                                subheader={
-                                                    <Box
-                                                        sx={{
-                                                            marginLeft: '30px',
-                                                        }}
-                                                    >
-                                                        Has the ability to use
-                                                        the database to generate
-                                                        insights and can query
-                                                        against the database.
-                                                    </Box>
-                                                }
-                                                action={
-                                                    <RadioGroup.Item
-                                                        value="Editor"
-                                                        label=""
-                                                    />
-                                                }
-                                            />
-                                        </StyledCard>
-                                        <StyledCard>
-                                            <Card.Header
-                                                title={
-                                                    <Box
-                                                        sx={{
-                                                            display: 'flex',
-                                                            fontSize: '16px',
-                                                        }}
-                                                    >
-                                                        <Icon
-                                                            sx={{
-                                                                width: '20px',
-                                                                height: '20px',
-                                                                mt: '6px',
-                                                                marginRight:
-                                                                    '12px',
-                                                                fontSize:
-                                                                    '12px',
-                                                                fontWeight:
-                                                                    'bold',
-                                                                color: 'rgba(0, 0, 0, .5)',
-                                                            }}
-                                                        >
-                                                            <RemoveRedEyeRounded />
-                                                        </Icon>
-                                                        Read-Only
-                                                    </Box>
-                                                }
-                                                sx={{ color: '#000' }}
-                                                subheader={
-                                                    <Box
-                                                        sx={{
-                                                            marginLeft: '30px',
-                                                        }}
-                                                    >
-                                                        Can view insights built
-                                                        using the database.
-                                                    </Box>
-                                                }
-                                                action={
-                                                    <RadioGroup.Item
-                                                        value="Read-Only"
-                                                        label=""
-                                                    />
-                                                }
-                                            />
-                                        </StyledCard>
-                                    </Stack>
-                                </RadioGroup>
-                            </Box>
-                        </StyledModalContentText>
-                    </Modal.Content>
-                    <Modal.Actions>
-                        <Button
-                            variant="outlined"
-                            onClick={() => setAddMembersModal(false)}
-                        >
-                            Cancel
-                        </Button>
-                        <Button
-                            variant={'contained'}
-                            disabled={
-                                !addMemberRole ||
-                                selectedNonCredentialedUsers.length < 1
-                            }
-                            onClick={() => {
-                                submitNonCredUsers();
-                            }}
-                        >
-                            Save
-                        </Button>
-                    </Modal.Actions>
-                </Modal>
-            </StyledMemberContent>
-        );
-    } else {
-        return (
-            <StyledMemberContent style={{}}>
-                <div
-                    style={{
-                        display: 'flex',
-                        justifyContent: 'space-between',
-                        width: '100%',
-                        padding: '8px',
-                    }}
-                >
-                    <Search
-                        ref={memberSearchRef}
-                        placeholder={'Search members'}
-                        size={'small'}
-                        value={searchFilter}
-                        onChange={(e) => {
-                            setValue('SEARCH_FILTER', e.target.value);
-                        }}
-                    />
-                    <Button
-                        variant={'contained'}
-                        onClick={() => {
-                            getUsersNoCreds();
+            ) : (
+                <>
+                    <div
+                        style={{
+                            display: 'flex',
+                            justifyContent: 'space-between',
+                            width: '100%',
+                            padding: '8px',
                         }}
                     >
-                        Add{' '}
-                    </Button>
-                </div>
-                <StyledMemberTable>
-                    <Table.Head>
-                        <Table.Row>
-                            <Table.Cell size="small">ID</Table.Cell>
-                            <Table.Cell size="small">Permission</Table.Cell>
-                            {/* <Table.Cell size="small">Action</Table.Cell> */}
-                        </Table.Row>
-                    </Table.Head>
-                    <Table.Body>
-                        {verifiedMembers.map((x, i) => {
-                            const user = verifiedMembers[i];
+                        <Search
+                            ref={memberSearchRef}
+                            placeholder={'Search members'}
+                            size={'small'}
+                            value={searchFilter}
+                            onChange={(e) => {
+                                setValue('SEARCH_FILTER', e.target.value);
+                            }}
+                        />
+                        <Button
+                            variant={'contained'}
+                            onClick={() => {
+                                getUsersNoCreds();
+                            }}
+                        >
+                            Add{' '}
+                        </Button>
+                    </div>
+                    <StyledMemberTable>
+                        <Table.Head>
+                            <Table.Row>
+                                <Table.Cell size="small">ID</Table.Cell>
+                                <Table.Cell size="small">Permission</Table.Cell>
+                                {/* <Table.Cell size="small">Action</Table.Cell> */}
+                            </Table.Row>
+                        </Table.Head>
+                        <Table.Body>
+                            {verifiedMembers.map((x, i) => {
+                                const user = verifiedMembers[i];
 
-                            let isSelected = false;
+                                let isSelected = false;
 
-                            if (user) {
-                                isSelected = selectedMembers.some((value) => {
-                                    return value.id === user.id;
-                                });
-                            }
-                            if (user) {
-                                return (
-                                    <Table.Row key={user.name + i}>
-                                        <Table.Cell
-                                            size="small"
-                                            component="td"
-                                            scope="row"
-                                        >
-                                            {user.id}
-                                        </Table.Cell>
-                                        <Table.Cell size="small">
-                                            <Select
-                                                value={
-                                                    permissionMapper[
-                                                        user.permission
-                                                    ]
-                                                }
-                                                onChange={(e) => {
-                                                    updateSelectedUsers(
-                                                        [user],
-                                                        permissionMapper[
-                                                            e.target.value
-                                                        ],
-                                                    );
-                                                }}
+                                if (user) {
+                                    isSelected = selectedMembers.some(
+                                        (value) => {
+                                            return value.id === user.id;
+                                        },
+                                    );
+                                }
+                                if (user) {
+                                    return (
+                                        <Table.Row key={user.name + i}>
+                                            <Table.Cell
                                                 size="small"
+                                                component="td"
+                                                scope="row"
                                             >
-                                                <Select.Item value={'Author'}>
-                                                    Author
-                                                </Select.Item>
-                                                <Select.Item value={'Editor'}>
-                                                    Editor
-                                                </Select.Item>
-                                                <Select.Item
-                                                    value={'Read-Only'}
+                                                {user.id}
+                                            </Table.Cell>
+                                            <Table.Cell size="small">
+                                                <Select
+                                                    value={
+                                                        permissionMapper[
+                                                            user.permission
+                                                        ]
+                                                    }
+                                                    onChange={(e) => {
+                                                        updateSelectedUsers(
+                                                            [user],
+                                                            permissionMapper[
+                                                                e.target.value
+                                                            ],
+                                                        );
+                                                    }}
+                                                    size="small"
                                                 >
-                                                    Read-Only
-                                                </Select.Item>
-                                            </Select>
-                                            {/* <RadioGroup
+                                                    <Select.Item
+                                                        value={'Author'}
+                                                    >
+                                                        Author
+                                                    </Select.Item>
+                                                    <Select.Item
+                                                        value={'Editor'}
+                                                    >
+                                                        Editor
+                                                    </Select.Item>
+                                                    <Select.Item
+                                                        value={'Read-Only'}
+                                                    >
+                                                        Read-Only
+                                                    </Select.Item>
+                                                </Select>
+                                                {/* <RadioGroup
                                                 row
                                                 defaultValue={
                                                     permissionMapper[
@@ -1505,8 +1081,8 @@ export const MembersTable = (props: MembersTableProps) => {
                                                     label="Read-Only"
                                                 />
                                             </RadioGroup> */}
-                                        </Table.Cell>
-                                        {/* <Table.Cell size="small">
+                                            </Table.Cell>
+                                            {/* <Table.Cell size="small">
                                             <IconButton
                                                 onClick={() => {
                                                     // set user
@@ -1518,29 +1094,431 @@ export const MembersTable = (props: MembersTableProps) => {
                                                 <Delete></Delete>
                                             </IconButton>
                                         </Table.Cell> */}
-                                    </Table.Row>
-                                );
-                            }
-                        })}
-                    </Table.Body>
-                    <Table.Footer>
-                        <Table.Row>
-                            <Table.Pagination
-                                rowsPerPageOptions={
-                                    paginationOptions.membersPageCounts
+                                        </Table.Row>
+                                    );
                                 }
-                                onPageChange={(e, v) => {
-                                    setMembersPage(v + 1);
-                                    setSelectedMembers([]);
+                            })}
+                        </Table.Body>
+                        <Table.Footer>
+                            <Table.Row>
+                                <Table.Pagination
+                                    rowsPerPageOptions={
+                                        paginationOptions.membersPageCounts
+                                    }
+                                    onPageChange={(e, v) => {
+                                        setMembersPage(v + 1);
+                                        setSelectedMembers([]);
+                                    }}
+                                    page={membersPage - 1}
+                                    rowsPerPage={5}
+                                    count={filteredMembersCount}
+                                />
+                            </Table.Row>
+                        </Table.Footer>
+                    </StyledMemberTable>
+                </>
+            )}
+            <Modal open={deleteMembersModal}>
+                <Modal.Title>Are you sure?</Modal.Title>
+                <Modal.Content>
+                    Would you like to delete all selected members
+                </Modal.Content>
+                <Modal.Actions>
+                    <Button
+                        variant="text"
+                        onClick={() => setDeleteMembersModal(false)}
+                    >
+                        Close
+                    </Button>
+                    <Button
+                        variant={'contained'}
+                        color="error"
+                        onClick={() => {
+                            deleteSelectedMembers(selectedMembers);
+                        }}
+                    >
+                        Confirm
+                    </Button>
+                </Modal.Actions>
+            </Modal>
+            <Modal open={deleteMemberModal} maxWidth="md">
+                <Modal.Title>
+                    <Typography variant="h6">Are you sure?</Typography>
+                </Modal.Title>
+                <Modal.Content>
+                    <Modal.ContentText>
+                        {userToDelete && (
+                            <Typography variant="body1">
+                                This will remove <b>{userToDelete.name}</b> from
+                                the {type}
+                            </Typography>
+                        )}
+                    </Modal.ContentText>
+                </Modal.Content>
+                <Modal.Actions>
+                    <Button
+                        variant="text"
+                        onClick={() => setDeleteMemberModal(false)}
+                    >
+                        Close
+                    </Button>
+                    <Button
+                        color="error"
+                        variant={'contained'}
+                        onClick={() => {
+                            if (!userToDelete) {
+                                console.error('No user to delete');
+                            }
+                            deleteSelectedMembers([userToDelete]);
+                        }}
+                    >
+                        Confirm
+                    </Button>
+                </Modal.Actions>
+            </Modal>
+
+            <Modal open={addMembersModal} maxWidth="lg">
+                <Modal.Title>Add Members</Modal.Title>
+                <Modal.Content sx={{ width: '50rem' }}>
+                    <StyledModalContentText>
+                        <Autocomplete
+                            label="Search"
+                            multiple={true}
+                            options={nonCredentialedUsers}
+                            limitTags={2}
+                            getLimitTagsText={() =>
+                                ` +${selectedNonCredentialedUsers.length - 2}`
+                            }
+                            value={[...selectedNonCredentialedUsers]}
+                            getOptionLabel={(option: any) => {
+                                return `${option.name}`;
+                            }}
+                            isOptionEqualToValue={(option, value) => {
+                                return option.name === value.name;
+                            }}
+                            onChange={(event, newValue: any) => {
+                                setSelectedNonCredentialedUsers([...newValue]);
+                            }}
+                        />
+
+                        {selectedNonCredentialedUsers &&
+                            selectedNonCredentialedUsers.map((user, idx) => {
+                                const space = user.name.indexOf(' ');
+                                const initial = user.name
+                                    ? space > -1
+                                        ? `${user.name[0].toUpperCase()}${user.name[
+                                              space + 1
+                                          ].toUpperCase()}`
+                                        : user.name[0].toUpperCase()
+                                    : user.id[0].toUpperCase();
+                                return (
+                                    <Box
+                                        key={idx}
+                                        sx={{
+                                            display: 'flex',
+                                            justifyContent: 'left',
+                                            align: 'center',
+                                            backgroundColor:
+                                                idx % 2 !== 0
+                                                    ? 'rgba(0, 0, 0, .03)'
+                                                    : '',
+                                        }}
+                                    >
+                                        <Box
+                                            sx={{
+                                                display: 'flex',
+                                                justifyContent: 'center',
+                                                marginTop: '6px',
+                                                marginLeft: '8px',
+                                                marginRight: '8px',
+                                            }}
+                                        >
+                                            <Box
+                                                sx={{
+                                                    display: 'flex',
+                                                    height: '80px',
+                                                    width: '80px',
+                                                    justifyContent: 'center',
+                                                    alignItems: 'center',
+                                                    border: '0.5px solid rgba(0, 0, 0, .05)',
+                                                    borderRadius: '50%',
+                                                }}
+                                            >
+                                                <Avatar
+                                                    aria-label="avatar"
+                                                    sx={{
+                                                        display: 'flex',
+                                                        width: '60px',
+                                                        height: '60px',
+                                                        fontSize: '24px',
+                                                        backgroundColor:
+                                                            user.color,
+                                                    }}
+                                                >
+                                                    {initial}
+                                                </Avatar>
+                                            </Box>
+                                        </Box>
+                                        <Card.Header
+                                            title={
+                                                <Typography variant="h5">
+                                                    {user.name}
+                                                </Typography>
+                                            }
+                                            sx={{
+                                                color: '#000',
+                                                width: '100%',
+                                            }}
+                                            subheader={
+                                                <Box
+                                                    sx={{
+                                                        display: 'flex',
+                                                        gap: 2,
+                                                        marginTop: '4px',
+                                                    }}
+                                                >
+                                                    <span
+                                                        style={{
+                                                            opacity: 0.9,
+                                                            fontSize: '14px',
+                                                        }}
+                                                    >
+                                                        {`User ID: `}
+                                                        <Chip
+                                                            label={user.id}
+                                                            size="small"
+                                                        />
+                                                    </span>
+                                                    {`• `}
+                                                    <span>
+                                                        {`Email: `}
+                                                        <Link
+                                                            href={`mailto:${user.email}`}
+                                                            underline="none"
+                                                        >
+                                                            {user.email}
+                                                        </Link>
+                                                    </span>
+                                                </Box>
+                                            }
+                                            action={
+                                                <IconButton
+                                                    sx={{
+                                                        mt: '16px',
+                                                        color: 'rgba( 0, 0, 0, .7)',
+                                                        mr: '24px',
+                                                    }}
+                                                    onClick={() => {
+                                                        const filtered =
+                                                            selectedNonCredentialedUsers.filter(
+                                                                (val) =>
+                                                                    val.id !==
+                                                                    user.id,
+                                                            );
+                                                        setSelectedNonCredentialedUsers(
+                                                            filtered,
+                                                        );
+                                                    }}
+                                                >
+                                                    <ClearRounded />
+                                                </IconButton>
+                                            }
+                                        />
+                                    </Box>
+                                );
+                            })}
+
+                        <Typography
+                            variant="subtitle1"
+                            sx={{
+                                pt: '12px',
+                                pb: '12px',
+                                fontWeight: 'bold',
+                                fontSize: '16',
+                            }}
+                        >
+                            Permissions
+                        </Typography>
+                        <Box
+                            sx={{
+                                backgroundColor: 'rgba(0,0,0,.03)',
+                                padding: '10px',
+                                borderRadius: '8px',
+                            }}
+                        >
+                            <RadioGroup
+                                label={''}
+                                onChange={(e) => {
+                                    const val = e.target.value;
+                                    if (val) {
+                                        setAddMemberRole(val as SETTINGS_ROLE);
+                                    }
                                 }}
-                                page={membersPage - 1}
-                                rowsPerPage={5}
-                                count={filteredMembersCount}
-                            />
-                        </Table.Row>
-                    </Table.Footer>
-                </StyledMemberTable>
-            </StyledMemberContent>
-        );
-    }
+                            >
+                                <Stack spacing={1}>
+                                    <StyledCard>
+                                        <Card.Header
+                                            title={
+                                                <Box
+                                                    sx={{
+                                                        display: 'flex',
+                                                        fontSize: '16px',
+                                                    }}
+                                                >
+                                                    <Avatar
+                                                        sx={{
+                                                            width: '20px',
+                                                            height: '20px',
+                                                            mt: '6px',
+                                                            marginRight: '12px',
+                                                            fontSize: '12px',
+                                                            fontWeight: 'bold',
+                                                            backgroundColor:
+                                                                'rgba(0, 0, 0, .5)',
+                                                        }}
+                                                    >
+                                                        A
+                                                    </Avatar>
+                                                    Author
+                                                </Box>
+                                            }
+                                            sx={{ color: '#000' }}
+                                            subheader={
+                                                <Box
+                                                    sx={{
+                                                        marginLeft: '30px',
+                                                    }}
+                                                >
+                                                    Ability to provision other
+                                                    users, edit database details
+                                                    and hide or delete the
+                                                    database.
+                                                </Box>
+                                            }
+                                            action={
+                                                <RadioGroup.Item
+                                                    value="Author"
+                                                    label=""
+                                                />
+                                            }
+                                        />
+                                    </StyledCard>
+                                    <StyledCard>
+                                        <Card.Header
+                                            title={
+                                                <Box
+                                                    sx={{
+                                                        display: 'flex',
+                                                        fontSize: '16px',
+                                                    }}
+                                                >
+                                                    <Icon
+                                                        sx={{
+                                                            width: '20px',
+                                                            height: '20px',
+                                                            mt: '6px',
+                                                            marginRight: '12px',
+                                                            fontSize: '12px',
+                                                            fontWeight: 'bold',
+                                                            color: 'rgba(0, 0, 0, .5)',
+                                                        }}
+                                                    >
+                                                        <EditRounded />
+                                                    </Icon>
+                                                    Editor
+                                                </Box>
+                                            }
+                                            sx={{ color: '#000' }}
+                                            subheader={
+                                                <Box
+                                                    sx={{
+                                                        marginLeft: '30px',
+                                                    }}
+                                                >
+                                                    Has the ability to use the
+                                                    database to generate
+                                                    insights and can query
+                                                    against the database.
+                                                </Box>
+                                            }
+                                            action={
+                                                <RadioGroup.Item
+                                                    value="Editor"
+                                                    label=""
+                                                />
+                                            }
+                                        />
+                                    </StyledCard>
+                                    <StyledCard>
+                                        <Card.Header
+                                            title={
+                                                <Box
+                                                    sx={{
+                                                        display: 'flex',
+                                                        fontSize: '16px',
+                                                    }}
+                                                >
+                                                    <Icon
+                                                        sx={{
+                                                            width: '20px',
+                                                            height: '20px',
+                                                            mt: '6px',
+                                                            marginRight: '12px',
+                                                            fontSize: '12px',
+                                                            fontWeight: 'bold',
+                                                            color: 'rgba(0, 0, 0, .5)',
+                                                        }}
+                                                    >
+                                                        <RemoveRedEyeRounded />
+                                                    </Icon>
+                                                    Read-Only
+                                                </Box>
+                                            }
+                                            sx={{ color: '#000' }}
+                                            subheader={
+                                                <Box
+                                                    sx={{
+                                                        marginLeft: '30px',
+                                                    }}
+                                                >
+                                                    Can view insights built
+                                                    using the database.
+                                                </Box>
+                                            }
+                                            action={
+                                                <RadioGroup.Item
+                                                    value="Read-Only"
+                                                    label=""
+                                                />
+                                            }
+                                        />
+                                    </StyledCard>
+                                </Stack>
+                            </RadioGroup>
+                        </Box>
+                    </StyledModalContentText>
+                </Modal.Content>
+                <Modal.Actions>
+                    <Button
+                        variant="outlined"
+                        onClick={() => setAddMembersModal(false)}
+                    >
+                        Cancel
+                    </Button>
+                    <Button
+                        variant={'contained'}
+                        disabled={
+                            !addMemberRole ||
+                            selectedNonCredentialedUsers.length < 1
+                        }
+                        onClick={() => {
+                            submitNonCredUsers();
+                        }}
+                    >
+                        Save
+                    </Button>
+                </Modal.Actions>
+            </Modal>
+        </StyledMemberContent>
+    );
 };

@@ -66,6 +66,7 @@ export const AppEditorPanel = (props) => {
 
     const { appId, editorView, refreshApp, setIsLoading, isLoading } = useApp();
 
+    const { width } = props;
     const { handleSubmit, control } = useForm<EditAppForm>({
         defaultValues: {
             PROJECT_UPLOAD: null,
@@ -282,6 +283,7 @@ export const AppEditorPanel = (props) => {
             {editorView === 'code-editor' && (
                 <AppEditor
                     appId={appId}
+                    width={width}
                     onSave={(success: boolean) => {
                         // Succesfully Saved Asset, refresh portal
                         if (success) {
