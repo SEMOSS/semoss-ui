@@ -32,79 +32,95 @@ const StyledKeyValue = styled('div')(({ theme }) => ({
     gap: theme.spacing(2),
     marginBottom: theme.spacing(2),
 }));
+export const ImportForm = (props) => {
+    const { submitFunc, fields } = props;
 
-type FormProps = {
-    MODEL: string;
-    SMSS_PROPERTIES: { KEY: string; value: string }[];
-} & { [key: string]: unknown };
+    const { steps, setSteps } = useImport();
 
-export const ModelForm = (props) => {
-    const { submitFunc } = props;
-
-    // Model in last step
-    const { steps } = useImport();
-
-    const { control, handleSubmit, reset } = useForm<FormProps>({
+    const { control, handleSubmit, reset } = useForm({
         defaultValues: {
             MODEL: '',
             // SMSS_PROPERTIES: [],
-        },
+        } || { VECTOR: '' },
     });
-
-    // const { fields, remove, append } = useFieldArray({
-    //     control,
-    //     name: 'SMSS_PROPERTIES',
-    // });
 
     /**
-     * Used to get form fields in constants
+     * Sets default values for fields
      */
-    const lastStep = steps[steps.length - 1];
-
-    const foundForm = MODEL_FORMS.find((val) => {
-        return val.name === lastStep.title;
-    });
-
-    if (!foundForm) return <div>No Form found</div>;
-
     useEffect(() => {
         const defaultVals = {};
-        foundForm.fields.forEach((f) => {
+        fields.forEach((f) => {
             defaultVals[f.fieldName] = f.defaultValue;
         });
 
         reset(defaultVals);
     }, [steps.length]);
 
+    /**
+     * @desc Takes details from submission form and
+     * constucts values to parent for submission
+     * @param data // TO DO: Type this out
+     */
     const onSubmit = async (data) => {
-        const smssProperties = {};
+        // Submit Form connection and its over. Now on catalog
+        if (steps[0].data !== 'DATABASE') {
+            const connectionDetails = {};
 
-        Object.entries(data).forEach((obj) => {
-            if (obj[0] !== 'SMSS_PROPERTIES') {
-                smssProperties[obj[0]] = obj[1];
-            }
-        });
+            // Construct details for submission account for new properties
+            Object.entries(data).forEach((obj) => {
+                if (obj[0] !== 'SMSS_PROPERTIES') {
+                    connectionDetails[obj[0]] = obj[1];
+                }
+            });
+            /** For custom properties */
+            // data.SMSS_PROPERTIES.forEach((obj) => {
+            //     if (!connectionDetails[obj.KEY]) {
+            //         connectionDetails[obj.KEY] = obj.VALUE;
+            //     }
+            // });
 
-        /** For custom properties */
-        // data.SMSS_PROPERTIES.forEach((obj) => {
-        //     if (!smssProperties[obj.KEY]) {
-        //         smssProperties[obj.KEY] = obj.VALUE;
-        //     }
-        // });
+            const formVals = {
+                type: steps[0].data, // 'MODEL' | "VECTOR" | "FUNCTION" | "STORAGE" | "DATABASE"
+                name: data.NAME, // Name of engine
+                fields: connectionDetails,
+            };
 
-        const formVals = {
-            type: 'MODEL',
-            name: data.NAME,
-            fields: smssProperties,
-        };
+            submitFunc(formVals);
+        } else {
+            // Add new step for connection details for metamodeling
+            // 1. set another step for connection details, this will trigger a page change
 
-        submitFunc(formVals);
+            const conDetails = {
+                dbDriver: data.dbDriver,
+                additional: data.additional,
+                hostname: data.hostname,
+                port: data.port,
+                database: data.database,
+                schema: data.schema,
+                USERNAME: data.USERNAME,
+                PASSWORD: data.PASSWORD,
+                CONNECTION_URL: data.CONNECTION_URL,
+            };
+
+            // setSteps(
+            //     [
+            //         ...steps,
+            //         {
+            //             title: data.NAME,
+            //             description:
+            //                 'View and edit the relationships of the selected tables from the external connection that was made.',
+            //             data: conDetails,
+            //         },
+            //     ],
+            //     steps.length + 1,
+            // );
+        }
     };
 
     return (
         <form onSubmit={handleSubmit(onSubmit)}>
             <Stack rowGap={2}>
-                {foundForm.fields.map((val, i) => {
+                {fields.map((val, i) => {
                     return (
                         <StyledKeyValue key={i}>
                             <Controller
@@ -269,7 +285,7 @@ export const ModelForm = (props) => {
                         Add Property
                     </Button> */}
                     <Button type="submit" variant={'contained'}>
-                        Add Model
+                        Add {steps[0].data.toLowerCase()}
                     </Button>
                 </StyledFlexEnd>
             </Stack>

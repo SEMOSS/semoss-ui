@@ -167,17 +167,23 @@ export const CatalogPage = observer((): JSX.Element => {
     let catalogType = '';
 
     switch (catalogParams) {
-        case '':
-            catalogType = 'Database';
+        case '?type=model':
+            catalogType = 'Model';
+            break;
+        case '?type=vector':
+            catalogType = 'Vector';
+            break;
+        case '?type=function':
+            catalogType = 'Function';
             break;
         case '?type=database':
             catalogType = 'Database';
             break;
-        case '?type=model':
-            catalogType = 'Model';
-            break;
         case '?type=storage':
             catalogType = 'Storage';
+            break;
+        case '':
+            catalogType = 'Database';
             break;
     }
 
@@ -659,11 +665,15 @@ export const CatalogPage = observer((): JSX.Element => {
                             spacing={2}
                         >
                             <Typography variant={'h4'}>
-                                {catalogType === 'Database'
+                                {catalogType === 'Model'
+                                    ? 'Model'
+                                    : catalogType === 'Function'
+                                    ? 'Function'
+                                    : catalogType === 'Vector'
+                                    ? 'Vector'
+                                    : catalogType === 'Database'
                                     ? 'Data'
-                                    : catalogType === 'Storage'
-                                    ? 'Storage'
-                                    : 'Model'}{' '}
+                                    : 'Storage'}{' '}
                                 Catalog
                             </Typography>
                             <Search
@@ -694,6 +704,10 @@ export const CatalogPage = observer((): JSX.Element => {
                                 onClick={() => {
                                     if (catalogType === 'Model') {
                                         navigate('/import?type=model');
+                                    } else if (catalogType === 'Function') {
+                                        navigate('/import?type=function');
+                                    } else if (catalogType === 'Vector') {
+                                        navigate('/import?type=vector');
                                     } else if (catalogType === 'Storage') {
                                         navigate('/import?type=storage');
                                     } else {
@@ -767,11 +781,15 @@ export const CatalogPage = observer((): JSX.Element => {
                             <StyledChipList>
                                 <StyledChip
                                     label={
-                                        catalogType === 'Database'
+                                        catalogType === 'Model'
+                                            ? 'My Models'
+                                            : catalogType === 'Function'
+                                            ? 'My Functions'
+                                            : catalogType === 'Vector'
+                                            ? 'My Vectors'
+                                            : catalogType === 'Database'
                                             ? 'My Databases'
-                                            : catalogType === 'Storage'
-                                            ? 'My Storages'
-                                            : 'My Models'
+                                            : 'My Storages'
                                     }
                                     selected={mode === 'Mine'}
                                     onClick={() => {
@@ -787,11 +805,15 @@ export const CatalogPage = observer((): JSX.Element => {
                                 ></StyledChip>
                                 <StyledChip
                                     label={
-                                        catalogType === 'Database'
+                                        catalogType === 'Model'
+                                            ? 'Discoverable Models'
+                                            : catalogType === 'Function'
+                                            ? 'Discoverable Functions'
+                                            : catalogType === 'Vector'
+                                            ? 'Discoverable Vectors'
+                                            : catalogType === 'Database'
                                             ? 'Discoverable Databases'
-                                            : catalogType === 'Storage'
-                                            ? 'Discoverable Storages'
-                                            : 'Discoverable Models'
+                                            : 'Discoverable Storages'
                                     }
                                     selected={mode === 'Discoverable'}
                                     onClick={() => {

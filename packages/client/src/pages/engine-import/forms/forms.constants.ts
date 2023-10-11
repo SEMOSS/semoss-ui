@@ -1,3 +1,4 @@
+import React from 'react';
 import { CSVForm } from './forms/CSVForm';
 import { ExcelForm } from './forms/ExcelForm';
 import { TSVForm } from './forms/TSVForm';
@@ -31,8 +32,6 @@ import { SQLServerForm } from './forms/SQLServerForm';
 import { TeradataForm } from './forms/TeradataForm';
 import { TibcoForm } from './forms/TibcoForm';
 import { TrinoForm } from './forms/TrinoForm';
-
-import React from 'react';
 
 export interface FormRoute {
     component: React.FunctionComponent;

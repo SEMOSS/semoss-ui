@@ -86,7 +86,11 @@ export const NavigatorLayout = observer(() => {
         <>
             <Navbar />
             <StyledSidebar>
-                <StyledSidebarItem to={''} selected={location.pathname === '/'}>
+                <StyledSidebarItem
+                    to={''}
+                    selected={location.pathname === '/'}
+                    title={'Navigate to app catalog'}
+                >
                     <Icon>
                         <LibraryBooksOutlined />
                     </Icon>
@@ -95,6 +99,7 @@ export const NavigatorLayout = observer(() => {
                 <StyledSidebarItem
                     to={'catalog?type=model'}
                     selected={location.search.includes('?type=model')}
+                    title={'Navigate to model catalog'}
                 >
                     <Icon>
                         <ModelBrain />
@@ -102,7 +107,8 @@ export const NavigatorLayout = observer(() => {
                 </StyledSidebarItem>
                 <StyledSidebarItem
                     to={'catalog?type=function'}
-                    selected={location.pathname === '/function'}
+                    selected={location.search.includes('?type=function')}
+                    title={'Navigate to function catalog'}
                 >
                     <Icon>
                         <Functions />
@@ -110,7 +116,8 @@ export const NavigatorLayout = observer(() => {
                 </StyledSidebarItem>
                 <StyledSidebarItem
                     to={'catalog?type=vector'}
-                    selected={location.pathname === '/?type=vector'}
+                    selected={location.search.includes('?type=vector')}
+                    title={'Navigate to vector catalog'}
                 >
                     <Icon>
                         <Polyline />
@@ -119,6 +126,7 @@ export const NavigatorLayout = observer(() => {
                 <StyledSidebarItem
                     to={'catalog?type=database'}
                     selected={location.search.includes('?type=database')}
+                    title={'Navigate to database catalog'}
                 >
                     <Icon>
                         <Database />
@@ -127,6 +135,7 @@ export const NavigatorLayout = observer(() => {
                 <StyledSidebarItem
                     to={'catalog?type=storage'}
                     selected={location.search.includes('?type=storage')}
+                    title={'Navigate to storage catalog'}
                 >
                     <Icon>
                         <Inventory2Outlined />
@@ -136,6 +145,7 @@ export const NavigatorLayout = observer(() => {
                 <StyledSidebarItem
                     to={'settings'}
                     selected={location.pathname === '/settings'}
+                    title={'Navigate to settings'}
                 >
                     <Icon>
                         <Settings />
