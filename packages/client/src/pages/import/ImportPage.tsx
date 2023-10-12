@@ -24,7 +24,10 @@ import {
     Box,
     Grid,
 } from '@semoss/ui';
-import { stepsOne, CONNECTION_OPTIONS } from './import.constants';
+import {
+    stepsOne,
+    // CONNECTION_OPTIONS
+} from './import.constants';
 
 import { UploadData } from '../engine-import/forms/UploadData';
 import { CopyDatabaseForm } from '../engine-import/forms/CopyDatabaseForm';
@@ -187,7 +190,7 @@ const IconMapper = {
 export const ImportPage = () => {
     const [importSearch, setImportSearch] = React.useState('');
     const [search, setSearch] = React.useState('');
-    const { steps, activeStep, setSteps } = useImport();
+    const { steps, activeStep, setSteps, CONNECTION_OPTIONS } = useImport();
 
     const navigate = useNavigate();
     const { search: importParams } = useLocation();
@@ -403,7 +406,7 @@ export const ImportPage = () => {
                                 Other Options
                             </StyledCategoryTitle>
                             <Grid container columns={12} spacing={2}>
-                                {stepsOne.slice(4, 6).map((val, idx) => (
+                                {stepsOne.slice(4, 8).map((val, idx) => (
                                     <Grid
                                         item
                                         key={idx}

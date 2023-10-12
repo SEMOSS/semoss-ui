@@ -56,7 +56,6 @@ export const ImportConnectionPage = () => {
         setIsLoading(true);
 
         const formDetails = steps[steps.length - 1];
-        debugger;
         const pixel = `ExternalJdbcTablesAndViews(conDetails=[
           ${JSON.stringify(formDetails.data)}
         ])`;
@@ -368,8 +367,9 @@ export const MetamodelView = (props: MetamodelViewProps) => {
             }
         });
 
+        debugger;
         const pixel = `databaseVar = RdbmsExternalUpload(conDetails=[
-          ${JSON.stringify(formDetails.data)}, database=["${
+          ${JSON.stringify(formDetails.data)}], database=["${
             formDetails.title
         }"], metamodel=[
           ${JSON.stringify({
@@ -485,14 +485,14 @@ export const MetamodelView = (props: MetamodelViewProps) => {
                 >
                     Tables and Views
                 </Button>
-                <Button
+                {/* <Button
                     variant={'contained'}
                     onClick={() => {
                         console.log('Apply new metamodel');
                     }}
                 >
                     Apply
-                </Button>
+                </Button> */}
             </div>
         </div>
         // <Modal open={true} maxWidth={'xl'} fullWidth={true}>

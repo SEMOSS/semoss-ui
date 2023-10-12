@@ -6,6 +6,7 @@ import SQLITE from '@/assets/img/SQLITE.png';
 import H2_DB from '@/assets/img/H2_DB.png';
 import NEO4J from '@/assets/img/NEO4J.png';
 import TINKER from '@/assets/img/TINKER.png';
+import ZIP from '@/assets/img/ZIP.png';
 
 //Connect to an External Database
 import ASTER from '@/assets/img/ASTER.png';
@@ -110,6 +111,19 @@ export const stepsOne = [
         description: '',
         disabled: false,
         data: 'STORAGE',
+    },
+    {
+        name: 'Connect to Vector Database',
+        description: '',
+        disabled: false,
+        data: 'VECTOR',
+    },
+    {
+        name: 'Connect to Function',
+        description:
+            "In an era fueled by information, the seamless interlinking of various databases stands as a cornerstone for unlocking the untapped potential of LLM applications. Whether you're a seasoned AI practitioner, a language aficionado, or an industry visionary, this page serves as your guiding star to grasp the spectrum of database options available within the LLM landscape.",
+        disabled: false,
+        data: 'FUNCTION',
     },
 ];
 
@@ -2739,9 +2753,28 @@ export const CONNECTION_OPTIONS = {
                 fields: [],
             },
         ],
+        'File Uploads': [
+            {
+                name: 'ZIP',
+                disable: false,
+                icon: ZIP,
+                fields: [
+                    {
+                        fieldName: 'ZIP',
+                        label: 'Zip File',
+                        defaultValue: null,
+                        options: {
+                            component: 'zip-upload',
+                        },
+                        disabled: true,
+                        rules: { required: true },
+                    },
+                ],
+            },
+        ],
     },
     VECTOR: {
-        VECTOR: [
+        Connections: [
             {
                 name: 'FAISS',
                 disable: false,
@@ -2832,6 +2865,24 @@ export const CONNECTION_OPTIONS = {
     DATABASE: {
         'File Uploads': [
             {
+                name: 'ZIP',
+                description: 'Drop a zip file',
+                disable: false,
+                icon: ZIP,
+                fields: [
+                    {
+                        fieldName: 'ZIP',
+                        label: 'Zip File',
+                        defaultValue: null,
+                        options: {
+                            component: 'zip-upload',
+                        },
+                        disabled: true,
+                        rules: { required: true },
+                    },
+                ],
+            },
+            {
                 name: 'CSV',
                 disable: true,
                 icon: CSV,
@@ -2892,7 +2943,7 @@ export const CONNECTION_OPTIONS = {
                         hidden: true,
                     },
                     {
-                        fieldName: 'DATABASE_NAME',
+                        fieldName: 'NAME',
                         label: 'Database Name',
                         defaultValue: '',
                         options: {
@@ -3010,7 +3061,7 @@ export const CONNECTION_OPTIONS = {
                         hidden: true,
                     },
                     {
-                        fieldName: 'DATABASE_NAME',
+                        fieldName: 'NAME',
                         label: 'Database Name',
                         defaultValue: '',
                         options: {
@@ -3128,7 +3179,7 @@ export const CONNECTION_OPTIONS = {
                         hidden: true,
                     },
                     {
-                        fieldName: 'DATABASE_NAME',
+                        fieldName: 'NAME',
                         label: 'Database Name',
                         defaultValue: '',
                         options: {
@@ -3266,7 +3317,7 @@ export const CONNECTION_OPTIONS = {
                         hidden: true,
                     },
                     {
-                        fieldName: 'DATABASE_NAME',
+                        fieldName: 'NAME',
                         label: 'Database Name',
                         defaultValue: '',
                         options: {
@@ -3384,7 +3435,7 @@ export const CONNECTION_OPTIONS = {
                         hidden: true,
                     },
                     {
-                        fieldName: 'DATABASE_NAME',
+                        fieldName: 'NAME',
                         label: 'Database Name',
                         defaultValue: '',
                         options: {
@@ -3512,7 +3563,7 @@ export const CONNECTION_OPTIONS = {
                         hidden: true,
                     },
                     {
-                        fieldName: 'DATABASE_NAME',
+                        fieldName: 'NAME',
                         label: 'Database Name',
                         defaultValue: '',
                         options: {
@@ -3650,7 +3701,7 @@ export const CONNECTION_OPTIONS = {
                         hidden: true,
                     },
                     {
-                        fieldName: 'DATABASE_NAME',
+                        fieldName: 'NAME',
                         label: 'Database Name',
                         defaultValue: '',
                         options: {
@@ -3748,7 +3799,7 @@ export const CONNECTION_OPTIONS = {
                         hidden: true,
                     },
                     {
-                        fieldName: 'DATABASE_NAME',
+                        fieldName: 'NAME',
                         label: 'Database Name',
                         defaultValue: '',
                         options: {
@@ -3867,7 +3918,7 @@ export const CONNECTION_OPTIONS = {
                         hidden: true,
                     },
                     {
-                        fieldName: 'DATABASE_NAME',
+                        fieldName: 'NAME',
                         label: 'Database Name',
                         defaultValue: '',
                         options: {
@@ -3986,7 +4037,7 @@ export const CONNECTION_OPTIONS = {
                         hidden: true,
                     },
                     {
-                        fieldName: 'DATABASE_NAME',
+                        fieldName: 'NAME',
                         label: 'Database Name',
                         defaultValue: '',
                         options: {
@@ -4111,7 +4162,7 @@ export const CONNECTION_OPTIONS = {
                         hidden: true,
                     },
                     {
-                        fieldName: 'DATABASE_NAME',
+                        fieldName: 'NAME',
                         label: 'Database Name',
                         defaultValue: '',
                         options: {
@@ -4230,7 +4281,7 @@ export const CONNECTION_OPTIONS = {
                         hidden: true,
                     },
                     {
-                        fieldName: 'DATABASE_NAME',
+                        fieldName: 'NAME',
                         label: 'Database Name',
                         defaultValue: '',
                         options: {
@@ -4348,7 +4399,7 @@ export const CONNECTION_OPTIONS = {
                         hidden: true,
                     },
                     {
-                        fieldName: 'DATABASE_NAME',
+                        fieldName: 'NAME',
                         label: 'Database Name',
                         defaultValue: '',
                         options: {
@@ -4466,7 +4517,7 @@ export const CONNECTION_OPTIONS = {
                         hidden: true,
                     },
                     {
-                        fieldName: 'DATABASE_NAME',
+                        fieldName: 'NAME',
                         label: 'Database Name',
                         defaultValue: '',
                         options: {
@@ -4584,7 +4635,7 @@ export const CONNECTION_OPTIONS = {
                         hidden: true,
                     },
                     {
-                        fieldName: 'DATABASE_NAME',
+                        fieldName: 'NAME',
                         label: 'Database Name',
                         defaultValue: '',
                         options: {
@@ -4702,7 +4753,7 @@ export const CONNECTION_OPTIONS = {
                         hidden: true,
                     },
                     {
-                        fieldName: 'DATABASE_NAME',
+                        fieldName: 'NAME',
                         label: 'Database Name',
                         defaultValue: '',
                         options: {
@@ -4820,7 +4871,7 @@ export const CONNECTION_OPTIONS = {
                         hidden: true,
                     },
                     {
-                        fieldName: 'DATABASE_NAME',
+                        fieldName: 'NAME',
                         label: 'Database Name',
                         defaultValue: '',
                         options: {
@@ -4938,7 +4989,7 @@ export const CONNECTION_OPTIONS = {
                         hidden: true,
                     },
                     {
-                        fieldName: 'DATABASE_NAME',
+                        fieldName: 'NAME',
                         label: 'Database Name',
                         defaultValue: '',
                         options: {
@@ -5066,7 +5117,7 @@ export const CONNECTION_OPTIONS = {
                         hidden: true,
                     },
                     {
-                        fieldName: 'DATABASE_NAME',
+                        fieldName: 'NAME',
                         label: 'Database Name',
                         defaultValue: '',
                         options: {
@@ -5194,7 +5245,7 @@ export const CONNECTION_OPTIONS = {
                         hidden: true,
                     },
                     {
-                        fieldName: 'DATABASE_NAME',
+                        fieldName: 'NAME',
                         label: 'Database Name',
                         defaultValue: '',
                         options: {
@@ -5312,7 +5363,7 @@ export const CONNECTION_OPTIONS = {
                         hidden: true,
                     },
                     {
-                        fieldName: 'DATABASE_NAME',
+                        fieldName: 'NAME',
                         label: 'Database Name',
                         defaultValue: '',
                         options: {
@@ -5470,7 +5521,7 @@ export const CONNECTION_OPTIONS = {
                         hidden: true,
                     },
                     {
-                        fieldName: 'DATABASE_NAME',
+                        fieldName: 'NAME',
                         label: 'Database Name',
                         defaultValue: '',
                         options: {
@@ -5619,7 +5670,7 @@ export const CONNECTION_OPTIONS = {
                         hidden: true,
                     },
                     {
-                        fieldName: 'DATABASE_NAME',
+                        fieldName: 'NAME',
                         label: 'Database Name',
                         defaultValue: '',
                         options: {
@@ -5661,7 +5712,7 @@ export const CONNECTION_OPTIONS = {
                     {
                         fieldName: 'port',
                         label: 'Port',
-                        defaultValue: '',
+                        defaultValue: '1433',
                         options: {
                             component: 'text-field',
                         },
@@ -5681,7 +5732,7 @@ export const CONNECTION_OPTIONS = {
                     {
                         fieldName: 'schema',
                         label: 'Schema',
-                        defaultValue: '',
+                        defaultValue: 'dbo',
                         options: {
                             component: 'text-field',
                         },
@@ -5754,7 +5805,7 @@ export const CONNECTION_OPTIONS = {
                         hidden: true,
                     },
                     {
-                        fieldName: 'DATABASE_NAME',
+                        fieldName: 'NAME',
                         label: 'Database Name',
                         defaultValue: '',
                         options: {
@@ -5862,7 +5913,7 @@ export const CONNECTION_OPTIONS = {
                         hidden: true,
                     },
                     {
-                        fieldName: 'DATABASE_NAME',
+                        fieldName: 'NAME',
                         label: 'Database Name',
                         defaultValue: '',
                         options: {
@@ -5980,7 +6031,7 @@ export const CONNECTION_OPTIONS = {
                         hidden: true,
                     },
                     {
-                        fieldName: 'DATABASE_NAME',
+                        fieldName: 'NAME',
                         label: 'Database Name',
                         defaultValue: '',
                         options: {
@@ -6626,6 +6677,204 @@ export const CONNECTION_OPTIONS = {
                         rules: { required: false },
                     },
                 ],
+            },
+        ],
+    },
+};
+
+const d = {
+    FUNCTION: {
+        Function: [
+            {
+                name: 'MINIO DUPE',
+                disable: false,
+                icon: MINIO,
+                fields: [
+                    {
+                        fieldName: 'STORAGE_TYPE',
+                        label: 'Storage Type',
+                        defaultValue: 'MINIO',
+                        options: {
+                            component: 'text-field',
+                        },
+                        disabled: true,
+                        rules: { required: true },
+                    },
+                    {
+                        fieldName: 'NAME',
+                        label: 'Name',
+                        defaultValue: '',
+                        options: {
+                            component: 'text-field',
+                        },
+                        disabled: false,
+                        rules: { required: true },
+                    },
+                    {
+                        fieldName: 'MINIO_REGION',
+                        label: 'Region',
+                        defaultValue: 'us-east-1',
+                        options: {
+                            component: 'text-field',
+                        },
+                        disabled: false,
+                        rules: { required: true },
+                    },
+                    {
+                        fieldName: 'MINIO_ACCESS_KEY',
+                        label: 'Access Key',
+                        defaultValue: '',
+                        options: {
+                            component: 'text-field',
+                        },
+                        disabled: false,
+                        rules: { required: true },
+                    },
+                    {
+                        fieldName: 'MINIO_SECRET_KEY',
+                        label: 'Secret Key',
+                        defaultValue: '',
+                        options: {
+                            component: 'password',
+                        },
+                        disabled: false,
+                        rules: { required: true },
+                    },
+                    {
+                        fieldName: 'MINIO_ENDPOINT',
+                        label: 'Endpoint',
+                        defaultValue: '',
+                        options: {
+                            component: 'text-field',
+                        },
+                        disabled: false,
+                        rules: { required: true },
+                    },
+                    {
+                        fieldName: 'MINIO_BUCKET',
+                        label: 'Root Bucket Path',
+                        defaultValue: '',
+                        options: {
+                            component: 'text-field',
+                        },
+                        disabled: false,
+                        rules: { required: false },
+                    },
+                ],
+            },
+            {
+                name: 'Test',
+                disable: true,
+                icon: BRAIN,
+                fields: [],
+            },
+        ],
+        'File Uploads': [
+            {
+                name: 'ZIP',
+                disable: false,
+                icon: ZIP,
+                fields: [
+                    {
+                        fieldName: 'ZIP',
+                        label: 'Zip File',
+                        defaultValue: null,
+                        options: {
+                            component: 'zip-upload',
+                        },
+                        disabled: true,
+                        rules: { required: true },
+                    },
+                ],
+            },
+        ],
+    },
+    VECTOR: {
+        Connections: [
+            {
+                name: 'FAISS',
+                disable: false,
+                icon: META,
+                fields: [
+                    {
+                        fieldName: 'NAME',
+                        label: 'Name',
+                        defaultValue: '',
+                        options: {
+                            component: 'text-field',
+                        },
+                        disabled: false,
+                        rules: { required: true },
+                    },
+                    {
+                        fieldName: 'VECTOR_TYPE',
+                        label: 'Type',
+                        defaultValue: 'FAISS',
+                        options: {
+                            component: 'text-field',
+                        },
+                        disabled: true,
+                        rules: { required: true },
+                    },
+                    {
+                        fieldName: 'CONNECTION_URL',
+                        label: 'Connection URL',
+                        defaultValue: '@BaseFolder@/vector/@ENGINE@/',
+                        options: {
+                            component: 'text-field',
+                        },
+                        disabled: true,
+                        rules: { required: true },
+                    },
+                    {
+                        fieldName: 'ENCODER_NAME',
+                        label: 'Encoder Name',
+                        defaultValue: '',
+                        options: {
+                            component: 'text-field',
+                        },
+                        disabled: false,
+                        rules: { required: true },
+                    },
+                    {
+                        fieldName: 'ENCODER_TYPE',
+                        label: 'Encoder Type',
+                        defaultValue: '',
+                        options: {
+                            component: 'text-field',
+                        },
+                        disabled: false,
+                        rules: { required: true },
+                    },
+                    {
+                        fieldName: 'ENCODER_API_KEY',
+                        label: 'Encoder API Key',
+                        defaultValue: '',
+                        options: {
+                            component: 'text-field',
+                        },
+                        disabled: false,
+                        rules: { required: true },
+                    },
+                ],
+            },
+            {
+                name: 'Weaviate',
+                disable: true,
+                icon: WEVIATE,
+                fields: [],
+            },
+            {
+                name: 'Pinecone',
+                disable: true,
+                icon: PINECONE,
+                fields: [],
+            },
+            {
+                name: 'pgvector',
+                disable: true,
+                icon: POSTGRES,
+                fields: [],
             },
         ],
     },

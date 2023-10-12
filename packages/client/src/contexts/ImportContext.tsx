@@ -60,6 +60,11 @@ export type ImportContextType = {
      * activeStepIdx - new active step
      */
     setActiveStep: (index: number) => void;
+
+    /**
+     * CONNECTION OPTIONS WITH UNIQUE ID
+     */
+    CONNECTION_OPTIONS: any;
 };
 
 /**

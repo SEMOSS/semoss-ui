@@ -229,19 +229,17 @@ export const ImportSpecificPage = () => {
 
             {/* TODO */}
             {/* --------------------------------------------------------- */}
-            {/* EVERYTHING THAT IS NOT DATABASE SHOULD WORK ON SUBMISSION */}
-            {/* 1. Ensure db-connection form hits step 3 with correct details */}
+            {/* 1. Add in Advanced Settings properties in JSON for Form   */}
             {/* --------------------------------------------------------- */}
 
             {/* Comment code out below Guranteed to work  */}
             {/* {steps[0].title !== 'Connect to Database' && (
                 <ImportForm
-                fields={steps[1].data}
-                submitFunc={(vals) => formSubmit(vals)}
+                    fields={steps[1].data}
+                    submitFunc={(vals) => formSubmit(vals)}
                 />
-             )} */}
-
-            {/* {steps[0].title === 'Connect to Database' &&
+            )}
+            {steps[0].title === 'Connect to Database' &&
                 DATABASE_FORM_ROUTES.map((f, i) => {
                     if (f.name === steps[1].title) {
                         return getForm(f, i);

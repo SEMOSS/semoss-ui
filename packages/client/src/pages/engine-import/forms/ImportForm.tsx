@@ -8,6 +8,7 @@ import {
     styled,
     Menu,
     Select,
+    FileDropzone,
 } from '@semoss/ui';
 import { Delete } from '@mui/icons-material';
 import { useImport } from '@/hooks';
@@ -33,18 +34,10 @@ const StyledKeyValue = styled('div')(({ theme }) => ({
     marginBottom: theme.spacing(2),
 }));
 
-interface FormStep {
-    data: string;
-    title: string;
-    description: string;
-}
-
 export const ImportForm = (props) => {
     const { submitFunc, fields } = props;
 
-    const { steps, setSteps } = useImport();
-
-    const formStep: FormStep = steps[0];
+    const { steps, setSteps, CONNECTION_OPTIONS } = useImport();
 
     const { control, handleSubmit, reset } = useForm({
         defaultValues: {
@@ -71,6 +64,8 @@ export const ImportForm = (props) => {
      * @param data // TO DO: Type this out
      */
     const onSubmit = async (data) => {
+        console.log('should have id', CONNECTION_OPTIONS);
+        debugger;
         // Submit Form connection and its over. Now on catalog
         if (steps[0].data !== 'DATABASE') {
             const connectionDetails = {};
@@ -98,33 +93,6 @@ export const ImportForm = (props) => {
         } else {
             // Add new step for connection details for metamodeling
             // 1. set another step for connection details, this will trigger a page change
-
-            // {
-            //     "dbDriver":"SQL_SERVER",
-            //     "additional":";encrypt=true;trustServerCertificate=true;",
-            //     "hostname":"18.213.113.140",
-            //     "port":"1433",
-            //     "database":"semoss_supply",
-            //     "schema":"dbo",
-            //     "USERNAME":"SA",
-            //     "PASSWORD":"semoss@123123"
-            // }
-
-            // {
-            //     "hostname":"18.213.113.140",
-            //     "port":"1433",
-            //     "database":"semoss_supply",
-            //     "schema":"dbo",
-            //     "USERNAME":"SA",
-            //     "PASSWORD":"semoss@123123",
-            //     "additional":";encrypt=true;trustServerCertificate=true;",
-            //     "CONNECTION_URL":""
-
-            //     "DATABASE_NAME":"NEW",
-            //     "DATABASE_DESCRIPTION":"",
-            //     "DATABASE_TAGS":"",
-            // }
-
             setSteps(
                 [
                     ...steps,
@@ -234,6 +202,22 @@ export const ImportForm = (props) => {
                                                         },
                                                     )}
                                                 </Select>
+                                            );
+                                        } else if (
+                                            val.options.component ===
+                                            'zip-upload'
+                                        ) {
+                                            return (
+                                                <FileDropzone
+                                                    multiple={false}
+                                                    value={field.value}
+                                                    disabled={false}
+                                                    onChange={(newValues) => {
+                                                        field.onChange(
+                                                            newValues,
+                                                        );
+                                                    }}
+                                                />
                                             );
                                         }
                                     }}
