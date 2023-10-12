@@ -502,6 +502,7 @@ export const ImportPage = () => {
                                                                                 [
                                                                                     ...steps,
                                                                                     {
+                                                                                        id: `${kv[0]}.${stage.name}`,
                                                                                         title: stage.name,
                                                                                         description: `Fill out ${
                                                                                             stage.name

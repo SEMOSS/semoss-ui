@@ -13,6 +13,9 @@ interface ImportStep {
 
     /** Component to render in the step */
     component?: React.FunctionComponent;
+
+    /** Where you came from based on CONNECTION_OPTIONS */
+    id?: string;
 }
 
 /**

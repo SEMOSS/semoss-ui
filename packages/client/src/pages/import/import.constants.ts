@@ -2666,6 +2666,25 @@ export const CONNECTION_OPTIONS = {
                 fields: [],
             },
         ],
+        'File Uploads': [
+            {
+                name: 'ZIP',
+                disable: false,
+                icon: ZIP,
+                fields: [
+                    {
+                        fieldName: 'ZIP',
+                        label: 'Zip File',
+                        defaultValue: null,
+                        options: {
+                            component: 'zip-upload',
+                        },
+                        disabled: true,
+                        rules: { required: true },
+                    },
+                ],
+            },
+        ],
     },
     FUNCTION: {
         Function: [
@@ -2859,6 +2878,25 @@ export const CONNECTION_OPTIONS = {
                 disable: true,
                 icon: POSTGRES,
                 fields: [],
+            },
+        ],
+        'File Uploads': [
+            {
+                name: 'ZIP',
+                disable: false,
+                icon: ZIP,
+                fields: [
+                    {
+                        fieldName: 'ZIP',
+                        label: 'Zip File',
+                        defaultValue: null,
+                        options: {
+                            component: 'zip-upload',
+                        },
+                        disabled: true,
+                        rules: { required: true },
+                    },
+                ],
             },
         ],
     },
@@ -6675,6 +6713,25 @@ export const CONNECTION_OPTIONS = {
                         },
                         disabled: false,
                         rules: { required: false },
+                    },
+                ],
+            },
+        ],
+        'File Uploads': [
+            {
+                name: 'ZIP',
+                disable: false,
+                icon: ZIP,
+                fields: [
+                    {
+                        fieldName: 'ZIP',
+                        label: 'Zip File',
+                        defaultValue: null,
+                        options: {
+                            component: 'zip-upload',
+                        },
+                        disabled: true,
+                        rules: { required: true },
                     },
                 ],
             },

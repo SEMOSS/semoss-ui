@@ -9,11 +9,11 @@ import {
     Menu,
     Select,
     FileDropzone,
+    useNotification,
 } from '@semoss/ui';
 import { Delete } from '@mui/icons-material';
-import { useImport } from '@/hooks';
-
-import { MODEL_FORMS } from './forms.constants';
+import { useImport, useRootStore } from '@/hooks';
+import { useNavigate } from 'react-router-dom';
 
 const StyledFlexEnd = styled('div')(({ theme }) => ({
     display: 'flex',
@@ -37,7 +37,10 @@ const StyledKeyValue = styled('div')(({ theme }) => ({
 export const ImportForm = (props) => {
     const { submitFunc, fields } = props;
 
-    const { steps, setSteps, CONNECTION_OPTIONS } = useImport();
+    const { steps, setSteps } = useImport();
+    const notification = useNotification();
+    const { monolithStore, configStore } = useRootStore();
+    const navigate = useNavigate();
 
     const { control, handleSubmit, reset } = useForm({
         defaultValues: {
@@ -64,10 +67,54 @@ export const ImportForm = (props) => {
      * @param data // TO DO: Type this out
      */
     const onSubmit = async (data) => {
-        console.log('should have id', CONNECTION_OPTIONS);
-        debugger;
-        // Submit Form connection and its over. Now on catalog
-        if (steps[0].data !== 'DATABASE') {
+        // If it's a File Upload
+        if (steps[1].id.includes('File Uploads')) {
+            if (steps[1].title === 'ZIP') {
+                const upload = await monolithStore.uploadFile(
+                    [data.ZIP],
+                    configStore.store.insightID,
+                );
+
+                const pixelString =
+                    steps[0].data === 'DATABASE'
+                        ? `UploadDatabase(filePath=["${upload[0].fileLocation}"])`
+                        : `UploadEngine(filePath=["${upload[0].fileLocation}"], engineTypes=["${steps[0].data}"])`;
+
+                const response = await monolithStore.runQuery(pixelString);
+                const output = response.pixelReturn[0].output,
+                    operationType = response.pixelReturn[0].operationType;
+
+                if (operationType.indexOf('ERROR') > -1) {
+                    notification.add({
+                        color: 'error',
+                        message: output,
+                    });
+                    return;
+                }
+
+                navigate(`/catalog?type=${steps[0].data.toLowerCase()}`);
+                return;
+            }
+            return;
+        }
+
+        // If its one of the other engines that just has an input form and done
+        if (steps[0].data === 'DATABASE') {
+            // Add new step for connection details for metamodeling
+            // 1. set another step for connection details, this will trigger a page change
+            setSteps(
+                [
+                    ...steps,
+                    {
+                        title: data.NAME,
+                        description:
+                            'View and edit the relationships of the selected tables from the external connection that was made.',
+                        data: data,
+                    },
+                ],
+                steps.length + 1,
+            );
+        } else {
             const connectionDetails = {};
 
             // Construct details for submission account for new properties
@@ -90,21 +137,6 @@ export const ImportForm = (props) => {
             };
 
             submitFunc(formVals);
-        } else {
-            // Add new step for connection details for metamodeling
-            // 1. set another step for connection details, this will trigger a page change
-            setSteps(
-                [
-                    ...steps,
-                    {
-                        title: data.NAME,
-                        description:
-                            'View and edit the relationships of the selected tables from the external connection that was made.',
-                        data: data,
-                    },
-                ],
-                steps.length + 1,
-            );
         }
     };
 
