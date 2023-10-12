@@ -29,7 +29,6 @@ export const ImportLayout = () => {
     }, [internalSteps, internalActiveStepIdx]);
 
     useEffect(() => {
-        debugger;
         assignUniqueIds(CONNECTION_OPTIONS);
     }, []);
 
