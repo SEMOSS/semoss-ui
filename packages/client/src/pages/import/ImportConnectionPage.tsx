@@ -56,6 +56,7 @@ export const ImportConnectionPage = () => {
         setIsLoading(true);
 
         const formDetails = steps[steps.length - 1];
+        debugger;
         const pixel = `ExternalJdbcTablesAndViews(conDetails=[
           ${JSON.stringify(formDetails.data)}
         ])`;
