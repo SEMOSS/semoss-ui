@@ -275,7 +275,11 @@ export const MembersTable = (props: MembersTableProps) => {
 
     // get the api
     const getMembersApi: Parameters<typeof useAPI>[0] =
-        type === 'database' || type === 'model' || type === 'storage'
+        type === 'database' ||
+        type === 'model' ||
+        type === 'storage' ||
+        type === 'function' ||
+        type === 'vector'
             ? [
                   'getEngineUsers',
                   adminMode,
@@ -354,7 +358,13 @@ export const MembersTable = (props: MembersTableProps) => {
             }
 
             let response: AxiosResponse<{ success: boolean }> | null = null;
-            if (type === 'database' || type === 'model' || type === 'storage') {
+            if (
+                type === 'database' ||
+                type === 'model' ||
+                type === 'storage' ||
+                type === 'function' ||
+                type === 'vector'
+            ) {
                 response = await monolithStore.editEngineUserPermissions(
                     adminMode,
                     id,
@@ -418,7 +428,13 @@ export const MembersTable = (props: MembersTableProps) => {
             }
 
             let response: AxiosResponse<{ success: boolean }> | null = null;
-            if (type === 'database' || type === 'model' || type === 'storage') {
+            if (
+                type === 'database' ||
+                type === 'model' ||
+                type === 'storage' ||
+                type === 'function' ||
+                type === 'vector'
+            ) {
                 response = await monolithStore.removeEngineUserPermissions(
                     adminMode,
                     id,
@@ -508,7 +524,13 @@ export const MembersTable = (props: MembersTableProps) => {
         try {
             let response: AxiosResponse<Record<string, unknown>[]> | null =
                 null;
-            if (type === 'database' || type === 'model' || type === 'storage') {
+            if (
+                type === 'database' ||
+                type === 'model' ||
+                type === 'storage' ||
+                type === 'function' ||
+                type === 'vector'
+            ) {
                 response = await monolithStore.getEngineUsersNoCredentials(
                     adminMode,
                     id,
@@ -567,7 +589,13 @@ export const MembersTable = (props: MembersTableProps) => {
             }
 
             let response: AxiosResponse<{ success: boolean }> | null = null;
-            if (type === 'database' || type === 'model' || type === 'storage') {
+            if (
+                type === 'database' ||
+                type === 'model' ||
+                type === 'storage' ||
+                type === 'function' ||
+                type === 'vector'
+            ) {
                 response = await monolithStore.addEngineUserPermissions(
                     adminMode,
                     id,

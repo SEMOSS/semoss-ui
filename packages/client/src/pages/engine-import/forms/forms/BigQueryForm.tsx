@@ -171,7 +171,7 @@ export const BigQueryForm: ImportFormComponent = () => {
                             <TextField
                                 fullWidth
                                 required
-                                label="Port"
+                                label="Schema"
                                 value={field.value ? field.value : ''}
                                 onChange={(value) => field.onChange(value)}
                             ></TextField>

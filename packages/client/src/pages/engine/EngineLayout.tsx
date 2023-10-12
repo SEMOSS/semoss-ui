@@ -42,13 +42,19 @@ export const EngineLayout = () => {
     const { pathname } = useLocation();
     const navigate = useNavigate();
 
-    let engineType: 'database' | 'storage' | 'model' = 'database';
-    if (pathname.includes('database')) {
-        engineType = 'database';
-    } else if (pathname.includes('storage')) {
-        engineType = 'storage';
-    } else {
+    let engineType: 'database' | 'storage' | 'model' | 'function' | 'vector' =
+        'database';
+
+    if (pathname.includes('model')) {
         engineType = 'model';
+    } else if (pathname.includes('function')) {
+        engineType = 'function';
+    } else if (pathname.includes('vector')) {
+        engineType = 'vector';
+    } else if (pathname.includes('database')) {
+        engineType = 'database';
+    } else {
+        engineType = 'storage';
     }
 
     // filter metakeys to the ones we want

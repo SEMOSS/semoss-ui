@@ -2141,7 +2141,6 @@ function storeService(
                     PANEL_LABEL(changes, output, insightID);
                 } else if (type[typeIdx] === 'PANEL_CONFIG') {
                     if (output.config && output.config.test) {
-                        // debugger;
                     } else {
                         PANEL_CONFIG(changes, output, insightID);
                     }

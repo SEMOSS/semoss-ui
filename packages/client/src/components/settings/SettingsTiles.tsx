@@ -73,7 +73,11 @@ export const SettingsTiles = (props: SettingsTilesProps) => {
     const [loading, setLoading] = useState(false);
 
     const infoPixel =
-        type === 'database' || type === 'model' || type === 'storage'
+        type === 'database' ||
+        type === 'model' ||
+        type === 'storage' ||
+        type === 'function' ||
+        type === 'vector'
             ? `EngineInfo(engine='${id}');`
             : type === 'app'
             ? `ProjectInfo(project='${id}')`
@@ -111,7 +115,13 @@ export const SettingsTiles = (props: SettingsTilesProps) => {
         try {
             setLoading(true);
             let pixel = '';
-            if (type === 'database' || type === 'model' || type === 'storage') {
+            if (
+                type === 'database' ||
+                type === 'model' ||
+                type === 'storage' ||
+                type === 'function' ||
+                type === 'vector'
+            ) {
                 pixel = `DeleteEngine(engine=['${id}']);`;
             } else {
                 pixel = `DeleteProject(project=['${id}']);`;
@@ -156,7 +166,13 @@ export const SettingsTiles = (props: SettingsTilesProps) => {
     const changeDiscoverable = async () => {
         try {
             let response: AxiosResponse<{ success: boolean }> | null = null;
-            if (type === 'database' || type === 'model' || type === 'storage') {
+            if (
+                type === 'database' ||
+                type === 'model' ||
+                type === 'storage' ||
+                type === 'function' ||
+                type === 'vector'
+            ) {
                 response = await monolithStore.setEngineVisiblity(
                     adminMode,
                     id,
@@ -202,7 +218,13 @@ export const SettingsTiles = (props: SettingsTilesProps) => {
     const changeGlobal = async () => {
         try {
             let response: AxiosResponse<{ success: boolean }> | null = null;
-            if (type === 'database' || type === 'model' || type === 'storage') {
+            if (
+                type === 'database' ||
+                type === 'model' ||
+                type === 'storage' ||
+                type === 'function' ||
+                type === 'vector'
+            ) {
                 response = await monolithStore.setEngineGlobal(
                     adminMode,
                     id,

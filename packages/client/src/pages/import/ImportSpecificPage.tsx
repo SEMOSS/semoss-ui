@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { DATABASE_FORM_ROUTES } from '../engine-import/forms/forms';
 import { StorageForm } from '../engine-import/forms/StorageForm';
 import { ModelForm } from '../engine-import/forms/ModelForm';
+import { ImportForm } from '../engine-import/forms/ImportForm';
 import { useRootStore } from '@/hooks';
 
 import { useImport } from '@/hooks';
@@ -31,16 +32,22 @@ export const ImportSpecificPage = () => {
      *
      * @param values
      * @returns
-     * @desc determines what pixel to hit based on steps
+     * @desc  Based on type of submitted form it will either:
+     * 1. Hit the respective reactor to submit
+     * 2. Sets next step in process to continue with submission
      */
-    const formSubmit = async (values) => {
+    const formSubmit = async (values: {
+        type: 'VECTOR' | 'STORAGE' | 'MODEL' | 'FUNCTION' | 'UPLOAD';
+        name: string;
+        fields: unknown[];
+    }) => {
         // Loading
         setIsLoading(true);
 
-        /** Storage: START */
-        if (values.type === 'storage') {
+        if (values.type === 'STORAGE') {
+            /** Storage: START */
             const pixel = `CreateStorageEngine(storage=["${
-                values.storage
+                values.name
             }"], storageDetails=[${JSON.stringify(values.fields)}])`;
 
             monolithStore.runQuery(pixel).then((response) => {
@@ -64,14 +71,12 @@ export const ImportSpecificPage = () => {
 
                 navigate(`/storage/${output.database_id}`);
             });
-            return;
-        }
-        /** Storage: END */
 
-        /** Model: START */
-        if (values.type === 'model') {
+            return;
+        } else if (values.type === 'MODEL') {
+            /** Model: START */
             const pixel = `CreateModelEngine(model=["${
-                values.storage
+                values.name
             }"], modelDetails=[${JSON.stringify(values.fields)}])`;
 
             monolithStore.runQuery(pixel).then((response) => {
@@ -96,8 +101,49 @@ export const ImportSpecificPage = () => {
                 navigate(`/model/${output.database_id}`);
             });
             return;
+        } else if (values.type === 'VECTOR') {
+            /** Vector Database: START */
+            const pixel = `
+                CreateVectorDatabaseEngine ( 
+                    database=["${values.name}"], 
+                    conDetails=[ ${JSON.stringify(values.fields)}
+                    ]
+                ) ;
+            `;
+
+            console.warn('verify fields went back correctly');
+            monolithStore.runQuery(pixel).then((response) => {
+                const output = response.pixelReturn[0].output,
+                    operationType = response.pixelReturn[0].operationType;
+
+                setIsLoading(false);
+
+                if (operationType.indexOf('ERROR') > -1) {
+                    notification.add({
+                        color: 'error',
+                        message: output,
+                    });
+                    return;
+                }
+
+                notification.add({
+                    color: 'success',
+                    message: `Successfully added vector`,
+                });
+
+                navigate(`/vector/${output.database_id}`);
+            });
+            console.log(pixel);
+            return;
+        } else if (values.type === 'FUNCTION') {
+            /** Function: START */
+            notification.add({
+                color: 'warning',
+                message:
+                    'Pixel for Function Creation required, we apologize for the inconvenience.',
+            });
+            return;
         }
-        /** Model: END */
 
         /** Connect to External: START */
         // I'll be hitting this reactor if dbDriver is in RDBMSTypeEnum on BE
@@ -125,38 +171,40 @@ export const ImportSpecificPage = () => {
         /** Connect to External: END */
 
         /** Drag and Drop: START */
-        if (values.METAMODEL_TYPE === 'As Suggested Metamodel') {
-            monolithStore
-                .uploadFile(values.FILE, insightId)
-                .then((res: { fileName: string; fileLocation: string }[]) => {
-                    const file = res[0].fileLocation;
-                    monolithStore
-                        .runQuery(
-                            `PredictMetamodel(filePath=["${file}"], delimiter=["${values.DELIMETER}"], rowCount=[false])`,
-                        )
-                        .then((res) => {
-                            const output = res.pixelReturn[0].output;
-                            setIsLoading(false);
-                            // format response to send to Form
-                            setMetamodel(output);
-                        });
-                });
-        }
-        if (values.METAMODEL_TYPE === 'As Flat Table') {
-            monolithStore
-                .uploadFile(values.FILE, insightId)
-                .then((res: { fileName: string; fileLocation: string }[]) => {
-                    const file = res[0].fileLocation;
-                    monolithStore
-                        .runQuery(
-                            `PredictDataTypes(filePath=["${file}"], delimiter=["${values.DELIMETER}"], rowCount=[false])`,
-                        )
-                        .then((res) => {
-                            setIsLoading(false);
-                            setPredictDataTypes(res);
-                        });
-                });
-        }
+
+        // if (values.METAMODEL_TYPE === 'As Suggested Metamodel') {
+        //     monolithStore
+        //         .uploadFile(values.FILE, insightId)
+        //         .then((res: { fileName: string; fileLocation: string }[]) => {
+        //             const file = res[0].fileLocation;
+        //             monolithStore
+        //                 .runQuery(
+        //                     `PredictMetamodel(filePath=["${file}"], delimiter=["${values.DELIMETER}"], rowCount=[false])`,
+        //                 )
+        //                 .then((res) => {
+        //                     const output = res.pixelReturn[0].output;
+        //                     setIsLoading(false);
+        //                     // format response to send to Form
+        //                     setMetamodel(output);
+        //                 });
+        //         });
+        // }
+        // if (values.METAMODEL_TYPE === 'As Flat Table') {
+        //     monolithStore
+        //         .uploadFile(values.FILE, insightId)
+        //         .then((res: { fileName: string; fileLocation: string }[]) => {
+        //             const file = res[0].fileLocation;
+        //             monolithStore
+        //                 .runQuery(
+        //                     `PredictDataTypes(filePath=["${file}"], delimiter=["${values.DELIMETER}"], rowCount=[false])`,
+        //                 )
+        //                 .then((res) => {
+        //                     setIsLoading(false);
+        //                     setPredictDataTypes(res);
+        //                 });
+        //         });
+        // }
+
         /** Drag and Drop: END */
     };
 
@@ -169,19 +217,36 @@ export const ImportSpecificPage = () => {
         });
     };
 
+    console.log('steps at specific page', steps[1]);
+
     return (
         <StyledBox>
-            {steps[0].title === 'Connect to Model' ? (
-                <ModelForm submitFunc={(vals) => formSubmit(vals)} />
-            ) : steps[0].title === 'Connect to Storage' ? (
-                <StorageForm submitFunc={(vals) => formSubmit(vals)} />
-            ) : (
+            {/* Genericize Form Component take in list of fields */}
+            <ImportForm
+                fields={steps[1].data}
+                submitFunc={(vals) => formSubmit(vals)}
+            />
+
+            {/* TODO */}
+            {/* --------------------------------------------------------- */}
+            {/* EVERYTHING THAT IS NOT DATABASE SHOULD WORK ON SUBMISSION */}
+            {/* 1. Ensure db-connection form hits step 3 with correct details */}
+            {/* --------------------------------------------------------- */}
+
+            {/* Comment code out below Guranteed to work  */}
+            {/* {steps[0].title !== 'Connect to Database' && (
+                <ImportForm
+                fields={steps[1].data}
+                submitFunc={(vals) => formSubmit(vals)}
+                />
+             )} */}
+
+            {/* {steps[0].title === 'Connect to Database' &&
                 DATABASE_FORM_ROUTES.map((f, i) => {
                     if (f.name === steps[1].title) {
                         return getForm(f, i);
                     }
-                })
-            )}
+                })} */}
         </StyledBox>
     );
 };

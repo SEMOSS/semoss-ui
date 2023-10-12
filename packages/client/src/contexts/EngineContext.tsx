@@ -7,7 +7,7 @@ import { Role } from '@/types';
  */
 export type EngineContextType = {
     /** Engine Type */
-    type: 'database' | 'model' | 'storage';
+    type: 'database' | 'model' | 'storage' | 'vector' | 'function';
 
     /** ID of the engine to load */
     id: string;
