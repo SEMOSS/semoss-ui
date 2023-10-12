@@ -9,7 +9,7 @@ interface ImportStep {
     description: string;
 
     /** Data associated with the step */
-    data: unknown;
+    data: any; // TODO Look through steps and type out each one should be just {} and "";
 
     /** Component to render in the step */
     component?: React.FunctionComponent;

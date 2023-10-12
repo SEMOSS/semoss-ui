@@ -37,7 +37,7 @@ export const ImportSpecificPage = () => {
      * 2. Sets next step in process to continue with submission
      */
     const formSubmit = async (values: {
-        type: 'VECTOR' | 'STORAGE' | 'MODEL' | 'FUNCTION';
+        type: 'VECTOR' | 'STORAGE' | 'MODEL' | 'FUNCTION' | 'UPLOAD';
         name: string;
         fields: unknown[];
     }) => {
@@ -103,13 +103,6 @@ export const ImportSpecificPage = () => {
             return;
         } else if (values.type === 'VECTOR') {
             /** Vector Database: START */
-            // const t = {
-            //     VECTOR_TYPE: 'FAISS',
-            //     NAME: 'SampleVectorDb',
-            //     CONNECTION_URL: '@BaseFolder@/vector/@ENGINE@/',
-            //     ENCODER_NAME: 'BAAI/bge-large-en-v1.5',
-            //     ENCODER_TYPE: 'huggingface',
-            // };
             const pixel = `
                 CreateVectorDatabaseEngine ( 
                     database=["${values.name}"], 
@@ -229,22 +222,31 @@ export const ImportSpecificPage = () => {
     return (
         <StyledBox>
             {/* Genericize Form Component take in list of fields */}
+            <ImportForm
+                fields={steps[1].data}
+                submitFunc={(vals) => formSubmit(vals)}
+            />
 
-            {steps[0].title !== 'Connect to Database' && (
+            {/* TODO */}
+            {/* --------------------------------------------------------- */}
+            {/* EVERYTHING THAT IS NOT DATABASE SHOULD WORK ON SUBMISSION */}
+            {/* 1. Ensure db-connection form hits step 3 with correct details */}
+            {/* --------------------------------------------------------- */}
+
+            {/* Comment code out below Guranteed to work  */}
+            {/* {steps[0].title !== 'Connect to Database' && (
                 <ImportForm
-                    fields={steps[1].data}
-                    submitFunc={(vals) => formSubmit(vals)}
+                fields={steps[1].data}
+                submitFunc={(vals) => formSubmit(vals)}
                 />
-            )}
+             )} */}
 
-            <br></br>
-
-            {steps[0].title === 'Connect to Database' &&
+            {/* {steps[0].title === 'Connect to Database' &&
                 DATABASE_FORM_ROUTES.map((f, i) => {
                     if (f.name === steps[1].title) {
                         return getForm(f, i);
                     }
-                })}
+                })} */}
         </StyledBox>
     );
 };

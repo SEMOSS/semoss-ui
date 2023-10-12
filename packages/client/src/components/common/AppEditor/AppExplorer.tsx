@@ -110,7 +110,6 @@ export const AppExplorer = (props) => {
                     // const
                     const selectedNodes = onSelect(v);
 
-                    // debugger;
                     setSelected(selectedNodes);
                     // if succesful select node in tree view state
                 }}

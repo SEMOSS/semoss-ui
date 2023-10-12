@@ -240,8 +240,6 @@ export const ImportPage = () => {
         }
     }, [importParams]);
 
-    console.log(steps);
-
     return (
         <Page
             header={
@@ -456,13 +454,14 @@ export const ImportPage = () => {
                         <Box sx={{ width: '100%' }}>
                             {Object.entries(
                                 CONNECTION_OPTIONS[steps[0].data],
-                            ).map((kv, i) => {
-                                // const connectionType = steps[0].data as "MODEL" | "FUNCTION" | "VECTOR" | "DATABASE" | "STORAGE"
+                            ).map((kv: [string, any[]], i) => {
+                                // TODO FIX ANY TYPE
                                 return (
                                     <Box key={i}>
                                         <StyledCategoryTitle>
                                             {kv[0]}
                                         </StyledCategoryTitle>
+
                                         <Box>
                                             <Grid
                                                 container

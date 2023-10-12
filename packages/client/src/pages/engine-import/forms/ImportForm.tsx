@@ -32,10 +32,19 @@ const StyledKeyValue = styled('div')(({ theme }) => ({
     gap: theme.spacing(2),
     marginBottom: theme.spacing(2),
 }));
+
+interface FormStep {
+    data: string;
+    title: string;
+    description: string;
+}
+
 export const ImportForm = (props) => {
     const { submitFunc, fields } = props;
 
     const { steps, setSteps } = useImport();
+
+    const formStep: FormStep = steps[0];
 
     const { control, handleSubmit, reset } = useForm({
         defaultValues: {
@@ -90,30 +99,44 @@ export const ImportForm = (props) => {
             // Add new step for connection details for metamodeling
             // 1. set another step for connection details, this will trigger a page change
 
-            const conDetails = {
-                dbDriver: data.dbDriver,
-                additional: data.additional,
-                hostname: data.hostname,
-                port: data.port,
-                database: data.database,
-                schema: data.schema,
-                USERNAME: data.USERNAME,
-                PASSWORD: data.PASSWORD,
-                CONNECTION_URL: data.CONNECTION_URL,
-            };
+            // {
+            //     "dbDriver":"SQL_SERVER",
+            //     "additional":";encrypt=true;trustServerCertificate=true;",
+            //     "hostname":"18.213.113.140",
+            //     "port":"1433",
+            //     "database":"semoss_supply",
+            //     "schema":"dbo",
+            //     "USERNAME":"SA",
+            //     "PASSWORD":"semoss@123123"
+            // }
 
-            // setSteps(
-            //     [
-            //         ...steps,
-            //         {
-            //             title: data.NAME,
-            //             description:
-            //                 'View and edit the relationships of the selected tables from the external connection that was made.',
-            //             data: conDetails,
-            //         },
-            //     ],
-            //     steps.length + 1,
-            // );
+            // {
+            //     "hostname":"18.213.113.140",
+            //     "port":"1433",
+            //     "database":"semoss_supply",
+            //     "schema":"dbo",
+            //     "USERNAME":"SA",
+            //     "PASSWORD":"semoss@123123",
+            //     "additional":";encrypt=true;trustServerCertificate=true;",
+            //     "CONNECTION_URL":""
+
+            //     "DATABASE_NAME":"NEW",
+            //     "DATABASE_DESCRIPTION":"",
+            //     "DATABASE_TAGS":"",
+            // }
+
+            setSteps(
+                [
+                    ...steps,
+                    {
+                        title: data.NAME,
+                        description:
+                            'View and edit the relationships of the selected tables from the external connection that was made.',
+                        data: data,
+                    },
+                ],
+                steps.length + 1,
+            );
         }
     };
 
@@ -121,92 +144,103 @@ export const ImportForm = (props) => {
         <form onSubmit={handleSubmit(onSubmit)}>
             <Stack rowGap={2}>
                 {fields.map((val, i) => {
-                    return (
-                        <StyledKeyValue key={i}>
-                            <Controller
-                                name={val.fieldName}
-                                control={control}
-                                rules={val.rules}
-                                render={({ field, fieldState }) => {
-                                    const hasError = fieldState.error;
-                                    if (
-                                        val.options.component === 'text-field'
-                                    ) {
-                                        return (
-                                            <TextField
-                                                fullWidth
-                                                required={val.rules.required}
-                                                label={val.label}
-                                                disabled={val.disabled}
-                                                value={
-                                                    field.value
-                                                        ? field.value
-                                                        : ''
-                                                }
-                                                onChange={(value) =>
-                                                    field.onChange(value)
-                                                }
-                                            ></TextField>
-                                        );
-                                    } else if (
-                                        val.options.component === 'password'
-                                    ) {
-                                        return (
-                                            <TextField
-                                                type="password"
-                                                fullWidth
-                                                required={val.rules.required}
-                                                label={val.label}
-                                                disabled={val.disabled}
-                                                value={
-                                                    field.value
-                                                        ? field.value
-                                                        : ''
-                                                }
-                                                onChange={(value) =>
-                                                    field.onChange(value)
-                                                }
-                                            ></TextField>
-                                        );
-                                    } else if (
-                                        val.options.component === 'select'
-                                    ) {
-                                        return (
-                                            <Select
-                                                fullWidth
-                                                required={val.rules.required}
-                                                label={val.label}
-                                                disabled={val.disabled}
-                                                value={
-                                                    field.value
-                                                        ? field.value
-                                                        : ''
-                                                }
-                                                onChange={(value) =>
-                                                    field.onChange(value)
-                                                }
-                                            >
-                                                {val.options.options.map(
-                                                    (opt, i) => {
-                                                        return (
-                                                            <Menu.Item
-                                                                key={i}
-                                                                value={
-                                                                    opt.value
-                                                                }
-                                                            >
-                                                                {opt.display}
-                                                            </Menu.Item>
-                                                        );
-                                                    },
-                                                )}
-                                            </Select>
-                                        );
-                                    }
-                                }}
-                            />
-                        </StyledKeyValue>
-                    );
+                    if (!val.hidden) {
+                        return (
+                            <StyledKeyValue key={i}>
+                                <Controller
+                                    name={val.fieldName}
+                                    control={control}
+                                    rules={val.rules}
+                                    render={({ field, fieldState }) => {
+                                        const hasError = fieldState.error;
+                                        if (
+                                            val.options.component ===
+                                            'text-field'
+                                        ) {
+                                            return (
+                                                <TextField
+                                                    fullWidth
+                                                    required={
+                                                        val.rules.required
+                                                    }
+                                                    label={val.label}
+                                                    disabled={val.disabled}
+                                                    value={
+                                                        field.value
+                                                            ? field.value
+                                                            : ''
+                                                    }
+                                                    onChange={(value) =>
+                                                        field.onChange(value)
+                                                    }
+                                                ></TextField>
+                                            );
+                                        } else if (
+                                            val.options.component === 'password'
+                                        ) {
+                                            return (
+                                                <TextField
+                                                    type="password"
+                                                    fullWidth
+                                                    required={
+                                                        val.rules.required
+                                                    }
+                                                    label={val.label}
+                                                    disabled={val.disabled}
+                                                    value={
+                                                        field.value
+                                                            ? field.value
+                                                            : ''
+                                                    }
+                                                    onChange={(value) =>
+                                                        field.onChange(value)
+                                                    }
+                                                ></TextField>
+                                            );
+                                        } else if (
+                                            val.options.component === 'select'
+                                        ) {
+                                            return (
+                                                <Select
+                                                    fullWidth
+                                                    required={
+                                                        val.rules.required
+                                                    }
+                                                    label={val.label}
+                                                    disabled={val.disabled}
+                                                    value={
+                                                        field.value
+                                                            ? field.value
+                                                            : ''
+                                                    }
+                                                    onChange={(value) =>
+                                                        field.onChange(value)
+                                                    }
+                                                >
+                                                    {val.options.options.map(
+                                                        (opt, i) => {
+                                                            return (
+                                                                <Menu.Item
+                                                                    key={i}
+                                                                    value={
+                                                                        opt.value
+                                                                    }
+                                                                >
+                                                                    {
+                                                                        opt.display
+                                                                    }
+                                                                </Menu.Item>
+                                                            );
+                                                        },
+                                                    )}
+                                                </Select>
+                                            );
+                                        }
+                                    }}
+                                />
+                            </StyledKeyValue>
+                        );
+                    }
                 })}
 
                 {/* {fields.map((property, i) => {
