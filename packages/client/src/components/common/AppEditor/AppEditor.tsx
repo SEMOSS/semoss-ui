@@ -649,6 +649,10 @@ export const AppEditor = (props: AppEditorProps) => {
         }
     };
 
+    /**
+     * Assitant for adding code
+     *
+     */
     const generateCode = async () => {
         let pixel = '';
 
@@ -1208,7 +1212,7 @@ export const AppEditor = (props: AppEditorProps) => {
                                 // border: 'solid red',
                             }}
                         >
-                            {process.env.NODE_ENV === 'development' && (
+                            {process.env.NODE_ENV == 'development' && (
                                 <CustomButton
                                     sx={{ marginTop: '16px' }}
                                     variant="contained"

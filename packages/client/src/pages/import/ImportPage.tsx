@@ -1,3 +1,17 @@
+/**
+ * Page Documentation (10/10/2023)
+ *
+ * Different Connection types:
+ * Model(LLM), Vector Databases, Functions, Traditional Dbs, Storage
+ *
+ * Steps and (props...) from the useImport hook will give you the steps that
+ * have been completed through the selection process.
+ *
+ * Steps is important for this page as based on the step in the process you will
+ * see different steps in the connection process for all engines
+ *
+ */
+
 import React, { useEffect } from 'react';
 import { Page } from '@/components/ui/';
 import {
@@ -10,11 +24,8 @@ import {
     Box,
     Grid,
 } from '@semoss/ui';
-import {
-    stepsOne,
-    stepsTwo,
-    IconDBMapper,
-} from '../engine-import/forms/formSteps.constants';
+import { stepsOne, CONNECTION_OPTIONS } from './import.constants';
+
 import { UploadData } from '../engine-import/forms/UploadData';
 import { CopyDatabaseForm } from '../engine-import/forms/CopyDatabaseForm';
 import { Search as SearchIcon } from '@mui/icons-material/';
@@ -187,6 +198,8 @@ export const ImportPage = () => {
             description: '',
             data: '',
         };
+
+        // Based on where you came from in application, we can skip first step in connection process
         switch (importParams) {
             case '':
                 break;
@@ -196,7 +209,23 @@ export const ImportPage = () => {
                 paramedStep.title = 'Connect to Model';
                 paramedStep.description =
                     "In an era fueled by information, the seamless interlinking of various databases stands as a cornerstone for unlocking the untapped potential of LLM applications. Whether you're a seasoned AI practitioner, a language aficionado, or an industry visionary, this page serves as your guiding star to grasp the spectrum of database options available within the LLM landscape.";
-                paramedStep.data = 'Connect to Model';
+                paramedStep.data = 'MODEL';
+
+                setSteps([...steps, paramedStep], steps.length + 1);
+                break;
+            case '?type=vector':
+                paramedStep.title = 'Connect to Vector Database';
+                paramedStep.description =
+                    "In an era fueled by information, the seamless interlinking of various databases stands as a cornerstone for unlocking the untapped potential of LLM applications. Whether you're a seasoned AI practitioner, a language aficionado, or an industry visionary, this page serves as your guiding star to grasp the spectrum of database options available within the LLM landscape.";
+                paramedStep.data = 'VECTOR';
+
+                setSteps([...steps, paramedStep], steps.length + 1);
+                break;
+            case '?type=function':
+                paramedStep.title = 'Connect to Function';
+                paramedStep.description =
+                    "In an era fueled by information, the seamless interlinking of various databases stands as a cornerstone for unlocking the untapped potential of LLM applications. Whether you're a seasoned AI practitioner, a language aficionado, or an industry visionary, this page serves as your guiding star to grasp the spectrum of database options available within the LLM landscape.";
+                paramedStep.data = 'FUNCTION';
 
                 setSteps([...steps, paramedStep], steps.length + 1);
                 break;
@@ -204,7 +233,7 @@ export const ImportPage = () => {
                 paramedStep.title = 'Connect to Storage';
                 paramedStep.description =
                     "In an era fueled by information, the seamless interlinking of various databases stands as a cornerstone for unlocking the untapped potential of LLM applications. Whether you're a seasoned AI practitioner, a language aficionado, or an industry visionary, this page serves as your guiding star to grasp the spectrum of database options available within the LLM landscape.";
-                paramedStep.data = 'Connect to Storage';
+                paramedStep.data = 'STORAGE';
 
                 setSteps([...steps, paramedStep], steps.length + 1);
                 break;
@@ -260,6 +289,7 @@ export const ImportPage = () => {
             }
         >
             <StyledContainer>
+                {/* Search First Step: TODO - only one search */}
                 {steps.length < 1 ? (
                     <StyledSearchbarContainer>
                         <Search
@@ -278,6 +308,7 @@ export const ImportPage = () => {
                     </StyledSearchbarContainer>
                 ) : null}
 
+                {/* Search Second Step: TODO - only one search */}
                 {steps.length === 1 &&
                     steps[0].title !== 'Copy Database' &&
                     steps[0].title !== 'Upload Database' && (
@@ -297,6 +328,8 @@ export const ImportPage = () => {
                             />
                         </StyledSearchbarContainer>
                     )}
+
+                {/* Step 1: is determination which engine you would like to connect to */}
                 {steps.length < 1 && (
                     <Box sx={{ width: '100%' }}>
                         <>
@@ -327,7 +360,7 @@ export const ImportPage = () => {
                                                             title: val.name,
                                                             description:
                                                                 val.description,
-                                                            data: val.name,
+                                                            data: val.data,
                                                         };
 
                                                         if (!val.disabled) {
@@ -386,7 +419,7 @@ export const ImportPage = () => {
                                                 const stepOne = {
                                                     title: val.name,
                                                     description: '',
-                                                    data: val.name,
+                                                    data: val.data,
                                                 };
                                                 setSteps(
                                                     [...steps, stepOne],
@@ -413,185 +446,30 @@ export const ImportPage = () => {
                         </>
                     </Box>
                 )}
-                {/* Selection for options that require more info */}
+                {/* Step 2a: Selection for options that require more info */}
+                {/* This is shared between vector, function, database, model and storage */}
                 {steps.length === 1 &&
                     steps[0].title !== 'Copy Database' &&
                     steps[0].title !== 'Upload Database' && (
                         <Box sx={{ width: '100%' }}>
-                            {/* Database Options */}
-                            {steps[0].title
-                                .toLowerCase()
-                                .includes('database') && (
-                                <Box>
-                                    <StyledCategoryTitle>
-                                        File Uploads
-                                    </StyledCategoryTitle>
-                                    <Box>
-                                        <Grid
-                                            container
-                                            columns={6}
-                                            columnSpacing={2}
-                                            rowSpacing={2}
-                                        >
-                                            {stepsTwo['Drag and Drop Data'].map(
-                                                (stage, idx) => {
-                                                    if (
-                                                        stage.name
-                                                            .toLowerCase()
-                                                            .includes(
-                                                                search.toLowerCase(),
-                                                            )
-                                                    ) {
-                                                        return (
-                                                            <Grid
-                                                                key={idx}
-                                                                item
-                                                                lg={1}
-                                                                md={1}
-                                                                xs={1}
-                                                                xl={1}
-                                                                sm={1}
-                                                            >
-                                                                <StyledFormTypeBox
-                                                                    disabled={
-                                                                        stage.disable
-                                                                    }
-                                                                    onClick={() => {
-                                                                        if (
-                                                                            !stage.disable
-                                                                        ) {
-                                                                            setSteps(
-                                                                                [
-                                                                                    ...steps,
-                                                                                    {
-                                                                                        title: stage.name,
-                                                                                        description: `Fill out ${stage} details in order to work with data`,
-                                                                                        data: stage,
-                                                                                    },
-                                                                                ],
-                                                                                steps.length +
-                                                                                    1,
-                                                                            );
-                                                                        }
-                                                                    }}
-                                                                >
-                                                                    <StyledInnerBox>
-                                                                        <StyledCardImage
-                                                                            src={
-                                                                                IconDBMapper[
-                                                                                    stage
-                                                                                        .name
-                                                                                ]
-                                                                            }
-                                                                        />
-                                                                        <StyledCardText>
-                                                                            {
-                                                                                stage.name
-                                                                            }
-                                                                        </StyledCardText>
-                                                                    </StyledInnerBox>
-                                                                </StyledFormTypeBox>
-                                                            </Grid>
-                                                        );
-                                                    }
-                                                },
-                                            )}
-                                        </Grid>
-                                    </Box>
-                                    <StyledCategoryTitle>
-                                        Connections
-                                    </StyledCategoryTitle>
-                                    <Box>
-                                        <Grid
-                                            container
-                                            columns={6}
-                                            columnSpacing={2}
-                                            rowSpacing={2}
-                                        >
-                                            {stepsTwo[
-                                                'Connect to an External Database'
-                                            ].map((stage, idx) => {
-                                                if (
-                                                    stage.name
-                                                        .toLowerCase()
-                                                        .includes(
-                                                            search.toLowerCase(),
-                                                        )
-                                                ) {
-                                                    return (
-                                                        <Grid
-                                                            key={idx}
-                                                            item
-                                                            lg={1}
-                                                            md={1}
-                                                            xs={1}
-                                                            xl={1}
-                                                            sm={1}
-                                                        >
-                                                            <StyledFormTypeBox
-                                                                disabled={
-                                                                    stage.disable
-                                                                }
-                                                                // title={stage}
-                                                                onClick={() => {
-                                                                    if (
-                                                                        !stage.disable
-                                                                    ) {
-                                                                        setSteps(
-                                                                            [
-                                                                                ...steps,
-                                                                                {
-                                                                                    title: stage.name,
-                                                                                    description: `Fill out ${stage.name} details in order to connect to datasource`,
-                                                                                    data: stage.name,
-                                                                                },
-                                                                            ],
-                                                                            steps.length +
-                                                                                1,
-                                                                        );
-                                                                    }
-                                                                }}
-                                                            >
-                                                                <StyledInnerBox>
-                                                                    <StyledCardImage
-                                                                        src={
-                                                                            IconDBMapper[
-                                                                                stage
-                                                                                    .name
-                                                                            ]
-                                                                        }
-                                                                    />
-                                                                    <StyledCardText>
-                                                                        {
-                                                                            stage.name
-                                                                        }
-                                                                    </StyledCardText>
-                                                                </StyledInnerBox>
-                                                            </StyledFormTypeBox>
-                                                        </Grid>
-                                                    );
-                                                }
-                                            })}
-                                        </Grid>
-                                    </Box>
-                                </Box>
-                            )}
+                            {Object.entries(
+                                CONNECTION_OPTIONS[steps[0].data],
+                            ).map((kv: [string, any[]], i) => {
+                                // TODO FIX ANY TYPE
+                                return (
+                                    <Box key={i}>
+                                        <StyledCategoryTitle>
+                                            {kv[0]}
+                                        </StyledCategoryTitle>
 
-                            {/* Model Options */}
-                            {steps[0].title.toLowerCase().includes('model') && (
-                                <Box>
-                                    <StyledCategoryTitle>
-                                        Commercially Hosted
-                                    </StyledCategoryTitle>
-                                    <Box>
-                                        <Grid
-                                            container
-                                            columns={6}
-                                            columnSpacing={2}
-                                            rowSpacing={2}
-                                        >
-                                            {stepsTwo['Commercial Models'].map(
-                                                (stage, idx) => {
+                                        <Box>
+                                            <Grid
+                                                container
+                                                columns={6}
+                                                columnSpacing={2}
+                                                rowSpacing={2}
+                                            >
+                                                {kv[1].map((stage, idx) => {
                                                     if (
                                                         stage.name
                                                             .toLowerCase()
@@ -622,8 +500,10 @@ export const ImportPage = () => {
                                                                                     ...steps,
                                                                                     {
                                                                                         title: stage.name,
-                                                                                        description: `Fill out ${stage.name} details in order to add model to catalog`,
-                                                                                        data: stage.name,
+                                                                                        description: `Fill out ${
+                                                                                            stage.name
+                                                                                        } details in order to add ${steps[0].data.toLowerCase()} to catalog`,
+                                                                                        data: stage.fields,
                                                                                     },
                                                                                 ],
                                                                                 steps.length +
@@ -635,10 +515,7 @@ export const ImportPage = () => {
                                                                     <StyledInnerBox>
                                                                         <StyledCardImage
                                                                             src={
-                                                                                IconDBMapper[
-                                                                                    stage
-                                                                                        .name
-                                                                                ]
+                                                                                stage.icon
                                                                             }
                                                                         />
                                                                         <StyledCardText>
@@ -651,252 +528,16 @@ export const ImportPage = () => {
                                                             </Grid>
                                                         );
                                                     }
-                                                },
-                                            )}
-                                        </Grid>
+                                                })}
+                                            </Grid>
+                                        </Box>
                                     </Box>
-                                    <StyledCategoryTitle>
-                                        Locally Hosted
-                                    </StyledCategoryTitle>
-                                    <Box>
-                                        <Grid
-                                            container
-                                            columns={6}
-                                            columnSpacing={2}
-                                            rowSpacing={2}
-                                        >
-                                            {stepsTwo['Local Models'].map(
-                                                (stage, idx) => {
-                                                    if (
-                                                        stage.name
-                                                            .toLowerCase()
-                                                            .includes(
-                                                                search.toLowerCase(),
-                                                            )
-                                                    ) {
-                                                        return (
-                                                            <Grid
-                                                                key={idx}
-                                                                item
-                                                                lg={1}
-                                                                md={1}
-                                                                xs={1}
-                                                                xl={1}
-                                                                sm={1}
-                                                            >
-                                                                <StyledFormTypeBox
-                                                                    disabled={
-                                                                        stage.disable
-                                                                    }
-                                                                    // title={stage}
-                                                                    onClick={() => {
-                                                                        if (
-                                                                            !stage.disable
-                                                                        ) {
-                                                                            setSteps(
-                                                                                [
-                                                                                    ...steps,
-                                                                                    {
-                                                                                        title: stage.name,
-                                                                                        description: `Fill out ${stage.name} details in order to add model to catalog`,
-                                                                                        data: stage.name,
-                                                                                    },
-                                                                                ],
-                                                                                steps.length +
-                                                                                    1,
-                                                                            );
-                                                                        }
-                                                                    }}
-                                                                >
-                                                                    <StyledInnerBox>
-                                                                        <StyledCardImage
-                                                                            src={
-                                                                                IconDBMapper[
-                                                                                    stage
-                                                                                        .name
-                                                                                ]
-                                                                            }
-                                                                        />
-                                                                        <StyledCardText>
-                                                                            {
-                                                                                stage.name
-                                                                            }
-                                                                        </StyledCardText>
-                                                                    </StyledInnerBox>
-                                                                </StyledFormTypeBox>
-                                                            </Grid>
-                                                        );
-                                                    }
-                                                },
-                                            )}
-                                        </Grid>
-                                    </Box>
-
-                                    <StyledCategoryTitle>
-                                        Embedded
-                                    </StyledCategoryTitle>
-                                    <Box>
-                                        <Grid
-                                            container
-                                            columns={6}
-                                            columnSpacing={2}
-                                            rowSpacing={2}
-                                        >
-                                            {stepsTwo['Embedded Models'].map(
-                                                (stage, idx) => {
-                                                    if (
-                                                        stage.name
-                                                            .toLowerCase()
-                                                            .includes(
-                                                                search.toLowerCase(),
-                                                            )
-                                                    ) {
-                                                        return (
-                                                            <Grid
-                                                                key={idx}
-                                                                item
-                                                                lg={1}
-                                                                md={1}
-                                                                xs={1}
-                                                                xl={1}
-                                                                sm={1}
-                                                            >
-                                                                <StyledFormTypeBox
-                                                                    disabled={
-                                                                        stage.disable
-                                                                    }
-                                                                    // title={stage}
-                                                                    onClick={() => {
-                                                                        if (
-                                                                            !stage.disable
-                                                                        ) {
-                                                                            setSteps(
-                                                                                [
-                                                                                    ...steps,
-                                                                                    {
-                                                                                        title: stage.name,
-                                                                                        description: `Fill out ${stage.name} details in order to add model to catalog`,
-                                                                                        data: stage.name,
-                                                                                    },
-                                                                                ],
-                                                                                steps.length +
-                                                                                    1,
-                                                                            );
-                                                                        }
-                                                                    }}
-                                                                >
-                                                                    <StyledInnerBox>
-                                                                        <StyledCardImage
-                                                                            src={
-                                                                                IconDBMapper[
-                                                                                    stage
-                                                                                        .name
-                                                                                ]
-                                                                            }
-                                                                        />
-                                                                        <StyledCardText>
-                                                                            {
-                                                                                stage.name
-                                                                            }
-                                                                        </StyledCardText>
-                                                                    </StyledInnerBox>
-                                                                </StyledFormTypeBox>
-                                                            </Grid>
-                                                        );
-                                                    }
-                                                },
-                                            )}
-                                        </Grid>
-                                    </Box>
-                                </Box>
-                            )}
-                            {/* Storage Options */}
-                            {steps[0].title
-                                .toLowerCase()
-                                .includes('storage') && (
-                                <Box>
-                                    <StyledCategoryTitle>
-                                        Storage
-                                    </StyledCategoryTitle>
-                                    <Box>
-                                        <Grid
-                                            container
-                                            columns={6}
-                                            columnSpacing={2}
-                                            rowSpacing={2}
-                                        >
-                                            {stepsTwo['Add Storage'].map(
-                                                (stage, idx) => {
-                                                    if (
-                                                        stage.name
-                                                            .toLowerCase()
-                                                            .includes(
-                                                                search.toLowerCase(),
-                                                            )
-                                                    ) {
-                                                        return (
-                                                            <Grid
-                                                                key={idx}
-                                                                item
-                                                                lg={1}
-                                                                md={1}
-                                                                xs={1}
-                                                                xl={1}
-                                                                sm={1}
-                                                            >
-                                                                <StyledFormTypeBox
-                                                                    disabled={
-                                                                        stage.disable
-                                                                    }
-                                                                    // title={stage}
-                                                                    onClick={() => {
-                                                                        if (
-                                                                            !stage.disable
-                                                                        ) {
-                                                                            setSteps(
-                                                                                [
-                                                                                    ...steps,
-                                                                                    {
-                                                                                        title: stage.name,
-                                                                                        description: `Fill out ${stage.name} details in order to create new storage`,
-                                                                                        data: stage.name,
-                                                                                    },
-                                                                                ],
-                                                                                steps.length +
-                                                                                    1,
-                                                                            );
-                                                                        }
-                                                                    }}
-                                                                >
-                                                                    <StyledInnerBox>
-                                                                        <StyledCardImage
-                                                                            src={
-                                                                                IconDBMapper[
-                                                                                    stage
-                                                                                        .name
-                                                                                ]
-                                                                            }
-                                                                        />
-                                                                        <StyledCardText>
-                                                                            {
-                                                                                stage.name
-                                                                            }
-                                                                        </StyledCardText>
-                                                                    </StyledInnerBox>
-                                                                </StyledFormTypeBox>
-                                                            </Grid>
-                                                        );
-                                                    }
-                                                },
-                                            )}
-                                        </Grid>
-                                    </Box>
-                                </Box>
-                            )}
+                                );
+                            })}
                         </Box>
                     )}
 
-                {/* Step 2 Show Form for Copy and Upload */}
+                {/* Step 2b: Show Form for Copy and Upload ( this is only a 2-step process) */}
                 {steps.length === 1 &&
                     (steps[0].title === 'Copy Database' ||
                         steps[0].title === 'Upload Database') && (
@@ -909,11 +550,13 @@ export const ImportPage = () => {
                         </StyledBox>
                     )}
 
-                {/* Step 3 will be the form */}
+                {/* Step 3:  Will be the form to capture specific engine connection details */}
                 {steps.length === 2 && <ImportSpecificPage />}
+                {/* Let's call this ImportConnectionPage */}
 
-                {/* Step 4 will be the next thing to be shown after form */}
+                {/* Step 4: If there is a step in the process after inputting connection details: metamodel for example */}
                 {steps.length === 3 && <ImportConnectionPage />}
+                {/* Lets call this EstablishedConnectionPage */}
             </StyledContainer>
         </Page>
     );

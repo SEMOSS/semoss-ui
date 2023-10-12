@@ -1,4 +1,3 @@
-/* eslint-disable no-debugger */
 'use strict';
 
 import './edit-insight.scss';

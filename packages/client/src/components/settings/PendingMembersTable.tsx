@@ -197,7 +197,11 @@ export const PendingMembersTable = (props: PendingMemberTableProps) => {
     }, [pendingMembers]);
 
     const pendingUserAccessPixel =
-        type === 'database' || type === 'model' || type === 'storage'
+        type === 'database' ||
+        type === 'model' ||
+        type === 'storage' ||
+        type === 'function' ||
+        type === 'vector'
             ? `GetEngineUserAccessRequest(engine='${id}');`
             : type === 'app'
             ? `GetProjectUserAccessRequest(project='${id}')`
@@ -286,7 +290,13 @@ export const PendingMembersTable = (props: PendingMemberTableProps) => {
             }
 
             let response: AxiosResponse<{ success: boolean }> | null = null;
-            if (type === 'database' || type === 'model' || type === 'storage') {
+            if (
+                type === 'database' ||
+                type === 'model' ||
+                type === 'storage' ||
+                type === 'function' ||
+                type === 'vector'
+            ) {
                 response = await monolithStore.approveEngineUserAccessRequest(
                     adminMode,
                     id,
@@ -383,7 +393,13 @@ export const PendingMembersTable = (props: PendingMemberTableProps) => {
             }
 
             let response: AxiosResponse<{ success: boolean }> | null = null;
-            if (type === 'database' || type === 'model' || type === 'storage') {
+            if (
+                type === 'database' ||
+                type === 'model' ||
+                type === 'storage' ||
+                type === 'function' ||
+                type === 'vector'
+            ) {
                 response = await monolithStore.denyEngineUserAccessRequest(
                     adminMode,
                     id,

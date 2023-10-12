@@ -93,8 +93,8 @@ export const ModelForm = (props) => {
         // });
 
         const formVals = {
-            type: 'model',
-            storage: data.NAME,
+            type: 'MODEL',
+            name: data.NAME,
             fields: smssProperties,
         };
 
