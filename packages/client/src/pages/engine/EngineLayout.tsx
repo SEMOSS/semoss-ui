@@ -1,21 +1,21 @@
-import { SyntheticEvent, useCallback, useMemo } from 'react';
+import { SyntheticEvent, useMemo } from 'react';
 import {
     useParams,
     useLocation,
     useResolvedPath,
     Outlet,
     Navigate,
-    Link,
     matchPath,
     useNavigate,
 } from 'react-router-dom';
 import { styled, ToggleTabsGroup } from '@semoss/ui';
 import { usePixel, useAPI, useRootStore } from '@/hooks';
 
-import { EngineContext, EngineContextType } from '@/contexts/EngineContext';
+import { EngineContext } from '@/contexts/EngineContext';
 
 import { LoadingScreen } from '@/components/ui';
 import { EngineShell } from '@/components/engine';
+import { ENGINE_TYPES } from '@/types';
 
 const StyledDocument = styled('div')(({ theme }) => ({
     width: '100%',
@@ -42,20 +42,23 @@ export const EngineLayout = () => {
     const { pathname } = useLocation();
     const navigate = useNavigate();
 
-    let engineType: 'database' | 'storage' | 'model' | 'function' | 'vector' =
-        'database';
-
+    let type: ENGINE_TYPES = 'DATABASE';
     if (pathname.includes('model')) {
-        engineType = 'model';
+        type = 'MODEL';
     } else if (pathname.includes('function')) {
-        engineType = 'function';
+        type = 'FUNCTION';
     } else if (pathname.includes('vector')) {
-        engineType = 'vector';
+        type = 'VECTOR';
     } else if (pathname.includes('database')) {
-        engineType = 'database';
-    } else {
-        engineType = 'storage';
+        type = 'DATABASE';
+    } else if (pathname.includes('storage')) {
+        type = 'STORAGE';
     }
+
+    // get a pretty name
+    const name = type
+        .replace(/^[-_]*(.)/, (_, c) => c.toUpperCase())
+        .replace(/[-_]+(.)/g, (_, c) => ' ' + c.toUpperCase());
 
     // filter metakeys to the ones we want
     const engineMetaKeys = configStore.store.config.databaseMetaKeys.filter(
@@ -131,7 +134,7 @@ export const EngineLayout = () => {
             getUserEnginePermission.data.permission === 'OWNER' ||
             getUserEnginePermission.data.permission === 'READ_ONLY'
         ) {
-            if (engineType === 'database') {
+            if (type === 'DATABASE') {
                 tabs.push({
                     label: 'Metadata',
                     path: '/metadata',
@@ -171,7 +174,7 @@ export const EngineLayout = () => {
 
     // if the engine isn't found, navigate to the Home Page
     if (!id || getUserEnginePermission.status === 'ERROR') {
-        return <Navigate to={`/catalog?type=${engineType}`} replace />;
+        return <Navigate to={`/catalog?type=${type}`} replace />;
     }
 
     // show a loading screen when it is pending
@@ -182,8 +185,9 @@ export const EngineLayout = () => {
     return (
         <EngineContext.Provider
             value={{
-                type: engineType,
+                type: type,
                 id: id,
+                name: name,
                 role: getUserEnginePermission.data.permission,
                 refresh: engineMetaRefresh,
                 metaVals: values, // Needed so edit button can be in header

@@ -20,10 +20,10 @@ import { useNavigate } from 'react-router-dom';
 
 import { useApp, useRootStore } from '@/hooks';
 import { SettingsContext } from '@/contexts';
-import { SettingsTiles } from '@/components/settings';
-import { AppSettings } from '@/components/app';
 import { AppEditor } from '@/components/common';
-import { MembersTable } from '@/components/settings/MembersTable';
+import { MembersTable, SettingsTiles } from '@/components/settings';
+
+import { AppSettings } from './AppSettings';
 
 const StyledContainer = styled('div')(({ theme }) => ({
     display: 'flex',
@@ -193,13 +193,11 @@ export const AppEditorPanel = (props) => {
                                         Access
                                     </Typography>
                                     <SettingsTiles
-                                        type={'app'}
+                                        mode="app"
                                         id={appId}
+                                        name="App"
                                         condensed={true}
                                         onDelete={() => {
-                                            console.log(
-                                                'navigate to app library',
-                                            );
                                             navigate('/');
                                         }}
                                     />
@@ -263,7 +261,7 @@ export const AppEditorPanel = (props) => {
                                 </Typography>
                                 <Typography variant={'h6'}>Members</Typography>
                                 <MembersTable
-                                    type={'app'}
+                                    mode={'app'}
                                     id={appId}
                                     condensed={true}
                                 />
@@ -271,7 +269,7 @@ export const AppEditorPanel = (props) => {
                                                 Pending Permissions
                                             </Typography> */}
                                 {/* <PendingMembersTable
-                                                type={'app'}
+                                                mode={'app'}
                                                 id={appId}
                                             /> */}
                                 {/* </div> */}

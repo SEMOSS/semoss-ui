@@ -6,12 +6,10 @@ import { EngineContext, EngineContextType } from '@/contexts';
  * Access the current Engine Context
  * @returns the Engine Context
  */
-export function useDatabase(): EngineContextType {
+export function useEngine(): EngineContextType {
     const context = useContext(EngineContext);
     if (context === undefined) {
-        throw new Error(
-            'useDatabase must be used within Engine Context Provider',
-        );
+        throw new Error('useEngine must be used within EngineContext Provider');
     }
 
     return context;

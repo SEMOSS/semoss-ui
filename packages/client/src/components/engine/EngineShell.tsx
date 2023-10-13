@@ -9,7 +9,7 @@ import {
 } from '@semoss/ui';
 
 import { Env } from '@/env';
-import { useRootStore, useDatabase, usePixel } from '@/hooks';
+import { useRootStore, useEngine, usePixel } from '@/hooks';
 
 import { EditDatabaseDetails } from '@/components/database';
 import { Page, LoadingScreen } from '@/components/ui';
@@ -80,7 +80,7 @@ export const EngineShell = (props: EngineShellProps) => {
     const { children } = props;
 
     // get the database information
-    const { type, id, role, metaVals, refresh } = useDatabase();
+    const { id, type, name, role, metaVals, refresh } = useEngine();
 
     // Service for Axios calls
     const { monolithStore, configStore } = useRootStore();
@@ -129,10 +129,7 @@ export const EngineShell = (props: EngineShellProps) => {
                 <Stack>
                     <Breadcrumbs>
                         <StyledLink to={`/catalog?type=${type}`}>
-                            {type === 'database'
-                                ? 'Data'
-                                : type.charAt(0).toUpperCase() +
-                                  type.slice(1)}{' '}
+                            {name}
                             Catalog
                         </StyledLink>
                         <StyledLink to={`/${type}/${id}`}>
@@ -213,13 +210,13 @@ export const EngineShell = (props: EngineShellProps) => {
                         {metaVals.description
                             ? metaVals.description
                             : canEdit
-                            ? `Please use the Edit button to provide a description for this ${type}. A description will help other's find the ${type} and understand how to use it. To include a more details associated to the ${type}, edit the markdown located in the Overview section.`
-                            : `This ${type} is currently awaiting a detailed description, which will be provided by the engine editor in the near future. As of now, the ${type} contains valuable and relevant information that pertains to its designated subject matter. Kindly check back later for a comprehensive overview of the contents and scope of this engine, as the editor will be updating it shortly`}
+                            ? `Please use the Edit button to provide a description for this ${name}. A description will help other's find the ${name} and understand how to use it. To include a more details associated to the ${type}, edit the markdown located in the Overview section.`
+                            : `This ${name} is currently awaiting a detailed description, which will be provided by the engine editor in the near future. As of now, the ${name} contains valuable and relevant information that pertains to its designated subject matter. Kindly check back later for a comprehensive overview of the contents and scope of this engine, as the editor will be updating it shortly`}
                     </StyledInfoDescription>
 
                     <StyledChipContainer>
                         {metaVals.tag &&
-                            metaVals.tag.map((tag, i) => {
+                            (metaVals.tag as string[]).map((tag, i) => {
                                 return (
                                     <Chip
                                         key={i}

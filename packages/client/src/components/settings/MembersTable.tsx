@@ -32,8 +32,7 @@ import { AxiosResponse } from 'axios';
 
 import { useRootStore, useAPI, useSettings } from '@/hooks';
 import { LoadingScreen } from '@/components/ui';
-import { SETTINGS_TYPE, SETTINGS_ROLE } from './settings.types';
-import { MonolithStore } from '@/stores';
+import { SETTINGS_MODE, SETTINGS_ROLE } from './settings.types';
 
 const colors = [
     '#22A4FF',
@@ -199,7 +198,7 @@ interface MembersTableProps {
     /**
      * Type of setting
      */
-    type: SETTINGS_TYPE;
+    mode: SETTINGS_MODE;
 
     /**
      * Id of the setting
@@ -216,7 +215,7 @@ interface MembersTableProps {
 
 export const MembersTable = (props: MembersTableProps) => {
     const {
-        type,
+        mode,
         id,
         condensed,
         refreshPermission = () => console.log('pass refresh function'),
@@ -275,11 +274,7 @@ export const MembersTable = (props: MembersTableProps) => {
 
     // get the api
     const getMembersApi: Parameters<typeof useAPI>[0] =
-        type === 'database' ||
-        type === 'model' ||
-        type === 'storage' ||
-        type === 'function' ||
-        type === 'vector'
+        mode === 'engine'
             ? [
                   'getEngineUsers',
                   adminMode,
@@ -289,7 +284,7 @@ export const MembersTable = (props: MembersTableProps) => {
                   membersPage * limit - limit, // offset
                   limit,
               ]
-            : type === 'app'
+            : mode === 'app'
             ? [
                   'getProjectUsers',
                   adminMode,
@@ -358,19 +353,13 @@ export const MembersTable = (props: MembersTableProps) => {
             }
 
             let response: AxiosResponse<{ success: boolean }> | null = null;
-            if (
-                type === 'database' ||
-                type === 'model' ||
-                type === 'storage' ||
-                type === 'function' ||
-                type === 'vector'
-            ) {
+            if (mode === 'engine') {
                 response = await monolithStore.editEngineUserPermissions(
                     adminMode,
                     id,
                     requests,
                 );
-            } else if (type === 'app') {
+            } else if (mode === 'app') {
                 response = await monolithStore.editProjectUserPermissions(
                     adminMode,
                     id,
@@ -428,19 +417,13 @@ export const MembersTable = (props: MembersTableProps) => {
             }
 
             let response: AxiosResponse<{ success: boolean }> | null = null;
-            if (
-                type === 'database' ||
-                type === 'model' ||
-                type === 'storage' ||
-                type === 'function' ||
-                type === 'vector'
-            ) {
+            if (mode === 'engine') {
                 response = await monolithStore.removeEngineUserPermissions(
                     adminMode,
                     id,
                     requests,
                 );
-            } else if (type === 'app') {
+            } else if (mode === 'app') {
                 response = await monolithStore.removeProjectUserPermissions(
                     adminMode,
                     id,
@@ -496,7 +479,7 @@ export const MembersTable = (props: MembersTableProps) => {
                     color: 'success',
                     message: `Successfully removed ${
                         requests.length > 1 ? 'members' : 'member'
-                    } from ${type}`,
+                    }`,
                 });
             } else {
                 notification.add({
@@ -524,18 +507,12 @@ export const MembersTable = (props: MembersTableProps) => {
         try {
             let response: AxiosResponse<Record<string, unknown>[]> | null =
                 null;
-            if (
-                type === 'database' ||
-                type === 'model' ||
-                type === 'storage' ||
-                type === 'function' ||
-                type === 'vector'
-            ) {
+            if (mode === 'engine') {
                 response = await monolithStore.getEngineUsersNoCredentials(
                     adminMode,
                     id,
                 );
-            } else if (type === 'app') {
+            } else if (mode === 'app') {
                 response = await monolithStore.getProjectUsersNoCredentials(
                     adminMode,
                     id,
@@ -589,19 +566,13 @@ export const MembersTable = (props: MembersTableProps) => {
             }
 
             let response: AxiosResponse<{ success: boolean }> | null = null;
-            if (
-                type === 'database' ||
-                type === 'model' ||
-                type === 'storage' ||
-                type === 'function' ||
-                type === 'vector'
-            ) {
+            if (mode === 'engine') {
                 response = await monolithStore.addEngineUserPermissions(
                     adminMode,
                     id,
                     requests,
                 );
-            } else if (type === 'app') {
+            } else if (mode === 'app') {
                 response = await monolithStore.addProjectUserPermissions(
                     adminMode,
                     id,
@@ -1177,8 +1148,7 @@ export const MembersTable = (props: MembersTableProps) => {
                     <Modal.ContentText>
                         {userToDelete && (
                             <Typography variant="body1">
-                                This will remove <b>{userToDelete.name}</b> from
-                                the {type}
+                                This will remove <b>{userToDelete.name}</b>
                             </Typography>
                         )}
                     </Modal.ContentText>

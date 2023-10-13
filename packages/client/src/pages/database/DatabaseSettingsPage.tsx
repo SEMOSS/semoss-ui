@@ -8,7 +8,7 @@ import {
     PendingMembersTable,
     SettingsTiles,
 } from '@/components/settings';
-import { useDatabase } from '@/hooks';
+import { useEngine } from '@/hooks';
 
 const StyledContainer = styled('div')(({ theme }) => ({
     width: '100%',
@@ -20,7 +20,7 @@ const StyledContainer = styled('div')(({ theme }) => ({
 }));
 
 export const DatabaseSettingsPage = () => {
-    const { id, type } = useDatabase();
+    const { id, type } = useEngine();
     const navigate = useNavigate();
 
     return (
@@ -31,14 +31,15 @@ export const DatabaseSettingsPage = () => {
         >
             <StyledContainer>
                 <SettingsTiles
-                    type={type}
+                    mode="engine"
+                    name={type}
                     id={id}
                     onDelete={() => {
                         navigate('/catalog');
                     }}
                 />
-                <PendingMembersTable type={type} id={id} />
-                <MembersTable type={type} id={id} />
+                <PendingMembersTable mode={'engine'} id={id} />
+                <MembersTable mode={'engine'} id={id} />
                 <UpdateSMSS id={id} />
             </StyledContainer>
         </SettingsContext.Provider>

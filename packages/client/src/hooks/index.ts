@@ -1,6 +1,6 @@
 import { useAPI } from './useAPI';
 import { useApp } from './useApp';
-import { useDatabase } from './useDatabase';
+import { useEngine } from './useEngine';
 import { useImport } from './useImport';
 import { useMetamodel } from './useMetamodel';
 import { useRootStore } from './useRootStore';
@@ -10,7 +10,7 @@ import { usePixel } from './usePixel';
 export {
     useAPI,
     useApp,
-    useDatabase,
+    useEngine,
     useImport,
     useMetamodel,
     useRootStore,

@@ -1,7 +1,8 @@
-import { useEffect, useState, useRef, useReducer } from 'react';
-import { useRootStore, usePixel, useAPI } from '@/hooks';
-import { useSettings } from '@/hooks/useSettings';
 import { useNavigate } from 'react-router-dom';
+import { useEffect, useState, useRef, useReducer } from 'react';
+
+import { ENGINE_TYPES } from '@/types';
+import { useRootStore, usePixel, useAPI, useSettings } from '@/hooks';
 
 import {
     Grid,
@@ -34,7 +35,7 @@ export interface DBMember {
     SELECTED: boolean;
 }
 
-export interface Storage {
+export interface Database {
     app_cost: string;
     app_favorite: number;
     app_id: string;
@@ -91,7 +92,19 @@ const reducer = (state, action) => {
     return state;
 };
 
-export const StorageSettingsPage = () => {
+/**
+ * Show detailed settings for an engine
+ */
+interface EngineSettingsIndexPageProps {
+    /** Type of the page to render */
+    type: ENGINE_TYPES;
+}
+
+export const EngineSettingsIndexPage = (
+    props: EngineSettingsIndexPageProps,
+) => {
+    const { type } = props;
+
     const { adminMode } = useSettings();
     const { configStore, monolithStore } = useRootStore();
     const navigate = useNavigate();
@@ -102,8 +115,6 @@ export const StorageSettingsPage = () => {
     const [view, setView] = useState('tile');
     const [search, setSearch] = useState('');
     const [sort, setSort] = useState('Name');
-
-    const [selectedApp, setSelectedApp] = useState<Storage>(null);
     const [canCollect, setCanCollect] = useState(true);
     const [offset, setOffset] = useState(0);
 
@@ -133,10 +144,11 @@ export const StorageSettingsPage = () => {
         return k.metakey;
     });
 
+    // Favorites ----------------------------------
     const getFavoritedDatabases = usePixel(`
     MyEngines(metaKeys = ${JSON.stringify(
         metaKeys,
-    )}, filterWord=["${search}"], onlyFavorites=[true], engineTypes=['STORAGE']);
+    )}, filterWord=["${search}"], onlyFavorites=[true], engineTypes=["${type}"]);
     `);
 
     useEffect(() => {
@@ -158,7 +170,7 @@ export const StorageSettingsPage = () => {
         'getEngines',
         adminMode,
         search,
-        'STORAGE',
+        type,
         offset,
         limit,
     ]);
@@ -186,6 +198,7 @@ export const StorageSettingsPage = () => {
                 setCanCollect(true);
             }
         }
+
         const mutateListWithVotes = databases;
 
         getEngines.data.forEach((db, i) => {
@@ -204,7 +217,6 @@ export const StorageSettingsPage = () => {
             value: mutateListWithVotes,
         });
 
-        setSelectedApp(null);
         searchbarRef.current?.focus();
     }, [getEngines.status, getEngines.data]);
 
@@ -216,7 +228,7 @@ export const StorageSettingsPage = () => {
         const favorite = !isFavorited(db.database_id);
         monolithStore
             .setEngineFavorite(db.database_id, favorite)
-            .then(() => {
+            .then((response) => {
                 if (!favorite) {
                     const newFavorites = favoritedDbs;
                     for (let i = newFavorites.length - 1; i >= 0; i--) {
@@ -367,7 +379,6 @@ export const StorageSettingsPage = () => {
      */
     useEffect(() => {
         scrollEle = document.querySelector('#home__content');
-
         scrollEle.addEventListener('scroll', scrollAll);
         return () => {
             scrollEle.removeEventListener('scroll', scrollAll);
@@ -391,7 +402,7 @@ export const StorageSettingsPage = () => {
                 >
                     <CircularProgress />
                     <Typography variant="body2">Loading</Typography>
-                    <Typography variant="caption">Storages</Typography>
+                    <Typography variant="caption">Databases</Typography>
                 </Stack>
             </Backdrop>
             <StyledContainer>
@@ -401,9 +412,9 @@ export const StorageSettingsPage = () => {
                         onChange={(e) => {
                             setSearch(e.target.value);
                         }}
-                        label="Storage"
+                        label="Database"
                         size="small"
-                        // enableEndAdornment={true}
+                        enableEndAdornment={true}
                         ref={searchbarRef}
                     />
                     <StyledSort
@@ -413,6 +424,9 @@ export const StorageSettingsPage = () => {
                     >
                         <MenuItem value="Name">Name</MenuItem>
                         <MenuItem value="Date Created">Date Created</MenuItem>
+                        <MenuItem value="Views">Views</MenuItem>
+                        <MenuItem value="Trending">Trending</MenuItem>
+                        <MenuItem value="Upvotes">Upvotes</MenuItem>
                     </StyledSort>
 
                     <ToggleButtonGroup size={'small'} value={view}>
