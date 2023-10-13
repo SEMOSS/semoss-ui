@@ -26,8 +26,8 @@ import {
 } from '@semoss/ui';
 import { stepsOne } from './import.constants';
 
-import { UploadData } from '../engine-import/forms/UploadData';
-import { CopyDatabaseForm } from '../engine-import/forms/CopyDatabaseForm';
+import { UploadData } from '../../components/import/refactor/UploadData';
+import { CopyDatabaseForm } from '../../components/import/refactor/CopyDatabaseForm';
 import { Search as SearchIcon } from '@mui/icons-material/';
 import { BuildDb } from '@/assets/img/BuildDb';
 import { ConnectModel } from '@/assets/img/ConnectModel';
@@ -239,11 +239,21 @@ export const ImportPage = () => {
     }, [importParams]);
 
     useEffect(() => {
-        scrollToTopRef.current.scrollIntoView({
-            behavior: 'smooth',
-            block: 'center',
-            inline: 'start',
-        });
+        const scrollIntoView = () => {
+            if (scrollToTopRef.current) {
+                scrollToTopRef.current.scrollIntoView({
+                    behavior: 'smooth',
+                    block: 'center',
+                    inline: 'start',
+                });
+            }
+        };
+
+        const delayScroll = () => {
+            setTimeout(scrollIntoView, 100); // 5000 milliseconds = 5 seconds
+        };
+
+        delayScroll(); // Trigger the delayed scroll when the component mounts
     }, [steps.length]);
 
     return (

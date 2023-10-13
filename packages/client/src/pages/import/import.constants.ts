@@ -4625,9 +4625,120 @@ export const CONNECTION_OPTIONS = {
             },
             {
                 name: 'H2',
-                disable: true,
+                disable: false,
                 icon: H2_DB,
                 fields: [
+                    {
+                        fieldName: 'dbDriver',
+                        label: 'Driver Name',
+                        defaultValue: 'HIVE',
+                        options: {
+                            component: 'text-field',
+                        },
+                        disabled: true,
+                        rules: { required: true },
+                        hidden: true,
+                    },
+                    {
+                        fieldName: 'NAME',
+                        label: 'Database Name',
+                        defaultValue: '',
+                        options: {
+                            component: 'text-field',
+                        },
+                        disabled: false,
+                        rules: { required: true },
+                    },
+                    {
+                        fieldName: 'DATABASE_DESCRIPTION',
+                        label: 'Database Description',
+                        defaultValue: '',
+                        options: {
+                            component: 'text-field',
+                        },
+                        disabled: false,
+                        rules: { required: false },
+                    },
+                    {
+                        fieldName: 'DATABASE_TAGS',
+                        label: 'Tags',
+                        defaultValue: '',
+                        options: {
+                            component: 'text-field',
+                        },
+                        disabled: false,
+                        rules: { required: false },
+                    },
+                    {
+                        fieldName: 'hostname',
+                        label: 'Host Name',
+                        defaultValue: '',
+                        options: {
+                            component: 'text-field',
+                        },
+                        disabled: false,
+                        rules: { required: true },
+                    },
+                    {
+                        fieldName: 'port',
+                        label: 'Port',
+                        defaultValue: '1000',
+                        options: {
+                            component: 'text-field',
+                        },
+                        disabled: false,
+                        rules: { required: false },
+                    },
+                    {
+                        fieldName: 'schema',
+                        label: 'Schema',
+                        defaultValue: '',
+                        options: {
+                            component: 'text-field',
+                        },
+                        disabled: false,
+                        rules: { required: false },
+                    },
+                    {
+                        fieldName: 'USERNAME',
+                        label: 'Username',
+                        defaultValue: '',
+                        options: {
+                            component: 'text-field',
+                        },
+                        disabled: false,
+                        rules: { required: false },
+                    },
+                    {
+                        fieldName: 'PASSWORD',
+                        label: 'Password',
+                        defaultValue: '',
+                        options: {
+                            component: 'password',
+                        },
+                        disabled: false,
+                        rules: { required: false },
+                    },
+                    {
+                        fieldName: 'additional',
+                        label: 'Additional Parameters',
+                        defaultValue: '',
+                        options: {
+                            component: 'text-field',
+                        },
+                        disabled: false,
+                        rules: { required: false },
+                    },
+                    {
+                        fieldName: 'CONNECTION_URL',
+                        label: 'JDBC Url',
+                        defaultValue: '',
+                        options: {
+                            component: 'text-field',
+                        },
+                        disabled: false,
+                        rules: { required: false },
+                    },
                     // ADVANCED
                     {
                         fieldName: 'FETCH_SIZE',
@@ -6998,9 +7109,110 @@ export const CONNECTION_OPTIONS = {
 
             {
                 name: 'SQLITE',
-                disable: true,
+                disable: false,
                 icon: SQLITE,
                 fields: [
+                    {
+                        fieldName: 'dbDriver',
+                        label: 'Driver Name',
+                        defaultValue: 'SQLITE',
+                        options: {
+                            component: 'text-field',
+                        },
+                        disabled: true,
+                        rules: { required: true },
+                        hidden: true,
+                    },
+                    {
+                        fieldName: 'NAME',
+                        label: 'Database Name',
+                        defaultValue: '',
+                        options: {
+                            component: 'text-field',
+                        },
+                        disabled: false,
+                        rules: { required: true },
+                    },
+                    {
+                        fieldName: 'DATABASE_DESCRIPTION',
+                        label: 'Database Description',
+                        defaultValue: '',
+                        options: {
+                            component: 'text-field',
+                        },
+                        disabled: false,
+                        rules: { required: false },
+                    },
+                    {
+                        fieldName: 'DATABASE_TAGS',
+                        label: 'Tags',
+                        defaultValue: '',
+                        options: {
+                            component: 'text-field',
+                        },
+                        disabled: false,
+                        rules: { required: false },
+                    },
+                    {
+                        fieldName: 'hostname',
+                        label: 'Host Name',
+                        defaultValue: '',
+                        options: {
+                            component: 'text-field',
+                        },
+                        disabled: false,
+                        rules: { required: true },
+                    },
+                    {
+                        fieldName: 'port',
+                        label: 'Port',
+                        defaultValue: '1000',
+                        options: {
+                            component: 'text-field',
+                        },
+                        disabled: false,
+                        rules: { required: false },
+                    },
+                    {
+                        fieldName: 'USERNAME',
+                        label: 'Username',
+                        defaultValue: '',
+                        options: {
+                            component: 'text-field',
+                        },
+                        disabled: false,
+                        rules: { required: false },
+                    },
+                    {
+                        fieldName: 'PASSWORD',
+                        label: 'Password',
+                        defaultValue: '',
+                        options: {
+                            component: 'password',
+                        },
+                        disabled: false,
+                        rules: { required: false },
+                    },
+                    {
+                        fieldName: 'additional',
+                        label: 'Additional Parameters',
+                        defaultValue: '',
+                        options: {
+                            component: 'text-field',
+                        },
+                        disabled: false,
+                        rules: { required: false },
+                    },
+                    {
+                        fieldName: 'CONNECTION_URL',
+                        label: 'JDBC Url',
+                        defaultValue: '',
+                        options: {
+                            component: 'text-field',
+                        },
+                        disabled: false,
+                        rules: { required: false },
+                    },
                     // ADVANCED
                     {
                         fieldName: 'FETCH_SIZE',
