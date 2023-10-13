@@ -2689,14 +2689,14 @@ export const CONNECTION_OPTIONS = {
     FUNCTION: {
         Function: [
             {
-                name: 'MINIO DUPE',
+                name: 'REST',
                 disable: false,
                 icon: MINIO,
                 fields: [
                     {
-                        fieldName: 'STORAGE_TYPE',
-                        label: 'Storage Type',
-                        defaultValue: 'MINIO',
+                        fieldName: 'FUNCTION_TYPE',
+                        label: 'Function Type',
+                        defaultValue: 'REST',
                         options: {
                             component: 'text-field',
                         },
@@ -2714,18 +2714,8 @@ export const CONNECTION_OPTIONS = {
                         rules: { required: true },
                     },
                     {
-                        fieldName: 'MINIO_REGION',
-                        label: 'Region',
-                        defaultValue: 'us-east-1',
-                        options: {
-                            component: 'text-field',
-                        },
-                        disabled: false,
-                        rules: { required: true },
-                    },
-                    {
-                        fieldName: 'MINIO_ACCESS_KEY',
-                        label: 'Access Key',
+                        fieldName: 'URL',
+                        label: 'URL',
                         defaultValue: '',
                         options: {
                             component: 'text-field',
@@ -2734,18 +2724,52 @@ export const CONNECTION_OPTIONS = {
                         rules: { required: true },
                     },
                     {
-                        fieldName: 'MINIO_SECRET_KEY',
-                        label: 'Secret Key',
-                        defaultValue: '',
+                        fieldName: 'HTTP_METHOD',
+                        label: 'Http Method',
+                        defaultValue: 'POST',
                         options: {
-                            component: 'password',
+                            component: 'select',
+                            options: [
+                                {
+                                    display: 'GET',
+                                    value: 'GET',
+                                },
+                                {
+                                    display: 'POST',
+                                    value: 'POST',
+                                },
+                            ],
                         },
                         disabled: false,
                         rules: { required: true },
                     },
                     {
-                        fieldName: 'MINIO_ENDPOINT',
-                        label: 'Endpoint',
+                        fieldName: 'CONTENT_TYPE',
+                        label: 'POST Message Body',
+                        defaultValue: '',
+                        options: {
+                            component: 'select',
+                            options: [
+                                {
+                                    display: '',
+                                    value: '',
+                                },
+                                {
+                                    display: 'json',
+                                    value: 'json',
+                                },
+                                {
+                                    display: 'x-www-form-urlencoded',
+                                    value: 'x-www-form-urlencoded',
+                                },
+                            ],
+                        },
+                        disabled: false,
+                        rules: { required: true },
+                    },
+                    {
+                        fieldName: 'FUNCTION_NAME',
+                        label: 'Function Name (metadata)',
                         defaultValue: '',
                         options: {
                             component: 'text-field',
@@ -2754,14 +2778,34 @@ export const CONNECTION_OPTIONS = {
                         rules: { required: true },
                     },
                     {
-                        fieldName: 'MINIO_BUCKET',
-                        label: 'Root Bucket Path',
+                        fieldName: 'FUNCTION_DESCRIPTION',
+                        label: 'Function Description (metadata)',
                         defaultValue: '',
                         options: {
                             component: 'text-field',
                         },
                         disabled: false,
-                        rules: { required: false },
+                        rules: { required: true },
+                    },
+                    {
+                        fieldName: 'FUNCTION_PARAMETERS',
+                        label: 'Function Parameters',
+                        defaultValue: '',
+                        options: {
+                            component: 'text-field',
+                        },
+                        disabled: false,
+                        rules: { required: true },
+                    },
+                    {
+                        fieldName: 'FUNCTION_REQUIRED_PARAMETERS',
+                        label: 'Function Required Parameters',
+                        defaultValue: '',
+                        options: {
+                            component: 'text-field',
+                        },
+                        disabled: false,
+                        rules: { required: true },
                     },
                 ],
             },
