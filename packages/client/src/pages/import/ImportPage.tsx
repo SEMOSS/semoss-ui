@@ -12,7 +12,7 @@
  *
  */
 
-import React, { useEffect } from 'react';
+import React, { useEffect, useRef } from 'react';
 import { Page } from '@/components/ui/';
 import {
     Avatar,
@@ -37,8 +37,8 @@ import { UploadDb } from '@/assets/img/UploadDb';
 import { ConnectStorage } from '@/assets/img/ConnectStorage';
 
 import { useImport } from '@/hooks';
-import { ImportSpecificPage } from './ImportSpecificPage';
-import { ImportConnectionPage } from './ImportConnectionPage';
+
+import { EstablishConnectionPage, ImportConnectionPage } from './';
 
 import { useNavigate, useLocation } from 'react-router-dom';
 
@@ -47,7 +47,6 @@ const StyledContainer = styled('div')(({ theme }) => ({
     width: 'auto',
     flexDirection: 'column',
     alignItems: 'flex-start',
-    gap: theme.spacing(3),
 }));
 
 const StyledSearchbarContainer = styled('div')(({ theme }) => ({
@@ -186,6 +185,8 @@ export const ImportPage = () => {
     const [search, setSearch] = React.useState('');
     const { steps, activeStep, setSteps, CONNECTION_OPTIONS } = useImport();
 
+    const scrollToTopRef = useRef(null);
+
     const navigate = useNavigate();
     const { search: importParams } = useLocation();
 
@@ -236,6 +237,14 @@ export const ImportPage = () => {
                 break;
         }
     }, [importParams]);
+
+    useEffect(() => {
+        scrollToTopRef.current.scrollIntoView({
+            behavior: 'smooth',
+            block: 'center',
+            inline: 'start',
+        });
+    }, [steps.length]);
 
     return (
         <Page
@@ -326,6 +335,10 @@ export const ImportPage = () => {
                         </StyledSearchbarContainer>
                     )}
 
+                {/*  When Step changes scroll top into view */}
+                <div ref={scrollToTopRef} style={{ height: '0px' }}>
+                    &nbsp;
+                </div>
                 {/* Step 1: is determination which engine you would like to connect to */}
                 {steps.length < 1 && (
                     <Box sx={{ width: '100%' }}>
@@ -549,11 +562,11 @@ export const ImportPage = () => {
                     )}
 
                 {/* Step 3:  Will be the form to capture specific engine connection details */}
-                {steps.length === 2 && <ImportSpecificPage />}
+                {steps.length === 2 && <ImportConnectionPage />}
                 {/* Let's call this ImportConnectionPage */}
 
                 {/* Step 4: If there is a step in the process after inputting connection details: metamodel for example */}
-                {steps.length === 3 && <ImportConnectionPage />}
+                {steps.length === 3 && <EstablishConnectionPage />}
                 {/* Lets call this EstablishedConnectionPage */}
             </StyledContainer>
         </Page>
