@@ -24,10 +24,7 @@ import {
     Box,
     Grid,
 } from '@semoss/ui';
-import {
-    stepsOne,
-    // CONNECTION_OPTIONS
-} from './import.constants';
+import { stepsOne } from './import.constants';
 
 import { UploadData } from '../engine-import/forms/UploadData';
 import { CopyDatabaseForm } from '../engine-import/forms/CopyDatabaseForm';
@@ -71,8 +68,6 @@ const StyledCard = styled(Card, {
 })<{
     disabled: boolean;
 }>(({ theme, disabled }) => {
-    // const palette = theme.palette as CustomPaletteOptions;
-    // TODO: Fix typing
     const palette = theme.palette as unknown as {
         primary: Record<string, string>;
         primaryContrast: Record<string, string>;
@@ -121,7 +116,6 @@ const StyledCardImage = styled('img')({
     overflowClipMargin: 'content-box',
     overflow: 'clip',
     objectFit: 'cover',
-    // aspectRatio: '1/1'
 });
 
 const StyledCardText = styled('p')({
@@ -136,8 +130,6 @@ const StyledFormTypeBox = styled(Box, {
 })<{
     disabled: boolean;
 }>(({ theme, disabled }) => {
-    // const palette = theme.palette as CustomPaletteOptions;
-    // TODO: Fix typing
     const palette = theme.palette as unknown as {
         primary: Record<string, string>;
         primaryContrast: Record<string, string>;
@@ -181,10 +173,12 @@ const StyledCategoryTitle = styled(Box)({
 const IconMapper = {
     'Connect to Database': <ConnectDb />,
     'Copy Database': <CopyDb />,
-    'Upload Database': <UploadDb />,
     'Build Database': <BuildDb />,
     'Connect to Storage': <ConnectStorage />,
     'Connect to Model': <ConnectModel />,
+    'Connect to Vector Database': <ConnectStorage />,
+    'Connect to Function': <ConnectModel />,
+    // 'Upload Database': <UploadDb />,
 };
 
 export const ImportPage = () => {
@@ -338,7 +332,7 @@ export const ImportPage = () => {
                         <>
                             <StyledCategoryTitle>Database</StyledCategoryTitle>
                             <Grid container columns={12} spacing={2}>
-                                {stepsOne.slice(0, 4).map((val, idx) => {
+                                {stepsOne.slice(0, 3).map((val, idx) => {
                                     if (
                                         val.name
                                             .toLowerCase()
@@ -406,7 +400,7 @@ export const ImportPage = () => {
                                 Other Options
                             </StyledCategoryTitle>
                             <Grid container columns={12} spacing={2}>
-                                {stepsOne.slice(4, 8).map((val, idx) => (
+                                {stepsOne.slice(3, 7).map((val, idx) => (
                                     <Grid
                                         item
                                         key={idx}

@@ -87,12 +87,12 @@ export const stepsOne = [
         disabled: true,
         data: 'COPY_DATABASE', // DOES NOT MATTER AT THE MOMENT, Tie this into one DS
     },
-    {
-        name: 'Upload Database',
-        description: '',
-        disabled: true,
-        data: 'UPLOAD_DATABASE', // DOES NOT MATTER AT THE MOMENT, Tie this into one DS
-    },
+    // {
+    //     name: 'Upload Database',
+    //     description: '',
+    //     disabled: true,
+    //     data: 'UPLOAD_DATABASE', // DOES NOT MATTER AT THE MOMENT, Tie this into one DS
+    // },
     {
         name: 'Build Database',
         description: '',
@@ -130,7 +130,9 @@ export const stepsOne = [
 // NEW CONSTRUCT --> EACH SPECIFIC ENGINE SELECTION WILL NEED A UNIQ ID
 // {
 //     MODEL: {
-//         TYPES_OF_ENGINE: [{
+//         "View All Page Header": [{
+//             // id will get created on mount of import and held in Context.
+//             id: Model-View All Page Header-Open AI
 //             name: 'Open AI',
 //             disable: false,
 //             icon: OPEN_AI,
@@ -5861,6 +5863,62 @@ export const CONNECTION_OPTIONS = {
                         disabled: false,
                         rules: { required: false },
                     },
+                    // ADVANCED
+                    // {
+                    //     fieldName: 'FETCH_SIZE',
+                    //     label: 'Fetch Size',
+                    //     defaultValue: '',
+                    //     rules: { required: false },
+                    //     options: {
+                    //         component: 'text-field',
+                    //     },
+                    //     disabled: false,
+                    //     advanced: true,
+                    // },
+                    // {
+                    //     fieldName: 'CONNECTION_TIMEOUT',
+                    //     label: 'Connection Timeout',
+                    //     defaultValue: '',
+                    //     rules: { required: false },
+                    //     options: {
+                    //         component: 'text-field',
+                    //     },
+                    //     disabled: false,
+                    //     advanced: true,
+                    // },
+                    // {
+                    //     fieldName: 'CONNECTION_POOLING',
+                    //     label: 'Fetch Size',
+                    //     defaultValue: '',
+                    //     rules: { required: false },
+                    //     options: {
+                    //         component: 'text-field',
+                    //     },
+                    //     disabled: false,
+                    //     advanced: true,
+                    // },
+                    // {
+                    //     fieldName: 'POOL_MIN_SIZE',
+                    //     label: 'Connection Timeout',
+                    //     defaultValue: '',
+                    //     rules: { required: false },
+                    //     options: {
+                    //         component: 'text-field',
+                    //     },
+                    //     disabled: false,
+                    //     advanced: true,
+                    // },
+                    // {
+                    //     fieldName: 'POOL_MAX_SIZE',
+                    //     label: 'Connection Timeout',
+                    //     defaultValue: '',
+                    //     rules: { required: false },
+                    //     options: {
+                    //         component: 'text-field',
+                    //     },
+                    //     disabled: false,
+                    //     advanced: true,
+                    // },
                 ],
             },
 

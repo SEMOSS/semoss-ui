@@ -35,20 +35,22 @@ export const ImportSpecificPage = () => {
      * @desc  Based on type of submitted form it will either:
      * 1. Hit the respective reactor to submit
      * 2. Sets next step in process to continue with submission
+     * 3. Refactor
      */
     const formSubmit = async (values: {
         type: 'VECTOR' | 'STORAGE' | 'MODEL' | 'FUNCTION' | 'UPLOAD';
         name: string;
         fields: unknown[];
     }) => {
-        // Loading
+        let pixel = ''; // 'VECTOR' | 'STORAGE' | 'MODEL' | 'FUNCTION' | 'UPLOAD'
         setIsLoading(true);
 
         if (values.type === 'STORAGE') {
             /** Storage: START */
-            const pixel = `CreateStorageEngine(storage=["${
-                values.name
-            }"], storageDetails=[${JSON.stringify(values.fields)}])`;
+            const pixel = `CreateStorageEngine(
+                storage=["${values.name}"], 
+                storageDetails=[${JSON.stringify(values.fields)}]
+            )`;
 
             monolithStore.runQuery(pixel).then((response) => {
                 const output = response.pixelReturn[0].output,
@@ -66,7 +68,7 @@ export const ImportSpecificPage = () => {
 
                 notification.add({
                     color: 'success',
-                    message: `Successfully created storage`,
+                    message: `Successfully added to catalog storage`,
                 });
 
                 navigate(`/storage/${output.database_id}`);
@@ -75,9 +77,10 @@ export const ImportSpecificPage = () => {
             return;
         } else if (values.type === 'MODEL') {
             /** Model: START */
-            const pixel = `CreateModelEngine(model=["${
-                values.name
-            }"], modelDetails=[${JSON.stringify(values.fields)}])`;
+            const pixel = `CreateModelEngine(
+                model=["${values.name}"], 
+                modelDetails=[${JSON.stringify(values.fields)}]
+            )`;
 
             monolithStore.runQuery(pixel).then((response) => {
                 const output = response.pixelReturn[0].output,
@@ -95,7 +98,7 @@ export const ImportSpecificPage = () => {
 
                 notification.add({
                     color: 'success',
-                    message: `Successfully added model`,
+                    message: `Successfully added LLM to catalog`,
                 });
 
                 navigate(`/model/${output.database_id}`);
@@ -106,8 +109,7 @@ export const ImportSpecificPage = () => {
             const pixel = `
                 CreateVectorDatabaseEngine ( 
                     database=["${values.name}"], 
-                    conDetails=[ ${JSON.stringify(values.fields)}
-                    ]
+                    conDetails=[${JSON.stringify(values.fields)}]
                 ) ;
             `;
 
@@ -128,7 +130,7 @@ export const ImportSpecificPage = () => {
 
                 notification.add({
                     color: 'success',
-                    message: `Successfully added vector`,
+                    message: `Successfully added vector database to catalog`,
                 });
 
                 navigate(`/vector/${output.database_id}`);
@@ -137,13 +139,60 @@ export const ImportSpecificPage = () => {
             return;
         } else if (values.type === 'FUNCTION') {
             /** Function: START */
-            notification.add({
-                color: 'warning',
-                message:
-                    'Pixel for Function Creation required, we apologize for the inconvenience.',
+
+            const pixel = `
+            CreateRestFunctionEngine( 
+                function=["${values.name}"], 
+                functionDetails=[${JSON.stringify(values.fields)}] 
+            );
+            `;
+            debugger;
+
+            monolithStore.runQuery(pixel).then((response) => {
+                const output = response.pixelReturn[0].output,
+                    operationType = response.pixelReturn[0].operationType;
+
+                setIsLoading(false);
+
+                if (operationType.indexOf('ERROR') > -1) {
+                    notification.add({
+                        color: 'error',
+                        message: output,
+                    });
+                    return;
+                }
+
+                notification.add({
+                    color: 'success',
+                    message: `Successfully added function to catalog`,
+                });
+
+                navigate(`/vector/${output.database_id}`);
             });
             return;
         }
+
+        monolithStore.runQuery(pixel).then((response) => {
+            const output = response.pixelReturn[0].output,
+                operationType = response.pixelReturn[0].operationType;
+
+            setIsLoading(false);
+
+            if (operationType.indexOf('ERROR') > -1) {
+                notification.add({
+                    color: 'error',
+                    message: output,
+                });
+                return;
+            }
+
+            // notification.add({
+            //     color: 'success',
+            //     message: `Successfully added function to catalog`,
+            // });
+
+            // navigate(`/vector/${output.database_id}`);
+        });
 
         /** Connect to External: START */
         // I'll be hitting this reactor if dbDriver is in RDBMSTypeEnum on BE
