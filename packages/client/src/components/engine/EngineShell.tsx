@@ -4,6 +4,7 @@ import {
     Breadcrumbs,
     Button,
     Chip,
+    IconButton,
     Stack,
     Typography,
 } from '@semoss/ui';
@@ -14,7 +15,12 @@ import { useRootStore, useEngine, usePixel } from '@/hooks';
 import { EditDatabaseDetails } from '@/components/database';
 import { Page, LoadingScreen } from '@/components/ui';
 import { RequestAccess } from './';
-import { Add, EditRounded, SimCardDownload } from '@mui/icons-material';
+import {
+    Add,
+    ContentPasteOutlined,
+    EditRounded,
+    SimCardDownload,
+} from '@mui/icons-material';
 import { formatName } from '@/utils';
 import { Link } from 'react-router-dom';
 
@@ -145,6 +151,15 @@ export const EngineShell = (props: EngineShellProps) => {
                             {formatName(data.database_name)}
                         </Typography>
                         <Stack direction="row">
+                            <IconButton
+                                size="small"
+                                title={'Copy Engine ID'}
+                                onClick={(e) => {
+                                    navigator.clipboard.writeText(id);
+                                }}
+                            >
+                                <ContentPasteOutlined />
+                            </IconButton>
                             {configStore.store.security && role !== 'OWNER' && (
                                 <>
                                     {requestAccess && (
