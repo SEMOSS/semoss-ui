@@ -10,6 +10,10 @@
  * Steps is important for this page as based on the step in the process you will
  * see different steps in the connection process for all engines
  *
+ * TODO seperate links: Just seperate the steps into
+ * - /import
+ * - /import/model
+ * - /import/model/OpenAi
  */
 
 import React, { useEffect, useRef } from 'react';

@@ -83,7 +83,7 @@ export const ImportForm = (props) => {
     /**
      * @desc Takes details from submission form and
      * constucts values to parent for submission
-     * @param data // TO DO: Type this out and handle of this in the parent
+     * @param data // TO DO: Type this out and handle all of this in the parent
      */
     const onSubmit = async (data) => {
         // If it's a File Upload
