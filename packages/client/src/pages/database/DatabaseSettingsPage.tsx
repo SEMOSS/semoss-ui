@@ -17,7 +17,6 @@ const StyledContainer = styled('div')(({ theme }) => ({
     flexDirection: 'column',
     alignItems: 'flex-start',
     gap: theme.spacing(3),
-    // padding: `${theme.spacing(3)} ${theme.spacing(2)}`,
 }));
 
 export const DatabaseSettingsPage = () => {

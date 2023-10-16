@@ -5,7 +5,7 @@ import { FileDropzone } from '@semoss/ui';
 import { ImportFormComponent } from './formTypes';
 import { Metamodel } from '@/components/metamodel';
 import { useRootStore } from '@/hooks';
-import { DataFormTable } from '../DataFormTable';
+import { DataFormTable } from './DataFormTable';
 
 export const ExcelForm: ImportFormComponent = (props) => {
     const { submitFunc, metamodel, predictDataTypes } = props;

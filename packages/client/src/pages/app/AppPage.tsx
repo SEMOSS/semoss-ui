@@ -1,23 +1,34 @@
 /**
  * ---------------------------*------------------------------------
- * This will be your app page, what this component does is
- * really is to handle the layout and switching between the
+ * This will be your app page, what this component
+ * really does is handle the layout and switching between the
  * different { editor mode } nav items.
  *
- * - We have a Resizable Bottom Panel for the console.
+ * - We have a Resizable Bottom Panel for the console. (Removed)
+ *      - AppConsole
+ * - Resizable Left Right Panel
+ *      - AppEditorPanel (also resizable),
  * - The Bigger Components that get consumed here are:
- *      - AppEditorPanel (also resizable), AppConsole, AppRenderer
+ *      - AppEditorPanel, AppConsole, AppRenderer
+ *
+ * Update: 9/28/2023 -
+ * Bottom Debug Console commented out so no horizontal bottom panel resize
  * ---------------------------*------------------------------------
  *
  */
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useParams } from 'react-router-dom';
 import { observer } from 'mobx-react-lite';
 import { AppContext, AppContextType } from '@/contexts';
 import { useRootStore } from '@/hooks';
 import { AppEditorActions, Navbar } from '@/components/ui';
-import { AppRenderer, AppConsole, AppEditorPanel } from '@/components/app';
-import { styled, Button } from '@semoss/ui';
+import {
+    AppRenderer,
+    AppConsole,
+    AppPortal,
+    AppEditorPanel,
+} from '@/components/app';
+import { styled, Button, ThemeProvider } from '@semoss/ui';
 
 // Styles --------------------------------------*
 const NAV_HEIGHT = '48px';
@@ -43,13 +54,15 @@ const StyledLeftPanel = styled('div')(({ theme }) => ({
     justifyContent: 'space-between',
 }));
 
-const StyledRightPanel = styled('div')(({ theme }) => ({}));
+const StyledRightPanel = styled('div')(({ theme }) => ({
+    position: 'relative',
+}));
 
 const StyledVertDivider = styled('div')(({ theme }) => ({
-    width: theme.spacing(0.25),
+    width: theme.spacing(0.5),
     background: theme.palette.divider,
     '&:hover': {
-        cursor: 'ew-resize',
+        cursor: 'col-resize',
     },
 }));
 
@@ -76,7 +89,7 @@ const StyledBottomPanel = styled('div')(({ theme }) => ({
 }));
 
 export const AppPage = observer(() => {
-    const { monolithStore, configStore } = useRootStore();
+    const { monolithStore } = useRootStore();
 
     // App ID Needed for pixel calls
     const { appId } = useParams();
@@ -85,9 +98,11 @@ export const AppPage = observer(() => {
     const [editMode, setEditMode] = useState<boolean>(false);
     const [isLoading, setIsLoading] = useState(false);
     const [counter, setCounter] = useState(0);
+    const [showPortal, setShowPortal] = useState(false);
     const [view, setView] = useState<
         'code-editor' | 'settings' | 'permissions' | ''
     >('');
+    const [transparentOverlay, setTransparentOverlay] = useState(false);
 
     /**
      * Effects
@@ -116,12 +131,7 @@ export const AppPage = observer(() => {
     const switchEditorMode = (mode: boolean) => {
         setEditMode(mode);
         if (mode) {
-            // setTopPanelHeight('96.5%');
-            if (configStore.store.user.admin) {
-                setEditorView('code-editor');
-            } else {
-                setEditorView('settings');
-            }
+            setEditorView('code-editor');
         } else {
             // setTopPanelHeight('100%');
             setEditorView('');
@@ -138,9 +148,6 @@ export const AppPage = observer(() => {
         newValue: 'code-editor' | 'settings' | 'permissions' | '',
     ) => {
         if (newValue === 'code-editor') {
-            if (!configStore.store.user.admin) {
-                return;
-            }
             setLeftPanelWidth('55%');
             setRightPanelWidth('45%');
         } else {
@@ -172,7 +179,7 @@ export const AppPage = observer(() => {
     /**
      * Resizing of Panels Code
      */
-    const [topPanelHeight, setTopPanelHeight] = useState('100%');
+    const [topPanelHeight, setTopPanelHeight] = useState('96.5%');
     const [bottomPanelHeight, setBottomPanelHeight] = useState('3.5%');
 
     const [leftPanelWidth, setLeftPanelWidth] = useState('50%');
@@ -205,9 +212,29 @@ export const AppPage = observer(() => {
         const newRightPanelWidthPercentage = `${rightContainerWidth}%`;
         const newLeftPanelWidthPercentage = `${leftContainerWidth}%`;
 
+        const parsedLeftPanelWidth = Math.floor(leftContainerWidth);
+        // Prevent Code Editor from being resized to small
+        if (view === 'code-editor' && parsedLeftPanelWidth < 15) {
+            return;
+        }
+        // Transparency Overlay allows dragging over iframe and removal of event listener
+        setTransparentOverlay(true);
+
         setLeftPanelWidth(newLeftPanelWidthPercentage);
         setRightPanelWidth(newRightPanelWidthPercentage);
     };
+
+    const open = useCallback(() => {
+        setShowPortal(true);
+
+        // Minimize App view in traditional view
+        setLeftPanelWidth('80%');
+        setRightPanelWidth('20%');
+    }, []);
+
+    const close = useCallback(() => {
+        setShowPortal(false);
+    }, []);
 
     /**
      * Value to pass for App Context
@@ -242,69 +269,104 @@ export const AppPage = observer(() => {
             <AppContext.Provider value={value}>
                 <Navbar>
                     {/* Actions to Open Editor Mode */}
-                    {appPermission === 'OWNER' && <AppEditorActions />}
+                    {(appPermission === 'OWNER' ||
+                        appPermission === 'EDIT') && <AppEditorActions />}
                 </Navbar>
 
                 {/* Top Panel: Contains Editor and Renderer */}
-                <StyledTopPanel sx={{ height: topPanelHeight }}>
+                <StyledTopPanel
+                    sx={{
+                        // height: editMode ? '96.5%' : '100%',
+                        height: '100%',
+                    }}
+                >
                     {editMode && (
                         <StyledLeftPanel sx={{ width: leftPanelWidth }}>
-                            {/* Left Panel for Editor Mode */}
-                            <AppEditorPanel />
-                            <StyledVertDivider
-                                onMouseDown={(e) => {
-                                    e.preventDefault();
-                                    window.addEventListener(
-                                        'mousemove',
-                                        handleHorizontalResize,
-                                    );
-                                    window.addEventListener('mouseup', () => {
-                                        window.removeEventListener(
+                            {/* Left Panel for Editor Mode, should be Dark Mode */}
+                            <ThemeProvider reset={true} type={'light'}>
+                                <AppEditorPanel width={leftPanelWidth} />
+                                <StyledVertDivider
+                                    onMouseDown={(e) => {
+                                        e.preventDefault();
+                                        window.addEventListener(
                                             'mousemove',
                                             handleHorizontalResize,
                                         );
-                                    });
-                                }}
-                            />
+                                        window.addEventListener(
+                                            'mouseup',
+                                            () => {
+                                                window.removeEventListener(
+                                                    'mousemove',
+                                                    handleHorizontalResize,
+                                                );
+                                                setTransparentOverlay(false);
+                                            },
+                                        );
+                                    }}
+                                />
+                            </ThemeProvider>
                         </StyledLeftPanel>
                     )}
-
+                    {/* Right Panel that Renders our App */}
                     <StyledRightPanel
                         sx={{ width: !editMode ? '100%' : rightPanelWidth }}
                     >
-                        {/* Right Panel that Renders our App */}
+                        {/* Allows you to drag over the iframe, if you remove this resizing is buggy */}
+                        {transparentOverlay ? (
+                            <div
+                                style={{
+                                    width: '100%',
+                                    height: '100%',
+                                    position: 'absolute',
+                                    top: '0',
+                                    left: '0',
+                                    opacity: '0.8',
+                                    zIndex: 9999,
+                                }}
+                            ></div>
+                        ) : null}
                         <AppRenderer
                             key={counter}
                             appId={appId}
                             counter={counter}
                             editMode={editMode}
                             refreshApp={refreshOutlet}
+                            open={open}
                         ></AppRenderer>
+                        {showPortal ? (
+                            <AppPortal
+                                counter={counter}
+                                appId={appId}
+                                close={close}
+                            />
+                        ) : null}
                     </StyledRightPanel>
                 </StyledTopPanel>
 
                 {/* Only when in Editor Mode: Resizable Bottom Panel  */}
-                {editMode ? (
-                    <StyledBottomPanel sx={{ height: bottomPanelHeight }}>
-                        <StyledHorizDivider
-                            onMouseDown={(e) => {
-                                e.preventDefault();
-                                window.addEventListener(
-                                    'mousemove',
-                                    handleVerticalResize,
-                                );
-                                window.addEventListener('mouseup', () => {
-                                    window.removeEventListener(
-                                        'mousemove',
-                                        handleVerticalResize,
-                                    );
-                                });
-                            }}
-                        ></StyledHorizDivider>
-                        {/* App Console */}
-                        <AppConsole />
-                    </StyledBottomPanel>
-                ) : null}
+                {
+                    // editMode ? (
+                    //     <StyledBottomPanel sx={{ height: bottomPanelHeight }}>
+                    //         <StyledHorizDivider
+                    //             onMouseDown={(e) => {
+                    //                 e.preventDefault();
+                    //                 window.addEventListener(
+                    //                     'mousemove',
+                    //                     handleVerticalResize,
+                    //                 );
+                    //                 window.addEventListener('mouseup', () => {
+                    //                     window.removeEventListener(
+                    //                         'mousemove',
+                    //                         handleVerticalResize,
+                    //                     );
+                    //                 });
+                    //             }}
+                    //         ></StyledHorizDivider>
+                    //         {/* App Console */}
+                    //         <AppConsole />
+                    //     </StyledBottomPanel>
+                    // ) : null
+                }
             </AppContext.Provider>
         </StyledViewport>
     );

@@ -193,6 +193,7 @@ export const MemberSettingsPage = () => {
     };
 
     const updateActiveMember = handleSubmit((data) => {
+        setMemberInfoModal(false);
         monolithStore['editMemberInfo'](adminMode, data)
             .then(() => {
                 const message = `You have successfully updated user information`;
@@ -574,7 +575,7 @@ export const MemberSettingsPage = () => {
                                                     render={({ field }) => {
                                                         return (
                                                             <Switch
-                                                                value={
+                                                                checked={
                                                                     field.value
                                                                 }
                                                                 onChange={() =>
@@ -605,7 +606,7 @@ export const MemberSettingsPage = () => {
                                                     render={({ field }) => {
                                                         return (
                                                             <Switch
-                                                                value={
+                                                                checked={
                                                                     field.value
                                                                 }
                                                                 onChange={() =>
@@ -638,7 +639,7 @@ export const MemberSettingsPage = () => {
                                                     render={({ field }) => {
                                                         return (
                                                             <Switch
-                                                                value={
+                                                                checked={
                                                                     field.value
                                                                 }
                                                                 onChange={() =>
@@ -679,8 +680,8 @@ export const MemberSettingsPage = () => {
                             <Button
                                 variant="contained"
                                 onClick={() => {
+                                    console.log('saving info');
                                     updateActiveMember();
-                                    setMemberInfoModal(false);
                                 }}
                             >
                                 Save
@@ -1216,7 +1217,7 @@ export const MemberSettingsPage = () => {
                                                 onChange={() => {
                                                     updateMemberInfo({
                                                         ...mem,
-                                                        exporter: !mem.admin,
+                                                        admin: !mem.admin,
                                                     });
                                                 }}
                                             />

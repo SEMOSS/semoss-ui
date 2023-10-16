@@ -6,8 +6,9 @@ import React, {
     SyntheticEvent,
 } from 'react';
 import Editor, { loader } from '@monaco-editor/react';
-import { Typography, Tabs, styled, keyframes } from '@semoss/ui';
+import { IconButton, Typography, Tabs, styled, keyframes } from '@semoss/ui';
 import { File, ControlledFile } from '../';
+import { Clear, SaveOutlined } from '@mui/icons-material';
 
 // Weird thing with Monaco Editor and does not get loaded in correctly from install
 // loader.config({
@@ -34,28 +35,45 @@ const StyledEmptyFiles = styled('div')(({ theme }) => ({
 
 const StyledFileTabs = styled('div')(({ theme }) => ({
     display: 'flex',
+    justifyContent: 'space-between',
+    gap: theme.spacing(1),
 }));
 
 const StyledActiveFilePath = styled('div')(({ theme }) => ({
     display: 'flex',
+    backgroundColor: theme.palette.background.paper,
     // border: 'solid green',
     padding: theme.spacing(1),
 }));
 
-// Define keyframes for the text color transition
-const colorTransition = keyframes`
-  0% {
-    color: #1e1e1e;
-  }
-  100% {
-    color: #F3F3F3;
-  }
-`;
-
-const StyledTypography = styled(Typography)(({ theme }) => ({
-    animation: `${colorTransition} 4s infinite alternate`,
-    background: 'transparent',
+const StyledTabsItem = styled(Tabs.Item, {
+    shouldForwardProp: (prop) => prop !== 'selected',
+})<{
+    /** Track if tab is selected */
+    selected: boolean;
+}>(({ theme, selected }) => ({
+    backgroundColor: selected ? theme.palette.background.paper : 'inherit',
 }));
+
+const StyledTabLabelContainer = styled('div')(({ theme }) => ({
+    display: 'flex',
+    flexDirection: 'row',
+    gap: theme.spacing(0.5),
+    alignItems: 'center',
+}));
+
+const StyledTabLabel = styled('div')(({ theme }) => ({
+    display: 'flex',
+    flexDirection: 'row',
+    gap: theme.spacing(1),
+    alignItems: 'center',
+}));
+
+const StyledSaveChangesIndicator = styled('div')(({ theme }) => ({
+    color: theme.palette.primary.main,
+}));
+
+const StyledTypography = styled(Typography)(({ theme }) => ({}));
 
 interface TextEditorProps {
     /**
@@ -74,16 +92,20 @@ interface TextEditorProps {
      * Saves the Asset
      */
     onSave: (asset: ControlledFile) => Promise<boolean>;
+    /**
+     * Closes indexed file tab in files
+     */
+    onClose?: (index) => void;
 }
 
 export const TextEditor = (props: TextEditorProps) => {
-    const { files, activeIndex, setActiveIndex, onSave } = props;
+    const { files, activeIndex, setActiveIndex, onSave, onClose } = props;
 
     // Refresh Controlled Values
-    const [counter, setCounter] = useState(0);
     const [controlledFiles, setControlledFiles] = useState<ControlledFile[]>(
         [],
     );
+    const [counter, setCounter] = useState(0);
 
     /**
      * Listen for Keyboard Shortcuts, save and --> etc down the road
@@ -93,26 +115,7 @@ export const TextEditor = (props: TextEditorProps) => {
             if ((e.ctrlKey || e.metaKey) && e.key === 's') {
                 e.preventDefault(); // Prevent the default browser save dialog
                 console.log('Ctrl + S pressed');
-
-                // 1. Save Asset with reactor
-                // 2. Save the controlled files new original to content
-                // 3. Trigger Memoized Val: Set New Counter to refresh active file based on new controlled files
-
-                const saveSuccessful: boolean = await onSave(
-                    controlledFiles[activeIndex],
-                );
-
-                if (saveSuccessful) {
-                    const updatedControlledFiles = controlledFiles;
-                    updatedControlledFiles[activeIndex] = {
-                        ...updatedControlledFiles[activeIndex],
-                        original: updatedControlledFiles[activeIndex].content,
-                    };
-                    setControlledFiles(updatedControlledFiles);
-
-                    let newCounter = counter;
-                    setCounter((newCounter += 1));
-                }
+                saveFile();
             }
         };
 
@@ -128,6 +131,8 @@ export const TextEditor = (props: TextEditorProps) => {
      * Adds new files to Controlled structure
      */
     useEffect(() => {
+        console.log('files', files);
+        console.log('contfiles', controlledFiles);
         if (controlledFiles.length === files.length) return;
 
         const newControlledFiles = controlledFiles;
@@ -137,7 +142,7 @@ export const TextEditor = (props: TextEditorProps) => {
         });
 
         setControlledFiles(newControlledFiles);
-    }, [files.length]);
+    }, [files.length, activeIndex, controlledFiles.length]);
 
     /**
      * Handles change with editor
@@ -160,6 +165,32 @@ export const TextEditor = (props: TextEditorProps) => {
         setCounter((newCounter += 1));
     };
 
+    /**
+     * Saves Asset
+     *
+     */
+    const saveFile = async () => {
+        // 1. Save Asset with reactor
+        // 2. Save the controlled files new original to content
+        // 3. Trigger Memoized Val: Set New Counter to refresh active file based on new controlled files
+
+        const saveSuccessful: boolean = await onSave(
+            controlledFiles[activeIndex],
+        );
+
+        if (saveSuccessful) {
+            const updatedControlledFiles = controlledFiles;
+            updatedControlledFiles[activeIndex] = {
+                ...updatedControlledFiles[activeIndex],
+                original: updatedControlledFiles[activeIndex].content,
+            };
+            setControlledFiles(updatedControlledFiles);
+
+            let newCounter = counter;
+            setCounter((newCounter += 1));
+        }
+    };
+
     /** ------------------
      * Memoized Values
      *  ------------------
@@ -172,7 +203,7 @@ export const TextEditor = (props: TextEditorProps) => {
         const af = controlledFiles[activeIndex];
         if (af) return af;
         return null;
-    }, [activeIndex, controlledFiles.length, counter]);
+    }, [activeIndex, files.length, controlledFiles.length, counter]);
 
     /**
      * @returns language to interpet in editor based on the Active File
@@ -206,6 +237,10 @@ export const TextEditor = (props: TextEditorProps) => {
         return interpretedLanguage;
     }, [activeIndex, files.length, counter]);
 
+    // const memoizedFiles = useMemo(() => {
+
+    // })
+
     if (!files.length) {
         return (
             <StyledContainer>
@@ -226,67 +261,127 @@ export const TextEditor = (props: TextEditorProps) => {
             // const tabRefs = files.map(() => useRef());
             return (
                 <StyledContainer>
-                    <>
-                        <StyledFileTabs>
-                            <Tabs
-                                value={activeIndex}
-                                onChange={(
-                                    event: SyntheticEvent,
-                                    newValue: number,
-                                ) => {
-                                    // tabRefs[newValue].current.scrollIntoView({
-                                    //     behavior: 'smooth',
-                                    //     block: 'center',
-                                    // });
+                    <StyledFileTabs>
+                        <Tabs
+                            value={activeIndex}
+                            variant="scrollable"
+                            scrollButtons={false}
+                            // indicatorColor={'transparent'}
+                            onChange={(
+                                event: SyntheticEvent,
+                                newValue: number,
+                            ) => {
+                                // tabRefs[newValue].current.scrollIntoView({
+                                //     behavior: 'smooth',
+                                //     block: 'center',
+                                // });
 
-                                    setActiveIndex(newValue);
-                                }}
-                            >
-                                {controlledFiles.map((f, i) => {
-                                    return (
-                                        <Tabs.Item
-                                            key={i}
-                                            // ref={tabRefs[i]}
-                                            label={
-                                                <div
-                                                    style={{
-                                                        display: 'flex',
-                                                        flexDirection: 'row',
-                                                        // border: 'solid red',
+                                setActiveIndex(newValue);
+                            }}
+                        >
+                            {controlledFiles.map((f, i) => {
+                                return (
+                                    <StyledTabsItem
+                                        key={i}
+                                        selected={activeIndex === i}
+                                        label={
+                                            <StyledTabLabelContainer>
+                                                <StyledTabLabel>
+                                                    <span>{f.name}</span>
+                                                    <StyledSaveChangesIndicator>
+                                                        {f.content !==
+                                                        f.original ? (
+                                                            <svg
+                                                                xmlns="http://www.w3.org/2000/svg"
+                                                                width="8"
+                                                                height="8"
+                                                                viewBox="0 0 8 8"
+                                                                fill="none"
+                                                            >
+                                                                <circle
+                                                                    cx="4"
+                                                                    cy="4"
+                                                                    r="4"
+                                                                    fill="#0471F0"
+                                                                />
+                                                            </svg>
+                                                        ) : (
+                                                            <div>&nbsp;</div>
+                                                        )}
+                                                    </StyledSaveChangesIndicator>
+                                                </StyledTabLabel>
+                                                <IconButton
+                                                    size={'small'}
+                                                    sx={{
+                                                        // width: '24px',
+                                                        // height: '50px',
+                                                        fontSize: '16px',
+                                                    }}
+                                                    onClick={async (e) => {
+                                                        e.stopPropagation();
+                                                        console.warn(
+                                                            ' closing tab',
+                                                            controlledFiles,
+                                                        );
+
+                                                        const newControlledFiles =
+                                                            controlledFiles;
+                                                        newControlledFiles.splice(
+                                                            i,
+                                                            1,
+                                                        );
+
+                                                        setControlledFiles(
+                                                            newControlledFiles,
+                                                        );
+
+                                                        // close this index, set state of files in parent
+                                                        await onClose(i);
+
+                                                        // Refresh Active File Memoized value
+                                                        setCounter(counter + 1);
                                                     }}
                                                 >
-                                                    <div>{f.name}</div>
-                                                    {f.content !==
-                                                    f.original ? (
-                                                        <span>*</span>
-                                                    ) : null}
-                                                </div>
-                                            }
-                                        ></Tabs.Item>
-                                    );
-                                })}
-                            </Tabs>
-                        </StyledFileTabs>
-                        <StyledActiveFilePath>
-                            <Typography variant={'body1'}>
-                                {activeFile.id}
-                            </Typography>
-                        </StyledActiveFilePath>
-                        <Editor
-                            // theme={'vs-dark'}
-                            width={'100%'}
-                            height={'100%'}
-                            value={activeFile.content}
-                            language={fileLanguage}
-                            onChange={(newValue, e) => {
-                                // Set new value of file in state, keep old contents
-                                editFile(newValue);
-
-                                // onSave for App Renderer??
-                                // onChange(newValue);
+                                                    <Clear
+                                                        style={{
+                                                            width: '16px',
+                                                            height: '16px',
+                                                        }}
+                                                    />
+                                                </IconButton>
+                                            </StyledTabLabelContainer>
+                                        }
+                                    ></StyledTabsItem>
+                                );
+                            })}
+                        </Tabs>
+                        <IconButton
+                            onClick={() => {
+                                saveFile();
                             }}
-                        ></Editor>
-                    </>
+                        >
+                            <SaveOutlined />
+                        </IconButton>
+                    </StyledFileTabs>
+                    <StyledActiveFilePath>
+                        <Typography variant={'body1'}>
+                            {activeFile.id}
+                        </Typography>
+                    </StyledActiveFilePath>
+                    <Editor
+                        // theme={'vs-dark'}
+                        width={'100%'}
+                        height={'100%'}
+                        value={activeFile.content}
+                        language={fileLanguage}
+                        onChange={(newValue, e) => {
+                            // Set new value of file in state, keep old contents
+                            editFile(newValue);
+
+                            // onSave for App Renderer??
+                            // onChange(newValue);
+                        }}
+                    ></Editor>
                 </StyledContainer>
             );
         } else {

@@ -19,7 +19,7 @@ angular
                 pathSplit = [],
                 returnObj;
 
-            mod = 'MonolithDev';
+            mod = 'Monolith';
             protocol = window.location.protocol;
             host = window.location.hostname;
             port = window.location.port;
@@ -27,6 +27,24 @@ angular
 
             if (pathSplit.length > 1 && pathSplit[0]) {
                 path = pathSplit[0];
+            }
+
+            try {
+                const ele = document.getElementById('semoss-env');
+
+                if (!ele) {
+                    throw new Error('No Element');
+                }
+
+                const env = JSON.parse(ele.textContent || '');
+
+                // update the enviornment variables with the module
+                if (env) {
+                    mod = env.MODULE;
+                }
+            } catch (e) {
+                console.warn(e);
+                // noop
             }
 
             url =

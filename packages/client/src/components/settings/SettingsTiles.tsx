@@ -17,6 +17,7 @@ import {
     VisibilityOffRounded,
 } from '@mui/icons-material';
 import { AxiosResponse } from 'axios';
+import { LoadingScreen } from '@/components/ui';
 
 import { useRootStore, usePixel, useSettings } from '@/hooks';
 
@@ -69,9 +70,14 @@ export const SettingsTiles = (props: SettingsTilesProps) => {
     const [deleteModal, setDeleteModal] = useState(false);
     const [discoverable, setDiscoverable] = useState(false);
     const [global, setGlobal] = useState(false);
+    const [loading, setLoading] = useState(false);
 
     const infoPixel =
-        type === 'database' || type === 'model' || type === 'storage'
+        type === 'database' ||
+        type === 'model' ||
+        type === 'storage' ||
+        type === 'function' ||
+        type === 'vector'
             ? `EngineInfo(engine='${id}');`
             : type === 'app'
             ? `ProjectInfo(project='${id}')`
@@ -107,9 +113,16 @@ export const SettingsTiles = (props: SettingsTilesProps) => {
      */
     const deleteWorkflow = async () => {
         try {
+            setLoading(true);
             let pixel = '';
-            if (type === 'database' || type === 'model' || type === 'storage') {
-                pixel = `DeleteEngine(engineId=['${id}']);`;
+            if (
+                type === 'database' ||
+                type === 'model' ||
+                type === 'storage' ||
+                type === 'function' ||
+                type === 'vector'
+            ) {
+                pixel = `DeleteEngine(engine=['${id}']);`;
             } else {
                 pixel = `DeleteProject(project=['${id}']);`;
             }
@@ -122,6 +135,9 @@ export const SettingsTiles = (props: SettingsTilesProps) => {
 
             const operationType = response.pixelReturn[0].operationType;
             const output = response.pixelReturn[0].output;
+
+            setLoading(false);
+
             if (operationType.indexOf('ERROR') === -1) {
                 notification.add({
                     color: 'success',
@@ -150,7 +166,13 @@ export const SettingsTiles = (props: SettingsTilesProps) => {
     const changeDiscoverable = async () => {
         try {
             let response: AxiosResponse<{ success: boolean }> | null = null;
-            if (type === 'database' || type === 'model' || type === 'storage') {
+            if (
+                type === 'database' ||
+                type === 'model' ||
+                type === 'storage' ||
+                type === 'function' ||
+                type === 'vector'
+            ) {
                 response = await monolithStore.setEngineVisiblity(
                     adminMode,
                     id,
@@ -196,7 +218,13 @@ export const SettingsTiles = (props: SettingsTilesProps) => {
     const changeGlobal = async () => {
         try {
             let response: AxiosResponse<{ success: boolean }> | null = null;
-            if (type === 'database' || type === 'model' || type === 'storage') {
+            if (
+                type === 'database' ||
+                type === 'model' ||
+                type === 'storage' ||
+                type === 'function' ||
+                type === 'vector'
+            ) {
                 response = await monolithStore.setEngineGlobal(
                     adminMode,
                     id,
@@ -235,6 +263,11 @@ export const SettingsTiles = (props: SettingsTilesProps) => {
             });
         }
     };
+
+    /** LOADING */
+    if (loading) {
+        return <LoadingScreen.Trigger description="Deleting..." />;
+    }
 
     if (condensed) {
         return (

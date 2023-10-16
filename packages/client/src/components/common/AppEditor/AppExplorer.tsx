@@ -19,6 +19,7 @@ import {
     useNotification,
     styled,
     Typography,
+    ThemeProvider,
 } from '@semoss/ui';
 
 import {
@@ -82,7 +83,12 @@ export const AppExplorer = (props) => {
      */
     function renderTreeNodes(nodes) {
         return nodes.map((node, i) => (
-            <TreeView.Item key={node.id} nodeId={node.id} label={node.name}>
+            <TreeView.Item
+                key={node.id}
+                nodeId={node.id}
+                label={node.name + 'dir'}
+            >
+                'hann'
                 {node.children && node.children.length > 0
                     ? renderTreeNodes(node.children)
                     : null}
@@ -93,7 +99,7 @@ export const AppExplorer = (props) => {
     return (
         <StyledCollapseContainer>
             <StyleAppExplorerHeader>
-                <Typography variant="h6">Explorer</Typography>
+                <Typography variant="h6">Explorers</Typography>
             </StyleAppExplorerHeader>
             <TreeView
                 sx={{ width: '100%' }}
@@ -104,7 +110,6 @@ export const AppExplorer = (props) => {
                     // const
                     const selectedNodes = onSelect(v);
 
-                    // debugger;
                     setSelected(selectedNodes);
                     // if succesful select node in tree view state
                 }}
@@ -112,6 +117,7 @@ export const AppExplorer = (props) => {
                 defaultExpandIcon={<ChevronRight />}
                 multiSelect
             >
+                Hey
                 {renderTreeNodes(directory)}
             </TreeView>
         </StyledCollapseContainer>
