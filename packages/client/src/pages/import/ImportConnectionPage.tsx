@@ -134,7 +134,6 @@ export const ImportConnectionPage = () => {
             return;
         } else if (values.type === 'FUNCTION') {
             /** Function: START */
-
             const pixel = `
             CreateRestFunctionEngine( 
                 function=["${values.name}"], 
