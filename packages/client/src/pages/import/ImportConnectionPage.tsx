@@ -135,11 +135,30 @@ export const ImportConnectionPage = () => {
         } else if (values.type === 'FUNCTION') {
             /** Function: START */
             const pixel = `
-            CreateRestFunctionEngine( 
-                function=["${values.name}"], 
-                functionDetails=[${JSON.stringify(values.fields)}] 
-            );
-            `;
+            CreateRestFunctionEngine(function=["${
+                values.name
+            }"],functionDetails=[${JSON.stringify(values.fields)}]);`;
+            //     {
+            //     URL: 'http://127.0.0.1:5000/runML',
+            //     HTTP_METHOD: 'post',
+            //     FUNCTION_NAME: 'myExampleExecution',
+            //     HEADERS: { 'Content-Type': 'application/json' },
+            //     CONTENT_TYPE: 'JSON',
+            //     FUNCTION_REQUIRED_PARAMETERS: ['number1', 'number2'],
+            //     FUNCTION_PARAMETERS: [
+            //         {
+            //             parameterName: 'number1',
+            //             parameterType: 'double',
+            //             parameterDescription: 'the first number to use',
+            //         },
+            //         {
+            //             parameterName: 'number2',
+            //             parameterType: 'double',
+            //             parameterDescription: 'the second number to use',
+            //         },
+            //     ],
+            //     FUNCTION_DESCRIPTION: 'Perform addition',
+            // }
 
             monolithStore.runQuery(pixel).then((response) => {
                 const output = response.pixelReturn[0].output,
@@ -160,7 +179,7 @@ export const ImportConnectionPage = () => {
                     message: `Successfully added function to catalog`,
                 });
 
-                navigate(`/vector/${output.database_id}`);
+                navigate(`/function/${output.database_id}`);
             });
             return;
         }

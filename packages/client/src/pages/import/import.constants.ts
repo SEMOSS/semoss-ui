@@ -2800,7 +2800,7 @@ export const CONNECTION_OPTIONS = {
                         rules: { required: true },
                     },
                     {
-                        fieldName: 'FUNCTION_PARAMETERS',
+                        fieldName: 'parameters',
                         label: 'Function Parameters',
                         defaultValue: '',
                         options: {
@@ -2810,7 +2810,7 @@ export const CONNECTION_OPTIONS = {
                         rules: { required: true },
                     },
                     {
-                        fieldName: 'FUNCTION_REQUIRED_PARAMETERS',
+                        fieldName: 'requiredParameters',
                         label: 'Function Required Parameters',
                         defaultValue: '',
                         options: {
