@@ -61,6 +61,11 @@ const StyledHeaderLogo = styled(Link)(({ theme }) => ({
     },
 }));
 
+const StyledHeaderLogoImg = styled('img')(({ theme }) => ({
+    width: theme.spacing(3),
+    filter: 'brightness(0) invert(1)', // convert to white
+}));
+
 const StyledHeaderLogout = styled('div')(({ theme }) => ({
     display: 'flex',
     flexDirection: 'column',
@@ -113,7 +118,7 @@ export const Navbar = (props: NavbarProps) => {
     return (
         <StyledHeader>
             <StyledHeaderLogo to={'/'}>
-                {THEME.logo ? <img src={THEME.logo} /> : null}
+                {THEME.logo ? <StyledHeaderLogoImg src={THEME.logo} /> : null}
                 {THEME.name}
             </StyledHeaderLogo>
             <Stack flex={1}>{children}</Stack>

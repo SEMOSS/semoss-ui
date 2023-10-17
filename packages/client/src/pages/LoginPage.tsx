@@ -3,7 +3,7 @@ import { observer } from 'mobx-react-lite';
 import { Navigate, useLocation, Location } from 'react-router-dom';
 import { useForm, Controller } from 'react-hook-form';
 import { THEME } from '@/constants';
-import GRAPHIC from '@/assets/login_graphic.png';
+import GIF from '@/assets/img/login-gif.gif';
 
 import {
     styled,
@@ -25,13 +25,25 @@ import { useRootStore } from '@/hooks';
 import MS from '@/assets/img/ms.png';
 import GOOGLE from '@/assets/img/google.png';
 
-const StyledMain = styled('div')(() => ({
+const StyledMain = styled('div')(({ theme }) => ({
+    display: 'flex',
+    flexDirection: 'column',
+    height: '100vh',
+    width: '100vw',
+    background: theme.palette.background.paper,
+}));
+
+const StyledRow = styled('div')(() => ({
+    flex: '1',
     display: 'flex',
     flexDirection: 'row',
     position: 'relative',
-    height: '100vh',
-    width: '100vw',
+    width: '100%',
     overflow: 'hidden',
+}));
+
+const StyledProgress = styled(LinearProgress)(() => ({
+    width: '100%',
 }));
 
 const StyledScroll = styled('div')(({ theme }) => ({
@@ -40,9 +52,14 @@ const StyledScroll = styled('div')(({ theme }) => ({
     display: 'flex',
     flexDirection: 'column',
     alignItems: 'center',
-    overflow: 'auto',
     zIndex: 1,
     background: theme.palette.background.paper,
+    overflowY: 'auto',
+    overflowX: 'hidden',
+    [theme.breakpoints.down('md')]: {
+        height: '100%',
+        width: '100%',
+    },
 }));
 
 const StyledContent = styled('div')(({ theme }) => ({
@@ -57,7 +74,8 @@ const StyledContent = styled('div')(({ theme }) => ({
     [theme.breakpoints.down('md')]: {
         margin: 0,
         padding: theme.spacing(4),
-        width: '100vw',
+        maxWidth: '610px',
+        width: '100%',
     },
 }));
 
@@ -73,7 +91,6 @@ const StyledImageHolder = styled('div')(() => ({
     position: 'absolute',
     top: '0px',
     right: '0px',
-    left: '0px',
     bottom: '0px',
     overflow: 'hidden',
     zIndex: 0,
@@ -81,7 +98,7 @@ const StyledImageHolder = styled('div')(() => ({
 
 const StyledImage = styled('img')(() => ({
     height: '100%',
-    width: '100%',
+    // width: '100%',
     objectFit: 'cover',
 }));
 
@@ -142,15 +159,17 @@ const StyledRegisterNowBox = styled(Box)({
     justifyContent: 'center',
 });
 
-const StyledLogo = styled('img')({});
+const StyledLogo = styled('img')(({ theme }) => ({
+    width: theme.spacing(3),
+}));
 
-const StyledLogoBox = styled(Box)({
+const StyledLogoBox = styled('div')(({ theme }) => ({
     display: 'flex',
     align: 'center',
     alignItems: 'center',
-    gap: '4px',
-    marginBottom: '16px',
-});
+    gap: theme.spacing(1),
+    marginBottom: theme.spacing(4),
+}));
 
 const StyledLogoText = styled('span')(() => ({
     fontFeatureSettings: '"clig" off, "liga" off',
@@ -160,6 +179,10 @@ const StyledLogoText = styled('span')(() => ({
     fontWeight: 500,
     lineHeight: '150%',
     letterSpacing: '0.15px',
+}));
+
+const StyledInstructions = styled(Typography)(({ theme }) => ({
+    marginBottom: theme.spacing(4),
 }));
 
 const StyledButtonText = styled(Button)({
@@ -451,362 +474,348 @@ export const LoginPage = observer(() => {
                 </Alert>
             </Snackbar>
             <StyledMain>
-                <StyledScroll>
-                    <StyledContent>
-                        <Stack spacing={0}>
-                            <StyledLogoBox>
-                                <StyledLogo
-                                    src={THEME.logo}
-                                    sx={{
-                                        /* or to blue */
-                                        filter: 'invert(0.5) sepia(1) saturate(5) hue-rotate(175deg)',
-                                    }}
-                                />
-                                <StyledLogoText>{THEME.name}</StyledLogoText>
-                            </StyledLogoBox>
-                            <Typography variant="h4">Welcome!</Typography>
-                            <Typography variant="body1">
-                                {register ? 'Register below' : 'Log in below'}
-                            </Typography>
-                        </Stack>
-                        {!register && (
-                            <StyledButtonGroup variant="outlined">
-                                <ButtonGroup.Item
-                                    onClick={() => {
-                                        setLoginType('Native');
-                                        setSuccess('');
-                                        setError('');
-                                    }}
-                                    sx={{
-                                        backgroundColor:
-                                            loginType === 'Native'
-                                                ? '#0471F0'
-                                                : '#fff',
-                                        color:
-                                            loginType === 'Native'
-                                                ? '#fff'
-                                                : '#0471F0',
-                                        ':hover': {
-                                            bgcolor:
+                <StyledRow>
+                    <StyledScroll>
+                        <StyledContent>
+                            <div>
+                                <StyledLogoBox>
+                                    <StyledLogo src={THEME.logo} />
+                                    <StyledLogoText>
+                                        {THEME.name}
+                                    </StyledLogoText>
+                                </StyledLogoBox>
+                                <Typography variant="h4">Welcome!</Typography>
+                                <StyledInstructions variant="body1">
+                                    {register
+                                        ? 'Register below'
+                                        : 'Log in below'}
+                                </StyledInstructions>
+                            </div>
+                            {!register && (
+                                <StyledButtonGroup variant="outlined">
+                                    <ButtonGroup.Item
+                                        onClick={() => {
+                                            setLoginType('Native');
+                                            setSuccess('');
+                                            setError('');
+                                        }}
+                                        sx={{
+                                            backgroundColor:
                                                 loginType === 'Native'
                                                     ? '#0471F0'
-                                                    : 'transparent',
+                                                    : '#fff',
                                             color:
                                                 loginType === 'Native'
                                                     ? '#fff'
                                                     : '#0471F0',
-                                            borderColor: '#fff',
-                                        },
-                                    }}
-                                >
-                                    Native
-                                </ButtonGroup.Item>
-                                <ButtonGroup.Item
-                                    onClick={() => {
-                                        setLoginType('LDAP');
-                                        setSuccess('');
-                                        setError('');
-                                    }}
-                                    sx={{
-                                        backgroundColor:
-                                            loginType === 'LDAP'
-                                                ? '#0471F0'
-                                                : '#fff',
-                                        color:
-                                            loginType === 'LDAP'
-                                                ? '#fff'
-                                                : '#0471F0',
-                                        ':hover': {
-                                            bgcolor:
+                                            ':hover': {
+                                                bgcolor:
+                                                    loginType === 'Native'
+                                                        ? '#0471F0'
+                                                        : 'transparent',
+                                                color:
+                                                    loginType === 'Native'
+                                                        ? '#fff'
+                                                        : '#0471F0',
+                                                borderColor: '#fff',
+                                            },
+                                        }}
+                                    >
+                                        Native
+                                    </ButtonGroup.Item>
+                                    <ButtonGroup.Item
+                                        onClick={() => {
+                                            setLoginType('LDAP');
+                                            setSuccess('');
+                                            setError('');
+                                        }}
+                                        sx={{
+                                            backgroundColor:
                                                 loginType === 'LDAP'
                                                     ? '#0471F0'
-                                                    : 'transparent',
+                                                    : '#fff',
                                             color:
                                                 loginType === 'LDAP'
                                                     ? '#fff'
                                                     : '#0471F0',
-                                            borderColor: '#fff',
-                                        },
-                                    }}
-                                >
-                                    LDAP
-                                </ButtonGroup.Item>
-                                <ButtonGroup.Item
-                                    onClick={() => {
-                                        setLoginType('LinOTP');
-                                        setSuccess('');
-                                        setError('');
-                                    }}
-                                    sx={{
-                                        backgroundColor:
-                                            loginType === 'LinOTP'
-                                                ? '#0471F0'
-                                                : '#fff',
-                                        color:
-                                            loginType === 'LinOTP'
-                                                ? '#fff'
-                                                : '#0471F0',
-                                        ':hover': {
-                                            bgcolor:
+                                            ':hover': {
+                                                bgcolor:
+                                                    loginType === 'LDAP'
+                                                        ? '#0471F0'
+                                                        : 'transparent',
+                                                color:
+                                                    loginType === 'LDAP'
+                                                        ? '#fff'
+                                                        : '#0471F0',
+                                                borderColor: '#fff',
+                                            },
+                                        }}
+                                    >
+                                        LDAP
+                                    </ButtonGroup.Item>
+                                    <ButtonGroup.Item
+                                        onClick={() => {
+                                            setLoginType('LinOTP');
+                                            setSuccess('');
+                                            setError('');
+                                        }}
+                                        sx={{
+                                            backgroundColor:
                                                 loginType === 'LinOTP'
                                                     ? '#0471F0'
-                                                    : 'transparent',
+                                                    : '#fff',
                                             color:
                                                 loginType === 'LinOTP'
                                                     ? '#fff'
                                                     : '#0471F0',
-                                            borderColor: '#fff',
-                                        },
-                                    }}
-                                >
-                                    LinOTP
-                                </ButtonGroup.Item>
-                            </StyledButtonGroup>
-                        )}
-                        {error && <Alert color="error">{error}</Alert>}
-                        {success && <Alert color="success">{success}</Alert>}
-                        {providers.indexOf('native') > -1 && (
-                            <>
-                                <Stack spacing={2}>
-                                    {!showOTPCodeField && register && (
-                                        <>
-                                            <Controller
-                                                name={'FIRST_NAME'}
-                                                control={registerControl}
-                                                rules={{
-                                                    required: true,
-                                                }}
-                                                render={({ field }) => {
-                                                    return (
-                                                        <TextField
-                                                            label="First Name"
-                                                            variant="outlined"
-                                                            size="small"
-                                                            fullWidth
-                                                            value={
-                                                                field.value
-                                                                    ? field.value
-                                                                    : ''
-                                                            }
-                                                            onChange={(e) =>
-                                                                field.onChange(
-                                                                    e.target
-                                                                        .value,
-                                                                )
-                                                            }
-                                                        />
-                                                    );
-                                                }}
-                                            />
-                                            <Controller
-                                                name={'LAST_NAME'}
-                                                control={registerControl}
-                                                rules={{
-                                                    required: true,
-                                                }}
-                                                render={({ field }) => {
-                                                    return (
-                                                        <TextField
-                                                            label="Last Name"
-                                                            size="small"
-                                                            variant="outlined"
-                                                            fullWidth
-                                                            value={
-                                                                field.value
-                                                                    ? field.value
-                                                                    : ''
-                                                            }
-                                                            onChange={(e) =>
-                                                                field.onChange(
-                                                                    e.target
-                                                                        .value,
-                                                                )
-                                                            }
-                                                        />
-                                                    );
-                                                }}
-                                            />
-                                            <Controller
-                                                name={'USERNAME'}
-                                                control={registerControl}
-                                                rules={{
-                                                    required: true,
-                                                }}
-                                                render={({ field }) => {
-                                                    return (
-                                                        <TextField
-                                                            label="Username"
-                                                            size="small"
-                                                            variant="outlined"
-                                                            fullWidth
-                                                            value={
-                                                                field.value
-                                                                    ? field.value
-                                                                    : ''
-                                                            }
-                                                            onChange={(e) =>
-                                                                field.onChange(
-                                                                    e.target
-                                                                        .value,
-                                                                )
-                                                            }
-                                                        />
-                                                    );
-                                                }}
-                                            />
-                                            <Controller
-                                                name={'EMAIL'}
-                                                control={registerControl}
-                                                rules={{
-                                                    required: true,
-                                                }}
-                                                render={({ field }) => {
-                                                    return (
-                                                        <TextField
-                                                            label="Email"
-                                                            error={error.includes(
-                                                                'is not a valid email address',
-                                                            )}
-                                                            helperText={
-                                                                error.includes(
+                                            ':hover': {
+                                                bgcolor:
+                                                    loginType === 'LinOTP'
+                                                        ? '#0471F0'
+                                                        : 'transparent',
+                                                color:
+                                                    loginType === 'LinOTP'
+                                                        ? '#fff'
+                                                        : '#0471F0',
+                                                borderColor: '#fff',
+                                            },
+                                        }}
+                                    >
+                                        LinOTP
+                                    </ButtonGroup.Item>
+                                </StyledButtonGroup>
+                            )}
+                            {error && <Alert color="error">{error}</Alert>}
+                            {success && (
+                                <Alert color="success">{success}</Alert>
+                            )}
+                            {providers.indexOf('native') > -1 && (
+                                <>
+                                    <Stack spacing={2}>
+                                        {!showOTPCodeField && register && (
+                                            <>
+                                                <Controller
+                                                    name={'FIRST_NAME'}
+                                                    control={registerControl}
+                                                    rules={{
+                                                        required: true,
+                                                    }}
+                                                    render={({ field }) => {
+                                                        return (
+                                                            <TextField
+                                                                label="First Name"
+                                                                variant="outlined"
+                                                                size="small"
+                                                                fullWidth
+                                                                value={
+                                                                    field.value
+                                                                        ? field.value
+                                                                        : ''
+                                                                }
+                                                                onChange={(e) =>
+                                                                    field.onChange(
+                                                                        e.target
+                                                                            .value,
+                                                                    )
+                                                                }
+                                                            />
+                                                        );
+                                                    }}
+                                                />
+                                                <Controller
+                                                    name={'LAST_NAME'}
+                                                    control={registerControl}
+                                                    rules={{
+                                                        required: true,
+                                                    }}
+                                                    render={({ field }) => {
+                                                        return (
+                                                            <TextField
+                                                                label="Last Name"
+                                                                size="small"
+                                                                variant="outlined"
+                                                                fullWidth
+                                                                value={
+                                                                    field.value
+                                                                        ? field.value
+                                                                        : ''
+                                                                }
+                                                                onChange={(e) =>
+                                                                    field.onChange(
+                                                                        e.target
+                                                                            .value,
+                                                                    )
+                                                                }
+                                                            />
+                                                        );
+                                                    }}
+                                                />
+                                                <Controller
+                                                    name={'USERNAME'}
+                                                    control={registerControl}
+                                                    rules={{
+                                                        required: true,
+                                                    }}
+                                                    render={({ field }) => {
+                                                        return (
+                                                            <TextField
+                                                                label="Username"
+                                                                size="small"
+                                                                variant="outlined"
+                                                                fullWidth
+                                                                value={
+                                                                    field.value
+                                                                        ? field.value
+                                                                        : ''
+                                                                }
+                                                                onChange={(e) =>
+                                                                    field.onChange(
+                                                                        e.target
+                                                                            .value,
+                                                                    )
+                                                                }
+                                                            />
+                                                        );
+                                                    }}
+                                                />
+                                                <Controller
+                                                    name={'EMAIL'}
+                                                    control={registerControl}
+                                                    rules={{
+                                                        required: true,
+                                                    }}
+                                                    render={({ field }) => {
+                                                        return (
+                                                            <TextField
+                                                                label="Email"
+                                                                error={error.includes(
                                                                     'is not a valid email address',
-                                                                ) &&
-                                                                'Please enter a valid email'
-                                                            }
-                                                            size="small"
-                                                            variant="outlined"
-                                                            fullWidth
-                                                            value={
-                                                                field.value
-                                                                    ? field.value
-                                                                    : ''
-                                                            }
-                                                            onChange={(e) =>
-                                                                field.onChange(
-                                                                    e.target
-                                                                        .value,
-                                                                )
-                                                            }
-                                                        />
-                                                    );
-                                                }}
-                                            />
-                                            <Controller
-                                                name={'PHONE'}
-                                                control={registerControl}
-                                                rules={{
-                                                    required: false,
-                                                }}
-                                                render={({ field }) => {
-                                                    return (
-                                                        <TextField
-                                                            label="Phone Number"
-                                                            size="small"
-                                                            variant="outlined"
-                                                            fullWidth
-                                                            value={
-                                                                field.value
-                                                                    ? field.value
-                                                                    : ''
-                                                            }
-                                                            onChange={(e) =>
-                                                                field.onChange(
-                                                                    e.target
-                                                                        .value,
-                                                                )
-                                                            }
-                                                        />
-                                                    );
-                                                }}
-                                            />
-                                            <Controller
-                                                name={'EXTENTION'}
-                                                control={registerControl}
-                                                rules={{
-                                                    required: false,
-                                                }}
-                                                render={({ field }) => {
-                                                    return (
-                                                        <TextField
-                                                            label="Phone Extention"
-                                                            size="small"
-                                                            variant="outlined"
-                                                            fullWidth
-                                                            value={
-                                                                field.value
-                                                                    ? field.value
-                                                                    : ''
-                                                            }
-                                                            onChange={(e) =>
-                                                                field.onChange(
-                                                                    e.target
-                                                                        .value,
-                                                                )
-                                                            }
-                                                        />
-                                                    );
-                                                }}
-                                            />
-                                            <Controller
-                                                name={'COUNTRY_CODE'}
-                                                control={registerControl}
-                                                rules={{
-                                                    required: false,
-                                                }}
-                                                render={({ field }) => {
-                                                    return (
-                                                        <TextField
-                                                            label="Country Code"
-                                                            size="small"
-                                                            variant="outlined"
-                                                            fullWidth
-                                                            value={
-                                                                field.value
-                                                                    ? field.value
-                                                                    : ''
-                                                            }
-                                                            onChange={(e) =>
-                                                                field.onChange(
-                                                                    e.target
-                                                                        .value,
-                                                                )
-                                                            }
-                                                        />
-                                                    );
-                                                }}
-                                            />
-                                            <Controller
-                                                name={'PASSWORD'}
-                                                control={registerControl}
-                                                rules={{
-                                                    required: true,
-                                                }}
-                                                render={({ field }) => {
-                                                    return (
-                                                        <TextField
-                                                            label="Password"
-                                                            error={
-                                                                error.includes(
-                                                                    'Passwords do not match',
-                                                                ) ||
-                                                                error.includes(
-                                                                    'Password must be at least 8 characters in length',
-                                                                ) ||
-                                                                error.includes(
-                                                                    'Password must have atleast one uppercase character',
-                                                                ) ||
-                                                                error.includes(
-                                                                    'Password must have atleast one lowercase character',
-                                                                ) ||
-                                                                error.includes(
-                                                                    'Password must have atleast one special character among [!,@,#,$,%,^,&,*]',
-                                                                )
-                                                            }
-                                                            helperText={
-                                                                error &&
-                                                                (error.includes(
-                                                                    'Password must be at least 8 characters in length',
-                                                                ) ||
+                                                                )}
+                                                                helperText={
+                                                                    error.includes(
+                                                                        'is not a valid email address',
+                                                                    ) &&
+                                                                    'Please enter a valid email'
+                                                                }
+                                                                size="small"
+                                                                variant="outlined"
+                                                                fullWidth
+                                                                value={
+                                                                    field.value
+                                                                        ? field.value
+                                                                        : ''
+                                                                }
+                                                                onChange={(e) =>
+                                                                    field.onChange(
+                                                                        e.target
+                                                                            .value,
+                                                                    )
+                                                                }
+                                                            />
+                                                        );
+                                                    }}
+                                                />
+                                                <Controller
+                                                    name={'PHONE'}
+                                                    control={registerControl}
+                                                    rules={{
+                                                        required: false,
+                                                    }}
+                                                    render={({ field }) => {
+                                                        return (
+                                                            <TextField
+                                                                label="Phone Number"
+                                                                size="small"
+                                                                variant="outlined"
+                                                                fullWidth
+                                                                value={
+                                                                    field.value
+                                                                        ? field.value
+                                                                        : ''
+                                                                }
+                                                                onChange={(e) =>
+                                                                    field.onChange(
+                                                                        e.target
+                                                                            .value,
+                                                                    )
+                                                                }
+                                                            />
+                                                        );
+                                                    }}
+                                                />
+                                                <Controller
+                                                    name={'EXTENTION'}
+                                                    control={registerControl}
+                                                    rules={{
+                                                        required: false,
+                                                    }}
+                                                    render={({ field }) => {
+                                                        return (
+                                                            <TextField
+                                                                label="Phone Extention"
+                                                                size="small"
+                                                                variant="outlined"
+                                                                fullWidth
+                                                                value={
+                                                                    field.value
+                                                                        ? field.value
+                                                                        : ''
+                                                                }
+                                                                onChange={(e) =>
+                                                                    field.onChange(
+                                                                        e.target
+                                                                            .value,
+                                                                    )
+                                                                }
+                                                            />
+                                                        );
+                                                    }}
+                                                />
+                                                <Controller
+                                                    name={'COUNTRY_CODE'}
+                                                    control={registerControl}
+                                                    rules={{
+                                                        required: false,
+                                                    }}
+                                                    render={({ field }) => {
+                                                        return (
+                                                            <TextField
+                                                                label="Country Code"
+                                                                size="small"
+                                                                variant="outlined"
+                                                                fullWidth
+                                                                value={
+                                                                    field.value
+                                                                        ? field.value
+                                                                        : ''
+                                                                }
+                                                                onChange={(e) =>
+                                                                    field.onChange(
+                                                                        e.target
+                                                                            .value,
+                                                                    )
+                                                                }
+                                                            />
+                                                        );
+                                                    }}
+                                                />
+                                                <Controller
+                                                    name={'PASSWORD'}
+                                                    control={registerControl}
+                                                    rules={{
+                                                        required: true,
+                                                    }}
+                                                    render={({ field }) => {
+                                                        return (
+                                                            <TextField
+                                                                label="Password"
+                                                                error={
+                                                                    error.includes(
+                                                                        'Passwords do not match',
+                                                                    ) ||
+                                                                    error.includes(
+                                                                        'Password must be at least 8 characters in length',
+                                                                    ) ||
                                                                     error.includes(
                                                                         'Password must have atleast one uppercase character',
                                                                     ) ||
@@ -815,315 +824,341 @@ export const LoginPage = observer(() => {
                                                                     ) ||
                                                                     error.includes(
                                                                         'Password must have atleast one special character among [!,@,#,$,%,^,&,*]',
-                                                                    ) ||
-                                                                    error.includes(
-                                                                        'Password must have atleast one special character among [!,@,#,$,%,^,&,*]',
-                                                                    ))
-                                                                    ? error.includes(
-                                                                          'Passwords do no match',
-                                                                      )
-                                                                        ? 'Passwords do not match'
-                                                                        : 'Passwords must be at least 8 characters in length and contain one lowercase, one uppercase, one special character.'
-                                                                    : ''
-                                                            }
-                                                            size="small"
-                                                            variant="outlined"
-                                                            type="password"
-                                                            fullWidth
-                                                            value={
-                                                                field.value
-                                                                    ? field.value
-                                                                    : ''
-                                                            }
-                                                            onChange={(e) =>
-                                                                field.onChange(
-                                                                    e.target
-                                                                        .value,
-                                                                )
-                                                            }
-                                                        />
-                                                    );
-                                                }}
-                                            />
-                                            <Controller
-                                                name={'PASSWORD_CONFIRMATION'}
-                                                control={registerControl}
-                                                rules={{
-                                                    required: true,
-                                                }}
-                                                render={({ field }) => {
-                                                    return (
-                                                        <TextField
-                                                            label="Password Confirmation"
-                                                            size="small"
-                                                            error={
-                                                                error.includes(
-                                                                    'Passwords do not match',
-                                                                ) ||
-                                                                error.includes(
-                                                                    'Password must be at least 8 characters in length',
-                                                                ) ||
-                                                                error.includes(
-                                                                    'Password must have atleast one uppercase character',
-                                                                ) ||
-                                                                error.includes(
-                                                                    'Password must have atleast one lowercase character',
-                                                                ) ||
-                                                                error.includes(
-                                                                    'Password must have atleast one special character among [!,@,#,$,%,^,&,*]',
-                                                                )
-                                                            }
-                                                            helperText={
-                                                                error.includes(
-                                                                    'Passwords do not match',
-                                                                ) &&
-                                                                'Passwords do no match'
-                                                            }
-                                                            variant="outlined"
-                                                            type="password"
-                                                            fullWidth
-                                                            value={
-                                                                field.value
-                                                                    ? field.value
-                                                                    : ''
-                                                            }
-                                                            onChange={(e) =>
-                                                                field.onChange(
-                                                                    e.target
-                                                                        .value,
-                                                                )
-                                                            }
-                                                        />
-                                                    );
-                                                }}
-                                            />
-                                            <StyledGoBackBox>
-                                                <Button
-                                                    fullWidth
-                                                    variant={'text'}
-                                                    onClick={() =>
-                                                        setRegister(false)
-                                                    }
-                                                >
-                                                    Go Back
-                                                </Button>
-                                                <Button
-                                                    fullWidth
-                                                    variant={'contained'}
-                                                    onClick={registerAccount}
-                                                >
-                                                    Register Account
-                                                </Button>
-                                            </StyledGoBackBox>
-                                        </>
-                                    )}
-                                    {!showOTPCodeField && !register && (
-                                        <>
-                                            <Controller
-                                                name={'USERNAME'}
-                                                control={control}
-                                                rules={{
-                                                    required: true,
-                                                }}
-                                                render={({ field }) => {
-                                                    return (
-                                                        <TextField
-                                                            label="Username"
-                                                            variant="outlined"
-                                                            fullWidth
-                                                            value={
-                                                                field.value
-                                                                    ? field.value
-                                                                    : ''
-                                                            }
-                                                            onChange={(e) =>
-                                                                field.onChange(
-                                                                    e.target
-                                                                        .value,
-                                                                )
-                                                            }
-                                                        />
-                                                    );
-                                                }}
-                                            />
-                                            <Controller
-                                                name={'PASSWORD'}
-                                                control={control}
-                                                rules={{
-                                                    required: true,
-                                                }}
-                                                render={({ field }) => {
-                                                    return (
-                                                        <TextField
-                                                            label="Password"
-                                                            variant="outlined"
-                                                            type="password"
-                                                            fullWidth
-                                                            value={
-                                                                field.value
-                                                                    ? field.value
-                                                                    : ''
-                                                            }
-                                                            onChange={(e) =>
-                                                                field.onChange(
-                                                                    e.target
-                                                                        .value,
-                                                                )
-                                                            }
-                                                        />
-                                                    );
-                                                }}
-                                            />
-                                        </>
-                                    )}
-                                    {showOTPCodeField && (
-                                        <Controller
-                                            name={'OTP_CONFIRM'}
-                                            control={control}
-                                            rules={{
-                                                required: true,
-                                            }}
-                                            render={({ field }) => {
-                                                return (
-                                                    <TextField
-                                                        label="OTP Confirmation Code"
-                                                        variant="outlined"
-                                                        fullWidth
-                                                        value={
-                                                            field.value
-                                                                ? field.value
-                                                                : ''
-                                                        }
-                                                        onChange={(e) =>
-                                                            field.onChange(
-                                                                e.target.value,
-                                                            )
-                                                        }
-                                                    />
-                                                );
-                                            }}
-                                        />
-                                    )}
-                                    {!register && (
-                                        <>
-                                            <StyledRememberBox>
-                                                <Controller
-                                                    name={'REMEMBER_LOGIN'}
-                                                    control={control}
-                                                    rules={{
-                                                        required: false,
-                                                    }}
-                                                    render={({ field }) => {
-                                                        return (
-                                                            <Checkbox
-                                                                label="Keep me logged in"
-                                                                checked={
-                                                                    field.value
+                                                                    )
                                                                 }
+                                                                helperText={
+                                                                    error &&
+                                                                    (error.includes(
+                                                                        'Password must be at least 8 characters in length',
+                                                                    ) ||
+                                                                        error.includes(
+                                                                            'Password must have atleast one uppercase character',
+                                                                        ) ||
+                                                                        error.includes(
+                                                                            'Password must have atleast one lowercase character',
+                                                                        ) ||
+                                                                        error.includes(
+                                                                            'Password must have atleast one special character among [!,@,#,$,%,^,&,*]',
+                                                                        ) ||
+                                                                        error.includes(
+                                                                            'Password must have atleast one special character among [!,@,#,$,%,^,&,*]',
+                                                                        ))
+                                                                        ? error.includes(
+                                                                              'Passwords do no match',
+                                                                          )
+                                                                            ? 'Passwords do not match'
+                                                                            : 'Passwords must be at least 8 characters in length and contain one lowercase, one uppercase, one special character.'
+                                                                        : ''
+                                                                }
+                                                                size="small"
+                                                                variant="outlined"
+                                                                type="password"
+                                                                fullWidth
                                                                 value={
                                                                     field.value
                                                                         ? field.value
-                                                                        : false
+                                                                        : ''
                                                                 }
-                                                                onChange={(
-                                                                    e: React.ChangeEvent<HTMLInputElement>,
-                                                                ) =>
+                                                                onChange={(e) =>
                                                                     field.onChange(
                                                                         e.target
-                                                                            .checked,
+                                                                            .value,
                                                                     )
                                                                 }
                                                             />
                                                         );
                                                     }}
                                                 />
-                                                <StyledButtonText
-                                                    variant="text"
-                                                    onClick={() =>
-                                                        setForgotPassword(true)
+                                                <Controller
+                                                    name={
+                                                        'PASSWORD_CONFIRMATION'
                                                     }
+                                                    control={registerControl}
+                                                    rules={{
+                                                        required: true,
+                                                    }}
+                                                    render={({ field }) => {
+                                                        return (
+                                                            <TextField
+                                                                label="Password Confirmation"
+                                                                size="small"
+                                                                error={
+                                                                    error.includes(
+                                                                        'Passwords do not match',
+                                                                    ) ||
+                                                                    error.includes(
+                                                                        'Password must be at least 8 characters in length',
+                                                                    ) ||
+                                                                    error.includes(
+                                                                        'Password must have atleast one uppercase character',
+                                                                    ) ||
+                                                                    error.includes(
+                                                                        'Password must have atleast one lowercase character',
+                                                                    ) ||
+                                                                    error.includes(
+                                                                        'Password must have atleast one special character among [!,@,#,$,%,^,&,*]',
+                                                                    )
+                                                                }
+                                                                helperText={
+                                                                    error.includes(
+                                                                        'Passwords do not match',
+                                                                    ) &&
+                                                                    'Passwords do no match'
+                                                                }
+                                                                variant="outlined"
+                                                                type="password"
+                                                                fullWidth
+                                                                value={
+                                                                    field.value
+                                                                        ? field.value
+                                                                        : ''
+                                                                }
+                                                                onChange={(e) =>
+                                                                    field.onChange(
+                                                                        e.target
+                                                                            .value,
+                                                                    )
+                                                                }
+                                                            />
+                                                        );
+                                                    }}
+                                                />
+                                                <StyledGoBackBox>
+                                                    <Button
+                                                        fullWidth
+                                                        variant={'text'}
+                                                        onClick={() =>
+                                                            setRegister(false)
+                                                        }
+                                                    >
+                                                        Go Back
+                                                    </Button>
+                                                    <Button
+                                                        fullWidth
+                                                        variant={'contained'}
+                                                        onClick={
+                                                            registerAccount
+                                                        }
+                                                    >
+                                                        Register Account
+                                                    </Button>
+                                                </StyledGoBackBox>
+                                            </>
+                                        )}
+                                        {!showOTPCodeField && !register && (
+                                            <>
+                                                <Controller
+                                                    name={'USERNAME'}
+                                                    control={control}
+                                                    rules={{
+                                                        required: true,
+                                                    }}
+                                                    render={({ field }) => {
+                                                        return (
+                                                            <TextField
+                                                                label="Username"
+                                                                variant="outlined"
+                                                                fullWidth
+                                                                value={
+                                                                    field.value
+                                                                        ? field.value
+                                                                        : ''
+                                                                }
+                                                                onChange={(e) =>
+                                                                    field.onChange(
+                                                                        e.target
+                                                                            .value,
+                                                                    )
+                                                                }
+                                                            />
+                                                        );
+                                                    }}
+                                                />
+                                                <Controller
+                                                    name={'PASSWORD'}
+                                                    control={control}
+                                                    rules={{
+                                                        required: true,
+                                                    }}
+                                                    render={({ field }) => {
+                                                        return (
+                                                            <TextField
+                                                                label="Password"
+                                                                variant="outlined"
+                                                                type="password"
+                                                                fullWidth
+                                                                value={
+                                                                    field.value
+                                                                        ? field.value
+                                                                        : ''
+                                                                }
+                                                                onChange={(e) =>
+                                                                    field.onChange(
+                                                                        e.target
+                                                                            .value,
+                                                                    )
+                                                                }
+                                                            />
+                                                        );
+                                                    }}
+                                                />
+                                            </>
+                                        )}
+                                        {showOTPCodeField && (
+                                            <Controller
+                                                name={'OTP_CONFIRM'}
+                                                control={control}
+                                                rules={{
+                                                    required: true,
+                                                }}
+                                                render={({ field }) => {
+                                                    return (
+                                                        <TextField
+                                                            label="OTP Confirmation Code"
+                                                            variant="outlined"
+                                                            fullWidth
+                                                            value={
+                                                                field.value
+                                                                    ? field.value
+                                                                    : ''
+                                                            }
+                                                            onChange={(e) =>
+                                                                field.onChange(
+                                                                    e.target
+                                                                        .value,
+                                                                )
+                                                            }
+                                                        />
+                                                    );
+                                                }}
+                                            />
+                                        )}
+                                        {!register && (
+                                            <>
+                                                <StyledRememberBox>
+                                                    <Controller
+                                                        name={'REMEMBER_LOGIN'}
+                                                        control={control}
+                                                        rules={{
+                                                            required: false,
+                                                        }}
+                                                        render={({ field }) => {
+                                                            return (
+                                                                <Checkbox
+                                                                    label="Keep me logged in"
+                                                                    checked={
+                                                                        field.value
+                                                                    }
+                                                                    value={
+                                                                        field.value
+                                                                            ? field.value
+                                                                            : false
+                                                                    }
+                                                                    onChange={(
+                                                                        e: React.ChangeEvent<HTMLInputElement>,
+                                                                    ) =>
+                                                                        field.onChange(
+                                                                            e
+                                                                                .target
+                                                                                .checked,
+                                                                        )
+                                                                    }
+                                                                />
+                                                            );
+                                                        }}
+                                                    />
+                                                    <StyledButtonText
+                                                        variant="text"
+                                                        onClick={() =>
+                                                            setForgotPassword(
+                                                                true,
+                                                            )
+                                                        }
+                                                    >
+                                                        Forgot Password
+                                                    </StyledButtonText>
+                                                </StyledRememberBox>
+                                                <Button
+                                                    fullWidth
+                                                    variant={'contained'}
+                                                    onClick={login}
                                                 >
-                                                    Forgot Password
-                                                </StyledButtonText>
-                                            </StyledRememberBox>
-                                            <Button
-                                                fullWidth
-                                                variant={'contained'}
-                                                onClick={login}
-                                            >
-                                                Login with {loginType}
-                                            </Button>
-                                            <StyledRegisterNowBox>
-                                                Don&apos;t have an account?{' '}
-                                                <StyledButtonText
-                                                    variant="text"
-                                                    onClick={() =>
-                                                        setRegister(true)
-                                                    }
-                                                >
-                                                    Register Now
-                                                </StyledButtonText>
-                                            </StyledRegisterNowBox>
-                                            {providers.indexOf('native') > -1 &&
-                                                providers.indexOf('ms') >
+                                                    Login with {loginType}
+                                                </Button>
+                                                <StyledRegisterNowBox>
+                                                    Don&apos;t have an account?{' '}
+                                                    <StyledButtonText
+                                                        variant="text"
+                                                        onClick={() =>
+                                                            setRegister(true)
+                                                        }
+                                                    >
+                                                        Register Now
+                                                    </StyledButtonText>
+                                                </StyledRegisterNowBox>
+                                                {providers.indexOf('native') >
+                                                    -1 &&
+                                                    providers.indexOf('ms') >
+                                                        -1 && (
+                                                        <>
+                                                            <Divider>
+                                                                <StyledDividerBox>
+                                                                    or
+                                                                </StyledDividerBox>
+                                                            </Divider>
+                                                        </>
+                                                    )}
+                                                {providers.indexOf('ms') >
                                                     -1 && (
-                                                    <>
-                                                        <Divider>
-                                                            <StyledDividerBox>
-                                                                or
-                                                            </StyledDividerBox>
-                                                        </Divider>
-                                                    </>
+                                                    <StyledAction
+                                                        variant="outlined"
+                                                        onClick={() => {
+                                                            oauth('ms');
+                                                        }}
+                                                        fullWidth
+                                                    >
+                                                        <StyledActionBox>
+                                                            <StyledActionImage
+                                                                src={MS}
+                                                            />
+                                                            <StyledActionText>
+                                                                Microsoft
+                                                            </StyledActionText>
+                                                        </StyledActionBox>
+                                                    </StyledAction>
                                                 )}
-                                            {providers.indexOf('ms') > -1 && (
-                                                <StyledAction
-                                                    variant="outlined"
-                                                    onClick={() => {
-                                                        oauth('ms');
-                                                    }}
-                                                    fullWidth
-                                                >
-                                                    <StyledActionBox>
-                                                        <StyledActionImage
-                                                            src={MS}
-                                                        />
-                                                        <StyledActionText>
-                                                            Microsoft
-                                                        </StyledActionText>
-                                                    </StyledActionBox>
-                                                </StyledAction>
-                                            )}
-                                            {providers.indexOf('google') >
-                                                -1 && (
-                                                <StyledAction
-                                                    variant="outlined"
-                                                    onClick={() => {
-                                                        oauth('google');
-                                                    }}
-                                                    fullWidth
-                                                >
-                                                    <StyledActionBox>
-                                                        <StyledActionImage
-                                                            src={GOOGLE}
-                                                        />
-                                                        <StyledActionText>
-                                                            Google
-                                                        </StyledActionText>
-                                                    </StyledActionBox>
-                                                </StyledAction>
-                                            )}
-                                        </>
-                                    )}
-                                </Stack>
-                            </>
-                        )}
-                        {isLoading && <LinearProgress />}
-                    </StyledContent>
-                </StyledScroll>
-                <StyledGradient />
-                <StyledImageHolder>
-                    <StyledImage src={GRAPHIC} />
-                </StyledImageHolder>
+                                                {providers.indexOf('google') >
+                                                    -1 && (
+                                                    <StyledAction
+                                                        variant="outlined"
+                                                        onClick={() => {
+                                                            oauth('google');
+                                                        }}
+                                                        fullWidth
+                                                    >
+                                                        <StyledActionBox>
+                                                            <StyledActionImage
+                                                                src={GOOGLE}
+                                                            />
+                                                            <StyledActionText>
+                                                                Google
+                                                            </StyledActionText>
+                                                        </StyledActionBox>
+                                                    </StyledAction>
+                                                )}
+                                            </>
+                                        )}
+                                    </Stack>
+                                </>
+                            )}
+                        </StyledContent>
+                    </StyledScroll>
+                    <StyledGradient />
+                    <StyledImageHolder>
+                        <StyledImage src={GIF} />
+                    </StyledImageHolder>
+                </StyledRow>
+                {isLoading && <StyledProgress />}
             </StyledMain>
             <Modal
                 open={forgotPassword}
