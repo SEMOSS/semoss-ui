@@ -114,7 +114,7 @@ const StyledAction = styled(Button)({
     overflow: 'hidden',
 });
 
-const StyledActionBox = styled(Button)({
+const StyledActionBox = styled('div')({
     display: 'flex',
     alignItems: 'center',
     gap: '16px',
@@ -151,6 +151,22 @@ const StyledButtonGroup = styled(ButtonGroup)({
         borderColor: '#fff',
     },
 });
+
+const StyledButtonGroupItem = styled(ButtonGroup.Item, {
+    shouldForwardProp: (prop) => prop !== 'selected',
+})<{
+    /** Track if Button is selected */
+    selected: boolean;
+}>(({ theme, selected }) => ({
+    color: selected ? theme.palette.common.white : theme.palette.primary.main,
+    backgroundColor: selected
+        ? theme.palette.primary.main
+        : theme.palette.common.white,
+    '&:hover': {
+        backgroundColor: selected ? theme.palette.primary.dark : '',
+        borderColor: theme.palette.common.white,
+    },
+}));
 
 const StyledRegisterNowBox = styled(Box)({
     display: 'flex',
@@ -493,105 +509,46 @@ export const LoginPage = observer(() => {
                             </div>
                             {!register && (
                                 <StyledButtonGroup variant="outlined">
-                                    <ButtonGroup.Item
+                                    <StyledButtonGroupItem
                                         onClick={() => {
                                             setLoginType('Native');
                                             setSuccess('');
                                             setError('');
                                         }}
-                                        sx={{
-                                            backgroundColor:
-                                                loginType === 'Native'
-                                                    ? '#0471F0'
-                                                    : '#fff',
-                                            color:
-                                                loginType === 'Native'
-                                                    ? '#fff'
-                                                    : '#0471F0',
-                                            ':hover': {
-                                                bgcolor:
-                                                    loginType === 'Native'
-                                                        ? '#0471F0'
-                                                        : 'transparent',
-                                                color:
-                                                    loginType === 'Native'
-                                                        ? '#fff'
-                                                        : '#0471F0',
-                                                borderColor: '#fff',
-                                            },
-                                        }}
+                                        selected={loginType === 'Native'}
                                     >
                                         Native
-                                    </ButtonGroup.Item>
-                                    <ButtonGroup.Item
+                                    </StyledButtonGroupItem>
+                                    <StyledButtonGroupItem
                                         onClick={() => {
                                             setLoginType('LDAP');
                                             setSuccess('');
                                             setError('');
                                         }}
-                                        sx={{
-                                            backgroundColor:
-                                                loginType === 'LDAP'
-                                                    ? '#0471F0'
-                                                    : '#fff',
-                                            color:
-                                                loginType === 'LDAP'
-                                                    ? '#fff'
-                                                    : '#0471F0',
-                                            ':hover': {
-                                                bgcolor:
-                                                    loginType === 'LDAP'
-                                                        ? '#0471F0'
-                                                        : 'transparent',
-                                                color:
-                                                    loginType === 'LDAP'
-                                                        ? '#fff'
-                                                        : '#0471F0',
-                                                borderColor: '#fff',
-                                            },
-                                        }}
+                                        selected={loginType === 'LDAP'}
                                     >
                                         LDAP
-                                    </ButtonGroup.Item>
-                                    <ButtonGroup.Item
+                                    </StyledButtonGroupItem>
+                                    <StyledButtonGroupItem
                                         onClick={() => {
                                             setLoginType('LinOTP');
                                             setSuccess('');
                                             setError('');
                                         }}
-                                        sx={{
-                                            backgroundColor:
-                                                loginType === 'LinOTP'
-                                                    ? '#0471F0'
-                                                    : '#fff',
-                                            color:
-                                                loginType === 'LinOTP'
-                                                    ? '#fff'
-                                                    : '#0471F0',
-                                            ':hover': {
-                                                bgcolor:
-                                                    loginType === 'LinOTP'
-                                                        ? '#0471F0'
-                                                        : 'transparent',
-                                                color:
-                                                    loginType === 'LinOTP'
-                                                        ? '#fff'
-                                                        : '#0471F0',
-                                                borderColor: '#fff',
-                                            },
-                                        }}
+                                        selected={loginType === 'LinOTP'}
                                     >
                                         LinOTP
-                                    </ButtonGroup.Item>
+                                    </StyledButtonGroupItem>
                                 </StyledButtonGroup>
                             )}
                             {error && <Alert color="error">{error}</Alert>}
                             {success && (
                                 <Alert color="success">{success}</Alert>
                             )}
-                            {providers.indexOf('native') > -1 && (
-                                <>
-                                    <Stack spacing={2}>
+
+                            <Stack spacing={2}>
+                                {providers.indexOf('native') > -1 && (
+                                    <>
                                         {!showOTPCodeField && register && (
                                             <>
                                                 <Controller
@@ -1096,61 +1053,61 @@ export const LoginPage = observer(() => {
                                                         Register Now
                                                     </StyledButtonText>
                                                 </StyledRegisterNowBox>
-                                                {providers.indexOf('native') >
-                                                    -1 &&
-                                                    providers.indexOf('ms') >
-                                                        -1 && (
-                                                        <>
-                                                            <Divider>
-                                                                <StyledDividerBox>
-                                                                    or
-                                                                </StyledDividerBox>
-                                                            </Divider>
-                                                        </>
-                                                    )}
-                                                {providers.indexOf('ms') >
-                                                    -1 && (
-                                                    <StyledAction
-                                                        variant="outlined"
-                                                        onClick={() => {
-                                                            oauth('ms');
-                                                        }}
-                                                        fullWidth
-                                                    >
-                                                        <StyledActionBox>
-                                                            <StyledActionImage
-                                                                src={MS}
-                                                            />
-                                                            <StyledActionText>
-                                                                Microsoft
-                                                            </StyledActionText>
-                                                        </StyledActionBox>
-                                                    </StyledAction>
-                                                )}
-                                                {providers.indexOf('google') >
-                                                    -1 && (
-                                                    <StyledAction
-                                                        variant="outlined"
-                                                        onClick={() => {
-                                                            oauth('google');
-                                                        }}
-                                                        fullWidth
-                                                    >
-                                                        <StyledActionBox>
-                                                            <StyledActionImage
-                                                                src={GOOGLE}
-                                                            />
-                                                            <StyledActionText>
-                                                                Google
-                                                            </StyledActionText>
-                                                        </StyledActionBox>
-                                                    </StyledAction>
-                                                )}
                                             </>
                                         )}
-                                    </Stack>
-                                </>
-                            )}
+                                    </>
+                                )}
+                                {!register && (
+                                    <>
+                                        {providers.indexOf('native') > -1 &&
+                                            providers.indexOf('ms') > -1 && (
+                                                <>
+                                                    <Divider>
+                                                        <StyledDividerBox>
+                                                            or
+                                                        </StyledDividerBox>
+                                                    </Divider>
+                                                </>
+                                            )}
+                                        {providers.indexOf('ms') > -1 && (
+                                            <StyledAction
+                                                variant="outlined"
+                                                onClick={() => {
+                                                    oauth('ms');
+                                                }}
+                                                fullWidth
+                                            >
+                                                <StyledActionBox>
+                                                    <StyledActionImage
+                                                        src={MS}
+                                                    />
+                                                    <StyledActionText>
+                                                        Microsoft
+                                                    </StyledActionText>
+                                                </StyledActionBox>
+                                            </StyledAction>
+                                        )}
+                                        {providers.indexOf('google') > -1 && (
+                                            <StyledAction
+                                                variant="outlined"
+                                                onClick={() => {
+                                                    oauth('google');
+                                                }}
+                                                fullWidth
+                                            >
+                                                <StyledActionBox>
+                                                    <StyledActionImage
+                                                        src={GOOGLE}
+                                                    />
+                                                    <StyledActionText>
+                                                        Google
+                                                    </StyledActionText>
+                                                </StyledActionBox>
+                                            </StyledAction>
+                                        )}
+                                    </>
+                                )}
+                            </Stack>
                         </StyledContent>
                     </StyledScroll>
                     <StyledGradient />
