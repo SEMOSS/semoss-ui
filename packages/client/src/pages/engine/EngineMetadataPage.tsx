@@ -34,7 +34,7 @@ const StyledTableContainer = styled(Table.Container)(() => ({
     height: '396px',
 }));
 
-export const DatabaseMetadataPage = observer(() => {
+export const EngineMetadataPage = observer(() => {
     const { id } = useEngine();
 
     const { monolithStore } = useRootStore();

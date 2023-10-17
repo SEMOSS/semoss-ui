@@ -263,6 +263,7 @@ export const AppEditorPanel = (props) => {
                                 <MembersTable
                                     mode={'app'}
                                     id={appId}
+                                    name={'app'}
                                     condensed={true}
                                 />
                                 {/* <Typography variant="h6">

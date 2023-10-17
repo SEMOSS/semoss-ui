@@ -206,6 +206,11 @@ interface MembersTableProps {
     id: string;
 
     /**
+     * Name for the item of the setting
+     */
+    name: string;
+
+    /**
      * Condensed view
      */
     condensed?: boolean;
@@ -217,6 +222,7 @@ export const MembersTable = (props: MembersTableProps) => {
     const {
         mode,
         id,
+        name,
         condensed,
         refreshPermission = () => console.log('pass refresh function'),
     } = props;
@@ -1388,9 +1394,9 @@ export const MembersTable = (props: MembersTableProps) => {
                                                     }}
                                                 >
                                                     Ability to provision other
-                                                    users, edit database details
+                                                    users, edit {name} details
                                                     and hide or delete the
-                                                    database.
+                                                    {name}.
                                                 </Box>
                                             }
                                             action={
@@ -1434,9 +1440,9 @@ export const MembersTable = (props: MembersTableProps) => {
                                                     }}
                                                 >
                                                     Has the ability to use the
-                                                    database to generate
-                                                    insights and can query
-                                                    against the database.
+                                                    {name} to generate insights
+                                                    and can query against the{' '}
+                                                    {name}.
                                                 </Box>
                                             }
                                             action={
@@ -1479,8 +1485,7 @@ export const MembersTable = (props: MembersTableProps) => {
                                                         marginLeft: '30px',
                                                     }}
                                                 >
-                                                    Can view insights built
-                                                    using the database.
+                                                    Can view data from {name}.
                                                 </Box>
                                             }
                                             action={

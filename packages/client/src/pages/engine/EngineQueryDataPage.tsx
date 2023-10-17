@@ -1,5 +1,5 @@
 import React from 'react';
 
-export const DatabaseQueryDataPage = () => {
+export const EngineQueryDataPage = () => {
     return <div>DatabaseQueryDataPage</div>;
 };

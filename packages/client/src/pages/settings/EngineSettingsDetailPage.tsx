@@ -8,6 +8,7 @@ import {
     SettingsTiles,
     PendingMembersTable,
     MembersTable,
+    UpdateSMSS,
 } from '@/components/settings';
 
 const StyledContainer = styled('div')(({ theme }) => ({
@@ -123,17 +124,21 @@ export const EngineSettingsDetailPage = (
                 </ToggleTabsGroup>
                 {view === 'CURRENT' && (
                     <MembersTable
-                        id={id}
                         mode={'engine'}
+                        id={id}
+                        name={name}
                         refreshPermission={() =>
                             getUserEnginePermission.refresh()
                         }
                     />
                 )}
                 {view === 'PENDING' && (
-                    <PendingMembersTable mode={'engine'} id={id} />
+                    <PendingMembersTable id={id} mode={'engine'} />
                 )}
             </StyledContent>
+            {permission === 'OWNER' ? (
+                <UpdateSMSS mode="engine" id={id} />
+            ) : null}
         </StyledContainer>
     );
 };

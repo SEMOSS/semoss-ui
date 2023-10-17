@@ -1,5 +1,5 @@
 import React from 'react';
 
-export const DatabaseReplaceDataPage = () => {
+export const EngineReplaceDataPage = () => {
     return <div>DatabaseReplaceDataPage</div>;
 };

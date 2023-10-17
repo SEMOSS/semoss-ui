@@ -111,6 +111,7 @@ export const AppSettingsDetailPage = () => {
                     <MembersTable
                         id={id}
                         mode={'app'}
+                        name={'app'}
                         refreshPermission={() =>
                             getUserEnginePermission.refresh()
                         }
