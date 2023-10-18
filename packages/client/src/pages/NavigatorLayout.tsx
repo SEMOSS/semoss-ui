@@ -1,5 +1,5 @@
 import { observer } from 'mobx-react-lite';
-import { Outlet, Link, useLocation } from 'react-router-dom';
+import { Outlet, Link, useLocation, matchPath } from 'react-router-dom';
 import { styled, Stack, Icon, Divider } from '@semoss/ui';
 
 import {
@@ -13,6 +13,8 @@ import {
 import { Navbar } from '@/components/ui';
 import { Database } from '@/assets/img/Database';
 import { ModelBrain } from '@/assets/img/ModelBrain';
+import { ENGINE_ROUTES } from './engine/engine.constants';
+import { createElement } from 'react';
 
 const NAV_HEIGHT = '48px';
 const SIDEBAR_WIDTH = '56px';
@@ -80,7 +82,7 @@ const StyledContent = styled('div')(() => ({
  * Wrap the routes with a side navigation
  */
 export const NavigatorLayout = observer(() => {
-    const location = useLocation();
+    const { pathname } = useLocation();
 
     return (
         <>
@@ -88,7 +90,7 @@ export const NavigatorLayout = observer(() => {
             <StyledSidebar>
                 <StyledSidebarItem
                     to={''}
-                    selected={location.pathname === '/'}
+                    selected={!!matchPath('', pathname)}
                     title={'Navigate to app catalog'}
                 >
                     <Icon>
@@ -96,55 +98,20 @@ export const NavigatorLayout = observer(() => {
                     </Icon>
                 </StyledSidebarItem>
                 <StyledSidebarDivider />
-                <StyledSidebarItem
-                    to={'catalog?type=function'}
-                    selected={location.search.includes('?type=function')}
-                    title={'Navigate to function catalog'}
-                >
-                    <Icon>
-                        <Functions />
-                    </Icon>
-                </StyledSidebarItem>
-                <StyledSidebarItem
-                    to={'catalog?type=model'}
-                    selected={location.search.includes('?type=model')}
-                    title={'Navigate to model catalog'}
-                >
-                    <Icon>
-                        <ModelBrain />
-                    </Icon>
-                </StyledSidebarItem>
-                <StyledSidebarItem
-                    to={'catalog?type=database'}
-                    selected={location.search.includes('?type=database')}
-                    title={'Navigate to database catalog'}
-                >
-                    <Icon>
-                        <Database />
-                    </Icon>
-                </StyledSidebarItem>
-                <StyledSidebarItem
-                    to={'catalog?type=vector'}
-                    selected={location.search.includes('?type=vector')}
-                    title={'Navigate to vector catalog'}
-                >
-                    <Icon>
-                        <Polyline />
-                    </Icon>
-                </StyledSidebarItem>
-                <StyledSidebarItem
-                    to={'catalog?type=storage'}
-                    selected={location.search.includes('?type=storage')}
-                    title={'Navigate to storage catalog'}
-                >
-                    <Icon>
-                        <Inventory2Outlined />
-                    </Icon>
-                </StyledSidebarItem>
+                {ENGINE_ROUTES.map((r) => (
+                    <StyledSidebarItem
+                        key={r.path}
+                        to={`engine/${r.path}`}
+                        selected={!!matchPath(`engine/${r.path}/*`, pathname)}
+                        title={`Navigate to ${r.name}`}
+                    >
+                        <Icon>{createElement(r.icon, {})}</Icon>
+                    </StyledSidebarItem>
+                ))}
                 <Stack flex={1}>&nbsp;</Stack>
                 <StyledSidebarItem
                     to={'settings'}
-                    selected={location.pathname === '/settings'}
+                    selected={!!matchPath('settings/*', pathname)}
                     title={'Navigate to settings'}
                 >
                     <Icon>

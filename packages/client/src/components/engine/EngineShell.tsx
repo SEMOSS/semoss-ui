@@ -134,11 +134,8 @@ export const EngineShell = (props: EngineShellProps) => {
             header={
                 <Stack>
                     <Breadcrumbs>
-                        <StyledLink to={`/catalog?type=${type}`}>
-                            {name}
-                            Catalog
-                        </StyledLink>
-                        <StyledLink to={`/${type}/${id}`}>
+                        <StyledLink to={`..`}>{name} Catalog</StyledLink>
+                        <StyledLink to={`.`}>
                             {formatName(data.database_name)}
                         </StyledLink>
                     </Breadcrumbs>

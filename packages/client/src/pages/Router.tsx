@@ -9,10 +9,8 @@ import { NavigatorLayout } from './NavigatorLayout';
 
 import { LoginPage } from './LoginPage';
 import { HomePage } from './HomePage';
-import { CatalogPage } from './CatalogPage';
 
 import { EngineRouter } from './engine';
-
 import { SettingsRouter } from './settings';
 import { AppRouter } from './app';
 import { ImportRouter } from './import';
@@ -32,9 +30,8 @@ export const Router = observer(() => {
                 <Route path="*" element={<NavigatorLayout />}>
                     <Route index element={<HomePage />} />
                     <Route path="import" element={<ImportRouter />} />
-                    <Route path="catalog" element={<CatalogPage />} />
                     <Route path="settings/*" element={<SettingsRouter />} />
-                    <Route path="*" element={<EngineRouter />} />
+                    <Route path="engine/*" element={<EngineRouter />} />
                 </Route>
                 <Route path="*" element={<Navigate to="/" replace />} />
             </Route>

@@ -111,7 +111,7 @@ export const ImportForm = (props) => {
                     return;
                 }
 
-                navigate(`/catalog?type=${steps[0].data.toLowerCase()}`);
+                navigate(`/engine/${(steps[0].data as string).toUpperCase()}`);
                 return;
             }
             return;

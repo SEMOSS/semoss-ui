@@ -1,124 +1,50 @@
 import { Routes, Route, Outlet, Navigate } from 'react-router-dom';
 import { observer } from 'mobx-react-lite';
 
-import { EngineLayout } from './EngineLayout';
-import { EngineIndexPage } from './EngineIndexPage';
-import { EngineUsagePage } from './EngineUsagePage';
+import { ENGINE_ROUTES } from './engine.constants';
 
-import { EngineMetadataPage } from './EngineMetadataPage';
-import { EngineSettingsPage } from './EngineSettingsPage';
-import { EngineQueryDataPage } from './EngineQueryDataPage';
-import { EngineReplaceDataPage } from './EngineReplaceDataPage';
+import { EngineLayout } from './EngineLayout';
+import { EngineCatalogPage } from './EngineCatalogPage';
+
+import { createElement } from 'react';
 
 export const EngineRouter = observer(() => {
     return (
         <Routes>
-            <Route path="*" element={<Outlet />}>
-                <Route path="model" element={<Outlet />}>
-                    <Route path=":id" element={<EngineLayout />}>
-                        <Route index element={<EngineIndexPage />} />
-                        <Route
-                            path="metadata"
-                            element={<EngineMetadataPage />}
-                        />
-                        <Route path="usage" element={<EngineUsagePage />} />
-                        <Route
-                            path="settings"
-                            element={<EngineSettingsPage />}
-                        />
-                    </Route>
-                    <Route
-                        index
-                        element={<Navigate to="/catalog?type=model" replace />}
-                    />
-                </Route>
+            <Route path="/" element={<Outlet />}>
+                {ENGINE_ROUTES.map((g) => (
+                    <Route key={g.path} path={g.path} element={<Outlet />}>
+                        {g.specific.length > 0 ? (
+                            <>
+                                <Route
+                                    index
+                                    element={
+                                        <EngineCatalogPage type={g.type} />
+                                    }
+                                />
+                                <Route
+                                    path=":id"
+                                    element={<EngineLayout type={g.type} />}
+                                >
+                                    {g.specific.map((s) => (
+                                        <Route
+                                            key={s.path}
+                                            path={s.path}
+                                            element={createElement(
+                                                s.component,
+                                                {
+                                                    type: g.type,
+                                                },
+                                            )}
+                                        />
+                                    ))}
+                                </Route>
+                            </>
+                        ) : null}
 
-                <Route path="function" element={<Outlet />}>
-                    <Route path=":id" element={<EngineLayout />}>
-                        <Route index element={<EngineIndexPage />} />
-                        <Route
-                            path="metadata"
-                            element={<EngineMetadataPage />}
-                        />
-                        <Route path="usage" element={<EngineUsagePage />} />
-                        <Route
-                            path="settings"
-                            element={<EngineSettingsPage />}
-                        />
+                        <Route path="*" element={<Navigate to="." replace />} />
                     </Route>
-                    <Route
-                        index
-                        element={
-                            <Navigate to="/catalog?type=function" replace />
-                        }
-                    />
-                </Route>
-
-                <Route path="vector" element={<Outlet />}>
-                    <Route path=":id" element={<EngineLayout />}>
-                        <Route index element={<EngineIndexPage />} />
-                        <Route
-                            path="metadata"
-                            element={<EngineMetadataPage />}
-                        />
-                        <Route path="usage" element={<EngineUsagePage />} />
-                        <Route
-                            path="settings"
-                            element={<EngineSettingsPage />}
-                        />
-                    </Route>
-                    <Route
-                        index
-                        element={<Navigate to="/catalog?type=vector" replace />}
-                    />
-                </Route>
-
-                <Route path="database" element={<Outlet />}>
-                    <Route path=":id" element={<EngineLayout />}>
-                        <Route index element={<EngineIndexPage />} />
-                        <Route
-                            path="metadata"
-                            element={<EngineMetadataPage />}
-                        />
-                        <Route path="usage" element={<EngineUsagePage />} />
-                        <Route
-                            path="settings"
-                            element={<EngineSettingsPage />}
-                        />
-                        <Route
-                            path="replace"
-                            element={<EngineReplaceDataPage />}
-                        />
-                        <Route path="query" element={<EngineQueryDataPage />} />
-                    </Route>
-                    <Route
-                        index
-                        element={
-                            <Navigate to="/catalog?type=database" replace />
-                        }
-                    />
-                </Route>
-
-                <Route path="storage" element={<Outlet />}>
-                    <Route path=":id" element={<EngineLayout />}>
-                        <Route index element={<EngineIndexPage />} />
-                        <Route
-                            path="metadata"
-                            element={<EngineMetadataPage />}
-                        />
-                        <Route path="usage" element={<EngineUsagePage />} />
-                        <Route
-                            path="settings"
-                            element={<EngineSettingsPage />}
-                        />
-                    </Route>
-                    <Route
-                        index
-                        element={
-                            <Navigate to="/catalog?type=storage" replace />
-                        }
-                    />
-                </Route>
+                ))}
             </Route>
             <Route path="*" element={<Navigate to={`.`} replace />} />
         </Routes>
