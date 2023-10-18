@@ -146,35 +146,6 @@ export const SETTINGS_ROUTES: {
         history: ['settings/'],
         admin: true,
     },
-    // {
-    //     title: 'External Connections',
-    //     path: 'external-connections',
-    //     description:
-    //         'Integrate with external services like Dropbox, Google, Github, and more.',
-    //     icon: mdiDatabase,
-    //     history: ['settings/'],
-    // },
-    // {
-    //     title: 'Teams',
-    //     path: 'teams',
-    //     description: 'Create and manage teams and set team level permissions.',
-    //     icon: mdiDatabase,
-    //     history: ['settings/'],
-    // },
-    // {
-    //     title: 'Teams Management',
-    //     path: 'teams-management',
-    //     description: 'Create teams and manage members.',
-    //     icon: mdiDatabase,
-    //     history: ['settings/'],
-    // },
-    // {
-    //     title: 'Teams Permissions',
-    //     path: 'teams-permissions',
-    //     description: 'Edit permission roles of teams.',
-    //     icon: mdiDatabase,
-    //     history: ['settings/'],
-    // },
     {
         title: 'My Profile',
         path: 'my-profile',
@@ -183,11 +154,4 @@ export const SETTINGS_ROUTES: {
         history: ['settings/'],
         admin: false,
     },
-    // {
-    //     title: 'Theming',
-    //     path: 'theme',
-    //     description: 'Update theme, this is an admin process.',
-    //     icon: mdiDatabase,
-    //     history: ['settings/'],
-    // },
 ];

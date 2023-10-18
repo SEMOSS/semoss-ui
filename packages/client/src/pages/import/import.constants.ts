@@ -66,6 +66,7 @@ import REPLIT from '@/assets/img/REPLIT_CODE.png';
 // Functions
 import WEVIATE from '@/assets/img/WEVIATE.png';
 import PINECONE from '@/assets/img/PINECONE.png';
+import RESTAPI from '@/assets/img/rest-api.svg';
 
 // TODO: Get rid of this and throw it into Connection Options
 export const stepsOne = [
@@ -2703,7 +2704,7 @@ export const CONNECTION_OPTIONS = {
             {
                 name: 'REST',
                 disable: false,
-                icon: MINIO,
+                icon: RESTAPI,
                 fields: [
                     {
                         fieldName: 'FUNCTION_TYPE',
@@ -2800,7 +2801,7 @@ export const CONNECTION_OPTIONS = {
                         rules: { required: true },
                     },
                     {
-                        fieldName: 'FUNCTION_PARAMETERS',
+                        fieldName: 'parameters',
                         label: 'Function Parameters',
                         defaultValue: '',
                         options: {
@@ -2810,7 +2811,7 @@ export const CONNECTION_OPTIONS = {
                         rules: { required: true },
                     },
                     {
-                        fieldName: 'FUNCTION_REQUIRED_PARAMETERS',
+                        fieldName: 'requiredParameters',
                         label: 'Function Required Parameters',
                         defaultValue: '',
                         options: {
@@ -2820,12 +2821,6 @@ export const CONNECTION_OPTIONS = {
                         rules: { required: true },
                     },
                 ],
-            },
-            {
-                name: 'Test',
-                disable: true,
-                icon: BRAIN,
-                fields: [],
             },
         ],
         'File Uploads': [

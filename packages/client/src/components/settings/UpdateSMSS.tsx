@@ -1,9 +1,19 @@
 import { useState, useEffect } from 'react';
 import { styled, useNotification, Button, Paper, Typography } from '@semoss/ui';
 import Editor from '@monaco-editor/react';
-import { useRootStore, usePixel } from '@/hooks';
+
+import { useRootStore, usePixel, useSettings } from '@/hooks';
+import { SETTINGS_MODE } from './settings.types';
 
 interface UpdateSMSSProps {
+    /**
+     * Mode of setting
+     */
+    mode: SETTINGS_MODE;
+
+    /**
+     * Id of the setting
+     */
     id: string;
 }
 
@@ -26,15 +36,27 @@ const StyledPaper = styled(Paper)(({ theme }) => ({
 }));
 
 export const UpdateSMSS = (props: UpdateSMSSProps) => {
-    const { id } = props;
+    const { mode, id } = props;
+
     const { monolithStore } = useRootStore();
     const notification = useNotification();
+    const { adminMode } = useSettings();
 
     const [initialValue, setInitialValue] = useState('');
     const [value, setValue] = useState('');
     const [readOnly, setReadOnly] = useState(true);
 
-    const smssDetails = usePixel<string>(`GetEngineSMSS(engine=['${id}'])`);
+    const smssDetails = usePixel<string>(
+        mode === 'engine'
+            ? adminMode
+                ? `AdminGetEngineSMSS(engine=['${id}'])`
+                : `GetEngineSMSS(engine=['${id}'])`
+            : mode === 'app'
+            ? adminMode
+                ? `AdminGetProjectSMSS(project=['${id}'])`
+                : `GetProjectSMSS(project=['${id}'])`
+            : '',
+    );
 
     useEffect(() => {
         if (smssDetails.status !== 'SUCCESS') {
@@ -57,12 +79,12 @@ export const UpdateSMSS = (props: UpdateSMSSProps) => {
                 setInitialValue(value);
                 notification.add({
                     color: 'success',
-                    message: 'Successfully updated SMSS Properties',
+                    message: `Successfully updated SMSS Properties`,
                 });
             } else {
                 notification.add({
                     color: 'error',
-                    message: 'Unsuccessfully updated SMSS Properties',
+                    message: `Unable to update SMSS Properties for`,
                 });
             }
         });

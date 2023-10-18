@@ -12,7 +12,7 @@ import {
 } from '@semoss/ui';
 import { ArrowCircleDown, Create } from '@mui/icons-material';
 
-import { usePixel, useDatabase, useRootStore } from '@/hooks';
+import { usePixel, useEngine, useRootStore } from '@/hooks';
 import { Section } from '@/components/ui';
 import { Metamodel } from '@/components/metamodel';
 
@@ -34,8 +34,8 @@ const StyledTableContainer = styled(Table.Container)(() => ({
     height: '396px',
 }));
 
-export const DatabaseMetadataPage = observer(() => {
-    const { id } = useDatabase();
+export const EngineMetadataPage = observer(() => {
+    const { id } = useEngine();
 
     const { monolithStore } = useRootStore();
 

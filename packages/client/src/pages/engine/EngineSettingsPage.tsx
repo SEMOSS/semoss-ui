@@ -2,13 +2,13 @@ import { styled } from '@semoss/ui';
 import { useNavigate } from 'react-router-dom';
 
 import { SettingsContext } from '@/contexts';
-import { UpdateSMSS } from '@/components/database';
 import {
     MembersTable,
     PendingMembersTable,
     SettingsTiles,
+    UpdateSMSS,
 } from '@/components/settings';
-import { useDatabase } from '@/hooks';
+import { useEngine } from '@/hooks';
 
 const StyledContainer = styled('div')(({ theme }) => ({
     width: '100%',
@@ -19,8 +19,8 @@ const StyledContainer = styled('div')(({ theme }) => ({
     gap: theme.spacing(3),
 }));
 
-export const DatabaseSettingsPage = () => {
-    const { id, type } = useDatabase();
+export const EngineSettingsPage = () => {
+    const { id, name, type } = useEngine();
     const navigate = useNavigate();
 
     return (
@@ -31,15 +31,16 @@ export const DatabaseSettingsPage = () => {
         >
             <StyledContainer>
                 <SettingsTiles
-                    type={type}
+                    mode="engine"
+                    name={type}
                     id={id}
                     onDelete={() => {
                         navigate('/catalog');
                     }}
                 />
-                <PendingMembersTable type={type} id={id} />
-                <MembersTable type={type} id={id} />
-                <UpdateSMSS id={id} />
+                <PendingMembersTable mode={'engine'} id={id} />
+                <MembersTable mode={'engine'} id={id} name={name} />
+                <UpdateSMSS mode={'engine'} id={id} />
             </StyledContainer>
         </SettingsContext.Provider>
     );

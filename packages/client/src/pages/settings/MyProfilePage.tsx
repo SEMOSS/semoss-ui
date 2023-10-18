@@ -130,7 +130,10 @@ export const MyProfilePage = () => {
     /**
      * Callback that is triggered when the add modal closes
      */
-    const onAddModalClose = () => {
+    const closeModel = () => {
+        // close it
+        setAddModal(false);
+
         // a new key was added refresh the current keys
         if (isCreated) {
             getUserAccessKeys.refresh();
@@ -256,7 +259,7 @@ export const MyProfilePage = () => {
                 </Table>
             </Table.Container>
 
-            <Modal open={addModal} onClose={() => onAddModalClose()}>
+            <Modal open={addModal} onClose={() => closeModel()}>
                 <Modal.Title>Generate Access Key</Modal.Title>
                 <Modal.Content>
                     <form onSubmit={handleSubmit(createAccessKey)}>
@@ -371,7 +374,7 @@ export const MyProfilePage = () => {
                     </form>
                 </Modal.Content>
                 <Modal.Actions>
-                    <Button variant="text" onClick={() => setAddModal(false)}>
+                    <Button variant="text" onClick={() => closeModel()}>
                         Close
                     </Button>
                 </Modal.Actions>

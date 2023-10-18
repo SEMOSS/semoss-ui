@@ -97,15 +97,6 @@ export const NavigatorLayout = observer(() => {
                 </StyledSidebarItem>
                 <StyledSidebarDivider />
                 <StyledSidebarItem
-                    to={'catalog?type=model'}
-                    selected={location.search.includes('?type=model')}
-                    title={'Navigate to model catalog'}
-                >
-                    <Icon>
-                        <ModelBrain />
-                    </Icon>
-                </StyledSidebarItem>
-                <StyledSidebarItem
                     to={'catalog?type=function'}
                     selected={location.search.includes('?type=function')}
                     title={'Navigate to function catalog'}
@@ -115,12 +106,12 @@ export const NavigatorLayout = observer(() => {
                     </Icon>
                 </StyledSidebarItem>
                 <StyledSidebarItem
-                    to={'catalog?type=vector'}
-                    selected={location.search.includes('?type=vector')}
-                    title={'Navigate to vector catalog'}
+                    to={'catalog?type=model'}
+                    selected={location.search.includes('?type=model')}
+                    title={'Navigate to model catalog'}
                 >
                     <Icon>
-                        <Polyline />
+                        <ModelBrain />
                     </Icon>
                 </StyledSidebarItem>
                 <StyledSidebarItem
@@ -130,6 +121,15 @@ export const NavigatorLayout = observer(() => {
                 >
                     <Icon>
                         <Database />
+                    </Icon>
+                </StyledSidebarItem>
+                <StyledSidebarItem
+                    to={'catalog?type=vector'}
+                    selected={location.search.includes('?type=vector')}
+                    title={'Navigate to vector catalog'}
+                >
+                    <Icon>
+                        <Polyline />
                     </Icon>
                 </StyledSidebarItem>
                 <StyledSidebarItem
