@@ -7,6 +7,8 @@ import {
     IconButton,
     Stack,
     Typography,
+    Tooltip,
+    useNotification,
 } from '@semoss/ui';
 
 import { Env } from '@/env';
@@ -14,9 +16,8 @@ import { useRootStore, useEngine, usePixel } from '@/hooks';
 
 import { EditDatabaseDetails } from '@/components/database';
 import { Page, LoadingScreen } from '@/components/ui';
-import { RequestAccess } from './';
+import { EngineAccessButton } from './';
 import {
-    Add,
     ContentPasteOutlined,
     EditRounded,
     SimCardDownload,
@@ -89,15 +90,16 @@ export const EngineShell = (props: EngineShellProps) => {
     const { id, type, name, role, metaVals, refresh } = useEngine();
 
     // Service for Axios calls
-    const { monolithStore, configStore } = useRootStore();
+    const { monolithStore } = useRootStore();
+
+    // notification
+    const notification = useNotification();
 
     // set if it can edit
     const canEdit = role === 'OWNER' || role === 'EDITOR';
 
     // track the edit state
     const [edit, setEdit] = useState(false);
-
-    const [requestAccess, setRequestAccess] = useState(false);
 
     // get the engine info
     const { status, data } = usePixel<{
@@ -139,44 +141,45 @@ export const EngineShell = (props: EngineShellProps) => {
                             {formatName(data.database_name)}
                         </StyledLink>
                     </Breadcrumbs>
-                    <Stack
-                        direction="row"
-                        justifyContent={'space-between'}
-                        width={'100%'}
-                    >
+                    <Stack direction="row" alignItems={'center'} width={'100%'}>
                         <Typography variant="h4">
                             {formatName(data.database_name)}
                         </Typography>
+                        <Tooltip title={`Copy ${name} ID`}>
+                            <span>
+                                <IconButton
+                                    aria-label={`copy ${name} ID`}
+                                    size="small"
+                                    onClick={(e) => {
+                                        // prevent the default action
+                                        e.preventDefault();
+
+                                        // copy
+                                        try {
+                                            navigator.clipboard.writeText(id);
+
+                                            notification.add({
+                                                color: 'success',
+                                                message:
+                                                    'Successfully copied id',
+                                            });
+                                        } catch (e) {
+                                            console.error(e);
+
+                                            notification.add({
+                                                color: 'error',
+                                                message: 'Error copyng id',
+                                            });
+                                        }
+                                    }}
+                                >
+                                    <ContentPasteOutlined fontSize="inherit" />
+                                </IconButton>
+                            </span>
+                        </Tooltip>
+                        <Stack flex={1}> &nbsp;</Stack>
                         <Stack direction="row">
-                            <IconButton
-                                size="small"
-                                title={'Copy Engine ID'}
-                                onClick={(e) => {
-                                    navigator.clipboard.writeText(id);
-                                }}
-                            >
-                                <ContentPasteOutlined />
-                            </IconButton>
-                            {configStore.store.security && role !== 'OWNER' && (
-                                <>
-                                    {requestAccess && (
-                                        <RequestAccess
-                                            id={id}
-                                            open={requestAccess}
-                                            onClose={() => {
-                                                setRequestAccess(false);
-                                            }}
-                                        />
-                                    )}
-                                    <Button
-                                        startIcon={<Add />}
-                                        variant="outlined"
-                                        onClick={() => setRequestAccess(true)}
-                                    >
-                                        Request Access
-                                    </Button>
-                                </>
-                            )}
+                            <EngineAccessButton />
                             {role === 'OWNER' && (
                                 <Button
                                     startIcon={<SimCardDownload />}

@@ -721,6 +721,7 @@ export const EngineCatalogPage = observer(
                                     >
                                         <SpaceDashboardOutlined />
                                     </ToggleButton>
+
                                     <ToggleButton
                                         color="primary"
                                         onClick={(e, v) => setView(v)}

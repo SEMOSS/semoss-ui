@@ -32,7 +32,7 @@ export const EngineSettingsPage = () => {
             <StyledContainer>
                 <SettingsTiles
                     mode="engine"
-                    name={type}
+                    name={name}
                     id={id}
                     onDelete={() => {
                         navigate('/catalog');

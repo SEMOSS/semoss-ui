@@ -94,9 +94,6 @@ export const EngineSettingsDetailPage = (
         return null;
     }
 
-    console.log('hi');
-    console.log(permission);
-
     return (
         <StyledContainer>
             {permission === 'OWNER' ? (

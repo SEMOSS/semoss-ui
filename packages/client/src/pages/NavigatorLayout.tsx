@@ -1,7 +1,7 @@
+import { createElement } from 'react';
 import { observer } from 'mobx-react-lite';
 import { Outlet, Link, useLocation, matchPath } from 'react-router-dom';
-import { styled, Stack, Icon, Divider } from '@semoss/ui';
-
+import { styled, Stack, Icon, Divider, Tooltip } from '@semoss/ui';
 import {
     Functions,
     Inventory2Outlined,
@@ -12,9 +12,9 @@ import {
 
 import { Navbar } from '@/components/ui';
 import { Database } from '@/assets/img/Database';
+
 import { ModelBrain } from '@/assets/img/ModelBrain';
-import { ENGINE_ROUTES } from './engine/engine.constants';
-import { createElement } from 'react';
+import { ENGINE_ROUTES } from '@/pages/engine';
 
 const NAV_HEIGHT = '48px';
 const SIDEBAR_WIDTH = '56px';
@@ -88,36 +88,47 @@ export const NavigatorLayout = observer(() => {
         <>
             <Navbar />
             <StyledSidebar>
-                <StyledSidebarItem
-                    to={''}
-                    selected={!!matchPath('', pathname)}
-                    title={'Navigate to app catalog'}
-                >
-                    <Icon>
-                        <LibraryBooksOutlined />
-                    </Icon>
-                </StyledSidebarItem>
+                <Tooltip title={`Open App Library`} placement="right">
+                    <StyledSidebarItem
+                        to={''}
+                        selected={!!matchPath('', pathname)}
+                        aria-label={'Navigate to app library'}
+                    >
+                        <Icon>
+                            <LibraryBooksOutlined />
+                        </Icon>
+                    </StyledSidebarItem>
+                </Tooltip>
                 <StyledSidebarDivider />
                 {ENGINE_ROUTES.map((r) => (
-                    <StyledSidebarItem
+                    <Tooltip
+                        title={`Open ${r.name}`}
                         key={r.path}
-                        to={`engine/${r.path}`}
-                        selected={!!matchPath(`engine/${r.path}/*`, pathname)}
-                        title={`Navigate to ${r.name}`}
+                        placement="right"
                     >
-                        <Icon>{createElement(r.icon, {})}</Icon>
-                    </StyledSidebarItem>
+                        <StyledSidebarItem
+                            to={`engine/${r.path}`}
+                            selected={
+                                !!matchPath(`engine/${r.path}/*`, pathname)
+                            }
+                            aria-label={`Navigate to ${r.name}`}
+                        >
+                            <Icon>{createElement(r.icon, {})}</Icon>
+                        </StyledSidebarItem>
+                    </Tooltip>
                 ))}
                 <Stack flex={1}>&nbsp;</Stack>
-                <StyledSidebarItem
-                    to={'settings'}
-                    selected={!!matchPath('settings/*', pathname)}
-                    title={'Navigate to settings'}
-                >
-                    <Icon>
-                        <Settings />
-                    </Icon>
-                </StyledSidebarItem>
+                <Tooltip title={`Open Settings`} placement="right">
+                    <StyledSidebarItem
+                        to={'settings'}
+                        selected={!!matchPath('settings/*', pathname)}
+                        aria-label={'Navigate to settings'}
+                    >
+                        <Icon>
+                            <Settings />
+                        </Icon>
+                    </StyledSidebarItem>
+                </Tooltip>
             </StyledSidebar>
             <StyledContent>
                 <Outlet />
