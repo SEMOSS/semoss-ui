@@ -15,20 +15,26 @@ import { ArrowCircleDown, Create } from '@mui/icons-material';
 import { usePixel, useEngine, useRootStore } from '@/hooks';
 import { Section } from '@/components/ui';
 import { Metamodel } from '@/components/metamodel';
+import { MetamodelToolbar } from '@/components/metamodel/MetamodelToolbar';
+import { MetamodelNav } from '@/components/metamodel/MetamodelNav';
+import { MetamodelContext } from '@/contexts';
 
 const StyledPage = styled('div')(() => ({
     position: 'relative',
     zIndex: '0',
 }));
 
-const StyledMetamodelContainer = styled('section')(({ theme }) => ({
-    height: '55vh',
-    width: '100%',
-    borderWidth: '1px',
-    borderStyle: 'solid',
-    // borderColor: theme.palette.outline, // TODO: create a theme variable
-    borderRadius: theme.shape.borderRadius,
-}));
+const StyledMetamodelContainer = styled('section')(({ theme }) => {
+    const shape = theme.shape as unknown as {
+        borderRadiusNone: string;
+    };
+    return {
+        display: 'flex',
+        height: '70vh',
+        width: '100%',
+        borderRadius: shape.borderRadiusNone,
+    };
+});
 
 const StyledTableContainer = styled(Table.Container)(() => ({
     height: '396px',
@@ -112,7 +118,13 @@ export const EngineMetadataPage = observer(() => {
             }
 
             // extract the required information
-            const { nodes = [], positions = {} } = getDatabaseMetamodel.data;
+            const {
+                nodes = [],
+                positions = {},
+                dataTypes,
+                additionalDataTypes,
+                physicalTypes,
+            } = getDatabaseMetamodel.data;
 
             return nodes.map((n) => {
                 const node = n.conceptualName;
@@ -128,7 +140,15 @@ export const EngineMetadataPage = observer(() => {
                             return {
                                 id: property,
                                 name: String(p).replace(/_/g, ' '),
-                                type: '',
+                                type: dataTypes[property]
+                                    ? dataTypes[property]
+                                    : '',
+                                physicalType: physicalTypes[property]
+                                    ? physicalTypes[property]
+                                    : '',
+                                specificFormat: additionalDataTypes[property]
+                                    ? additionalDataTypes[property]
+                                    : '',
                             };
                         }),
                     },
@@ -227,24 +247,10 @@ export const EngineMetadataPage = observer(() => {
                 >
                     Metamodel
                 </Section.Header>
+
+                <MetamodelToolbar />
+
                 <Stack spacing={2}>
-                    {/* <StyledSelect
-                        value={selectedNode || ''}
-                        onChange={(e) => {
-                            setSelectedNode(e.target.value as MetamodelNode);
-                        }}
-                        renderValue={(n: MetamodelNode) => n.data.name}
-                        multiple={false}
-                    >
-                        {nodes.map((n) => {
-                            return (
-                                //@ts-expect-error This is an error in the component
-                                <MenuItem key={n.id} value={n}>
-                                    {n.data.name}
-                                </MenuItem>
-                            );
-                        })}
-                    </StyledSelect> */}
                     <StyledMetamodelContainer>
                         <Metamodel
                             nodes={nodes}
@@ -259,7 +265,7 @@ export const EngineMetadataPage = observer(() => {
                 </Stack>
             </Section>
 
-            {selectedNode && (
+            {/* {selectedNode && (
                 <Section>
                     <Section.Header>Description</Section.Header>
                     <Typography variant="body2">{description}</Typography>
@@ -435,7 +441,7 @@ export const EngineMetadataPage = observer(() => {
                         </Table>
                     </StyledTableContainer>
                 </Section>
-            )}
+            )} */}
         </StyledPage>
     );
 });

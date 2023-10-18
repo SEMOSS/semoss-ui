@@ -2,6 +2,10 @@ import { TextField as MuiTextField, SxProps } from "@mui/material";
 
 export interface SelectProps {
     /**
+     * this prop is currently added to solve an issue in Metamodel.tsx use of reactflow package
+     */
+    className?: string;
+    /**
      * This prop helps users to fill forms faster, especially on mobile devices.
      * The name can be confusing, as it's more like an autofill.
      * You can learn more about it [following the specification](https://html.spec.whatwg.org/multipage/form-control-infrastructure.html#autofill).

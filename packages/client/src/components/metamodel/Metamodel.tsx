@@ -1,33 +1,23 @@
-import { useCallback, useState, useEffect } from 'react';
-import ReactFlow, { MiniMap, Controls, Node, Edge } from 'react-flow-renderer';
+import { useCallback, useState, useEffect, useRef } from 'react';
+import ReactFlow, {
+    MiniMap,
+    Controls,
+    Node,
+    Edge,
+    ReactFlowProvider,
+    Background,
+    BackgroundVariant,
+} from 'react-flow-renderer';
 import Panel from 'react-flow-renderer';
 import { Button, styled } from '@semoss/ui';
 import { MetamodelNode } from './MetamodelNode';
 import { FloatingEdge } from './FloatingEdge';
 import { MetamodelContext, MetamodelContextType } from '@/contexts';
 
-const StyledMetamodelPage = styled('div')(() => ({
-    display: 'flex',
-    width: '1271px',
-    height: '1032px',
-    padding: 'var(--spacing-spacing-08, 40px) 0px 20px 0px',
-    alignItems: 'flex-start',
-    gap: 'var(--spacing-spacing-05, 16px)',
-    flexShrink: 0,
-}));
-const StyledMetamodelContainer = styled('div')(() => ({
-    display: 'flex',
-    height: '785px',
-    flexDirection: 'column',
-    alignItems: 'flex-start',
-    gap: '24px',
-    flexShrink: 0,
-    alignSelf: 'stretch',
-}));
-const defaultViewport = { x: 0, y: 0, zoom: 1.5 };
-
-// const StyledReactFlowContainer = styled('div')(() => ({
-// }));
+import { MetamodelToolbar } from './MetamodelToolbar';
+import { format } from 'path';
+import { MetamodelNav } from './MetamodelNav';
+import { MetamodelEditMenu } from './MetamodelEditMenu';
 
 const edgeTypes = {
     floating: FloatingEdge,
@@ -40,6 +30,10 @@ const nodeTypes = {
 export type MetamodelNode = Node<
     React.ComponentProps<typeof MetamodelNode>['data']
 >;
+
+interface FormattedNode extends MetamodelNode {
+    nodeIndex?: number;
+}
 
 interface MetamodelProps {
     /** Nodes to render in the metamodel */
@@ -57,6 +51,9 @@ interface MetamodelProps {
 
     /** boolean to determine if metamodel can be modified */
     isInteractive?: boolean;
+
+    /** number to track width of the metamodel nav component to adjust styling/width of the react-flow component */
+    navWidth?: any;
 }
 
 // depending on the type of action, functionality will be different
@@ -76,6 +73,7 @@ export const Metamodel = (props: MetamodelProps) => {
         callback,
         isInteractive,
     } = props;
+    const [navWidth, setNavWidth] = useState(4.12);
 
     // node is {
     //     data: { name: 'table', properties: [{ id: 'colid', name: 'colname', type: 'coltype' }] },
@@ -90,6 +88,12 @@ export const Metamodel = (props: MetamodelProps) => {
     //     target: 'tableTo',
     //     type: 'floating'
     // };
+    const formattedNodes = [];
+    for (let i = 0; i < nodes.length; i++) {
+        const tempNode: FormattedNode = nodes[i];
+        tempNode.nodeIndex = i;
+        formattedNodes.push(tempNode as any);
+    }
 
     const [originalData, setOriginalData] = useState({
         nodes: nodes,
@@ -170,6 +174,7 @@ export const Metamodel = (props: MetamodelProps) => {
         ),
         isInteractive: isInteractive,
         updateData: updateData,
+        navWidth: navWidth, // track width of the metamodelNav component
     };
 
     const onSubmit = () => {
@@ -215,70 +220,112 @@ export const Metamodel = (props: MetamodelProps) => {
 
         // build dataTypeMap for each table
         for (const node of data.nodes) {
-            console.log('node: ', node);
-            // const temp = { [node.data.name]: [] };
-            // const temp = [];
             for (const col of node.data.properties) {
                 payloadObj.dataTypeMap[col.name] = col.type;
-                // temp[node.data.name].push(col.name);
-                // if (idx === 0) {
-                // no-op to skip pushing in the first column bc nodeProp does not accept the first column !!! Need to figure out why?
-                // } else {
-                // if (node.data.properties.length <= 1) {
-                //     // no-op
-                // } else {
-                //     temp.push(col.name);
-                // }
-                // }
             }
 
             payloadObj.metamodel.nodeProp[node.data.name] = [];
         }
-
-        // callback(payloadObj);
         callback(payloadObj);
     };
 
-    return (
-        <MetamodelContext.Provider value={metamodelContext}>
-            <ReactFlow
-                defaultNodes={nodes}
-                defaultEdges={edges}
-                nodeTypes={nodeTypes}
-                edgeTypes={edgeTypes}
-                fitView={true}
-            >
-                {/* <Panel>
-                    <Button
-                        onClick={() => {
-                            onSubmit();
-                        }}
-                    >
-                        Apply
-                    </Button>
-                </Panel> */}
-                <MiniMap />
-                <Controls showInteractive={false} />
-            </ReactFlow>
+    const StyledImportButton = styled(Button)(({ theme }) => ({
+        position: 'absolute',
+        bottom: 0,
+        right: 0,
+        display: 'flex',
+        flexDirection: 'column',
+        justifyContent: 'center',
+        alignItems: 'center',
+        background: theme.palette.primary.main,
+        color: 'var(--light-primary-contrast, #FFF)',
+    }));
 
-            {callback && (
-                <Button
-                    onClick={() => {
-                        onSubmit();
+    /** Need to make the state of the nav (open/closed) available to this Metamodel component to determine width of the reactflow */
+    const reactFlowWidth = 100 - navWidth;
+    useEffect(() => {
+        console.log('metamodelContext: ', metamodelContext);
+    }, [navWidth]);
+
+    return (
+        <>
+            <MetamodelContext.Provider value={metamodelContext}>
+                <div
+                    style={{
+                        height: '100vh',
+                        width: '100%',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        justifyContent: 'space-between',
+                        marginTop: '10px',
                     }}
                 >
-                    Apply
-                </Button>
-            )}
-        </MetamodelContext.Provider>
+                    <div
+                        style={{
+                            display: 'flex',
+                            height: '70vh',
+                            width: '100%',
+                        }}
+                    >
+                        <div
+                            style={{
+                                width: `${navWidth}%`,
+                                height: '100%',
+                            }}
+                        >
+                            <MetamodelNav
+                                setNavWidth={setNavWidth}
+                                nodes={formattedNodes}
+                            />
+                        </div>
+                        <div
+                            style={{
+                                position: 'relative',
+                                width: `${reactFlowWidth}%`,
+                                minWidth: `${reactFlowWidth}%`,
+                                height: '100%',
+                            }}
+                        >
+                            <div
+                                style={{
+                                    position: 'absolute',
+                                    left: '0',
+                                    top: '0',
+                                    minWidth: '100%',
+                                    height: '100%',
+                                    overflow: 'auto',
+                                }}
+                            >
+                                <ReactFlow
+                                    defaultNodes={formattedNodes}
+                                    defaultEdges={edges}
+                                    nodeTypes={nodeTypes}
+                                    edgeTypes={edgeTypes}
+                                    // defaultPosition={[-300, 0]}
+                                    fitView={true}
+                                >
+                                    <Background
+                                        variant={BackgroundVariant.Dots}
+                                    />
+                                    <MiniMap nodeStrokeWidth={3} />
+                                    <Controls />
+                                </ReactFlow>
+                            </div>
+                        </div>
+                    </div>
+                    <div
+                        style={{
+                            width: '100%',
+                        }}
+                    >
+                        <MetamodelEditMenu
+                            node={
+                                selectedNode ? selectedNode : formattedNodes[0]
+                            }
+                        />
+                    </div>
+                </div>
+            </MetamodelContext.Provider>
+        </>
     );
 };
-
-/** CHANGES MADE:
- * made onSelectNode an option prop in MetamodelProps
- *  removed arg / prop in CSVForm calling Metamodel component bc it was null and caused error. And the function is not needed in the CSVForm
- *
- */
-
-// OBSERVATION: metamodel in legacy gives the table a primary key column that matches the table name...
-// dataType map needs to include the primary key for all tables

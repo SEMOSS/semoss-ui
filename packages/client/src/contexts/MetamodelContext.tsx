@@ -12,6 +12,8 @@ export type MetamodelContextType = {
     isInteractive: boolean;
     /** update metamodel state */
     updateData: (nodeData: any, action: string) => void;
+    /** number to track width of metamodel nav component to update width of react-flow component */
+    navWidth: any;
 };
 
 /**
