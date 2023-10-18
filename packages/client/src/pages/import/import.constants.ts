@@ -43,6 +43,7 @@ import GOOGLE_DRIVE from '@/assets/img/GOOGLE_DRIVE.png';
 import ONEDRIVE from '@/assets/img/ONEDRIVE.png';
 import AZURE_BLOB from '@/assets/img/AZURE_BLOB.png';
 import MINIO from '@/assets/img/MINIO.png';
+import CEPH from '@/assets/img/CEPH.png';
 import SFTP from '@/assets/img/SFTP.png';
 //Commercial Models
 import OPEN_AI from '@/assets/img/OPEN_AI.png';
@@ -7843,6 +7844,73 @@ export const CONNECTION_OPTIONS = {
                         defaultValue: '',
                         options: {
                             component: 'password',
+                        },
+                        disabled: false,
+                        rules: { required: false },
+                    },
+                ],
+            },
+            {
+                name: 'CEPH',
+                disable: false,
+                icon: CEPH,
+                fields: [
+                    {
+                        fieldName: 'STORAGE_TYPE',
+                        label: 'Storage Type',
+                        defaultValue: 'CEPH',
+                        options: {
+                            component: 'text-field',
+                        },
+                        disabled: true,
+                        rules: { required: true },
+                    },
+                    {
+                        fieldName: 'NAME',
+                        label: 'Name',
+                        defaultValue: '',
+                        options: {
+                            component: 'text-field',
+                        },
+                        disabled: false,
+                        rules: { required: true },
+                    },
+                    {
+                        fieldName: 'CEPH_ACCESS_KEY',
+                        label: 'Access Key',
+                        defaultValue: '',
+                        options: {
+                            component: 'text-field',
+                        },
+                        disabled: false,
+                        rules: { required: true },
+                    },
+                    {
+                        fieldName: 'CEPH_SECRET_KEY',
+                        label: 'Secret Key',
+                        defaultValue: '',
+                        options: {
+                            component: 'password',
+                        },
+                        disabled: false,
+                        rules: { required: true },
+                    },
+                    {
+                        fieldName: 'CEPH_ENDPOINT',
+                        label: 'Endpoint',
+                        defaultValue: '',
+                        options: {
+                            component: 'text-field',
+                        },
+                        disabled: false,
+                        rules: { required: true },
+                    },
+                    {
+                        fieldName: 'CEPH_BUCKET',
+                        label: 'Root Bucket Path',
+                        defaultValue: '',
+                        options: {
+                            component: 'text-field',
                         },
                         disabled: false,
                         rules: { required: false },
