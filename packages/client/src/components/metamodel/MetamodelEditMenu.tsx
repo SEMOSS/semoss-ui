@@ -444,7 +444,7 @@ export const MetamodelEditMenu = ({ node }) => {
                 <Table.Body>
                     {fields.length
                         ? fields.map((col, colIdx) => (
-                              <Table.Row key={col.name}>
+                              <Table.Row key={colIdx}>
                                   <Table.Cell>{colIdx}</Table.Cell>
                                   <Table.Cell component="th" scope="row">
                                       {/* <StyledEditTextCell> */}
@@ -464,7 +464,7 @@ export const MetamodelEditMenu = ({ node }) => {
                                                               },
                                                           },
                                                       }}
-                                                      key={field.id}
+                                                      key={`${colIdx}_field`}
                                                       variant="outlined"
                                                       disabled={!canEdit}
                                                       value={
