@@ -5,7 +5,7 @@ import { LoadingScreen } from '@/components/ui';
 import { ImportContext, ImportContextType } from '@/contexts';
 import { CONNECTION_OPTIONS } from './import.constants';
 
-export const ImportLayout = () => {
+export const ImportLayout = (props) => {
     const [isLoading, setIsLoading] =
         useState<ImportContextType['isLoading']>(false);
     const [internalSteps, setInternalSteps] = useState<

@@ -81,7 +81,7 @@ const StyledContent = styled('div')(() => ({
 /**
  * Wrap the routes with a side navigation
  */
-export const NavigatorLayout = observer(() => {
+export const NavigatorLayout = observer((props) => {
     const { pathname } = useLocation();
 
     return (
@@ -131,7 +131,9 @@ export const NavigatorLayout = observer(() => {
                 </Tooltip>
             </StyledSidebar>
             <StyledContent>
-                <Outlet />
+                {/* TODO - Review this: */}
+                {/* I would like to wrap AddAppPage in NavigatorLayout and use the Outlet, quick fix using children if children */}
+                {props.children ? props.children : <Outlet />}
             </StyledContent>
         </>
     );

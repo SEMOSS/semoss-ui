@@ -6,12 +6,12 @@ import { useRootStore } from '@/hooks';
 
 import { useImport } from '@/hooks';
 
-const StyledBox = styled(Box)({
+const StyledBox = styled(Box)(({ theme }) => ({
     boxShadow: '0px 5px 22px 0px rgba(0, 0, 0, 0.06)',
     width: '100%',
     padding: '16px 16px 16px 16px',
     marginBottom: '32px',
-});
+}));
 
 export const ImportConnectionPage = () => {
     const { monolithStore } = useRootStore();
@@ -145,7 +145,7 @@ export const ImportConnectionPage = () => {
             //     HEADERS: { 'Content-Type': 'application/json' },
             //     CONTENT_TYPE: 'JSON',
             //     FUNCTION_REQUIRED_PARAMETERS: ['number1', 'number2'],
-            //     FUNCTION_PARAMETERS: [
+            //     FUNCTION_PARAMETERS: [ // Custom list of maps
             //         {
             //             parameterName: 'number1',
             //             parameterType: 'double',
