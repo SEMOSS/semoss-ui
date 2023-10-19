@@ -191,7 +191,9 @@ export const NewAppPage = () => {
             {/* 2. Next step in process is members and privacy: for everything in framework build App. */}
 
             {/* Step 3: */}
-            {/* Only Build App from Framework, get members*/}
+            {/* Only Build App from Framework, get members */}
+            {/* Or */}
+            {/* Take them to the editor, ui builder or prompt builder */}
         </Page>
     );
 };
