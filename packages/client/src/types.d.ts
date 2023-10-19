@@ -13,6 +13,21 @@ export interface PixelCommand {
     meta?: boolean;
 }
 
+/**
+ * All types used in the app
+ */
+export type ALL_TYPES = 'APP' | ENGINE_TYPES;
+
+/**
+ * Engine types used in the app
+ */
+export type ENGINE_TYPES =
+    | 'DATABASE'
+    | 'STORAGE'
+    | 'MODEL'
+    | 'VECTOR'
+    | 'FUNCTION';
+
 export type Join<K, P> = K extends string | number
     ? P extends string | number
         ? `${K}${'' extends P ? '' : '.'}${P}`

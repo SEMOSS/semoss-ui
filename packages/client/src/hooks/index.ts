@@ -3,7 +3,7 @@ import { useApp } from './useApp';
 import { useBlock } from './useBlock';
 import { useBlocks } from './useBlocks';
 import { useBlockSettings } from './useBlockSettings';
-import { useDatabase } from './useDatabase';
+import { useEngine } from './useEngine';
 import { useImport } from './useImport';
 import { useMetamodel } from './useMetamodel';
 import { useRootStore } from './useRootStore';
@@ -17,7 +17,7 @@ export {
     useBlock,
     useBlocks,
     useBlockSettings,
-    useDatabase,
+    useEngine,
     useImport,
     useMetamodel,
     useRootStore,
