@@ -2,7 +2,13 @@ import React, { useState, useRef, useEffect } from 'react';
 import { Node } from 'react-flow-renderer';
 import { MetamodelNode } from './MetamodelNode';
 import { Close, ExpandMore, KeyRounded } from '@mui/icons-material';
-import { useForm, Controller, useFieldArray, useWatch } from 'react-hook-form';
+import {
+    useForm,
+    Controller,
+    useFieldArray,
+    useWatch,
+    useFormState,
+} from 'react-hook-form';
 import { getDefaultOptions } from './utility';
 
 import {
@@ -17,11 +23,16 @@ import {
     Switch,
     FormControlLabel,
     Select,
+    TableCellProps,
 } from '@semoss/ui';
 
 import { useMetamodel } from '@/hooks';
 import { MetamodelContext, MetamodelContextType } from '@/contexts';
 import { TableContainer } from '@mui/material';
+
+type CustomTableCellProps = TableCellProps & {
+    isDirty?: boolean;
+};
 
 // type MetamodelNode = Node<React.ComponentProps<typeof MetamodelNode>['data']>;
 
@@ -38,13 +49,13 @@ import { TableContainer } from '@mui/material';
  * STYLING
  */
 
-export const MetamodelEditMenu = ({ node }) => {
+export const MetamodelEditMenu = ({ nodeData }) => {
     const [dataTypeOptions, setDataTypeOptions] = useState([]);
 
     const { selectedNodeId, onSelectNodeId, isInteractive, updateData } =
         useMetamodel();
 
-    const [nodeData, setNodeData] = useState({
+    const [initialNodeData, setInitialNodeData] = useState({
         data: {
             name: '',
             properties: [
@@ -70,38 +81,38 @@ export const MetamodelEditMenu = ({ node }) => {
         setValue,
         getValues,
         formState: { isDirty, dirtyFields },
+        handleSubmit,
     } = useForm({
         defaultValues: {
-            name: node?.data.name,
-            COLUMNS: node?.data.properties,
+            name: nodeData?.data.name,
+            COLUMNS: nodeData?.data.properties,
         },
     });
-    console.log('nodeData inside metamodel edit: ', nodeData);
-    const { fields } = useFieldArray({
+    console.log('nodeData inside metamodel edit: ', initialNodeData);
+    const { fields, append, remove } = useFieldArray({
         control,
         name: 'COLUMNS',
     });
 
     useEffect(() => {
-        setNodeData(node);
-        if (node?.data) {
-            setValue('COLUMNS', node.data.properties);
+        setInitialNodeData(nodeData);
+        if (nodeData?.data) {
+            setValue('COLUMNS', nodeData.data.properties);
         }
-    }, [node]);
+    }, [nodeData]);
 
     useEffect(() => {
         const temp = getDefaultOptions();
         setDataTypeOptions(temp);
     }, []);
 
-    console.log('fields are: ', fields);
-    // const nodeData = watch('NODE');
+    /** handle save click */
+    const onSubmit = (data) => {
+        console.log('data on save: ', data);
+    };
 
-    // get the metamodel nodes
-
-    // USE EFFECT: set active node
-
-    // create an option for each node
+    console.log('dirty fields: ', dirtyFields);
+    console.log('is dirty: ', isDirty);
 
     /** STYLES: METAMODEL NAV*/
 
@@ -156,7 +167,7 @@ export const MetamodelEditMenu = ({ node }) => {
     const StyledHeader = styled('div')(() => {
         return {
             display: 'flex',
-            padding: '0px 16px',
+            padding: '16px 16px',
             alignItems: 'center',
             alignSelf: 'stretch',
         };
@@ -401,6 +412,12 @@ export const MetamodelEditMenu = ({ node }) => {
         // alignmentSelf: 'stretch',
     }));
 
+    const StyledTableCell = styled(Table.Cell)<CustomTableCellProps>(
+        ({ isDirty }) => ({
+            // background: isDirty ? 'yellow !important' : 'inherit',
+        }),
+    );
+
     // const StyledSelect = styled(Select)(() => ({
     //     minWidth: '126px',
     //     // width: '126px',
@@ -414,123 +431,239 @@ export const MetamodelEditMenu = ({ node }) => {
      */
 
     /** Reset Draggable */
+
     return (
-        <TableContainer sx={{ width: '1100px', zIndex: 1 }} component={Paper}>
-            {nodeData ? (
-                <h2>Edit Table: {nodeData.data.name}</h2>
-            ) : (
-                <h2>
-                    Please select a table from above if you would like to view
-                    or edit table data
-                </h2>
-            )}
-            <FormControlLabel
-                sx={{ marginLeft: '9px', marginTop: '9px' }}
-                control={<Switch onChange={() => setCanEdit(!canEdit)} />}
-                label="Edit"
-            />
-            <Button
-                variant="contained"
-                sx={{ marginLeft: '9px', marginTop: '9px' }}
-                disabled={!isDirty}
-            >
-                Save Changes
-            </Button>
-            <Table>
-                <Table.Head>
-                    <Table.Row>
-                        <Table.Cell>ID</Table.Cell>
-                        <Table.Cell>Name</Table.Cell>
-                        {/* <Table.Cell>Alias</Table.Cell> */}
-                        {/* <Table.Cell>Description</Table.Cell> */}
-                        <Table.Cell>Data Type</Table.Cell>
-                        <Table.Cell>Primary Key</Table.Cell>
-                        <Table.Cell>Allow null</Table.Cell>
-                        <Table.Cell>Foreign Key</Table.Cell>
-                    </Table.Row>
-                </Table.Head>
-                <Table.Body>
-                    {fields.length
-                        ? fields.map((col, colIdx) => (
-                              <Table.Row key={colIdx}>
-                                  <Table.Cell>{colIdx}</Table.Cell>
-                                  <Table.Cell component="th" scope="row">
-                                      {/* <StyledEditTextCell> */}
-                                      <Controller
-                                          name={`COLUMNS.${colIdx}.name`}
-                                          control={control}
-                                          render={({ field }) => {
-                                              return (
-                                                  <StyledEditTextField
-                                                      size="small"
-                                                      sx={{
-                                                          styleOverrides: {
-                                                              root: {
-                                                                  borderRadius:
-                                                                      '8px',
-                                                                  border: '1px solid var(--light-other-outlined-border-23-p, rgba(0, 0, 0, 0.23))',
+        <TableContainer
+            sx={{
+                width: '100%',
+                zIndex: 1,
+                marginBottom: '20px',
+                boxShadow: '9px 5px 22px 0px #D6EAFF',
+            }}
+            component={Paper}
+        >
+            <form onSubmit={handleSubmit(onSubmit)}>
+                {initialNodeData ? (
+                    <StyledHeaderContainer>
+                        <StyledHeader>
+                            <StyledHeaderTitle variant="h6">
+                                {canEdit ? 'Edit' : 'View'} Table:{' '}
+                                {initialNodeData.data.name}
+                            </StyledHeaderTitle>
+                        </StyledHeader>
+                    </StyledHeaderContainer>
+                ) : (
+                    <StyledHeaderInstruction variant={'body1'}>
+                        Please select a table from above if you would like to
+                        view or edit table data
+                    </StyledHeaderInstruction>
+                )}
+                <FormControlLabel
+                    sx={{ marginLeft: '9px', marginTop: '9px' }}
+                    control={<Switch onChange={() => setCanEdit(!canEdit)} />}
+                    label="Edit"
+                />
+                <Button
+                    variant="contained"
+                    sx={{ marginLeft: '9px', marginTop: '9px' }}
+                    disabled={!isDirty}
+                >
+                    Save Changes
+                </Button>
+                <Table>
+                    <Table.Head>
+                        <Table.Row>
+                            <Table.Cell>ID</Table.Cell>
+                            <Table.Cell>Name</Table.Cell>
+                            {/* <Table.Cell>Alias</Table.Cell> */}
+                            {/* <Table.Cell>Description</Table.Cell> */}
+                            <Table.Cell>Data Type</Table.Cell>
+                            <Table.Cell>Primary Key</Table.Cell>
+                            <Table.Cell>Allow null</Table.Cell>
+                            <Table.Cell>Foreign Key</Table.Cell>
+                            <Table.Cell>Actions</Table.Cell>
+                        </Table.Row>
+                    </Table.Head>
+                    <Table.Body>
+                        {fields.length
+                            ? fields.map((col, colIdx) => (
+                                  <Table.Row key={col.id}>
+                                      <StyledTableCell>
+                                          {colIdx}
+                                      </StyledTableCell>
+                                      <StyledTableCell
+                                          component="th"
+                                          scope="row"
+                                          isDirty={
+                                              dirtyFields &&
+                                              dirtyFields?.COLUMNS?.length &&
+                                              dirtyFields[
+                                                  `COLUMNS[${colIdx}].name`
+                                              ]
+                                          }
+                                      >
+                                          {/* <StyledEditTextCell> */}
+                                          <Controller
+                                              name={`COLUMNS.${colIdx}.name`}
+                                              control={control}
+                                              render={({ field }) => {
+                                                  return (
+                                                      <StyledEditTextField
+                                                          size="small"
+                                                          sx={{
+                                                              styleOverrides: {
+                                                                  root: {
+                                                                      borderRadius:
+                                                                          '8px',
+                                                                      border: '1px solid var(--light-other-outlined-border-23-p, rgba(0, 0, 0, 0.23))',
+                                                                  },
                                                               },
-                                                          },
-                                                      }}
-                                                      key={`${colIdx}_field`}
-                                                      variant="outlined"
-                                                      disabled={!canEdit}
-                                                      value={
-                                                          field.value
-                                                              ? field.value
-                                                              : ''
-                                                      }
-                                                      onChange={(event) =>
-                                                          field.onChange(event)
-                                                      }
-                                                      onBlur={(e) => {
-                                                          const tempNodeData =
-                                                              nodeData;
+                                                          }}
+                                                          variant="outlined"
+                                                          disabled={!canEdit}
+                                                          {...field}
+                                                          //   value={
+                                                          //       field.value
+                                                          //           ? field.value
+                                                          //           : ''
+                                                          //   }
+                                                          //   onChange={(event) =>
+                                                          //       field.onChange(
+                                                          //           event,
+                                                          //       )
+                                                          //   }
+                                                          //   onBlur={(e) => {
+                                                          //       const tempNodeData =
+                                                          //           initialNodeData;
 
-                                                          tempNodeData.data.name =
-                                                              e.target.value;
-                                                          setNodeData({
-                                                              ...tempNodeData,
-                                                          });
-                                                      }}
-                                                  />
-                                              );
+                                                          //       tempNodeData.data.name =
+                                                          //           e.target.value;
+                                                          //       setInitialNodeData({
+                                                          //           ...tempNodeData,
+                                                          //       });
+                                                          //   }}
+                                                      />
+                                                  );
+                                              }}
+                                          />
+                                          {/* </StyledEditTextCell> */}
+                                          {/* {col.name} */}
+                                      </StyledTableCell>
+                                      <StyledTableCell
+                                          isDirty={
+                                              dirtyFields &&
+                                              dirtyFields?.COLUMNS?.length &&
+                                              dirtyFields[
+                                                  `COLUMNS[${colIdx}].type`
+                                              ]
+                                          }
+                                          sx={{
+                                              backgroundColor:
+                                                  dirtyFields &&
+                                                  dirtyFields[
+                                                      `COLUMNS[${colIdx}].type`
+                                                  ]
+                                                      ? 'yellow'
+                                                      : 'inherit',
                                           }}
-                                      />
-                                      {/* </StyledEditTextCell> */}
-                                      {/* {col.name} */}
-                                  </Table.Cell>
-                                  <Table.Cell>
-                                      <Controller
-                                          control={control}
-                                          name={`COLUMNS.${colIdx}.type`}
-                                          render={({ field }) => (
-                                              <StyledSelect
-                                                  key={`${col.id}_type`}
-                                                  fullWidth
-                                                  className="nodrag"
-                                                  disabled={!canEdit}
-                                                  value={
-                                                      field.value
-                                                          ? field.value
-                                                          : ''
-                                                  }
-                                                  onChange={(event) => {
-                                                      field.onChange(event);
+                                      >
+                                          <Controller
+                                              control={control}
+                                              name={`COLUMNS.${colIdx}.type`}
+                                              render={({ field }) => (
+                                                  <StyledSelect
+                                                      key={`${col.id}_type`}
+                                                      fullWidth
+                                                      className="nodrag"
+                                                      disabled={!canEdit}
+                                                      {...field}
+                                                      //   value={
+                                                      //       field.value
+                                                      //           ? field.value
+                                                      //           : ''
+                                                      //   }
+                                                      //   onChange={(event) => {
+                                                      //       field.onChange(event);
 
-                                                      const tempNodeData =
-                                                          nodeData;
-                                                      tempNodeData.data.properties[
-                                                          colIdx
-                                                      ].type =
-                                                          event.target.value;
-                                                      setNodeData({
-                                                          ...tempNodeData,
-                                                      });
-                                                  }}
-                                              >
-                                                  {dataTypeOptions.map(
-                                                      (option, idx) => (
+                                                      //       const tempNodeData =
+                                                      //           nodeData;
+                                                      //       tempNodeData.data.properties[
+                                                      //           colIdx
+                                                      //       ].type =
+                                                      //           event.target.value;
+                                                      //       setInitialNodeData({
+                                                      //           ...tempNodeData,
+                                                      //       });
+                                                      //   }}
+                                                  >
+                                                      {dataTypeOptions.map(
+                                                          (option, idx) => (
+                                                              <Select.Item
+                                                                  key={`${idx}_first`}
+                                                                  value={
+                                                                      option.value
+                                                                  }
+                                                              >
+                                                                  {
+                                                                      option.display
+                                                                  }
+                                                              </Select.Item>
+                                                          ),
+                                                      )}
+                                                  </StyledSelect>
+                                              )}
+                                          />
+
+                                          {/* {col.type} */}
+                                      </StyledTableCell>
+                                      <StyledTableCell
+                                          isDirty={
+                                              dirtyFields &&
+                                              dirtyFields?.COLUMNS?.length &&
+                                              dirtyFields[
+                                                  `COLUMNS[${colIdx}].isPrimary`
+                                              ]
+                                          }
+                                      >
+                                          <Controller
+                                              control={control}
+                                              name={`COLUMNS.${colIdx}.isPrimary`}
+                                              render={({ field }) => (
+                                                  <StyledSelect
+                                                      key={`${col.id}_isPrimary`}
+                                                      fullWidth
+                                                      className="nodrag"
+                                                      disabled={!canEdit}
+                                                      {...field}
+                                                      //   value={
+                                                      //       field.value
+                                                      //           ? field.value
+                                                      //           : ''
+                                                      //   }
+                                                      //   onChange={(event) => {
+                                                      //       field.onChange(event);
+
+                                                      //       const tempNodeData =
+                                                      //           nodeData;
+                                                      //       tempNodeData.data.properties[
+                                                      //           colIdx
+                                                      //       ].isPrimary =
+                                                      //           event.target.value;
+                                                      //       setInitialNodeData({
+                                                      //           ...tempNodeData,
+                                                      //       });
+                                                      //   }}
+                                                  >
+                                                      {[
+                                                          {
+                                                              value: 'true',
+                                                              display: 'True',
+                                                          },
+                                                          {
+                                                              value: 'false',
+                                                              display: 'False',
+                                                          },
+                                                      ].map((option, idx) => (
                                                           <Select.Item
                                                               key={`${idx}_first`}
                                                               value={
@@ -539,75 +672,41 @@ export const MetamodelEditMenu = ({ node }) => {
                                                           >
                                                               {option.display}
                                                           </Select.Item>
-                                                      ),
-                                                  )}
-                                              </StyledSelect>
-                                          )}
-                                      />
-
-                                      {/* {col.type} */}
-                                  </Table.Cell>
-                                  <Table.Cell>
-                                      <Controller
-                                          control={control}
-                                          name={`COLUMNS.${colIdx}.isPrimary`}
-                                          render={({ field }) => (
-                                              <StyledSelect
-                                                  key={`${col.id}_isPrimary`}
-                                                  fullWidth
-                                                  className="nodrag"
-                                                  disabled={!canEdit}
-                                                  value={
-                                                      field.value
-                                                          ? field.value
-                                                          : ''
-                                                  }
-                                                  onChange={(event) => {
-                                                      field.onChange(event);
-
-                                                      const tempNodeData =
-                                                          nodeData;
-                                                      tempNodeData.data.properties[
-                                                          colIdx
-                                                      ].isPrimary =
-                                                          event.target.value;
-                                                      setNodeData({
-                                                          ...tempNodeData,
-                                                      });
-                                                  }}
-                                              >
-                                                  {[
-                                                      {
-                                                          value: 'true',
-                                                          display: 'True',
-                                                      },
-                                                      {
-                                                          value: 'false',
-                                                          display: 'False',
-                                                      },
-                                                  ].map((option, idx) => (
-                                                      <Select.Item
-                                                          key={`${idx}_first`}
-                                                          value={option.value}
-                                                      >
-                                                          {option.display}
-                                                      </Select.Item>
-                                                  ))}
-                                              </StyledSelect>
-                                          )}
-                                      />
-
-                                      {/* {col.type} */}
-                                  </Table.Cell>
-                                  {/* <Table.Cell>True</Table.Cell> */}
-                                  <Table.Cell>False</Table.Cell>
-                                  <Table.Cell>NA</Table.Cell>
-                              </Table.Row>
-                          ))
-                        : null}
-                </Table.Body>
-            </Table>
+                                                      ))}
+                                                  </StyledSelect>
+                                              )}
+                                          />
+                                      </StyledTableCell>
+                                      <StyledTableCell>False</StyledTableCell>
+                                      <StyledTableCell>NA</StyledTableCell>
+                                      <StyledTableCell>
+                                          <Button
+                                              type="button"
+                                              disabled={!canEdit}
+                                              onClick={() => remove(colIdx)}
+                                          >
+                                              Delete
+                                          </Button>
+                                      </StyledTableCell>
+                                  </Table.Row>
+                              ))
+                            : null}
+                    </Table.Body>
+                </Table>
+                <Button
+                    type="button"
+                    disabled={!canEdit}
+                    onClick={() => append({})}
+                >
+                    Add Column
+                </Button>
+                <Button type="submit" disabled={!isDirty}>
+                    Save
+                </Button>
+            </form>
         </TableContainer>
+
+        /** VERTICAL PANEL VERSION OF EDIT METAMODEL */
         // <StyledContainer>
         //     <StyledHeaderContainer>
         //         <StyledHeader>

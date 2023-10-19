@@ -252,12 +252,13 @@ export const Metamodel = (props: MetamodelProps) => {
             <MetamodelContext.Provider value={metamodelContext}>
                 <div
                     style={{
-                        height: '100vh',
+                        height: '100%',
                         width: '100%',
                         display: 'flex',
                         flexDirection: 'column',
-                        justifyContent: 'space-between',
-                        marginTop: '10px',
+                        // justifyContent: 'space-between',
+                        gap: '60px',
+                        marginTop: '16px',
                     }}
                 >
                     <div
@@ -265,6 +266,8 @@ export const Metamodel = (props: MetamodelProps) => {
                             display: 'flex',
                             height: '70vh',
                             width: '100%',
+                            // justifyContent: 'space-between',
+                            // marginBottom: '16px',
                         }}
                     >
                         <div
@@ -284,6 +287,7 @@ export const Metamodel = (props: MetamodelProps) => {
                                 width: `${reactFlowWidth}%`,
                                 minWidth: `${reactFlowWidth}%`,
                                 height: '100%',
+                                marginLeft: '10px',
                             }}
                         >
                             <div
@@ -316,10 +320,12 @@ export const Metamodel = (props: MetamodelProps) => {
                     <div
                         style={{
                             width: '100%',
+                            // marginTop: '20px',
+                            // marginBottom: '20px',
                         }}
                     >
                         <MetamodelEditMenu
-                            node={
+                            nodeData={
                                 selectedNode ? selectedNode : formattedNodes[0]
                             }
                         />

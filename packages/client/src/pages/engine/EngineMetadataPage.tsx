@@ -30,8 +30,9 @@ const StyledMetamodelContainer = styled('section')(({ theme }) => {
     };
     return {
         display: 'flex',
-        height: '70vh',
+        // height: '70vh',
         width: '100%',
+
         borderRadius: shape.borderRadiusNone,
     };
 });
@@ -233,7 +234,7 @@ export const EngineMetadataPage = observer(() => {
 
     return (
         <StyledPage>
-            <Section>
+            <Section style={{ height: '100%' }}>
                 <Section.Header
                     actions={
                         <Button
@@ -251,6 +252,7 @@ export const EngineMetadataPage = observer(() => {
                 <MetamodelToolbar />
 
                 <Stack spacing={2}>
+                    stack
                     <StyledMetamodelContainer>
                         <Metamodel
                             nodes={nodes}
@@ -264,7 +266,6 @@ export const EngineMetadataPage = observer(() => {
                     </StyledMetamodelContainer>
                 </Stack>
             </Section>
-
             {/* {selectedNode && (
                 <Section>
                     <Section.Header>Description</Section.Header>
