@@ -12,6 +12,8 @@
     NODE_ENV=development
 ```
 
+** Note: in this example the filepath for semoss-ui os `C:\workspace\apache-tomcat-9.0.73\webapps\semoss-ui` and the filepath for vha-supply is `C:\workspace\vha-supply`
+
 2. run `pnpm install` in root directory
 
 3. run `pnpm run dev`, this may take a while, wait until it is finished / compiled, check `package.json` for other pnpm startup scripts
