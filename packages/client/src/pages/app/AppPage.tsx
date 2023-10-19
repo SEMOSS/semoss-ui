@@ -106,6 +106,8 @@ export const AppPage = observer(() => {
 
     /**
      * Effects
+     * TODO - See what type of App we have
+     * UI Builder or Template (code-editor)
      */
     useEffect(() => {
         getAppPermission();
