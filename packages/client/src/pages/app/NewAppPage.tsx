@@ -53,7 +53,10 @@ export const NewAppPage = () => {
                                 const step = {
                                     title: 'Build App',
                                     description: 'Build App with framework',
-                                    data: 'Framework build',
+                                    data: {
+                                        type: 'template',
+                                        title: 'Framework build',
+                                    },
                                 };
 
                                 setActiveStep(0);
@@ -69,7 +72,10 @@ export const NewAppPage = () => {
                                 const step = {
                                     title: 'Import App',
                                     description: 'Create app with UI Builder',
-                                    data: 'import',
+                                    data: {
+                                        type: 'template',
+                                        title: 'Import',
+                                    },
                                 };
 
                                 setActiveStep(0);
@@ -88,9 +94,21 @@ export const NewAppPage = () => {
                 <div>
                     <StyledCard
                         onClick={() => {
-                            console.log(
-                                'Just create App with an empty zip, and then redirect to /app/39369823',
-                            );
+                            const step = {
+                                title: 'Blank Template',
+                                description: 'Create app with prompt builder',
+                                data: {
+                                    type: 'template',
+                                    title: 'Blank Template',
+                                },
+                            };
+
+                            setActiveStep(0);
+                            setSteps([step], 0);
+
+                            // console.log(
+                            //     'Just create App with an empty zip, and then redirect to /app/39369823',
+                            // );
                         }}
                     >
                         Blank Template
@@ -100,7 +118,10 @@ export const NewAppPage = () => {
                             const step = {
                                 title: 'Prompt Builder',
                                 description: 'Create app with prompt builder',
-                                data: 'Prompt builder',
+                                data: {
+                                    type: 'Prompt',
+                                    title: 'Prompt builder',
+                                },
                             };
 
                             setActiveStep(0);
@@ -114,47 +135,97 @@ export const NewAppPage = () => {
                             const step = {
                                 title: 'UI Builder',
                                 description: 'Create app with UI Builder',
-                                data: 'Ui Builder',
+                                data: {
+                                    type: 'UI-Builder',
+                                    title: 'UI Builder',
+                                },
                             };
 
                             setActiveStep(0);
                             setSteps([step], 0);
                         }}
                     >
-                        Ui Builder
+                        UI Builder
+                    </StyledCard>
+
+                    <StyledCard
+                        onClick={() => {
+                            const step = {
+                                title: 'Template App',
+                                description: 'Create app with template',
+                                data: {
+                                    type: 'Template App',
+                                    title: 'Template App',
+                                    options: 'placeholder id: 8913971',
+                                },
+                            };
+
+                            setActiveStep(0);
+                            setSteps([step], 0);
+                        }}
+                    >
+                        Placeholder Template
                     </StyledCard>
                 </div>
             ) : null}
 
             {/* Step 1 - Create App via whatever process, with meta data like name and such */}
-            {steps.length === 1 && steps[0].title === 'UI Builder' ? (
-                <div> UI Builder Component</div>
-            ) : null}
-
-            {steps.length === 1 && steps[0].title === 'Prompt Builder' ? (
-                <div> Prompt Builder Component</div>
-            ) : null}
-
-            {steps.length === 1 && steps[0].title === 'Import App' ? (
-                <ImportAppPage />
-            ) : null}
-
-            {steps.length === 1 && steps[0].title === 'Build App' ? (
-                <ImportAppPage /> // Can be shared really just creates App
-            ) : null}
-
-            {steps.length === 1 && steps[0].title === 'Template App' ? (
-                <ImportAppPage /> // Can be shared really just creates App
+            {steps.length === 1 ? (
+                <ImportAppPage
+                    onCreate={(appId) => {
+                        console.log(
+                            'Set step for created app and move to permissions or for framework app get engines to have access to in app',
+                        );
+                    }}
+                    data={{
+                        type: steps[0].title,
+                        options: steps[0].data.options,
+                    }}
+                />
             ) : null}
             {/* End of Step 1: ----------------------- */}
 
             {/* Step 2:  App has been created, privacy and other details*/}
-            {/* Framework Build App has an extra step for connecting Engines */}
+            {/* 1. Framework Build App has an extra step for connecting Engines */}
 
-            {/* Next step in process is members and privacy: for everything in framework build App. */}
+            {/* 2. Next step in process is members and privacy: for everything in framework build App. */}
 
             {/* Step 3: */}
-            {/* Only Build App from Framework, get members*/}
+            {/* Only Build App from Framework, get members */}
+            {/* Or */}
+            {/* Take them to the editor, ui builder or prompt builder */}
         </Page>
     );
 };
+
+// {steps.length === 1 && steps[0].title === 'UI Builder' ? (
+//     <div> UI Builder Component</div>
+// ) : null}
+
+// {steps.length === 1 && steps[0].title === 'Prompt Builder' ? (
+//     <div> Prompt Builder Component</div>
+// ) : null}
+
+// {steps.length === 1 && steps[0].title === 'Build App' ? (
+//     <ImportAppPage
+//         onCreate={(appId) => {
+//             console.log(
+//                 'Set Step for created app and move to permissions',
+//             );
+//         }}
+//     /> // Can be shared really just creates App
+// ) : null}
+
+// {steps.length === 1 && steps[0].title === 'Template App' ? (
+//     <ImportAppPage
+//         onCreate={(appId) => {
+//             console.log(
+//                 'Set Step for created app and move to permissions',
+//             );
+//         }}
+//     /> // Can be shared really just creates App
+// ) : null}
+
+// {steps.length === 1 && steps[0].title === 'Blank Template' ? (
+//     <ImportAppPage /> // Can be shared really just creates App
+// ) : null}
