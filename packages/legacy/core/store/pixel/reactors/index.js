@@ -5022,7 +5022,7 @@ const REACTORS = {
         filter
     ) {
         var query = '';
-        query += 'MyDatabases(';
+        query += 'MyEngines(engineTypes=["DATABASE"],';
 
         if (typeof onlyFavorites !== 'undefined') {
             query += `onlyFavorites=[${onlyFavorites}], `;
@@ -5070,7 +5070,7 @@ const REACTORS = {
         filter
     ) {
         var query = '';
-        query += 'MyDiscoverableDatabases(';
+        query += 'MyDiscoverableEngines(engineTypes=["DATABASE"],';
 
         if (typeof onlyFavorites !== 'undefined') {
             query += `onlyFavorites=[${onlyFavorites}], `;

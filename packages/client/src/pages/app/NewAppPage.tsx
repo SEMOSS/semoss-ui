@@ -1,11 +1,23 @@
 import React from 'react';
-import { Card, Button, Stack, Typography, styled } from '@semoss/ui';
+import {
+    Breadcrumbs,
+    Button,
+    Card,
+    Stack,
+    Typography,
+    styled,
+} from '@semoss/ui';
 import { Page } from '@/components/ui';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 
 import { useImport } from '@/hooks';
 
 import { ImportAppPage } from './ImportAppPage';
+
+const StyledLink = styled(Link)(() => ({
+    textDecoration: 'none',
+    color: 'inherit',
+}));
 
 const StyledCard = styled(Card)(({ theme }) => ({
     height: '300px',
@@ -24,7 +36,10 @@ export const NewAppPage = () => {
         <Page
             header={
                 <Stack>
-                    <div>Breadcrumb</div>
+                    <Breadcrumbs>
+                        <StyledLink to={`..`}>App Library</StyledLink>
+                        <StyledLink to={`.`}>Add App</StyledLink>
+                    </Breadcrumbs>
                     <Typography variant="h4">
                         {!steps.length ? 'Add App' : activeStep.title}
                     </Typography>
