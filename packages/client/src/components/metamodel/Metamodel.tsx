@@ -243,9 +243,6 @@ export const Metamodel = (props: MetamodelProps) => {
 
     /** Need to make the state of the nav (open/closed) available to this Metamodel component to determine width of the reactflow */
     const reactFlowWidth = 100 - navWidth;
-    useEffect(() => {
-        console.log('metamodelContext: ', metamodelContext);
-    }, [navWidth]);
 
     return (
         <>

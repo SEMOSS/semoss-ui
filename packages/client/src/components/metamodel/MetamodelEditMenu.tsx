@@ -77,9 +77,7 @@ export const MetamodelEditMenu = ({ nodeData }) => {
 
     const {
         control,
-        watch,
         setValue,
-        getValues,
         formState: { isDirty, dirtyFields },
         handleSubmit,
     } = useForm({
@@ -88,7 +86,6 @@ export const MetamodelEditMenu = ({ nodeData }) => {
             COLUMNS: nodeData?.data.properties,
         },
     });
-    console.log('nodeData inside metamodel edit: ', initialNodeData);
     const { fields, append, remove } = useFieldArray({
         control,
         name: 'COLUMNS',
@@ -111,11 +108,7 @@ export const MetamodelEditMenu = ({ nodeData }) => {
         console.log('data on save: ', data);
     };
 
-    console.log('dirty fields: ', dirtyFields);
-    console.log('is dirty: ', isDirty);
-
     /** STYLES: METAMODEL NAV*/
-
     const StyledContainer = styled('div')(({ theme }) => {
         const shape = theme.shape as unknown as {
             borderRadiusNone: string;
@@ -412,11 +405,9 @@ export const MetamodelEditMenu = ({ nodeData }) => {
         // alignmentSelf: 'stretch',
     }));
 
-    const StyledTableCell = styled(Table.Cell)<CustomTableCellProps>(
-        ({ isDirty }) => ({
-            // background: isDirty ? 'yellow !important' : 'inherit',
-        }),
-    );
+    const StyledTableCell = styled(Table.Cell)({
+        padding: '3px',
+    });
 
     // const StyledSelect = styled(Select)(() => ({
     //     minWidth: '126px',
@@ -486,29 +477,42 @@ export const MetamodelEditMenu = ({ nodeData }) => {
                     </Table.Head>
                     <Table.Body>
                         {fields.length
-                            ? fields.map((col, colIdx) => (
+                            ? fields.map((col, rowIndex) => (
                                   <Table.Row key={col.id}>
                                       <StyledTableCell>
-                                          {colIdx}
+                                          {rowIndex}
                                       </StyledTableCell>
                                       <StyledTableCell
                                           component="th"
                                           scope="row"
-                                          isDirty={
-                                              dirtyFields &&
-                                              dirtyFields?.COLUMNS?.length &&
-                                              dirtyFields[
-                                                  `COLUMNS[${colIdx}].name`
-                                              ]
-                                          }
                                       >
-                                          {/* <StyledEditTextCell> */}
                                           <Controller
-                                              name={`COLUMNS.${colIdx}.name`}
+                                              name={`COLUMNS.${rowIndex}.name`}
                                               control={control}
                                               render={({ field }) => {
                                                   return (
                                                       <StyledEditTextField
+                                                          value={
+                                                              field.value
+                                                                  ? field.value
+                                                                  : ''
+                                                          }
+                                                          onChange={(e) => {
+                                                              console.log(
+                                                                  'fid: ',
+                                                                  field,
+                                                              );
+                                                              console.log(
+                                                                  'etarget: ',
+                                                                  e.target,
+                                                              );
+                                                              field.onChange(
+                                                                  e.target
+                                                                      .value,
+                                                              );
+                                                          }}
+                                                          variant="outlined"
+                                                          disabled={!canEdit}
                                                           size="small"
                                                           sx={{
                                                               styleOverrides: {
@@ -517,84 +521,47 @@ export const MetamodelEditMenu = ({ nodeData }) => {
                                                                           '8px',
                                                                       border: '1px solid var(--light-other-outlined-border-23-p, rgba(0, 0, 0, 0.23))',
                                                                   },
+                                                                  borderRadius:
+                                                                      '8px',
+
+                                                                  backgroundColor:
+                                                                      dirtyFields &&
+                                                                      dirtyFields.COLUMNS &&
+                                                                      dirtyFields
+                                                                          .COLUMNS[
+                                                                          `${rowIndex}`
+                                                                      ]?.name
+                                                                          ? 'rgb(255, 213, 128)'
+                                                                          : 'transparent',
                                                               },
                                                           }}
-                                                          variant="outlined"
-                                                          disabled={!canEdit}
-                                                          {...field}
-                                                          //   value={
-                                                          //       field.value
-                                                          //           ? field.value
-                                                          //           : ''
-                                                          //   }
-                                                          //   onChange={(event) =>
-                                                          //       field.onChange(
-                                                          //           event,
-                                                          //       )
-                                                          //   }
-                                                          //   onBlur={(e) => {
-                                                          //       const tempNodeData =
-                                                          //           initialNodeData;
-
-                                                          //       tempNodeData.data.name =
-                                                          //           e.target.value;
-                                                          //       setInitialNodeData({
-                                                          //           ...tempNodeData,
-                                                          //       });
-                                                          //   }}
                                                       />
                                                   );
                                               }}
                                           />
-                                          {/* </StyledEditTextCell> */}
-                                          {/* {col.name} */}
                                       </StyledTableCell>
-                                      <StyledTableCell
-                                          isDirty={
-                                              dirtyFields &&
-                                              dirtyFields?.COLUMNS?.length &&
-                                              dirtyFields[
-                                                  `COLUMNS[${colIdx}].type`
-                                              ]
-                                          }
-                                          sx={{
-                                              backgroundColor:
-                                                  dirtyFields &&
-                                                  dirtyFields[
-                                                      `COLUMNS[${colIdx}].type`
-                                                  ]
-                                                      ? 'yellow'
-                                                      : 'inherit',
-                                          }}
-                                      >
+                                      <StyledTableCell>
                                           <Controller
                                               control={control}
-                                              name={`COLUMNS.${colIdx}.type`}
+                                              name={`COLUMNS.${rowIndex}.type`}
                                               render={({ field }) => (
                                                   <StyledSelect
-                                                      key={`${col.id}_type`}
                                                       fullWidth
                                                       className="nodrag"
                                                       disabled={!canEdit}
                                                       {...field}
-                                                      //   value={
-                                                      //       field.value
-                                                      //           ? field.value
-                                                      //           : ''
-                                                      //   }
-                                                      //   onChange={(event) => {
-                                                      //       field.onChange(event);
-
-                                                      //       const tempNodeData =
-                                                      //           nodeData;
-                                                      //       tempNodeData.data.properties[
-                                                      //           colIdx
-                                                      //       ].type =
-                                                      //           event.target.value;
-                                                      //       setInitialNodeData({
-                                                      //           ...tempNodeData,
-                                                      //       });
-                                                      //   }}
+                                                      sx={{
+                                                          borderRadius: '8px',
+                                                          backgroundColor:
+                                                              dirtyFields &&
+                                                              dirtyFields.COLUMNS &&
+                                                              dirtyFields
+                                                                  .COLUMNS[
+                                                                  `${rowIndex}`
+                                                              ]?.type
+                                                                  ? 'rgb(255, 213, 128)'
+                                                                  : 'transparent',
+                                                      }}
                                                   >
                                                       {dataTypeOptions.map(
                                                           (option, idx) => (
@@ -616,43 +583,34 @@ export const MetamodelEditMenu = ({ nodeData }) => {
 
                                           {/* {col.type} */}
                                       </StyledTableCell>
-                                      <StyledTableCell
-                                          isDirty={
-                                              dirtyFields &&
-                                              dirtyFields?.COLUMNS?.length &&
-                                              dirtyFields[
-                                                  `COLUMNS[${colIdx}].isPrimary`
-                                              ]
-                                          }
-                                      >
+                                      <StyledTableCell>
                                           <Controller
                                               control={control}
-                                              name={`COLUMNS.${colIdx}.isPrimary`}
+                                              name={`COLUMNS.${rowIndex}.isPrimary`}
                                               render={({ field }) => (
                                                   <StyledSelect
-                                                      key={`${col.id}_isPrimary`}
                                                       fullWidth
                                                       className="nodrag"
                                                       disabled={!canEdit}
+                                                      defaultValue={
+                                                          field.value ===
+                                                          undefined
+                                                              ? false
+                                                              : field.value
+                                                      }
                                                       {...field}
-                                                      //   value={
-                                                      //       field.value
-                                                      //           ? field.value
-                                                      //           : ''
-                                                      //   }
-                                                      //   onChange={(event) => {
-                                                      //       field.onChange(event);
-
-                                                      //       const tempNodeData =
-                                                      //           nodeData;
-                                                      //       tempNodeData.data.properties[
-                                                      //           colIdx
-                                                      //       ].isPrimary =
-                                                      //           event.target.value;
-                                                      //       setInitialNodeData({
-                                                      //           ...tempNodeData,
-                                                      //       });
-                                                      //   }}
+                                                      sx={{
+                                                          borderRadius: '8px',
+                                                          backgroundColor:
+                                                              dirtyFields &&
+                                                              dirtyFields.COLUMNS &&
+                                                              dirtyFields
+                                                                  .COLUMNS[
+                                                                  `${rowIndex}`
+                                                              ]?.isPrimary
+                                                                  ? 'rgb(255, 213, 128)'
+                                                                  : 'transparent',
+                                                      }}
                                                   >
                                                       {[
                                                           {
@@ -679,11 +637,13 @@ export const MetamodelEditMenu = ({ nodeData }) => {
                                       </StyledTableCell>
                                       <StyledTableCell>False</StyledTableCell>
                                       <StyledTableCell>NA</StyledTableCell>
-                                      <StyledTableCell>
+                                      <StyledTableCell
+                                      //   key={`${col.id}_${rowIndex}_action`}
+                                      >
                                           <Button
                                               type="button"
                                               disabled={!canEdit}
-                                              onClick={() => remove(colIdx)}
+                                              onClick={() => remove(rowIndex)}
                                           >
                                               Delete
                                           </Button>

@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useState, useRef, Fragment } from 'react';
 import { NodeProps, Handle, Position } from 'react-flow-renderer';
 import { useForm, Controller, useFieldArray, useWatch } from 'react-hook-form';
 
@@ -572,16 +572,10 @@ const _MetamodelNode = (props: MetamodelNodeProps) => {
 
     const StyledSelect = styled(Select)(() => ({
         minWidth: '126px',
-        // width: '126px',
         alignmentSelf: 'stretch',
     }));
 
-    useEffect(() => {
-        console.log('new node data: ', nodeData);
-    }, [nodeData]);
-
     /** Reset Draggable */
-
     if (selectedNodeId === id) {
         return (
             <form>
@@ -797,7 +791,7 @@ const _MetamodelNode = (props: MetamodelNodeProps) => {
                 <StyledMetamodelCardContent>
                     {data.properties.map((p, idx) => {
                         return (
-                            <>
+                            <Fragment key={`${p.id}_fragment`}>
                                 <StyledMetamodelCardItem
                                     key={p.id}
                                     isPrimary={idx === 0 ? true : false}
@@ -832,7 +826,7 @@ const _MetamodelNode = (props: MetamodelNodeProps) => {
                                     ) : null}
                                 </StyledMetamodelCardItem>
                                 {idx === 0 ? <StyledDivider /> : null}
-                            </>
+                            </Fragment>
                         );
                     })}
                     <Handle type="source" position={Position.Right} />
