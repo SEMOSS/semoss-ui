@@ -34,6 +34,7 @@ const StyledSelection = styled('div')(({ theme }) => ({
     display: 'flex',
     flexDirection: 'column',
     width: '45%',
+    height: '280px',
     alignItems: 'flex-start',
     gap: theme.spacing(2),
 }));
