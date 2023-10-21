@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { Node } from 'react-flow-renderer';
 import { MetamodelNode } from './MetamodelNode';
 import { Close, ExpandMore, KeyRounded } from '@mui/icons-material';
@@ -50,12 +50,17 @@ type CustomTableCellProps = TableCellProps & {
  */
 
 export const MetamodelEditMenu = ({ nodeData }) => {
+    const [originalValues, setOriginalValues] = useState({
+        name: '',
+        COLUMNS: [],
+    });
     const [dataTypeOptions, setDataTypeOptions] = useState([]);
+    const [changedCells, setChangedCells] = useState({}); // track changed cells, specifically table name
 
     const { selectedNodeId, onSelectNodeId, isInteractive, updateData } =
         useMetamodel();
 
-    const [initialNodeData, setInitialNodeData] = useState({
+    const [data, setData] = useState({
         data: {
             name: '',
             properties: [
@@ -92,9 +97,16 @@ export const MetamodelEditMenu = ({ nodeData }) => {
     });
 
     useEffect(() => {
-        setInitialNodeData(nodeData);
+        setData(nodeData);
         if (nodeData?.data) {
             setValue('COLUMNS', nodeData.data.properties);
+        }
+        if (nodeData?.data && !originalValues.COLUMNS.length) {
+            const temp = {
+                name: nodeData.data.name,
+                COLUMNS: nodeData.data.properties,
+            };
+            setOriginalValues(temp);
         }
     }, [nodeData]);
 
@@ -106,6 +118,21 @@ export const MetamodelEditMenu = ({ nodeData }) => {
     /** handle save click */
     const onSubmit = (data) => {
         console.log('data on save: ', data);
+    };
+
+    const handleTextFieldChange = (rowIndex, cellName, value) => {
+        /** Handle tracking changed cells */
+        const key = `${rowIndex}-${cellName}`;
+        if (
+            originalValues.COLUMNS.length &&
+            value !== originalValues.COLUMNS[rowIndex][cellName]
+        ) {
+            setChangedCells((prev) => ({ ...prev, [key]: true }));
+        } else {
+            const updated = { ...changedCells };
+            delete updated[key];
+            setChangedCells(updated);
+        }
     };
 
     /** STYLES: METAMODEL NAV*/
@@ -409,12 +436,6 @@ export const MetamodelEditMenu = ({ nodeData }) => {
         padding: '3px',
     });
 
-    // const StyledSelect = styled(Select)(() => ({
-    //     minWidth: '126px',
-    //     // width: '126px',
-    //     alignmentSelf: 'stretch',
-    // }));
-
     /**
      * EDIT LOGIC
      *
@@ -434,12 +455,12 @@ export const MetamodelEditMenu = ({ nodeData }) => {
             component={Paper}
         >
             <form onSubmit={handleSubmit(onSubmit)}>
-                {initialNodeData ? (
+                {data ? (
                     <StyledHeaderContainer>
                         <StyledHeader>
                             <StyledHeaderTitle variant="h6">
                                 {canEdit ? 'Edit' : 'View'} Table:{' '}
-                                {initialNodeData.data.name}
+                                {data.data.name}
                             </StyledHeaderTitle>
                         </StyledHeader>
                     </StyledHeaderContainer>
@@ -486,44 +507,65 @@ export const MetamodelEditMenu = ({ nodeData }) => {
                                           component="th"
                                           scope="row"
                                       >
-                                          <Controller
+                                          <StyledEditTextField
+                                              key={`${rowIndex}-name`}
+                                              defaultValue={
+                                                  data.data &&
+                                                  data.data.properties[rowIndex]
+                                                      .name
+                                                      ? data.data.properties[
+                                                            rowIndex
+                                                        ].name
+                                                      : ''
+                                              }
+                                              onChange={(e) => {
+                                                  /** update cell value */
+                                                  const temp = data;
+                                                  temp.data.properties[
+                                                      rowIndex
+                                                  ].name = e.target.value;
+                                                  setData(temp);
+                                              }}
+                                              onBlur={(e) => {
+                                                  handleTextFieldChange(
+                                                      rowIndex,
+                                                      'name',
+                                                      e.target.value,
+                                                  );
+                                              }}
+                                              variant="outlined"
+                                              disabled={!canEdit}
+                                              size="small"
+                                              sx={{
+                                                  '& .MuiInputBase-input': {
+                                                      borderRadius: '8px',
+                                                      backgroundColor:
+                                                          changedCells[
+                                                              `${rowIndex}-name`
+                                                          ]
+                                                              ? 'rgb(255, 213, 128, 0.5)'
+                                                              : 'transparent',
+                                                  },
+                                              }}
+                                          />
+                                          {/* <Controller
                                               name={`COLUMNS.${rowIndex}.name`}
                                               control={control}
                                               render={({ field }) => {
-                                                  return (
-                                                      <StyledEditTextField
-                                                          value={
-                                                              field.value
-                                                                  ? field.value
-                                                                  : ''
-                                                          }
-                                                          onChange={(e) => {
-                                                              console.log(
-                                                                  'fid: ',
-                                                                  field,
-                                                              );
-                                                              console.log(
-                                                                  'etarget: ',
-                                                                  e.target,
-                                                              );
-                                                              field.onChange(
-                                                                  e.target
-                                                                      .value,
-                                                              );
-                                                          }}
-                                                          variant="outlined"
-                                                          disabled={!canEdit}
-                                                          size="small"
-                                                          sx={{
-                                                              styleOverrides: {
-                                                                  root: {
-                                                                      borderRadius:
-                                                                          '8px',
-                                                                      border: '1px solid var(--light-other-outlined-border-23-p, rgba(0, 0, 0, 0.23))',
-                                                                  },
+                                                  <StyledEditTextField
+                                                      key={`${rowIndex}-name`}
+                                                      value={field.value}
+                                                      onChange={(event) =>
+                                                          field.onChange(event)
+                                                      }
+                                                      variant="outlined"
+                                                      disabled={!canEdit}
+                                                      size="small"
+                                                      sx={{
+                                                          '& .MuiInputBase-input':
+                                                              {
                                                                   borderRadius:
                                                                       '8px',
-
                                                                   backgroundColor:
                                                                       dirtyFields &&
                                                                       dirtyFields.COLUMNS &&
@@ -534,11 +576,10 @@ export const MetamodelEditMenu = ({ nodeData }) => {
                                                                           ? 'rgb(255, 213, 128)'
                                                                           : 'transparent',
                                                               },
-                                                          }}
-                                                      />
-                                                  );
+                                                      }}
+                                                  />;
                                               }}
-                                          />
+                                          /> */}
                                       </StyledTableCell>
                                       <StyledTableCell>
                                           <Controller
@@ -549,17 +590,24 @@ export const MetamodelEditMenu = ({ nodeData }) => {
                                                       fullWidth
                                                       className="nodrag"
                                                       disabled={!canEdit}
-                                                      {...field}
+                                                      value={field.value}
+                                                      //   {...field}
+                                                      onChange={(event) => {
+                                                          field.onChange(event);
+                                                          handleTextFieldChange(
+                                                              rowIndex,
+                                                              'type',
+                                                              event.target
+                                                                  .value,
+                                                          );
+                                                      }}
                                                       sx={{
                                                           borderRadius: '8px',
                                                           backgroundColor:
-                                                              dirtyFields &&
-                                                              dirtyFields.COLUMNS &&
-                                                              dirtyFields
-                                                                  .COLUMNS[
-                                                                  `${rowIndex}`
-                                                              ]?.type
-                                                                  ? 'rgb(255, 213, 128)'
+                                                              changedCells[
+                                                                  `${rowIndex}-type`
+                                                              ]
+                                                                  ? 'rgb(255, 213, 128, 0.5)'
                                                                   : 'transparent',
                                                       }}
                                                   >
@@ -580,8 +628,6 @@ export const MetamodelEditMenu = ({ nodeData }) => {
                                                   </StyledSelect>
                                               )}
                                           />
-
-                                          {/* {col.type} */}
                                       </StyledTableCell>
                                       <StyledTableCell>
                                           <Controller
@@ -599,16 +645,22 @@ export const MetamodelEditMenu = ({ nodeData }) => {
                                                               : field.value
                                                       }
                                                       {...field}
+                                                      onChange={(event) => {
+                                                          field.onChange(event);
+                                                          handleTextFieldChange(
+                                                              rowIndex,
+                                                              'isPrimary',
+                                                              event.target
+                                                                  .value,
+                                                          );
+                                                      }}
                                                       sx={{
                                                           borderRadius: '8px',
                                                           backgroundColor:
-                                                              dirtyFields &&
-                                                              dirtyFields.COLUMNS &&
-                                                              dirtyFields
-                                                                  .COLUMNS[
-                                                                  `${rowIndex}`
-                                                              ]?.isPrimary
-                                                                  ? 'rgb(255, 213, 128)'
+                                                              changedCells[
+                                                                  `${rowIndex}-isPrimary`
+                                                              ]
+                                                                  ? 'rgb(255, 213, 128, 0.5)'
                                                                   : 'transparent',
                                                       }}
                                                   >
