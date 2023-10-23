@@ -1,18 +1,20 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
     Breadcrumbs,
     Button,
     Card,
+    Grid,
     Stack,
     Typography,
     styled,
 } from '@semoss/ui';
 import { Page } from '@/components/ui';
+import { ImportApp } from '@/components/app';
+import { MembersTable, SettingsTiles } from '@/components/settings';
+
 import { Link, useNavigate } from 'react-router-dom';
-
-import { useImport } from '@/hooks';
-
-import { ImportAppPage } from './ImportAppPage';
+import { useImport, useRootStore, usePixel } from '@/hooks';
+import { SettingsContext } from '@/contexts';
 
 const StyledLink = styled(Link)(() => ({
     textDecoration: 'none',
@@ -31,6 +33,36 @@ const StyledCard = styled(Card)(({ theme }) => ({
 export const NewAppPage = () => {
     const navigate = useNavigate();
     const { steps, setSteps, setActiveStep, activeStep } = useImport();
+    const { configStore } = useRootStore();
+
+    const [appId, setAppId] = useState('');
+
+    // get a list of the keys
+    const projectMetaKeys = configStore.store.config.projectMetaKeys.filter(
+        (k) => {
+            return (
+                k.display_options === 'single-checklist' ||
+                k.display_options === 'multi-checklist' ||
+                k.display_options === 'single-select' ||
+                k.display_options === 'multi-select' ||
+                k.display_options === 'single-typeahead' ||
+                k.display_options === 'multi-typeahead' ||
+                k.display_options === 'textarea'
+            );
+        },
+    );
+
+    // get metakeys to the ones we want
+    const metaKeys = projectMetaKeys.map((k) => {
+        return k.metakey;
+    });
+
+    // get the projects
+    const myApps = usePixel(
+        `MyProjects(metaKeys = ${JSON.stringify(
+            metaKeys,
+        )}, onlyPortals=[true]);`,
+    );
 
     return (
         <Page
@@ -163,34 +195,68 @@ export const NewAppPage = () => {
                         UI Builder
                     </StyledCard>
 
-                    <StyledCard
-                        onClick={() => {
-                            const step = {
-                                title: 'Template App',
-                                description: 'Create app with template',
-                                data: {
-                                    type: 'Template App',
-                                    title: 'Template App',
-                                    options: 'placeholder id: 8913971',
-                                },
-                            };
+                    {myApps.status === 'SUCCESS' && myApps.data.length > 0 ? (
+                        <Grid container columnSpacing={3} rowSpacing={3}>
+                            {myApps.data.map((app) => {
+                                return (
+                                    <Grid
+                                        item
+                                        key={app.project_id}
+                                        sm={12}
+                                        md={4}
+                                        lg={3}
+                                        xl={2}
+                                    >
+                                        <StyledCard
+                                            onClick={() => {
+                                                const step = {
+                                                    title: 'Template App',
+                                                    description:
+                                                        'Create app with template',
+                                                    data: {
+                                                        type: 'Template App',
+                                                        title: 'Template App',
+                                                        options:
+                                                            'placeholder id: 8913971',
+                                                    },
+                                                };
 
-                            setActiveStep(0);
-                            setSteps([step], 0);
-                        }}
-                    >
-                        Placeholder Template
-                    </StyledCard>
+                                                setActiveStep(0);
+                                                setSteps([step], 0);
+                                            }}
+                                        >
+                                            Placeholder Template
+                                        </StyledCard>
+                                    </Grid>
+                                );
+                            })}
+                        </Grid>
+                    ) : null}
                 </div>
             ) : null}
 
             {/* Step 1 - Create App via whatever process, with meta data like name and such */}
             {steps.length === 1 ? (
-                <ImportAppPage
+                <ImportApp
                     onCreate={(appId) => {
                         console.log(
                             'Set step for created app and move to permissions or for framework app get engines to have access to in app',
                         );
+
+                        setAppId(appId);
+
+                        const stepWithAppId = {
+                            title: 'Access',
+                            description:
+                                'Retrieve Access Permissions for newly added app',
+                            data: {
+                                type: 'Import App',
+                                title: 'Import App',
+                                options: appId,
+                            },
+                        };
+
+                        setSteps([...steps, stepWithAppId], steps.length);
                     }}
                     data={{
                         type: steps[0].title,
@@ -200,10 +266,31 @@ export const NewAppPage = () => {
             ) : null}
             {/* End of Step 1: ----------------------- */}
 
-            {/* Step 2:  App has been created, privacy and other details*/}
+            {/* Step 2:  App has been created, Navigate to Settings page*/}
             {/* 1. Framework Build App has an extra step for connecting Engines */}
-
             {/* 2. Next step in process is members and privacy: for everything in framework build App. */}
+
+            {steps.length === 2 ? (
+                <div>
+                    <SettingsContext.Provider
+                        value={{
+                            adminMode: configStore.store.user.admin,
+                        }}
+                    >
+                        <SettingsTiles
+                            mode="app"
+                            name={'App'}
+                            id={appId}
+                            // onDelete={() => {
+                            //     navigate('/catalog');
+                            // }}
+                        />
+                        <MembersTable id={appId} mode={'app'} name={'app'} />
+                    </SettingsContext.Provider>
+
+                    <Button>Next</Button>
+                </div>
+            ) : null}
 
             {/* Step 3: */}
             {/* Only Build App from Framework, get members */}
