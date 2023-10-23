@@ -70,7 +70,7 @@ type AddAppForm = {
 
 const frameworks = ['REACT', 'ANGULARJS', 'HTML/JS', 'VUE'];
 
-export const ImportAppPage = (props: CreateAppProps) => {
+export const ImportApp = (props: CreateAppProps) => {
     const { data, onCreate } = props;
     const { monolithStore, configStore } = useRootStore();
 
@@ -160,23 +160,25 @@ export const ImportAppPage = (props: CreateAppProps) => {
         setIsLoading(true);
 
         if (APP_TYPE === 'UI Builder' || APP_TYPE === 'Prompt Builder') {
-            // Hit Reactor to add property in smss file for APP_TYPE = 'ui-builder' | 'prompt-builder'
             const pixel = `CreateBuilderApp(type=[${APP_TYPE}])`;
+
+            // Hit Reactor to add property in smss file for APP_TYPE = 'ui-builder' | 'prompt-builder'
         } else if (APP_TYPE === 'Blank Template') {
-            // Creates Blank App
             const pixel = `CreateBlankApp(meta=["${formVals}"])`;
 
-            console.log('hit respective reactor');
+            // Creates an empty project
         } else if (APP_TYPE === 'Build App') {
+            const pixel = `CreateAppWithFramework(meta=["${formVals}"], framework=[${formVals.FRAMEWORK}])`;
+
             // I need a reactor:
             // 1. Meta-Data (Name, desc)
             // 2. As well as framework
-            const pixel = `CreateAppWithFramework(meta=["${formVals}"], framework=[${formVals.FRAMEWORK}])`;
         } else if (APP_TYPE === 'Template App') {
+            const pixel = `CreateAppFromTemplate(meta=["${formVals}"], template=[${data.options}])`;
+
             // I need a reactor:
             // 1. Meta-Data (Name, desc)
             // 2. Selected Template App Id
-            const pixel = `CreateAppFromTemplate(meta=["${formVals}"], template=[${data.options}])`;
         } else if (APP_TYPE === 'Import App') {
             const id = await uploadFromZip(formVals);
 
@@ -333,7 +335,9 @@ export const ImportAppPage = (props: CreateAppProps) => {
                 </div>
             </StyledBox>
             <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
-                <Button variant="contained">Next</Button>
+                <Button variant="contained" type="submit">
+                    Create App
+                </Button>
             </div>
         </form>
     );

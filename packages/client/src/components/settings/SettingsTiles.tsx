@@ -57,7 +57,7 @@ interface SettingsTilesProps {
      * Callback that is fired on delete
      * @returns
      */
-    onDelete: () => void;
+    onDelete?: () => void;
 
     /**
      * Condensed View
@@ -433,46 +433,48 @@ export const SettingsTiles = (props: SettingsTilesProps) => {
                         to this {name} if private
                     </StyledAlert>
                 </Grid>
-                <Grid item>
-                    <StyledAlert
-                        icon={
-                            <StyledIcon>
-                                <Delete />
-                            </StyledIcon>
-                        }
-                        action={
-                            <Button
-                                variant="contained"
-                                color="error"
-                                onClick={() => setDeleteModal(true)}
-                            >
-                                Delete
-                            </Button>
-                        }
-                    >
-                        <Alert.Title>Delete {name}</Alert.Title>
-                        Remove {name} from catalog
-                    </StyledAlert>
-                    <Modal open={deleteModal}>
-                        <Modal.Title>Are you sure?</Modal.Title>
-                        <Modal.Content>
-                            This action is irreversable. This will permanentely
-                            delete this {name}.
-                        </Modal.Content>
-                        <Modal.Actions>
-                            <Button onClick={() => setDeleteModal(false)}>
-                                Cancel
-                            </Button>
-                            <Button
-                                color={'error'}
-                                variant={'contained'}
-                                onClick={() => deleteWorkflow()}
-                            >
-                                Delete
-                            </Button>
-                        </Modal.Actions>
-                    </Modal>
-                </Grid>
+                {onDelete ? (
+                    <Grid item>
+                        <StyledAlert
+                            icon={
+                                <StyledIcon>
+                                    <Delete />
+                                </StyledIcon>
+                            }
+                            action={
+                                <Button
+                                    variant="contained"
+                                    color="error"
+                                    onClick={() => setDeleteModal(true)}
+                                >
+                                    Delete
+                                </Button>
+                            }
+                        >
+                            <Alert.Title>Delete {name}</Alert.Title>
+                            Remove {name} from catalog
+                        </StyledAlert>
+                        <Modal open={deleteModal}>
+                            <Modal.Title>Are you sure?</Modal.Title>
+                            <Modal.Content>
+                                This action is irreversable. This will
+                                permanentely delete this {name}.
+                            </Modal.Content>
+                            <Modal.Actions>
+                                <Button onClick={() => setDeleteModal(false)}>
+                                    Cancel
+                                </Button>
+                                <Button
+                                    color={'error'}
+                                    variant={'contained'}
+                                    onClick={() => deleteWorkflow()}
+                                >
+                                    Delete
+                                </Button>
+                            </Modal.Actions>
+                        </Modal>
+                    </Grid>
+                ) : null}
             </StyledGrid>
         );
     }
