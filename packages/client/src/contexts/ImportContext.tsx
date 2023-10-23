@@ -1,7 +1,7 @@
 import { MonolithStore } from '@/stores';
 import { createContext } from 'react';
 
-interface ImportStep {
+export interface ImportStep {
     /** Title of the step */
     title: string;
 
