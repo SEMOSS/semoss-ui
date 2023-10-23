@@ -10,6 +10,7 @@ import {
     Modal,
     RadioGroup,
     Stack,
+    TextArea,
 } from '@semoss/ui';
 import { EditRounded, RemoveRedEyeRounded, Add } from '@mui/icons-material';
 
@@ -22,7 +23,11 @@ const StyledCard = styled(Card)({
 
 export const EngineAccessButton = () => {
     // get the database information
+
+    // tom---> set role manually for testing remove later
     const { id, role } = useEngine();
+    // const { id } = useEngine();
+    // const role = 'DISCOVERABLE';
 
     const { monolithStore } = useRootStore();
     const notification = useNotification();
@@ -30,6 +35,9 @@ export const EngineAccessButton = () => {
     // track if open
     const [open, setOpen] = useState(false);
     const [requestedRole, setRequestedRole] = useState<Role>(role);
+
+    // tom---> tracking comment in useState
+    const [comment, setComment] = useState<string>('');
 
     // close when the id changes
     useEffect(() => {
@@ -45,9 +53,16 @@ export const EngineAccessButton = () => {
      * Request the new access
      */
     const requestAccess = async () => {
+        // tom---> for testing remove later
+        // const newPixel = `META | RequestEngine(engine=['${id}'], permission=['${requestedRole}']${ comment && `, comment=['${comment}']`})`;
+        // console.log({newPixel});
+        // return;
+
         try {
             const response = await monolithStore.runQuery(
-                `META | RequestEngine(engine=['${id}'], permission=['${requestedRole}'])`,
+                `META | RequestEngine(engine=['${id}'], permission=['${requestedRole}']${
+                    comment && `, comment=['${comment}']`
+                })`,
             );
 
             const { operationType, output } = response.pixelReturn[0];
@@ -235,6 +250,15 @@ export const EngineAccessButton = () => {
                                     }
                                 />
                             </StyledCard>
+
+                            {/* tom---> comment textarea if we want this here, can be removed */}
+                            <Card.Header title={<Box>Comment:</Box>} />
+                            <TextArea
+                                required={false}
+                                value={comment}
+                                onChange={(e) => setComment(e.target.value)}
+                                rows={3}
+                            ></TextArea>
                         </Stack>
                     </RadioGroup>
                 </Modal.Content>
