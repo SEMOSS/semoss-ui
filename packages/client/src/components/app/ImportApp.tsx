@@ -78,6 +78,8 @@ export const ImportApp = (props: CreateAppProps) => {
 
     const APP_TYPE = data.type;
 
+    console.log(APP_TYPE);
+
     const { handleSubmit, control } = useForm<AddAppForm>({
         defaultValues: {
             APP_NAME: '',
@@ -159,27 +161,27 @@ export const ImportApp = (props: CreateAppProps) => {
         // turn on loading
         setIsLoading(true);
 
-        if (APP_TYPE === 'UI Builder' || APP_TYPE === 'Prompt Builder') {
-            const pixel = `CreateBuilderApp(type=[${APP_TYPE}])`;
-
+        if (APP_TYPE === 'UI_BUILDER' || APP_TYPE === 'PROMPT_BUILDER') {
             // Hit Reactor to add property in smss file for APP_TYPE = 'ui-builder' | 'prompt-builder'
-        } else if (APP_TYPE === 'Blank Template') {
-            const pixel = `CreateBlankApp(meta=["${formVals}"])`;
+            const pixel = `CreateBuilderApp(type=[${APP_TYPE}]);`;
 
-            // Creates an empty project
-        } else if (APP_TYPE === 'Build App') {
+            onCreate('dummy id: 17833789124');
+        } else if (APP_TYPE === 'TEMPLATE_APP') {
+            let pixel = `CreateAppFromTemplate(meta=["${formVals}"]`;
+
+            // If TEMPLATE_ID
+            if (data.options) {
+                pixel += `, template=[${data.options}]`;
+            }
+
+            pixel += ')';
+
+            onCreate('dummy id: 09312849');
+        } else if (APP_TYPE === 'FRAMEWORK_APP') {
             const pixel = `CreateAppWithFramework(meta=["${formVals}"], framework=[${formVals.FRAMEWORK}])`;
 
-            // I need a reactor:
-            // 1. Meta-Data (Name, desc)
-            // 2. As well as framework
-        } else if (APP_TYPE === 'Template App') {
-            const pixel = `CreateAppFromTemplate(meta=["${formVals}"], template=[${data.options}])`;
-
-            // I need a reactor:
-            // 1. Meta-Data (Name, desc)
-            // 2. Selected Template App Id
-        } else if (APP_TYPE === 'Import App') {
+            onCreate('dummy id: 173781387');
+        } else if (APP_TYPE === 'IMPORT_APP') {
             const id = await uploadFromZip(formVals);
 
             if (id) {
@@ -191,7 +193,7 @@ export const ImportApp = (props: CreateAppProps) => {
     return (
         <form onSubmit={createApp}>
             <StyledBox>
-                {APP_TYPE === 'Import App' ? (
+                {APP_TYPE === 'IMPORT_APP' ? (
                     <StyledSelectionContainer>
                         <StyledSelection>
                             <Typography variant="h6">Upload ZIP</Typography>
@@ -228,7 +230,7 @@ export const ImportApp = (props: CreateAppProps) => {
                     </StyledSelectionContainer>
                 ) : null}
 
-                {APP_TYPE === 'Build App' ? (
+                {APP_TYPE === 'FRAMEWORK_APP' ? (
                     <div>
                         <Typography variant="h6">Select Framework</Typography>
                         <div
@@ -259,16 +261,16 @@ export const ImportApp = (props: CreateAppProps) => {
                     </div>
                 ) : null}
 
-                {APP_TYPE === 'Template App' ? (
+                {APP_TYPE === 'TEMPLATE_APP' ? (
                     <div>
                         <Typography variant="h6">Selected Template</Typography>
                         <Card sx={{ width: '10rem', height: '10rem' }}>
-                            {data.options}
+                            {data.options ? data.options : 'blank template'}
                         </Card>
                     </div>
                 ) : null}
 
-                {/* This is constant for every type of app  */}
+                {/* These are the required metavals for every app */}
                 <div
                     style={{
                         display: 'flex',

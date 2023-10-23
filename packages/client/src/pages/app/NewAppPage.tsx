@@ -1,30 +1,64 @@
 import React, { useState } from 'react';
+import { ArrowBack } from '@mui/icons-material';
+
 import {
     Breadcrumbs,
     Button,
     Card,
+    Chip,
     Grid,
+    Icon,
     Stack,
     Typography,
     styled,
 } from '@semoss/ui';
+
 import { Page } from '@/components/ui';
-import { ImportApp } from '@/components/app';
+import { ImportApp, App } from '@/components/app';
 import { MembersTable, SettingsTiles } from '@/components/settings';
 
 import { Link, useNavigate } from 'react-router-dom';
 import { useImport, useRootStore, usePixel } from '@/hooks';
 import { SettingsContext } from '@/contexts';
 
-const StyledLink = styled(Link)(() => ({
+import { ADD_APP_STEPS } from './add-app.constants';
+import { ImportStep } from '@/contexts/ImportContext';
+
+const StyledContainer = styled('div')(({ theme }) => ({
+    display: 'flex',
+    height: '100%',
+    gap: theme.spacing(3),
+    paddingTop: theme.spacing(1),
+    paddingBottom: theme.spacing(1),
+}));
+
+const StyledFilter = styled('div')(({ theme }) => ({
+    display: 'flex',
+    flexDirection: 'column',
+    height: 'fit-content',
+    width: '355px',
+    boxShadow: '0px 5px 22px 0px rgba(0, 0, 0, 0.06)',
+    background: theme.palette.background.paper,
+}));
+
+const StyledContent = styled('div')(() => ({
+    display: 'flex',
+    flexDirection: 'column',
+    height: '100%',
+    flex: '1',
+}));
+
+const StyledLink = styled(Link)(({ theme }) => ({
     textDecoration: 'none',
     color: 'inherit',
+    display: 'flex',
+    alignItems: 'center',
+    gap: theme.spacing(1),
 }));
 
 const StyledCard = styled(Card)(({ theme }) => ({
     height: '300px',
-    width: '300px',
-    backgroundColor: theme.palette.secondary.light,
+    backgroundColor: theme.palette.background.paper,
     padding: theme.spacing(1),
     // paddingLeft: theme.spacing(0.5),
     // zIndex: 9998,
@@ -58,7 +92,7 @@ export const NewAppPage = () => {
     });
 
     // get the projects
-    const myApps = usePixel(
+    const myApps = usePixel<App[]>(
         `MyProjects(metaKeys = ${JSON.stringify(
             metaKeys,
         )}, onlyPortals=[true]);`,
@@ -69,8 +103,22 @@ export const NewAppPage = () => {
             header={
                 <Stack>
                     <Breadcrumbs>
-                        <StyledLink to={`..`}>App Library</StyledLink>
-                        <StyledLink to={`.`}>Add App</StyledLink>
+                        {!steps.length ? (
+                            <StyledLink to={`..`}>App Library</StyledLink>
+                        ) : null}
+                        <StyledLink
+                            to={`.`}
+                            onClick={() => {
+                                setSteps([], -1);
+                            }}
+                        >
+                            {steps.length ? (
+                                <Icon>
+                                    <ArrowBack />
+                                </Icon>
+                            ) : null}
+                            Add App
+                        </StyledLink>
                     </Breadcrumbs>
                     <Typography variant="h4">
                         {!steps.length ? 'Add App' : activeStep.title}
@@ -83,7 +131,7 @@ export const NewAppPage = () => {
                 </Stack>
             }
         >
-            {/* Landing Page */}
+            {/* Add App Header OR Stepper based on selected import */}
             {steps.length === 0 ? (
                 <div
                     style={{
@@ -100,15 +148,14 @@ export const NewAppPage = () => {
                                 const step = {
                                     title: 'Build App',
                                     description: 'Build App with framework',
+                                    stepInProcess: 0,
                                     data: {
-                                        type: 'template',
-                                        title: 'Framework build',
+                                        type: 'FRAMEWORK_APP',
                                     },
                                 };
 
                                 setActiveStep(0);
                                 setSteps([step], 0);
-                                // navigate('/app/framework-build');
                             }}
                         >
                             Create Default App
@@ -119,125 +166,168 @@ export const NewAppPage = () => {
                                 const step = {
                                     title: 'Import App',
                                     description: 'Create app with UI Builder',
+                                    stepInProcess: 0,
                                     data: {
-                                        type: 'template',
-                                        title: 'Import',
+                                        type: 'IMPORT_APP',
                                     },
                                 };
 
                                 setActiveStep(0);
                                 setSteps([step], 0);
-                                // navigate('/app/import');
                             }}
                         >
                             Import App
                         </Button>
                     </div>
                 </div>
-            ) : null}
+            ) : (
+                <div style={{ display: 'flex', gap: '8px' }}>
+                    <Breadcrumbs>
+                        {ADD_APP_STEPS[steps[0].data.type].steps.map(
+                            (step, i) => {
+                                const s = activeStep as unknown as {
+                                    stepInProcess: number;
+                                };
+                                // Not Ideal -> Loop through steps and see if that precursor step is complete, in order to disable
+                                return (
+                                    <Chip
+                                        key={i}
+                                        label={step.title}
+                                        variant={'outlined'}
+                                        disabled={i > s.stepInProcess}
+                                        color={
+                                            i === s.stepInProcess
+                                                ? 'primary'
+                                                : 'default'
+                                        }
+                                        onClick={() => {
+                                            if (s.stepInProcess > i - 1) {
+                                                console.log('navigate to step');
+                                            }
+                                        }}
+                                    />
+                                );
+                            },
+                        )}
+                    </Breadcrumbs>
+                </div>
+            )}
 
             {/* Landing content of page: How to create app*/}
             {!steps.length ? (
-                <div>
-                    <StyledCard
-                        onClick={() => {
-                            const step = {
-                                title: 'Blank Template',
-                                description: 'Create app with prompt builder',
-                                data: {
-                                    type: 'template',
-                                    title: 'Blank Template',
-                                },
-                            };
+                <StyledContainer>
+                    <StyledFilter>Filter Box</StyledFilter>
+                    <StyledContent>
+                        <div style={{ display: 'flex', flexDirection: 'row' }}>
+                            <StyledCard
+                                onClick={() => {
+                                    const step = {
+                                        title: 'Prompt Builder',
+                                        description:
+                                            'Create app with prompt builder',
+                                        stepInProcess: 0,
+                                        data: {
+                                            type: 'PROMPT_BUILDER',
+                                        },
+                                    };
 
-                            setActiveStep(0);
-                            setSteps([step], 0);
+                                    setActiveStep(0);
+                                    setSteps([step], 0);
+                                }}
+                            >
+                                Prompt Builder
+                            </StyledCard>
+                            <StyledCard
+                                onClick={() => {
+                                    const step = {
+                                        title: 'UI Builder',
+                                        description:
+                                            'Create app with UI Builder',
+                                        stepInProcess: 0,
+                                        data: {
+                                            type: 'UI_BUILDER',
+                                        },
+                                    };
 
-                            // console.log(
-                            //     'Just create App with an empty zip, and then redirect to /app/39369823',
-                            // );
-                        }}
-                    >
-                        Blank Template
-                    </StyledCard>
-                    <StyledCard
-                        onClick={() => {
-                            const step = {
-                                title: 'Prompt Builder',
-                                description: 'Create app with prompt builder',
-                                data: {
-                                    type: 'Prompt',
-                                    title: 'Prompt builder',
-                                },
-                            };
+                                    setActiveStep(0);
+                                    setSteps([step], 0);
+                                }}
+                            >
+                                UI Builder
+                            </StyledCard>
+                        </div>
 
-                            setActiveStep(0);
-                            setSteps([step], 0);
-                        }}
-                    >
-                        Prompt Builder
-                    </StyledCard>
-                    <StyledCard
-                        onClick={() => {
-                            const step = {
-                                title: 'UI Builder',
-                                description: 'Create app with UI Builder',
-                                data: {
-                                    type: 'UI-Builder',
-                                    title: 'UI Builder',
-                                },
-                            };
+                        {myApps.status === 'SUCCESS' &&
+                        myApps.data.length > 0 ? (
+                            <Grid container columnSpacing={3} rowSpacing={3}>
+                                <Grid item sm={12} md={6} lg={4} xl={4}>
+                                    <StyledCard
+                                        onClick={() => {
+                                            const step = {
+                                                title: 'Blank Template',
+                                                description:
+                                                    'Create app with prompt builder',
+                                                stepInProcess: 0,
+                                                data: {
+                                                    type: 'TEMPLATE_APP',
+                                                    options: '',
+                                                },
+                                            };
 
-                            setActiveStep(0);
-                            setSteps([step], 0);
-                        }}
-                    >
-                        UI Builder
-                    </StyledCard>
+                                            setActiveStep(0);
+                                            setSteps([step], 0);
 
-                    {myApps.status === 'SUCCESS' && myApps.data.length > 0 ? (
-                        <Grid container columnSpacing={3} rowSpacing={3}>
-                            {myApps.data.map((app) => {
-                                return (
-                                    <Grid
-                                        item
-                                        key={app.project_id}
-                                        sm={12}
-                                        md={4}
-                                        lg={3}
-                                        xl={2}
+                                            // console.log(
+                                            //     'Just create App with an empty zip, and then redirect to /app/39369823',
+                                            // );
+                                        }}
                                     >
-                                        <StyledCard
-                                            onClick={() => {
-                                                const step = {
-                                                    title: 'Template App',
-                                                    description:
-                                                        'Create app with template',
-                                                    data: {
-                                                        type: 'Template App',
-                                                        title: 'Template App',
-                                                        options:
-                                                            'placeholder id: 8913971',
-                                                    },
-                                                };
-
-                                                setActiveStep(0);
-                                                setSteps([step], 0);
-                                            }}
+                                        Blank Template
+                                    </StyledCard>
+                                </Grid>
+                                {myApps.data.map((app) => {
+                                    return (
+                                        <Grid
+                                            item
+                                            key={app.project_id}
+                                            sm={12}
+                                            md={4}
+                                            lg={3}
+                                            xl={2}
                                         >
-                                            Placeholder Template
-                                        </StyledCard>
-                                    </Grid>
-                                );
-                            })}
-                        </Grid>
-                    ) : null}
-                </div>
+                                            <StyledCard
+                                                onClick={() => {
+                                                    const step = {
+                                                        title: 'Template App',
+                                                        description:
+                                                            'Create app with template',
+                                                        stepInProcess: 0,
+                                                        data: {
+                                                            type: 'TEMPLATE_APP',
+                                                            options:
+                                                                app.project_id,
+                                                        },
+                                                    };
+
+                                                    setActiveStep(0);
+                                                    setSteps([step], 0);
+                                                }}
+                                            >
+                                                {app.project_id}
+                                            </StyledCard>
+                                        </Grid>
+                                    );
+                                })}
+                            </Grid>
+                        ) : null}
+                    </StyledContent>
+                </StyledContainer>
             ) : null}
 
             {/* Step 1 - Create App via whatever process, with meta data like name and such */}
             {steps.length === 1 ? (
                 <ImportApp
+                    data={steps[0].data}
                     onCreate={(appId) => {
                         console.log(
                             'Set step for created app and move to permissions or for framework app get engines to have access to in app',
@@ -249,6 +339,7 @@ export const NewAppPage = () => {
                             title: 'Access',
                             description:
                                 'Retrieve Access Permissions for newly added app',
+                            stepInProcess: 1,
                             data: {
                                 type: 'Import App',
                                 title: 'Import App',
@@ -257,10 +348,6 @@ export const NewAppPage = () => {
                         };
 
                         setSteps([...steps, stepWithAppId], steps.length);
-                    }}
-                    data={{
-                        type: steps[0].title,
-                        options: steps[0].data.options,
                     }}
                 />
             ) : null}
@@ -272,23 +359,59 @@ export const NewAppPage = () => {
 
             {steps.length === 2 ? (
                 <div>
-                    <SettingsContext.Provider
-                        value={{
-                            adminMode: configStore.store.user.admin,
+                    {steps[0].data.type === 'FRAMEWORK_APP' ? (
+                        <div>Connect Engines</div>
+                    ) : (
+                        <SettingsContext.Provider
+                            value={{
+                                adminMode: configStore.store.user.admin,
+                            }}
+                        >
+                            <SettingsTiles
+                                mode="app"
+                                name={'App'}
+                                id={appId}
+                                // onDelete={() => {
+                                //     navigate('/catalog');
+                                // }}
+                            />
+                            <MembersTable
+                                id={appId}
+                                mode={'app'}
+                                name={'app'}
+                            />
+                        </SettingsContext.Provider>
+                    )}
+
+                    <Button
+                        onClick={() => {
+                            const APP_TYPE = steps[0].data.type;
+                            // Set new step in process
+
+                            // Just Navigate to the App Page
+                            if (
+                                APP_TYPE !== 'PROMPT_BUILDER' &&
+                                APP_TYPE !== 'FRAMEWORK_APP'
+                            ) {
+                                navigate(`../${steps[1].data.options}`);
+                            } else {
+                                const accessStep = {
+                                    title: steps[0].title,
+                                    description: steps[0].description,
+                                    stepInProcess: 2,
+                                    data: {
+                                        type: steps[0].data.type,
+                                        options:
+                                            'Successfully added permissions',
+                                    },
+                                };
+
+                                setSteps([...steps, accessStep], steps.length);
+                            }
                         }}
                     >
-                        <SettingsTiles
-                            mode="app"
-                            name={'App'}
-                            id={appId}
-                            // onDelete={() => {
-                            //     navigate('/catalog');
-                            // }}
-                        />
-                        <MembersTable id={appId} mode={'app'} name={'app'} />
-                    </SettingsContext.Provider>
-
-                    <Button>Next</Button>
+                        Next
+                    </Button>
                 </div>
             ) : null}
 
@@ -296,38 +419,23 @@ export const NewAppPage = () => {
             {/* Only Build App from Framework, get members */}
             {/* Or */}
             {/* Take them to the editor, ui builder or prompt builder */}
+
+            {/* 
+            <PromptGenerator
+                onComplete={() => {
+                    navigate()
+                }}
+            /> 
+            */}
+            {steps.length === 3 ? (
+                <>
+                    {steps[0].data.type === 'PROMPT_BUILDER' ? (
+                        <div>Prompt Builder</div>
+                    ) : (
+                        <div>Framework Members</div>
+                    )}
+                </>
+            ) : null}
         </Page>
     );
 };
-
-// {steps.length === 1 && steps[0].title === 'UI Builder' ? (
-//     <div> UI Builder Component</div>
-// ) : null}
-
-// {steps.length === 1 && steps[0].title === 'Prompt Builder' ? (
-//     <div> Prompt Builder Component</div>
-// ) : null}
-
-// {steps.length === 1 && steps[0].title === 'Build App' ? (
-//     <ImportAppPage
-//         onCreate={(appId) => {
-//             console.log(
-//                 'Set Step for created app and move to permissions',
-//             );
-//         }}
-//     /> // Can be shared really just creates App
-// ) : null}
-
-// {steps.length === 1 && steps[0].title === 'Template App' ? (
-//     <ImportAppPage
-//         onCreate={(appId) => {
-//             console.log(
-//                 'Set Step for created app and move to permissions',
-//             );
-//         }}
-//     /> // Can be shared really just creates App
-// ) : null}
-
-// {steps.length === 1 && steps[0].title === 'Blank Template' ? (
-//     <ImportAppPage /> // Can be shared really just creates App
-// ) : null}

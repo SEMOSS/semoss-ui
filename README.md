@@ -1,10 +1,12 @@
 # First-Time Semoss-UI Setup Instructions
 
-1. create a `.env.local` file and populate with the following, paths may have to be adjusted for your file system, check directory locations
+1. Ensure your BE server is running in eclipse.
+
+2. create a `.env.local` file and populate with the following, MODULE may have to be adjusted for your project specific endpoint.
 
 ```
     ENDPOINT=../../..
-    MODULE=/vha-supply
+    MODULE=/Monolith_Dev
 
     THEME_TITLE=SEMOSS
     THEME_FAVICON=./src/assets/favicon.svg
@@ -12,18 +14,12 @@
     NODE_ENV=development
 ```
 
-** Note: in this example the filepath for semoss-ui os `C:\workspace\apache-tomcat-9.0.73\webapps\semoss-ui` and the filepath for vha-supply is `C:\workspace\vha-supply`
+3. run `pnpm install` in root directory
 
-2. run `pnpm install` in root directory
+4. run `pnpm run dev:ui-client`, this will take some time
 
-3. run `pnpm run dev`, this may take a while, wait until it is finished / compiled, check `package.json` for other pnpm startup scripts
+- This script first builds out our component library (ui), once components are built the application will be accesible at: `http://localhost:9090/semoss-ui/packages/client/dist/#/`
 
-4. make sure your `vha-supply` server is running in eclipse and that you are connected to your VPN
 
-5. open `http://localhost:9090/semoss-ui/packages/client/dist/#/` in your browser and log into Semoss, you should see the application's UI
-
-6. if errors occur when committing changes restructure your commit message, example commit message structure is below
-
-```
-git commit -m 'feat: add user comment to request access reactor and modal with a text area input'
-```
+# Common Errors
+ `Cannot find module @semoss/ui` - This error indicates that our component library is not fully built out which is a required dependency in the Applications UI.  To get around this, you
