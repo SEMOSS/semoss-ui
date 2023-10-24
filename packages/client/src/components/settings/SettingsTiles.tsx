@@ -17,11 +17,11 @@ import {
     VisibilityOffRounded,
 } from '@mui/icons-material';
 import { AxiosResponse } from 'axios';
-import { LoadingScreen } from '@/components/ui';
 
 import { useRootStore, usePixel, useSettings } from '@/hooks';
+import { LoadingScreen } from '@/components/ui';
 
-import { SETTINGS_TYPE } from './settings.types';
+import { SETTINGS_MODE } from './settings.types';
 
 const StyledIcon = styled(Icon)(() => ({
     color: 'rgba(0, 0, 0, .5)',
@@ -39,9 +39,9 @@ const StyledGrid = styled(Grid)(() => ({
 
 interface SettingsTilesProps {
     /**
-     * Type of setting
+     * Mode of setting
      */
-    type: SETTINGS_TYPE;
+    mode: SETTINGS_MODE;
 
     /**
      * Id of the setting
@@ -49,10 +49,15 @@ interface SettingsTilesProps {
     id: string;
 
     /**
+     * Name of setting
+     */
+    name: string;
+
+    /**
      * Callback that is fired on delete
      * @returns
      */
-    onDelete: () => void;
+    onDelete?: () => void;
 
     /**
      * Condensed View
@@ -61,7 +66,7 @@ interface SettingsTilesProps {
 }
 
 export const SettingsTiles = (props: SettingsTilesProps) => {
-    const { type, id, condensed, onDelete } = props;
+    const { id, mode, name, condensed, onDelete } = props;
 
     const { monolithStore } = useRootStore();
     const notification = useNotification();
@@ -72,76 +77,67 @@ export const SettingsTiles = (props: SettingsTilesProps) => {
     const [global, setGlobal] = useState(false);
     const [loading, setLoading] = useState(false);
 
-    const infoPixel =
-        type === 'database' ||
-        type === 'model' ||
-        type === 'storage' ||
-        type === 'function' ||
-        type === 'vector'
-            ? `EngineInfo(engine='${id}');`
-            : type === 'app'
-            ? `ProjectInfo(project='${id}')`
-            : '';
-
-    const info = usePixel<{
-        database_global: boolean;
-        database_discoverable: boolean;
-        project_global: boolean;
-        project_discoverable: boolean;
-    }>(infoPixel);
+    const engineInfo = usePixel(
+        mode === 'engine'
+            ? adminMode
+                ? `AdminEngineInfo(engine='${id}');`
+                : `EngineInfo(engine='${id}');`
+            : mode === 'app'
+            ? adminMode
+                ? `AdminProjectInfo(project='${id}')`
+                : `ProjectInfo(project='${id}')`
+            : '',
+    );
 
     useEffect(() => {
         // pixel call to get pending members
-        if (info.status !== 'SUCCESS' || !info.data) {
+        if (engineInfo.status !== 'SUCCESS' || !engineInfo.data) {
             return;
         }
 
-        setDiscoverable(
-            type === 'app'
-                ? info.data.project_discoverable
-                : info.data.database_discoverable,
-        );
-        setGlobal(
-            type === 'app'
-                ? info.data.project_global
-                : info.data.database_global,
-        );
-    }, [info.status, info.data]);
+        if (mode === 'engine') {
+            const data = engineInfo.data as {
+                database_global: boolean;
+                database_discoverable: boolean;
+            };
+
+            setDiscoverable(data.database_discoverable);
+            setGlobal(data.database_global);
+        } else if (mode === 'app') {
+            const data = engineInfo.data as {
+                project_global: boolean;
+                project_discoverable: boolean;
+            };
+
+            setDiscoverable(data.project_discoverable);
+            setGlobal(data.project_global);
+        }
+    }, [engineInfo.status, engineInfo.data]);
 
     /**
      * Delete the item
      */
     const deleteWorkflow = async () => {
         try {
+            // start the loading screen
             setLoading(true);
-            let pixel = '';
-            if (
-                type === 'database' ||
-                type === 'model' ||
-                type === 'storage' ||
-                type === 'function' ||
-                type === 'vector'
-            ) {
-                pixel = `DeleteEngine(engine=['${id}']);`;
-            } else {
-                pixel = `DeleteProject(project=['${id}']);`;
-            }
 
-            if (!pixel) {
-                return;
-            }
-
-            const response = await monolithStore.runQuery(pixel);
+            // run the pixel
+            const response = await monolithStore.runQuery(
+                mode === 'engine'
+                    ? `DeleteEngine(engine=['${id}']);`
+                    : mode === 'app'
+                    ? `DeleteProject(project=['${id}']);`
+                    : '',
+            );
 
             const operationType = response.pixelReturn[0].operationType;
             const output = response.pixelReturn[0].output;
 
-            setLoading(false);
-
             if (operationType.indexOf('ERROR') === -1) {
                 notification.add({
                     color: 'success',
-                    message: `Successfully deleted ${type}`,
+                    message: `Successfully deleted ${name}`,
                 });
 
                 // go back to page before
@@ -157,6 +153,9 @@ export const SettingsTiles = (props: SettingsTilesProps) => {
                 color: 'error',
                 message: String(e),
             });
+        } finally {
+            // stop the loading screen
+            setLoading(false);
         }
     };
 
@@ -165,20 +164,17 @@ export const SettingsTiles = (props: SettingsTilesProps) => {
      */
     const changeDiscoverable = async () => {
         try {
+            // start the loading screen
+            setLoading(true);
+
             let response: AxiosResponse<{ success: boolean }> | null = null;
-            if (
-                type === 'database' ||
-                type === 'model' ||
-                type === 'storage' ||
-                type === 'function' ||
-                type === 'vector'
-            ) {
+            if (mode === 'engine') {
                 response = await monolithStore.setEngineVisiblity(
                     adminMode,
                     id,
                     !discoverable,
                 );
-            } else if (type === 'app') {
+            } else if (mode === 'app') {
                 response = await monolithStore.setProjectVisiblity(
                     adminMode,
                     id,
@@ -196,12 +192,12 @@ export const SettingsTiles = (props: SettingsTilesProps) => {
 
                 notification.add({
                     color: 'success',
-                    message: `Successfully made ${type} discoverable`,
+                    message: `Successfully made ${name} discoverable`,
                 });
             } else {
                 notification.add({
                     color: 'error',
-                    message: `Error making ${type} discoverable`,
+                    message: `Error making ${name} discoverable`,
                 });
             }
         } catch (e) {
@@ -209,6 +205,9 @@ export const SettingsTiles = (props: SettingsTilesProps) => {
                 color: 'error',
                 message: String(e),
             });
+        } finally {
+            // stop the loading screen
+            setLoading(false);
         }
     };
 
@@ -217,20 +216,17 @@ export const SettingsTiles = (props: SettingsTilesProps) => {
      */
     const changeGlobal = async () => {
         try {
+            // start the loading screen
+            setLoading(true);
+
             let response: AxiosResponse<{ success: boolean }> | null = null;
-            if (
-                type === 'database' ||
-                type === 'model' ||
-                type === 'storage' ||
-                type === 'function' ||
-                type === 'vector'
-            ) {
+            if (mode === 'engine') {
                 response = await monolithStore.setEngineGlobal(
                     adminMode,
                     id,
                     !global,
                 );
-            } else if (type === 'app') {
+            } else if (mode === 'app') {
                 response = await monolithStore.setProjectGlobal(
                     adminMode,
                     id,
@@ -248,12 +244,12 @@ export const SettingsTiles = (props: SettingsTilesProps) => {
 
                 notification.add({
                     color: 'success',
-                    message: `Successfully made ${type} global`,
+                    message: `Successfully made ${name} global`,
                 });
             } else {
                 notification.add({
                     color: 'error',
-                    message: `Error making ${type} global`,
+                    message: `Error making ${name} global`,
                 });
             }
         } catch (e) {
@@ -261,6 +257,9 @@ export const SettingsTiles = (props: SettingsTilesProps) => {
                 color: 'error',
                 message: String(e),
             });
+        } finally {
+            // stop the loading screen
+            setLoading(false);
         }
     };
 
@@ -283,8 +282,8 @@ export const SettingsTiles = (props: SettingsTilesProps) => {
                         <Switch
                             title={
                                 global
-                                    ? `Make ${type} private`
-                                    : `Make ${type} public`
+                                    ? `Make ${name} private`
+                                    : `Make ${name} public`
                             }
                             checked={global}
                             onChange={() => {
@@ -313,8 +312,8 @@ export const SettingsTiles = (props: SettingsTilesProps) => {
                         <Switch
                             title={
                                 discoverable
-                                    ? `Make ${type} non-discoverable`
-                                    : `Make ${type} discoverable`
+                                    ? `Make ${name} non-discoverable`
+                                    : `Make ${name} discoverable`
                             }
                             checked={discoverable}
                             onChange={() => {
@@ -327,7 +326,7 @@ export const SettingsTiles = (props: SettingsTilesProps) => {
                         {discoverable ? 'Discoverable' : 'Non-Discoverable'}
                     </Alert.Title>
                     Users {discoverable ? 'can' : 'cannot'} request access to
-                    this {type} if private
+                    this {name} if private
                 </StyledAlert>
                 <StyledAlert
                     sx={{ width: '100%', boxShadow: 'none' }}
@@ -346,14 +345,14 @@ export const SettingsTiles = (props: SettingsTilesProps) => {
                         </Button>
                     }
                 >
-                    <Alert.Title>Delete {type}</Alert.Title>
-                    Remove {type} from catalog
+                    <Alert.Title>Delete {name}</Alert.Title>
+                    Remove {name} from catalog
                 </StyledAlert>
                 <Modal open={deleteModal}>
                     <Modal.Title>Are you sure?</Modal.Title>
                     <Modal.Content>
                         This action is irreversable. This will permanentely
-                        delete this {type}.
+                        delete this {name}.
                     </Modal.Content>
                     <Modal.Actions>
                         <Button onClick={() => setDeleteModal(false)}>
@@ -384,8 +383,8 @@ export const SettingsTiles = (props: SettingsTilesProps) => {
                             <Switch
                                 title={
                                     global
-                                        ? `Make ${type} private`
-                                        : `Make ${type} public`
+                                        ? `Make ${name} private`
+                                        : `Make ${name} public`
                                 }
                                 checked={global}
                                 onChange={() => {
@@ -417,8 +416,8 @@ export const SettingsTiles = (props: SettingsTilesProps) => {
                             <Switch
                                 title={
                                     discoverable
-                                        ? `Make ${type} non-discoverable`
-                                        : `Make ${type} discoverable`
+                                        ? `Make ${name} non-discoverable`
+                                        : `Make ${name} discoverable`
                                 }
                                 checked={discoverable}
                                 onChange={() => {
@@ -431,49 +430,51 @@ export const SettingsTiles = (props: SettingsTilesProps) => {
                             {discoverable ? 'Discoverable' : 'Non-Discoverable'}
                         </Alert.Title>
                         Users {discoverable ? 'can' : 'cannot'} request access
-                        to this {type} if private
+                        to this {name} if private
                     </StyledAlert>
                 </Grid>
-                <Grid item>
-                    <StyledAlert
-                        icon={
-                            <StyledIcon>
-                                <Delete />
-                            </StyledIcon>
-                        }
-                        action={
-                            <Button
-                                variant="contained"
-                                color="error"
-                                onClick={() => setDeleteModal(true)}
-                            >
-                                Delete
-                            </Button>
-                        }
-                    >
-                        <Alert.Title>Delete {type}</Alert.Title>
-                        Remove {type} from catalog
-                    </StyledAlert>
-                    <Modal open={deleteModal}>
-                        <Modal.Title>Are you sure?</Modal.Title>
-                        <Modal.Content>
-                            This action is irreversable. This will permanentely
-                            delete this {type}.
-                        </Modal.Content>
-                        <Modal.Actions>
-                            <Button onClick={() => setDeleteModal(false)}>
-                                Cancel
-                            </Button>
-                            <Button
-                                color={'error'}
-                                variant={'contained'}
-                                onClick={() => deleteWorkflow()}
-                            >
-                                Delete
-                            </Button>
-                        </Modal.Actions>
-                    </Modal>
-                </Grid>
+                {onDelete ? (
+                    <Grid item>
+                        <StyledAlert
+                            icon={
+                                <StyledIcon>
+                                    <Delete />
+                                </StyledIcon>
+                            }
+                            action={
+                                <Button
+                                    variant="contained"
+                                    color="error"
+                                    onClick={() => setDeleteModal(true)}
+                                >
+                                    Delete
+                                </Button>
+                            }
+                        >
+                            <Alert.Title>Delete {name}</Alert.Title>
+                            Remove {name} from catalog
+                        </StyledAlert>
+                        <Modal open={deleteModal}>
+                            <Modal.Title>Are you sure?</Modal.Title>
+                            <Modal.Content>
+                                This action is irreversable. This will
+                                permanentely delete this {name}.
+                            </Modal.Content>
+                            <Modal.Actions>
+                                <Button onClick={() => setDeleteModal(false)}>
+                                    Cancel
+                                </Button>
+                                <Button
+                                    color={'error'}
+                                    variant={'contained'}
+                                    onClick={() => deleteWorkflow()}
+                                >
+                                    Delete
+                                </Button>
+                            </Modal.Actions>
+                        </Modal>
+                    </Grid>
+                ) : null}
             </StyledGrid>
         );
     }

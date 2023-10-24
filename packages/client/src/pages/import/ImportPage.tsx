@@ -10,9 +10,13 @@
  * Steps is important for this page as based on the step in the process you will
  * see different steps in the connection process for all engines
  *
+ * TODO seperate links: Just seperate the steps into
+ * - /import
+ * - /import/model
+ * - /import/model/OpenAi
  */
 
-import React, { useEffect } from 'react';
+import React, { useEffect, useRef } from 'react';
 import { Page } from '@/components/ui/';
 import {
     Avatar,
@@ -24,13 +28,10 @@ import {
     Box,
     Grid,
 } from '@semoss/ui';
-import {
-    stepsOne,
-    // CONNECTION_OPTIONS
-} from './import.constants';
+import { stepsOne } from './import.constants';
 
-import { UploadData } from '../engine-import/forms/UploadData';
-import { CopyDatabaseForm } from '../engine-import/forms/CopyDatabaseForm';
+import { UploadData } from '../../components/import/refactor/UploadData';
+import { CopyDatabaseForm } from '../../components/import/refactor/CopyDatabaseForm';
 import { Search as SearchIcon } from '@mui/icons-material/';
 import { BuildDb } from '@/assets/img/BuildDb';
 import { ConnectModel } from '@/assets/img/ConnectModel';
@@ -40,8 +41,8 @@ import { UploadDb } from '@/assets/img/UploadDb';
 import { ConnectStorage } from '@/assets/img/ConnectStorage';
 
 import { useImport } from '@/hooks';
-import { ImportSpecificPage } from './ImportSpecificPage';
-import { ImportConnectionPage } from './ImportConnectionPage';
+
+import { EstablishConnectionPage, ImportConnectionPage } from './';
 
 import { useNavigate, useLocation } from 'react-router-dom';
 
@@ -50,7 +51,6 @@ const StyledContainer = styled('div')(({ theme }) => ({
     width: 'auto',
     flexDirection: 'column',
     alignItems: 'flex-start',
-    gap: theme.spacing(3),
 }));
 
 const StyledSearchbarContainer = styled('div')(({ theme }) => ({
@@ -71,8 +71,6 @@ const StyledCard = styled(Card, {
 })<{
     disabled: boolean;
 }>(({ theme, disabled }) => {
-    // const palette = theme.palette as CustomPaletteOptions;
-    // TODO: Fix typing
     const palette = theme.palette as unknown as {
         primary: Record<string, string>;
         primaryContrast: Record<string, string>;
@@ -121,7 +119,6 @@ const StyledCardImage = styled('img')({
     overflowClipMargin: 'content-box',
     overflow: 'clip',
     objectFit: 'cover',
-    // aspectRatio: '1/1'
 });
 
 const StyledCardText = styled('p')({
@@ -136,8 +133,6 @@ const StyledFormTypeBox = styled(Box, {
 })<{
     disabled: boolean;
 }>(({ theme, disabled }) => {
-    // const palette = theme.palette as CustomPaletteOptions;
-    // TODO: Fix typing
     const palette = theme.palette as unknown as {
         primary: Record<string, string>;
         primaryContrast: Record<string, string>;
@@ -181,16 +176,20 @@ const StyledCategoryTitle = styled(Box)({
 const IconMapper = {
     'Connect to Database': <ConnectDb />,
     'Copy Database': <CopyDb />,
-    'Upload Database': <UploadDb />,
     'Build Database': <BuildDb />,
     'Connect to Storage': <ConnectStorage />,
     'Connect to Model': <ConnectModel />,
+    'Connect to Vector Database': <ConnectStorage />,
+    'Connect to Function': <ConnectModel />,
+    // 'Upload Database': <UploadDb />,
 };
 
 export const ImportPage = () => {
     const [importSearch, setImportSearch] = React.useState('');
     const [search, setSearch] = React.useState('');
     const { steps, activeStep, setSteps, CONNECTION_OPTIONS } = useImport();
+
+    const scrollToTopRef = useRef(null);
 
     const navigate = useNavigate();
     const { search: importParams } = useLocation();
@@ -242,6 +241,24 @@ export const ImportPage = () => {
                 break;
         }
     }, [importParams]);
+
+    useEffect(() => {
+        const scrollIntoView = () => {
+            if (scrollToTopRef.current) {
+                scrollToTopRef.current.scrollIntoView({
+                    behavior: 'smooth',
+                    block: 'center',
+                    inline: 'start',
+                });
+            }
+        };
+
+        const delayScroll = () => {
+            setTimeout(scrollIntoView, 100); // 5000 milliseconds = 5 seconds
+        };
+
+        delayScroll(); // Trigger the delayed scroll when the component mounts
+    }, [steps.length]);
 
     return (
         <Page
@@ -332,13 +349,17 @@ export const ImportPage = () => {
                         </StyledSearchbarContainer>
                     )}
 
+                {/*  When Step changes scroll top into view */}
+                <div ref={scrollToTopRef} style={{ height: '0px' }}>
+                    &nbsp;
+                </div>
                 {/* Step 1: is determination which engine you would like to connect to */}
                 {steps.length < 1 && (
                     <Box sx={{ width: '100%' }}>
                         <>
                             <StyledCategoryTitle>Database</StyledCategoryTitle>
                             <Grid container columns={12} spacing={2}>
-                                {stepsOne.slice(0, 4).map((val, idx) => {
+                                {stepsOne.slice(0, 3).map((val, idx) => {
                                     if (
                                         val.name
                                             .toLowerCase()
@@ -406,7 +427,7 @@ export const ImportPage = () => {
                                 Other Options
                             </StyledCategoryTitle>
                             <Grid container columns={12} spacing={2}>
-                                {stepsOne.slice(4, 8).map((val, idx) => (
+                                {stepsOne.slice(3, 7).map((val, idx) => (
                                     <Grid
                                         item
                                         key={idx}
@@ -555,12 +576,10 @@ export const ImportPage = () => {
                     )}
 
                 {/* Step 3:  Will be the form to capture specific engine connection details */}
-                {steps.length === 2 && <ImportSpecificPage />}
-                {/* Let's call this ImportConnectionPage */}
+                {steps.length === 2 && <ImportConnectionPage />}
 
                 {/* Step 4: If there is a step in the process after inputting connection details: metamodel for example */}
-                {steps.length === 3 && <ImportConnectionPage />}
-                {/* Lets call this EstablishedConnectionPage */}
+                {steps.length === 3 && <EstablishConnectionPage />}
             </StyledContainer>
         </Page>
     );

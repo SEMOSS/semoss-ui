@@ -1,6 +1,6 @@
 import { styled, Button, Stack, Typography, useNotification } from '@semoss/ui';
 
-import { useDatabase, usePixel } from '@/hooks';
+import { useEngine, usePixel } from '@/hooks';
 
 import { LoadingScreen } from '@/components/ui';
 import { ContentCopyOutlined } from '@mui/icons-material';
@@ -25,7 +25,7 @@ const StyledCodeContent = styled('code')(() => ({
  */
 export const EngineUsagePage = () => {
     // get the database information
-    const { id } = useDatabase();
+    const { id } = useEngine();
     const notification = useNotification();
 
     // get the engine info

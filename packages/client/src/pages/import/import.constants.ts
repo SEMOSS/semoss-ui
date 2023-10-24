@@ -7,7 +7,6 @@ import H2_DB from '@/assets/img/H2_DB.png';
 import NEO4J from '@/assets/img/NEO4J.png';
 import TINKER from '@/assets/img/TINKER.png';
 import ZIP from '@/assets/img/ZIP.png';
-
 //Connect to an External Database
 import ASTER from '@/assets/img/ASTER.png';
 import ATHENA from '@/assets/img/ATHENA.png';
@@ -35,7 +34,6 @@ import SQL_SERVER from '@/assets/img/SQL_SERVER.png';
 import TERADATA from '@/assets/img/TERADATA.png';
 import TIBCO from '@/assets/img/TIBCO.png';
 import TRINO from '@/assets/img/TRINO.jpg';
-
 //Add Storage
 import AMAZON_S3 from '@/assets/img/Amazon_S3.png';
 import DREAMHOST from '@/assets/img/DREAMHOST.png';
@@ -45,13 +43,12 @@ import GOOGLE_DRIVE from '@/assets/img/GOOGLE_DRIVE.png';
 import ONEDRIVE from '@/assets/img/ONEDRIVE.png';
 import AZURE_BLOB from '@/assets/img/AZURE_BLOB.png';
 import MINIO from '@/assets/img/MINIO.png';
+import CEPH from '@/assets/img/CEPH.png';
 import SFTP from '@/assets/img/SFTP.png';
-
 //Commercial Models
 import OPEN_AI from '@/assets/img/OPEN_AI.png';
 import AZURE_OPEN_AI from '@/assets/img/OPEN_AI.png';
 import CLAUDE from '@/assets/img/CLAUDE_AI.png';
-
 //Local Models
 import BRAIN from '@/assets/img/BRAIN.png';
 import META from '@/assets/img/META.png';
@@ -63,16 +60,16 @@ import FLAN from '@/assets/img/FLAN.jpg';
 import BERT from '@/assets/img/BERT.png';
 import ELEUTHER from '@/assets/img/ELEUTHER_AI.png';
 import NEMO from '@/assets/img/NEMO.png';
-
 //Embedded Models
 import ORCA from '@/assets/img/ORCA.png';
 import STABILITY_AI from '@/assets/img/STABILITY_AI.png';
 import REPLIT from '@/assets/img/REPLIT_CODE.png';
-
 // Functions
 import WEVIATE from '@/assets/img/WEVIATE.png';
 import PINECONE from '@/assets/img/PINECONE.png';
+import RESTAPI from '@/assets/img/rest-api.svg';
 
+// TODO: Get rid of this and throw it into Connection Options
 export const stepsOne = [
     {
         name: 'Connect to Database',
@@ -87,12 +84,12 @@ export const stepsOne = [
         disabled: true,
         data: 'COPY_DATABASE', // DOES NOT MATTER AT THE MOMENT, Tie this into one DS
     },
-    {
-        name: 'Upload Database',
-        description: '',
-        disabled: true,
-        data: 'UPLOAD_DATABASE', // DOES NOT MATTER AT THE MOMENT, Tie this into one DS
-    },
+    // {
+    //     name: 'Upload Database',
+    //     description: '',
+    //     disabled: true,
+    //     data: 'UPLOAD_DATABASE', // DOES NOT MATTER AT THE MOMENT, Tie this into one DS
+    // },
     {
         name: 'Build Database',
         description: '',
@@ -127,10 +124,11 @@ export const stepsOne = [
     },
 ];
 
-// NEW CONSTRUCT --> EACH SPECIFIC ENGINE SELECTION WILL NEED A UNIQ ID
 // {
 //     MODEL: {
-//         TYPES_OF_ENGINE: [{
+//         "View All Page Header": [{
+//             // id will get created on mount of import and held in Context.
+//             id: Model-View All Page Header-Open AI
 //             name: 'Open AI',
 //             disable: false,
 //             icon: OPEN_AI,
@@ -140,6 +138,22 @@ export const stepsOne = [
 //     STORAGE: {},
 // }
 
+export type EngineFields = {
+    name: string;
+    fields: {
+        fieldName: string;
+        label: string;
+        defaultValue: string;
+        options: {
+            component: string;
+            options?: { value: string; display: string }[];
+        };
+        disabled: boolean;
+        rules: Record<string, any>; // react hook form
+    }[];
+}[];
+
+// TODO: Type out Connection Options
 export const CONNECTION_OPTIONS = {
     MODEL: {
         'Commercially Hosted': [
@@ -2691,7 +2705,7 @@ export const CONNECTION_OPTIONS = {
             {
                 name: 'REST',
                 disable: false,
-                icon: MINIO,
+                icon: RESTAPI,
                 fields: [
                     {
                         fieldName: 'FUNCTION_TYPE',
@@ -2788,7 +2802,7 @@ export const CONNECTION_OPTIONS = {
                         rules: { required: true },
                     },
                     {
-                        fieldName: 'FUNCTION_PARAMETERS',
+                        fieldName: 'parameters',
                         label: 'Function Parameters',
                         defaultValue: '',
                         options: {
@@ -2798,7 +2812,7 @@ export const CONNECTION_OPTIONS = {
                         rules: { required: true },
                     },
                     {
-                        fieldName: 'FUNCTION_REQUIRED_PARAMETERS',
+                        fieldName: 'requiredParameters',
                         label: 'Function Required Parameters',
                         defaultValue: '',
                         options: {
@@ -2808,12 +2822,6 @@ export const CONNECTION_OPTIONS = {
                         rules: { required: true },
                     },
                 ],
-            },
-            {
-                name: 'Test',
-                disable: true,
-                icon: BRAIN,
-                fields: [],
             },
         ],
         'File Uploads': [
@@ -3124,6 +3132,62 @@ export const CONNECTION_OPTIONS = {
                         disabled: false,
                         rules: { required: false },
                     },
+                    // ADVANCED
+                    {
+                        fieldName: 'FETCH_SIZE',
+                        label: 'Fetch Size',
+                        defaultValue: '',
+                        rules: { required: false, min: 0 },
+                        options: {
+                            component: 'number',
+                        },
+                        disabled: false,
+                        advanced: true,
+                    },
+                    {
+                        fieldName: 'CONNECTION_TIMEOUT',
+                        label: 'Connection Timeout',
+                        defaultValue: '',
+                        rules: { required: false, min: 0 },
+                        options: {
+                            component: 'number',
+                        },
+                        disabled: false,
+                        advanced: true,
+                    },
+                    {
+                        fieldName: 'CONNECTION_POOLING',
+                        label: 'Use Connection Pooling',
+                        defaultValue: false,
+                        rules: { required: false },
+                        options: {
+                            component: 'checkbox',
+                        },
+                        disabled: false,
+                        advanced: true,
+                    },
+                    {
+                        fieldName: 'POOL_MIN_SIZE',
+                        label: 'Pool Min Size',
+                        defaultValue: '',
+                        rules: { required: false, min: 0 },
+                        options: {
+                            component: 'number',
+                        },
+                        disabled: false,
+                        advanced: true,
+                    },
+                    {
+                        fieldName: 'POOL_MAX_SIZE',
+                        label: 'Pool Max Size',
+                        defaultValue: '',
+                        rules: { required: false, min: 0 },
+                        options: {
+                            component: 'number',
+                        },
+                        disabled: false,
+                        advanced: true,
+                    },
                 ],
             },
             {
@@ -3241,6 +3305,62 @@ export const CONNECTION_OPTIONS = {
                         },
                         disabled: false,
                         rules: { required: false },
+                    },
+                    // ADVANCED
+                    {
+                        fieldName: 'FETCH_SIZE',
+                        label: 'Fetch Size',
+                        defaultValue: '',
+                        rules: { required: false, min: 0 },
+                        options: {
+                            component: 'number',
+                        },
+                        disabled: false,
+                        advanced: true,
+                    },
+                    {
+                        fieldName: 'CONNECTION_TIMEOUT',
+                        label: 'Connection Timeout',
+                        defaultValue: '',
+                        rules: { required: false, min: 0 },
+                        options: {
+                            component: 'number',
+                        },
+                        disabled: false,
+                        advanced: true,
+                    },
+                    {
+                        fieldName: 'CONNECTION_POOLING',
+                        label: 'Use Connection Pooling',
+                        defaultValue: false,
+                        rules: { required: false },
+                        options: {
+                            component: 'checkbox',
+                        },
+                        disabled: false,
+                        advanced: true,
+                    },
+                    {
+                        fieldName: 'POOL_MIN_SIZE',
+                        label: 'Pool Min Size',
+                        defaultValue: '',
+                        rules: { required: false, min: 0 },
+                        options: {
+                            component: 'number',
+                        },
+                        disabled: false,
+                        advanced: true,
+                    },
+                    {
+                        fieldName: 'POOL_MAX_SIZE',
+                        label: 'Pool Max Size',
+                        defaultValue: '',
+                        rules: { required: false, min: 0 },
+                        options: {
+                            component: 'number',
+                        },
+                        disabled: false,
+                        advanced: true,
                     },
                 ],
             },
@@ -3498,6 +3618,62 @@ export const CONNECTION_OPTIONS = {
                         disabled: false,
                         rules: { required: false },
                     },
+                    // ADVANCED
+                    {
+                        fieldName: 'FETCH_SIZE',
+                        label: 'Fetch Size',
+                        defaultValue: '',
+                        rules: { required: false, min: 0 },
+                        options: {
+                            component: 'number',
+                        },
+                        disabled: false,
+                        advanced: true,
+                    },
+                    {
+                        fieldName: 'CONNECTION_TIMEOUT',
+                        label: 'Connection Timeout',
+                        defaultValue: '',
+                        rules: { required: false, min: 0 },
+                        options: {
+                            component: 'number',
+                        },
+                        disabled: false,
+                        advanced: true,
+                    },
+                    {
+                        fieldName: 'CONNECTION_POOLING',
+                        label: 'Use Connection Pooling',
+                        defaultValue: false,
+                        rules: { required: false },
+                        options: {
+                            component: 'checkbox',
+                        },
+                        disabled: false,
+                        advanced: true,
+                    },
+                    {
+                        fieldName: 'POOL_MIN_SIZE',
+                        label: 'Pool Min Size',
+                        defaultValue: '',
+                        rules: { required: false, min: 0 },
+                        options: {
+                            component: 'number',
+                        },
+                        disabled: false,
+                        advanced: true,
+                    },
+                    {
+                        fieldName: 'POOL_MAX_SIZE',
+                        label: 'Pool Max Size',
+                        defaultValue: '',
+                        rules: { required: false, min: 0 },
+                        options: {
+                            component: 'number',
+                        },
+                        disabled: false,
+                        advanced: true,
+                    },
                 ],
             },
             {
@@ -3625,6 +3801,62 @@ export const CONNECTION_OPTIONS = {
                         },
                         disabled: false,
                         rules: { required: false },
+                    },
+                    // ADVANCED
+                    {
+                        fieldName: 'FETCH_SIZE',
+                        label: 'Fetch Size',
+                        defaultValue: '',
+                        rules: { required: false, min: 0 },
+                        options: {
+                            component: 'number',
+                        },
+                        disabled: false,
+                        advanced: true,
+                    },
+                    {
+                        fieldName: 'CONNECTION_TIMEOUT',
+                        label: 'Connection Timeout',
+                        defaultValue: '',
+                        rules: { required: false, min: 0 },
+                        options: {
+                            component: 'number',
+                        },
+                        disabled: false,
+                        advanced: true,
+                    },
+                    {
+                        fieldName: 'CONNECTION_POOLING',
+                        label: 'Use Connection Pooling',
+                        defaultValue: false,
+                        rules: { required: false },
+                        options: {
+                            component: 'checkbox',
+                        },
+                        disabled: false,
+                        advanced: true,
+                    },
+                    {
+                        fieldName: 'POOL_MIN_SIZE',
+                        label: 'Pool Min Size',
+                        defaultValue: '',
+                        rules: { required: false, min: 0 },
+                        options: {
+                            component: 'number',
+                        },
+                        disabled: false,
+                        advanced: true,
+                    },
+                    {
+                        fieldName: 'POOL_MAX_SIZE',
+                        label: 'Pool Max Size',
+                        defaultValue: '',
+                        rules: { required: false, min: 0 },
+                        options: {
+                            component: 'number',
+                        },
+                        disabled: false,
+                        advanced: true,
                     },
                 ],
             },
@@ -3763,6 +3995,62 @@ export const CONNECTION_OPTIONS = {
                         },
                         disabled: false,
                         rules: { required: false },
+                    },
+                    // ADVANCED
+                    {
+                        fieldName: 'FETCH_SIZE',
+                        label: 'Fetch Size',
+                        defaultValue: '',
+                        rules: { required: false, min: 0 },
+                        options: {
+                            component: 'number',
+                        },
+                        disabled: false,
+                        advanced: true,
+                    },
+                    {
+                        fieldName: 'CONNECTION_TIMEOUT',
+                        label: 'Connection Timeout',
+                        defaultValue: '',
+                        rules: { required: false, min: 0 },
+                        options: {
+                            component: 'number',
+                        },
+                        disabled: false,
+                        advanced: true,
+                    },
+                    {
+                        fieldName: 'CONNECTION_POOLING',
+                        label: 'Use Connection Pooling',
+                        defaultValue: false,
+                        rules: { required: false },
+                        options: {
+                            component: 'checkbox',
+                        },
+                        disabled: false,
+                        advanced: true,
+                    },
+                    {
+                        fieldName: 'POOL_MIN_SIZE',
+                        label: 'Pool Min Size',
+                        defaultValue: '',
+                        rules: { required: false, min: 0 },
+                        options: {
+                            component: 'number',
+                        },
+                        disabled: false,
+                        advanced: true,
+                    },
+                    {
+                        fieldName: 'POOL_MAX_SIZE',
+                        label: 'Pool Max Size',
+                        defaultValue: '',
+                        rules: { required: false, min: 0 },
+                        options: {
+                            component: 'number',
+                        },
+                        disabled: false,
+                        advanced: true,
                     },
                 ],
             },
@@ -3979,6 +4267,61 @@ export const CONNECTION_OPTIONS = {
                         },
                         disabled: false,
                         rules: { required: false },
+                    }, // ADVANCED
+                    {
+                        fieldName: 'FETCH_SIZE',
+                        label: 'Fetch Size',
+                        defaultValue: '',
+                        rules: { required: false, min: 0 },
+                        options: {
+                            component: 'number',
+                        },
+                        disabled: false,
+                        advanced: true,
+                    },
+                    {
+                        fieldName: 'CONNECTION_TIMEOUT',
+                        label: 'Connection Timeout',
+                        defaultValue: '',
+                        rules: { required: false, min: 0 },
+                        options: {
+                            component: 'number',
+                        },
+                        disabled: false,
+                        advanced: true,
+                    },
+                    {
+                        fieldName: 'CONNECTION_POOLING',
+                        label: 'Use Connection Pooling',
+                        defaultValue: false,
+                        rules: { required: false },
+                        options: {
+                            component: 'checkbox',
+                        },
+                        disabled: false,
+                        advanced: true,
+                    },
+                    {
+                        fieldName: 'POOL_MIN_SIZE',
+                        label: 'Pool Min Size',
+                        defaultValue: '',
+                        rules: { required: false, min: 0 },
+                        options: {
+                            component: 'number',
+                        },
+                        disabled: false,
+                        advanced: true,
+                    },
+                    {
+                        fieldName: 'POOL_MAX_SIZE',
+                        label: 'Pool Max Size',
+                        defaultValue: '',
+                        rules: { required: false, min: 0 },
+                        options: {
+                            component: 'number',
+                        },
+                        disabled: false,
+                        advanced: true,
                     },
                 ],
             },
@@ -4098,6 +4441,62 @@ export const CONNECTION_OPTIONS = {
                         },
                         disabled: false,
                         rules: { required: false },
+                    },
+                    // ADVANCED
+                    {
+                        fieldName: 'FETCH_SIZE',
+                        label: 'Fetch Size',
+                        defaultValue: '',
+                        rules: { required: false, min: 0 },
+                        options: {
+                            component: 'number',
+                        },
+                        disabled: false,
+                        advanced: true,
+                    },
+                    {
+                        fieldName: 'CONNECTION_TIMEOUT',
+                        label: 'Connection Timeout',
+                        defaultValue: '',
+                        rules: { required: false, min: 0 },
+                        options: {
+                            component: 'number',
+                        },
+                        disabled: false,
+                        advanced: true,
+                    },
+                    {
+                        fieldName: 'CONNECTION_POOLING',
+                        label: 'Use Connection Pooling',
+                        defaultValue: false,
+                        rules: { required: false },
+                        options: {
+                            component: 'checkbox',
+                        },
+                        disabled: false,
+                        advanced: true,
+                    },
+                    {
+                        fieldName: 'POOL_MIN_SIZE',
+                        label: 'Pool Min Size',
+                        defaultValue: '',
+                        rules: { required: false, min: 0 },
+                        options: {
+                            component: 'number',
+                        },
+                        disabled: false,
+                        advanced: true,
+                    },
+                    {
+                        fieldName: 'POOL_MAX_SIZE',
+                        label: 'Pool Max Size',
+                        defaultValue: '',
+                        rules: { required: false, min: 0 },
+                        options: {
+                            component: 'number',
+                        },
+                        disabled: false,
+                        advanced: true,
                     },
                 ],
             },
@@ -4222,9 +4621,177 @@ export const CONNECTION_OPTIONS = {
             },
             {
                 name: 'H2',
-                disable: true,
+                disable: false,
                 icon: H2_DB,
-                fields: [],
+                fields: [
+                    {
+                        fieldName: 'dbDriver',
+                        label: 'Driver Name',
+                        defaultValue: 'HIVE',
+                        options: {
+                            component: 'text-field',
+                        },
+                        disabled: true,
+                        rules: { required: true },
+                        hidden: true,
+                    },
+                    {
+                        fieldName: 'NAME',
+                        label: 'Database Name',
+                        defaultValue: '',
+                        options: {
+                            component: 'text-field',
+                        },
+                        disabled: false,
+                        rules: { required: true },
+                    },
+                    {
+                        fieldName: 'DATABASE_DESCRIPTION',
+                        label: 'Database Description',
+                        defaultValue: '',
+                        options: {
+                            component: 'text-field',
+                        },
+                        disabled: false,
+                        rules: { required: false },
+                    },
+                    {
+                        fieldName: 'DATABASE_TAGS',
+                        label: 'Tags',
+                        defaultValue: '',
+                        options: {
+                            component: 'text-field',
+                        },
+                        disabled: false,
+                        rules: { required: false },
+                    },
+                    {
+                        fieldName: 'hostname',
+                        label: 'Host Name',
+                        defaultValue: '',
+                        options: {
+                            component: 'text-field',
+                        },
+                        disabled: false,
+                        rules: { required: true },
+                    },
+                    {
+                        fieldName: 'port',
+                        label: 'Port',
+                        defaultValue: '1000',
+                        options: {
+                            component: 'text-field',
+                        },
+                        disabled: false,
+                        rules: { required: false },
+                    },
+                    {
+                        fieldName: 'schema',
+                        label: 'Schema',
+                        defaultValue: '',
+                        options: {
+                            component: 'text-field',
+                        },
+                        disabled: false,
+                        rules: { required: false },
+                    },
+                    {
+                        fieldName: 'USERNAME',
+                        label: 'Username',
+                        defaultValue: '',
+                        options: {
+                            component: 'text-field',
+                        },
+                        disabled: false,
+                        rules: { required: false },
+                    },
+                    {
+                        fieldName: 'PASSWORD',
+                        label: 'Password',
+                        defaultValue: '',
+                        options: {
+                            component: 'password',
+                        },
+                        disabled: false,
+                        rules: { required: false },
+                    },
+                    {
+                        fieldName: 'additional',
+                        label: 'Additional Parameters',
+                        defaultValue: '',
+                        options: {
+                            component: 'text-field',
+                        },
+                        disabled: false,
+                        rules: { required: false },
+                    },
+                    {
+                        fieldName: 'CONNECTION_URL',
+                        label: 'JDBC Url',
+                        defaultValue: '',
+                        options: {
+                            component: 'text-field',
+                        },
+                        disabled: false,
+                        rules: { required: false },
+                    },
+                    // ADVANCED
+                    {
+                        fieldName: 'FETCH_SIZE',
+                        label: 'Fetch Size',
+                        defaultValue: '',
+                        rules: { required: false, min: 0 },
+                        options: {
+                            component: 'number',
+                        },
+                        disabled: false,
+                        advanced: true,
+                    },
+                    {
+                        fieldName: 'CONNECTION_TIMEOUT',
+                        label: 'Connection Timeout',
+                        defaultValue: '',
+                        rules: { required: false, min: 0 },
+                        options: {
+                            component: 'number',
+                        },
+                        disabled: false,
+                        advanced: true,
+                    },
+                    {
+                        fieldName: 'CONNECTION_POOLING',
+                        label: 'Use Connection Pooling',
+                        defaultValue: false,
+                        rules: { required: false },
+                        options: {
+                            component: 'checkbox',
+                        },
+                        disabled: false,
+                        advanced: true,
+                    },
+                    {
+                        fieldName: 'POOL_MIN_SIZE',
+                        label: 'Pool Min Size',
+                        defaultValue: '',
+                        rules: { required: false, min: 0 },
+                        options: {
+                            component: 'number',
+                        },
+                        disabled: false,
+                        advanced: true,
+                    },
+                    {
+                        fieldName: 'POOL_MAX_SIZE',
+                        label: 'Pool Max Size',
+                        defaultValue: '',
+                        rules: { required: false, min: 0 },
+                        options: {
+                            component: 'number',
+                        },
+                        disabled: false,
+                        advanced: true,
+                    },
+                ],
             },
 
             {
@@ -4342,6 +4909,62 @@ export const CONNECTION_OPTIONS = {
                         },
                         disabled: false,
                         rules: { required: false },
+                    },
+                    // ADVANCED
+                    {
+                        fieldName: 'FETCH_SIZE',
+                        label: 'Fetch Size',
+                        defaultValue: '',
+                        rules: { required: false, min: 0 },
+                        options: {
+                            component: 'number',
+                        },
+                        disabled: false,
+                        advanced: true,
+                    },
+                    {
+                        fieldName: 'CONNECTION_TIMEOUT',
+                        label: 'Connection Timeout',
+                        defaultValue: '',
+                        rules: { required: false, min: 0 },
+                        options: {
+                            component: 'number',
+                        },
+                        disabled: false,
+                        advanced: true,
+                    },
+                    {
+                        fieldName: 'CONNECTION_POOLING',
+                        label: 'Use Connection Pooling',
+                        defaultValue: false,
+                        rules: { required: false },
+                        options: {
+                            component: 'checkbox',
+                        },
+                        disabled: false,
+                        advanced: true,
+                    },
+                    {
+                        fieldName: 'POOL_MIN_SIZE',
+                        label: 'Pool Min Size',
+                        defaultValue: '',
+                        rules: { required: false, min: 0 },
+                        options: {
+                            component: 'number',
+                        },
+                        disabled: false,
+                        advanced: true,
+                    },
+                    {
+                        fieldName: 'POOL_MAX_SIZE',
+                        label: 'Pool Max Size',
+                        defaultValue: '',
+                        rules: { required: false, min: 0 },
+                        options: {
+                            component: 'number',
+                        },
+                        disabled: false,
+                        advanced: true,
                     },
                 ],
             },
@@ -4462,6 +5085,62 @@ export const CONNECTION_OPTIONS = {
                         disabled: false,
                         rules: { required: false },
                     },
+                    // ADVANCED
+                    {
+                        fieldName: 'FETCH_SIZE',
+                        label: 'Fetch Size',
+                        defaultValue: '',
+                        rules: { required: false, min: 0 },
+                        options: {
+                            component: 'number',
+                        },
+                        disabled: false,
+                        advanced: true,
+                    },
+                    {
+                        fieldName: 'CONNECTION_TIMEOUT',
+                        label: 'Connection Timeout',
+                        defaultValue: '',
+                        rules: { required: false, min: 0 },
+                        options: {
+                            component: 'number',
+                        },
+                        disabled: false,
+                        advanced: true,
+                    },
+                    {
+                        fieldName: 'CONNECTION_POOLING',
+                        label: 'Use Connection Pooling',
+                        defaultValue: false,
+                        rules: { required: false },
+                        options: {
+                            component: 'checkbox',
+                        },
+                        disabled: false,
+                        advanced: true,
+                    },
+                    {
+                        fieldName: 'POOL_MIN_SIZE',
+                        label: 'Pool Min Size',
+                        defaultValue: '',
+                        rules: { required: false, min: 0 },
+                        options: {
+                            component: 'number',
+                        },
+                        disabled: false,
+                        advanced: true,
+                    },
+                    {
+                        fieldName: 'POOL_MAX_SIZE',
+                        label: 'Pool Max Size',
+                        defaultValue: '',
+                        rules: { required: false, min: 0 },
+                        options: {
+                            component: 'number',
+                        },
+                        disabled: false,
+                        advanced: true,
+                    },
                 ],
             },
             {
@@ -4580,6 +5259,62 @@ export const CONNECTION_OPTIONS = {
                         disabled: false,
                         rules: { required: false },
                     },
+                    // ADVANCED
+                    {
+                        fieldName: 'FETCH_SIZE',
+                        label: 'Fetch Size',
+                        defaultValue: '',
+                        rules: { required: false, min: 0 },
+                        options: {
+                            component: 'number',
+                        },
+                        disabled: false,
+                        advanced: true,
+                    },
+                    {
+                        fieldName: 'CONNECTION_TIMEOUT',
+                        label: 'Connection Timeout',
+                        defaultValue: '',
+                        rules: { required: false, min: 0 },
+                        options: {
+                            component: 'number',
+                        },
+                        disabled: false,
+                        advanced: true,
+                    },
+                    {
+                        fieldName: 'CONNECTION_POOLING',
+                        label: 'Use Connection Pooling',
+                        defaultValue: false,
+                        rules: { required: false },
+                        options: {
+                            component: 'checkbox',
+                        },
+                        disabled: false,
+                        advanced: true,
+                    },
+                    {
+                        fieldName: 'POOL_MIN_SIZE',
+                        label: 'Pool Min Size',
+                        defaultValue: '',
+                        rules: { required: false, min: 0 },
+                        options: {
+                            component: 'number',
+                        },
+                        disabled: false,
+                        advanced: true,
+                    },
+                    {
+                        fieldName: 'POOL_MAX_SIZE',
+                        label: 'Pool Max Size',
+                        defaultValue: '',
+                        rules: { required: false, min: 0 },
+                        options: {
+                            component: 'number',
+                        },
+                        disabled: false,
+                        advanced: true,
+                    },
                 ],
             },
             {
@@ -4697,6 +5432,62 @@ export const CONNECTION_OPTIONS = {
                         },
                         disabled: false,
                         rules: { required: false },
+                    },
+                    // ADVANCED
+                    {
+                        fieldName: 'FETCH_SIZE',
+                        label: 'Fetch Size',
+                        defaultValue: '',
+                        rules: { required: false, min: 0 },
+                        options: {
+                            component: 'number',
+                        },
+                        disabled: false,
+                        advanced: true,
+                    },
+                    {
+                        fieldName: 'CONNECTION_TIMEOUT',
+                        label: 'Connection Timeout',
+                        defaultValue: '',
+                        rules: { required: false, min: 0 },
+                        options: {
+                            component: 'number',
+                        },
+                        disabled: false,
+                        advanced: true,
+                    },
+                    {
+                        fieldName: 'CONNECTION_POOLING',
+                        label: 'Use Connection Pooling',
+                        defaultValue: false,
+                        rules: { required: false },
+                        options: {
+                            component: 'checkbox',
+                        },
+                        disabled: false,
+                        advanced: true,
+                    },
+                    {
+                        fieldName: 'POOL_MIN_SIZE',
+                        label: 'Pool Min Size',
+                        defaultValue: '',
+                        rules: { required: false, min: 0 },
+                        options: {
+                            component: 'number',
+                        },
+                        disabled: false,
+                        advanced: true,
+                    },
+                    {
+                        fieldName: 'POOL_MAX_SIZE',
+                        label: 'Pool Max Size',
+                        defaultValue: '',
+                        rules: { required: false, min: 0 },
+                        options: {
+                            component: 'number',
+                        },
+                        disabled: false,
+                        advanced: true,
                     },
                 ],
             },
@@ -4934,6 +5725,62 @@ export const CONNECTION_OPTIONS = {
                         disabled: false,
                         rules: { required: false },
                     },
+                    // ADVANCED
+                    {
+                        fieldName: 'FETCH_SIZE',
+                        label: 'Fetch Size',
+                        defaultValue: '',
+                        rules: { required: false, min: 0 },
+                        options: {
+                            component: 'number',
+                        },
+                        disabled: false,
+                        advanced: true,
+                    },
+                    {
+                        fieldName: 'CONNECTION_TIMEOUT',
+                        label: 'Connection Timeout',
+                        defaultValue: '',
+                        rules: { required: false, min: 0 },
+                        options: {
+                            component: 'number',
+                        },
+                        disabled: false,
+                        advanced: true,
+                    },
+                    {
+                        fieldName: 'CONNECTION_POOLING',
+                        label: 'Use Connection Pooling',
+                        defaultValue: false,
+                        rules: { required: false },
+                        options: {
+                            component: 'checkbox',
+                        },
+                        disabled: false,
+                        advanced: true,
+                    },
+                    {
+                        fieldName: 'POOL_MIN_SIZE',
+                        label: 'Pool Min Size',
+                        defaultValue: '',
+                        rules: { required: false, min: 0 },
+                        options: {
+                            component: 'number',
+                        },
+                        disabled: false,
+                        advanced: true,
+                    },
+                    {
+                        fieldName: 'POOL_MAX_SIZE',
+                        label: 'Pool Max Size',
+                        defaultValue: '',
+                        rules: { required: false, min: 0 },
+                        options: {
+                            component: 'number',
+                        },
+                        disabled: false,
+                        advanced: true,
+                    },
                 ],
             },
             {
@@ -5051,6 +5898,62 @@ export const CONNECTION_OPTIONS = {
                         },
                         disabled: false,
                         rules: { required: false },
+                    },
+                    // ADVANCED
+                    {
+                        fieldName: 'FETCH_SIZE',
+                        label: 'Fetch Size',
+                        defaultValue: '',
+                        rules: { required: false, min: 0 },
+                        options: {
+                            component: 'number',
+                        },
+                        disabled: false,
+                        advanced: true,
+                    },
+                    {
+                        fieldName: 'CONNECTION_TIMEOUT',
+                        label: 'Connection Timeout',
+                        defaultValue: '',
+                        rules: { required: false, min: 0 },
+                        options: {
+                            component: 'number',
+                        },
+                        disabled: false,
+                        advanced: true,
+                    },
+                    {
+                        fieldName: 'CONNECTION_POOLING',
+                        label: 'Use Connection Pooling',
+                        defaultValue: false,
+                        rules: { required: false },
+                        options: {
+                            component: 'checkbox',
+                        },
+                        disabled: false,
+                        advanced: true,
+                    },
+                    {
+                        fieldName: 'POOL_MIN_SIZE',
+                        label: 'Pool Min Size',
+                        defaultValue: '',
+                        rules: { required: false, min: 0 },
+                        options: {
+                            component: 'number',
+                        },
+                        disabled: false,
+                        advanced: true,
+                    },
+                    {
+                        fieldName: 'POOL_MAX_SIZE',
+                        label: 'Pool Max Size',
+                        defaultValue: '',
+                        rules: { required: false, min: 0 },
+                        options: {
+                            component: 'number',
+                        },
+                        disabled: false,
+                        advanced: true,
                     },
                 ],
             },
@@ -5180,6 +6083,62 @@ export const CONNECTION_OPTIONS = {
                         disabled: false,
                         rules: { required: false },
                     },
+                    // ADVANCED
+                    {
+                        fieldName: 'FETCH_SIZE',
+                        label: 'Fetch Size',
+                        defaultValue: '',
+                        rules: { required: false, min: 0 },
+                        options: {
+                            component: 'number',
+                        },
+                        disabled: false,
+                        advanced: true,
+                    },
+                    {
+                        fieldName: 'CONNECTION_TIMEOUT',
+                        label: 'Connection Timeout',
+                        defaultValue: '',
+                        rules: { required: false, min: 0 },
+                        options: {
+                            component: 'number',
+                        },
+                        disabled: false,
+                        advanced: true,
+                    },
+                    {
+                        fieldName: 'CONNECTION_POOLING',
+                        label: 'Use Connection Pooling',
+                        defaultValue: false,
+                        rules: { required: false },
+                        options: {
+                            component: 'checkbox',
+                        },
+                        disabled: false,
+                        advanced: true,
+                    },
+                    {
+                        fieldName: 'POOL_MIN_SIZE',
+                        label: 'Pool Min Size',
+                        defaultValue: '',
+                        rules: { required: false, min: 0 },
+                        options: {
+                            component: 'number',
+                        },
+                        disabled: false,
+                        advanced: true,
+                    },
+                    {
+                        fieldName: 'POOL_MAX_SIZE',
+                        label: 'Pool Max Size',
+                        defaultValue: '',
+                        rules: { required: false, min: 0 },
+                        options: {
+                            component: 'number',
+                        },
+                        disabled: false,
+                        advanced: true,
+                    },
                 ],
             },
             {
@@ -5308,6 +6267,62 @@ export const CONNECTION_OPTIONS = {
                         disabled: false,
                         rules: { required: false },
                     },
+                    // ADVANCED
+                    {
+                        fieldName: 'FETCH_SIZE',
+                        label: 'Fetch Size',
+                        defaultValue: '',
+                        rules: { required: false, min: 0 },
+                        options: {
+                            component: 'number',
+                        },
+                        disabled: false,
+                        advanced: true,
+                    },
+                    {
+                        fieldName: 'CONNECTION_TIMEOUT',
+                        label: 'Connection Timeout',
+                        defaultValue: '',
+                        rules: { required: false, min: 0 },
+                        options: {
+                            component: 'number',
+                        },
+                        disabled: false,
+                        advanced: true,
+                    },
+                    {
+                        fieldName: 'CONNECTION_POOLING',
+                        label: 'Use Connection Pooling',
+                        defaultValue: false,
+                        rules: { required: false },
+                        options: {
+                            component: 'checkbox',
+                        },
+                        disabled: false,
+                        advanced: true,
+                    },
+                    {
+                        fieldName: 'POOL_MIN_SIZE',
+                        label: 'Pool Min Size',
+                        defaultValue: '',
+                        rules: { required: false, min: 0 },
+                        options: {
+                            component: 'number',
+                        },
+                        disabled: false,
+                        advanced: true,
+                    },
+                    {
+                        fieldName: 'POOL_MAX_SIZE',
+                        label: 'Pool Max Size',
+                        defaultValue: '',
+                        rules: { required: false, min: 0 },
+                        options: {
+                            component: 'number',
+                        },
+                        disabled: false,
+                        advanced: true,
+                    },
                 ],
             },
             {
@@ -5425,6 +6440,62 @@ export const CONNECTION_OPTIONS = {
                         },
                         disabled: false,
                         rules: { required: false },
+                    },
+                    // ADVANCED
+                    {
+                        fieldName: 'FETCH_SIZE',
+                        label: 'Fetch Size',
+                        defaultValue: '',
+                        rules: { required: false, min: 0 },
+                        options: {
+                            component: 'number',
+                        },
+                        disabled: false,
+                        advanced: true,
+                    },
+                    {
+                        fieldName: 'CONNECTION_TIMEOUT',
+                        label: 'Connection Timeout',
+                        defaultValue: '',
+                        rules: { required: false, min: 0 },
+                        options: {
+                            component: 'number',
+                        },
+                        disabled: false,
+                        advanced: true,
+                    },
+                    {
+                        fieldName: 'CONNECTION_POOLING',
+                        label: 'Use Connection Pooling',
+                        defaultValue: false,
+                        rules: { required: false },
+                        options: {
+                            component: 'checkbox',
+                        },
+                        disabled: false,
+                        advanced: true,
+                    },
+                    {
+                        fieldName: 'POOL_MIN_SIZE',
+                        label: 'Pool Min Size',
+                        defaultValue: '',
+                        rules: { required: false, min: 0 },
+                        options: {
+                            component: 'number',
+                        },
+                        disabled: false,
+                        advanced: true,
+                    },
+                    {
+                        fieldName: 'POOL_MAX_SIZE',
+                        label: 'Pool Max Size',
+                        defaultValue: '',
+                        rules: { required: false, min: 0 },
+                        options: {
+                            component: 'number',
+                        },
+                        disabled: false,
+                        advanced: true,
                     },
                 ],
             },
@@ -5584,6 +6655,62 @@ export const CONNECTION_OPTIONS = {
                         disabled: false,
                         rules: { required: false },
                     },
+                    // ADVANCED
+                    {
+                        fieldName: 'FETCH_SIZE',
+                        label: 'Fetch Size',
+                        defaultValue: '',
+                        rules: { required: false, min: 0 },
+                        options: {
+                            component: 'number',
+                        },
+                        disabled: false,
+                        advanced: true,
+                    },
+                    {
+                        fieldName: 'CONNECTION_TIMEOUT',
+                        label: 'Connection Timeout',
+                        defaultValue: '',
+                        rules: { required: false, min: 0 },
+                        options: {
+                            component: 'number',
+                        },
+                        disabled: false,
+                        advanced: true,
+                    },
+                    {
+                        fieldName: 'CONNECTION_POOLING',
+                        label: 'Use Connection Pooling',
+                        defaultValue: false,
+                        rules: { required: false },
+                        options: {
+                            component: 'checkbox',
+                        },
+                        disabled: false,
+                        advanced: true,
+                    },
+                    {
+                        fieldName: 'POOL_MIN_SIZE',
+                        label: 'Pool Min Size',
+                        defaultValue: '',
+                        rules: { required: false, min: 0 },
+                        options: {
+                            component: 'number',
+                        },
+                        disabled: false,
+                        advanced: true,
+                    },
+                    {
+                        fieldName: 'POOL_MAX_SIZE',
+                        label: 'Pool Max Size',
+                        defaultValue: '',
+                        rules: { required: false, min: 0 },
+                        options: {
+                            component: 'number',
+                        },
+                        disabled: false,
+                        advanced: true,
+                    },
                 ],
             },
             {
@@ -5733,6 +6860,62 @@ export const CONNECTION_OPTIONS = {
                         disabled: false,
                         rules: { required: false },
                     },
+                    // ADVANCED
+                    {
+                        fieldName: 'FETCH_SIZE',
+                        label: 'Fetch Size',
+                        defaultValue: '',
+                        rules: { required: false, min: 0 },
+                        options: {
+                            component: 'number',
+                        },
+                        disabled: false,
+                        advanced: true,
+                    },
+                    {
+                        fieldName: 'CONNECTION_TIMEOUT',
+                        label: 'Connection Timeout',
+                        defaultValue: '',
+                        rules: { required: false, min: 0 },
+                        options: {
+                            component: 'number',
+                        },
+                        disabled: false,
+                        advanced: true,
+                    },
+                    {
+                        fieldName: 'CONNECTION_POOLING',
+                        label: 'Use Connection Pooling',
+                        defaultValue: false,
+                        rules: { required: false },
+                        options: {
+                            component: 'checkbox',
+                        },
+                        disabled: false,
+                        advanced: true,
+                    },
+                    {
+                        fieldName: 'POOL_MIN_SIZE',
+                        label: 'Pool Min Size',
+                        defaultValue: '',
+                        rules: { required: false, min: 0 },
+                        options: {
+                            component: 'number',
+                        },
+                        disabled: false,
+                        advanced: true,
+                    },
+                    {
+                        fieldName: 'POOL_MAX_SIZE',
+                        label: 'Pool Max Size',
+                        defaultValue: '',
+                        rules: { required: false, min: 0 },
+                        options: {
+                            component: 'number',
+                        },
+                        disabled: false,
+                        advanced: true,
+                    },
                 ],
             },
             {
@@ -5861,14 +7044,228 @@ export const CONNECTION_OPTIONS = {
                         disabled: false,
                         rules: { required: false },
                     },
+                    // ADVANCED
+                    {
+                        fieldName: 'FETCH_SIZE',
+                        label: 'Fetch Size',
+                        defaultValue: '',
+                        rules: { required: false, min: 0 },
+                        options: {
+                            component: 'number',
+                        },
+                        disabled: false,
+                        advanced: true,
+                    },
+                    {
+                        fieldName: 'CONNECTION_TIMEOUT',
+                        label: 'Connection Timeout',
+                        defaultValue: '',
+                        rules: { required: false, min: 0 },
+                        options: {
+                            component: 'number',
+                        },
+                        disabled: false,
+                        advanced: true,
+                    },
+                    {
+                        fieldName: 'CONNECTION_POOLING',
+                        label: 'Use Connection Pooling',
+                        defaultValue: false,
+                        rules: { required: false },
+                        options: {
+                            component: 'checkbox',
+                        },
+                        disabled: false,
+                        advanced: true,
+                    },
+                    {
+                        fieldName: 'POOL_MIN_SIZE',
+                        label: 'Pool Min Size',
+                        defaultValue: '',
+                        rules: { required: false, min: 0 },
+                        options: {
+                            component: 'number',
+                        },
+                        disabled: false,
+                        advanced: true,
+                    },
+                    {
+                        fieldName: 'POOL_MAX_SIZE',
+                        label: 'Pool Max Size',
+                        defaultValue: '',
+                        rules: { required: false, min: 0 },
+                        options: {
+                            component: 'number',
+                        },
+                        disabled: false,
+                        advanced: true,
+                    },
                 ],
             },
 
             {
                 name: 'SQLITE',
-                disable: true,
+                disable: false,
                 icon: SQLITE,
-                fields: [],
+                fields: [
+                    {
+                        fieldName: 'dbDriver',
+                        label: 'Driver Name',
+                        defaultValue: 'SQLITE',
+                        options: {
+                            component: 'text-field',
+                        },
+                        disabled: true,
+                        rules: { required: true },
+                        hidden: true,
+                    },
+                    {
+                        fieldName: 'NAME',
+                        label: 'Database Name',
+                        defaultValue: '',
+                        options: {
+                            component: 'text-field',
+                        },
+                        disabled: false,
+                        rules: { required: true },
+                    },
+                    {
+                        fieldName: 'DATABASE_DESCRIPTION',
+                        label: 'Database Description',
+                        defaultValue: '',
+                        options: {
+                            component: 'text-field',
+                        },
+                        disabled: false,
+                        rules: { required: false },
+                    },
+                    {
+                        fieldName: 'DATABASE_TAGS',
+                        label: 'Tags',
+                        defaultValue: '',
+                        options: {
+                            component: 'text-field',
+                        },
+                        disabled: false,
+                        rules: { required: false },
+                    },
+                    {
+                        fieldName: 'hostname',
+                        label: 'Host Name',
+                        defaultValue: '',
+                        options: {
+                            component: 'text-field',
+                        },
+                        disabled: false,
+                        rules: { required: true },
+                    },
+                    {
+                        fieldName: 'port',
+                        label: 'Port',
+                        defaultValue: '1000',
+                        options: {
+                            component: 'text-field',
+                        },
+                        disabled: false,
+                        rules: { required: false },
+                    },
+                    {
+                        fieldName: 'USERNAME',
+                        label: 'Username',
+                        defaultValue: '',
+                        options: {
+                            component: 'text-field',
+                        },
+                        disabled: false,
+                        rules: { required: false },
+                    },
+                    {
+                        fieldName: 'PASSWORD',
+                        label: 'Password',
+                        defaultValue: '',
+                        options: {
+                            component: 'password',
+                        },
+                        disabled: false,
+                        rules: { required: false },
+                    },
+                    {
+                        fieldName: 'additional',
+                        label: 'Additional Parameters',
+                        defaultValue: '',
+                        options: {
+                            component: 'text-field',
+                        },
+                        disabled: false,
+                        rules: { required: false },
+                    },
+                    {
+                        fieldName: 'CONNECTION_URL',
+                        label: 'JDBC Url',
+                        defaultValue: '',
+                        options: {
+                            component: 'text-field',
+                        },
+                        disabled: false,
+                        rules: { required: false },
+                    },
+                    // ADVANCED
+                    {
+                        fieldName: 'FETCH_SIZE',
+                        label: 'Fetch Size',
+                        defaultValue: '',
+                        rules: { required: false, min: 0 },
+                        options: {
+                            component: 'number',
+                        },
+                        disabled: false,
+                        advanced: true,
+                    },
+                    {
+                        fieldName: 'CONNECTION_TIMEOUT',
+                        label: 'Connection Timeout',
+                        defaultValue: '',
+                        rules: { required: false, min: 0 },
+                        options: {
+                            component: 'number',
+                        },
+                        disabled: false,
+                        advanced: true,
+                    },
+                    {
+                        fieldName: 'CONNECTION_POOLING',
+                        label: 'Use Connection Pooling',
+                        defaultValue: false,
+                        rules: { required: false },
+                        options: {
+                            component: 'checkbox',
+                        },
+                        disabled: false,
+                        advanced: true,
+                    },
+                    {
+                        fieldName: 'POOL_MIN_SIZE',
+                        label: 'Pool Min Size',
+                        defaultValue: '',
+                        rules: { required: false, min: 0 },
+                        options: {
+                            component: 'number',
+                        },
+                        disabled: false,
+                        advanced: true,
+                    },
+                    {
+                        fieldName: 'POOL_MAX_SIZE',
+                        label: 'Pool Max Size',
+                        defaultValue: '',
+                        rules: { required: false, min: 0 },
+                        options: {
+                            component: 'number',
+                        },
+                        disabled: false,
+                        advanced: true,
+                    },
+                ],
             },
             {
                 name: 'Teradata',
@@ -5975,6 +7372,62 @@ export const CONNECTION_OPTIONS = {
                         },
                         disabled: false,
                         rules: { required: false },
+                    },
+                    // ADVANCED
+                    {
+                        fieldName: 'FETCH_SIZE',
+                        label: 'Fetch Size',
+                        defaultValue: '',
+                        rules: { required: false, min: 0 },
+                        options: {
+                            component: 'number',
+                        },
+                        disabled: false,
+                        advanced: true,
+                    },
+                    {
+                        fieldName: 'CONNECTION_TIMEOUT',
+                        label: 'Connection Timeout',
+                        defaultValue: '',
+                        rules: { required: false, min: 0 },
+                        options: {
+                            component: 'number',
+                        },
+                        disabled: false,
+                        advanced: true,
+                    },
+                    {
+                        fieldName: 'CONNECTION_POOLING',
+                        label: 'Use Connection Pooling',
+                        defaultValue: false,
+                        rules: { required: false },
+                        options: {
+                            component: 'checkbox',
+                        },
+                        disabled: false,
+                        advanced: true,
+                    },
+                    {
+                        fieldName: 'POOL_MIN_SIZE',
+                        label: 'Pool Min Size',
+                        defaultValue: '',
+                        rules: { required: false, min: 0 },
+                        options: {
+                            component: 'number',
+                        },
+                        disabled: false,
+                        advanced: true,
+                    },
+                    {
+                        fieldName: 'POOL_MAX_SIZE',
+                        label: 'Pool Max Size',
+                        defaultValue: '',
+                        rules: { required: false, min: 0 },
+                        options: {
+                            component: 'number',
+                        },
+                        disabled: false,
+                        advanced: true,
                     },
                 ],
             },
@@ -6093,6 +7546,62 @@ export const CONNECTION_OPTIONS = {
                         },
                         disabled: false,
                         rules: { required: false },
+                    },
+                    // ADVANCED
+                    {
+                        fieldName: 'FETCH_SIZE',
+                        label: 'Fetch Size',
+                        defaultValue: '',
+                        rules: { required: false, min: 0 },
+                        options: {
+                            component: 'number',
+                        },
+                        disabled: false,
+                        advanced: true,
+                    },
+                    {
+                        fieldName: 'CONNECTION_TIMEOUT',
+                        label: 'Connection Timeout',
+                        defaultValue: '',
+                        rules: { required: false, min: 0 },
+                        options: {
+                            component: 'number',
+                        },
+                        disabled: false,
+                        advanced: true,
+                    },
+                    {
+                        fieldName: 'CONNECTION_POOLING',
+                        label: 'Use Connection Pooling',
+                        defaultValue: false,
+                        rules: { required: false },
+                        options: {
+                            component: 'checkbox',
+                        },
+                        disabled: false,
+                        advanced: true,
+                    },
+                    {
+                        fieldName: 'POOL_MIN_SIZE',
+                        label: 'Pool Min Size',
+                        defaultValue: '',
+                        rules: { required: false, min: 0 },
+                        options: {
+                            component: 'number',
+                        },
+                        disabled: false,
+                        advanced: true,
+                    },
+                    {
+                        fieldName: 'POOL_MAX_SIZE',
+                        label: 'Pool Max Size',
+                        defaultValue: '',
+                        rules: { required: false, min: 0 },
+                        options: {
+                            component: 'number',
+                        },
+                        disabled: false,
+                        advanced: true,
                     },
                 ],
             },
@@ -6222,6 +7731,62 @@ export const CONNECTION_OPTIONS = {
                         disabled: false,
                         rules: { required: false },
                     },
+                    // ADVANCED
+                    {
+                        fieldName: 'FETCH_SIZE',
+                        label: 'Fetch Size',
+                        defaultValue: '',
+                        rules: { required: false, min: 0 },
+                        options: {
+                            component: 'number',
+                        },
+                        disabled: false,
+                        advanced: true,
+                    },
+                    {
+                        fieldName: 'CONNECTION_TIMEOUT',
+                        label: 'Connection Timeout',
+                        defaultValue: '',
+                        rules: { required: false, min: 0 },
+                        options: {
+                            component: 'number',
+                        },
+                        disabled: false,
+                        advanced: true,
+                    },
+                    {
+                        fieldName: 'CONNECTION_POOLING',
+                        label: 'Use Connection Pooling',
+                        defaultValue: false,
+                        rules: { required: false },
+                        options: {
+                            component: 'checkbox',
+                        },
+                        disabled: false,
+                        advanced: true,
+                    },
+                    {
+                        fieldName: 'POOL_MIN_SIZE',
+                        label: 'Pool Min Size',
+                        defaultValue: '',
+                        rules: { required: false, min: 0 },
+                        options: {
+                            component: 'number',
+                        },
+                        disabled: false,
+                        advanced: true,
+                    },
+                    {
+                        fieldName: 'POOL_MAX_SIZE',
+                        label: 'Pool Max Size',
+                        defaultValue: '',
+                        rules: { required: false, min: 0 },
+                        options: {
+                            component: 'number',
+                        },
+                        disabled: false,
+                        advanced: true,
+                    },
                 ],
             },
         ],
@@ -6279,6 +7844,73 @@ export const CONNECTION_OPTIONS = {
                         defaultValue: '',
                         options: {
                             component: 'password',
+                        },
+                        disabled: false,
+                        rules: { required: false },
+                    },
+                ],
+            },
+            {
+                name: 'CEPH',
+                disable: false,
+                icon: CEPH,
+                fields: [
+                    {
+                        fieldName: 'STORAGE_TYPE',
+                        label: 'Storage Type',
+                        defaultValue: 'CEPH',
+                        options: {
+                            component: 'text-field',
+                        },
+                        disabled: true,
+                        rules: { required: true },
+                    },
+                    {
+                        fieldName: 'NAME',
+                        label: 'Name',
+                        defaultValue: '',
+                        options: {
+                            component: 'text-field',
+                        },
+                        disabled: false,
+                        rules: { required: true },
+                    },
+                    {
+                        fieldName: 'CEPH_ACCESS_KEY',
+                        label: 'Access Key',
+                        defaultValue: '',
+                        options: {
+                            component: 'text-field',
+                        },
+                        disabled: false,
+                        rules: { required: true },
+                    },
+                    {
+                        fieldName: 'CEPH_SECRET_KEY',
+                        label: 'Secret Key',
+                        defaultValue: '',
+                        options: {
+                            component: 'password',
+                        },
+                        disabled: false,
+                        rules: { required: true },
+                    },
+                    {
+                        fieldName: 'CEPH_ENDPOINT',
+                        label: 'Endpoint',
+                        defaultValue: '',
+                        options: {
+                            component: 'text-field',
+                        },
+                        disabled: false,
+                        rules: { required: true },
+                    },
+                    {
+                        fieldName: 'CEPH_BUCKET',
+                        label: 'Root Bucket Path',
+                        defaultValue: '',
+                        options: {
+                            component: 'text-field',
                         },
                         disabled: false,
                         rules: { required: false },
@@ -6778,204 +8410,6 @@ export const CONNECTION_OPTIONS = {
                         rules: { required: true },
                     },
                 ],
-            },
-        ],
-    },
-};
-
-const d = {
-    FUNCTION: {
-        Function: [
-            {
-                name: 'MINIO DUPE',
-                disable: false,
-                icon: MINIO,
-                fields: [
-                    {
-                        fieldName: 'STORAGE_TYPE',
-                        label: 'Storage Type',
-                        defaultValue: 'MINIO',
-                        options: {
-                            component: 'text-field',
-                        },
-                        disabled: true,
-                        rules: { required: true },
-                    },
-                    {
-                        fieldName: 'NAME',
-                        label: 'Name',
-                        defaultValue: '',
-                        options: {
-                            component: 'text-field',
-                        },
-                        disabled: false,
-                        rules: { required: true },
-                    },
-                    {
-                        fieldName: 'MINIO_REGION',
-                        label: 'Region',
-                        defaultValue: 'us-east-1',
-                        options: {
-                            component: 'text-field',
-                        },
-                        disabled: false,
-                        rules: { required: true },
-                    },
-                    {
-                        fieldName: 'MINIO_ACCESS_KEY',
-                        label: 'Access Key',
-                        defaultValue: '',
-                        options: {
-                            component: 'text-field',
-                        },
-                        disabled: false,
-                        rules: { required: true },
-                    },
-                    {
-                        fieldName: 'MINIO_SECRET_KEY',
-                        label: 'Secret Key',
-                        defaultValue: '',
-                        options: {
-                            component: 'password',
-                        },
-                        disabled: false,
-                        rules: { required: true },
-                    },
-                    {
-                        fieldName: 'MINIO_ENDPOINT',
-                        label: 'Endpoint',
-                        defaultValue: '',
-                        options: {
-                            component: 'text-field',
-                        },
-                        disabled: false,
-                        rules: { required: true },
-                    },
-                    {
-                        fieldName: 'MINIO_BUCKET',
-                        label: 'Root Bucket Path',
-                        defaultValue: '',
-                        options: {
-                            component: 'text-field',
-                        },
-                        disabled: false,
-                        rules: { required: false },
-                    },
-                ],
-            },
-            {
-                name: 'Test',
-                disable: true,
-                icon: BRAIN,
-                fields: [],
-            },
-        ],
-        'File Uploads': [
-            {
-                name: 'ZIP',
-                disable: false,
-                icon: ZIP,
-                fields: [
-                    {
-                        fieldName: 'ZIP',
-                        label: 'Zip File',
-                        defaultValue: null,
-                        options: {
-                            component: 'zip-upload',
-                        },
-                        disabled: true,
-                        rules: { required: true },
-                    },
-                ],
-            },
-        ],
-    },
-    VECTOR: {
-        Connections: [
-            {
-                name: 'FAISS',
-                disable: false,
-                icon: META,
-                fields: [
-                    {
-                        fieldName: 'NAME',
-                        label: 'Name',
-                        defaultValue: '',
-                        options: {
-                            component: 'text-field',
-                        },
-                        disabled: false,
-                        rules: { required: true },
-                    },
-                    {
-                        fieldName: 'VECTOR_TYPE',
-                        label: 'Type',
-                        defaultValue: 'FAISS',
-                        options: {
-                            component: 'text-field',
-                        },
-                        disabled: true,
-                        rules: { required: true },
-                    },
-                    {
-                        fieldName: 'CONNECTION_URL',
-                        label: 'Connection URL',
-                        defaultValue: '@BaseFolder@/vector/@ENGINE@/',
-                        options: {
-                            component: 'text-field',
-                        },
-                        disabled: true,
-                        rules: { required: true },
-                    },
-                    {
-                        fieldName: 'ENCODER_NAME',
-                        label: 'Encoder Name',
-                        defaultValue: '',
-                        options: {
-                            component: 'text-field',
-                        },
-                        disabled: false,
-                        rules: { required: true },
-                    },
-                    {
-                        fieldName: 'ENCODER_TYPE',
-                        label: 'Encoder Type',
-                        defaultValue: '',
-                        options: {
-                            component: 'text-field',
-                        },
-                        disabled: false,
-                        rules: { required: true },
-                    },
-                    {
-                        fieldName: 'ENCODER_API_KEY',
-                        label: 'Encoder API Key',
-                        defaultValue: '',
-                        options: {
-                            component: 'text-field',
-                        },
-                        disabled: false,
-                        rules: { required: true },
-                    },
-                ],
-            },
-            {
-                name: 'Weaviate',
-                disable: true,
-                icon: WEVIATE,
-                fields: [],
-            },
-            {
-                name: 'Pinecone',
-                disable: true,
-                icon: PINECONE,
-                fields: [],
-            },
-            {
-                name: 'pgvector',
-                disable: true,
-                icon: POSTGRES,
-                fields: [],
             },
         ],
     },

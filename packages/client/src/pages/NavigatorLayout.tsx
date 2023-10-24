@@ -1,7 +1,7 @@
+import { createElement } from 'react';
 import { observer } from 'mobx-react-lite';
-import { Outlet, Link, useLocation } from 'react-router-dom';
-import { styled, Stack, Icon, Divider } from '@semoss/ui';
-
+import { Outlet, Link, useLocation, matchPath } from 'react-router-dom';
+import { styled, Stack, Icon, Divider, Tooltip } from '@semoss/ui';
 import {
     Functions,
     Inventory2Outlined,
@@ -12,7 +12,9 @@ import {
 
 import { Navbar } from '@/components/ui';
 import { Database } from '@/assets/img/Database';
+
 import { ModelBrain } from '@/assets/img/ModelBrain';
+import { ENGINE_ROUTES } from '@/pages/engine';
 
 const NAV_HEIGHT = '48px';
 const SIDEBAR_WIDTH = '56px';
@@ -79,81 +81,59 @@ const StyledContent = styled('div')(() => ({
 /**
  * Wrap the routes with a side navigation
  */
-export const NavigatorLayout = observer(() => {
-    const location = useLocation();
+export const NavigatorLayout = observer((props) => {
+    const { pathname } = useLocation();
 
     return (
         <>
             <Navbar />
             <StyledSidebar>
-                <StyledSidebarItem
-                    to={''}
-                    selected={location.pathname === '/'}
-                    title={'Navigate to app catalog'}
-                >
-                    <Icon>
-                        <LibraryBooksOutlined />
-                    </Icon>
-                </StyledSidebarItem>
+                <Tooltip title={`Open App Library`} placement="right">
+                    <StyledSidebarItem
+                        to={''}
+                        selected={!!matchPath('', pathname)}
+                        aria-label={'Navigate to app library'}
+                    >
+                        <Icon>
+                            <LibraryBooksOutlined />
+                        </Icon>
+                    </StyledSidebarItem>
+                </Tooltip>
                 <StyledSidebarDivider />
-                <StyledSidebarItem
-                    to={'catalog?type=model'}
-                    selected={location.search.includes('?type=model')}
-                    title={'Navigate to model catalog'}
-                >
-                    <Icon>
-                        <ModelBrain />
-                    </Icon>
-                </StyledSidebarItem>
-                <StyledSidebarItem
-                    to={'catalog?type=function'}
-                    selected={location.search.includes('?type=function')}
-                    title={'Navigate to function catalog'}
-                >
-                    <Icon>
-                        <Functions />
-                    </Icon>
-                </StyledSidebarItem>
-                <StyledSidebarItem
-                    to={'catalog?type=vector'}
-                    selected={location.search.includes('?type=vector')}
-                    title={'Navigate to vector catalog'}
-                >
-                    <Icon>
-                        <Polyline />
-                    </Icon>
-                </StyledSidebarItem>
-                <StyledSidebarItem
-                    to={'catalog?type=database'}
-                    selected={location.search.includes('?type=database')}
-                    title={'Navigate to database catalog'}
-                >
-                    <Icon>
-                        <Database />
-                    </Icon>
-                </StyledSidebarItem>
-                <StyledSidebarItem
-                    to={'catalog?type=storage'}
-                    selected={location.search.includes('?type=storage')}
-                    title={'Navigate to storage catalog'}
-                >
-                    <Icon>
-                        <Inventory2Outlined />
-                    </Icon>
-                </StyledSidebarItem>
+                {ENGINE_ROUTES.map((r) => (
+                    <Tooltip
+                        title={`Open ${r.name}`}
+                        key={r.path}
+                        placement="right"
+                    >
+                        <StyledSidebarItem
+                            to={`engine/${r.path}`}
+                            selected={
+                                !!matchPath(`engine/${r.path}/*`, pathname)
+                            }
+                            aria-label={`Navigate to ${r.name}`}
+                        >
+                            <Icon>{createElement(r.icon, {})}</Icon>
+                        </StyledSidebarItem>
+                    </Tooltip>
+                ))}
                 <Stack flex={1}>&nbsp;</Stack>
-                <StyledSidebarItem
-                    to={'settings'}
-                    selected={location.pathname === '/settings'}
-                    title={'Navigate to settings'}
-                >
-                    <Icon>
-                        <Settings />
-                    </Icon>
-                </StyledSidebarItem>
+                <Tooltip title={`Open Settings`} placement="right">
+                    <StyledSidebarItem
+                        to={'settings'}
+                        selected={!!matchPath('settings/*', pathname)}
+                        aria-label={'Navigate to settings'}
+                    >
+                        <Icon>
+                            <Settings />
+                        </Icon>
+                    </StyledSidebarItem>
+                </Tooltip>
             </StyledSidebar>
             <StyledContent>
-                <Outlet />
+                {/* TODO - Review this: */}
+                {/* I would like to wrap AddAppPage in NavigatorLayout and use the Outlet, quick fix using children if children */}
+                {props.children ? props.children : <Outlet />}
             </StyledContent>
         </>
     );

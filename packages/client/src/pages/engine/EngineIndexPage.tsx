@@ -6,7 +6,7 @@ import { observer } from 'mobx-react-lite';
 
 import { Section } from '@/components/ui';
 import { Markdown } from '@/components/common';
-import { useDatabase, useRootStore } from '@/hooks';
+import { useEngine, useRootStore } from '@/hooks';
 import { SimilarDatabases } from '@/components/database/SimilarDatabases';
 import { DatabaseStatistics } from '@/components/database/DatabaseStatistics';
 
@@ -16,7 +16,7 @@ const StyledPage = styled('div')(() => ({
 }));
 
 export const EngineIndexPage = observer(() => {
-    const { type, id, metaVals } = useDatabase();
+    const { type, id, metaVals } = useEngine();
     const { configStore } = useRootStore();
 
     // filter metakeys to the ones we want
@@ -37,7 +37,7 @@ export const EngineIndexPage = observer(() => {
                     <Typography variant={'h6'}>Details</Typography>
                 </Section.Header>
                 {metaVals.markdown ? (
-                    <Markdown content={metaVals.markdown} />
+                    <Markdown content={metaVals.markdown as string} />
                 ) : (
                     <div> No Markdown available</div>
                 )}
@@ -65,17 +65,19 @@ export const EngineIndexPage = observer(() => {
                                 spacing={1}
                                 flexWrap={'wrap'}
                             >
-                                {metaVals[k.metakey].map((tag) => {
-                                    return (
-                                        <Chip
-                                            key={tag}
-                                            label={tag}
-                                            color={'primary'}
-                                            variant={'outlined'}
-                                            // size={'small'}
-                                        ></Chip>
-                                    );
-                                })}
+                                {(metaVals[k.metakey] as string[]).map(
+                                    (tag) => {
+                                        return (
+                                            <Chip
+                                                key={tag}
+                                                label={tag}
+                                                color={'primary'}
+                                                variant={'outlined'}
+                                                // size={'small'}
+                                            ></Chip>
+                                        );
+                                    },
+                                )}
                             </Stack>
                         ) : (
                             <>{metaVals[k.metakey]}</>
@@ -83,7 +85,7 @@ export const EngineIndexPage = observer(() => {
                     </Section>
                 );
             })}
-            {type === 'database' && (
+            {type === 'DATABASE' && (
                 <Section>
                     <Section.Header>
                         <Typography variant={'h6'}>Statistics</Typography>

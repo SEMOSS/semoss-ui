@@ -99,7 +99,11 @@ export const HomePage = observer((): JSX.Element => {
                             size={'large'}
                             variant={'contained'}
                             onClick={() => {
-                                setAddAppModal(true);
+                                if (process.env.NODE_ENV == 'development') {
+                                    navigate('/app/new');
+                                } else {
+                                    setAddAppModal(true);
+                                }
                             }}
                             aria-label={`Open the App Model`}
                         >
@@ -196,25 +200,6 @@ export const HomePage = observer((): JSX.Element => {
                                 </Grid>
                             );
                         })}
-                        {/* <Grid item key={'kda'} sm={12} md={4} lg={3} xl={2}>
-                            <AppTileCard
-                                app={{
-                                    project_id: 'gagjdgja',
-                                    project_name: 'gagjdgja',
-                                    project_type: 'gagjdgja',
-                                    project_cost: 'gagjdgja',
-                                    project_global: 'gagjdgja',
-                                    project_catalog_name: 'gagjdgja',
-                                    project_created_by: 'gagjdgja',
-                                    project_created_by_type: 'gagjdgja',
-                                    project_date_created: 'gagjdgja',
-                                    project_has_portal: false,
-                                    project_portal_name: 'gagjdgja',
-                                    project_portal_published_date: 'gagjdgja',
-                                }}
-                                href={`#/app/hadha`}
-                            />
-                        </Grid> */}
                     </Grid>
                 ) : null}
             </StyledContainer>

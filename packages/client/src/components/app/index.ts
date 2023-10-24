@@ -8,3 +8,5 @@ export * from './AppEditorPanel';
 export * from './AppRenderer';
 export * from './AppSettings';
 export * from './AppTileCard';
+
+export * from './ImportApp';

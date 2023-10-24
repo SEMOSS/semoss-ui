@@ -5,7 +5,7 @@ import { LoadingScreen } from '@/components/ui';
 import { ImportContext, ImportContextType } from '@/contexts';
 import { CONNECTION_OPTIONS } from './import.constants';
 
-export const ImportLayout = () => {
+export const ImportLayout = (props) => {
     const [isLoading, setIsLoading] =
         useState<ImportContextType['isLoading']>(false);
     const [internalSteps, setInternalSteps] = useState<
@@ -32,6 +32,11 @@ export const ImportLayout = () => {
         assignUniqueIds(CONNECTION_OPTIONS);
     }, []);
 
+    /**
+     * Assigns unique IDs for each connection type
+     * @param obj
+     * @param prefix
+     */
     function assignUniqueIds(obj, prefix = '') {
         if (Array.isArray(obj)) {
             // If it's an array, iterate through its elements
@@ -84,8 +89,6 @@ export const ImportLayout = () => {
     ) => {
         setInternalActiveStepIdx(updatedActiveStepIdx);
     };
-
-    // console.log(CONNECTION_OPTIONS);
 
     return (
         <ImportContext.Provider
