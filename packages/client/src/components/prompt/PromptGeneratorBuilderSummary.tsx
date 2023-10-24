@@ -1,5 +1,6 @@
-import { Builder, BuilderStepItem } from './prompt.types';
 import { SUMMARY_STEPS } from './prompt.constants';
+import { Builder, BuilderStepItem } from './prompt.types';
+import { grey } from '@mui/material/colors';
 import {
     styled,
     Avatar,
@@ -13,9 +14,8 @@ import {
     ListItemText,
     Typography,
 } from '@mui/material';
-import { PromptGeneratorBuilderSummaryStepItem } from './PromptGeneratorBuilderSummaryStepItem';
 import { PendingOutlined, CheckCircleOutlined } from '@mui/icons-material';
-import { grey } from '@mui/material/colors';
+import { PromptGeneratorBuilderSummaryStepItem } from './PromptGeneratorBuilderSummaryStepItem';
 
 const StyledListItem = styled(ListItem)(({ theme }) => ({
     backgroundColor: grey[100],

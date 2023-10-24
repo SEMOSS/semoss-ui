@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react';
 import { TOKEN_TYPE_TEXT, TOKEN_TYPE_INPUT } from './prompt.constants';
 import { Builder, Token } from './prompt.types';
-import { Box, Typography } from '@mui/material';
 import { StyledStepPaper, StyledTextPaper } from './prompt.styled';
+import { Box, Typography } from '@mui/material';
 import { PromptGeneratorSetToken } from './PromptGeneratorToken';
 
 export function PromptGeneratorBuilderInputStep(props: {

@@ -5,6 +5,7 @@ import {
     INPUT_TYPE_DISPLAY,
 } from './prompt.constants';
 import { Token } from './prompt.types';
+import { blue } from '@mui/material/colors';
 import {
     styled,
     tooltipClasses,
@@ -15,7 +16,6 @@ import {
     Typography,
 } from '@mui/material';
 import { SaveAlt } from '@mui/icons-material';
-import { blue } from '@mui/material/colors';
 
 const StyledTextButton = styled('button')(() => ({
     background: 'none',

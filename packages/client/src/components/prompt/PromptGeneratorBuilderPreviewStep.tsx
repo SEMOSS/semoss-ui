@@ -1,8 +1,8 @@
-import { Box, Typography } from '@mui/material';
+import { TOKEN_TYPE_TEXT } from './prompt.constants';
 import { Builder, Token } from './prompt.types';
 import { StyledStepPaper, StyledTextPaper } from './prompt.styled';
+import { Box, Typography } from '@mui/material';
 import { PromptGeneratorHoverToken } from './PromptGeneratorToken';
-import { TOKEN_TYPE_TEXT } from './prompt.constants';
 
 export function PromptGeneratorBuilderPreviewStep(props: {
     builder: Builder;

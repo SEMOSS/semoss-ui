@@ -1,11 +1,11 @@
+import { useState } from 'react';
 import {
     Builder,
     BuilderStepItem,
     ConstraintSettings,
     Token,
 } from './prompt.types';
-import { Box, Button, Grid, Paper, styled } from '@mui/material';
-import { useState } from 'react';
+import { styled, Box, Button, Grid, Paper } from '@mui/material';
 import { PromptGeneratorBuilderConstraintsStep } from './PromptGeneratorBuilderConstraintsStep';
 import { PromptGeneratorBuilderInputStep } from './PromptGeneratorBuilderInputStep';
 import { PromptGeneratorBuilderInputTypeStep } from './PromptGeneratorBuilderInputTypeStep';
