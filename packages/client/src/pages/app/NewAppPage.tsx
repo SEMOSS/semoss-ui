@@ -17,9 +17,9 @@ import {
     ConnectEngines,
     ImportAppForm,
     ImportAppAccess,
-    PromptGenerator,
     App,
 } from '@/components/app';
+import { PromptGenerator } from '@/components/prompt';
 
 import { Page } from '@/components/ui';
 
