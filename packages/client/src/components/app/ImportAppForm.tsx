@@ -16,6 +16,7 @@ import {
 
 import { Controller, useForm } from 'react-hook-form';
 import { useRootStore } from '@/hooks';
+import { RadioGroup } from '@semoss/ui';
 
 const StyledBox = styled(Box)(({ theme }) => ({
     boxShadow: '0px 5px 22px 0px rgba(0, 0, 0, 0.06)',
@@ -77,10 +78,37 @@ const StyledFrameworkContainer = styled('div')(({ theme }) => ({
 
 const StyledFrameworkCard = styled(Card)(({ theme }) => ({
     display: 'flex',
-    justifyContent: 'center',
-    alignItems: 'center',
+    alignItems: 'flex-start',
     height: '10rem',
     width: '23%',
+    paddingBottom: '0px',
+    flexDirection: 'column',
+    gap: theme.spacing(1),
+    flex: '1 0 0',
+}));
+
+const StyledRadioCardTop = styled('div')(({ theme }) => ({
+    gap: '10px',
+    display: 'flex',
+    alignItems: 'center',
+    alignSelf: 'stretch',
+    padding: theme.spacing(1),
+}));
+
+const StyledRadioCardMiddle = styled('div')(({ theme }) => ({
+    display: 'flex',
+    justifyContent: 'center',
+    alignItems: 'flex-start',
+    gap: '10px',
+    alignSelf: 'stretch',
+}));
+
+const StyledRadioCardBottom = styled('div')(({ theme }) => ({
+    display: 'flex',
+    padding: `0px ${theme.spacing(2)}`,
+    flexDirection: 'column',
+    alignItems: 'flex-start',
+    alignSelf: 'stretch',
 }));
 
 const StyledMetavalsForm = styled('div')(({ theme }) => ({
@@ -246,15 +274,13 @@ export const ImportAppForm = (props: CreateAppProps) => {
         // turn on loading
         setIsLoading(true);
 
-        debugger;
-
         if (APP_TYPE === 'UI_BUILDER' || APP_TYPE === 'PROMPT_BUILDER') {
             // Hit Reactor to add property in smss file for APP_TYPE = 'ui-builder' | 'prompt-builder'
             const pixel = `CreateBuilderApp(type=[${APP_TYPE}]);`;
 
             onCreate('dummy id: 17833789124');
         } else if (APP_TYPE === 'TEMPLATE_APP') {
-            let pixel = `CreateAppFromTemplate(meta=["${formVals}"]`;
+            let pixel = `CreateAppFromTemplate(meta=["${formVals}"])`;
 
             // If TEMPLATE_ID
             if (data.options) {
@@ -350,15 +376,46 @@ export const ImportAppForm = (props: CreateAppProps) => {
                 {APP_TYPE === 'FRAMEWORK_APP' ? (
                     <div>
                         <Typography variant="h6">Select Framework</Typography>
-                        <StyledFrameworkContainer>
-                            {frameworks.map((f, i) => {
+                        <Controller
+                            name={'FRAMEWORK'}
+                            control={control}
+                            rules={{ required: true }}
+                            render={({ field }) => {
                                 return (
-                                    <StyledFrameworkCard key={i}>
-                                        {f}
-                                    </StyledFrameworkCard>
+                                    <RadioGroup
+                                        row
+                                        onChange={(e) => {
+                                            field.onChange(e.target.value);
+                                        }}
+                                    >
+                                        <StyledFrameworkContainer>
+                                            {frameworks.map((f, i) => {
+                                                return (
+                                                    <StyledFrameworkCard
+                                                        key={i}
+                                                    >
+                                                        <StyledRadioCardTop>
+                                                            <RadioGroup.Item
+                                                                label=""
+                                                                value={f}
+                                                            ></RadioGroup.Item>
+                                                        </StyledRadioCardTop>
+                                                        <StyledRadioCardMiddle></StyledRadioCardMiddle>
+                                                        <StyledRadioCardBottom>
+                                                            <Typography
+                                                                variant={'h6'}
+                                                            >
+                                                                {f}
+                                                            </Typography>
+                                                        </StyledRadioCardBottom>
+                                                    </StyledFrameworkCard>
+                                                );
+                                            })}
+                                        </StyledFrameworkContainer>
+                                    </RadioGroup>
                                 );
-                            })}
-                        </StyledFrameworkContainer>
+                            }}
+                        />
                     </div>
                 ) : null}
 

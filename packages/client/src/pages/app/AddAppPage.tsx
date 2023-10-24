@@ -77,7 +77,7 @@ const StyledCard = styled(Card)(({ theme }) => ({
     padding: theme.spacing(1),
 }));
 
-export const NewAppPage = () => {
+export const AddAppPage = () => {
     const navigate = useNavigate();
     const { steps, setSteps, setActiveStep, activeStep } = useImport();
     const { configStore } = useRootStore();
