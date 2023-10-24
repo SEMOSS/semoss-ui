@@ -5,11 +5,12 @@ import { IconButton, Button, styled } from '@semoss/ui';
 
 const StyledAppRendererActions = styled('div')(({ theme }) => ({
     display: 'flex',
+    justifyContent: 'space-between',
     width: '100%',
-    marginBottom: theme.spacing(1),
+    height: '50px',
+    // marginBottom: theme.spacing(1),
     backgroundColor: theme.palette.secondary.light,
-    boxShadow: '5px 5px 5px -2px rgba(0, 0, 0, 0.04)',
-    justifyContent: 'flex-end',
+    // boxShadow: '5px 5px 5px -2px rgba(0, 0, 0, 0.04)',
 }));
 import { Env } from '@/env';
 
@@ -82,20 +83,54 @@ export const AppRenderer = (props: AppRendererProps) => {
             {editMode ? (
                 <StyledAppRendererActions>
                     <IconButton
+                            size={'small'}
+                            color={'secondary'}
+                            variant={'text'}
+                            fontSize={"inherit"}
+                            title={'Refresh'}
+                            onClick={() => {
+                                refreshApp();
+                            }}
+                            sx={{
+                                color: '#0000008A',
+                                height:'50px',
+                                width:'50px',
+                            }}
+                        >
+                            <Refresh />
+                        </IconButton>
+                    
+                    {/* <IconButton
                         onClick={() => {
                             refreshApp();
                         }}
                     >
                         <Refresh />
-                    </IconButton>
-
+                    </IconButton> */}
                     <IconButton
+                            size={'small'}
+                            color={'secondary'}
+                            variant={'text'}
+                            fontSize={"inherit"}
+                            title={'Open in new window'}
+                            onClick={() => {
+                                open();
+                            }}
+                            sx={{
+                                color: '#0000008A',
+                                height:'50px',
+                                width:'50px',
+                            }}
+                        >
+                            <OpenInNew />
+                        </IconButton>
+                    {/* <IconButton
                         onClick={() => {
                             open();
                         }}
                     >
                         <OpenInNew />
-                    </IconButton>
+                    </IconButton> */}
                 </StyledAppRendererActions>
             ) : null}
 
@@ -104,8 +139,8 @@ export const AppRenderer = (props: AppRendererProps) => {
                 ref={iframeRef}
                 src={src}
                 style={{
-                    height: editMode ? '90%' : '95%',
-                    width: editMode ? '90%' : '95%',
+                    height: editMode ? '100%' : '95%',
+                    width: editMode ? '100%' : '95%',
                     border: 'none',
                 }}
             />

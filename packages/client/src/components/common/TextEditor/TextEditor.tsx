@@ -9,6 +9,8 @@ import Editor, { loader } from '@monaco-editor/react';
 import { IconButton, Typography, Tabs, styled, keyframes } from '@semoss/ui';
 import { File, ControlledFile } from '../';
 import { Clear, SaveOutlined } from '@mui/icons-material';
+import { Button } from '@semoss/ui';
+import { Container } from '../../../../../ui/dist';
 
 // Weird thing with Monaco Editor and does not get loaded in correctly from install
 // loader.config({
@@ -28,9 +30,10 @@ const StyledEmptyFiles = styled('div')(({ theme }) => ({
     width: '100%',
     height: '100%',
     justifyContent: 'center',
-    alignItems: 'center',
-    textAlign: 'center',
+    alignItems: 'normal',
+    textAlign: 'left',
     padding: theme.spacing(5),
+    justifyContent: 'space-around',
 }));
 
 const StyledFileTabs = styled('div')(({ theme }) => ({
@@ -73,7 +76,10 @@ const StyledSaveChangesIndicator = styled('div')(({ theme }) => ({
     color: theme.palette.primary.main,
 }));
 
-const StyledTypography = styled(Typography)(({ theme }) => ({}));
+const StyledTypography = styled(Typography)(({ theme }) => ({
+    textAlign:'left',
+    display:'block',
+}));
 
 interface TextEditorProps {
     /**
@@ -245,14 +251,26 @@ export const TextEditor = (props: TextEditorProps) => {
         return (
             <StyledContainer>
                 <StyledEmptyFiles>
-                    <StyledTypography variant="h6">
-                        Welcome to Editor Mode
+                    <Container>
+                    <StyledTypography variant="h5">
+                        Welcome to the Code Editor
                     </StyledTypography>
                     <StyledTypography variant="body1">
-                        The File explorer to your left, has all files that make
-                        up your application. Feel free to edit them directly to
-                        make real-time changes to your application.
+                    Get started by selecting a file or 
                     </StyledTypography>
+                    <Button>Generate Code</Button>
+                    </Container>
+                    <Container>
+                    <Typography variant="h6">
+                        Github Documentation
+                    </Typography>
+                    <ul>
+                    <li>Link</li>
+                    <li>Link</li>
+                    <li>Link</li>
+                    </ul>
+                    </Container>
+                    
                 </StyledEmptyFiles>
             </StyledContainer>
         );
@@ -356,16 +374,26 @@ export const TextEditor = (props: TextEditorProps) => {
                             })}
                         </Tabs>
                         <IconButton
+                            size={'small'}
+                            color={'secondary'}
+                            variant={'text'}
+                            fontSize={"inherit"}
+                            title={"Save"}
                             onClick={() => {
                                 saveFile();
+                            }}
+                            sx={{
+                                color: '#0000008A',
+                                height:'50px',
+                                width:'50px',
                             }}
                         >
                             <SaveOutlined />
                         </IconButton>
                     </StyledFileTabs>
                     <StyledActiveFilePath>
-                        <Typography variant={'body1'}>
-                            {activeFile.id}
+                        <Typography variant={'body2'}>
+                            {activeFile.id.replace('version/assets/','').replace('/',' / ')}
                         </Typography>
                     </StyledActiveFilePath>
                     <Editor
