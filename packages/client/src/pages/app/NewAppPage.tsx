@@ -329,10 +329,6 @@ export const NewAppPage = () => {
                 <ImportApp
                     data={steps[0].data}
                     onCreate={(appId) => {
-                        console.log(
-                            'Set step for created app and move to permissions or for framework app get engines to have access to in app',
-                        );
-
                         setAppId(appId);
 
                         const stepWithAppId = {
@@ -353,7 +349,7 @@ export const NewAppPage = () => {
             ) : null}
             {/* End of Step 1: ----------------------- */}
 
-            {/* Step 2:  App has been created, Navigate to Settings page*/}
+            {/* Step 2:  App has been created */}
             {/* 1. Framework Build App has an extra step for connecting Engines */}
             {/* 2. Next step in process is members and privacy: for everything in framework build App. */}
 

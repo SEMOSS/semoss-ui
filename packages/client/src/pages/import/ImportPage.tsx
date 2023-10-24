@@ -577,11 +577,9 @@ export const ImportPage = () => {
 
                 {/* Step 3:  Will be the form to capture specific engine connection details */}
                 {steps.length === 2 && <ImportConnectionPage />}
-                {/* Let's call this ImportConnectionPage */}
 
                 {/* Step 4: If there is a step in the process after inputting connection details: metamodel for example */}
                 {steps.length === 3 && <EstablishConnectionPage />}
-                {/* Lets call this EstablishedConnectionPage */}
             </StyledContainer>
         </Page>
     );

@@ -20,23 +20,79 @@ import { useRootStore } from '@/hooks';
 const StyledBox = styled(Box)(({ theme }) => ({
     boxShadow: '0px 5px 22px 0px rgba(0, 0, 0, 0.06)',
     width: '100%',
-    padding: '16px 16px 16px 16px',
-    marginBottom: '32px',
+    padding: `${theme.spacing(2)} ${theme.spacing(2)} ${theme.spacing(
+        2,
+    )} ${theme.spacing(2)}`,
+    marginBottom: theme.spacing(4),
 }));
 
 const StyledSelectionContainer = styled('div')(({ theme }) => ({
     display: 'flex',
-    flexDirection: 'row',
-    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    gap: theme.spacing(4),
+    alignSelf: 'stretch',
 }));
 
 const StyledSelection = styled('div')(({ theme }) => ({
     display: 'flex',
     flexDirection: 'column',
-    width: '45%',
-    height: '280px',
     alignItems: 'flex-start',
     gap: theme.spacing(2),
+    flex: '1 0 0',
+    alignSelf: 'stretch',
+}));
+const StyledDropzoneContainer = styled(StyledSelection)(({ theme }) => ({
+    height: theme.spacing(37.5),
+}));
+
+const StyledOrContainer = styled('div')(({ theme }) => ({
+    display: 'flex',
+    justifyContent: 'center',
+    alignItems: 'center',
+    gap: '10px',
+    alignSelf: 'stretch',
+}));
+
+const StyledOr = styled('div')(({ theme }) => ({
+    display: 'flex',
+    height: '54px',
+    padding: '12px 16px',
+    justifyContent: 'center',
+    alignItems: 'center',
+    gap: '8px',
+    borderRadius: '64px',
+    border: '2px solid rgba(134, 188, 37, 0.50)',
+}));
+
+const StyledTextField = styled(TextField)(({ theme }) => ({
+    width: '100%',
+}));
+
+const StyledFrameworkContainer = styled('div')(({ theme }) => ({
+    display: 'flex',
+    justifyContent: 'space-between',
+    flexDirection: 'row',
+    width: '100%',
+}));
+
+const StyledFrameworkCard = styled(Card)(({ theme }) => ({
+    display: 'flex',
+    justifyContent: 'center',
+    alignItems: 'center',
+    height: '10rem',
+    width: '23%',
+}));
+
+const StyledMetavalsForm = styled('div')(({ theme }) => ({
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '16px',
+    marginTop: '8px',
+}));
+
+const StyledFlexend = styled('div')(({ theme }) => ({
+    display: 'flex',
+    justifyContent: 'flex-end',
 }));
 
 interface CreateAppProps {
@@ -61,11 +117,15 @@ interface CreateAppProps {
 }
 
 type AddAppForm = {
+    // Import
+    PROJECT_UPLOAD?: File;
+    GIT_URL?: '';
+    // Framework
+    FRAMEWORK?: 'REACT' | 'ANGULARJS' | 'HTML/JS' | 'VUE';
+    // Metavals
     APP_NAME: string;
     APP_DESCRIPTION: string;
     TAGS: string[];
-    PROJECT_UPLOAD?: File;
-    FRAMEWORK?: 'REACT' | 'ANGULARJS' | 'HTML/JS' | 'VUE';
 };
 
 const frameworks = ['REACT', 'ANGULARJS', 'HTML/JS', 'VUE'];
@@ -78,67 +138,33 @@ export const ImportApp = (props: CreateAppProps) => {
 
     const APP_TYPE = data.type;
 
-    console.log(APP_TYPE);
-
-    const { handleSubmit, control } = useForm<AddAppForm>({
+    const { handleSubmit, setValue, control } = useForm<AddAppForm>({
         defaultValues: {
+            // Import
+            PROJECT_UPLOAD: null,
+            GIT_URL: null,
+            // Framework
+            FRAMEWORK: null,
+            // Metavals
             APP_NAME: '',
             APP_DESCRIPTION: '',
             TAGS: [],
-            PROJECT_UPLOAD: null,
-            FRAMEWORK: null,
         },
     });
 
     /**
-     * Upload App from zip
+     * Import App from zip or git
      * @param data
      * @returns
      */
-    const uploadFromZip = async (data) => {
+    const importApp = async (data) => {
         try {
-            const path = 'version/assets/';
-
-            // create the project
-            const response = await monolithStore.runQuery(
-                `META | projectVar = CreateProject("${
-                    data.APP_NAME
-                }"); SetProjectMetadata(project=[projectVar], meta=[${JSON.stringify(
-                    {
-                        description: data.APP_DESCRIPTION,
-                        tag: data.TAGS,
-                    },
-                )}])`,
-            );
-
-            const output = response.pixelReturn[0].output;
-
-            // get the app id
-            const appId = output.project_id;
-
-            // upload the file
-            const upload = await monolithStore.uploadFile(
-                [data.PROJECT_UPLOAD],
-                configStore.store.insightID,
-                appId,
-                path,
-            );
-
-            // upnzip the file in the new project
-            await monolithStore.runQuery(
-                `UnzipFile(filePath=["${`${path}${upload[0].fileName}`}"], space=["${appId}"])`,
-            );
-
-            // Load the insight classes
-            await monolithStore.runQuery(`ReloadInsightClasses('${appId}');`);
-
-            // set the project portal
-            await monolithStore.setProjectPortal(false, appId, true, 'public');
-
-            // Publish the project the insight classes
-            await monolithStore.runQuery(
-                `PublishProject('${appId}', release=true);`,
-            );
+            let appId;
+            if (data.GIT_URL) {
+                appId = await uploadFromZip(data);
+            } else {
+                appId = await uploadFromZip(data);
+            }
 
             return appId;
         } catch (e) {
@@ -148,6 +174,65 @@ export const ImportApp = (props: CreateAppProps) => {
             // turn of loading
             setIsLoading(false);
         }
+    };
+
+    const uploadFromGit = async (data) => {
+        const pixel = `CreateAppFromGit(meta=[])`;
+
+        // create the project
+        const response = await monolithStore.runQuery(pixel);
+    };
+
+    /**
+     * @desc Uploads App From Zip
+     * @param data
+     * @returns
+     */
+    const uploadFromZip = async (data) => {
+        const path = 'version/assets/';
+
+        // create the project
+        const response = await monolithStore.runQuery(
+            `META | projectVar = CreateProject("${
+                data.APP_NAME
+            }"); SetProjectMetadata(project=[projectVar], meta=[${JSON.stringify(
+                {
+                    description: data.APP_DESCRIPTION,
+                    tag: data.TAGS,
+                },
+            )}])`,
+        );
+
+        const output = response.pixelReturn[0].output;
+
+        // get the app id
+        const appId = output.project_id;
+
+        // upload the file
+        const upload = await monolithStore.uploadFile(
+            [data.PROJECT_UPLOAD],
+            configStore.store.insightID,
+            appId,
+            path,
+        );
+
+        // upnzip the file in the new project
+        await monolithStore.runQuery(
+            `UnzipFile(filePath=["${`${path}${upload[0].fileName}`}"], space=["${appId}"])`,
+        );
+
+        // Load the insight classes
+        await monolithStore.runQuery(`ReloadInsightClasses('${appId}');`);
+
+        // set the project portal
+        await monolithStore.setProjectPortal(false, appId, true, 'public');
+
+        // Publish the project the insight classes
+        await monolithStore.runQuery(
+            `PublishProject('${appId}', release=true);`,
+        );
+
+        return appId;
     };
 
     /**
@@ -160,6 +245,8 @@ export const ImportApp = (props: CreateAppProps) => {
     const createApp = handleSubmit(async (formVals: AddAppForm) => {
         // turn on loading
         setIsLoading(true);
+
+        debugger;
 
         if (APP_TYPE === 'UI_BUILDER' || APP_TYPE === 'PROMPT_BUILDER') {
             // Hit Reactor to add property in smss file for APP_TYPE = 'ui-builder' | 'prompt-builder'
@@ -182,7 +269,7 @@ export const ImportApp = (props: CreateAppProps) => {
 
             onCreate('dummy id: 173781387');
         } else if (APP_TYPE === 'IMPORT_APP') {
-            const id = await uploadFromZip(formVals);
+            const id = await importApp(formVals);
 
             if (id) {
                 onCreate(id);
@@ -195,7 +282,7 @@ export const ImportApp = (props: CreateAppProps) => {
             <StyledBox>
                 {APP_TYPE === 'IMPORT_APP' ? (
                     <StyledSelectionContainer>
-                        <StyledSelection>
+                        <StyledDropzoneContainer>
                             <Typography variant="h6">Upload ZIP</Typography>
                             <Controller
                                 name={'PROJECT_UPLOAD'}
@@ -206,9 +293,48 @@ export const ImportApp = (props: CreateAppProps) => {
                                     return (
                                         <FileDropzone
                                             multiple={false}
+                                            extensions={['zip']}
                                             value={field.value}
                                             disabled={isLoading}
                                             onChange={(newValues) => {
+                                                // Remove Git Url
+                                                setValue('GIT_URL', '');
+
+                                                field.onChange(newValues);
+                                            }}
+                                        />
+                                    );
+                                }}
+                            />
+                        </StyledDropzoneContainer>
+                        <StyledOrContainer>
+                            <StyledOr>
+                                <Typography variant={'caption'}>OR</Typography>
+                            </StyledOr>
+                        </StyledOrContainer>
+                        <StyledSelection>
+                            <Typography variant="h6">Connect to Git</Typography>
+                            <Typography variant="body1">
+                                To import your app from a GitHub repository,
+                                copy and paste the HTTPS link below:
+                            </Typography>
+                            <Controller
+                                name={'GIT_URL'}
+                                control={control}
+                                rules={{}}
+                                render={({ field }) => {
+                                    return (
+                                        <StyledTextField
+                                            disabled
+                                            value={field.value}
+                                            placeholder={'github.com'}
+                                            onChange={(newValues) => {
+                                                // Remove File Upload
+                                                setValue(
+                                                    'PROJECT_UPLOAD',
+                                                    null,
+                                                );
+
                                                 field.onChange(newValues);
                                             }}
                                         />
@@ -216,48 +342,21 @@ export const ImportApp = (props: CreateAppProps) => {
                                 }}
                             />
                         </StyledSelection>
-                        <div>
-                            <Typography variant={'caption'}>OR</Typography>
-                        </div>
-                        <StyledSelection>
-                            <Typography variant="h6">Connect to Git</Typography>
-                            <Typography variant="body1">
-                                To import your app from a GitHub repository,
-                                copy and paste the HTTPS link below:
-                            </Typography>
-                            <TextField />
-                        </StyledSelection>
                     </StyledSelectionContainer>
                 ) : null}
 
                 {APP_TYPE === 'FRAMEWORK_APP' ? (
                     <div>
                         <Typography variant="h6">Select Framework</Typography>
-                        <div
-                            style={{
-                                display: 'flex',
-                                justifyContent: 'space-between',
-                                flexDirection: 'row',
-                                width: '100%',
-                            }}
-                        >
+                        <StyledFrameworkContainer>
                             {frameworks.map((f, i) => {
                                 return (
-                                    <div style={{ width: '20%' }} key={f + i}>
-                                        <Card
-                                            sx={{
-                                                display: 'flex',
-                                                justifyContent: 'center',
-                                                alignItems: 'center',
-                                                height: '10rem',
-                                            }}
-                                        >
-                                            {f}
-                                        </Card>
-                                    </div>
+                                    <StyledFrameworkCard key={i}>
+                                        {f}
+                                    </StyledFrameworkCard>
                                 );
                             })}
-                        </div>
+                        </StyledFrameworkContainer>
                     </div>
                 ) : null}
 
@@ -271,14 +370,7 @@ export const ImportApp = (props: CreateAppProps) => {
                 ) : null}
 
                 {/* These are the required metavals for every app */}
-                <div
-                    style={{
-                        display: 'flex',
-                        flexDirection: 'column',
-                        gap: '16px',
-                        marginTop: '8px',
-                    }}
-                >
+                <StyledMetavalsForm>
                     <Typography variant="h6">Details</Typography>
                     <Controller
                         name={'APP_NAME'}
@@ -334,13 +426,13 @@ export const ImportApp = (props: CreateAppProps) => {
                             );
                         }}
                     />
-                </div>
+                </StyledMetavalsForm>
             </StyledBox>
-            <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+            <StyledFlexend>
                 <Button variant="contained" type="submit">
                     Create App
                 </Button>
-            </div>
+            </StyledFlexend>
         </form>
     );
 };
