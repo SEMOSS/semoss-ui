@@ -2,6 +2,15 @@ import { useEffect, useRef, useMemo, useState, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 import { Refresh, OpenInNew } from '@mui/icons-material';
 import { IconButton, Button, styled } from '@semoss/ui';
+import { Env } from '@/env';
+
+const StyledContainer = styled('div')(({ theme }) => ({
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
+    height: '100%',
+    width: '100%',
+}));
 
 const StyledAppRendererActions = styled('div')(({ theme }) => ({
     display: 'flex',
@@ -12,7 +21,13 @@ const StyledAppRendererActions = styled('div')(({ theme }) => ({
     backgroundColor: theme.palette.secondary.light,
     // boxShadow: '5px 5px 5px -2px rgba(0, 0, 0, 0.04)',
 }));
-import { Env } from '@/env';
+
+const StyledIconButton = styled(IconButton)(({ theme }) => ({
+    color: '#0000008A',
+    height: '50px',
+    width: '50px',
+    fontSize: 'inherit',
+}));
 
 interface AppRendererProps {
     /** appId of the app to render */
@@ -71,66 +86,29 @@ export const AppRenderer = (props: AppRendererProps) => {
 
     // return the app
     return (
-        <div
-            style={{
-                display: 'flex',
-                flexDirection: 'column',
-                alignItems: 'center',
-                height: '100%',
-                width: '100%',
-            }}
-        >
+        <StyledContainer>
             {editMode ? (
                 <StyledAppRendererActions>
-                    <IconButton
-                            size={'small'}
-                            color={'secondary'}
-                            variant={'text'}
-                            fontSize={"inherit"}
-                            title={'Refresh'}
-                            onClick={() => {
-                                refreshApp();
-                            }}
-                            sx={{
-                                color: '#0000008A',
-                                height:'50px',
-                                width:'50px',
-                            }}
-                        >
-                            <Refresh />
-                        </IconButton>
-                    
-                    {/* <IconButton
+                    <StyledIconButton
+                        size={'small'}
+                        color={'secondary'}
+                        title={'Refresh'}
                         onClick={() => {
                             refreshApp();
                         }}
                     >
                         <Refresh />
-                    </IconButton> */}
-                    <IconButton
-                            size={'small'}
-                            color={'secondary'}
-                            variant={'text'}
-                            fontSize={"inherit"}
-                            title={'Open in new window'}
-                            onClick={() => {
-                                open();
-                            }}
-                            sx={{
-                                color: '#0000008A',
-                                height:'50px',
-                                width:'50px',
-                            }}
-                        >
-                            <OpenInNew />
-                        </IconButton>
-                    {/* <IconButton
+                    </StyledIconButton>
+                    <StyledIconButton
+                        size={'small'}
+                        color={'secondary'}
+                        title={'Open in new window'}
                         onClick={() => {
                             open();
                         }}
                     >
                         <OpenInNew />
-                    </IconButton> */}
+                    </StyledIconButton>
                 </StyledAppRendererActions>
             ) : null}
 
@@ -144,7 +122,7 @@ export const AppRenderer = (props: AppRendererProps) => {
                     border: 'none',
                 }}
             />
-        </div>
+        </StyledContainer>
     );
 };
 

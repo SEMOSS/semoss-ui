@@ -29,11 +29,17 @@ const StyledEmptyFiles = styled('div')(({ theme }) => ({
     flexDirection: 'column',
     width: '100%',
     height: '100%',
-    justifyContent: 'center',
     alignItems: 'normal',
     textAlign: 'left',
     padding: theme.spacing(5),
     justifyContent: 'space-around',
+}));
+
+const StyledIconButton = styled(IconButton)(({ theme }) => ({
+    color: '#0000008A',
+    height: '50px',
+    width: '50px',
+    fontSize: 'inherit',
 }));
 
 const StyledFileTabs = styled('div')(({ theme }) => ({
@@ -77,8 +83,8 @@ const StyledSaveChangesIndicator = styled('div')(({ theme }) => ({
 }));
 
 const StyledTypography = styled(Typography)(({ theme }) => ({
-    textAlign:'left',
-    display:'block',
+    textAlign: 'left',
+    display: 'block',
 }));
 
 interface TextEditorProps {
@@ -252,25 +258,24 @@ export const TextEditor = (props: TextEditorProps) => {
             <StyledContainer>
                 <StyledEmptyFiles>
                     <Container>
-                    <StyledTypography variant="h5">
-                        Welcome to the Code Editor
-                    </StyledTypography>
-                    <StyledTypography variant="body1">
-                    Get started by selecting a file or 
-                    </StyledTypography>
-                    <Button>Generate Code</Button>
+                        <StyledTypography variant="h5">
+                            Welcome to the Code Editor
+                        </StyledTypography>
+                        <StyledTypography variant="body1">
+                            Get started by selecting a file or
+                        </StyledTypography>
+                        <Button>Generate Code</Button>
                     </Container>
                     <Container>
-                    <Typography variant="h6">
-                        Github Documentation
-                    </Typography>
-                    <ul>
-                    <li>Link</li>
-                    <li>Link</li>
-                    <li>Link</li>
-                    </ul>
+                        <Typography variant="h6">
+                            Github Documentation
+                        </Typography>
+                        <ul>
+                            <li>Link</li>
+                            <li>Link</li>
+                            <li>Link</li>
+                        </ul>
                     </Container>
-                    
                 </StyledEmptyFiles>
             </StyledContainer>
         );
@@ -373,27 +378,22 @@ export const TextEditor = (props: TextEditorProps) => {
                                 );
                             })}
                         </Tabs>
-                        <IconButton
+                        <StyledIconButton
                             size={'small'}
                             color={'secondary'}
-                            variant={'text'}
-                            fontSize={"inherit"}
-                            title={"Save"}
+                            title={'Save'}
                             onClick={() => {
                                 saveFile();
                             }}
-                            sx={{
-                                color: '#0000008A',
-                                height:'50px',
-                                width:'50px',
-                            }}
                         >
                             <SaveOutlined />
-                        </IconButton>
+                        </StyledIconButton>
                     </StyledFileTabs>
                     <StyledActiveFilePath>
                         <Typography variant={'body2'}>
-                            {activeFile.id.replace('version/assets/','').replace('/',' / ')}
+                            {activeFile.id
+                                .replace('version/assets/', '')
+                                .replace('/', ' / ')}
                         </Typography>
                     </StyledActiveFilePath>
                     <Editor

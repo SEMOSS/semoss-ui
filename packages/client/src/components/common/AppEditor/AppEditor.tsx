@@ -6,45 +6,32 @@
 // Handles the View of or Text Editor alongside the App Explorer (Dir struct, Dependencies)
 // This needs to handle Adding of Folders and Files to projects, and editting contents of existing
 // --------------------
-import React, {
-    useEffect,
-    useState,
-    useRef,
-    useCallback,
-    useMemo,
-    SyntheticEvent,
-    ChangeEvent,
-    HtmlHTMLAttributes,
-} from 'react';
-import { useRootStore, useAPI } from '@/hooks';
+import React, { useEffect, useState, useRef } from 'react';
+import { useRootStore } from '@/hooks';
 import { TextEditor, ControlledFile } from '../';
 
 import {
     Accordion,
     Button,
     Collapse,
-    Divider,
     Modal,
+    Icon,
     IconButton,
     TreeView,
     TextField,
-    Icon,
     Skeleton,
     useNotification,
     styled,
-    // makeStyles,
     Typography,
 } from '@semoss/ui';
 
 import {
     AutoAwesome,
     ContentCopyOutlined,
-    Download,
     ExpandMore,
     ChevronRight,
     KeyboardDoubleArrowLeft,
     KeyboardDoubleArrowRight,
-    ExpandLess,
     CreateNewFolderOutlined,
     NoteAddOutlined,
 } from '@mui/icons-material/';
@@ -62,8 +49,10 @@ const StyledCollapseTrigger = styled('div')(({ theme }) => ({
     width: '50px',
     backgroundColor: theme.palette.secondary.light,
     padding: theme.spacing(1),
-    // paddingLeft: theme.spacing(0.5),
-    // zIndex: 9998,
+}));
+
+const StyledOpenAssetsContainer = styled('div')(({ theme }) => ({
+    height: '5%',
 }));
 
 const StyledCollapse = styled(Collapse)(({ theme }) => ({
@@ -92,6 +81,15 @@ const StyleAppExplorerHeader = styled('div')(({ theme }) => ({
     // height: '5%',
     // paddingTop: '2px',
     alignItems: 'center',
+}));
+
+const StyledAppExplorerContainer = styled('div')(({ theme }) => ({
+    height: '95%',
+    overflow: 'hidden',
+}));
+
+const StyledAppExplorerSection = styled('div')(({ theme }) => ({
+    maxHeight: '85%',
 }));
 
 const CustomGenerateButton = styled(Button)(({ theme }) => {
@@ -127,24 +125,10 @@ const CustomButton = styled(Button)(({ theme }) => {
 const StyledTreeView = styled(TreeView)(({ theme }) => ({
     width: '100%',
     maxHeight: '100%',
-    gap:'24px',
-    ".MuiTreeItem-content":{
-        padding:'4px',
+    gap: '24px',
+    '.MuiTreeItem-content': {
+        padding: '4px',
     },
-}));
-
-const StyledAppDirectoryLabel = styled('div')(({ theme }) => ({
-    display: 'flex',
-    justifyContent: 'space-between',
-    width: '100%',
-}));
-
-const StyledScrollableTreeView = styled('div')(({ theme }) => ({
-    width: '100%',
-    display: 'flex',
-    gap: '16px',
-    overflowX: 'scroll',
-    paddingLeft: '-8px',
 }));
 
 const StyledRow = styled('div')(({ theme }) => ({
@@ -186,12 +170,11 @@ const CustomAccordionTrigger = styled(Accordion.Trigger)(({ theme }) => ({
     '& .MuiAccordionDetails-root': {
         padding: '0px',
     },
-    '.MuiSvgIcon-root':{
-        width:'1.25rem',
-        height:'1.25rem',
+    '.MuiSvgIcon-root': {
+        width: '1.25rem',
+        height: '1.25rem',
         color: 'rgba(0, 0, 0, .3)',
     },
-
 }));
 
 const CustomAccordionTriggerContent = styled('div')(({ theme }) => ({
@@ -200,13 +183,21 @@ const CustomAccordionTriggerContent = styled('div')(({ theme }) => ({
     gap: theme.spacing(4),
     // Icon Button Size
     height: `calc(1rem + 0px)`,
-    '.MuiButtonBase-root' :{
-        padding:'0px',
+    '.MuiButtonBase-root': {
+        padding: '0px',
     },
-    '.MuiSvgIcon-root':{
-        width:'20px',
-        height:'20px',
+    '.MuiSvgIcon-root': {
+        width: '20px',
+        height: '20px',
     },
+}));
+
+const CustomAccordionTriggerLabel = styled('div')(({ theme }) => ({
+    display: 'flex',
+    alignItems: 'center',
+    overflow: 'hidden',
+    whiteSpace: 'nowrap',
+    textOverflow: 'ellipsis ellipsis',
 }));
 
 const CustomAccordionContent = styled(Accordion.Content)(({ theme }) => ({
@@ -244,6 +235,9 @@ const StyledCodeContent = styled('code')(() => ({
     flex: 1,
 }));
 
+const StyledSkeletonContainer = styled('div')(() => ({
+    height: '200px',
+}));
 
 interface AppEditorProps {
     /**
@@ -1017,7 +1011,6 @@ export const AppEditor = (props: AppEditorProps) => {
                                 height: 'auto',
                                 overflow: 'none',
                             },
-
                         }}
                         ref={newDirectoryRefs.current}
                         key={node.id}
@@ -1133,7 +1126,6 @@ export const AppEditor = (props: AppEditorProps) => {
                             // File svg pack? (Js, html, etc)
                             node.name
                         }
-
                     >
                         {node.children && node.children.length > 0
                             ? renderTreeNodes(node.children)
@@ -1174,7 +1166,7 @@ export const AppEditor = (props: AppEditorProps) => {
                         : 'none',
                 }}
             >
-                <div style={{ height: '5%' }}>
+                <StyledOpenAssetsContainer>
                     {openAppAssetsPanel ? (
                         <IconButton
                             size="small"
@@ -1194,7 +1186,7 @@ export const AppEditor = (props: AppEditorProps) => {
                             <KeyboardDoubleArrowRight />
                         </IconButton>
                     )}
-                </div>
+                </StyledOpenAssetsContainer>
             </StyledCollapseTrigger>
 
             {/* If Open: Displays App Explorer */}
@@ -1213,52 +1205,9 @@ export const AppEditor = (props: AppEditorProps) => {
                 <StyledCollapseContainer>
                     <StyleAppExplorerHeader>
                         <Typography variant="h6">Explorer</Typography>
-                        {/* <IconButton
-                            size={'small'}
-                            // color={'primary'}
-                            // variant={'text'}
-                            onClick={() => {
-                                downloadApp();
-                            }}
-                        >
-                            <Download />
-                        </IconButton> */}
                     </StyleAppExplorerHeader>
-                    <div
-                        style={{
-                            height: '95%',
-                            overflow: 'hidden',
-                            // border: 'solid yellow',
-                        }}
-                    >
-                        <div
-                            style={{
-                                maxHeight: '85%',
-                                // border: 'solid red',
-                            }}
-                        >
-                            {/* {process.env.NODE_ENV == 'development' && (
-                                <CustomButton
-                                    sx={{ marginTop: '16px' }}
-                                    variant="contained"
-                                    color="secondary"
-                                    onClick={() => {
-                                        console.log(
-                                            'Open Generate Code Modal and App Directory',
-                                        );
-                                        if (openAccordion.indexOf('file') < 0) {
-                                            setOpenAccordion([
-                                                ...openAccordion,
-                                                'file',
-                                            ]);
-                                        }
-                                        setGenerateCodeModal(true);
-                                    }}
-                                >
-                                    <AutoAwesome />
-                                    Generate Code
-                                </CustomButton>
-                            )} */}
+                    <StyledAppExplorerContainer>
+                        <StyledAppExplorerSection>
                             <CustomAccordion
                                 disableGutters
                                 square={true}
@@ -1274,23 +1223,14 @@ export const AppEditor = (props: AppEditorProps) => {
                                 }}
                             >
                                 <CustomAccordionTrigger
-                                    expandIcon={<ChevronRight/>}
+                                    expandIcon={<ChevronRight />}
                                 >
                                     <CustomAccordionTriggerContent>
-                                        <div
-                                            style={{
-                                                display: 'flex',
-                                                alignItems: 'center',
-                                                overflow: 'hidden',
-                                                whiteSpace: 'nowrap',
-                                                textOverflow:
-                                                    'ellipsis ellipsis',
-                                            }}
-                                        >
+                                        <CustomAccordionTriggerLabel>
                                             <Typography variant="body1">
                                                 App Directory
                                             </Typography>
-                                        </div>
+                                        </CustomAccordionTriggerLabel>
                                         {openAccordion.indexOf('file') > -1 ? (
                                             <StyledRow>
                                                 <IconButton
@@ -1330,11 +1270,6 @@ export const AppEditor = (props: AppEditorProps) => {
                                     {/* <StyledScrollableTreeView> */}
                                     <StyledTreeView
                                         multiSelect
-                                        // sx={{
-                                        //     width: '100%',
-                                        //     maxHeight: '100%',
-                                        //     gap:'24px',
-                                        // }}
                                         expanded={expanded}
                                         selected={selected}
                                         onNodeToggle={handleToggle}
@@ -1357,22 +1292,15 @@ export const AppEditor = (props: AppEditorProps) => {
                                         //     </StyledIcon>
                                         // }
                                     >
-                                        
                                         {renderTreeNodes(appDirectory)}
-                                        
                                     </StyledTreeView>
                                     {/* </StyledScrollableTreeView> */}
                                 </CustomAccordionContent>
                             </CustomAccordion>
-                        </div>
+                        </StyledAppExplorerSection>
 
                         {/* Dependencies */}
-                        <div
-                            style={{
-                                maxHeight: '85%',
-                                // border: 'solid red',
-                            }}
-                        >
+                        <StyledAppExplorerSection>
                             <CustomAccordion
                                 disableGutters
                                 square={true}
@@ -1401,31 +1329,30 @@ export const AppEditor = (props: AppEditorProps) => {
                                     </Typography>
                                 </CustomAccordionContent>
                             </CustomAccordion>
-                        </div>
-                    </div>
+                        </StyledAppExplorerSection>
+                    </StyledAppExplorerContainer>
                     {process.env.NODE_ENV == 'development' && (
-                                <CustomButton
-                                    sx={{ marginTop: '16px' }}
-                                    variant="contained"
-                                    color="secondary"
-                                    onClick={() => {
-                                        console.log(
-                                            'Open Generate Code Modal and App Directory',
-                                        );
-                                        if (openAccordion.indexOf('file') < 0) {
-                                            setOpenAccordion([
-                                                ...openAccordion,
-                                                'file',
-                                            ]);
-                                        }
-                                        setGenerateCodeModal(true);
-                                    }}
-                                >
-                                    <AutoAwesome />
-                                    Generate Code
-                                </CustomButton>
-                            )}
-
+                        <CustomButton
+                            sx={{ marginTop: '16px' }}
+                            variant="contained"
+                            color="secondary"
+                            onClick={() => {
+                                console.log(
+                                    'Open Generate Code Modal and App Directory',
+                                );
+                                if (openAccordion.indexOf('file') < 0) {
+                                    setOpenAccordion([
+                                        ...openAccordion,
+                                        'file',
+                                    ]);
+                                }
+                                setGenerateCodeModal(true);
+                            }}
+                        >
+                            <AutoAwesome />
+                            Generate Code
+                        </CustomButton>
+                    )}
                 </StyledCollapseContainer>
             </StyledCollapse>
 
@@ -1519,13 +1446,13 @@ export const AppEditor = (props: AppEditorProps) => {
                             </StyledCodeBlock>
                         </div>
                     ) : loadCodeSnippet ? (
-                        <div style={{ height: '200px' }}>
+                        <StyledSkeletonContainer>
                             <Skeleton
                                 variant={'rectangular'}
                                 width={'100%'}
                                 height={'100%'}
                             />
-                        </div>
+                        </StyledSkeletonContainer>
                     ) : null}
                 </Modal.Content>
                 <Modal.Actions>
