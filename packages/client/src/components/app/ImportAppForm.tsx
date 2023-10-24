@@ -130,7 +130,7 @@ type AddAppForm = {
 
 const frameworks = ['REACT', 'ANGULARJS', 'HTML/JS', 'VUE'];
 
-export const ImportApp = (props: CreateAppProps) => {
+export const ImportAppForm = (props: CreateAppProps) => {
     const { data, onCreate } = props;
     const { monolithStore, configStore } = useRootStore();
 
@@ -327,7 +327,9 @@ export const ImportApp = (props: CreateAppProps) => {
                                         <StyledTextField
                                             disabled
                                             value={field.value}
-                                            placeholder={'github.com'}
+                                            placeholder={
+                                                'github.com/cfg-ai-portal'
+                                            }
                                             onChange={(newValues) => {
                                                 // Remove File Upload
                                                 setValue(

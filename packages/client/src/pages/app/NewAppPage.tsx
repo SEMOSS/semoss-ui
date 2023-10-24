@@ -13,16 +13,20 @@ import {
     styled,
 } from '@semoss/ui';
 
+import {
+    ConnectEngines,
+    ImportAppForm,
+    ImportAppAccess,
+    PromptGenerator,
+    App,
+} from '@/components/app';
+
 import { Page } from '@/components/ui';
-import { ImportApp, App } from '@/components/app';
-import { MembersTable, SettingsTiles } from '@/components/settings';
 
 import { Link, useNavigate } from 'react-router-dom';
 import { useImport, useRootStore, usePixel } from '@/hooks';
-import { SettingsContext } from '@/contexts';
 
 import { ADD_APP_STEPS } from './add-app.constants';
-import { ImportStep } from '@/contexts/ImportContext';
 
 const StyledContainer = styled('div')(({ theme }) => ({
     display: 'flex',
@@ -30,6 +34,17 @@ const StyledContainer = styled('div')(({ theme }) => ({
     gap: theme.spacing(3),
     paddingTop: theme.spacing(1),
     paddingBottom: theme.spacing(1),
+}));
+
+const StyledSpaceBetween = styled('div')(({ theme }) => ({
+    display: 'flex',
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+}));
+
+const StyledGap = styled('div')(({ theme }) => ({
+    display: 'flex',
+    gap: theme.spacing(1),
 }));
 
 const StyledFilter = styled('div')(({ theme }) => ({
@@ -60,8 +75,6 @@ const StyledCard = styled(Card)(({ theme }) => ({
     height: '300px',
     backgroundColor: theme.palette.background.paper,
     padding: theme.spacing(1),
-    // paddingLeft: theme.spacing(0.5),
-    // zIndex: 9998,
 }));
 
 export const NewAppPage = () => {
@@ -133,13 +146,7 @@ export const NewAppPage = () => {
         >
             {/* Add App Header OR Stepper based on selected import */}
             {steps.length === 0 ? (
-                <div
-                    style={{
-                        display: 'flex',
-                        flexDirection: 'row',
-                        justifyContent: 'space-between',
-                    }}
-                >
+                <StyledSpaceBetween>
                     <Typography variant="h5">App Templates</Typography>
                     <div style={{ display: 'flex', gap: '8px' }}>
                         <Button
@@ -179,9 +186,9 @@ export const NewAppPage = () => {
                             Import App
                         </Button>
                     </div>
-                </div>
+                </StyledSpaceBetween>
             ) : (
-                <div style={{ display: 'flex', gap: '8px' }}>
+                <StyledGap>
                     <Breadcrumbs>
                         {ADD_APP_STEPS[steps[0].data.type].steps.map(
                             (step, i) => {
@@ -210,7 +217,7 @@ export const NewAppPage = () => {
                             },
                         )}
                     </Breadcrumbs>
-                </div>
+                </StyledGap>
             )}
 
             {/* Landing content of page: How to create app*/}
@@ -324,9 +331,10 @@ export const NewAppPage = () => {
                 </StyledContainer>
             ) : null}
 
-            {/* Step 1 - Create App via whatever process, with meta data like name and such */}
+            {/* Step 1 */}
+            {/* All Import Workflows: Get Metadata, and import type specific properties */}
             {steps.length === 1 ? (
-                <ImportApp
+                <ImportAppForm
                     data={steps[0].data}
                     onCreate={(appId) => {
                         setAppId(appId);
@@ -347,50 +355,17 @@ export const NewAppPage = () => {
                     }}
                 />
             ) : null}
-            {/* End of Step 1: ----------------------- */}
 
-            {/* Step 2:  App has been created */}
-            {/* 1. Framework Build App has an extra step for connecting Engines */}
-            {/* 2. Next step in process is members and privacy: for everything in framework build App. */}
-
+            {/* Step 2:  App has been created and we now have an App Id */}
+            {/* 1. Framework App: Connecting Engines */}
+            {/* 2. Everything Else: App Access */}
             {steps.length === 2 ? (
                 <div>
                     {steps[0].data.type === 'FRAMEWORK_APP' ? (
-                        <div>Connect Engines</div>
-                    ) : (
-                        <SettingsContext.Provider
-                            value={{
-                                adminMode: configStore.store.user.admin,
-                            }}
-                        >
-                            <SettingsTiles
-                                mode="app"
-                                name={'App'}
-                                id={appId}
-                                // onDelete={() => {
-                                //     navigate('/catalog');
-                                // }}
-                            />
-                            <MembersTable
-                                id={appId}
-                                mode={'app'}
-                                name={'app'}
-                            />
-                        </SettingsContext.Provider>
-                    )}
-
-                    <Button
-                        onClick={() => {
-                            const APP_TYPE = steps[0].data.type;
-                            // Set new step in process
-
-                            // Just Navigate to the App Page
-                            if (
-                                APP_TYPE !== 'PROMPT_BUILDER' &&
-                                APP_TYPE !== 'FRAMEWORK_APP'
-                            ) {
-                                navigate(`../${steps[1].data.options}`);
-                            } else {
+                        <ConnectEngines
+                            appId={appId}
+                            onSuccess={() => {
+                                // Set new step in process
                                 const accessStep = {
                                     title: steps[0].title,
                                     description: steps[0].description,
@@ -403,32 +378,59 @@ export const NewAppPage = () => {
                                 };
 
                                 setSteps([...steps, accessStep], steps.length);
-                            }
-                        }}
-                    >
-                        Next
-                    </Button>
+                            }}
+                        />
+                    ) : (
+                        <ImportAppAccess
+                            appId={appId}
+                            onSuccess={() => {
+                                const APP_TYPE = steps[0].data.type;
+                                // Just Navigate to the App Page
+                                if (APP_TYPE !== 'PROMPT_BUILDER') {
+                                    // ID of APP
+                                    navigate(`../${steps[1].data.options}`);
+                                } else {
+                                    // Set new step in process
+                                    const accessStep = {
+                                        title: steps[0].title,
+                                        description: steps[0].description,
+                                        stepInProcess: 2,
+                                        data: {
+                                            type: steps[0].data.type,
+                                            options:
+                                                'Successfully added permissions',
+                                        },
+                                    };
+
+                                    setSteps(
+                                        [...steps, accessStep],
+                                        steps.length,
+                                    );
+                                }
+                            }}
+                        />
+                    )}
                 </div>
             ) : null}
 
-            {/* Step 3: */}
-            {/* Only Build App from Framework, get members */}
-            {/* Or */}
-            {/* Take them to the editor, ui builder or prompt builder */}
-
-            {/* 
-            <PromptGenerator
-                onComplete={() => {
-                    navigate()
-                }}
-            /> 
-            */}
+            {/* Step 3 */}
+            {/* 1. Framework App: App Access */}
+            {/* 2. Prompt Generator: Build Prompt */}
             {steps.length === 3 ? (
                 <>
                     {steps[0].data.type === 'PROMPT_BUILDER' ? (
-                        <div>Prompt Builder</div>
+                        <PromptGenerator
+                            onSuccess={() => {
+                                console.warn('navigate to app page');
+                            }}
+                        />
                     ) : (
-                        <div>Framework Members</div>
+                        <ImportAppAccess
+                            appId={appId}
+                            onSuccess={() => {
+                                navigate(`../${steps[1].data.options}`);
+                            }}
+                        />
                     )}
                 </>
             ) : null}
