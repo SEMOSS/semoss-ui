@@ -3,7 +3,9 @@ import {
     Delete,
     ContentCopyOutlined,
     EditRounded,
+    ContentCopy,
 } from '@mui/icons-material';
+
 import { useForm, Controller } from 'react-hook-form';
 import {
     styled,
@@ -18,17 +20,47 @@ import {
     TextField,
     Icon,
     Box,
+    Grid,
 } from '@semoss/ui';
 
 import { useAPI, useRootStore } from '@/hooks';
 import { LoadingScreen } from '@/components/ui';
 import { useState } from 'react';
 
+const HeaderCell = styled(Table.Cell)(({ theme }) => ({
+    backgroundColor: '#f3f3f3',
+    borderBottom: '1px solid #ccc',
+}));
+
+const MessageDiv = styled('div')(({ theme }) => ({
+    textAlign: 'center',
+    margin: '50px auto 75px',
+    display: 'block',
+    width: '100%',
+    marginTop: '100px',
+    color: '#666',
+    fontSize: '13px',
+    // border: '1px solid pink',
+}));
+
+const ShadowedStack = styled(Stack)(({ theme }) => ({
+    borderRadius: '15px',
+    boxShadow: '0 0 10px #00000020',
+    padding: '17.5px 20px',
+}));
+
+const GridItem = styled(Grid)(({ theme }) => ({
+    padding: 0,
+    // border: '1px solid red',
+    display: 'flex',
+    alignItems: 'center',
+}));
+
 const ProfileImagePlaceholder = styled('span')(({ theme }) => ({
     display: 'block',
     width: '50px',
     height: '50px',
-    backgroundColor: '#999',
+    backgroundColor: '#eee',
     borderRadius: '50%',
 }));
 
@@ -52,6 +84,10 @@ interface CreateAccessKeyForm {
     TOKENDESCRIPTION?: string;
     ACCESSKEY: string;
     SECRETKEY: string;
+    FIRSTNAME: string;
+    LASTNAME: string;
+    USERNAME: string;
+    EMAIL: string;
 }
 
 export const MyProfilePage = () => {
@@ -65,6 +101,18 @@ export const MyProfilePage = () => {
     // get the keys
     const getUserAccessKeys = useAPI(['getUserAccessKeys']);
 
+    // ### ---> old working control for new access key only
+    // const { control, reset, setValue, handleSubmit, watch } =
+    //     useForm<CreateAccessKeyForm>({
+    //         defaultValues: {
+    //             TOKENNAME: '',
+    //             TOKENDESCRIPTION: '',
+    //             ACCESSKEY: '',
+    //             SECRETKEY: '',
+    //         },
+    //     });
+
+    // ### ---> adding user info etc to same control, might have to break out to new control or state vars
     const { control, reset, setValue, handleSubmit, watch } =
         useForm<CreateAccessKeyForm>({
             defaultValues: {
@@ -72,6 +120,10 @@ export const MyProfilePage = () => {
                 TOKENDESCRIPTION: '',
                 ACCESSKEY: '',
                 SECRETKEY: '',
+                FIRSTNAME: '',
+                LASTNAME: '',
+                USERNAME: '',
+                EMAIL: '',
             },
         });
 
@@ -163,6 +215,10 @@ export const MyProfilePage = () => {
         setProfileImgModal(false);
     };
 
+    const profileEditSubmit = () => {
+        alert('submit edits');
+    };
+
     /**
      * Copy text and add it to the clipboard
      * @param text - text to copy
@@ -194,116 +250,357 @@ export const MyProfilePage = () => {
         <>
             {/* ### ---> test stack for profileImgModal */}
 
-            <Stack direction="row" alignItems={'center'}>
+            <ShadowedStack direction="row" alignItems={'center'}>
                 {/* ### ---> need to add a table or grid here - does semoss-ui use Grid? */}
-                <Typography variant="h6">
-                    <strong>Edit profile picture</strong>
-                </Typography>
+                <Grid container spacing={3}>
+                    <GridItem sm={4}>
+                        <Typography variant="h6">
+                            <strong>Edit profile picture</strong>
+                        </Typography>
+                    </GridItem>
 
-                <ProfileImagePlaceholder />
+                    {/* <GridItem sm={0.75}>
+                    </GridItem> */}
 
-                <Button
-                    variant="text"
-                    // startIcon={<EditRounded />}
-                    sx={{ textAlign: 'right' }}
-                    onClick={() => {
-                        setProfileImgModal(true);
-                    }}
+                    <GridItem sm={3}>
+                        <ProfileImagePlaceholder />
+                        <Button
+                            variant="text"
+                            // startIcon={<EditRounded />}
+                            sx={{
+                                textAlign: 'right',
+                                fontWeight: '800',
+                                marginLeft: '15px',
+                            }}
+                            onClick={() => {
+                                setProfileImgModal(true);
+                            }}
+                        >
+                            Upload
+                        </Button>
+                    </GridItem>
+                </Grid>
+            </ShadowedStack>
+
+            <ShadowedStack>
+                <Grid
+                    container
+                    spacing={3}
+                    style={{ alignItems: 'flex-start', paddingRight: '25px' }}
                 >
-                    Upload
-                </Button>
-            </Stack>
+                    <GridItem sm={4}>
+                        <Typography variant="h6">
+                            <strong>Edit profile information</strong>
+                        </Typography>
+                    </GridItem>
 
-            <Stack direction="row" justifyContent={'space-between'} mb={1}>
-                <Typography variant="h6">
-                    <strong>Access Keys</strong>
-                </Typography>
+                    {/* <GridItem sm={0.75}>
+                    </GridItem> */}
 
-                <Button
-                    variant="contained"
-                    startIcon={<Add />}
-                    sx={{ textAlign: 'right' }}
-                    onClick={() => {
-                        setAddModal(true);
-                    }}
-                >
-                    Add New
-                </Button>
-            </Stack>
+                    <GridItem sm={8}>
+                        <form
+                            onSubmit={profileEditSubmit}
+                            style={{ width: '100%' }}
+                        >
+                            <Stack
+                                direction="row"
+                                spacing={2}
+                                style={{ marginBottom: '15px' }}
+                            >
+                                <Controller
+                                    name={'FIRSTNAME'}
+                                    control={control}
+                                    rules={{ required: true }}
+                                    render={({ field }) => {
+                                        return (
+                                            <TextField
+                                                label="First Name"
+                                                value={
+                                                    field.value
+                                                        ? field.value
+                                                        : ''
+                                                }
+                                                // disabled={isCreated}
+                                                onChange={(value) =>
+                                                    field.onChange(value)
+                                                }
+                                                inputProps={{ maxLength: 255 }}
+                                                fullWidth={false}
+                                                style={{ width: '50%' }}
+                                            ></TextField>
+                                        );
+                                    }}
+                                />
 
-            <Table.Container>
-                <Table>
-                    <Table.Head>
-                        <Table.Row>
-                            <Table.Cell>
-                                <strong>Name</strong>
-                            </Table.Cell>
-                            <Table.Cell>
-                                <strong>Description</strong>
-                            </Table.Cell>
-                            <Table.Cell>
-                                <strong>Date Created</strong>
-                            </Table.Cell>
-                            <Table.Cell>
-                                <strong>Last Used Created</strong>
-                            </Table.Cell>
-                            <Table.Cell>
-                                <strong>Access Key</strong>
-                            </Table.Cell>
-                            <Table.Cell>&nbsp;</Table.Cell>
-                        </Table.Row>
-                    </Table.Head>
-                    <Table.Body>
-                        {getUserAccessKeys.status === 'SUCCESS' &&
-                        getUserAccessKeys.data.length !== 0
-                            ? getUserAccessKeys.data.map((k, idx) => {
-                                  return (
-                                      <Table.Row key={idx}>
-                                          <Table.Cell>{k.TOKENNAME}</Table.Cell>
-                                          <Table.Cell>
-                                              {k.TOKENDESCRIPTION || ''}
-                                          </Table.Cell>
-                                          <Table.Cell>
-                                              {k.DATECREATED}
-                                          </Table.Cell>
-                                          <Table.Cell>{k.LASTUSED}</Table.Cell>
-                                          <Table.Cell>{k.ACCESSKEY}</Table.Cell>
-                                          <Table.Cell>
-                                              <Stack
-                                                  direction="row"
-                                                  spacing={1}
-                                              >
-                                                  <IconButton
-                                                      title="Copy"
-                                                      onClick={() => {
-                                                          copy(k.ACCESSKEY);
-                                                      }}
+                                <Controller
+                                    name={'LASTNAME'}
+                                    control={control}
+                                    rules={{ required: false }}
+                                    render={({ field }) => {
+                                        return (
+                                            <TextField
+                                                label="Last Name"
+                                                value={
+                                                    field.value
+                                                        ? field.value
+                                                        : ''
+                                                }
+                                                // disabled={isCreated}
+                                                onChange={(value) =>
+                                                    field.onChange(value)
+                                                }
+                                                inputProps={{ maxLength: 500 }}
+                                                fullWidth={false}
+                                                style={{ width: '50%' }}
+                                            ></TextField>
+                                        );
+                                    }}
+                                />
+                            </Stack>
+
+                            <Stack
+                                direction="row"
+                                style={{ marginBottom: '15px' }}
+                            >
+                                <Controller
+                                    name={'USERNAME'}
+                                    control={control}
+                                    rules={{ required: false }}
+                                    render={({ field }) => {
+                                        return (
+                                            <TextField
+                                                label="Username"
+                                                value={
+                                                    field.value
+                                                        ? field.value
+                                                        : ''
+                                                }
+                                                // disabled={isCreated}
+                                                onChange={(value) =>
+                                                    field.onChange(value)
+                                                }
+                                                inputProps={{ maxLength: 500 }}
+                                                fullWidth={true}
+                                                // style={{width: "50%"}}
+                                            ></TextField>
+                                        );
+                                    }}
+                                />
+                            </Stack>
+
+                            <Stack
+                                direction="row"
+                                style={{ marginBottom: '15px' }}
+                            >
+                                <Controller
+                                    name={'EMAIL'}
+                                    control={control}
+                                    rules={{ required: false }}
+                                    render={({ field }) => {
+                                        return (
+                                            <TextField
+                                                label="Email"
+                                                value={
+                                                    field.value
+                                                        ? field.value
+                                                        : ''
+                                                }
+                                                // disabled={isCreated}
+                                                onChange={(value) =>
+                                                    field.onChange(value)
+                                                }
+                                                inputProps={{ maxLength: 500 }}
+                                                fullWidth={true}
+                                                // style={{width: "50%"}}
+                                            ></TextField>
+                                        );
+                                    }}
+                                />
+                            </Stack>
+
+                            <Stack direction="row">
+                                <Button
+                                    variant="contained"
+                                    color="primary"
+                                    style={{
+                                        fontWeight: '800',
+                                        marginRight: '10px',
+                                    }}
+                                    onClick={() => {
+                                        alert('Save');
+                                    }}
+                                >
+                                    Save
+                                </Button>
+
+                                <Button
+                                    variant="text"
+                                    color="primary"
+                                    sx={{ fontWeight: '800', color: 'black' }}
+                                    onClick={() => {
+                                        alert('Reset');
+                                    }}
+                                >
+                                    Reset
+                                </Button>
+                            </Stack>
+                        </form>
+                    </GridItem>
+                </Grid>
+            </ShadowedStack>
+
+            <ShadowedStack>
+                <Grid container spacing={3}>
+                    <GridItem sm={4}>
+                        <Typography variant="h6">
+                            <strong>Monolith Endpoint</strong>
+                        </Typography>
+                    </GridItem>
+
+                    <GridItem sm={7}>
+                        <p style={{ fontSize: '15px' }}>
+                            {/* ### ---> check config for this url */}
+                            https://workspace.cfg.deloitte.com/cfg-ai-demo/Monolith/api
+                        </p>
+                        {/* <Button
+                            variant="text"
+                            // startIcon={<EditRounded />}
+                            sx={{ textAlign: 'right', fontWeight: '800', marginLeft: "15px" }}
+                            onClick={() => {
+                                setProfileImgModal(true);
+                            }}
+                        >
+                            Upload
+                        </Button> */}
+                    </GridItem>
+
+                    <GridItem sm={1} style={{ justifyContent: 'center' }}>
+                        <IconButton
+                            onClick={() => {
+                                alert('copy');
+                            }}
+                        >
+                            <ContentCopy />
+                        </IconButton>
+                    </GridItem>
+                </Grid>
+            </ShadowedStack>
+
+            <ShadowedStack>
+                <Stack direction="row" justifyContent={'space-between'} mb={1}>
+                    <Typography variant="h6">
+                        <strong>Personal Access Tokens</strong>
+                    </Typography>
+
+                    <Button
+                        variant="contained"
+                        startIcon={<Add />}
+                        sx={{ textAlign: 'right' }}
+                        onClick={() => {
+                            setAddModal(true);
+                        }}
+                    >
+                        New Key
+                    </Button>
+                </Stack>
+
+                <Table.Container style={{ marginTop: '20px' }}>
+                    <Table>
+                        <Table.Head>
+                            <Table.Row>
+                                <HeaderCell
+                                    style={{ borderRadius: '20px 0 0 0' }}
+                                >
+                                    <strong>Name</strong>
+                                </HeaderCell>
+                                {/* <HeaderCell> */}
+                                <HeaderCell>
+                                    <strong>Description</strong>
+                                </HeaderCell>
+                                {/* <HeaderCell> */}
+                                <HeaderCell>
+                                    <strong>Date Created</strong>
+                                </HeaderCell>
+                                {/* <HeaderCell> */}
+                                <HeaderCell>
+                                    <strong>Last Used Created</strong>
+                                </HeaderCell>
+                                {/* <HeaderCell> */}
+                                <HeaderCell
+                                    style={{ borderRadius: '0 20px 0 0' }}
+                                >
+                                    <strong>Access Key</strong>
+                                </HeaderCell>
+                                {/* <HeaderCell>&nbsp;</HeaderCell> */}
+                            </Table.Row>
+                        </Table.Head>
+                        <Table.Body>
+                            {getUserAccessKeys.status === 'SUCCESS' &&
+                            getUserAccessKeys.data.length !== 0
+                                ? getUserAccessKeys.data.map((k, idx) => {
+                                      return (
+                                          <Table.Row key={idx}>
+                                              <Table.Cell>
+                                                  {k.TOKENNAME}
+                                              </Table.Cell>
+                                              <Table.Cell>
+                                                  {k.TOKENDESCRIPTION || ''}
+                                              </Table.Cell>
+                                              <Table.Cell>
+                                                  {k.DATECREATED}
+                                              </Table.Cell>
+                                              <Table.Cell>
+                                                  {k.LASTUSED}
+                                              </Table.Cell>
+                                              <Table.Cell>
+                                                  {k.ACCESSKEY}
+                                              </Table.Cell>
+                                              <Table.Cell>
+                                                  <Stack
+                                                      direction="row"
+                                                      spacing={1}
                                                   >
-                                                      <ContentCopyOutlined />
-                                                  </IconButton>
+                                                      <IconButton
+                                                          title="Copy"
+                                                          onClick={() => {
+                                                              copy(k.ACCESSKEY);
+                                                          }}
+                                                      >
+                                                          <ContentCopyOutlined />
+                                                      </IconButton>
 
-                                                  <IconButton
-                                                      title="Delete"
-                                                      onClick={() => {
-                                                          deleteAccessKey(
-                                                              k.ACCESSKEY,
-                                                          );
-                                                      }}
-                                                  >
-                                                      <Delete />
-                                                  </IconButton>
-                                              </Stack>
-                                          </Table.Cell>
-                                      </Table.Row>
-                                  );
-                              })
-                            : null}
-                    </Table.Body>
-                </Table>
-            </Table.Container>
+                                                      <IconButton
+                                                          title="Delete"
+                                                          onClick={() => {
+                                                              deleteAccessKey(
+                                                                  k.ACCESSKEY,
+                                                              );
+                                                          }}
+                                                      >
+                                                          <Delete />
+                                                      </IconButton>
+                                                  </Stack>
+                                              </Table.Cell>
+                                          </Table.Row>
+                                      );
+                                  })
+                                : null}
+                        </Table.Body>
+                    </Table>
+                </Table.Container>
+                {getUserAccessKeys.status === 'SUCCESS' &&
+                    getUserAccessKeys.data.length === 0 && (
+                        <MessageDiv style={{ margin: '75px auto 85px' }}>
+                            No Personal Access Tokens to display at this time
+                            <br />
+                            Click <strong>New Key</strong> to create a new
+                            Personal Access Token
+                        </MessageDiv>
+                    )}
+            </ShadowedStack>
 
             <Modal open={addModal} onClose={() => closeModel()}>
-                <Modal.Title>Generate Access Key</Modal.Title>
+                <Modal.Title>Generate Key</Modal.Title>
                 <Modal.Content>
                     <form onSubmit={handleSubmit(createAccessKey)}>
                         <Stack direction="column" spacing={2}>
@@ -427,124 +724,60 @@ export const MyProfilePage = () => {
             <Modal open={profileImgModal} onClose={() => closeModel()}>
                 <Modal.Title>Upload Profile Picture</Modal.Title>
                 <Modal.Content>
-                    <ProfileImagePlaceholder />
-                    {/* <form onSubmit={handleSubmit(createAccessKey)}>
-                        <Stack direction="column" spacing={2}>
-                            <Alert severity="info" variant="outlined">
-                                Note: Your private key will only be generated
-                                once
-                            </Alert>
+                    <Stack
+                        direction="row"
+                        spacing={2}
+                        style={{ marginBottom: '15px', alignItems: 'center' }}
+                    >
+                        <ProfileImagePlaceholder />
+                        <span>Current avatar</span>
+                    </Stack>
 
+                    <Stack
+                        direction="row"
+                        spacing={2}
+                        style={{ marginBottom: '15px' }}
+                    >
+                        <form
+                            onSubmit={profileEditSubmit}
+                            style={{ width: '750px' }}
+                        >
                             <Controller
-                                name={'TOKENNAME'}
+                                name={'PLACEHOLDER'}
                                 control={control}
                                 rules={{ required: true }}
                                 render={({ field }) => {
                                     return (
                                         <TextField
-                                            required
-                                            label="Name"
+                                            label="Placeholder"
                                             value={
                                                 field.value ? field.value : ''
                                             }
-                                            disabled={isCreated}
+                                            // disabled={isCreated}
                                             onChange={(value) =>
                                                 field.onChange(value)
                                             }
                                             inputProps={{ maxLength: 255 }}
+                                            fullWidth={true}
+                                            // style={{width: "50%"}}
                                         ></TextField>
                                     );
                                 }}
                             />
-
-                            <Controller
-                                name={'TOKENDESCRIPTION'}
-                                control={control}
-                                rules={{ required: false }}
-                                render={({ field }) => {
-                                    return (
-                                        <TextField
-                                            label="Description"
-                                            value={
-                                                field.value ? field.value : ''
-                                            }
-                                            disabled={isCreated}
-                                            onChange={(value) =>
-                                                field.onChange(value)
-                                            }
-                                            inputProps={{ maxLength: 500 }}
-                                        ></TextField>
-                                    );
-                                }}
-                            />
-
-                            <Stack direction="row" justifyContent={'start'}>
-                                <Button
-                                    disabled={isCreated}
-                                    type="submit"
-                                    variant={'outlined'}
-                                    color="primary"
-                                >
-                                    Generate
-                                </Button>
-                            </Stack>
-                            {isCreated && (
-                                <>
-                                    <Stack direction="column" spacing={1}>
-                                        <Typography variant={'subtitle2'}>
-                                            Access Key
-                                        </Typography>
-                                        <StyledCodeBlock>
-                                            <StyledCodeContent>
-                                                {ACCESSKEY}
-                                            </StyledCodeContent>
-                                            <Button
-                                                size={'medium'}
-                                                variant="outlined"
-                                                startIcon={
-                                                    <ContentCopyOutlined
-                                                        color={'inherit'}
-                                                    />
-                                                }
-                                                onClick={() => copy(ACCESSKEY)}
-                                            >
-                                                Copy
-                                            </Button>
-                                        </StyledCodeBlock>
-                                    </Stack>
-                                    <Stack direction="column" spacing={1}>
-                                        <Typography variant={'subtitle2'}>
-                                            Secret Key
-                                        </Typography>
-                                        <StyledCodeBlock>
-                                            <StyledCodeContent>
-                                                {SECRETKEY}
-                                            </StyledCodeContent>
-                                            <Button
-                                                size={'medium'}
-                                                variant="outlined"
-                                                startIcon={
-                                                    <ContentCopyOutlined
-                                                        color={'inherit'}
-                                                    />
-                                                }
-                                                onClick={() => copy(SECRETKEY)}
-                                            >
-                                                Copy
-                                            </Button>
-                                        </StyledCodeBlock>
-                                    </Stack>
-                                </>
-                            )}
-                        </Stack>
-                    </form> */}
+                        </form>
+                    </Stack>
+                    {/* <Button variant="text" onClick={() => closeModel()}>
+                        Close
+                    </Button> */}
                 </Modal.Content>
                 <Modal.Actions>
                     <Button
-                        variant="text"
-                        onClick={() => closeProfileEditModel()}
+                        variant="contained"
+                        onClick={() => {
+                            alert('save');
+                        }}
                     >
-                        Close
+                        Save
                     </Button>
                 </Modal.Actions>
             </Modal>
