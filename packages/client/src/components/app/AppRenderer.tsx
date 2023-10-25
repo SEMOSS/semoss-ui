@@ -117,8 +117,9 @@ export const AppRenderer = (props: AppRendererProps) => {
                 ref={iframeRef}
                 src={src}
                 style={{
-                    height: editMode ? '100%' : '95%',
-                    width: editMode ? '100%' : '95%',
+                    flex: '1',
+                    height: editMode ? '100%' : '100%',
+                    width: editMode ? '100%' : '100%',
                     border: 'none',
                 }}
             />

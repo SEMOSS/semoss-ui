@@ -8,7 +8,7 @@
 // --------------------
 import React, { useEffect, useState, useRef } from 'react';
 import { useRootStore } from '@/hooks';
-import { TextEditor, ControlledFile } from '../';
+import { TextEditor, ControlledFile, TextEditorCodeGeneration } from '../';
 
 import {
     Accordion,
@@ -92,36 +92,6 @@ const StyledAppExplorerSection = styled('div')(({ theme }) => ({
     maxHeight: '85%',
 }));
 
-const CustomGenerateButton = styled(Button)(({ theme }) => {
-    const palette = theme.palette as unknown as {
-        purple: Record<string, string>;
-    };
-
-    return {
-        backgroundColor: palette.purple['400'],
-        color: theme.palette.background.paper,
-        gap: theme.spacing(1),
-        '&:hover': {
-            backgroundColor: palette.purple['200'],
-        },
-    };
-});
-
-const CustomButton = styled(Button)(({ theme }) => {
-    const palette = theme.palette as unknown as {
-        purple: Record<string, string>;
-    };
-
-    return {
-        backgroundColor: palette.purple['400'],
-        color: theme.palette.background.paper,
-        gap: theme.spacing(1),
-        width: '100%',
-        '&:hover': {
-            backgroundColor: palette.purple['200'],
-        },
-    };
-});
 const StyledTreeView = styled(TreeView)(({ theme }) => ({
     width: '100%',
     maxHeight: '100%',
@@ -210,35 +180,6 @@ const CustomAccordionContent = styled(Accordion.Content)(({ theme }) => ({
     // alignItems: 'center',
 }));
 
-const StyledExpandCode = styled('div')(({ theme }) => ({
-    width: '100%',
-    height: '100%',
-    display: 'flex',
-    justifyContent: 'space-between',
-    padding: theme.spacing(1),
-    background: theme.palette.secondary.main,
-    borderRadius: `${theme.shape.borderRadius}px ${theme.shape.borderRadius}px 0px 0px`,
-}));
-
-const StyledCodeBlock = styled('pre')(({ theme }) => ({
-    display: 'flex',
-    alignItems: 'flex-start',
-    gap: '40px',
-    background: theme.palette.secondary.light,
-    borderRadius: `0px 0px ${theme.shape.borderRadius}px ${theme.shape.borderRadius}px`,
-    padding: theme.spacing(2),
-    margin: '0px',
-    overflowX: 'scroll',
-}));
-
-const StyledCodeContent = styled('code')(() => ({
-    flex: 1,
-}));
-
-const StyledSkeletonContainer = styled('div')(() => ({
-    height: '200px',
-}));
-
 interface AppEditorProps {
     /**
      * Id of App to get Directory
@@ -287,12 +228,6 @@ export const AppEditor = (props: AppEditorProps) => {
     // Props necessary for TextEditor component
     const [filesToView, setFilesToView] = useState([]);
     const [activeFileIndex, setActiveFileIndex] = useState(null);
-
-    // Generate Code assistant
-    const [generateCodeModal, setGenerateCodeModal] = useState(false);
-    const [generatedCode, setGeneratedCode] = useState('');
-    const [generatePrompt, setGeneratePrompt] = useState('');
-    const [loadCodeSnippet, setLoadCodeSnippet] = useState(false);
 
     useEffect(() => {
         getInitialAppStructure();
@@ -663,53 +598,6 @@ export const AppEditor = (props: AppEditorProps) => {
                 color: 'error',
                 message: e.message,
             });
-        }
-    };
-
-    /**
-     * Assitant for adding code
-     *
-     */
-    const generateCode = async () => {
-        let pixel = '';
-
-        // Project owner pays for these queries or should this come from Semoss.
-        pixel += `LLM(engine=["${'EMB_5b0c6586-4ab8-4905-83e4-1bab3b6a1966'}"], command=["${generatePrompt}"])`;
-
-        notification.add({
-            color: 'warning',
-            message: 'Please set LLM to use in RDF_MAP',
-        });
-
-        const response = await monolithStore.runQuery(pixel);
-        const output = response.pixelReturn[0].output,
-            operationType = response.pixelReturn[0].operationType;
-
-        setLoadCodeSnippet(false);
-
-        if (operationType.indexOf('ERROR') > -1) {
-            notification.add({
-                color: 'error',
-                message: output,
-            });
-            return;
-        }
-
-        // Regex anything between the 3 backticks
-        const codeMatch = output.response.match(/```[\s\S]*?\n([\s\S]*)\n```/);
-
-        // TO-DO: Figure out if there is a particular LLM that will have a consistent response structure
-        if (!codeMatch) {
-            notification.add({
-                color: 'error',
-                message: 'Unable to parse generated code',
-            });
-            return;
-        }
-
-        // Will this be multiple indexes
-        if (codeMatch.length > 1) {
-            setGeneratedCode(codeMatch[1]);
         }
     };
 
@@ -1136,26 +1024,6 @@ export const AppEditor = (props: AppEditorProps) => {
         });
     };
 
-    /**
-     * Copy text and add it to the clipboard
-     * @param text - text to copy
-     */
-    const copy = async (text: string) => {
-        try {
-            await navigator.clipboard.writeText(text);
-
-            notification.add({
-                color: 'success',
-                message: 'Successfully copied code',
-            });
-        } catch (e) {
-            notification.add({
-                color: 'error',
-                message: 'Unable to copy code',
-            });
-        }
-    };
-
     return (
         <StyledEditorPanel>
             {/* Collapse Trigger Container */}
@@ -1332,26 +1200,7 @@ export const AppEditor = (props: AppEditorProps) => {
                         </StyledAppExplorerSection>
                     </StyledAppExplorerContainer>
                     {process.env.NODE_ENV == 'development' && (
-                        <CustomButton
-                            sx={{ marginTop: '16px' }}
-                            variant="contained"
-                            color="secondary"
-                            onClick={() => {
-                                console.log(
-                                    'Open Generate Code Modal and App Directory',
-                                );
-                                if (openAccordion.indexOf('file') < 0) {
-                                    setOpenAccordion([
-                                        ...openAccordion,
-                                        'file',
-                                    ]);
-                                }
-                                setGenerateCodeModal(true);
-                            }}
-                        >
-                            <AutoAwesome />
-                            Generate Code
-                        </CustomButton>
+                        <TextEditorCodeGeneration />
                     )}
                 </StyledCollapseContainer>
             </StyledCollapse>
@@ -1385,100 +1234,6 @@ export const AppEditor = (props: AppEditorProps) => {
                     }}
                 />
             </div>
-
-            {/* Generate Code Modal */}
-            <Modal open={generateCodeModal} maxWidth="xl">
-                <Modal.Title
-                    sx={{
-                        display: 'flex',
-                        flexDirection: 'column',
-                        gap: '8px',
-                    }}
-                >
-                    <Typography variant="h5">Code Generation</Typography>
-                    <TextField
-                        sx={{ width: '100%', marginTop: '8px' }}
-                        label="Prompt"
-                        helperText={
-                            'Example prompt: "Write me a html form that intakes patient information"'
-                        }
-                        onKeyDown={(e) => {
-                            if (e.code === 'Enter') {
-                                // Remove Old Code
-                                setGeneratedCode('');
-
-                                // Load Skeleton for code
-                                setLoadCodeSnippet(true);
-
-                                // Generate code based on prompt
-                                generateCode();
-                            }
-                        }}
-                        onChange={(e) => {
-                            setGeneratePrompt(e.target.value);
-                        }}
-                    ></TextField>
-                </Modal.Title>
-                <Modal.Content sx={{ width: '800px' }}>
-                    {generatedCode ? (
-                        <div>
-                            <StyledExpandCode>
-                                <IconButton>
-                                    <ExpandMore />
-                                </IconButton>
-                                <Button
-                                    size={'medium'}
-                                    variant="outlined"
-                                    startIcon={
-                                        <ContentCopyOutlined
-                                            color={'inherit'}
-                                        />
-                                    }
-                                    onClick={() => copy(generatedCode)}
-                                >
-                                    Copy
-                                </Button>
-                            </StyledExpandCode>
-                            <StyledCodeBlock>
-                                <StyledCodeContent>
-                                    {generatedCode}
-                                </StyledCodeContent>
-                            </StyledCodeBlock>
-                        </div>
-                    ) : loadCodeSnippet ? (
-                        <StyledSkeletonContainer>
-                            <Skeleton
-                                variant={'rectangular'}
-                                width={'100%'}
-                                height={'100%'}
-                            />
-                        </StyledSkeletonContainer>
-                    ) : null}
-                </Modal.Content>
-                <Modal.Actions>
-                    <Button
-                        onClick={() => {
-                            setGenerateCodeModal(false);
-                        }}
-                    >
-                        Cancel
-                    </Button>
-                    <CustomGenerateButton
-                        onClick={() => {
-                            // Remove Old Code
-                            setGeneratedCode('');
-
-                            // Load Skeleton for code
-                            setLoadCodeSnippet(true);
-
-                            // Generate code based on prompt
-                            generateCode();
-                        }}
-                    >
-                        Generate
-                    </CustomGenerateButton>
-                </Modal.Actions>
-            </Modal>
         </StyledEditorPanel>
     );
 };
