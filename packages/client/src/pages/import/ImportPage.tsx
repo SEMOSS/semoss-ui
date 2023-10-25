@@ -4,7 +4,7 @@
  * Different Connection types:
  * Model(LLM), Vector Databases, Functions, Traditional Dbs, Storage
  *
- * Steps and (props...) from the useImport hook will give you the steps that
+ * Steps and (props...) from the useStepper hook will give you the steps that
  * have been completed through the selection process.
  *
  * Steps is important for this page as based on the step in the process you will
@@ -40,11 +40,11 @@ import { CopyDb } from '@/assets/img/CopyDb';
 import { UploadDb } from '@/assets/img/UploadDb';
 import { ConnectStorage } from '@/assets/img/ConnectStorage';
 
-import { useImport } from '@/hooks';
-
-import { EstablishConnectionPage, ImportConnectionPage } from './';
-
+import { useStepper } from '@/hooks';
 import { useNavigate, useLocation } from 'react-router-dom';
+
+import { CONNECTION_OPTIONS } from './import.constants';
+import { EstablishConnectionPage, ImportConnectionPage } from './';
 
 const StyledContainer = styled('div')(({ theme }) => ({
     display: 'flex',
@@ -185,14 +185,18 @@ const IconMapper = {
 };
 
 export const ImportPage = () => {
+    const { steps, activeStep, setSteps, setIsLoading, isLoading } =
+        useStepper();
+    const { search: importParams } = useLocation();
+    const navigate = useNavigate();
+
     const [importSearch, setImportSearch] = React.useState('');
     const [search, setSearch] = React.useState('');
-    const { steps, activeStep, setSteps, CONNECTION_OPTIONS } = useImport();
+
+    const [connectionOptions, setConnectionOptions] =
+        React.useState(CONNECTION_OPTIONS);
 
     const scrollToTopRef = useRef(null);
-
-    const navigate = useNavigate();
-    const { search: importParams } = useLocation();
 
     useEffect(() => {
         const paramedStep = {
@@ -259,6 +263,47 @@ export const ImportPage = () => {
 
         delayScroll(); // Trigger the delayed scroll when the component mounts
     }, [steps.length]);
+
+    useEffect(() => {
+        setUniqueIdsOnConnectionOptions();
+    }, []);
+
+    const setUniqueIdsOnConnectionOptions = async () => {
+        setIsLoading(true);
+        await assignUniqueIds(CONNECTION_OPTIONS);
+        setIsLoading(false);
+
+        setConnectionOptions(CONNECTION_OPTIONS);
+    };
+
+    /**
+     * Assigns unique IDs for each connection type
+     * @param obj
+     * @param prefix
+     */
+    function assignUniqueIds(obj, prefix = '') {
+        if (Array.isArray(obj)) {
+            // If it's an array, iterate through its elements
+            for (let i = 0; i < obj.length; i++) {
+                assignUniqueIds(obj[i], `${prefix}[${i}]`);
+            }
+        } else if (typeof obj === 'object' && obj !== null) {
+            // If it's an object, iterate through its properties
+            for (const key in obj) {
+                // if (obj.hasOwnProperty(key)) {
+                const currentPrefix = prefix ? `${prefix}.${key}` : key;
+
+                // Assign unique ID to the 'name', 'disable', 'fields' properties
+                if (key === 'name' || key === 'disable' || key === 'fields') {
+                    obj[`id`] = `${currentPrefix}${obj['name']}`;
+                }
+
+                // Recursively traverse nested objects
+                assignUniqueIds(obj[key], currentPrefix);
+                // }
+            }
+        }
+    }
 
     return (
         <Page
@@ -474,10 +519,11 @@ export const ImportPage = () => {
                 {/* This is shared between vector, function, database, model and storage */}
                 {steps.length === 1 &&
                     steps[0].title !== 'Copy Database' &&
-                    steps[0].title !== 'Upload Database' && (
+                    steps[0].title !== 'Upload Database' &&
+                    !isLoading && (
                         <Box sx={{ width: '100%' }}>
                             {Object.entries(
-                                CONNECTION_OPTIONS[steps[0].data],
+                                connectionOptions[steps[0].data],
                             ).map((kv: [string, any[]], i) => {
                                 // TODO FIX ANY TYPE
                                 return (

@@ -26,7 +26,7 @@ import { PromptGenerator } from '@/components/prompt';
 import { Page, LoadingScreen } from '@/components/ui';
 
 import { Link, useNavigate } from 'react-router-dom';
-import { useImport, useRootStore, usePixel } from '@/hooks';
+import { useStepper, useRootStore, usePixel } from '@/hooks';
 
 import { ADD_APP_STEPS } from './add-app.constants';
 import { BuildDb } from '@/assets/img/BuildDb';
@@ -50,29 +50,12 @@ const StyledGap = styled('div')(({ theme }) => ({
     gap: theme.spacing(1),
 }));
 
-const StyledFilter = styled('div')(({ theme }) => ({
-    display: 'flex',
-    flexDirection: 'column',
-    height: 'fit-content',
-    width: '355px',
-    boxShadow: '0px 5px 22px 0px rgba(0, 0, 0, 0.06)',
-    background: theme.palette.background.paper,
-}));
-
 const StyledContent = styled('div')(({ theme }) => ({
     display: 'flex',
     flexDirection: 'column',
     height: '100%',
     gap: theme.spacing(3),
     flex: '1',
-}));
-
-const StyledLink = styled(Link)(({ theme }) => ({
-    textDecoration: 'none',
-    color: 'inherit',
-    display: 'flex',
-    alignItems: 'center',
-    gap: theme.spacing(1),
 }));
 
 const StyledBuilderCard = styled(Card)(({ theme }) => ({
@@ -100,42 +83,11 @@ const StyledAppCard = styled(Card)(({ theme }) => ({
 
 export const AddAppPage = () => {
     const navigate = useNavigate();
-    const { steps, setSteps, setActiveStep, activeStep } = useImport();
+    const { steps, setSteps, setActiveStep, activeStep } = useStepper();
     const [appId, setAppId] = useState('');
 
     return (
-        <Page
-            header={
-                <Stack>
-                    <Breadcrumbs>
-                        {!steps.length ? (
-                            <StyledLink to={`..`}>App Library</StyledLink>
-                        ) : null}
-                        <StyledLink
-                            to={`.`}
-                            onClick={() => {
-                                setSteps([], -1);
-                            }}
-                        >
-                            {steps.length ? (
-                                <Icon>
-                                    <ArrowBack />
-                                </Icon>
-                            ) : null}
-                            Create App
-                        </StyledLink>
-                    </Breadcrumbs>
-                    <Typography variant="h4">
-                        {!steps.length ? 'Create App' : activeStep.title}
-                    </Typography>
-                    <Typography variant="body1">
-                        {!steps.length
-                            ? 'Select a template, import an existing app, or create a new app'
-                            : activeStep.description}
-                    </Typography>
-                </Stack>
-            }
-        >
+        <div>
             {/* Add App Header OR Stepper based on selected import */}
             {steps.length === 0 ? (
                 <StyledSpaceBetween>
@@ -308,7 +260,7 @@ export const AddAppPage = () => {
                     )}
                 </>
             ) : null}
-        </Page>
+        </div>
     );
 };
 

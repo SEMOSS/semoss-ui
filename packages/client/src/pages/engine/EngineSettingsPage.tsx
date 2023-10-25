@@ -23,6 +23,7 @@ export const EngineSettingsPage = () => {
     const { id, name, type } = useEngine();
     const navigate = useNavigate();
 
+    console.log(type);
     return (
         <SettingsContext.Provider
             value={{
@@ -35,7 +36,7 @@ export const EngineSettingsPage = () => {
                     name={name}
                     id={id}
                     onDelete={() => {
-                        navigate('/catalog');
+                        navigate(`/engine/${type.toLowerCase()}`);
                     }}
                 />
                 <PendingMembersTable mode={'engine'} id={id} />

@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { ImportForm } from '@/components/import';
 import { useRootStore } from '@/hooks';
 
-import { useImport } from '@/hooks';
+import { useStepper } from '@/hooks';
 
 const StyledBox = styled(Box)(({ theme }) => ({
     boxShadow: '0px 5px 22px 0px rgba(0, 0, 0, 0.06)',
@@ -17,7 +17,7 @@ export const ImportConnectionPage = () => {
     const { monolithStore } = useRootStore();
     const navigate = useNavigate();
     const notification = useNotification();
-    const { steps, setIsLoading } = useImport();
+    const { steps, setIsLoading } = useStepper();
 
     // File Uploads Database
     const [predictDataTypes, setPredictDataTypes] = React.useState(null);
@@ -66,7 +66,7 @@ export const ImportConnectionPage = () => {
                     message: `Successfully added to catalog storage`,
                 });
 
-                navigate(`/storage/${output.database_id}`);
+                navigate(`/engine/storage/${output.database_id}`);
             });
 
             return;
@@ -96,7 +96,7 @@ export const ImportConnectionPage = () => {
                     message: `Successfully added LLM to catalog`,
                 });
 
-                navigate(`/model/${output.database_id}`);
+                navigate(`/engine/model/${output.database_id}`);
             });
             return;
         } else if (values.type === 'VECTOR') {
@@ -128,7 +128,7 @@ export const ImportConnectionPage = () => {
                     message: `Successfully added vector database to catalog`,
                 });
 
-                navigate(`/vector/${output.database_id}`);
+                navigate(`/engine/vector/${output.database_id}`);
             });
             console.log(pixel);
             return;
@@ -178,8 +178,7 @@ export const ImportConnectionPage = () => {
                     color: 'success',
                     message: `Successfully added function to catalog`,
                 });
-
-                navigate(`/function/${output.database_id}`);
+                navigate(`/engine/function/${output.database_id}`);
             });
             return;
         }
