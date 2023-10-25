@@ -14,7 +14,7 @@ In figma, Use dev, and change th unit to 'rem'
 - 1.5rem = 24px
 - 2 rem = 32px
 
-### themem.spacing (Padding & Margin)
+### theme.spacing (Padding & Margin)
 - theme.spacing(1) = equivalent of 8px
 - theme.spacing(2) = equivalent of 16px
 - theme.spacing(3) = equivalent of 24px

@@ -108,6 +108,7 @@ export function PromptGenerator(props: { onSuccess: () => void }) {
             : currentBuilderStep === 4
             ? 'Preview'
             : 'Open in Builder';
+
     const nextButtonAction = () => {
         currentBuilderStep === 5
             ? props.onSuccess()

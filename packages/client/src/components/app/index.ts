@@ -12,3 +12,4 @@ export * from './AppTileCard';
 export * from './ConnectEngines';
 export * from './ImportAppForm';
 export * from './ImportAppAccess';
+export * from './AppFilter';
