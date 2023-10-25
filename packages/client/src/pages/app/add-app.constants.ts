@@ -1,5 +1,5 @@
 export const ADD_APP_STEPS = {
-    TEMPLATE_APP: {
+    IMPORT_APP: {
         steps: [
             {
                 name: 'metavals',
@@ -11,7 +11,7 @@ export const ADD_APP_STEPS = {
             },
         ],
     },
-    IMPORT_APP: {
+    TEMPLATE_APP: {
         steps: [
             {
                 name: 'metavals',
