@@ -101,16 +101,6 @@ export const AppPage = observer(() => {
         setView(newValue);
     };
 
-    const setConsoleHeight = () => {
-        if (bottomPanelHeight === '3.5%') {
-            setShowConsole(true);
-            setBottomPanelHeight('25%');
-        } else {
-            setShowConsole(false);
-            setBottomPanelHeight('3.5%');
-        }
-    };
-
     /**
      * @desc Refreshes the inner Iframe/Application
      */
@@ -125,8 +115,6 @@ export const AppPage = observer(() => {
      */
     const [bottomPanelHeight, setBottomPanelHeight] = useState('3.5%');
 
-    const [showConsole, setShowConsole] = useState(false);
-
     return (
         <AppContext.Provider
             value={{
@@ -138,16 +126,12 @@ export const AppPage = observer(() => {
                 editorMode: editMode,
                 /** Editor View (code-editor, settings, permissions) */
                 editorView: view,
-                /** Is our App Console Open */
-                openConsole: showConsole,
                 /** Loading */
                 isLoading: isLoading,
                 /** Turns edit mode on/off */
                 setEditorMode: switchEditorMode,
                 /** Changes Layout */
                 setEditorView: setEditorView,
-                /** Opens and closes console */
-                setOpenConsole: setConsoleHeight,
                 /** Set Loading */
                 setIsLoading: setIsLoading,
                 /** Refreshes App */

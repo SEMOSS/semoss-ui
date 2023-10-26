@@ -25,11 +25,6 @@ export type AppContextType = {
     editorView: 'code-editor' | 'settings' | 'permissions' | '';
 
     /**
-     * Is Console Open or not
-     */
-    openConsole: boolean;
-
-    /**
      * Show Loading or not
      */
     isLoading: boolean;
@@ -45,11 +40,6 @@ export type AppContextType = {
     setEditorView: (
         value: 'code-editor' | 'settings' | 'permissions' | '',
     ) => void;
-
-    /**
-     * Open and close console
-     */
-    setOpenConsole: () => void;
 
     /**
      * Sets Loading screen
