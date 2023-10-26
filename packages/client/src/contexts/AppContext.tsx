@@ -57,6 +57,10 @@ export type AppContextType = {
     setIsLoading: (val: boolean) => void;
 
     /**
+     * Key to refresh the app
+     */
+    refreshKey: number;
+    /**
      * Callback to refresh Application View
      */
     refreshApp: () => void;
