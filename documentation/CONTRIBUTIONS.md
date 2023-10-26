@@ -1,4 +1,13 @@
+# Contributions and Standardized Commits 
+
+## Overview
+This repository follows a standardized commit message convention to ensure consistency and clarity in our version control history. We employ CommitLint to enforce these conventions, promoting meaningful commit messages that convey the purpose and impact of each change.
+
+
+## Commit Message Format
+
 ### Type
+
 Must be one of the following:
 
 * **build**: Changes that affect the build system or external dependencies (example scopes: gulp, broccoli, npm)
@@ -39,3 +48,11 @@ Continuing off the example provided with Type and Scope, as for the subject of o
 With the three provided above our final commit message should look something like this.
 
 'feat(client/Catalog): add RequestAccess reactor to the engine catalog at all three levels'
+
+## Benefits
+Enforcing a standardized commit message format offers several advantages:
+
+- Clarity: Easily understand the nature and purpose of each commit.
+- Collaboration: Facilitate collaboration by providing a common and predictable commit message structure.
+
+By adhering to these commit message conventions and leveraging CommitLint, we aim to enhance the quality and coherence of our version control history. This approach streamlines collaboration and contributes to a more transparent and maintainable codebase.

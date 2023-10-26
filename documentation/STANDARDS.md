@@ -40,7 +40,7 @@ In our development practices, we prioritize the use of styled components over in
 
 Rather than scattering styles throughout the JSX code, styled components allow us to encapsulate styles within dedicated components. This not only promotes a cleaner and more readable codebase but also ensures a clear separation of concerns between structure and presentation.
 
-Example:
+1. Styled component accesing our theme:
 ```
 const StyledContainer = styled('div')(({ theme }) => ({
     display: 'flex',
@@ -48,5 +48,24 @@ const StyledContainer = styled('div')(({ theme }) => ({
     gap: theme.spacing(3),
     paddingTop: theme.spacing(1),
     paddingBottom: theme.spacing(1),
+}));
+```
+
+2. Styled component with props:
+
+```
+const StyledPageHeader = styled('div', {
+    shouldForwardProp: (prop) => prop !== 'stuck',
+})<{
+    /** Track if the page header is stuck */
+    stuck: boolean;
+}>(({ theme, stuck }) => ({
+    position: 'sticky',
+    top: '-1px',
+    paddingTop: theme.spacing(5),
+    paddingBottom: theme.spacing(1),
+    zIndex: 10,
+    borderBottom: stuck ? `solid ${theme.palette.divider}` : 'none',
+    backgroundColor: theme.palette.background.paper,
 }));
 ```
