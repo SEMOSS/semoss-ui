@@ -92,7 +92,25 @@ interface CreateAccessKeyForm {
 
 export const MyProfilePage = () => {
     const notification = useNotification();
-    const { monolithStore } = useRootStore();
+    const { configStore, monolithStore } = useRootStore();
+
+    console.log({ monolithStore });
+    console.log({ 'configStore.store': configStore.store });
+
+    const { email, id, name, admin, loggedIn } = configStore.store.user;
+    // console.log({ email, id, name, admin, loggedIn })
+
+    const dbMetaKeys = configStore.store.config.databaseMetaKeys;
+    console.log({ dbMetaKeys });
+
+    const projectMetaKeys = configStore.store.config.projectMetaKeys;
+    console.log({ projectMetaKeys });
+
+    const insightID = configStore.store.config.insightID;
+    console.log({ insightID });
+
+    const providers = configStore.store.config.providers;
+    console.log({ providers });
 
     // track the models
     const [addModal, setAddModal] = useState(false);
@@ -122,8 +140,8 @@ export const MyProfilePage = () => {
                 SECRETKEY: '',
                 FIRSTNAME: '',
                 LASTNAME: '',
-                USERNAME: '',
-                EMAIL: '',
+                USERNAME: name,
+                EMAIL: email,
             },
         });
 
@@ -139,6 +157,7 @@ export const MyProfilePage = () => {
      */
     const createAccessKey = async (data: CreateAccessKeyForm) => {
         try {
+            debugger;
             const output = await monolithStore.createUserAccessKey(
                 data.TOKENNAME,
                 data.TOKENDESCRIPTION || '',
@@ -147,6 +166,8 @@ export const MyProfilePage = () => {
             // update the values
             setValue('ACCESSKEY', output.ACCESSKEY);
             setValue('SECRETKEY', output.SECRETKEY);
+
+            console.log({ output });
 
             // add a new one
             notification.add({
@@ -215,9 +236,7 @@ export const MyProfilePage = () => {
         setProfileImgModal(false);
     };
 
-    const profileEditSubmit = () => {
-        alert('submit edits');
-    };
+    const profileEditSubmit = () => {};
 
     /**
      * Copy text and add it to the clipboard
@@ -255,7 +274,7 @@ export const MyProfilePage = () => {
                 <Grid container spacing={3}>
                     <GridItem sm={4}>
                         <Typography variant="h6">
-                            <strong>Edit profile picture</strong>
+                            Edit profile picture
                         </Typography>
                     </GridItem>
 
@@ -426,9 +445,7 @@ export const MyProfilePage = () => {
                                         fontWeight: '800',
                                         marginRight: '10px',
                                     }}
-                                    onClick={() => {
-                                        alert('Save');
-                                    }}
+                                    onClick={() => {}}
                                 >
                                     Save
                                 </Button>
@@ -437,9 +454,7 @@ export const MyProfilePage = () => {
                                     variant="text"
                                     color="primary"
                                     sx={{ fontWeight: '800', color: 'black' }}
-                                    onClick={() => {
-                                        alert('Reset');
-                                    }}
+                                    onClick={() => {}}
                                 >
                                     Reset
                                 </Button>
@@ -460,7 +475,7 @@ export const MyProfilePage = () => {
                     <GridItem sm={7}>
                         <p style={{ fontSize: '15px' }}>
                             {/* ### ---> check config for this url */}
-                            https://workspace.cfg.deloitte.com/cfg-ai-demo/Monolith/api
+                            {process.env.MODULE}
                         </p>
                         {/* <Button
                             variant="text"
@@ -475,11 +490,7 @@ export const MyProfilePage = () => {
                     </GridItem>
 
                     <GridItem sm={1} style={{ justifyContent: 'center' }}>
-                        <IconButton
-                            onClick={() => {
-                                alert('copy');
-                            }}
-                        >
+                        <IconButton onClick={() => {}}>
                             <ContentCopy />
                         </IconButton>
                     </GridItem>
@@ -654,6 +665,7 @@ export const MyProfilePage = () => {
 
                             <Stack direction="row" justifyContent={'start'}>
                                 <Button
+                                    // onClick={createAccessKey}
                                     disabled={isCreated}
                                     type="submit"
                                     variant={'outlined'}
@@ -771,15 +783,18 @@ export const MyProfilePage = () => {
                     </Button> */}
                 </Modal.Content>
                 <Modal.Actions>
-                    <Button
-                        variant="contained"
-                        onClick={() => {
-                            alert('save');
-                        }}
-                    >
+                    <Button variant="contained" onClick={() => {}}>
                         Save
                     </Button>
+                    <Button
+                        variant="text"
+                        onClick={() => closeProfileEditModel()}
+                    >
+                        Close
+                    </Button>
                 </Modal.Actions>
+                {/* <Modal.Actions>
+                </Modal.Actions> */}
             </Modal>
         </>
     );
