@@ -1,4 +1,4 @@
-image: node:18.16.0-buster
+image: node:18.16.0-bookworm
 
 stages:
     - pnpm_build
