@@ -43,34 +43,36 @@ pnpm_build_dev:
             - target/semossweb-${VERSION}-SNAPSHOT.war
 
 # # Pushes to maven central
-# pnpm_build_deploy:
-#     stage: pnpm_build
-#     # See https://docs.gitlab.com/ee/ci/yaml/#only-and-except-simplified
-#     only:
-#         refs:
-#             - triggers
-#             - web
-#     except:
-#         variables:
-#             - $RELEASE == "TRUE"
-#     script:
-#         - apt-get update
-#         - apt-get install -y maven
-#         - apt-get install -y gnupg2
-#         - gpg2 --batch --import <(echo "$GPG_PRIVATE_KEY")
-#         - echo "keyserver keyserver.ubuntu.com" > ~/.gnupg/gpg.conf
-#         - gpg2 --refresh-key
-#         # - npm install webpack --save-dev
-#         - npm install -g pnpm
-#         - pnpm install
-#         - pnpm -v
-#         - pnpm run build
-#         - /usr/share/maven/bin/mvn $MAVEN_CLI_OPTS deploy -P deploy -Dci.version=${VERSION}-SNAPSHOT
-#         # So that the cache takes up less space
-#         - rm -rf .m2/repository/org/semoss
-#     artifacts:
-#         paths:
-#             - target/semossweb-${VERSION}-SNAPSHOT.war
+pnpm_build_deploy:
+    stage: pnpm_build
+    # See https://docs.gitlab.com/ee/ci/yaml/#only-and-except-simplified
+    only:
+        refs:
+            - triggers
+            - web
+        variables:
+            - $CI_COMMIT_BRANCH == "dev"
+    except:
+        variables:
+            - $RELEASE == "TRUE"
+    script:
+        - apt-get update
+        - apt-get install -y maven
+        - apt-get install -y gnupg2
+        - gpg2 --batch --import <(echo "$GPG_PRIVATE_KEY")
+        - echo "keyserver keyserver.ubuntu.com" > ~/.gnupg/gpg.conf
+        - gpg2 --refresh-key
+        # - npm install webpack --save-dev
+        - npm install -g pnpm@6
+        - pnpm install
+        - pnpm -v
+        - pnpm run build
+        - /usr/share/maven/bin/mvn $MAVEN_CLI_OPTS deploy -P deploy -Dci.version=${VERSION}-SNAPSHOT
+        # So that the cache takes up less space
+        - rm -rf .m2/repository/org/semoss
+    artifacts:
+        paths:
+            - target/semossweb-${VERSION}-SNAPSHOT.war
 
 # # Releases to maven central
 # pnpm_build_release:
