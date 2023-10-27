@@ -574,6 +574,10 @@ export const CONNECTION_OPTIONS = {
                                     display: 'Text Generation',
                                     value: 'TEXT_GENERATION',
                                 },
+                                {
+                                    display: 'vLLM (Fast Chat)',
+                                    value: 'FAST_CHAT',
+                                },
                             ],
                         },
                         disabled: false,
@@ -686,6 +690,10 @@ export const CONNECTION_OPTIONS = {
                                 {
                                     display: 'Text Generation',
                                     value: 'TEXT_GENERATION',
+                                },
+                                {
+                                    display: 'vLLM (Fast Chat)',
+                                    value: 'FAST_CHAT',
                                 },
                             ],
                         },
@@ -800,6 +808,10 @@ export const CONNECTION_OPTIONS = {
                                     display: 'Text Generation',
                                     value: 'TEXT_GENERATION',
                                 },
+                                {
+                                    display: 'vLLM (Fast Chat)',
+                                    value: 'FAST_CHAT',
+                                },
                             ],
                         },
                         disabled: false,
@@ -912,6 +924,10 @@ export const CONNECTION_OPTIONS = {
                                 {
                                     display: 'Text Generation',
                                     value: 'TEXT_GENERATION',
+                                },
+                                {
+                                    display: 'vLLM (Fast Chat)',
+                                    value: 'FAST_CHAT',
                                 },
                             ],
                         },
@@ -1026,6 +1042,10 @@ export const CONNECTION_OPTIONS = {
                                     display: 'Text Generation',
                                     value: 'TEXT_GENERATION',
                                 },
+                                {
+                                    display: 'vLLM (Fast Chat)',
+                                    value: 'FAST_CHAT',
+                                },
                             ],
                         },
                         disabled: false,
@@ -1138,6 +1158,10 @@ export const CONNECTION_OPTIONS = {
                                 {
                                     display: 'Text Generation',
                                     value: 'TEXT_GENERATION',
+                                },
+                                {
+                                    display: 'vLLM (Fast Chat)',
+                                    value: 'FAST_CHAT',
                                 },
                             ],
                         },
@@ -1252,6 +1276,10 @@ export const CONNECTION_OPTIONS = {
                                     display: 'Text Generation',
                                     value: 'TEXT_GENERATION',
                                 },
+                                {
+                                    display: 'vLLM (Fast Chat)',
+                                    value: 'FAST_CHAT',
+                                },
                             ],
                         },
                         disabled: false,
@@ -1364,6 +1392,10 @@ export const CONNECTION_OPTIONS = {
                                 {
                                     display: 'Text Generation',
                                     value: 'TEXT_GENERATION',
+                                },
+                                {
+                                    display: 'vLLM (Fast Chat)',
+                                    value: 'FAST_CHAT',
                                 },
                             ],
                         },
@@ -1478,6 +1510,10 @@ export const CONNECTION_OPTIONS = {
                                     display: 'Text Generation',
                                     value: 'TEXT_GENERATION',
                                 },
+                                {
+                                    display: 'vLLM (Fast Chat)',
+                                    value: 'FAST_CHAT',
+                                },
                             ],
                         },
                         disabled: false,
@@ -1590,6 +1626,10 @@ export const CONNECTION_OPTIONS = {
                                 {
                                     display: 'Text Generation',
                                     value: 'TEXT_GENERATION',
+                                },
+                                {
+                                    display: 'vLLM (Fast Chat)',
+                                    value: 'FAST_CHAT',
                                 },
                             ],
                         },
@@ -1704,6 +1744,10 @@ export const CONNECTION_OPTIONS = {
                                     display: 'Text Generation',
                                     value: 'TEXT_GENERATION',
                                 },
+                                {
+                                    display: 'vLLM (Fast Chat)',
+                                    value: 'FAST_CHAT',
+                                },
                             ],
                         },
                         disabled: false,
@@ -1816,6 +1860,10 @@ export const CONNECTION_OPTIONS = {
                                 {
                                     display: 'Text Generation',
                                     value: 'TEXT_GENERATION',
+                                },
+                                {
+                                    display: 'vLLM (Fast Chat)',
+                                    value: 'FAST_CHAT',
                                 },
                             ],
                         },
@@ -1930,6 +1978,10 @@ export const CONNECTION_OPTIONS = {
                                     display: 'Text Generation',
                                     value: 'TEXT_GENERATION',
                                 },
+                                {
+                                    display: 'vLLM (Fast Chat)',
+                                    value: 'FAST_CHAT',
+                                },
                             ],
                         },
                         disabled: false,
@@ -2042,6 +2094,10 @@ export const CONNECTION_OPTIONS = {
                                 {
                                     display: 'Text Generation',
                                     value: 'TEXT_GENERATION',
+                                },
+                                {
+                                    display: 'vLLM (Fast Chat)',
+                                    value: 'FAST_CHAT',
                                 },
                             ],
                         },
@@ -2156,6 +2212,10 @@ export const CONNECTION_OPTIONS = {
                                     display: 'Text Generation',
                                     value: 'TEXT_GENERATION',
                                 },
+                                {
+                                    display: 'vLLM (Fast Chat)',
+                                    value: 'FAST_CHAT',
+                                },
                             ],
                         },
                         disabled: false,
@@ -2268,6 +2328,10 @@ export const CONNECTION_OPTIONS = {
                                 {
                                     display: 'Text Generation',
                                     value: 'TEXT_GENERATION',
+                                },
+                                {
+                                    display: 'vLLM (Fast Chat)',
+                                    value: 'FAST_CHAT',
                                 },
                             ],
                         },
