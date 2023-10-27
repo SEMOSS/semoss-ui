@@ -31,11 +31,19 @@ const StyledAlert = styled(Alert)(({ theme }) => ({
     width: '468px',
     height: theme.spacing(13),
     backgroundColor: theme.palette.background.paper,
+    padding:'8px, 0',
+    '.MuiAlert-root':{
+        background: 'rgba(100,0,150, 0.4)',
+    },
+    '.MuiAlert-action':{
+        paddingRight:'8px',
+    }
 }));
 
 const StyledGrid = styled(Grid)(() => ({
     flex: '1',
 }));
+
 
 interface SettingsTilesProps {
     /**

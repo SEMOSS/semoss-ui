@@ -18,6 +18,7 @@ import {
     Cached,
     PublishedWithChanges,
     InsertLink,
+    Publish,
 } from '@mui/icons-material';
 
 import { usePixel, useRootStore } from '@/hooks';
@@ -81,6 +82,7 @@ const StyledCardLeft = styled('div')(({ theme }) => ({
     gap: '1rem',
     flexDirection: 'column',
     alignItems: 'flex-start',
+    
 }));
 
 const StyledCondensedPublishContainer = styled('div')(({ theme }) => ({
@@ -110,7 +112,13 @@ const StyledSubRow = styled('div')({
     alignItems: 'center',
     alignContent: 'center',
     width: '100%',
-    margin: '10px 0',
+    margin: '4px 0 8px 0',
+    '.MuiTypography-body2':{
+        marginLeft:'32px',
+    },
+    '.MuiFormControl-root':{
+        marginLeft:'32px',
+    }
 });
 
 const StyledSubHeaderContainer = styled('div')(({ theme }) => ({
@@ -135,6 +143,10 @@ const StyledLeftActionDiv = styled('div')({
     justifyContent: 'center',
 });
 
+const StyledTypography = styled('div')({
+    fontWeight:'500',
+})
+
 const StyledActionDivLeft = styled('div')(({ theme }) => ({
     display: 'flex',
     paddingRight: theme.spacing(3),
@@ -152,16 +164,23 @@ const StyledPublishedIcon = styled(PublishedWithChanges)(() => ({
     marginRight: '5px',
 }));
 
-const StyledSwitchIcon = styled(ToggleOff)(({ theme }) => ({
-    display: 'flex',
-    alignItems: 'flex-start',
-    marginRight: theme.spacing(1),
-}));
+// const StyledSwitchIcon = styled(ToggleOff)(({ theme }) => ({
+//     display: 'flex',
+//     alignItems: 'flex-start',
+//     marginRight: theme.spacing(1),
+// }));
+const StyledPublishIcon = styled(Publish)(({ theme }) => ({
+        display: 'flex',
+        alignItems: 'flex-start',
+        marginRight: theme.spacing(1),
+        color: 'rgba(0, 0, 0, .5)',
+    }));
 
 const StyledRefreshIcon = styled(Cached)(({ theme }) => ({
     display: 'flex',
     alignItems: 'flex-start',
     marginRight: theme.spacing(1),
+    color: 'rgba(0, 0, 0, .5)',
 }));
 
 const StyledCardRight = styled('div')(() => ({
@@ -178,7 +197,7 @@ const StyledTable = styled(Table)(({ theme }) => ({
 
 const StyledPaper = styled(Paper)(({ theme }) => ({
     backgroundColor: theme.palette.background.paper,
-    padding: theme.spacing(1),
+    padding: theme.spacing(2),
 }));
 
 // User Table
@@ -429,10 +448,11 @@ export const AppSettings = (props: AppSettingsProps) => {
                                     alignItems: 'center',
                                 }}
                             >
-                                <StyledSwitchIcon />
-                                <Typography variant="subtitle1">
+                                {/* <StyledSwitchIcon /> */}
+                                <StyledPublishIcon />
+                                <StyledTypography variant="body1">
                                     Enable Publishing
-                                </Typography>
+                                </StyledTypography>
                             </div>
                             <StyledRightSwitch
                                 checked={portalDetails.hasPortal}
@@ -462,9 +482,9 @@ export const AppSettings = (props: AppSettingsProps) => {
                                     }}
                                 >
                                     <StyledRefreshIcon />
-                                    <Typography variant="subtitle1">
+                                    <StyledTypography variant="body1">
                                         Publish Portal
-                                    </Typography>
+                                    </StyledTypography>
                                 </div>
 
                                 <StyledRightButton
@@ -474,8 +494,7 @@ export const AppSettings = (props: AppSettingsProps) => {
                                         publish();
                                     }}
                                 >
-                                    <StyledPublishedIcon />
-                                    Publish
+                                    {/* <StyledPublishedIcon /> */}Publish
                                 </StyledRightButton>
                             </StyledSubRow>
 

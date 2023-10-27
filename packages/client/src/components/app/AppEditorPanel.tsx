@@ -24,6 +24,7 @@ import { AppEditor } from '@/components/common';
 import { MembersTable, SettingsTiles } from '@/components/settings';
 
 import { AppSettings } from './AppSettings';
+import { Card } from '@mui/material';
 
 const StyledContainer = styled('div')(({ theme }) => ({
     display: 'flex',
@@ -53,7 +54,10 @@ const StyledTopLeftContent = styled('div')(({ theme }) => ({
     display: 'flex',
     width: '100%',
     gap: theme.spacing(2),
+    padding:theme.spacing(2),
 }));
+
+
 
 type EditAppForm = {
     PROJECT_UPLOAD: File;
@@ -208,7 +212,7 @@ export const AppEditorPanel = (props) => {
                                     <Typography variant="h6">
                                         Update Project
                                     </Typography>
-
+                                    <Card>
                                     <Controller
                                         name={'PROJECT_UPLOAD'}
                                         control={control}
@@ -237,6 +241,7 @@ export const AppEditorPanel = (props) => {
                                             Update
                                         </Button>
                                     </Stack>
+                                    </Card>
                                 </Stack>
                             </form>
                         </SettingsContext.Provider>
