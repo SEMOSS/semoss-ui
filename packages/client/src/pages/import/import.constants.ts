@@ -405,7 +405,7 @@ export const CONNECTION_OPTIONS = {
             },
             {
                 name: 'Claude',
-                disable: true,
+                disable: false,
                 icon: CLAUDE,
                 fields: [
                     {
@@ -419,25 +419,15 @@ export const CONNECTION_OPTIONS = {
                         rules: { required: true },
                     },
                     {
-                        fieldName: 'MODEL',
-                        label: 'Model',
-                        defaultValue: 'Claude',
-                        options: {
-                            component: 'text-field',
-                        },
-                        disabled: true,
-                        rules: { required: true },
-                    },
-                    {
                         fieldName: 'MODEL_TYPE',
                         label: 'Type',
-                        defaultValue: 'Claude',
+                        defaultValue: 'BEDROCK',
                         options: {
                             component: 'select',
                             options: [
                                 {
-                                    display: 'Open AI',
-                                    value: 'OPEN_AI',
+                                    display: 'Bedrock',
+                                    value: 'BEDROCK',
                                 },
                             ],
                         },
@@ -445,11 +435,41 @@ export const CONNECTION_OPTIONS = {
                         rules: { required: true },
                     },
                     {
-                        fieldName: 'ENDPOINT',
-                        label: 'Endpoint',
+                        fieldName: 'MODEL',
+                        label: 'Model',
                         defaultValue: '',
                         options: {
                             component: 'text-field',
+                        },
+                        disabled: true,
+                        rules: { required: true },
+                    },
+                    {
+                        fieldName: 'AWS_REGION',
+                        label: 'Aws Region',
+                        defaultValue: 'us-east-1',
+                        options: {
+                            component: 'text-field',
+                        },
+                        disabled: false,
+                        rules: { required: true },
+                    },
+                    {
+                        fieldName: 'AWS_ACCESS_KEY',
+                        label: 'Aws Access Key',
+                        defaultValue: '',
+                        options: {
+                            component: 'text-field',
+                        },
+                        disabled: false,
+                        rules: { required: true },
+                    },
+                    {
+                        fieldName: 'AWS_SECRET_KEY',
+                        label: 'Aws Secret Key',
+                        defaultValue: '',
+                        options: {
+                            component: 'password',
                         },
                         disabled: false,
                         rules: { required: true },
