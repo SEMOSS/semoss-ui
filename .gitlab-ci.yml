@@ -1,5 +1,3 @@
-image: node:18.16.0-bookworm
-entrypoint: [ '/bin/bash', '-c' ]
 stages:
     - pnpm_build
     # - push_bundle
@@ -20,6 +18,9 @@ cache:
 # Does not push to maven central
 pnpm_build_dev:
     stage: pnpm_build
+    image:
+        name: node:18.16.0-bookworm
+        entrypoint: [ '/bin/bash', '-c' ]
     # See https://docs.gitlab.com/ee/ci/yaml/#only-and-except-simplified
     only:
         refs:
@@ -45,6 +46,9 @@ pnpm_build_dev:
 # # Pushes to maven central
 pnpm_build_deploy:
     stage: pnpm_build
+    image:
+        name: node:18.16.0-bookworm
+        entrypoint: [ '/bin/bash', '-c' ]
     # See https://docs.gitlab.com/ee/ci/yaml/#only-and-except-simplified
     only:
         refs:
