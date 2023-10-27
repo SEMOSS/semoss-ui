@@ -1,5 +1,5 @@
 image: node:18.16.0-bookworm
-
+entrypoint: [ '/bin/bash', '-c' ]
 stages:
     - pnpm_build
     # - push_bundle
