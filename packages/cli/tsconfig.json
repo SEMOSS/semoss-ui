@@ -1,0 +1,17 @@
+{
+    "compilerOptions": {
+        "declaration": true,
+        "outDir": "dist",
+        "rootDir": "src",
+        "strict": true,
+        "target": "es6",
+        "module": "esnext",
+        "moduleResolution": "node",
+        "allowSyntheticDefaultImports": true,
+        "baseUrl": "src",
+        "paths": {
+            "@/*": ["*"]
+        }
+    },
+    "include": ["./src/**/*"]
+}
