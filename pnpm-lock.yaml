@@ -329,9 +329,6 @@ importers:
       webpack-cli: 5.1.4_webpack@5.88.2
       webpack-merge: 5.9.0
 
-  packages/playsheet:
-    specifiers: {}
-
   packages/sdk:
     specifiers:
       '@rollup/plugin-commonjs': 25.0.4
