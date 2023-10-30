@@ -3,6 +3,8 @@ import { Env, Insight } from '@semoss/sdk';
 import AdmZip from 'adm-zip';
 import { config } from 'dotenv';
 import * as path from 'node:path';
+import { File } from 'node:buffer';
+
 import Listr from 'listr';
 
 export default class Deploy extends Command {
@@ -107,7 +109,7 @@ deploy (./src/commands/deploy.ts)
                         ['portals', 'java', 'r', 'python'].map((d) => {
                             return new Promise((resolve) => {
                                 zip.addLocalFolderAsync(
-                                    path.resolve(__dirname, d),
+                                    path.resolve(d),
                                     (err) => {
                                         if (err) {
                                             throw err;
@@ -139,27 +141,25 @@ deploy (./src/commands/deploy.ts)
                     const file = new File([context.package], name);
 
                     // upload to the insight
-                    const upload = await insight.actions.upload(file, Env.APP);
+
+                    const upload = await insight.actions.upload(
+                        //@ts-expect-error File is different in node than web
+                        file,
+                        '',
+                        'app',
+                    );
 
                     // unzip the file in the new project
-                    const unzipFile = await insight.actions.run(
-                        `UnzipFile(filePath=["${`${path}${upload[0].fileName}`}"], space=["${
-                            Env.APP
-                        }"])`,
+                    await insight.actions.run(
+                        `UnzipFile(filePath=["${upload[0].fileName}"], space=["${Env.APP}"])`,
                     );
 
-                    if (unzipFile.errors.length > 0) {
-                        throw new Error(unzipFile.errors.join(''));
-                    }
+                    console.log('unzip');
 
                     // cleanup
-                    const deleteAsset = await insight.actions.run(
+                    await insight.actions.run(
                         `DeleteAsset(filePath=["${path}"], space=["${Env.APP}"]);`,
                     );
-
-                    if (deleteAsset.errors.length > 0) {
-                        throw new Error(deleteAsset.errors.join(''));
-                    }
 
                     return true;
                 },
@@ -168,13 +168,9 @@ deploy (./src/commands/deploy.ts)
                 title: 'Configuring App',
                 task: async () => {
                     // Load the insight classes
-                    const { errors } = await insight.actions.run(
+                    await insight.actions.run(
                         `ReloadInsightClasses('${Env.APP}');`,
                     );
-
-                    if (errors.length > 0) {
-                        throw new Error(errors.join(''));
-                    }
 
                     return true;
                 },
@@ -183,13 +179,9 @@ deploy (./src/commands/deploy.ts)
                 title: 'Publishing App',
                 task: async (context) => {
                     // Publish the app
-                    const { pixelReturn, errors } = await insight.actions.run<
-                        [string]
-                    >(`PublishProject('${Env.APP}', release=true);`);
-
-                    if (errors.length > 0) {
-                        throw new Error(errors.join(''));
-                    }
+                    const { pixelReturn } = await insight.actions.run<[string]>(
+                        `PublishProject('${Env.APP}', release=true);`,
+                    );
 
                     // save the url
                     context.url = pixelReturn[0].output;
@@ -206,7 +198,7 @@ deploy (./src/commands/deploy.ts)
                     throw new Error('Url Missing');
                 }
 
-                this.log('Sucess');
+                this.log('Success');
                 this.log(`URL: ${context.url}`);
             })
             .catch((err) => {

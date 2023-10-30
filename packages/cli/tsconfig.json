@@ -11,7 +11,11 @@
         "baseUrl": "src",
         "paths": {
             "@/*": ["*"]
-        }
+        },
+        "sourceMap": true
     },
-    "include": ["./src/**/*"]
+    "include": ["./src/**/*"],
+    "ts-node": {
+        "esm": true
+    }
 }

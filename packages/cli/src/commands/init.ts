@@ -1,8 +1,7 @@
 import { Command, Flags } from '@oclif/core';
 import { Env, Insight } from '@semoss/sdk';
-import { config } from 'dotenv';
+import { config, parse } from 'dotenv';
 import * as fs from 'node:fs';
-import * as os from 'node:os';
 import Listr from 'listr';
 
 export default class Deploy extends Command {
@@ -89,11 +88,8 @@ init (./src/commands/init.ts)
             {
                 title: 'Initializing',
                 task: async () => {
-                    this.log('hi 1');
-
                     // initialize the insight
                     await insight.initialize();
-
                     if (insight.error) {
                         throw insight.error;
                     } else if (!insight.isAuthorized) {
@@ -101,9 +97,6 @@ init (./src/commands/init.ts)
                     } else if (!insight.isReady) {
                         throw new Error('Error initializing model');
                     }
-
-                    this.log('hi 2');
-
                     return true;
                 },
             },
@@ -111,17 +104,11 @@ init (./src/commands/init.ts)
                 title: 'Configuring App',
                 task: async (context) => {
                     // Load the insight classes
-                    const { errors, pixelReturn } = await insight.actions.run<
+                    const { pixelReturn } = await insight.actions.run<
                         [{ project_id: string }]
                     >(`CreateProject("${name}")`);
-
-                    if (errors.length > 0) {
-                        throw new Error(errors.join(''));
-                    }
-
                     // save the new app ID
                     context.APP = pixelReturn[0].output.project_id;
-
                     return true;
                 },
             },
@@ -129,26 +116,21 @@ init (./src/commands/init.ts)
                 title: 'Saving App',
                 task: async (context) => {
                     if (!context.APP) {
-                        throw new Error();
+                        throw new Error('No App');
                     }
 
-                    const ENV_VARS = fs
-                        .readFileSync(envPath, 'utf8')
-                        .split(os.EOL);
+                    const ENV_VARS = parse(fs.readFileSync(envPath, 'utf8'));
 
-                    const line = ENV_VARS.find((line) => {
-                        return line.match('APP');
-                    });
+                    // set the Variable
+                    ENV_VARS['APP'] = context.APP;
 
-                    // find the env we want based on the key
-                    const target = line ? ENV_VARS.indexOf(line) : -1;
+                    // construct the object
+                    const text = Object.keys(ENV_VARS)
+                        .map((k) => `${k}=${ENV_VARS[k]}`)
+                        .join('\n');
 
-                    // replace the key/value with the new value
-                    if (target > -1) {
-                        ENV_VARS.splice(target, 1, `APP=${context.APP}`);
-                    } else {
-                        ENV_VARS.push(`APP=${context.APP}`);
-                    }
+                    // write it
+                    fs.writeFileSync(envPath, text);
 
                     return true;
                 },
@@ -162,7 +144,7 @@ init (./src/commands/init.ts)
                     throw new Error('Id Missing');
                 }
 
-                this.log('Sucess');
+                this.log('Success');
                 this.log(`ID: ${context.APP}`);
             })
             .catch((err) => {

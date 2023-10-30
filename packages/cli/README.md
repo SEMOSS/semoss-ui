@@ -16,26 +16,18 @@ First define a few environment variables:
 
 ```.env
 MODULE      = ***URL HERE*** # Path to the application server
-ACCESS_KEY  = ***KEY HERE*** # Access ID to the application server 
+ACCESS_KEY  = ***KEY HERE*** # Access ID to the application server
 SECRET_KEY  = ***KEY HERE*** # Secret Key to the application server
 ```
-
 
 Next, initialize the app:
 
 ```sh
-@semoss/cli init
+@semoss/cli init -n="name"
 ```
 
 Make any changes and deploy by running:
 
 ```sh
 @semoss/cli deploy
-```
-
-## Test:
-
-```sh
-cd ./test
-../bin/dev init -e=".env.local" -n="test"
 ```
