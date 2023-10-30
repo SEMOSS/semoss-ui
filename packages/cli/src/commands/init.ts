@@ -1,4 +1,4 @@
-import { Command, Flags, Args } from '@oclif/core';
+import { Command, Flags } from '@oclif/core';
 import { Env, Insight } from '@semoss/sdk';
 import { config } from 'dotenv';
 import * as fs from 'node:fs';
@@ -6,10 +6,6 @@ import * as os from 'node:os';
 import Listr from 'listr';
 
 export default class Deploy extends Command {
-    static args = {
-        name: Args.string(),
-    };
-
     static description = 'Initialize a new app';
 
     static examples = [
@@ -24,17 +20,21 @@ init (./src/commands/init.ts)
             char: 'e',
             description: 'Path to the environment variables. Default is .env',
         }),
+        // name
+        name: Flags.string({
+            char: 'n',
+            description: 'Name of the project',
+        }),
     };
 
     public async run(): Promise<void> {
-        const { flags, args } = await this.parse(Deploy);
+        const { flags } = await this.parse(Deploy);
 
-        // get the name of the app
-        const name = args.name;
+        // name of the app
+        const name = flags.name;
         if (!name) {
             throw new Error('Name is required');
         }
-
         // path to the environment variables
         const envPath = flags.env ?? '.env';
 
@@ -89,6 +89,8 @@ init (./src/commands/init.ts)
             {
                 title: 'Initializing',
                 task: async () => {
+                    this.log('hi 1');
+
                     // initialize the insight
                     await insight.initialize();
 
@@ -99,6 +101,8 @@ init (./src/commands/init.ts)
                     } else if (!insight.isReady) {
                         throw new Error('Error initializing model');
                     }
+
+                    this.log('hi 2');
 
                     return true;
                 },
