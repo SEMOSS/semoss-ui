@@ -5,16 +5,16 @@ import { EngineContextType, EngineContext } from './EngineContext';
 import { MetamodelContextType, MetamodelContext } from './MetamodelContext';
 import { SettingsContextType, SettingsContext } from './SettingsContext';
 import { RootStoreContextType, RootStoreContext } from './RootStoreContext';
-import { ImportContext, ImportContextType } from './ImportContext';
+import { StepperContext, StepperContextType } from './StepperContext';
 
 export type {
     AppContextType,
     DesignerContextType,
     EngineContextType,
-    ImportContextType,
     MetamodelContextType,
     RootStoreContextType,
     SettingsContextType,
+    StepperContextType,
 };
 
 export {
@@ -22,8 +22,8 @@ export {
     BlocksContext,
     DesignerContext,
     EngineContext,
-    ImportContext,
     MetamodelContext,
-    SettingsContext,
     RootStoreContext,
+    SettingsContext,
+    StepperContext,
 };

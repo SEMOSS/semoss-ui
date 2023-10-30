@@ -767,7 +767,6 @@ export const EngineCatalogPage = observer(
                             </List.Item>
 
                             <Collapse in={filterByVisibility}>
-                                {/* {catalogType.toUpperCase() === 'DATABASE' && ( */}
                                 <StyledChipList>
                                     <StyledChip
                                         label={`My ${
@@ -806,7 +805,6 @@ export const EngineCatalogPage = observer(
                                         }}
                                     ></StyledChip>
                                 </StyledChipList>
-                                {/* )} */}
 
                                 {Object.entries(filterOptions).length ? (
                                     <StyledFilterSearchContainer>

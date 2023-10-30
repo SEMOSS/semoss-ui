@@ -1,8 +1,0 @@
-/*Bootstrap Slider Overrides*/
-.slider-selection {
-	background-image: linear-gradient(to bottom,#f9f9f9 0,#0c4ba2 100%) !important;
-}
-
-.slider-handle {
-	background-image: linear-gradient(to bottom,#149bdf 0,#0c4ba2 100%) !important;
-}
