@@ -19,8 +19,8 @@ cache:
 pnpm_build_dev:
     stage: pnpm_build
     image:
-        name: node:18.16.0-bookworm
-        entrypoint: [ '/bin/bash', '-c' ]
+        name: node:18.16.1-bullseye
+        # entrypoint: [ '/bin/bash', '-c' ]
     # See https://docs.gitlab.com/ee/ci/yaml/#only-and-except-simplified
     only:
         refs:
@@ -47,8 +47,8 @@ pnpm_build_dev:
 pnpm_build_deploy:
     stage: pnpm_build
     image:
-        name: node:18.16.0-bookworm
-        entrypoint: [ '/bin/bash', '-c' ]
+        name: node:18.16.1-bullseye
+        # entrypoint: [ '/bin/bash', '-c' ]
     # See https://docs.gitlab.com/ee/ci/yaml/#only-and-except-simplified
     only:
         refs:
