@@ -112,7 +112,7 @@ export class InsightStore {
         /**
          * App to load into the insight
          */
-        app?: string;
+        app?: string | false;
 
         /**
          * Python file to load into an insight
@@ -130,7 +130,8 @@ export class InsightStore {
                   type: 'script';
                   script: string;
                   alias: string;
-              };
+              }
+            | false;
     }): Promise<void> => {
         // reset it
         this._store.isInitialized = false;
@@ -140,7 +141,7 @@ export class InsightStore {
         const merged: NonNullable<typeof options> = {
             app: options && options.app ? options.app : '',
             python:
-                options && options.python
+                options && typeof options.python !== 'undefined'
                     ? options.python
                     : {
                           type: 'detect',
@@ -172,6 +173,10 @@ export class InsightStore {
 
         // load the environment from the document (production)
         try {
+            if (!document) {
+                return;
+            }
+
             const env = JSON.parse(
                 document.getElementById('semoss-env')?.textContent || '',
             ) as {
@@ -187,7 +192,7 @@ export class InsightStore {
                 });
             }
         } catch (e) {
-            console.warn(e);
+            // noop
         }
 
         try {
@@ -403,6 +408,7 @@ LoadPyFromFile(alias="${alias}", filePath="temp.py");
             script: '',
             alias: '',
         };
+
         try {
             const scriptEle = document.querySelector('[data-semoss-py]');
             const content = scriptEle?.textContent;
@@ -690,7 +696,7 @@ LoadPyFromFile(alias="${alias}", filePath="temp.py");
             try {
                 const response = await upload(
                     files,
-                    space === 'insight' ? this._store.insightId : '',
+                    this._store.insightId,
                     space === 'app' ? this._store.options.appId : '',
                     path,
                 );
