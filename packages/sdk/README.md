@@ -1,6 +1,6 @@
 # @semoss\sdk
 
-@semoss\sdk is a small utility package that accelerates the process of building an deploying an app.
+@semoss\sdk is a small utility package that accelerates the process of building an app.
 
 ## Getting Started:
 

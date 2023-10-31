@@ -1,6 +1,0 @@
-input[type=checkbox].embed-checkbox-align, input[type=radio].embed-checkbox-align {
-	vertical-align: middle;
-    position: relative;
-    bottom: 3px;
-    margin-right: 2px;
-}
