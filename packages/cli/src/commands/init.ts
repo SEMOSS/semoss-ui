@@ -89,7 +89,10 @@ init (./src/commands/init.ts)
                 title: 'Initializing',
                 task: async () => {
                     // initialize the insight
-                    await insight.initialize();
+                    await insight.initialize({
+                        python: false,
+                    });
+
                     if (insight.error) {
                         throw insight.error;
                     } else if (!insight.isAuthorized) {
