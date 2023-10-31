@@ -16,8 +16,6 @@ import { SettingsRouter } from './settings';
 import { AppRouter } from './app';
 import { ImportRouter } from './import';
 
-import { StateStore } from '@/stores';
-
 export const Router = observer(() => {
     const { configStore } = useRootStore();
 
@@ -40,10 +38,7 @@ export const Router = observer(() => {
             </Route>
             <Route path="/login" element={<LoginPage />}></Route>
             <Route path="/edit" element={<Outlet />}>
-                <Route
-                    path="design"
-                    element={<DesignPage store={StateStore} />}
-                ></Route>
+                <Route path="design" element={<DesignPage />}></Route>
             </Route>
         </Routes>
     );

@@ -1,20 +1,13 @@
-import { useMemo, useEffect } from 'react';
+import { useMemo } from 'react';
 
-import {
-    DesignerStore,
-    Block,
-    ActionMessages,
-    Query,
-    StateStore,
-    StateStoreImplementation,
-} from '@/stores';
+import { DesignerStore, StateStore } from '@/stores';
 import { Designer } from '@/components/designer';
 import { Blocks, Renderer } from '@/components/blocks';
 import { DefaultBlocks } from '@/components/block-defaults';
 
 const ACTIVE = 'page-1';
 
-export function DesignPage(props: { store: StateStoreImplementation }) {
+export const DesignPage = () => {
     /**
      * Have the designer control the blocks
      */
@@ -31,11 +24,11 @@ export function DesignPage(props: { store: StateStoreImplementation }) {
     return (
         // TODO: Fix
         <div style={{ height: '100vh', width: '100vw' }}>
-            <Blocks state={props.store} registry={DefaultBlocks}>
+            <Blocks state={StateStore} registry={DefaultBlocks}>
                 <Designer designer={designer}>
                     <Renderer id={ACTIVE} />
                 </Designer>
             </Blocks>
         </div>
     );
-}
+};
