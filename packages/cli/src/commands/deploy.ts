@@ -2,7 +2,8 @@ import { Command, Flags } from '@oclif/core';
 import { Env, Insight } from '@semoss/sdk';
 import AdmZip from 'adm-zip';
 import { config } from 'dotenv';
-import * as path from 'node:path';
+import { File } from 'node:buffer';
+
 import Listr from 'listr';
 
 export default class Deploy extends Command {
@@ -22,6 +23,11 @@ deploy (./src/commands/deploy.ts)
             char: 'e',
             description: 'Path to the environment variables. Default is .env',
         }),
+
+        root: Flags.string({
+            char: 'r',
+            description: 'Path to the root folder. Default is ./',
+        }),
     };
 
     public async run(): Promise<void> {
@@ -29,6 +35,9 @@ deploy (./src/commands/deploy.ts)
 
         // path to the environment variables
         const envPath = flags.env ?? '.env';
+
+        // path to the root of the app
+        const rootPath = flags.root ?? './';
 
         // load the environment variables if it exists
         try {
@@ -83,7 +92,9 @@ deploy (./src/commands/deploy.ts)
                 title: 'Initializing',
                 task: async () => {
                     // initialize the insight
-                    await insight.initialize();
+                    await insight.initialize({
+                        python: false,
+                    });
 
                     if (insight.error) {
                         throw insight.error;
@@ -107,14 +118,16 @@ deploy (./src/commands/deploy.ts)
                         ['portals', 'java', 'r', 'python'].map((d) => {
                             return new Promise((resolve) => {
                                 zip.addLocalFolderAsync(
-                                    path.resolve(__dirname, d),
-                                    (err) => {
+                                    `${rootPath}${d}`,
+                                    (success, err) => {
                                         if (err) {
-                                            throw err;
+                                            // warn the user
+                                            console.warn(err);
                                         }
 
                                         resolve(null);
                                     },
+                                    `./${d}`,
                                 );
                             });
                         }),
@@ -133,33 +146,39 @@ deploy (./src/commands/deploy.ts)
                         throw new Error('Package not found');
                     }
 
+                    const path = 'version/assets/';
                     const name = 'package.zip';
 
                     // Construct a file
                     const file = new File([context.package], name);
 
                     // upload to the insight
-                    const upload = await insight.actions.upload(file, Env.APP);
+                    const upload = await insight.actions.upload(
+                        //@ts-expect-error Expect TS error since node != browser
+                        file,
+                        path,
+                        'app',
+                    );
 
                     // unzip the file in the new project
-                    const unzipFile = await insight.actions.run(
-                        `UnzipFile(filePath=["${`${path}${upload[0].fileName}`}"], space=["${
-                            Env.APP
-                        }"])`,
+                    await insight.actions.run(
+                        `UnzipFile(filePath=["${path}${upload[0].fileName}"], space=["${Env.APP}"])`,
                     );
 
-                    if (unzipFile.errors.length > 0) {
-                        throw new Error(unzipFile.errors.join(''));
-                    }
+                    // reload the classes
+                    await insight.actions.run(
+                        `ReloadInsightClasses('${Env.APP}');`,
+                    );
+
+                    // publish the project
+                    await insight.actions.run(
+                        `PublishProject('${Env.APP}', release=true);`,
+                    );
 
                     // cleanup
-                    const deleteAsset = await insight.actions.run(
-                        `DeleteAsset(filePath=["${path}"], space=["${Env.APP}"]);`,
-                    );
-
-                    if (deleteAsset.errors.length > 0) {
-                        throw new Error(deleteAsset.errors.join(''));
-                    }
+                    // await insight.actions.run(
+                    //     `DeleteAsset(filePath=["${path}${upload[0].fileName}"], space=["${Env.APP}"]);`,
+                    // );
 
                     return true;
                 },
@@ -168,13 +187,9 @@ deploy (./src/commands/deploy.ts)
                 title: 'Configuring App',
                 task: async () => {
                     // Load the insight classes
-                    const { errors } = await insight.actions.run(
+                    await insight.actions.run(
                         `ReloadInsightClasses('${Env.APP}');`,
                     );
-
-                    if (errors.length > 0) {
-                        throw new Error(errors.join(''));
-                    }
 
                     return true;
                 },
@@ -183,13 +198,9 @@ deploy (./src/commands/deploy.ts)
                 title: 'Publishing App',
                 task: async (context) => {
                     // Publish the app
-                    const { pixelReturn, errors } = await insight.actions.run<
-                        [string]
-                    >(`PublishProject('${Env.APP}', release=true);`);
-
-                    if (errors.length > 0) {
-                        throw new Error(errors.join(''));
-                    }
+                    const { pixelReturn } = await insight.actions.run<[string]>(
+                        `PublishProject('${Env.APP}', release=true);`,
+                    );
 
                     // save the url
                     context.url = pixelReturn[0].output;
@@ -205,8 +216,7 @@ deploy (./src/commands/deploy.ts)
                 if (!context.url) {
                     throw new Error('Url Missing');
                 }
-
-                this.log('Sucess');
+                this.log('Success');
                 this.log(`URL: ${context.url}`);
             })
             .catch((err) => {

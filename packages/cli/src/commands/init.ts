@@ -1,8 +1,13 @@
 import { Command, Flags } from '@oclif/core';
 import { Env, Insight } from '@semoss/sdk';
+<<<<<<< HEAD
 import { config } from 'dotenv';
 import * as fs from 'node:fs';
 import * as os from 'node:os';
+=======
+import { config, parse } from 'dotenv';
+import * as fs from 'node:fs';
+>>>>>>> 7a8d1917a623c623b157a88077bd3efc44bb7ff5
 import Listr from 'listr';
 
 export default class Deploy extends Command {
@@ -89,10 +94,17 @@ init (./src/commands/init.ts)
             {
                 title: 'Initializing',
                 task: async () => {
+<<<<<<< HEAD
                     this.log('hi 1');
 
                     // initialize the insight
                     await insight.initialize();
+=======
+                    // initialize the insight
+                    await insight.initialize({
+                        python: false,
+                    });
+>>>>>>> 7a8d1917a623c623b157a88077bd3efc44bb7ff5
 
                     if (insight.error) {
                         throw insight.error;
@@ -101,9 +113,12 @@ init (./src/commands/init.ts)
                     } else if (!insight.isReady) {
                         throw new Error('Error initializing model');
                     }
+<<<<<<< HEAD
 
                     this.log('hi 2');
 
+=======
+>>>>>>> 7a8d1917a623c623b157a88077bd3efc44bb7ff5
                     return true;
                 },
             },
@@ -111,6 +126,7 @@ init (./src/commands/init.ts)
                 title: 'Configuring App',
                 task: async (context) => {
                     // Load the insight classes
+<<<<<<< HEAD
                     const { errors, pixelReturn } = await insight.actions.run<
                         [{ project_id: string }]
                     >(`CreateProject("${name}")`);
@@ -122,6 +138,13 @@ init (./src/commands/init.ts)
                     // save the new app ID
                     context.APP = pixelReturn[0].output.project_id;
 
+=======
+                    const { pixelReturn } = await insight.actions.run<
+                        [{ project_id: string }]
+                    >(`CreateProject("${name}")`);
+                    // save the new app ID
+                    context.APP = pixelReturn[0].output.project_id;
+>>>>>>> 7a8d1917a623c623b157a88077bd3efc44bb7ff5
                     return true;
                 },
             },
@@ -129,6 +152,7 @@ init (./src/commands/init.ts)
                 title: 'Saving App',
                 task: async (context) => {
                     if (!context.APP) {
+<<<<<<< HEAD
                         throw new Error();
                     }
 
@@ -149,6 +173,23 @@ init (./src/commands/init.ts)
                     } else {
                         ENV_VARS.push(`APP=${context.APP}`);
                     }
+=======
+                        throw new Error('No App');
+                    }
+
+                    const ENV_VARS = parse(fs.readFileSync(envPath, 'utf8'));
+
+                    // set the Variable
+                    ENV_VARS['APP'] = context.APP;
+
+                    // construct the object
+                    const text = Object.keys(ENV_VARS)
+                        .map((k) => `${k}=${ENV_VARS[k]}`)
+                        .join('\n');
+
+                    // write it
+                    fs.writeFileSync(envPath, text);
+>>>>>>> 7a8d1917a623c623b157a88077bd3efc44bb7ff5
 
                     return true;
                 },
@@ -162,7 +203,11 @@ init (./src/commands/init.ts)
                     throw new Error('Id Missing');
                 }
 
+<<<<<<< HEAD
                 this.log('Sucess');
+=======
+                this.log('Success');
+>>>>>>> 7a8d1917a623c623b157a88077bd3efc44bb7ff5
                 this.log(`ID: ${context.APP}`);
             })
             .catch((err) => {
