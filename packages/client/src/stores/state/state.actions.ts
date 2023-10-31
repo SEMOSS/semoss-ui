@@ -1,5 +1,5 @@
 import { BlockJSON, ListenerActions } from './state.types';
-import { StateStore } from './state.store';
+import { StateStoreImplementation } from './state.store';
 
 export enum ActionMessages {
     SET_STATE = 'SET_STATE',
@@ -36,8 +36,8 @@ export interface Action {
 export interface SetStateAction extends Action {
     message: ActionMessages.SET_STATE;
     payload: {
-        blocks?: StateStore['blocks'];
-        queries?: StateStore['queries'];
+        blocks?: StateStoreImplementation['blocks'];
+        queries?: StateStoreImplementation['queries'];
     };
 }
 

@@ -1,4 +1,4 @@
-import { StateStore, Registry } from '@/stores';
+import { StateStoreImplementation, Registry } from '@/stores';
 import { BlocksContext } from '@/contexts';
 
 export interface BlocksProps<R extends Registry> {
@@ -6,7 +6,7 @@ export interface BlocksProps<R extends Registry> {
     children: React.ReactNode;
 
     /** Store to connect to */
-    state: StateStore;
+    state: StateStoreImplementation;
 
     /** Widgets available to all of the blocks */
     registry: R;
@@ -15,21 +15,7 @@ export interface BlocksProps<R extends Registry> {
 export const Blocks = <R extends Registry = Registry>(
     props: BlocksProps<R>,
 ) => {
-    const {
-        children,
-        registry,
-        state = new StateStore(
-            {
-                blocks: {},
-                queries: {},
-            },
-            {
-                onQuery: async () => ({
-                    data: null,
-                }),
-            },
-        ),
-    } = props;
+    const { children, registry, state } = props;
 
     if (!state) {
         return null;

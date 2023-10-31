@@ -1,5 +1,6 @@
 import { makeAutoObservable, reaction, runInAction } from 'mobx';
 
+import { runPixel } from '@/api';
 import { cancellablePromise, getValueByPath } from '@/utility';
 
 import {
@@ -22,7 +23,7 @@ interface StateStoreInterface {
 /**
  * Block store that helps users build a view
  */
-export class StateStore {
+export class StateStoreImplementation {
     private _store: StateStoreInterface = {
         queries: {},
         blocks: {},
@@ -787,3 +788,45 @@ export class StateStore {
         window.dispatchEvent(event);
     };
 }
+
+// initialize state with blank page and basic onQuery function
+// if we want a more complex default page, we can set that up here
+export const StateStore = new StateStoreImplementation(
+    {
+        blocks: {
+            'page-1': {
+                id: 'page-1',
+                widget: 'page',
+                parent: null,
+                data: {
+                    style: {
+                        fontFamily: 'serif',
+                    },
+                },
+                listeners: {},
+                slots: {
+                    content: {
+                        name: 'content',
+                        children: [],
+                    },
+                },
+            },
+        },
+        queries: {},
+    },
+    {
+        onQuery: async ({ query }) => {
+            console.log('running', query);
+            const response = await runPixel('', query);
+            console.log(response);
+
+            if (response.errors.length) {
+                throw new Error(response.errors.join(''));
+            }
+
+            return {
+                data: response.pixelReturn[0].output,
+            };
+        },
+    },
+);

@@ -1,10 +1,10 @@
 import { makeAutoObservable } from 'mobx';
 
-import { StateStore } from '../state';
+import { StateStoreImplementation } from '../state';
 
 export interface DesignerStoreInterface {
     /** Blocks state information */
-    state: StateStore;
+    state: StateStoreImplementation;
     /** Current rendered block */
     rendered: string;
     /** Current selected block */
@@ -78,7 +78,7 @@ export class DesignerStore {
         },
     };
 
-    constructor(state: StateStore) {
+    constructor(state: StateStoreImplementation) {
         // register the blocks
         this._store.state = state;
 
