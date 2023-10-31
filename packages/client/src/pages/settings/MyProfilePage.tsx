@@ -4,6 +4,7 @@ import {
     ContentCopyOutlined,
     EditRounded,
     ContentCopy,
+    AccountCircle,
 } from '@mui/icons-material';
 
 import { useForm, Controller } from 'react-hook-form';
@@ -21,11 +22,17 @@ import {
     Icon,
     Box,
     Grid,
+    Paper,
+    Avatar,
 } from '@semoss/ui';
 
 import { useAPI, useRootStore } from '@/hooks';
 import { LoadingScreen } from '@/components/ui';
 import { useState } from 'react';
+
+const StyledPaper = styled(Paper)(({ theme }) => ({
+    padding: '40px 30px 20px 50px',
+}));
 
 const HeaderCell = styled(Table.Cell)(({ theme }) => ({
     backgroundColor: '#f3f3f3',
@@ -33,35 +40,29 @@ const HeaderCell = styled(Table.Cell)(({ theme }) => ({
 }));
 
 const MessageDiv = styled('div')(({ theme }) => ({
-    textAlign: 'center',
     margin: '50px auto 75px',
-    display: 'block',
-    width: '100%',
+    textAlign: 'center',
     marginTop: '100px',
-    color: '#666',
     fontSize: '13px',
-    // border: '1px solid pink',
+    display: 'block',
+    color: '#666',
+    width: '100%',
 }));
 
 const ShadowedStack = styled(Stack)(({ theme }) => ({
-    borderRadius: '15px',
     boxShadow: '0 0 10px #00000020',
     padding: '17.5px 20px',
+    borderRadius: '15px',
 }));
 
 const GridItem = styled(Grid)(({ theme }) => ({
-    padding: 0,
-    // border: '1px solid red',
-    display: 'flex',
     alignItems: 'center',
+    display: 'flex',
+    padding: 0,
 }));
 
-const ProfileImagePlaceholder = styled('span')(({ theme }) => ({
-    display: 'block',
-    width: '50px',
-    height: '50px',
-    backgroundColor: '#eee',
-    borderRadius: '50%',
+const ProfileImagePlaceholder = styled(Avatar)(({ theme }) => ({
+    fontSize: '50px !important',
 }));
 
 const StyledCodeBlock = styled('pre')(({ theme }) => ({
@@ -71,8 +72,8 @@ const StyledCodeBlock = styled('pre')(({ theme }) => ({
     background: theme.palette.background.default,
     borderRadius: theme.shape.borderRadius,
     padding: theme.spacing(2),
-    margin: '0px',
     overflowX: 'scroll',
+    margin: '0px',
 }));
 
 const StyledCodeContent = styled('code')(() => ({
@@ -84,8 +85,10 @@ interface CreateAccessKeyForm {
     TOKENDESCRIPTION?: string;
     ACCESSKEY: string;
     SECRETKEY: string;
-    FIRSTNAME: string;
-    LASTNAME: string;
+}
+
+interface EditUserInfoForm {
+    NAME: string;
     USERNAME: string;
     EMAIL: string;
 }
@@ -93,24 +96,7 @@ interface CreateAccessKeyForm {
 export const MyProfilePage = () => {
     const notification = useNotification();
     const { configStore, monolithStore } = useRootStore();
-
-    console.log({ monolithStore });
-    console.log({ 'configStore.store': configStore.store });
-
     const { email, id, name, admin, loggedIn } = configStore.store.user;
-    // console.log({ email, id, name, admin, loggedIn })
-
-    const dbMetaKeys = configStore.store.config.databaseMetaKeys;
-    console.log({ dbMetaKeys });
-
-    const projectMetaKeys = configStore.store.config.projectMetaKeys;
-    console.log({ projectMetaKeys });
-
-    const insightID = configStore.store.config.insightID;
-    console.log({ insightID });
-
-    const providers = configStore.store.config.providers;
-    console.log({ providers });
 
     // track the models
     const [addModal, setAddModal] = useState(false);
@@ -130,7 +116,6 @@ export const MyProfilePage = () => {
     //         },
     //     });
 
-    // ### ---> adding user info etc to same control, might have to break out to new control or state vars
     const { control, reset, setValue, handleSubmit, watch } =
         useForm<CreateAccessKeyForm>({
             defaultValues: {
@@ -138,12 +123,22 @@ export const MyProfilePage = () => {
                 TOKENDESCRIPTION: '',
                 ACCESSKEY: '',
                 SECRETKEY: '',
-                FIRSTNAME: '',
-                LASTNAME: '',
-                USERNAME: name,
-                EMAIL: email,
             },
         });
+
+    const {
+        control: userInfoControl,
+        reset: userInfoReset,
+        setValue: userInfoSetValue,
+        handleSubmit: userInfoHandleSubmit,
+        watch: userInfoWatch,
+    } = useForm<EditUserInfoForm>({
+        defaultValues: {
+            NAME: name,
+            USERNAME: id,
+            EMAIL: email,
+        },
+    });
 
     const ACCESSKEY = watch('ACCESSKEY');
     const SECRETKEY = watch('SECRETKEY');
@@ -152,12 +147,55 @@ export const MyProfilePage = () => {
     const isCreated = ACCESSKEY && SECRETKEY ? true : false;
 
     /**
+     * Submit edit profile info
+     */
+    const profileEditSubmit = async (data: EditUserInfoForm) => {
+        try {
+            // ### ---> need to confirm query string or monolithStore method
+
+            console.log({
+                'data.NAME': data.NAME,
+                'data.USERNAME': data.USERNAME,
+                'data.EMAIL': data.EMAIL,
+            });
+
+            // const response = await monolithStore.createUserAccessKey(
+            //     data.NAME,
+            //     data.USERNAME,
+            //     data.EMAIL,
+            // );
+
+            // const response = await monolithStore.createUserAccessKey(
+            //     data.TOKENNAME,
+            //     data.TOKENDESCRIPTION || '',
+            // );
+
+            // add a new one
+            notification.add({
+                color: 'success',
+                message: 'Successfully edited user profile information',
+            });
+
+            // ### ---> reload page or just leave inputs not reset
+        } catch (e) {
+            if (e instanceof Error) {
+                notification.add({
+                    color: 'error',
+                    message: e.message,
+                });
+            }
+
+            // ### ---> reset user information in form?
+        }
+    };
+
+    /**
      * Delete an accesskey
      * @param accessKey - delete an access key
      */
     const createAccessKey = async (data: CreateAccessKeyForm) => {
         try {
-            debugger;
+            // debugger;
             const output = await monolithStore.createUserAccessKey(
                 data.TOKENNAME,
                 data.TOKENDESCRIPTION || '',
@@ -236,8 +274,6 @@ export const MyProfilePage = () => {
         setProfileImgModal(false);
     };
 
-    const profileEditSubmit = () => {};
-
     /**
      * Copy text and add it to the clipboard
      * @param text - text to copy
@@ -267,25 +303,21 @@ export const MyProfilePage = () => {
 
     return (
         <>
-            {/* ### ---> test stack for profileImgModal */}
-
-            <ShadowedStack direction="row" alignItems={'center'}>
-                {/* ### ---> need to add a table or grid here - does semoss-ui use Grid? */}
-                <Grid container spacing={3}>
+            <StyledPaper>
+                <Grid container spacing={3} sx={{ marginBottom: '35px' }}>
                     <GridItem sm={4}>
                         <Typography variant="h6">
-                            Edit profile picture
+                            Edit profile information
                         </Typography>
                     </GridItem>
 
-                    {/* <GridItem sm={0.75}>
-                    </GridItem> */}
-
                     <GridItem sm={3}>
-                        <ProfileImagePlaceholder />
+                        <Avatar sx={{ bgcolor: '#975FE4' }}>
+                            {name[0].toUpperCase()}
+                        </Avatar>
+
                         <Button
                             variant="text"
-                            // startIcon={<EditRounded />}
                             sx={{
                                 textAlign: 'right',
                                 fontWeight: '800',
@@ -294,31 +326,22 @@ export const MyProfilePage = () => {
                             onClick={() => {
                                 setProfileImgModal(true);
                             }}
+                            disabled
                         >
                             Upload
                         </Button>
                     </GridItem>
                 </Grid>
-            </ShadowedStack>
 
-            <ShadowedStack>
                 <Grid
                     container
                     spacing={3}
-                    style={{ alignItems: 'flex-start', paddingRight: '25px' }}
+                    style={{ alignItems: 'flex-start' }}
                 >
-                    <GridItem sm={4}>
-                        <Typography variant="h6">
-                            <strong>Edit profile information</strong>
-                        </Typography>
-                    </GridItem>
-
-                    {/* <GridItem sm={0.75}>
-                    </GridItem> */}
-
+                    <GridItem sm={4}></GridItem>
                     <GridItem sm={8}>
                         <form
-                            onSubmit={profileEditSubmit}
+                            onSubmit={userInfoHandleSubmit(profileEditSubmit)}
                             style={{ width: '100%' }}
                         >
                             <Stack
@@ -327,50 +350,23 @@ export const MyProfilePage = () => {
                                 style={{ marginBottom: '15px' }}
                             >
                                 <Controller
-                                    name={'FIRSTNAME'}
-                                    control={control}
+                                    name={'NAME'}
+                                    control={userInfoControl}
                                     rules={{ required: true }}
                                     render={({ field }) => {
                                         return (
                                             <TextField
-                                                label="First Name"
+                                                label="Name"
                                                 value={
                                                     field.value
                                                         ? field.value
                                                         : ''
                                                 }
-                                                // disabled={isCreated}
                                                 onChange={(value) =>
                                                     field.onChange(value)
                                                 }
                                                 inputProps={{ maxLength: 255 }}
-                                                fullWidth={false}
-                                                style={{ width: '50%' }}
-                                            ></TextField>
-                                        );
-                                    }}
-                                />
-
-                                <Controller
-                                    name={'LASTNAME'}
-                                    control={control}
-                                    rules={{ required: false }}
-                                    render={({ field }) => {
-                                        return (
-                                            <TextField
-                                                label="Last Name"
-                                                value={
-                                                    field.value
-                                                        ? field.value
-                                                        : ''
-                                                }
-                                                // disabled={isCreated}
-                                                onChange={(value) =>
-                                                    field.onChange(value)
-                                                }
-                                                inputProps={{ maxLength: 500 }}
-                                                fullWidth={false}
-                                                style={{ width: '50%' }}
+                                                fullWidth={true}
                                             ></TextField>
                                         );
                                     }}
@@ -383,7 +379,7 @@ export const MyProfilePage = () => {
                             >
                                 <Controller
                                     name={'USERNAME'}
-                                    control={control}
+                                    control={userInfoControl}
                                     rules={{ required: false }}
                                     render={({ field }) => {
                                         return (
@@ -394,13 +390,11 @@ export const MyProfilePage = () => {
                                                         ? field.value
                                                         : ''
                                                 }
-                                                // disabled={isCreated}
                                                 onChange={(value) =>
                                                     field.onChange(value)
                                                 }
                                                 inputProps={{ maxLength: 500 }}
                                                 fullWidth={true}
-                                                // style={{width: "50%"}}
                                             ></TextField>
                                         );
                                     }}
@@ -413,7 +407,7 @@ export const MyProfilePage = () => {
                             >
                                 <Controller
                                     name={'EMAIL'}
-                                    control={control}
+                                    control={userInfoControl}
                                     rules={{ required: false }}
                                     render={({ field }) => {
                                         return (
@@ -424,13 +418,11 @@ export const MyProfilePage = () => {
                                                         ? field.value
                                                         : ''
                                                 }
-                                                // disabled={isCreated}
                                                 onChange={(value) =>
                                                     field.onChange(value)
                                                 }
                                                 inputProps={{ maxLength: 500 }}
                                                 fullWidth={true}
-                                                // style={{width: "50%"}}
                                             ></TextField>
                                         );
                                     }}
@@ -441,11 +433,11 @@ export const MyProfilePage = () => {
                                 <Button
                                     variant="contained"
                                     color="primary"
+                                    type="submit"
                                     style={{
                                         fontWeight: '800',
                                         marginRight: '10px',
                                     }}
-                                    onClick={() => {}}
                                 >
                                     Save
                                 </Button>
@@ -454,7 +446,7 @@ export const MyProfilePage = () => {
                                     variant="text"
                                     color="primary"
                                     sx={{ fontWeight: '800', color: 'black' }}
-                                    onClick={() => {}}
+                                    onClick={userInfoReset}
                                 >
                                     Reset
                                 </Button>
@@ -462,46 +454,34 @@ export const MyProfilePage = () => {
                         </form>
                     </GridItem>
                 </Grid>
-            </ShadowedStack>
+            </StyledPaper>
 
-            <ShadowedStack>
+            <StyledPaper>
                 <Grid container spacing={3}>
                     <GridItem sm={4}>
-                        <Typography variant="h6">
-                            <strong>Monolith Endpoint</strong>
-                        </Typography>
+                        <Typography variant="h6">Monolith Endpoint</Typography>
                     </GridItem>
 
                     <GridItem sm={7}>
-                        <p style={{ fontSize: '15px' }}>
-                            {/* ### ---> check config for this url */}
-                            {process.env.MODULE}
-                        </p>
-                        {/* <Button
-                            variant="text"
-                            // startIcon={<EditRounded />}
-                            sx={{ textAlign: 'right', fontWeight: '800', marginLeft: "15px" }}
-                            onClick={() => {
-                                setProfileImgModal(true);
-                            }}
-                        >
-                            Upload
-                        </Button> */}
+                        <p style={{ fontSize: '15px' }}>{process.env.MODULE}</p>
                     </GridItem>
 
-                    <GridItem sm={1} style={{ justifyContent: 'center' }}>
-                        <IconButton onClick={() => {}}>
-                            <ContentCopy />
+                    <GridItem sm={1} style={{ justifyContent: 'right' }}>
+                        <IconButton
+                            title="Copy"
+                            onClick={() => {
+                                copy(process.env.MODULE);
+                            }}
+                        >
+                            <ContentCopyOutlined />
                         </IconButton>
                     </GridItem>
                 </Grid>
-            </ShadowedStack>
+            </StyledPaper>
 
-            <ShadowedStack>
+            <StyledPaper>
                 <Stack direction="row" justifyContent={'space-between'} mb={1}>
-                    <Typography variant="h6">
-                        <strong>Personal Access Tokens</strong>
-                    </Typography>
+                    <Typography variant="h6">Personal Access Tokens</Typography>
 
                     <Button
                         variant="contained"
@@ -522,25 +502,19 @@ export const MyProfilePage = () => {
                                 <HeaderCell
                                     style={{ borderRadius: '20px 0 0 0' }}
                                 >
-                                    <strong>Name</strong>
+                                    Name
                                 </HeaderCell>
                                 {/* <HeaderCell> */}
-                                <HeaderCell>
-                                    <strong>Description</strong>
-                                </HeaderCell>
+                                <HeaderCell>Description</HeaderCell>
                                 {/* <HeaderCell> */}
-                                <HeaderCell>
-                                    <strong>Date Created</strong>
-                                </HeaderCell>
+                                <HeaderCell>Date Created</HeaderCell>
                                 {/* <HeaderCell> */}
-                                <HeaderCell>
-                                    <strong>Last Used Created</strong>
-                                </HeaderCell>
+                                <HeaderCell>Last Used Created</HeaderCell>
                                 {/* <HeaderCell> */}
                                 <HeaderCell
                                     style={{ borderRadius: '0 20px 0 0' }}
                                 >
-                                    <strong>Access Key</strong>
+                                    Access Key
                                 </HeaderCell>
                                 {/* <HeaderCell>&nbsp;</HeaderCell> */}
                             </Table.Row>
@@ -604,11 +578,10 @@ export const MyProfilePage = () => {
                         <MessageDiv style={{ margin: '75px auto 85px' }}>
                             No Personal Access Tokens to display at this time
                             <br />
-                            Click <strong>New Key</strong> to create a new
-                            Personal Access Token
+                            Click New Key to create a new Personal Access Token
                         </MessageDiv>
                     )}
-            </ShadowedStack>
+            </StyledPaper>
 
             <Modal open={addModal} onClose={() => closeModel()}>
                 <Modal.Title>Generate Key</Modal.Title>
@@ -665,7 +638,6 @@ export const MyProfilePage = () => {
 
                             <Stack direction="row" justifyContent={'start'}>
                                 <Button
-                                    // onClick={createAccessKey}
                                     disabled={isCreated}
                                     type="submit"
                                     variant={'outlined'}
@@ -743,6 +715,9 @@ export const MyProfilePage = () => {
                     >
                         <ProfileImagePlaceholder />
                         <span>Current avatar</span>
+                        <Avatar sx={{ bgcolor: '#975FE4' }}>
+                            {name[0].toUpperCase()}
+                        </Avatar>
                     </Stack>
 
                     <Stack
@@ -751,10 +726,14 @@ export const MyProfilePage = () => {
                         style={{ marginBottom: '15px' }}
                     >
                         <form
-                            onSubmit={profileEditSubmit}
+                            onSubmit={() =>
+                                console.log(
+                                    'submit upload profile image placeholder callback',
+                                )
+                            }
                             style={{ width: '750px' }}
                         >
-                            <Controller
+                            {/* <Controller
                                 name={'PLACEHOLDER'}
                                 control={control}
                                 rules={{ required: true }}
@@ -765,17 +744,15 @@ export const MyProfilePage = () => {
                                             value={
                                                 field.value ? field.value : ''
                                             }
-                                            // disabled={isCreated}
                                             onChange={(value) =>
                                                 field.onChange(value)
                                             }
                                             inputProps={{ maxLength: 255 }}
                                             fullWidth={true}
-                                            // style={{width: "50%"}}
                                         ></TextField>
                                     );
                                 }}
-                            />
+                            /> */}
                         </form>
                     </Stack>
                     {/* <Button variant="text" onClick={() => closeModel()}>
@@ -793,55 +770,7 @@ export const MyProfilePage = () => {
                         Close
                     </Button>
                 </Modal.Actions>
-                {/* <Modal.Actions>
-                </Modal.Actions> */}
             </Modal>
         </>
     );
 };
-
-// To-Do for ticket 144...
-
-// ---------------------------
-
-// My Profile page needs to be updated with the following items:
-//  Dependent on another branch hold off on this: Edit Profile Picture container **will require a crop window after upload, design team is working on building this out in future
-//  Edit Profile Information container with input/editable fields <-- [?] does this mean a modal
-//  Display of Monolith Endpoint and ability to copy
-//  Update current access key table to sit within a container as shown in designs and update styling accordingly
-//  Update the generate key modals according to the designs
-
-// ---------------------------
-
-// Generate Key modal may be working
-// need to test with correct user permissions
-// need to check for second stage of modal -- where Access Key and Secret Key are both shown with copy icon
-
-// Add Edit profile picture container -- save for later [?]
-// profile picture img
-// Upload blue link / text-only button
-// open profile pic edit modal
-// hide / save for later
-
-// Add Edit profile information container
-// input fields for First Name and Last Name
-// input for Username
-// input for Email
-// Blue button for Save
-// black text-only button for Reset
-// do we have a editProfileInfo reactor [?]
-
-// Add a Monolith Endpoint container
-// displays enpoint text with copy / clipboard icon
-// do we already have access to this info from existing reactor calls [?]
-
-// separate modal for -- Upload Profile Picture -- waiting on this [?]
-// text input for Name edit [?]
-// update image tool -- waiting on this still [?]
-
-// separate modal for -- Edit Access Key
-// uneditable display for Access Key: ...
-// editable text input for Name*
-// editable text input for Description
-// blue Save button
-// do we have an editAccessKey reactor [?]
