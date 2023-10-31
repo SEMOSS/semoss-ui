@@ -88,6 +88,8 @@ const IconMapper = {
     ),
     'Storage Settings': <ArchiveBox />,
     'App Settings': <Folder />,
+    'Vector Settings': <SEMOSS />,
+    'Function Settings': <Construction />,
     'Insight Settings': <SEMOSS />,
     'Member Settings': <Group />,
     Configuration: <Construction />,
