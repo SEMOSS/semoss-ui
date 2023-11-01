@@ -122,7 +122,7 @@ deploy (./src/commands/deploy.ts)
                                     (success, err) => {
                                         if (err) {
                                             // warn the user
-                                            console.warn(err);
+                                            this.warn(err);
                                         }
 
                                         resolve(null);
