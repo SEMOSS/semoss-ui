@@ -165,21 +165,6 @@ deploy (./src/commands/deploy.ts)
                         `UnzipFile(filePath=["${path}${upload[0].fileName}"], space=["${Env.APP}"])`,
                     );
 
-                    // reload the classes
-                    await insight.actions.run(
-                        `ReloadInsightClasses('${Env.APP}');`,
-                    );
-
-                    // publish the project
-                    await insight.actions.run(
-                        `PublishProject('${Env.APP}', release=true);`,
-                    );
-
-                    // cleanup
-                    // await insight.actions.run(
-                    //     `DeleteAsset(filePath=["${path}${upload[0].fileName}"], space=["${Env.APP}"]);`,
-                    // );
-
                     return true;
                 },
             },
