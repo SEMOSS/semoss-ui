@@ -99,11 +99,11 @@ export const HomePage = observer((): JSX.Element => {
                             size={'large'}
                             variant={'contained'}
                             onClick={() => {
-                                if (process.env.NODE_ENV == 'development') {
-                                    navigate('/app/new');
-                                } else {
-                                    setAddAppModal(true);
-                                }
+                                // if (process.env.NODE_ENV == 'development') {
+                                //     navigate('/app/new');
+                                // } else {
+                                setAddAppModal(true);
+                                // }
                             }}
                             aria-label={`Open the App Model`}
                         >
