@@ -1,4 +1,10 @@
-import { Functions, Inventory2Outlined, Polyline } from '@mui/icons-material';
+import {
+    Functions,
+    Inventory2Outlined,
+    Polyline,
+    SwitchAccessShortcutOutlined,
+    TokenOutlined,
+} from '@mui/icons-material';
 
 import { ENGINE_TYPES, Role } from '@/types';
 import { ModelBrain } from '@/assets/img/ModelBrain';
@@ -46,7 +52,7 @@ export const ENGINE_ROUTES: {
         name: 'Function',
         path: 'function',
         type: 'FUNCTION',
-        icon: Functions,
+        icon: SwitchAccessShortcutOutlined,
         specific: [
             {
                 name: 'Overview',
@@ -142,7 +148,7 @@ export const ENGINE_ROUTES: {
         name: 'Vector',
         path: 'vector',
         type: 'VECTOR',
-        icon: Polyline,
+        icon: TokenOutlined,
         specific: [
             {
                 name: 'Overview',

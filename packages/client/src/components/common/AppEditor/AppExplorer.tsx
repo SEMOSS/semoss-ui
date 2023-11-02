@@ -88,7 +88,6 @@ export const AppExplorer = (props) => {
                 nodeId={node.id}
                 label={node.name + 'dir'}
             >
-                'hann'
                 {node.children && node.children.length > 0
                     ? renderTreeNodes(node.children)
                     : null}
