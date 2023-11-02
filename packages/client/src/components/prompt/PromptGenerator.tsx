@@ -1,6 +1,11 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
+    getBlockForInput,
+    PROMPT_BASE_BLOCKS,
+    PROMPT_CONTAINER_BLOCK_ID,
+} from './prompt.helpers';
+import {
     Builder,
     BuilderStepItem,
     ConstraintSettings,
@@ -268,13 +273,25 @@ const BLOCKS: Record<string, Block> = {
 // TODO: transform the prompt into meaningful blocks and queries and set them in the store here
 // This is just using the blocks above as a proof of concept of store functionality
 function setBlocksAndOpenBuilder(
+    builder: Builder,
     navigate: (route: string) => void,
     onSuccess: () => void,
 ) {
+    let blocks: Record<string, Block> = { ...PROMPT_BASE_BLOCKS };
+    let childInputIds = [];
+    for (const [tokenIndex, inputType] of Object.entries(
+        builder.inputTypes.value as object,
+    )) {
+        const token = builder.inputs.value[tokenIndex] as Token;
+        const inputBlock = getBlockForInput(token, inputType);
+        childInputIds = [...childInputIds, inputBlock.id];
+        blocks = { ...blocks, [inputBlock.id]: inputBlock };
+    }
+    blocks[PROMPT_CONTAINER_BLOCK_ID].slots.children.children = childInputIds;
     StateStore.dispatch({
         message: ActionMessages.SET_STATE,
         payload: {
-            blocks: BLOCKS,
+            blocks: blocks,
             queries: QUERIES,
         },
     });
@@ -343,7 +360,7 @@ export function PromptGenerator(props: { onSuccess: () => void }) {
 
     const nextButtonAction = () => {
         currentBuilderStep === 5
-            ? setBlocksAndOpenBuilder(navigate, props.onSuccess)
+            ? setBlocksAndOpenBuilder(builder, navigate, props.onSuccess)
             : changeBuilderStep(currentBuilderStep + 1);
     };
 

@@ -800,7 +800,7 @@ export const StateStore = new StateStoreImplementation(
                 parent: null,
                 data: {
                     style: {
-                        fontFamily: 'serif',
+                        fontFamily: 'roboto',
                     },
                 },
                 listeners: {},
