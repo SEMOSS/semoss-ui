@@ -1,0 +1,37 @@
+{
+    "folders": [
+      {
+        "path": "../"
+      },
+      {
+        "name": "cli",
+        "path": "../packages/cli"
+      },
+      {
+        "name": "client",
+        "path": "../packages/client"
+      },
+      {
+        "name": "sdk",
+        "path": "../packages/sdk"
+      },
+      {
+        "name": "sdk-react",
+        "path": "../packages/sdk-react"
+      },
+      {
+        "name": "ui",
+        "path": "../packages/ui"
+      },
+      {
+        "name": "legacy",
+        "path": "../packages/legacy"
+      },
+    ],
+    "settings": {
+      "files.exclude": {
+        "node_modules/": true,
+        "packages/": true
+      },
+    }
+  }
