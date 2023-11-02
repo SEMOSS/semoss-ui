@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { ArrowBack } from '@mui/icons-material';
 
 import {
+    Avatar,
     Breadcrumbs,
     Button,
     Card,
@@ -14,19 +15,21 @@ import {
 } from '@semoss/ui';
 
 import {
+    App,
+    AppFilter,
     ConnectEngines,
     ImportAppForm,
     ImportAppAccess,
-    PromptGenerator,
-    App,
 } from '@/components/app';
+import { PromptGenerator } from '@/components/prompt';
 
-import { Page } from '@/components/ui';
+import { Page, LoadingScreen } from '@/components/ui';
 
 import { Link, useNavigate } from 'react-router-dom';
-import { useImport, useRootStore, usePixel } from '@/hooks';
+import { useStepper, useRootStore, usePixel } from '@/hooks';
 
 import { ADD_APP_STEPS } from './add-app.constants';
+import { BuildDb } from '@/assets/img/BuildDb';
 
 const StyledContainer = styled('div')(({ theme }) => ({
     display: 'flex',
@@ -47,132 +50,56 @@ const StyledGap = styled('div')(({ theme }) => ({
     gap: theme.spacing(1),
 }));
 
-const StyledFilter = styled('div')(({ theme }) => ({
-    display: 'flex',
-    flexDirection: 'column',
-    height: 'fit-content',
-    width: '355px',
-    boxShadow: '0px 5px 22px 0px rgba(0, 0, 0, 0.06)',
-    background: theme.palette.background.paper,
-}));
-
-const StyledContent = styled('div')(() => ({
+const StyledContent = styled('div')(({ theme }) => ({
     display: 'flex',
     flexDirection: 'column',
     height: '100%',
+    gap: theme.spacing(3),
     flex: '1',
 }));
 
-const StyledLink = styled(Link)(({ theme }) => ({
-    textDecoration: 'none',
-    color: 'inherit',
+const StyledBuilderCard = styled(Card)(({ theme }) => ({
+    // height: '300px',
+    width: '100%',
+    backgroundColor: theme.palette.background.paper,
+    padding: theme.spacing(1),
     display: 'flex',
+    justifyContent: 'center',
+    flexDirection: 'column',
     alignItems: 'center',
     gap: theme.spacing(1),
 }));
 
-const StyledCard = styled(Card)(({ theme }) => ({
+const StyledAppCard = styled(Card)(({ theme }) => ({
     height: '300px',
     backgroundColor: theme.palette.background.paper,
     padding: theme.spacing(1),
+    display: 'flex',
+    justifyContent: 'center',
+    flexDirection: 'column',
+    alignItems: 'center',
+    gap: theme.spacing(1),
 }));
 
 export const AddAppPage = () => {
     const navigate = useNavigate();
-    const { steps, setSteps, setActiveStep, activeStep } = useImport();
-    const { configStore } = useRootStore();
-
+    const { steps, setSteps, setActiveStep, activeStep } = useStepper();
     const [appId, setAppId] = useState('');
 
-    // get a list of the keys
-    const projectMetaKeys = configStore.store.config.projectMetaKeys.filter(
-        (k) => {
-            return (
-                k.display_options === 'single-checklist' ||
-                k.display_options === 'multi-checklist' ||
-                k.display_options === 'single-select' ||
-                k.display_options === 'multi-select' ||
-                k.display_options === 'single-typeahead' ||
-                k.display_options === 'multi-typeahead' ||
-                k.display_options === 'textarea'
-            );
-        },
-    );
-
-    // get metakeys to the ones we want
-    const metaKeys = projectMetaKeys.map((k) => {
-        return k.metakey;
-    });
-
-    // get the projects
-    const myApps = usePixel<App[]>(
-        `MyProjects(metaKeys = ${JSON.stringify(
-            metaKeys,
-        )}, onlyPortals=[true]);`,
-    );
-
     return (
-        <Page
-            header={
-                <Stack>
-                    <Breadcrumbs>
-                        {!steps.length ? (
-                            <StyledLink to={`..`}>App Library</StyledLink>
-                        ) : null}
-                        <StyledLink
-                            to={`.`}
-                            onClick={() => {
-                                setSteps([], -1);
-                            }}
-                        >
-                            {steps.length ? (
-                                <Icon>
-                                    <ArrowBack />
-                                </Icon>
-                            ) : null}
-                            Add App
-                        </StyledLink>
-                    </Breadcrumbs>
-                    <Typography variant="h4">
-                        {!steps.length ? 'Add App' : activeStep.title}
-                    </Typography>
-                    <Typography variant="body1">
-                        {!steps.length
-                            ? 'Select a template, import an existing app, or create a new app'
-                            : activeStep.description}
-                    </Typography>
-                </Stack>
-            }
-        >
+        <div>
             {/* Add App Header OR Stepper based on selected import */}
             {steps.length === 0 ? (
                 <StyledSpaceBetween>
                     <Typography variant="h5">App Templates</Typography>
                     <div style={{ display: 'flex', gap: '8px' }}>
                         <Button
-                            variant="outlined"
-                            onClick={() => {
-                                const step = {
-                                    title: 'Build App',
-                                    description: 'Build App with framework',
-                                    stepInProcess: 0,
-                                    data: {
-                                        type: 'FRAMEWORK_APP',
-                                    },
-                                };
-
-                                setActiveStep(0);
-                                setSteps([step], 0);
-                            }}
-                        >
-                            Create Default App
-                        </Button>
-                        <Button
                             variant="contained"
                             onClick={() => {
                                 const step = {
                                     title: 'Import App',
-                                    description: 'Create app with UI Builder',
+                                    description:
+                                        'Easily import your app with the flexibility of choosing between a seamless ZIP file upload or direct Git repository integration. Effortlessly bring your codebase into our platform, streamlining the onboarding process for efficient collaboration and development',
                                     stepInProcess: 0,
                                     data: {
                                         type: 'IMPORT_APP',
@@ -222,113 +149,12 @@ export const AddAppPage = () => {
 
             {/* Landing content of page: How to create app*/}
             {!steps.length ? (
-                <StyledContainer>
-                    <StyledFilter>Filter Box</StyledFilter>
-                    <StyledContent>
-                        <div style={{ display: 'flex', flexDirection: 'row' }}>
-                            <StyledCard
-                                onClick={() => {
-                                    const step = {
-                                        title: 'Prompt Builder',
-                                        description:
-                                            'Create app with prompt builder',
-                                        stepInProcess: 0,
-                                        data: {
-                                            type: 'PROMPT_BUILDER',
-                                        },
-                                    };
-
-                                    setActiveStep(0);
-                                    setSteps([step], 0);
-                                }}
-                            >
-                                Prompt Builder
-                            </StyledCard>
-                            <StyledCard
-                                onClick={() => {
-                                    const step = {
-                                        title: 'UI Builder',
-                                        description:
-                                            'Create app with UI Builder',
-                                        stepInProcess: 0,
-                                        data: {
-                                            type: 'UI_BUILDER',
-                                        },
-                                    };
-
-                                    setActiveStep(0);
-                                    setSteps([step], 0);
-                                }}
-                            >
-                                UI Builder
-                            </StyledCard>
-                        </div>
-
-                        {myApps.status === 'SUCCESS' &&
-                        myApps.data.length > 0 ? (
-                            <Grid container columnSpacing={3} rowSpacing={3}>
-                                <Grid item sm={12} md={6} lg={4} xl={4}>
-                                    <StyledCard
-                                        onClick={() => {
-                                            const step = {
-                                                title: 'Blank Template',
-                                                description:
-                                                    'Create app with prompt builder',
-                                                stepInProcess: 0,
-                                                data: {
-                                                    type: 'TEMPLATE_APP',
-                                                    options: '',
-                                                },
-                                            };
-
-                                            setActiveStep(0);
-                                            setSteps([step], 0);
-
-                                            // console.log(
-                                            //     'Just create App with an empty zip, and then redirect to /app/39369823',
-                                            // );
-                                        }}
-                                    >
-                                        Blank Template
-                                    </StyledCard>
-                                </Grid>
-                                {myApps.data.map((app) => {
-                                    return (
-                                        <Grid
-                                            item
-                                            key={app.project_id}
-                                            sm={12}
-                                            md={4}
-                                            lg={3}
-                                            xl={2}
-                                        >
-                                            <StyledCard
-                                                onClick={() => {
-                                                    const step = {
-                                                        title: 'Template App',
-                                                        description:
-                                                            'Create app with template',
-                                                        stepInProcess: 0,
-                                                        data: {
-                                                            type: 'TEMPLATE_APP',
-                                                            options:
-                                                                app.project_id,
-                                                        },
-                                                    };
-
-                                                    setActiveStep(0);
-                                                    setSteps([step], 0);
-                                                }}
-                                            >
-                                                {app.project_id}
-                                            </StyledCard>
-                                        </Grid>
-                                    );
-                                })}
-                            </Grid>
-                        ) : null}
-                    </StyledContent>
-                </StyledContainer>
+                <AddAppSelectionPage
+                    onSelect={(step) => {
+                        setActiveStep(0);
+                        setSteps([step], 0);
+                    }}
+                />
             ) : null}
 
             {/* Step 1 */}
@@ -434,6 +260,211 @@ export const AddAppPage = () => {
                     )}
                 </>
             ) : null}
-        </Page>
+        </div>
+    );
+};
+
+interface SelectionStep {
+    title: string;
+    description: string;
+    stepInProcess: number;
+    data: {
+        type: string;
+        options?: App;
+    };
+}
+interface AddAppSelectionPageProps {
+    /**
+     * Sends baseline info based on selection to the parent
+     */
+    onSelect: (step: SelectionStep) => void;
+}
+
+/**
+ * TODO: Discuss with Neel, how can we generecize this to be used on Landing Page
+ * OR Do we keep it seperate??
+ */
+export const AddAppSelectionPage = (props: AddAppSelectionPageProps) => {
+    const { onSelect } = props;
+    const { configStore } = useRootStore();
+
+    // get a list of the keys
+    const projectMetaKeys = configStore.store.config.projectMetaKeys.filter(
+        (k) => {
+            return (
+                k.display_options === 'single-checklist' ||
+                k.display_options === 'multi-checklist' ||
+                k.display_options === 'single-select' ||
+                k.display_options === 'multi-select' ||
+                k.display_options === 'single-typeahead' ||
+                k.display_options === 'multi-typeahead' ||
+                k.display_options === 'textarea'
+            );
+        },
+    );
+
+    // get metakeys to the ones we want
+    const metaKeys = projectMetaKeys.map((k) => {
+        return k.metakey;
+    });
+
+    // get the projects
+    const myApps = usePixel<App[]>(
+        `MyProjects(metaKeys = ${JSON.stringify(
+            metaKeys,
+        )}, onlyPortals=[true]);`,
+    );
+
+    if (myApps.status !== 'SUCCESS') {
+        return <LoadingScreen.Trigger description="Retrieving app templates" />;
+    }
+
+    return (
+        <StyledContainer>
+            <AppFilter
+                onChange={(filters) => {
+                    console.log('filter my apps pixel call');
+                }}
+            />
+            <StyledContent>
+                <Grid container columnSpacing={3} rowSpacing={3}>
+                    <Grid item sm={12} md={4} lg={3} xl={3}>
+                        <StyledBuilderCard
+                            onClick={() => {
+                                const step = {
+                                    title: 'Prompt Builder',
+                                    description:
+                                        'Empower your web design journey with our innovative UI Builder, responding to the prompt to create visually stunning websites effortlessly.  This intuitive platform allows you to design pixel-perfect layouts, customize interactions, and bring ideas to life seamlessly, all while freeing you from code constraints',
+                                    stepInProcess: 0,
+                                    data: {
+                                        type: 'PROMPT_BUILDER',
+                                    },
+                                };
+
+                                onSelect(step);
+                            }}
+                        >
+                            <Avatar>
+                                <BuildDb />
+                            </Avatar>
+                            <Typography variant={'body1'}>
+                                Prompt Builder
+                            </Typography>
+                        </StyledBuilderCard>
+                    </Grid>
+                    <Grid item sm={12} md={4} lg={3} xl={3}>
+                        <StyledBuilderCard
+                            onClick={() => {
+                                const step = {
+                                    title: 'UI Builder',
+                                    description:
+                                        'Craft visually stunning websites effortlessly with our UI Builder. Design pixel-perfect layouts, customize interactions, and bring ideas to life seamlessly, empowering you to create without code constraints.',
+                                    stepInProcess: 0,
+                                    data: {
+                                        type: 'UI_BUILDER',
+                                    },
+                                };
+                                onSelect(step);
+                            }}
+                        >
+                            <Avatar>
+                                <BuildDb />
+                            </Avatar>
+                            <Typography variant={'body1'}>
+                                UI Builder
+                            </Typography>
+                        </StyledBuilderCard>
+                    </Grid>
+                    <Grid item sm={12} md={4} lg={3} xl={3}>
+                        <StyledBuilderCard
+                            onClick={() => {
+                                const step = {
+                                    title: 'Build App',
+                                    description:
+                                        'Define purpose, research market, design UI/UX, choose front-end framework (React, AngularJs, Vue), develop responsive UI components, integrate APIs, test rigorously, ensure security, deploy, monitor, gather feedback, iterate, and launch for a dynamic and visually engaging app.',
+                                    stepInProcess: 0,
+                                    data: {
+                                        type: 'FRAMEWORK_APP',
+                                    },
+                                };
+
+                                onSelect(step);
+                            }}
+                        >
+                            <Avatar>
+                                <BuildDb />
+                            </Avatar>
+                            <Typography variant={'body1'}>
+                                Build with Framework
+                            </Typography>
+                        </StyledBuilderCard>
+                    </Grid>
+                    <Grid item sm={12} md={4} lg={3} xl={3}>
+                        <StyledBuilderCard
+                            onClick={() => {
+                                const step = {
+                                    title: 'Build from scratch',
+                                    description:
+                                        'Define purpose, research market, design UI/UX, choose tech stack, develop frontend/backend, integrate APIs, test rigorously, ensure security, deploy, monitor, gather feedback, iterate, and launch for a successful app.',
+                                    stepInProcess: 0,
+                                    data: {
+                                        type: 'TEMPLATE_APP',
+                                        // options: '',
+                                    },
+                                };
+                                onSelect(step);
+                            }}
+                        >
+                            <Avatar>
+                                <BuildDb />
+                            </Avatar>
+                            <Typography variant={'body1'}>
+                                Start App From Scratch
+                            </Typography>
+                        </StyledBuilderCard>
+                    </Grid>
+                </Grid>
+
+                {myApps.status === 'SUCCESS' && myApps.data.length > 0 ? (
+                    <Grid container columnSpacing={3} rowSpacing={3}>
+                        {myApps.data.map((app) => {
+                            return (
+                                <Grid
+                                    item
+                                    key={app.project_id}
+                                    sm={12}
+                                    md={4}
+                                    lg={3}
+                                    xl={3}
+                                >
+                                    <StyledAppCard
+                                        onClick={() => {
+                                            const step = {
+                                                title: 'Template App',
+                                                description:
+                                                    'Create app with template',
+                                                stepInProcess: 0,
+                                                data: {
+                                                    type: 'TEMPLATE_APP',
+                                                    options: app,
+                                                },
+                                            };
+                                            onSelect(step);
+                                        }}
+                                    >
+                                        <Typography variant={'body1'}>
+                                            {app.project_name}
+                                        </Typography>
+                                        <Typography variant={'caption'}>
+                                            {app.project_id}
+                                        </Typography>
+                                    </StyledAppCard>
+                                </Grid>
+                            );
+                        })}
+                    </Grid>
+                ) : null}
+            </StyledContent>
+        </StyledContainer>
     );
 };

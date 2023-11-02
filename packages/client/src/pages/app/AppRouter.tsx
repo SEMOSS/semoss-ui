@@ -2,10 +2,10 @@ import { observer } from 'mobx-react-lite';
 import { Outlet, Routes, Route, Navigate } from 'react-router-dom';
 import { AppPage } from './AppPage';
 import { AddAppPage } from './AddAppPage';
+import { AddAppLayout } from './AddAppLayout';
 
 // Fix these
 import { NavigatorLayout } from '../NavigatorLayout';
-import { ImportLayout } from '../import';
 
 export const AppRouter = observer(() => {
     return (
@@ -15,7 +15,7 @@ export const AppRouter = observer(() => {
                 path="new"
                 element={
                     <NavigatorLayout>
-                        <ImportLayout />
+                        <AddAppLayout />
                     </NavigatorLayout>
                 }
             >

@@ -14,7 +14,7 @@ import {
 } from '@semoss/ui';
 import { ExpandLess, ExpandMore } from '@mui/icons-material';
 
-import { useImport, useRootStore } from '@/hooks';
+import { useStepper, useRootStore } from '@/hooks';
 import { useNavigate } from 'react-router-dom';
 import { useFieldArray, useForm, Form, Controller } from 'react-hook-form';
 
@@ -40,7 +40,7 @@ const StyledKeyValue = styled('div')(({ theme }) => ({
 export const ImportForm = (props) => {
     const { submitFunc, fields } = props;
 
-    const { steps, setSteps } = useImport();
+    const { steps, setSteps } = useStepper();
     const notification = useNotification();
     const { monolithStore, configStore } = useRootStore();
     const navigate = useNavigate();

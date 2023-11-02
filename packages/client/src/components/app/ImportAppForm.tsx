@@ -17,6 +17,7 @@ import {
 import { Controller, useForm } from 'react-hook-form';
 import { useRootStore } from '@/hooks';
 import { RadioGroup } from '@semoss/ui';
+import { App } from './';
 
 const StyledBox = styled(Box)(({ theme }) => ({
     boxShadow: '0px 5px 22px 0px rgba(0, 0, 0, 0.06)',
@@ -133,14 +134,8 @@ interface CreateAppProps {
      * Data associated with the type of app that is getting created
      */
     data?: {
-        type: string;
-        options?: string;
-        // | 'Blank Template'
-        // | 'Build App'
-        // | 'Template App'
-        // | 'Import App'
-        // | 'Prompt Builder'
-        // | 'UI Builder';
+        type: string; // | 'Blank Template'| 'Build App' | 'Template App' | 'Import App' | 'Prompt Builder' | 'UI Builder';
+        options?: App;
     };
 }
 
@@ -189,9 +184,13 @@ export const ImportAppForm = (props: CreateAppProps) => {
         try {
             let appId;
             if (data.GIT_URL) {
-                appId = await uploadFromZip(data);
+                appId = await uploadFromGit(data);
             } else {
                 appId = await uploadFromZip(data);
+            }
+
+            if (!appId) {
+                throw Error('App Id was not generated from ZIP or Git');
             }
 
             return appId;
@@ -204,15 +203,22 @@ export const ImportAppForm = (props: CreateAppProps) => {
         }
     };
 
+    /**
+     * Uploads app from git
+     * @param data
+     * @returns
+     */
     const uploadFromGit = async (data) => {
         const pixel = `CreateAppFromGit(meta=[])`;
 
         // create the project
         const response = await monolithStore.runQuery(pixel);
+
+        return 'fakeId:8218923981';
     };
 
     /**
-     * @desc Uploads App From Zip
+     * @desc Uploads app From Zip
      * @param data
      * @returns
      */
@@ -419,11 +425,13 @@ export const ImportAppForm = (props: CreateAppProps) => {
                     </div>
                 ) : null}
 
-                {APP_TYPE === 'TEMPLATE_APP' ? (
+                {APP_TYPE === 'TEMPLATE_APP' && data.options ? (
                     <div>
                         <Typography variant="h6">Selected Template</Typography>
                         <Card sx={{ width: '10rem', height: '10rem' }}>
-                            {data.options ? data.options : 'blank template'}
+                            {data.options
+                                ? data.options.project_name
+                                : 'blank template'}
                         </Card>
                     </div>
                 ) : null}
