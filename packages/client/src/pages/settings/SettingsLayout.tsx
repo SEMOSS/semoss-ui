@@ -91,9 +91,14 @@ export const SettingsLayout = observer(() => {
                                                 key={i + link}
                                                 state={...state}
                                             >
-                                                {link.includes('<id>')
-                                                    ? id
-                                                    : matchedRoute.title}
+                                                {link.includes('<id>') ? (
+                                                    <>
+                                                        {id}{' '}
+                                                        <button>Copy</button>
+                                                    </>
+                                                ) : (
+                                                    matchedRoute.title
+                                                )}
                                             </Link>
                                         );
                                     })}
