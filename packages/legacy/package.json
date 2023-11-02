@@ -18,10 +18,6 @@
     "author": "",
     "license": "GPL-2.0",
     "dependencies": {
-        "@mdi/js": "^6.7.96",
-        "@mdi/react": "^1.6.0",
-        "@semoss/components": "^1.0.0-alpha.36",
-        "@stitches/react": "^1.2.8",
         "@uirouter/angularjs": "1.0.12",
         "ace-builds": "^1.4.11",
         "ag-grid-community": "22.0.0",
@@ -62,7 +58,8 @@
         "react-hook-form": "^7.43.9",
         "react2angular": "^4.0.6",
         "re-resizable": "^6.9.9",
-        "satellizer": "0.15.5"
+        "satellizer": "0.15.5",
+        "@semoss/ui": "workspace:*"
     },
     "devDependencies": {
         "@babel/cli": "7.21.5",
@@ -101,5 +98,9 @@
         "webpack": "^5.81.0",
         "webpack-cli": "^5.0.2",
         "webpack-merge": "^5.8.0"
+    },
+    "peerDependency": {
+        "react": "^17.0.2",
+        "react-dom": "^17.0.2"
     }
 }

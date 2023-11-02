@@ -1,23 +1,25 @@
 import React, { useState, useEffect, useRef } from 'react';
 
-import {
-    Form,
-    Input,
-    Textarea,
-    Button,
-    Scroll,
-    IconButton,
-    Icon,
-    Table,
-    styled,
-    theme,
-    keyframes,
-} from '@semoss/components';
+// import {
+//     Form,
+//     Input,
+//     Textarea,
+//     Button,
+//     Scroll,
+//     IconButton,
+//     Icon,
+//     Table,
+//     styled,
+//     theme,
+//     keyframes,
+// } from '@semoss/components';
+// import { Field } from '../form';
+// import { Resizable } from 're-resizable';
 
 import { useForm } from 'react-hook-form';
-import { Field } from '../form';
-import { Resizable } from 're-resizable';
 
+
+import { TextField, Button, Icon, IconButton, styled, Table, keyframes} from '@semoss/ui'
 interface PixelCommand {
     type: string;
     components: any[];
@@ -50,85 +52,91 @@ const mdiCodeTags =
 // ----------------------------------------------
 // Styles ---------------------------------------
 // ----------------------------------------------
-const StyledPreviewPopover = styled('div', {
+
+const StyledPreviewPopover = styled("div")(({ theme }) => ({
     display: 'block',
     position: 'absolute',
     transform: 'translateX(-50%)',
-    backgroundColor: theme.colors.base,
-    borderColor: theme.colors['grey-4'],
-    borderWidth: theme.borderWidths.default,
+    backgroundColor: theme.palette.background.paper,
+    borderColor: theme.palette.secondary.light,
+    borderWidth: '2px',
     borderRadius: '.5rem',
-    boxShadow: theme.shadows.default,
-    padding: theme.space['4'],
+    boxShadow:  '1px',
+    padding: theme.spacing(2),
     zIndex: '30',
     top: '0rem',
     outline: 'none',
     '&:focus': {
-        outline: `2px solid ${theme.colors['primary-1']}`,
+        outline: `2px solid ${theme.palette.primary.main}`,
         outlineOffset: '2px',
     },
-});
+}));
 
-const StyledPreviewContent = styled('div', {
+
+const StyledPreviewContent = styled("div")(({ theme }) => ({
     display: 'flex',
     height: '90%',
     paddingTop: '1rem',
     gap: '1rem',
     flexDirection: 'column',
     overflow: 'scroll',
-});
+}));
 
-const StyledPreviewTable = styled('div', {
+const StyledPreviewTable = styled("div")(({ theme }) => ({
     height: '13rem',
-});
+}));
 
 // SQL DIV
-const StyledSqlSection = styled('div', {
+const StyledSqlSection = styled("div")(({ theme }) => ({
     height: '6rem',
-});
+}));
 
-const StyledSqlContent = styled('div', {
+
+const StyledSqlContent = styled("div")(({ theme }) => ({
     display: 'flex',
-    backgroundColor: theme.colors.base,
-    borderColor: theme.colors['grey-4'],
-    borderWidth: theme.borderWidths.default,
-    borderRadius: theme.radii.default,
-});
+    backgroundColor: theme.palette.background.paper,
+    borderColor: theme.palette.secondary.light,
+    borderWidth: '2px',
+    borderRadius: '50px',
+}));
 
-const StyledEditSql = styled('div', {
+
+const StyledEditSql = styled("div")(({ theme }) => ({
     padding: '0.5rem',
     height: '6rem',
     width: '85%',
     overflow: 'scroll',
     lineHeight: '1.5rem',
-});
+}));
 
-const StyledSQLActionDiv = styled('div', {
+
+const StyledSQLActionDiv = styled("div")(({ theme }) => ({
     display: 'flex',
     width: '15%',
-});
+}));
 
-const StyledSQLActionButtonDiv = styled('div', {
+const StyledSQLActionButtonDiv = styled("div")(({ theme }) => ({
     display: 'flex',
     width: '50%',
     alignItems: 'center',
     justifyContent: 'center',
-    borderLeft: `${theme.borderWidths.default} solid ${theme.colors['grey-4']}`,
-});
+    borderLeft: `2px solid ${theme.palette.secondary.light}`,
+}));
 
-const StyledDiv = styled('div', {
+
+const StyledDiv = styled("div")(({ theme }) => ({
     display: 'flex',
     flexWrap: 'wrap',
     alignItems: 'center',
-    gap: theme.space['2'],
-    lineHeight: theme.space['6'],
-});
+    gap: theme.spacing(1),
+    lineHeight: theme.spacing(5)
+}));
 
-const StyledField = styled('div', {
+const StyledField = styled("div")(({ theme }) => ({
     display: 'inline-block',
-    minWidth: theme.space['20'],
-    maxWidth: theme.space['40'],
-});
+    minWidth: theme.spacing(10),
+    maxWidth: theme.spacing(20),
+}));
 
 // END OF PREVIEW ------------------------
 const mooseGradient = 'linear-gradient(45deg, #4394e4, #975fe4)';
@@ -136,7 +144,7 @@ const linearGradientText = {
     backgroundImage: mooseGradient,
     backgroundSize: '100%',
     backgroundRepeat: 'repeat',
-    fontWeight: theme.fontWeights['bold'],
+    // fontWeight: theme.fontWeights['bold'],
 
     WebkitBackgroundClip: 'text',
     WebkitTextFillColor: 'transparent',
@@ -144,219 +152,217 @@ const linearGradientText = {
     MozTextFillColor: 'transparent',
 };
 
-const StyledResizableContent = styled(Resizable, {
+const StyledResizableContent = styled('div')(({ theme }) => ({
     display: 'flex',
     flexDirection: 'column',
-    // width: '25rem',
-    // height: '30rem',
-});
+}));
 
-const StyledHeaderContent = styled('div', {
+const StyledHeaderContent = styled('div')(({ theme }) => ({
     display: 'flex',
     alignItems: 'center',
-    fontSize: theme.fontSizes.xl,
-    backgroundColor: theme.colors.base,
+    fontSize: 'xl',
+    backgroundColor: theme.palette.background.paper,
     height: '10%',
-    boxShadow: `0 4px 6px -6px ${theme.colors['grey-3']}`,
-});
+    boxShadow: `0 4px 6px -6px ${theme.palette.secondary.light}`,
+}));
 
-const StyledHeader = styled('div', {
+
+const StyledHeader = styled('div')(({ theme }) => ({
     display: 'flex',
     justifyContent: 'space-between',
     paddingBottom: '1rem',
-    gap: theme.space['2'],
-    fontWeight: theme.fontWeights['semibold'],
-});
+    gap: theme.spacing(1),
+    fontWeight: 'bold',
+}));
 
-const StyledColoredHeader = styled('span', {
+
+const StyledColoredHeader = styled('div')(({ theme }) => ({
     ...linearGradientText,
-    fontWeight: theme.fontWeights['bold'],
-});
+    fontWeight: 'bold',
+}));
 
-const StyledMessageContent = styled('div', {
+const StyledMessageContent = styled('div')(({ theme }) => ({
     height: '75%',
     maxHeight: '75%',
     display: 'flex',
     flexDirection: 'column',
-    paddingRight: theme.space['2'],
+    paddingRight: theme.spacing(1),
     paddingTop: '1rem',
-});
+}));
 
-const StyledMessageLeft = styled('div', {
+const StyledMessageLeft = styled('div')(({ theme }) => ({
     display: 'flex',
     color: 'black',
-    gap: theme.space['2'],
+    gap: theme.spacing(1),
     marginBottom: '1rem',
-});
+}));
 
-const StyledGreyBubble = styled('div', {
-    background: theme.colors['grey-5'],
-    borderRadius: theme.space['2'],
-    padding: theme.space['2'],
+
+const StyledGreyBubble = styled('div')(({ theme }) => ({
+    background: theme.palette.secondary.light,
+    borderRadius: theme.spacing(1),
+    padding: theme.spacing(1),
     maxWidth: '80%',
-});
+}));
 
-const StyledMessageRight = styled('div', {
+const StyledMessageRight = styled('div')(({ theme }) => ({
     display: 'flex',
     justifyContent: 'flex-end',
     color: 'black',
-    gap: theme.space['2'],
+    gap: theme.spacing(1),
     marginBottom: '1rem',
-});
+}));
 
-const StyledBlueBubble = styled('div', {
-    background: theme.colors['primary-1'],
-    borderRadius: theme.space['2'],
-    padding: theme.space['2'],
+
+const StyledBlueBubble = styled('div')(({ theme }) => ({
+    background: theme.palette.primary.light,
+    borderRadius: theme.spacing(1),
+    padding: theme.spacing(1),
     maxWidth: '80%',
-    color: theme.colors['base'],
-});
+    color: theme.palette.background.paper,
+}));
 
-const StyledIconDiv = styled('div', {
+const StyledIconDiv = styled('div')(({ theme }) => ({
     width: '1rem',
     height: '1rem',
-});
+}));
 
 const StyledUserIcon = styled(Icon, {
-    variants: {
-        color: {
-            assistant: {
-                color: theme.colors['grey-3'],
-            },
-            user: {
-                // color: '#86BC25',
-                color: theme.colors['primary-1'],
-            },
-        },
-    },
-});
+    shouldForwardProp: (prop) => prop !== 'color',
+})<{
+    type: string;
+}>(({ theme, type }) => ({
+    color: type === 'assistant' ? theme.palette.secondary.light : theme.palette.primary.main
+}));
 
-const StyledIconPlaceholder = styled('div', {
+const StyledIconPlaceholder = styled('div')(({ theme }) => ({
     width: '1rem',
-});
+}));
 
-const StyledDocQAMessage = styled('div', {
+
+const StyledDocQAMessage = styled("div")(({ theme }) => ({
     display: 'flex',
     flexDirection: 'column',
-    gap: theme.space['2'],
-});
+    gap: theme.spacing(1),
+}));
 
-const StyledNotBubble = styled('div', {
+const StyledNotBubble = styled("div")(({ theme }) => ({
     display: 'flex',
     flexDirection: 'column',
     marginLeft: '1.5rem',
     marginBottom: '1rem',
-});
+}));
 
-const StyledAnswerSample = styled('div', {
+
+const StyledAnswerSample = styled("div")(({ theme }) => ({
     width: '95%',
     height: '95%',
-});
+}));
 
-const StyledTableContainer = styled('div', {
+const StyledTableContainer = styled('div')(({ theme }) => ({
     maxWidth: 'fit-content',
     maxHeight: 'fit-content',
-});
+}));
 
-const StyledScroll = styled('div', {
+const StyledScroll = styled('div')(({ theme }) => ({
     overflowX: 'scroll',
     overflowY: 'scroll',
     height: '8rem',
-});
+}));
 
-const StyledPreviewTableScroll = styled('div', {
+const StyledPreviewTableScroll = styled("div")(({ theme }) => ({
     overflowX: 'scroll',
     overflowY: 'scroll',
     height: '100%',
-});
+}));
 
-const StyledTable = styled(Table, {
+const StyledTable = styled(Table)(({ theme }) => ({
     tableLayout: 'auto',
-});
+}));
 
-const StyledSQLAnswerPreview = styled('div', {
+const StyledSQLAnswerPreview = styled("div")(({ theme }) => ({
     display: 'flex',
     justifyContent: 'flex-end',
-    fontSize: theme.fontSizes['sm'],
-    fontWeight: theme.fontWeights['semibold'],
-});
+    fontWeight: 'bold',
+    // fontSize: theme.fontSizes['sm'],
+}));
 
-const StyledAccordionHeader = styled('div', {
+const StyledAccordionHeader = styled("div")(({ theme }) => ({
     display: 'flex',
-    gap: theme.space['2'],
-});
+    gap: theme.spacing(1),
+}));
 
-const StyledDocQABestAnswer = styled('span', {
+const StyledDocQABestAnswer = styled("span")(({ theme }) => ({
     ...linearGradientText,
-});
+}));
 
-const StyledDocQaBullet = styled('div', {
+const StyledDocQaBullet = styled("div")(({ theme }) => ({
     display: 'flex',
-    gap: theme.space['2'],
-    marginLeft: theme.space['2'],
-});
+    gap: theme.spacing(1),
+    marginLeft: theme.spacing(1),
+}));
 
-const StyledDocQaBulletAnswer = styled('div', {
-    marginTop: theme.space['2'],
-});
+const StyledDocQaBulletAnswer = styled("div")(({ theme }) => ({
+    marginTop: theme.spacing(1),
+}));
 
-const StyledDocQaBulletCallback = styled('span', {
+const StyledDocQaBulletCallback = styled("span")(({ theme }) => ({
     '&:hover': {
         cursor: 'pointer',
         color: '#86BC25',
         ...linearGradientText,
     },
-});
+}));
 
-const StyledDocQaBulletLink = styled('a', {
+const StyledDocQaBulletLink = styled("a")(({ theme }) => ({
     ...linearGradientText,
     textDecoration: 'underline',
     '&:hover': {
         cursor: 'pointer',
         textDecoration: 'underline',
     },
-});
+}));
 
-const StyledFillFormOutput = styled('div', {
+const StyledFillFormOutput = styled("div")(({ theme }) => ({
     height: '10rem',
-});
+}));
 
-const StyledScrollableFillFormFields = styled('div', {
+const StyledScrollableFillFormFields = styled("div")(({ theme }) => ({
     height: '8rem',
-});
+}));
 
-const StyledFillFormFields = styled('div', {
-    marginBottom: theme.space['2'],
-});
+const StyledFillFormFields = styled("div")(({ theme }) => ({
+    marginBottom: theme.spacing(2),
+}));
 
-const StyledApplyButtonDiv = styled('div', {
+const StyledApplyButtonDiv = styled("div")(({ theme }) => ({
     display: 'flex',
     justifyContent: 'center',
-    gap: theme.space['2'],
-});
+    gap: theme.spacing(1),
+}));
 
-const ScrollRefDiv = styled('div', {
-    height: theme.space['2'],
-});
+const ScrollRefDiv = styled("div")(({ theme }) => ({
+    height: theme.spacing(1),
+}));
 
-const StyledFooterContent = styled('div', {
+const StyledFooterContent = styled("div")(({ theme }) => ({
     height: '10%',
     display: 'flex',
     alignItems: 'center',
-    backgroundColor: theme.colors.base,
+    backgroundColor: theme.palette.background.paper,
     paddingTop: '1rem',
-    gap: theme.space['2'],
-    borderTop: `solid ${theme.colors['grey-5']}`,
-});
+    gap: theme.spacing(1),
+    borderTop: `solid ${theme.palette.secondary.light}`,
+}));
 
-const StyledInput = styled(Input, {
+const StyledInput = styled(TextField)(({ theme }) => ({
     border: 'none',
-});
+}));
 
-const StyledButtonGroup = styled('div', {
+const StyledButtonGroup = styled("div")(({ theme }) => ({
     display: 'flex',
-    gap: theme.space['2'],
-});
+    gap: theme.spacing(1),
+}));
 
 const dotAnimation = keyframes({
     '0%': {
@@ -369,34 +375,33 @@ const dotAnimation = keyframes({
         transform: 'rotate(720deg) scale(0.8)',
     },
 });
-
-const StyledDots = styled('div', {
+const StyledDots = styled("div")(({ theme }) => ({
     display: 'flex',
     justifyContent: 'center',
     alignItems: 'center',
-});
+}));
 
-const StyledDot = styled('div', {
+const StyledDot = styled("div")(({ theme }) => ({
     width: '10px',
     height: '10px',
     borderRadius: '50%',
-    backgroundColor: theme.colors['grey-3'],
+    backgroundColor: theme.palette.secondary.light,
     margin: '0 2px',
     animation: `${dotAnimation} 1s ease-in-out infinite`,
-
+    
     '&:nth-child(2)': {
         animationDelay: '0.2s',
     },
-
+    
     '&:nth-child(3)': {
         animationDelay: '0.4s',
     },
-});
+}));
 
-const StyledTableDiv = styled('div', {
+const StyledTableDiv = styled("div")(({ theme }) => ({
     width: '10rem',
     height: '10rem',
-});
+}));
 
 interface DocQAProps {
     model: 'docqa';
@@ -687,23 +692,26 @@ export const MooseContent = (props: MooseProps) => {
             // Push SQL portion
             list.push(res[0]);
             // Push Field for the blocker
-            list.push(
-                <Field<Record<string, unknown>>
-                    name={kv[0]}
-                    control={control}
-                    rules={{
-                        required: false,
-                    }}
-                    options={{
-                        component:
-                            typeof kv[1] === 'string'
-                                ? 'input'
-                                : 'numberpicker',
-                    }}
-                    description=""
-                    layout="horizontal"
-                ></Field>,
-            );
+
+            // Push Text field
+
+            // list.push(
+            //     <Field<Record<string, unknown>>
+            //         name={kv[0]}
+            //         control={control}
+            //         rules={{
+            //             required: false,
+            //         }}
+            //         options={{
+            //             component:
+            //                 typeof kv[1] === 'string'
+            //                     ? 'input'
+            //                     : 'numberpicker',
+            //         }}
+            //         description=""
+            //         layout="horizontal"
+            //     ></Field>,
+            // );
 
             // Clear string thats added to list already
             mutableStr = res[1];
@@ -982,8 +990,8 @@ export const MooseContent = (props: MooseProps) => {
                                 key={i}
                                 variant={
                                     selModel !== opt.model
-                                        ? 'outline'
-                                        : 'filled'
+                                        ? 'outlined'
+                                        : 'contained'
                                 }
                                 onClick={() => {
                                     formatSelectModelMessage(
@@ -1187,7 +1195,7 @@ export const MooseContent = (props: MooseProps) => {
                     <StyledAccordionHeader>
                         <h2>Relevant Information</h2>
                         <IconButton
-                            color="grey"
+                            color="secondary"
                             onClick={async () => {
                                 const newMessages = messages;
 
@@ -1208,13 +1216,14 @@ export const MooseContent = (props: MooseProps) => {
                                 setUpdated((prevState) => prevState + 1);
                             }}
                         >
-                            <Icon
+                            ^
+                            {/* <Icon
                                 path={
                                     openAccordion
                                         ? mdiChevronUp
                                         : mdiChevronDown
                                 }
-                            ></Icon>
+                            ></Icon> */}
                         </IconButton>
                     </StyledAccordionHeader>
 
@@ -1349,39 +1358,41 @@ export const MooseContent = (props: MooseProps) => {
                             }}
                         >
                             <Icon
-                                path={
-                                    openAccordion
-                                        ? mdiChevronUp
-                                        : mdiChevronDown
-                                }
-                            ></Icon>
+                                // path={
+                                //     openAccordion
+                                //         ? mdiChevronUp
+                                //         : mdiChevronDown
+                                // }
+                            >
+                                ^
+                            </Icon>
                         </IconButton>
                     </StyledAccordionHeader>
                     {openAccordion && (
                         <StyledFillFormOutput>
                             <StyledScrollableFillFormFields>
-                                <Scroll>
-                                    {resultsList.map(
+                                {/* <Scroll> */}
+                                    {/* {resultsList.map(
                                         (k: [string, string], i) => {
                                             return (
                                                 <StyledFillFormFields key={i}>
                                                     <span title={k[0]}>
                                                         {k[0]}:
                                                     </span>
-                                                    <Input
+                                                    <TextField
                                                         value={k[1]}
                                                         disabled={true}
                                                     />
                                                 </StyledFillFormFields>
                                             );
                                         },
-                                    )}
-                                </Scroll>
+                                    )} */}
+                                {/* </Scroll> */}
                             </StyledScrollableFillFormFields>
                             {opt.callback && (
                                 <StyledApplyButtonDiv>
                                     <Button
-                                        variant={'outline'}
+                                        variant={'outlined'}
                                         onClick={() => opt.callback(results)}
                                         autoFocus={false}
                                     >
@@ -1441,7 +1452,7 @@ export const MooseContent = (props: MooseProps) => {
                             <StyledApplyButtonDiv>
                                 {data && (
                                     <Button
-                                        variant={'outline'}
+                                        variant={'outlined'}
                                         onClick={(e) =>
                                             addButtonToRefs(
                                                 e,
@@ -1454,7 +1465,7 @@ export const MooseContent = (props: MooseProps) => {
                                     </Button>
                                 )}
                                 <Button
-                                    variant={'outline'}
+                                    variant={'outlined'}
                                     onClick={() => opt.callback(response.Query)}
                                 >
                                     Apply Filter
@@ -1605,8 +1616,8 @@ export const MooseContent = (props: MooseProps) => {
                                 <StyledTableContainer>
                                     <StyledScroll>
                                         <StyledTable
-                                            sticky={true}
-                                            border={false}
+                                            stickyHeader={true}
+                                            // border={false}
                                         >
                                             <Table.Head>
                                                 <Table.Row>
@@ -1761,7 +1772,7 @@ export const MooseContent = (props: MooseProps) => {
                     <StyledPreviewContent>
                         <StyledPreviewTable>
                             <StyledPreviewTableScroll>
-                                <StyledTable sticky={true} border={false}>
+                                <StyledTable stickyHeader={true}>
                                     <Table.Head>
                                         <Table.Row>
                                             {dataForPreview['headers'].map(
@@ -1825,7 +1836,7 @@ export const MooseContent = (props: MooseProps) => {
                                     {sqlView === 'preview' ? (
                                         dataForPreview['sql']
                                     ) : sqlView === 'params' ? (
-                                        <Form>
+                                        <form>
                                             <StyledDiv>
                                                 {/* <Button
                                                     onClick={() =>
@@ -1857,9 +1868,9 @@ export const MooseContent = (props: MooseProps) => {
                                                     },
                                                 )}
                                             </StyledDiv>
-                                        </Form>
+                                        </form>
                                     ) : (
-                                        <Textarea
+                                        <TextField
                                             value={
                                                 dataForPreview['editted_sql']
                                             }
@@ -1869,15 +1880,15 @@ export const MooseContent = (props: MooseProps) => {
                                                     editted_sql: v,
                                                 });
                                             }}
-                                        ></Textarea>
+                                        ></TextField>
                                     )}
                                 </StyledEditSql>
                                 <StyledSQLActionDiv>
                                     <StyledSQLActionButtonDiv>
                                         {sqlView === 'preview' ? (
                                             <IconButton
-                                                size="sm"
-                                                color="grey"
+                                                size="small"
+                                                color="secondary"
                                                 title="Copy to Clipboard"
                                                 onClick={() =>
                                                     copyToClipboard(
@@ -1886,13 +1897,15 @@ export const MooseContent = (props: MooseProps) => {
                                                 }
                                             >
                                                 <Icon
-                                                    path={mdiContentCopy}
-                                                ></Icon>
+                                                    // path={mdiContentCopy}
+                                                >
+                                                    Copy
+                                                </Icon>
                                             </IconButton>
                                         ) : (
                                             <IconButton
-                                                size="sm"
-                                                color="grey"
+                                                size="small"
+                                                color="secondary"
                                                 title={
                                                     sqlView === 'params'
                                                         ? 'Fully Edit SQL'
@@ -1907,20 +1920,22 @@ export const MooseContent = (props: MooseProps) => {
                                                 }}
                                             >
                                                 <Icon
-                                                    path={
-                                                        sqlView === 'params'
-                                                            ? mdiSquareEditOutline
-                                                            : mdiCodeTags
-                                                    }
-                                                ></Icon>
+                                                    // path={
+                                                    //     sqlView === 'params'
+                                                    //         ? mdiSquareEditOutline
+                                                    //         : mdiCodeTags
+                                                    // }
+                                                >
+                                                    params
+                                                </Icon>
                                             </IconButton>
                                         )}
                                     </StyledSQLActionButtonDiv>
                                     <StyledSQLActionButtonDiv>
                                         {sqlView === 'preview' ? (
                                             <IconButton
-                                                size="sm"
-                                                color="grey"
+                                                size="small"
+                                                color="secondary"
                                                 title="Edit Params"
                                                 onClick={async () => {
                                                     setSqlView('params');
@@ -1930,12 +1945,14 @@ export const MooseContent = (props: MooseProps) => {
                                                     );
                                                 }}
                                             >
-                                                <Icon path={mdiCodeTags}></Icon>
+                                                <Icon 
+                                                // path={mdiCodeTags}
+                                                > Code</Icon>
                                             </IconButton>
                                         ) : (
                                             <IconButton
-                                                size="sm"
-                                                color="grey"
+                                                size="small"
+                                                color="secondary"
                                                 title="Preview edits"
                                                 onClick={() => {
                                                     if (sqlView === 'params') {
@@ -1954,10 +1971,12 @@ export const MooseContent = (props: MooseProps) => {
                                                 }}
                                             >
                                                 <Icon
-                                                    path={
-                                                        mdiArrowRightBoldBoxOutline
-                                                    }
-                                                ></Icon>
+                                                    // path={
+                                                    //     mdiArrowRightBoldBoxOutline
+                                                    // }
+                                                >
+                                                    Arrow
+                                                </Icon>
                                             </IconButton>
                                         )}
                                     </StyledSQLActionButtonDiv>
@@ -1966,8 +1985,8 @@ export const MooseContent = (props: MooseProps) => {
                         </StyledSqlSection>
                         <StyledApplyButtonDiv>
                             <Button
-                                color="grey"
-                                variant={'outline'}
+                                color="secondary"
+                                variant={'outlined'}
                                 onClick={() => {
                                     setOpenPreview(false);
                                 }}
@@ -1976,7 +1995,7 @@ export const MooseContent = (props: MooseProps) => {
                             </Button>
                             <Button
                                 disabled={sqlView !== 'preview'}
-                                variant={'outline'}
+                                variant={'outlined'}
                                 onClick={() => {
                                     const opt = options.find(
                                         (obj) => obj.model === 'text2sql',
@@ -1991,17 +2010,19 @@ export const MooseContent = (props: MooseProps) => {
                 </StyledPreviewPopover>
             )}
             <StyledResizableContent
-                style={{}}
-                size={{ width: state.width, height: state.height }}
-                onResizeStop={(e, direction, ref, d) => {
-                    const w = state.width + d.width,
-                        h = state.height + d.height;
-
-                    setState({
-                        width: w < 450 ? 450 : w,
-                        height: h < 250 ? 250 : h,
-                    });
+                style={{
+                    width: state.width, height: state.height 
                 }}
+                // size={{ width: state.width, height: state.height }}
+                // onResizeStop={(e, direction, ref, d) => {
+                //     const w = state.width + d.width,
+                //         h = state.height + d.height;
+
+                //     setState({
+                //         width: w < 450 ? 450 : w,
+                //         height: h < 250 ? 250 : h,
+                //     });
+                // }}
             >
                 <StyledHeaderContent>
                     <StyledHeader>
@@ -2013,7 +2034,7 @@ export const MooseContent = (props: MooseProps) => {
                         </h2>
                     </StyledHeader>
                 </StyledHeaderContent>
-                <Scroll type={'scroll'}>
+                {/* <Scroll type={'scroll'}> */}
                     <StyledMessageContent>
                         {messages.map(
                             (messageGroup: MessageInterface, index) => {
@@ -2033,10 +2054,12 @@ export const MooseContent = (props: MooseProps) => {
                                                 ].assistant ? (
                                                     <StyledIconDiv>
                                                         <StyledUserIcon
-                                                            size={'md'}
-                                                            path={mdiAccount}
-                                                            color={'assistant'}
-                                                        ></StyledUserIcon>
+                                                            // size={'medium'}
+                                                            // path={mdiAccount}
+                                                            type={'assistant'}
+                                                        >
+                                                            icon
+                                                        </StyledUserIcon>
                                                     </StyledIconDiv>
                                                 ) : (
                                                     <StyledIconPlaceholder>
@@ -2057,10 +2080,12 @@ export const MooseContent = (props: MooseProps) => {
                                             </StyledBlueBubble>
                                             <StyledIconDiv>
                                                 <StyledUserIcon
-                                                    size={'md'}
-                                                    path={mdiAccount}
-                                                    color={'user'}
-                                                ></StyledUserIcon>
+                                                    // size={'md'}
+                                                    // path={mdiAccount}
+                                                    type={'user'}
+                                                >
+                                                    icon
+                                                </StyledUserIcon>
                                             </StyledIconDiv>
                                         </StyledMessageRight>
                                     );
@@ -2071,10 +2096,12 @@ export const MooseContent = (props: MooseProps) => {
                             <StyledMessageLeft>
                                 <StyledIconDiv>
                                     <StyledUserIcon
-                                        size={'md'}
-                                        path={mdiAccount}
-                                        color={'assistant'}
-                                    ></StyledUserIcon>
+                                        // size={'md'}
+                                        // path={mdiAccount}
+                                        type={'assistant'}
+                                    >
+                                        icon
+                                    </StyledUserIcon>
                                 </StyledIconDiv>{' '}
                                 <StyledGreyBubble>
                                     <StyledDots>
@@ -2087,7 +2114,7 @@ export const MooseContent = (props: MooseProps) => {
                         )}
                         <ScrollRefDiv ref={messagesEndRef}>&nbsp;</ScrollRefDiv>
                     </StyledMessageContent>
-                </Scroll>
+                {/* </Scroll> */}
                 <StyledFooterContent>
                     <StyledInput
                         type="text"
@@ -2120,8 +2147,8 @@ export const MooseContent = (props: MooseProps) => {
                     />
                     <StyledButtonGroup>
                         <IconButton
-                            size="sm"
-                            color={'grey'}
+                            size="small"
+                            color={'secondary'}
                             disabled={!selectedModel || loading}
                             onClick={async () => {
                                 if (!question) return;
@@ -2143,11 +2170,13 @@ export const MooseContent = (props: MooseProps) => {
                                 }
                             }}
                         >
-                            <Icon path={mdiSend}></Icon>
+                            <Icon 
+                            // path={mdiSend}
+                            >send</Icon>
                         </IconButton>
                         <IconButton
-                            size="sm"
-                            color={listening ? 'error' : 'grey'}
+                            size="small"
+                            color={listening ? 'error' : 'secondary'}
                             disabled={!selectedModel || loading || !speech}
                             onClick={() => {
                                 if (!listening) {
@@ -2156,17 +2185,21 @@ export const MooseContent = (props: MooseProps) => {
                                 }
                             }}
                         >
-                            <Icon path={mdiMicrophone}></Icon>
+                            <Icon 
+                            // path={mdiMicrophone}
+                            > mic</Icon>
                         </IconButton>
                         <IconButton
-                            size="sm"
-                            color={'grey'}
+                            size="small"
+                            color={'secondary'}
                             disabled={!selectedModel || loading || listening}
                             onClick={() => {
                                 refreshChatbot();
                             }}
                         >
-                            <Icon path={mdiRestore}></Icon>
+                            <Icon 
+                            // path={mdiRestore}
+                            > refresh</Icon>
                         </IconButton>
                     </StyledButtonGroup>
                 </StyledFooterContent>

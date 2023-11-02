@@ -669,9 +669,6 @@ export const AppSettings = (props: AppSettingsProps) => {
                                             <Typography variant="body2">
                                                 {portalReactors.compiledBy}
                                             </Typography>
-                                            {/* <Typography variant="body2">
-                                            {user.time}
-                                        </Typography> */}
                                             <Typography variant="body2">
                                                 on
                                             </Typography>
