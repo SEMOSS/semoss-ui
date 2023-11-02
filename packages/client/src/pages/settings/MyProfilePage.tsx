@@ -1,34 +1,32 @@
-import {
-    Add,
-    Delete,
-    ContentCopyOutlined,
-    EditRounded,
-    ContentCopy,
-    AccountCircle,
-} from '@mui/icons-material';
+import { Add, Delete, ContentCopyOutlined } from '@mui/icons-material';
 
 import { useForm, Controller } from 'react-hook-form';
 import {
+    useNotification,
     styled,
-    Button,
-    Typography,
     Stack,
     Table,
     IconButton,
-    useNotification,
-    Modal,
-    Alert,
+    Button,
+    Typography,
     TextField,
-    Icon,
-    Box,
-    Grid,
-    Paper,
     Avatar,
+    Paper,
+    Modal,
+    Grid,
+    Alert,
 } from '@semoss/ui';
 
 import { useAPI, useRootStore } from '@/hooks';
 import { LoadingScreen } from '@/components/ui';
 import { useState } from 'react';
+
+const StyledAvatar = styled(Avatar)(({ theme }) => ({
+    display: 'flex',
+    alignContent: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#975FE4',
+}));
 
 const StyledPaper = styled(Paper)(({ theme }) => ({
     padding: '40px 30px 20px 50px',
@@ -37,27 +35,66 @@ const StyledPaper = styled(Paper)(({ theme }) => ({
 const HeaderCell = styled(Table.Cell)(({ theme }) => ({
     backgroundColor: '#f3f3f3',
     borderBottom: '1px solid #ccc',
+    textAlign: 'center',
+}));
+
+const LeftHeaderCell = styled(Table.Cell)(({ theme }) => ({
+    backgroundColor: '#f3f3f3',
+    borderBottom: '1px solid #ccc',
+    borderRadius: '20px 0 0 0',
+    textAlign: 'center',
+}));
+
+const RightHeaderCell = styled(Table.Cell)(({ theme }) => ({
+    backgroundColor: '#f3f3f3',
+    borderBottom: '1px solid #ccc',
+    borderRadius: '0 20px 0 0',
+    textAlign: 'center',
 }));
 
 const MessageDiv = styled('div')(({ theme }) => ({
-    margin: '50px auto 75px',
     textAlign: 'center',
     marginTop: '100px',
     fontSize: '13px',
     display: 'block',
     color: '#666',
     width: '100%',
+    margin: '75px auto 85px',
 }));
 
-const ShadowedStack = styled(Stack)(({ theme }) => ({
-    boxShadow: '0 0 10px #00000020',
-    padding: '17.5px 20px',
-    borderRadius: '15px',
+const AvatarForm = styled('form')(({ theme }) => ({
+    paddingTop: '15px',
+    width: '750px',
+}));
+
+const CurrentAvatarStack = styled(Stack)(({ theme }) => ({
+    alignItems: 'center',
+}));
+
+const StyledTableContainer = styled(Table.Container)(({ theme }) => ({
+    marginTop: '20px',
+}));
+
+const StyledGrid = styled(Grid)(({ theme }) => ({
+    marginBottom: '40px',
+}));
+
+const MonolithGrid = styled(Grid)(({ theme }) => ({
+    display: 'flex',
+    alignItems: 'center',
+}));
+
+const StyledStack = styled(Stack)(({ theme }) => ({
+    marginBottom: '15px',
+}));
+
+const CopyGridItem = styled(Grid)(({ theme }) => ({
+    padding: 0,
+    display: 'flex',
+    justifyContent: 'right',
 }));
 
 const GridItem = styled(Grid)(({ theme }) => ({
-    alignItems: 'center',
-    display: 'flex',
     padding: 0,
 }));
 
@@ -105,17 +142,6 @@ export const MyProfilePage = () => {
     // get the keys
     const getUserAccessKeys = useAPI(['getUserAccessKeys']);
 
-    // ### ---> old working control for new access key only
-    // const { control, reset, setValue, handleSubmit, watch } =
-    //     useForm<CreateAccessKeyForm>({
-    //         defaultValues: {
-    //             TOKENNAME: '',
-    //             TOKENDESCRIPTION: '',
-    //             ACCESSKEY: '',
-    //             SECRETKEY: '',
-    //         },
-    //     });
-
     const { control, reset, setValue, handleSubmit, watch } =
         useForm<CreateAccessKeyForm>({
             defaultValues: {
@@ -150,33 +176,32 @@ export const MyProfilePage = () => {
      * Submit edit profile info
      */
     const profileEditSubmit = async (data: EditUserInfoForm) => {
+        // early return if information is unchanged if this is not handled
+        // if ( name == data.name && id == data.USERNAME && email == data.EMAIL ) {
+        //     notification.add({
+        //         color: 'error',
+        //         message: 'Name, username and email are unchanged',
+        //     });
+        //     return;
+        // }
+
         try {
-            // ### ---> need to confirm query string or monolithStore method
+            // need to confirm reactor for runQuery or monolithStore method for editing profile
 
-            console.log({
-                'data.NAME': data.NAME,
-                'data.USERNAME': data.USERNAME,
-                'data.EMAIL': data.EMAIL,
-            });
+            // unedited / original user information:
+            // name
+            // id
+            // email
 
-            // const response = await monolithStore.createUserAccessKey(
-            //     data.NAME,
-            //     data.USERNAME,
-            //     data.EMAIL,
-            // );
+            // edited user information from form:
+            // data.NAME
+            // data.USERNAME
+            // data.EMAIL
 
-            // const response = await monolithStore.createUserAccessKey(
-            //     data.TOKENNAME,
-            //     data.TOKENDESCRIPTION || '',
-            // );
-
-            // add a new one
             notification.add({
                 color: 'success',
-                message: 'Successfully edited user profile information',
+                message: 'Successfully edited profile information',
             });
-
-            // ### ---> reload page or just leave inputs not reset
         } catch (e) {
             if (e instanceof Error) {
                 notification.add({
@@ -184,8 +209,6 @@ export const MyProfilePage = () => {
                     message: e.message,
                 });
             }
-
-            // ### ---> reset user information in form?
         }
     };
 
@@ -204,8 +227,6 @@ export const MyProfilePage = () => {
             // update the values
             setValue('ACCESSKEY', output.ACCESSKEY);
             setValue('SECRETKEY', output.SECRETKEY);
-
-            console.log({ output });
 
             // add a new one
             notification.add({
@@ -304,25 +325,20 @@ export const MyProfilePage = () => {
     return (
         <>
             <StyledPaper>
-                <Grid container spacing={3} sx={{ marginBottom: '35px' }}>
+                <StyledGrid container spacing={3}>
                     <GridItem sm={4}>
                         <Typography variant="h6">
                             Edit profile information
                         </Typography>
                     </GridItem>
 
-                    <GridItem sm={3}>
-                        <Avatar sx={{ bgcolor: '#975FE4' }}>
-                            {name[0].toUpperCase()}
-                        </Avatar>
+                    <GridItem sm={0.6}>
+                        <StyledAvatar>{name[0].toUpperCase()}</StyledAvatar>
+                    </GridItem>
 
+                    <GridItem sm={3}>
                         <Button
                             variant="text"
-                            sx={{
-                                textAlign: 'right',
-                                fontWeight: '800',
-                                marginLeft: '15px',
-                            }}
                             onClick={() => {
                                 setProfileImgModal(true);
                             }}
@@ -331,24 +347,14 @@ export const MyProfilePage = () => {
                             Upload
                         </Button>
                     </GridItem>
-                </Grid>
-
-                <Grid
-                    container
-                    spacing={3}
-                    style={{ alignItems: 'flex-start' }}
-                >
-                    <GridItem sm={4}></GridItem>
+                </StyledGrid>
+                <Grid container spacing={3}>
+                    <GridItem sm={4}>{/* spacer */}</GridItem>
                     <GridItem sm={8}>
                         <form
                             onSubmit={userInfoHandleSubmit(profileEditSubmit)}
-                            style={{ width: '100%' }}
                         >
-                            <Stack
-                                direction="row"
-                                spacing={2}
-                                style={{ marginBottom: '15px' }}
-                            >
+                            <StyledStack direction="row" spacing={2}>
                                 <Controller
                                     name={'NAME'}
                                     control={userInfoControl}
@@ -371,12 +377,9 @@ export const MyProfilePage = () => {
                                         );
                                     }}
                                 />
-                            </Stack>
+                            </StyledStack>
 
-                            <Stack
-                                direction="row"
-                                style={{ marginBottom: '15px' }}
-                            >
+                            <StyledStack direction="row">
                                 <Controller
                                     name={'USERNAME'}
                                     control={userInfoControl}
@@ -399,12 +402,9 @@ export const MyProfilePage = () => {
                                         );
                                     }}
                                 />
-                            </Stack>
+                            </StyledStack>
 
-                            <Stack
-                                direction="row"
-                                style={{ marginBottom: '15px' }}
-                            >
+                            <StyledStack direction="row">
                                 <Controller
                                     name={'EMAIL'}
                                     control={userInfoControl}
@@ -427,25 +427,20 @@ export const MyProfilePage = () => {
                                         );
                                     }}
                                 />
-                            </Stack>
+                            </StyledStack>
 
                             <Stack direction="row">
                                 <Button
                                     variant="contained"
                                     color="primary"
                                     type="submit"
-                                    style={{
-                                        fontWeight: '800',
-                                        marginRight: '10px',
-                                    }}
                                 >
                                     Save
                                 </Button>
 
                                 <Button
                                     variant="text"
-                                    color="primary"
-                                    sx={{ fontWeight: '800', color: 'black' }}
+                                    color="inherit"
                                     onClick={userInfoReset}
                                 >
                                     Reset
@@ -457,16 +452,14 @@ export const MyProfilePage = () => {
             </StyledPaper>
 
             <StyledPaper>
-                <Grid container spacing={3}>
+                <MonolithGrid container spacing={3}>
                     <GridItem sm={4}>
                         <Typography variant="h6">Monolith Endpoint</Typography>
                     </GridItem>
 
-                    <GridItem sm={7}>
-                        <p style={{ fontSize: '15px' }}>{process.env.MODULE}</p>
-                    </GridItem>
+                    <GridItem sm={7}>{process.env.MODULE}</GridItem>
 
-                    <GridItem sm={1} style={{ justifyContent: 'right' }}>
+                    <CopyGridItem sm={1}>
                         <IconButton
                             title="Copy"
                             onClick={() => {
@@ -475,8 +468,8 @@ export const MyProfilePage = () => {
                         >
                             <ContentCopyOutlined />
                         </IconButton>
-                    </GridItem>
-                </Grid>
+                    </CopyGridItem>
+                </MonolithGrid>
             </StyledPaper>
 
             <StyledPaper>
@@ -486,7 +479,6 @@ export const MyProfilePage = () => {
                     <Button
                         variant="contained"
                         startIcon={<Add />}
-                        sx={{ textAlign: 'right' }}
                         onClick={() => {
                             setAddModal(true);
                         }}
@@ -495,28 +487,15 @@ export const MyProfilePage = () => {
                     </Button>
                 </Stack>
 
-                <Table.Container style={{ marginTop: '20px' }}>
+                <StyledTableContainer>
                     <Table>
                         <Table.Head>
                             <Table.Row>
-                                <HeaderCell
-                                    style={{ borderRadius: '20px 0 0 0' }}
-                                >
-                                    Name
-                                </HeaderCell>
-                                {/* <HeaderCell> */}
+                                <LeftHeaderCell>Name</LeftHeaderCell>
                                 <HeaderCell>Description</HeaderCell>
-                                {/* <HeaderCell> */}
                                 <HeaderCell>Date Created</HeaderCell>
-                                {/* <HeaderCell> */}
                                 <HeaderCell>Last Used Created</HeaderCell>
-                                {/* <HeaderCell> */}
-                                <HeaderCell
-                                    style={{ borderRadius: '0 20px 0 0' }}
-                                >
-                                    Access Key
-                                </HeaderCell>
-                                {/* <HeaderCell>&nbsp;</HeaderCell> */}
+                                <RightHeaderCell>Access Key</RightHeaderCell>
                             </Table.Row>
                         </Table.Head>
                         <Table.Body>
@@ -572,10 +551,10 @@ export const MyProfilePage = () => {
                                 : null}
                         </Table.Body>
                     </Table>
-                </Table.Container>
+                </StyledTableContainer>
                 {getUserAccessKeys.status === 'SUCCESS' &&
                     getUserAccessKeys.data.length === 0 && (
-                        <MessageDiv style={{ margin: '75px auto 85px' }}>
+                        <MessageDiv>
                             No Personal Access Tokens to display at this time
                             <br />
                             Click New Key to create a new Personal Access Token
@@ -704,36 +683,19 @@ export const MyProfilePage = () => {
                 </Modal.Actions>
             </Modal>
 
-            {/* ### ---> test modal */}
             <Modal open={profileImgModal} onClose={() => closeModel()}>
                 <Modal.Title>Upload Profile Picture</Modal.Title>
                 <Modal.Content>
-                    <Stack
-                        direction="row"
-                        spacing={2}
-                        style={{ marginBottom: '15px', alignItems: 'center' }}
-                    >
-                        <ProfileImagePlaceholder />
+                    <CurrentAvatarStack direction="row" spacing={2}>
+                        <StyledAvatar>{name[0].toUpperCase()}</StyledAvatar>
                         <span>Current avatar</span>
-                        <Avatar sx={{ bgcolor: '#975FE4' }}>
-                            {name[0].toUpperCase()}
-                        </Avatar>
-                    </Stack>
+                    </CurrentAvatarStack>
 
-                    <Stack
-                        direction="row"
-                        spacing={2}
-                        style={{ marginBottom: '15px' }}
-                    >
-                        <form
-                            onSubmit={() =>
-                                console.log(
-                                    'submit upload profile image placeholder callback',
-                                )
-                            }
-                            style={{ width: '750px' }}
+                    <Stack direction="row" spacing={2}>
+                        <AvatarForm
+                        // onSubmit={}
                         >
-                            {/* <Controller
+                            <Controller
                                 name={'PLACEHOLDER'}
                                 control={control}
                                 rules={{ required: true }}
@@ -752,24 +714,25 @@ export const MyProfilePage = () => {
                                         ></TextField>
                                     );
                                 }}
-                            /> */}
-                        </form>
+                            />
+                            <Modal.Actions>
+                                <Button
+                                    variant="contained"
+                                    disabled
+                                    type="submit"
+                                >
+                                    Save
+                                </Button>
+                                <Button
+                                    variant="text"
+                                    onClick={() => closeProfileEditModel()}
+                                >
+                                    Close
+                                </Button>
+                            </Modal.Actions>
+                        </AvatarForm>
                     </Stack>
-                    {/* <Button variant="text" onClick={() => closeModel()}>
-                        Close
-                    </Button> */}
                 </Modal.Content>
-                <Modal.Actions>
-                    <Button variant="contained" onClick={() => {}}>
-                        Save
-                    </Button>
-                    <Button
-                        variant="text"
-                        onClick={() => closeProfileEditModel()}
-                    >
-                        Close
-                    </Button>
-                </Modal.Actions>
             </Modal>
         </>
     );
