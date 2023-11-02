@@ -25,6 +25,8 @@ import { AppEditorActions, Navbar } from '@/components/ui';
 import { Renderer, CodeDevMode } from '@/components/app';
 import { styled } from '@semoss/ui';
 
+const NAV_HEIGHT = '48px';
+
 const StyledViewport = styled('div')(() => ({
     display: 'flex',
     height: '100vh',
@@ -37,6 +39,7 @@ const StyledContent = styled('div')(() => ({
     height: '100%',
     width: '100%',
     overflow: 'hidden',
+    paddingTop: NAV_HEIGHT,
 }));
 
 export const AppPage = observer(() => {
