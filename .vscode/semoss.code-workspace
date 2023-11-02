@@ -23,6 +23,10 @@
         "name": "ui",
         "path": "../packages/ui"
       },
+      {
+        "name": "legacy",
+        "path": "../packages/legacy"
+      },
     ],
     "settings": {
       "files.exclude": {
