@@ -992,7 +992,7 @@ export const MembersTable = (props: MembersTableProps) => {
                     <StyledMemberTable>
                         <Table.Head>
                             <Table.Row>
-                                <Table.Cell size="small">ID</Table.Cell>
+                                <Table.Cell size="small">Name</Table.Cell>
                                 <Table.Cell size="small">Permission</Table.Cell>
                                 {/* <Table.Cell size="small">Action</Table.Cell> */}
                             </Table.Row>
@@ -1012,13 +1012,13 @@ export const MembersTable = (props: MembersTableProps) => {
                                 }
                                 if (user) {
                                     return (
-                                        <Table.Row key={user.name + i}>
+                                        <Table.Row key={user.id + i}>
                                             <Table.Cell
                                                 size="small"
                                                 component="td"
                                                 scope="row"
                                             >
-                                                {user.id}
+                                                {user.name}
                                             </Table.Cell>
                                             <Table.Cell size="small">
                                                 <Select

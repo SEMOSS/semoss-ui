@@ -12,7 +12,7 @@ import {
 } from '@semoss/ui';
 import { useNavigate } from 'react-router-dom';
 import { useRootStore } from '@/hooks';
-import { useImport } from '@/hooks';
+import { useStepper } from '@/hooks';
 import { Metamodel } from '@/components/metamodel';
 
 const StyledBox = styled(Box)({
@@ -26,7 +26,7 @@ export const EstablishConnectionPage = () => {
     // Right now this is purposed for the DB Connectors;
     const { configStore, monolithStore } = useRootStore();
     const notification = useNotification();
-    const { steps, setSteps, setIsLoading } = useImport();
+    const { steps, setSteps, setIsLoading } = useStepper();
 
     const navigate = useNavigate();
     const insightId = configStore.store.insightID;
@@ -160,7 +160,7 @@ interface TablesViewsSelectionProps {
 const TablesViewsSelection = (props: TablesViewsSelectionProps) => {
     const { open = false, onClose = () => null, tables, views } = props;
 
-    const { steps, setSteps } = useImport();
+    const { steps, setSteps } = useStepper();
 
     const [checkedTables, setCheckedTables] = useState({});
     const [checkedViews, setCheckedViews] = useState({});
@@ -329,7 +329,7 @@ export const MetamodelView = (props: MetamodelViewProps) => {
     const { monolithStore } = useRootStore();
     const navigate = useNavigate();
     const notification = useNotification();
-    const { steps, setIsLoading, setSteps } = useImport();
+    const { steps, setIsLoading, setSteps } = useStepper();
 
     /**
      *

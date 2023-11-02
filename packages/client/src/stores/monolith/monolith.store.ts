@@ -29,7 +29,6 @@ export class MonolithStore {
         // get the response
         const response = await axios
             .get<{
-                security: boolean;
                 logins: { [key: string]: unknown };
                 loginsAllowed: { [key: string]: boolean };
                 [key: string]: unknown;

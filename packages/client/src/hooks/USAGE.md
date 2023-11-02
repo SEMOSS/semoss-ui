@@ -5,17 +5,19 @@ Where it is consumed, and why it is needed on that particular workflow/component
 1. APPLICATION LEVEL HOOKS
    useAPI:
 
-usePixel:
+    usePixel:
 
-useRootStore:
+    useRootStore:
+
+    useStepper:
 
 2. SPECIFIC WORKFLOW HOOKS
    useApp:
 
-useEngine:
+    useEngine:
 
-useImport:
+    useImport:
 
-useMetamodel:
+    useMetamodel:
 
-useSettings:
+    useSettings:
