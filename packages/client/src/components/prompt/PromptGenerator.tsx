@@ -119,17 +119,14 @@ const BLOCKS: Record<string, Block> = {
     },
     'text-1': {
         id: 'text-1',
-        widget: 'text',
+        widget: 'text-field',
         parent: {
             id: 'container-1',
             slot: 'children',
         },
         data: {
-            style: {
-                display: 'block',
-                fontSize: '2.125rem',
-            },
-            text: 'Title',
+            label: 'Example',
+            value: '',
         },
         listeners: {},
         slots: {},

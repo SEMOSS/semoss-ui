@@ -20,6 +20,7 @@ export const ContainerBlock: BlockComponent = observer(({ id }) => {
         <div
             style={{
                 display: 'flex',
+                flexWrap: 'wrap',
                 ...data.style,
             }}
             {...attrs}
