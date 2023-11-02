@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { ContentCopyOutlined } from '@mui/icons-material';
+import { ContentCopyOutlined, ContentPasteOutlined } from '@mui/icons-material';
 import {
     Outlet,
     Link,
@@ -28,7 +28,7 @@ import { AdminPanelSettingsOutlined } from '@mui/icons-material';
 import { spawnSync } from 'child_process';
 
 const IdSpan = styled('span')(({ theme }) => ({
-    marginRight: '5px',
+    marginRight: '3px',
 }));
 
 const IdContainer = styled('span')(({ theme }) => ({
@@ -36,8 +36,10 @@ const IdContainer = styled('span')(({ theme }) => ({
     alignItems: 'center',
 }));
 
-const StyledContentCopyOutlined = styled(ContentCopyOutlined)(({ theme }) => ({
-    fontSize: '18px !important',
+// const StyledContentCopyOutlined = styled(ContentCopyOutlined)(({ theme }) => ({
+const StyledContentCopyOutlined = styled(ContentPasteOutlined)(({ theme }) => ({
+    // paddingTop: "1px",
+    fontSize: '20px !important',
 }));
 
 const StyledAdminContainer = styled(Paper)(({ theme }) => ({
@@ -129,13 +131,17 @@ export const SettingsLayout = observer(() => {
                                                     <IdContainer>
                                                         <IdSpan>{id}</IdSpan>
                                                         <IconButton
-                                                            title="Copy"
                                                             size="small"
                                                             onClick={() => {
                                                                 copy(id);
                                                             }}
                                                         >
-                                                            <StyledContentCopyOutlined />
+                                                            {/* <StyledContentCopyOutlined /> */}
+                                                            <Tooltip
+                                                                title={`Copy ID`}
+                                                            >
+                                                                <ContentPasteOutlined fontSize="inherit" />
+                                                            </Tooltip>
                                                         </IconButton>
                                                     </IdContainer>
                                                 ) : (
