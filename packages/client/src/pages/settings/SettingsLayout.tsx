@@ -25,10 +25,9 @@ import { Page } from '@/components/ui/';
 import { SETTINGS_ROUTES } from './settings.constants';
 import { observer } from 'mobx-react-lite';
 import { AdminPanelSettingsOutlined } from '@mui/icons-material';
-import { spawnSync } from 'child_process';
 
-const IdSpan = styled('span')(({ theme }) => ({
-    marginRight: '3px',
+const StyledId = styled(Typography)(({ theme }) => ({
+    color: theme.palette.secondary.dark,
 }));
 
 const IdContainer = styled('span')(({ theme }) => ({
@@ -121,25 +120,9 @@ export const SettingsLayout = observer(() => {
                                                 key={i + link}
                                                 state={...state}
                                             >
-                                                {link.includes('<id>') ? (
-                                                    <IdContainer>
-                                                        <IdSpan>{id}</IdSpan>
-                                                        <IconButton
-                                                            size="small"
-                                                            onClick={() => {
-                                                                copy(id);
-                                                            }}
-                                                        >
-                                                            <Tooltip
-                                                                title={`Copy ID`}
-                                                            >
-                                                                <ContentCopyOutlined fontSize="inherit" />
-                                                            </Tooltip>
-                                                        </IconButton>
-                                                    </IdContainer>
-                                                ) : (
-                                                    matchedRoute.title
-                                                )}
+                                                {link.includes('<id>')
+                                                    ? id
+                                                    : matchedRoute.title}
                                             </Link>
                                         );
                                     })}
@@ -212,6 +195,21 @@ export const SettingsLayout = observer(() => {
                                 ? state.name
                                 : matchedRoute.title}
                         </Typography>
+                        {id ? (
+                            <IdContainer>
+                                <StyledId variant={'subtitle2'}>{id}</StyledId>
+                                <IconButton
+                                    size="small"
+                                    onClick={() => {
+                                        copy(id);
+                                    }}
+                                >
+                                    <Tooltip title={`Copy ID`}>
+                                        <ContentCopyOutlined fontSize="inherit" />
+                                    </Tooltip>
+                                </IconButton>
+                            </IdContainer>
+                        ) : null}
                         <Typography variant="body1">
                             {!adminMode || matchedRoute.path !== ''
                                 ? matchedRoute.description
