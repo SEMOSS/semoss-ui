@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { ContentPasteOutlined } from '@mui/icons-material';
+import { ContentCopyOutlined } from '@mui/icons-material';
 import {
     Outlet,
     Link,
@@ -133,7 +133,7 @@ export const SettingsLayout = observer(() => {
                                                             <Tooltip
                                                                 title={`Copy ID`}
                                                             >
-                                                                <ContentPasteOutlined fontSize="inherit" />
+                                                                <ContentCopyOutlined fontSize="inherit" />
                                                             </Tooltip>
                                                         </IconButton>
                                                     </IdContainer>

@@ -18,9 +18,9 @@ import { EditDatabaseDetails } from '@/components/database';
 import { Page, LoadingScreen } from '@/components/ui';
 import { EngineAccessButton } from './';
 import {
-    ContentPasteOutlined,
     EditRounded,
     SimCardDownload,
+    ContentCopyOutlined,
 } from '@mui/icons-material';
 import { formatName } from '@/utils';
 import { Link } from 'react-router-dom';
@@ -218,7 +218,7 @@ export const EngineShell = (props: EngineShellProps) => {
                                 }}
                             >
                                 <Tooltip title={`Copy ${name} ID`}>
-                                    <ContentPasteOutlined fontSize="inherit" />
+                                    <ContentCopyOutlined fontSize="inherit" />
                                 </Tooltip>
                             </StyledIconButton>
                         </span>
