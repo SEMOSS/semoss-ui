@@ -1032,13 +1032,34 @@ export const MembersTable = (props: MembersTableProps) => {
                                 if (user) {
                                     return (
                                         <Table.Row key={user.id + i}>
-                                            <Table.Cell
+                                            {/* leaving this in case we want to add separate columns for name, id, login type */}
+                                            {/* <Table.Cell
                                                 size="small"
                                                 component="td"
                                                 scope="row"
                                             >
                                                 {user.name}
-                                            </Table.Cell>
+                                            </Table.Cell> */}
+
+                                            <UserInfoTableCell
+                                                size="medium"
+                                                component="td"
+                                                scope="row"
+                                            >
+                                                <AvatarWrapper>
+                                                    <Avatar>
+                                                        {user.name[0].toUpperCase()}
+                                                    </Avatar>
+                                                </AvatarWrapper>
+                                                <NameIDWrapper>
+                                                    <Stack>{user.name}</Stack>
+                                                    <Stack>
+                                                        {/* dont seem to have access to login type currently */}
+                                                        ID: {user.id}
+                                                    </Stack>
+                                                </NameIDWrapper>
+                                            </UserInfoTableCell>
+
                                             <Table.Cell size="small">
                                                 <Select
                                                     value={
