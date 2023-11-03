@@ -6,8 +6,9 @@
             "request": "launch",
             "name": "Init",
             "skipFiles": ["<node_internals>/**"],
+            "cwd": "${workspaceFolder}/test/",
             "program": "${workspaceFolder}/bin/run.js",
-            "args": ["init", "-n=test", "-e=./test/.env.local"],
+            "args": ["init", "-n=test", "-e=.env.local"],
             "outputCapture": "std"
         },
         {
@@ -15,8 +16,9 @@
             "request": "launch",
             "name": "Deploy",
             "skipFiles": ["<node_internals>/**"],
+            "cwd": "${workspaceFolder}/test/",
             "program": "${workspaceFolder}/bin/run.js",
-            "args": ["deploy", "-e=./test/.env.local", "-r=./test/"],
+            "args": ["deploy", "-e=.env.local"],
             "outputCapture": "std"
         }
     ]
