@@ -1,3 +1,8 @@
+// COMMENTS: John (11/3/2023)
+// Please Ensure that all three Sections or Paper have the same padding as spacing
+// In order to get the Style fixes out, I added a quick StyledAccessTokensPaper with custom padding
+// Either way all three Sections should have a pretty similar structure
+
 import { Add, Delete, ContentCopyOutlined } from '@mui/icons-material';
 
 import { useForm, Controller } from 'react-hook-form';
@@ -32,10 +37,20 @@ const StyledPaper = styled(Paper)(({ theme }) => ({
     padding: '40px 30px 20px 50px',
 }));
 
+const StyledRow = styled('div')(({ theme }) => ({
+    display: 'flex',
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: theme.spacing(1),
+}));
+
+const StyledAccessTokensPaper = styled(Paper)(({ theme }) => ({
+    padding: '40px 30px 20px 28px',
+}));
+
 const HeaderCell = styled(Table.Cell)(({ theme }) => ({
     backgroundColor: '#f3f3f3',
     borderBottom: '1px solid #ccc',
-    textAlign: 'center',
 }));
 
 const LeftHeaderCell = styled(Table.Cell)(({ theme }) => ({
@@ -98,6 +113,11 @@ const GridItem = styled(Grid)(({ theme }) => ({
     padding: 0,
 }));
 
+const StyledAccessTokensGrid = styled(Grid)(({ theme }) => ({
+    padding: 0,
+    width: '100%',
+}));
+
 const ProfileImagePlaceholder = styled(Avatar)(({ theme }) => ({
     fontSize: '50px !important',
 }));
@@ -122,12 +142,14 @@ interface CreateAccessKeyForm {
     TOKENDESCRIPTION?: string;
     ACCESSKEY: string;
     SECRETKEY: string;
+    PLACEHOLDER: string;
 }
 
 interface EditUserInfoForm {
     NAME: string;
     USERNAME: string;
     EMAIL: string;
+    USERID?: string | undefined;
 }
 
 export const MyProfilePage = () => {
@@ -142,6 +164,10 @@ export const MyProfilePage = () => {
     // get the keys
     const getUserAccessKeys = useAPI(['getUserAccessKeys']);
 
+    // NATIVE Login USERID must match Username
+    const logins = configStore.store.config.logins;
+    const nativeLogin = logins['NATIVE'];
+
     const { control, reset, setValue, handleSubmit, watch } =
         useForm<CreateAccessKeyForm>({
             defaultValues: {
@@ -149,6 +175,7 @@ export const MyProfilePage = () => {
                 TOKENDESCRIPTION: '',
                 ACCESSKEY: '',
                 SECRETKEY: '',
+                PLACEHOLDER: '',
             },
         });
 
@@ -162,6 +189,7 @@ export const MyProfilePage = () => {
         defaultValues: {
             NAME: name,
             USERNAME: id,
+            USERID: nativeLogin,
             EMAIL: email,
         },
     });
@@ -176,27 +204,23 @@ export const MyProfilePage = () => {
      * Submit edit profile info
      */
     const profileEditSubmit = async (data: EditUserInfoForm) => {
-        // early return if information is unchanged if this is not handled
-        // if ( name == data.name && id == data.USERNAME && email == data.EMAIL ) {
-        //     notification.add({
-        //         color: 'error',
-        //         message: 'Name, username and email are unchanged',
-        //     });
-        //     return;
-        // }
-
         try {
             // need to confirm reactor for runQuery or monolithStore method for editing profile
+            console.log(data);
 
-            // unedited / original user information:
-            // name
-            // id
-            // email
+            const userObj = {
+                password: '',
+                id: nativeLogin,
+                email: email,
+                username: id,
+                name: data.NAME,
+            };
 
-            // edited user information from form:
-            // data.NAME
-            // data.USERNAME
-            // data.EMAIL
+            data.USERID !== nativeLogin && (userObj['newId'] = data.USERID);
+            data.USERNAME !== id && (userObj['newUsername'] = data.USERNAME);
+            data.EMAIL !== email && (userObj['newEmail'] = data.EMAIL);
+
+            const response = await monolithStore.editMemberInfo(true, userObj);
 
             notification.add({
                 color: 'success',
@@ -218,7 +242,6 @@ export const MyProfilePage = () => {
      */
     const createAccessKey = async (data: CreateAccessKeyForm) => {
         try {
-            // debugger;
             const output = await monolithStore.createUserAccessKey(
                 data.TOKENNAME,
                 data.TOKENDESCRIPTION || '',
@@ -328,7 +351,9 @@ export const MyProfilePage = () => {
                 <StyledGrid container spacing={3}>
                     <GridItem sm={4}>
                         <Typography variant="h6">
-                            Edit profile information
+                            {nativeLogin
+                                ? 'Edit profile information'
+                                : 'Profile Info'}
                         </Typography>
                     </GridItem>
 
@@ -351,102 +376,195 @@ export const MyProfilePage = () => {
                 <Grid container spacing={3}>
                     <GridItem sm={4}>{/* spacer */}</GridItem>
                     <GridItem sm={8}>
-                        <form
-                            onSubmit={userInfoHandleSubmit(profileEditSubmit)}
-                        >
-                            <StyledStack direction="row" spacing={2}>
-                                <Controller
-                                    name={'NAME'}
-                                    control={userInfoControl}
-                                    rules={{ required: true }}
-                                    render={({ field }) => {
-                                        return (
-                                            <TextField
-                                                label="Name"
-                                                value={
-                                                    field.value
-                                                        ? field.value
-                                                        : ''
-                                                }
-                                                onChange={(value) =>
-                                                    field.onChange(value)
-                                                }
-                                                inputProps={{ maxLength: 255 }}
-                                                fullWidth={true}
-                                            ></TextField>
-                                        );
-                                    }}
-                                />
-                            </StyledStack>
+                        {nativeLogin ? (
+                            <form
+                                onSubmit={userInfoHandleSubmit(
+                                    profileEditSubmit,
+                                )}
+                            >
+                                <StyledStack direction="row" spacing={2}>
+                                    <Controller
+                                        name={'NAME'}
+                                        control={userInfoControl}
+                                        rules={{ required: true }}
+                                        render={({ field }) => {
+                                            return (
+                                                <TextField
+                                                    label="Name"
+                                                    value={
+                                                        field.value
+                                                            ? field.value
+                                                            : ''
+                                                    }
+                                                    onChange={(value) =>
+                                                        field.onChange(value)
+                                                    }
+                                                    inputProps={{
+                                                        maxLength: 255,
+                                                    }}
+                                                    fullWidth={true}
+                                                    disabled={!admin}
+                                                ></TextField>
+                                            );
+                                        }}
+                                    />
+                                </StyledStack>
 
-                            <StyledStack direction="row">
-                                <Controller
-                                    name={'USERNAME'}
-                                    control={userInfoControl}
-                                    rules={{ required: false }}
-                                    render={({ field }) => {
-                                        return (
-                                            <TextField
-                                                label="Username"
-                                                value={
-                                                    field.value
-                                                        ? field.value
-                                                        : ''
-                                                }
-                                                onChange={(value) =>
-                                                    field.onChange(value)
-                                                }
-                                                inputProps={{ maxLength: 500 }}
-                                                fullWidth={true}
-                                            ></TextField>
-                                        );
-                                    }}
-                                />
-                            </StyledStack>
+                                <StyledStack direction="row">
+                                    <Controller
+                                        name={'USERID'}
+                                        control={userInfoControl}
+                                        rules={{ required: false }}
+                                        render={({ field }) => {
+                                            return (
+                                                <TextField
+                                                    label="User Id"
+                                                    value={
+                                                        field.value
+                                                            ? field.value
+                                                            : ''
+                                                    }
+                                                    onChange={(value) =>
+                                                        field.onChange(value)
+                                                    }
+                                                    inputProps={{
+                                                        maxLength: 500,
+                                                    }}
+                                                    fullWidth={true}
+                                                    disabled={!admin}
+                                                ></TextField>
+                                            );
+                                        }}
+                                    />
+                                </StyledStack>
+                                <StyledStack direction="row">
+                                    <Controller
+                                        name={'USERNAME'}
+                                        control={userInfoControl}
+                                        rules={{ required: false }}
+                                        render={({ field }) => {
+                                            return (
+                                                <TextField
+                                                    label="Username"
+                                                    value={
+                                                        field.value
+                                                            ? field.value
+                                                            : ''
+                                                    }
+                                                    onChange={(value) =>
+                                                        field.onChange(value)
+                                                    }
+                                                    inputProps={{
+                                                        maxLength: 500,
+                                                    }}
+                                                    fullWidth={true}
+                                                    disabled={!admin}
+                                                ></TextField>
+                                            );
+                                        }}
+                                    />
+                                </StyledStack>
 
-                            <StyledStack direction="row">
-                                <Controller
-                                    name={'EMAIL'}
-                                    control={userInfoControl}
-                                    rules={{ required: false }}
-                                    render={({ field }) => {
-                                        return (
-                                            <TextField
-                                                label="Email"
-                                                value={
-                                                    field.value
-                                                        ? field.value
-                                                        : ''
-                                                }
-                                                onChange={(value) =>
-                                                    field.onChange(value)
-                                                }
-                                                inputProps={{ maxLength: 500 }}
-                                                fullWidth={true}
-                                            ></TextField>
-                                        );
-                                    }}
-                                />
-                            </StyledStack>
+                                <StyledStack direction="row">
+                                    <Controller
+                                        name={'EMAIL'}
+                                        control={userInfoControl}
+                                        rules={{ required: false }}
+                                        render={({ field }) => {
+                                            return (
+                                                <TextField
+                                                    label="Email"
+                                                    value={
+                                                        field.value
+                                                            ? field.value
+                                                            : ''
+                                                    }
+                                                    onChange={(value) =>
+                                                        field.onChange(value)
+                                                    }
+                                                    inputProps={{
+                                                        maxLength: 500,
+                                                    }}
+                                                    fullWidth={true}
+                                                    disabled={!admin}
+                                                ></TextField>
+                                            );
+                                        }}
+                                    />
+                                </StyledStack>
 
-                            <Stack direction="row">
-                                <Button
-                                    variant="contained"
-                                    color="primary"
-                                    type="submit"
-                                >
-                                    Save
-                                </Button>
+                                <Stack direction="row">
+                                    <Button
+                                        variant="contained"
+                                        color="primary"
+                                        type="submit"
+                                        disabled={!admin}
+                                    >
+                                        Save
+                                    </Button>
 
-                                <Button
-                                    variant="text"
-                                    color="inherit"
-                                    onClick={userInfoReset}
-                                >
-                                    Reset
-                                </Button>
-                            </Stack>
-                        </form>
+                                    <Button
+                                        variant="text"
+                                        color="inherit"
+                                        onClick={() => {
+                                            userInfoReset();
+                                        }}
+                                        disabled={!admin}
+                                    >
+                                        Reset
+                                    </Button>
+                                </Stack>
+                            </form>
+                        ) : (
+                            <>
+                                <StyledStack direction="row">
+                                    <TextField
+                                        label={'Login Type'}
+                                        value={
+                                            Object.keys(
+                                                configStore.store.config
+                                                    .loginDetails,
+                                            )[0]
+                                        }
+                                        inputProps={{
+                                            maxLength: 500,
+                                        }}
+                                        fullWidth={true}
+                                        disabled
+                                    ></TextField>
+                                </StyledStack>
+                                {Object.entries(configStore.store.user).map(
+                                    (kv) => {
+                                        if (
+                                            kv[0] !== 'loggedIn' &&
+                                            kv[0] !== 'admin'
+                                        ) {
+                                            return (
+                                                <StyledStack
+                                                    direction="row"
+                                                    key={kv[0]}
+                                                >
+                                                    <TextField
+                                                        label={
+                                                            kv[0]
+                                                                .charAt(0)
+                                                                .toUpperCase() +
+                                                            kv[0].slice(1)
+                                                        }
+                                                        value={kv[1]}
+                                                        inputProps={{
+                                                            maxLength: 500,
+                                                        }}
+                                                        fullWidth={true}
+                                                        disabled
+                                                    ></TextField>
+                                                </StyledStack>
+                                            );
+                                        }
+                                    },
+                                )}
+                            </>
+                        )}
                     </GridItem>
                 </Grid>
             </StyledPaper>
@@ -472,7 +590,7 @@ export const MyProfilePage = () => {
                 </MonolithGrid>
             </StyledPaper>
 
-            <StyledPaper>
+            <StyledAccessTokensPaper>
                 <Stack direction="row" justifyContent={'space-between'} mb={1}>
                     <Typography variant="h6">Personal Access Tokens</Typography>
 
@@ -491,11 +609,22 @@ export const MyProfilePage = () => {
                     <Table>
                         <Table.Head>
                             <Table.Row>
-                                <LeftHeaderCell>Name</LeftHeaderCell>
-                                <HeaderCell>Description</HeaderCell>
-                                <HeaderCell>Date Created</HeaderCell>
-                                <HeaderCell>Last Used Created</HeaderCell>
-                                <RightHeaderCell>Access Key</RightHeaderCell>
+                                <LeftHeaderCell align={'left'}>
+                                    Name
+                                </LeftHeaderCell>
+                                <HeaderCell align={'left'}>
+                                    Description
+                                </HeaderCell>
+                                <HeaderCell align={'left'}>
+                                    Date Created
+                                </HeaderCell>
+                                <HeaderCell align={'left'}>
+                                    Last Used Created
+                                </HeaderCell>
+                                <HeaderCell align={'left'}>
+                                    Access Key
+                                </HeaderCell>
+                                <RightHeaderCell>&nbsp;</RightHeaderCell>
                             </Table.Row>
                         </Table.Head>
                         <Table.Body>
@@ -504,46 +633,40 @@ export const MyProfilePage = () => {
                                 ? getUserAccessKeys.data.map((k, idx) => {
                                       return (
                                           <Table.Row key={idx}>
-                                              <Table.Cell>
+                                              <Table.Cell align={'left'}>
                                                   {k.TOKENNAME}
                                               </Table.Cell>
-                                              <Table.Cell>
+                                              <Table.Cell align={'left'}>
                                                   {k.TOKENDESCRIPTION || ''}
                                               </Table.Cell>
-                                              <Table.Cell>
+                                              <Table.Cell align={'left'}>
                                                   {k.DATECREATED}
                                               </Table.Cell>
-                                              <Table.Cell>
+                                              <Table.Cell align={'left'}>
                                                   {k.LASTUSED}
                                               </Table.Cell>
-                                              <Table.Cell>
+                                              <Table.Cell align={'left'}>
                                                   {k.ACCESSKEY}
                                               </Table.Cell>
-                                              <Table.Cell>
-                                                  <Stack
-                                                      direction="row"
-                                                      spacing={1}
+                                              <Table.Cell align={'right'}>
+                                                  <IconButton
+                                                      title="Copy"
+                                                      onClick={() => {
+                                                          copy(k.ACCESSKEY);
+                                                      }}
                                                   >
-                                                      <IconButton
-                                                          title="Copy"
-                                                          onClick={() => {
-                                                              copy(k.ACCESSKEY);
-                                                          }}
-                                                      >
-                                                          <ContentCopyOutlined />
-                                                      </IconButton>
-
-                                                      <IconButton
-                                                          title="Delete"
-                                                          onClick={() => {
-                                                              deleteAccessKey(
-                                                                  k.ACCESSKEY,
-                                                              );
-                                                          }}
-                                                      >
-                                                          <Delete />
-                                                      </IconButton>
-                                                  </Stack>
+                                                      <ContentCopyOutlined />
+                                                  </IconButton>
+                                                  <IconButton
+                                                      title="Delete"
+                                                      onClick={() => {
+                                                          deleteAccessKey(
+                                                              k.ACCESSKEY,
+                                                          );
+                                                      }}
+                                                  >
+                                                      <Delete />
+                                                  </IconButton>
                                               </Table.Cell>
                                           </Table.Row>
                                       );
@@ -560,7 +683,7 @@ export const MyProfilePage = () => {
                             Click New Key to create a new Personal Access Token
                         </MessageDiv>
                     )}
-            </StyledPaper>
+            </StyledAccessTokensPaper>
 
             <Modal open={addModal} onClose={() => closeModel()}>
                 <Modal.Title>Generate Key</Modal.Title>
@@ -692,9 +815,7 @@ export const MyProfilePage = () => {
                     </CurrentAvatarStack>
 
                     <Stack direction="row" spacing={2}>
-                        <AvatarForm
-                        // onSubmit={}
-                        >
+                        <AvatarForm>
                             <Controller
                                 name={'PLACEHOLDER'}
                                 control={control}

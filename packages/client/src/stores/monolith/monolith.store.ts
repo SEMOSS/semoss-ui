@@ -1880,11 +1880,15 @@ export class MonolithStore {
 
         postData += 'user=' + encodeURIComponent(JSON.stringify(user));
 
-        const response = await axios.post<{ success: boolean }>(url, postData, {
-            headers: {
-                'content-type': 'application/x-www-form-urlencoded',
-            },
-        });
+        const response = await axios
+            .post<{ success: boolean }>(url, postData, {
+                headers: {
+                    'content-type': 'application/x-www-form-urlencoded',
+                },
+            })
+            .catch((e) => {
+                throw Error(e);
+            });
 
         return response;
     }
