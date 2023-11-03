@@ -128,6 +128,12 @@ export const buildStyleSection = () => ({
             ),
         },
         {
+            description: 'Color',
+            render: ({ id }) => (
+                <InputSettings id={id} label="Color" path="style.color" />
+            ),
+        },
+        {
             description: 'Box Shadow',
             render: ({ id }) => (
                 <InputSettings

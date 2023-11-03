@@ -1,4 +1,5 @@
 import { BlockConfig } from '@/stores';
+import { InputSettings } from '@/components/block-settings';
 
 import {
     buildLayoutSection,
@@ -23,6 +24,17 @@ export const config: BlockConfig<ButtonBlockDef> = {
     slots: {},
     render: ButtonBlock,
     menu: [
+        {
+            name: 'Button',
+            children: [
+                {
+                    description: 'Label',
+                    render: ({ id }) => (
+                        <InputSettings id={id} label="Label" path="label" />
+                    ),
+                },
+            ],
+        },
         buildLayoutSection(),
         buildSpacingSection(),
         buildDimensionsSection(),

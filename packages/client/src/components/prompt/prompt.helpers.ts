@@ -125,10 +125,10 @@ export const PROMPT_BASE_BLOCKS: Record<string, Block> = {
         },
         data: {
             style: {
-                display: 'block',
-                padding: '16px',
-                background: 'lightblue',
+                color: 'white',
+                backgroundColor: 'lightblue',
             },
+            label: 'Submit',
         },
         listeners: {
             onClick: [
@@ -151,7 +151,7 @@ export const PROMPT_BASE_BLOCKS: Record<string, Block> = {
         },
         data: {
             style: {},
-            text: `{{${PROMPT_RESPONSE_BLOCK_ID}.data.response}}`,
+            text: `{{${PROMPT_RESPONSE_BLOCK_ID}.data.response ?? ''}}`,
         },
         listeners: {},
         slots: {},
@@ -178,9 +178,9 @@ function getTextFieldInputBlock(
             slot: 'children',
         },
         data: {
-            label: label,
+            label: inputType === INPUT_TYPE_DATE ? '' : label,
             value: '',
-            type: { inputType },
+            type: inputType,
         },
         listeners: {},
         slots: {},
@@ -219,7 +219,9 @@ export function getQueryForPrompt(
             isLoading: false,
             error: null,
             query: `LLM(engine=["f5f7fd76-a3e5-4dba-8cbb-ededf0f612b4"], command=["<encode>{{input-3.value}}</encode>"]);`,
-            data: undefined,
+            data: {
+                response: 'Fill out the inputs to generate a response.',
+            },
             mode: 'manual',
         },
     };
