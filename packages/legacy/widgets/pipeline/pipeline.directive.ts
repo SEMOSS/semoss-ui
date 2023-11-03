@@ -238,7 +238,9 @@ function pipelineDirective(
                     const component = semossCoreService.utility.freeze(
                         components[componentIdx]
                     );
-                    const message = checkRequirements(component);
+
+                    let message = "";
+                    // const message = checkRequirements(component);
 
                     component.title = component.description;
                     // if there is a message, that means this component didn't meet one of the requirements (R/Py packages)
