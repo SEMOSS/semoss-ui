@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+import { ContentCopyOutlined } from '@mui/icons-material';
 import {
     Outlet,
     Link,
@@ -14,6 +15,8 @@ import {
     ToggleButton,
     Tooltip,
     Paper,
+    useNotification,
+    IconButton,
 } from '@semoss/ui';
 
 import { useRootStore } from '@/hooks';
@@ -22,6 +25,16 @@ import { Page } from '@/components/ui/';
 import { SETTINGS_ROUTES } from './settings.constants';
 import { observer } from 'mobx-react-lite';
 import { AdminPanelSettingsOutlined } from '@mui/icons-material';
+import { spawnSync } from 'child_process';
+
+const IdSpan = styled('span')(({ theme }) => ({
+    marginRight: '3px',
+}));
+
+const IdContainer = styled('span')(({ theme }) => ({
+    display: 'flex',
+    alignItems: 'center',
+}));
 
 const StyledAdminContainer = styled(Paper)(({ theme }) => ({
     position: 'absolute',
@@ -38,6 +51,7 @@ export const SettingsLayout = observer(() => {
     const { configStore } = useRootStore();
     const { id } = useParams();
     const { pathname, state } = useLocation();
+    const notification = useNotification();
 
     // track the active breadcrumbs
     const [adminMode, setAdminMode] = useState(false);
@@ -58,6 +72,22 @@ export const SettingsLayout = observer(() => {
 
         return null;
     }, [pathname]);
+
+    const copy = async (text: string) => {
+        try {
+            await navigator.clipboard.writeText(text);
+
+            notification.add({
+                color: 'success',
+                message: 'Successfully copied id',
+            });
+        } catch (e) {
+            notification.add({
+                color: 'error',
+                message: 'Unable to copy id',
+            });
+        }
+    };
 
     if (!matchedRoute) {
         return null;
@@ -91,9 +121,25 @@ export const SettingsLayout = observer(() => {
                                                 key={i + link}
                                                 state={...state}
                                             >
-                                                {link.includes('<id>')
-                                                    ? id
-                                                    : matchedRoute.title}
+                                                {link.includes('<id>') ? (
+                                                    <IdContainer>
+                                                        <IdSpan>{id}</IdSpan>
+                                                        <IconButton
+                                                            size="small"
+                                                            onClick={() => {
+                                                                copy(id);
+                                                            }}
+                                                        >
+                                                            <Tooltip
+                                                                title={`Copy ID`}
+                                                            >
+                                                                <ContentCopyOutlined fontSize="inherit" />
+                                                            </Tooltip>
+                                                        </IconButton>
+                                                    </IdContainer>
+                                                ) : (
+                                                    matchedRoute.title
+                                                )}
                                             </Link>
                                         );
                                     })}
