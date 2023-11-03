@@ -44,6 +44,20 @@ const colors = [
     '#4CAF50',
 ];
 
+const UserInfoTableCell = styled(Table.Cell)({
+    display: 'flex',
+    alignItems: 'center',
+});
+
+const AvatarWrapper = styled('div')({
+    display: 'inline-block',
+    width: '50px',
+});
+
+const NameIDWrapper = styled('div')({
+    display: 'inline-block',
+});
+
 const StyledMemberContent = styled('div')({
     display: 'flex',
     width: '100%',
@@ -514,6 +528,7 @@ export const MembersTable = (props: MembersTableProps) => {
             let response: AxiosResponse<Record<string, unknown>[]> | null =
                 null;
             if (mode === 'engine') {
+                // possibly add more db table columns / keys here to get id type for display under username
                 response = await monolithStore.getEngineUsersNoCredentials(
                     adminMode,
                     id,
@@ -764,7 +779,6 @@ export const MembersTable = (props: MembersTableProps) => {
                                                 }}
                                             />
                                         </Table.Cell>
-                                        <Table.Cell size="small">ID</Table.Cell>
                                         <Table.Cell size="small">
                                             Name
                                         </Table.Cell>
@@ -829,21 +843,26 @@ export const MembersTable = (props: MembersTableProps) => {
                                                             }}
                                                         />
                                                     </Table.Cell>
-
-                                                    <Table.Cell
+                                                    <UserInfoTableCell
                                                         size="medium"
                                                         component="td"
                                                         scope="row"
                                                     >
-                                                        {user.id}
-                                                    </Table.Cell>
-                                                    <Table.Cell
-                                                        size="medium"
-                                                        component="td"
-                                                        scope="row"
-                                                    >
-                                                        {user.name}
-                                                    </Table.Cell>
+                                                        <AvatarWrapper>
+                                                            <Avatar>
+                                                                {user.name[0].toUpperCase()}
+                                                            </Avatar>
+                                                        </AvatarWrapper>
+                                                        <NameIDWrapper>
+                                                            <Stack>
+                                                                {user.name}
+                                                            </Stack>
+                                                            <Stack>
+                                                                {/* dont seem to have access to ID types currently */}
+                                                                ID: {user.id}
+                                                            </Stack>
+                                                        </NameIDWrapper>
+                                                    </UserInfoTableCell>
                                                     <Table.Cell size="medium">
                                                         <RadioGroup
                                                             row
