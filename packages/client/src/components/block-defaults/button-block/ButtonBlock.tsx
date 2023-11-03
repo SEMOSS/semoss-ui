@@ -3,25 +3,24 @@ import { observer } from 'mobx-react-lite';
 
 import { useBlock } from '@/hooks';
 import { BlockDef, BlockComponent } from '@/stores';
-
-import { Slot } from '@/components/blocks';
+import { Button } from '@semoss/ui';
 
 export interface ButtonBlockDef extends BlockDef<'button'> {
     widget: 'button';
     data: {
         style: CSSProperties;
+        label: string;
     };
     listeners: {
         onClick: true;
     };
-    slots: 'text';
 }
 
 export const ButtonBlock: BlockComponent = observer(({ id }) => {
-    const { attrs, data, slots, listeners } = useBlock<ButtonBlockDef>(id);
+    const { attrs, data, listeners } = useBlock<ButtonBlockDef>(id);
 
     return (
-        <button
+        <Button
             style={{
                 ...data.style,
             }}
@@ -32,7 +31,7 @@ export const ButtonBlock: BlockComponent = observer(({ id }) => {
             }}
             {...attrs}
         >
-            <Slot slot={slots.text} />
-        </button>
+            {data.label}
+        </Button>
     );
 });

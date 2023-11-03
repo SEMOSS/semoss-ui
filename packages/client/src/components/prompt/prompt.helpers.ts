@@ -1,9 +1,18 @@
 import { Token } from './prompt.types';
-import { INPUT_TYPE_TEXT } from './prompt.constants';
-import { Block } from '@/stores';
+import {
+    INPUT_TYPE_DATE,
+    INPUT_TYPE_NUMBER,
+    INPUT_TYPE_TEXT,
+} from './prompt.constants';
+import { ActionMessages, Block, Query } from '@/stores';
 
 export const DESCRIPTION_CONTAINER: string = 'description-container';
 export const PROMPT_CONTAINER_BLOCK_ID: string = 'prompt-container';
+export const APP_TITLE_BLOCK_ID: string = 'title';
+export const HELP_TEXT_BLOCK_ID: string = 'help-text';
+export const PROMPT_SUBMIT_BLOCK_ID: string = 'prompt-submit';
+export const PROMPT_RESPONSE_BLOCK_ID: string = 'prompt-response';
+export const PROMPT_QUERY_ID: string = 'prompt-query';
 export const PROMPT_BASE_BLOCKS: Record<string, Block> = {
     'page-1': {
         id: 'page-1',
@@ -44,12 +53,12 @@ export const PROMPT_BASE_BLOCKS: Record<string, Block> = {
         slots: {
             children: {
                 name: 'children',
-                children: ['title', 'help-text'],
+                children: [APP_TITLE_BLOCK_ID, HELP_TEXT_BLOCK_ID],
             },
         },
     },
-    title: {
-        id: 'title',
+    [APP_TITLE_BLOCK_ID]: {
+        id: APP_TITLE_BLOCK_ID,
         widget: 'text',
         parent: {
             id: DESCRIPTION_CONTAINER,
@@ -65,8 +74,8 @@ export const PROMPT_BASE_BLOCKS: Record<string, Block> = {
         listeners: {},
         slots: {},
     },
-    'help-text': {
-        id: 'help-text',
+    [HELP_TEXT_BLOCK_ID]: {
+        id: HELP_TEXT_BLOCK_ID,
         widget: 'text',
         parent: {
             id: DESCRIPTION_CONTAINER,
@@ -103,9 +112,49 @@ export const PROMPT_BASE_BLOCKS: Record<string, Block> = {
         slots: {
             children: {
                 name: 'children',
-                children: [],
+                children: [PROMPT_SUBMIT_BLOCK_ID, PROMPT_RESPONSE_BLOCK_ID],
             },
         },
+    },
+    [PROMPT_SUBMIT_BLOCK_ID]: {
+        id: PROMPT_SUBMIT_BLOCK_ID,
+        widget: 'button',
+        parent: {
+            id: PROMPT_CONTAINER_BLOCK_ID,
+            slot: 'children',
+        },
+        data: {
+            style: {
+                display: 'block',
+                padding: '16px',
+                background: 'lightblue',
+            },
+        },
+        listeners: {
+            onClick: [
+                {
+                    message: ActionMessages.RUN_QUERY,
+                    payload: {
+                        id: PROMPT_QUERY_ID,
+                    },
+                },
+            ],
+        },
+        slots: {},
+    },
+    [PROMPT_RESPONSE_BLOCK_ID]: {
+        id: PROMPT_RESPONSE_BLOCK_ID,
+        widget: 'text',
+        parent: {
+            id: PROMPT_CONTAINER_BLOCK_ID,
+            slot: 'children',
+        },
+        data: {
+            style: {},
+            text: `{{${PROMPT_RESPONSE_BLOCK_ID}.data.response}}`,
+        },
+        listeners: {},
+        slots: {},
     },
 };
 
@@ -116,9 +165,13 @@ function capitalizeLabel(label: string): string {
     }
     return words.join(' ');
 }
-function getTextInputBlock(index: number, label: string) {
+function getTextFieldInputBlock(
+    inputType: string,
+    index: number,
+    label: string,
+) {
     return {
-        id: `text-input-${index}`,
+        id: `${inputType}-input-${index}`,
         widget: 'text-field',
         parent: {
             id: PROMPT_CONTAINER_BLOCK_ID,
@@ -127,34 +180,47 @@ function getTextInputBlock(index: number, label: string) {
         data: {
             label: label,
             value: '',
-            type: 'text',
+            type: { inputType },
         },
         listeners: {},
         slots: {},
     };
 }
-function getNumberInputBlock(index: number, label: string) {
+
+export function getBlockForInput(
+    token: Token,
+    inputType: string,
+): Block | null {
+    switch (inputType) {
+        case INPUT_TYPE_DATE:
+        case INPUT_TYPE_NUMBER:
+        case INPUT_TYPE_TEXT:
+            return getTextFieldInputBlock(
+                inputType,
+                token.index,
+                capitalizeLabel(token.key),
+            );
+        default:
+            console.log('Block not implemented for this input type yet.');
+            return null;
+    }
+}
+
+// TODO: this is just a generic query, need to actually process the prompt to make the query
+// waiting on format
+export function getQueryForPrompt(
+    tokens: Token[],
+    inputTypes: object,
+): Record<string, Query> {
     return {
-        id: `number-input-${index}`,
-        widget: 'text-field',
-        parent: {
-            id: PROMPT_CONTAINER_BLOCK_ID,
-            slot: 'children',
+        PROMPT_QUERY_ID: {
+            id: PROMPT_QUERY_ID,
+            isInitialized: false,
+            isLoading: false,
+            error: null,
+            query: `LLM(engine=["f5f7fd76-a3e5-4dba-8cbb-ededf0f612b4"], command=["<encode>{{input-3.value}}</encode>"]);`,
+            data: undefined,
+            mode: 'manual',
         },
-        data: {
-            label: label,
-            value: '',
-            type: 'number',
-        },
-        listeners: {},
-        slots: {},
     };
-}
-
-const INPUT_BLOCK_MAP = {
-    [INPUT_TYPE_TEXT]: getTextInputBlock,
-};
-
-export function getBlockForInput(token: Token, inputType: string): Block {
-    return INPUT_BLOCK_MAP[inputType](token.index, capitalizeLabel(token.key));
 }

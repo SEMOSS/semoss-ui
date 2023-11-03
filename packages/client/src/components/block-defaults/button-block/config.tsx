@@ -5,7 +5,6 @@ import {
     buildSpacingSection,
     buildDimensionsSection,
     buildStyleSection,
-    buildTypographySection,
     buildListenersSection,
 } from '../block-defaults.shared';
 
@@ -16,20 +15,18 @@ export const config: BlockConfig<ButtonBlockDef> = {
     widget: 'button',
     data: {
         style: {},
+        label: 'Submit',
     },
     listeners: {
         onClick: [],
     },
-    slots: {
-        text: [],
-    },
+    slots: {},
     render: ButtonBlock,
     menu: [
         buildLayoutSection(),
         buildSpacingSection(),
         buildDimensionsSection(),
         buildStyleSection(),
-        buildTypographySection(),
         buildListenersSection(['onClick']),
     ],
 };

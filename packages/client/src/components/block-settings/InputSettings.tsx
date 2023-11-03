@@ -203,6 +203,7 @@ export const InputTypeSettings = observer(
                     >
                         <MenuItem value={'text'}>Text</MenuItem>
                         <MenuItem value={'number'}>Number</MenuItem>
+                        <MenuItem value={'date'}>Date</MenuItem>
                     </Select>
                 </Stack>
             </Stack>

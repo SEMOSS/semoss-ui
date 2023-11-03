@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
     getBlockForInput,
+    getQueryForPrompt,
     PROMPT_BASE_BLOCKS,
     PROMPT_CONTAINER_BLOCK_ID,
 } from './prompt.helpers';
@@ -55,18 +56,6 @@ const initialBuilder: Builder = {
         value: undefined,
         required: true,
         display: 'Constraints',
-    },
-};
-
-const QUERIES: Record<string, Query> = {
-    'query-1': {
-        id: 'query-1',
-        isInitialized: false,
-        isLoading: false,
-        error: null,
-        query: `LLM(engine=["f5f7fd76-a3e5-4dba-8cbb-ededf0f612b4"], command=["<encode>{{input-3.value}}</encode>"]);`,
-        data: undefined,
-        mode: 'manual',
     },
 };
 const BLOCKS: Record<string, Block> = {
@@ -204,95 +193,40 @@ const BLOCKS: Record<string, Block> = {
         listeners: {},
         slots: {},
     },
-    'button-6': {
-        id: 'button-6',
-        widget: 'button',
-        parent: {
-            id: 'container-1',
-            slot: 'children',
-        },
-        data: {
-            style: {
-                display: 'block',
-                padding: '16px',
-                background: 'lightblue',
-            },
-        },
-        listeners: {
-            onClick: [
-                {
-                    message: ActionMessages.RUN_QUERY,
-                    payload: {
-                        id: 'query-1',
-                    },
-                },
-            ],
-        },
-        slots: {
-            text: {
-                name: 'text',
-                children: ['text-7'],
-            },
-        },
-    },
-    'text-7': {
-        id: 'text-7',
-        widget: 'text',
-        parent: {
-            id: 'button-6',
-            slot: 'text',
-        },
-        data: {
-            style: {
-                display: 'block',
-            },
-            text: 'Submit',
-        },
-        listeners: {},
-        slots: {},
-    },
-    'text-8': {
-        id: 'text-8',
-        widget: 'text',
-        parent: {
-            id: 'container-1',
-            slot: 'children',
-        },
-        data: {
-            style: {
-                display: 'block',
-                fontSize: '1.125rem',
-            },
-            text: '{{query-1.data.response}}',
-        },
-        listeners: {},
-        slots: {},
-    },
 };
 
-// TODO: transform the prompt into meaningful blocks and queries and set them in the store here
-// This is just using the blocks above as a proof of concept of store functionality
 function setBlocksAndOpenBuilder(
     builder: Builder,
     navigate: (route: string) => void,
     onSuccess: () => void,
 ) {
+    // base page
     let blocks: Record<string, Block> = { ...PROMPT_BASE_BLOCKS };
+    // inputs
     let childInputIds = [];
     for (const [tokenIndex, inputType] of Object.entries(
         builder.inputTypes.value as object,
     )) {
         const token = builder.inputs.value[tokenIndex] as Token;
         const inputBlock = getBlockForInput(token, inputType);
-        childInputIds = [...childInputIds, inputBlock.id];
-        blocks = { ...blocks, [inputBlock.id]: inputBlock };
+        if (!!inputBlock) {
+            childInputIds = [...childInputIds, inputBlock.id];
+            blocks = { ...blocks, [inputBlock.id]: inputBlock };
+        }
     }
-    blocks[PROMPT_CONTAINER_BLOCK_ID].slots.children.children = childInputIds;
+    // submit
+    blocks[PROMPT_CONTAINER_BLOCK_ID].slots.children.children = [
+        ...childInputIds,
+        ...blocks[PROMPT_CONTAINER_BLOCK_ID].slots.children.children,
+    ];
     StateStore.dispatch({
         message: ActionMessages.SET_STATE,
         payload: {
             blocks: blocks,
-            queries: QUERIES,
+            queries: getQueryForPrompt(
+                builder.inputs.value as Token[],
+                builder.inputTypes.value as object,
+            ),
         },
     });
     onSuccess(); // This doesn't have meaningful content yet, but adding as placeholder
