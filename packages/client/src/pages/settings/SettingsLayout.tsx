@@ -1,5 +1,4 @@
 import { useEffect, useMemo, useState } from 'react';
-import { ContentCopyOutlined, ContentPasteOutlined } from '@mui/icons-material';
 import {
     Outlet,
     Link,
@@ -15,8 +14,6 @@ import {
     ToggleButton,
     Tooltip,
     Paper,
-    useNotification,
-    IconButton,
 } from '@semoss/ui';
 
 import { useRootStore } from '@/hooks';
@@ -25,22 +22,6 @@ import { Page } from '@/components/ui/';
 import { SETTINGS_ROUTES } from './settings.constants';
 import { observer } from 'mobx-react-lite';
 import { AdminPanelSettingsOutlined } from '@mui/icons-material';
-import { spawnSync } from 'child_process';
-
-const IdSpan = styled('span')(({ theme }) => ({
-    marginRight: '3px',
-}));
-
-const IdContainer = styled('span')(({ theme }) => ({
-    display: 'flex',
-    alignItems: 'center',
-}));
-
-// const StyledContentCopyOutlined = styled(ContentCopyOutlined)(({ theme }) => ({
-const StyledContentCopyOutlined = styled(ContentPasteOutlined)(({ theme }) => ({
-    // paddingTop: "1px",
-    fontSize: '20px !important',
-}));
 
 const StyledAdminContainer = styled(Paper)(({ theme }) => ({
     position: 'absolute',
@@ -57,7 +38,6 @@ export const SettingsLayout = observer(() => {
     const { configStore } = useRootStore();
     const { id } = useParams();
     const { pathname, state } = useLocation();
-    const notification = useNotification();
 
     // track the active breadcrumbs
     const [adminMode, setAdminMode] = useState(false);
@@ -78,22 +58,6 @@ export const SettingsLayout = observer(() => {
 
         return null;
     }, [pathname]);
-
-    const copy = async (text: string) => {
-        try {
-            await navigator.clipboard.writeText(text);
-
-            notification.add({
-                color: 'success',
-                message: 'Successfully copied id',
-            });
-        } catch (e) {
-            notification.add({
-                color: 'error',
-                message: 'Unable to copy id',
-            });
-        }
-    };
 
     if (!matchedRoute) {
         return null;
@@ -127,26 +91,9 @@ export const SettingsLayout = observer(() => {
                                                 key={i + link}
                                                 state={...state}
                                             >
-                                                {link.includes('<id>') ? (
-                                                    <IdContainer>
-                                                        <IdSpan>{id}</IdSpan>
-                                                        <IconButton
-                                                            size="small"
-                                                            onClick={() => {
-                                                                copy(id);
-                                                            }}
-                                                        >
-                                                            {/* <StyledContentCopyOutlined /> */}
-                                                            <Tooltip
-                                                                title={`Copy ID`}
-                                                            >
-                                                                <ContentPasteOutlined fontSize="inherit" />
-                                                            </Tooltip>
-                                                        </IconButton>
-                                                    </IdContainer>
-                                                ) : (
-                                                    matchedRoute.title
-                                                )}
+                                                {link.includes('<id>')
+                                                    ? id
+                                                    : matchedRoute.title}
                                             </Link>
                                         );
                                     })}
