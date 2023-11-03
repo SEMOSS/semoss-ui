@@ -1,10 +1,18 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import {
+    getBlockForInput,
+    getQueryForPrompt,
+    PROMPT_BASE_BLOCKS,
+    PROMPT_CONTAINER_BLOCK_ID,
+} from './prompt.helpers';
 import {
     Builder,
     BuilderStepItem,
     ConstraintSettings,
     Token,
 } from './prompt.types';
+import { ActionMessages, Block, Query, StateStore } from '@/stores';
 import { styled, Box, Button, Grid, Paper } from '@mui/material';
 import { PromptGeneratorBuilderConstraintsStep } from './PromptGeneratorBuilderConstraintsStep';
 import { PromptGeneratorBuilderInputStep } from './PromptGeneratorBuilderInputStep';
@@ -50,6 +58,180 @@ const initialBuilder: Builder = {
         display: 'Constraints',
     },
 };
+const BLOCKS: Record<string, Block> = {
+    'page-1': {
+        id: 'page-1',
+        widget: 'page',
+        parent: null,
+        data: {
+            style: {
+                fontFamily: 'serif',
+            },
+        },
+        listeners: {},
+        slots: {
+            content: {
+                name: 'content',
+                children: ['container-1'],
+            },
+        },
+    },
+    'container-1': {
+        id: 'container-1',
+        widget: 'container',
+        parent: {
+            id: 'page-1',
+            slot: 'content',
+        },
+        data: {
+            style: {
+                background: 'white',
+                boxShadow: 'rgba(100, 100, 111, 0.2) 0px 7px 29px 0px',
+                flexDirection: 'column',
+                gap: '16px',
+                padding: '32px',
+                width: '100%',
+                maxWidth: '900px',
+                margin: '0 auto',
+            },
+        },
+        listeners: {},
+        slots: {
+            children: {
+                name: 'children',
+                children: [
+                    'text-1',
+                    'text-2',
+                    'input-3',
+                    'text-4',
+                    'text-5',
+                    'button-6',
+                    'text-8',
+                ],
+            },
+        },
+    },
+    'text-1': {
+        id: 'text-1',
+        widget: 'text-field',
+        parent: {
+            id: 'container-1',
+            slot: 'children',
+        },
+        data: {
+            label: 'Example',
+            value: '',
+        },
+        listeners: {},
+        slots: {},
+    },
+    'text-2': {
+        id: 'text-2',
+        widget: 'text',
+        parent: {
+            id: 'container-1',
+            slot: 'children',
+        },
+        data: {
+            style: {
+                display: 'block',
+                fontSize: '1.25rem',
+            },
+            text: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur.',
+        },
+        listeners: {},
+        slots: {},
+    },
+    'input-3': {
+        id: 'input-3',
+        widget: 'input',
+        parent: {
+            id: 'container-1',
+            slot: 'children',
+        },
+        data: {
+            style: {
+                display: 'block',
+            },
+            value: '',
+        },
+        listeners: {
+            onChange: [],
+        },
+        slots: {},
+    },
+    'text-4': {
+        id: 'text-4',
+        widget: 'text',
+        parent: {
+            id: 'container-1',
+            slot: 'children',
+        },
+        data: {
+            style: {
+                display: 'block',
+                fontWeight: 'bold',
+            },
+            text: 'Answer:',
+        },
+        listeners: {},
+        slots: {},
+    },
+    'text-5': {
+        id: 'text-5',
+        widget: 'text',
+        parent: {
+            id: 'container-1',
+            slot: 'children',
+        },
+        data: {
+            style: {
+                display: 'block',
+            },
+            text: '{{input-3.value}}',
+        },
+        listeners: {},
+        slots: {},
+    },
+};
+
+function setBlocksAndOpenBuilder(
+    builder: Builder,
+    navigate: (route: string) => void,
+    onSuccess: () => void,
+) {
+    // base page
+    let blocks: Record<string, Block> = { ...PROMPT_BASE_BLOCKS };
+    // inputs
+    let childInputIds = [];
+    for (const [tokenIndex, inputType] of Object.entries(
+        builder.inputTypes.value as object,
+    )) {
+        const token = builder.inputs.value[tokenIndex] as Token;
+        const inputBlock = getBlockForInput(token, inputType);
+        if (!!inputBlock) {
+            childInputIds = [...childInputIds, inputBlock.id];
+            blocks = { ...blocks, [inputBlock.id]: inputBlock };
+        }
+    }
+    // submit
+    blocks[PROMPT_CONTAINER_BLOCK_ID].slots.children.children = [
+        ...childInputIds,
+        ...blocks[PROMPT_CONTAINER_BLOCK_ID].slots.children.children,
+    ];
+    StateStore.dispatch({
+        message: ActionMessages.SET_STATE,
+        payload: {
+            blocks: blocks,
+            queries: getQueryForPrompt(
+                builder.inputs.value as Token[],
+                builder.inputTypes.value as object,
+            ),
+        },
+    });
+    onSuccess(); // This doesn't have meaningful content yet, but adding as placeholder
+    navigate('/edit/design');
+}
 
 function BuilderStep(props: {
     builder: Builder;
@@ -78,6 +260,7 @@ function BuilderStep(props: {
 export function PromptGenerator(props: { onSuccess: () => void }) {
     const [builder, setBuilder] = useState(initialBuilder);
     const [currentBuilderStep, changeBuilderStep] = useState(1);
+    const navigate = useNavigate();
 
     const setBuilderValue = (
         builderStepKey: string,
@@ -111,7 +294,7 @@ export function PromptGenerator(props: { onSuccess: () => void }) {
 
     const nextButtonAction = () => {
         currentBuilderStep === 5
-            ? props.onSuccess()
+            ? setBlocksAndOpenBuilder(builder, navigate, props.onSuccess)
             : changeBuilderStep(currentBuilderStep + 1);
     };
 

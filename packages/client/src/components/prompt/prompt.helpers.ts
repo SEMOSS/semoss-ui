@@ -1,0 +1,226 @@
+import { Token } from './prompt.types';
+import {
+    INPUT_TYPE_DATE,
+    INPUT_TYPE_NUMBER,
+    INPUT_TYPE_TEXT,
+} from './prompt.constants';
+import { ActionMessages, Block, Query } from '@/stores';
+
+export const DESCRIPTION_CONTAINER: string = 'description-container';
+export const PROMPT_CONTAINER_BLOCK_ID: string = 'prompt-container';
+export const APP_TITLE_BLOCK_ID: string = 'title';
+export const HELP_TEXT_BLOCK_ID: string = 'help-text';
+export const PROMPT_SUBMIT_BLOCK_ID: string = 'prompt-submit';
+export const PROMPT_RESPONSE_BLOCK_ID: string = 'prompt-response';
+export const PROMPT_QUERY_ID: string = 'prompt-query';
+export const PROMPT_BASE_BLOCKS: Record<string, Block> = {
+    'page-1': {
+        id: 'page-1',
+        widget: 'page',
+        parent: null,
+        data: {
+            style: {
+                fontFamily: 'roboto',
+            },
+        },
+        listeners: {},
+        slots: {
+            content: {
+                name: 'content',
+                children: [DESCRIPTION_CONTAINER, PROMPT_CONTAINER_BLOCK_ID],
+            },
+        },
+    },
+    [DESCRIPTION_CONTAINER]: {
+        id: DESCRIPTION_CONTAINER,
+        widget: 'container',
+        parent: {
+            id: 'page-1',
+            slot: 'content',
+        },
+        data: {
+            style: {
+                background: 'white',
+                flexDirection: 'column',
+                gap: '16px',
+                padding: '32px',
+                width: '100%',
+                maxWidth: '900px',
+                margin: '0 auto',
+            },
+        },
+        listeners: {},
+        slots: {
+            children: {
+                name: 'children',
+                children: [APP_TITLE_BLOCK_ID, HELP_TEXT_BLOCK_ID],
+            },
+        },
+    },
+    [APP_TITLE_BLOCK_ID]: {
+        id: APP_TITLE_BLOCK_ID,
+        widget: 'text',
+        parent: {
+            id: DESCRIPTION_CONTAINER,
+            slot: 'children',
+        },
+        data: {
+            style: {
+                fontSize: '2.5rem',
+                textAlign: 'center',
+            },
+            text: 'My App',
+        },
+        listeners: {},
+        slots: {},
+    },
+    [HELP_TEXT_BLOCK_ID]: {
+        id: HELP_TEXT_BLOCK_ID,
+        widget: 'text',
+        parent: {
+            id: DESCRIPTION_CONTAINER,
+            slot: 'children',
+        },
+        data: {
+            style: {
+                textAlign: 'center',
+            },
+            text: 'Welcome to the UI Builder! Below are pre-configured blocks for your prompt inputs to use in your app.',
+        },
+        listeners: {},
+        slots: {},
+    },
+    [PROMPT_CONTAINER_BLOCK_ID]: {
+        id: PROMPT_CONTAINER_BLOCK_ID,
+        widget: 'container',
+        parent: {
+            id: 'page-1',
+            slot: 'content',
+        },
+        data: {
+            style: {
+                background: 'white',
+                flexDirection: 'column',
+                gap: '16px',
+                padding: '32px',
+                width: '100%',
+                maxWidth: '900px',
+                margin: '0 auto',
+            },
+        },
+        listeners: {},
+        slots: {
+            children: {
+                name: 'children',
+                children: [PROMPT_SUBMIT_BLOCK_ID, PROMPT_RESPONSE_BLOCK_ID],
+            },
+        },
+    },
+    [PROMPT_SUBMIT_BLOCK_ID]: {
+        id: PROMPT_SUBMIT_BLOCK_ID,
+        widget: 'button',
+        parent: {
+            id: PROMPT_CONTAINER_BLOCK_ID,
+            slot: 'children',
+        },
+        data: {
+            style: {
+                display: 'block',
+                padding: '16px',
+                background: 'lightblue',
+            },
+        },
+        listeners: {
+            onClick: [
+                {
+                    message: ActionMessages.RUN_QUERY,
+                    payload: {
+                        id: PROMPT_QUERY_ID,
+                    },
+                },
+            ],
+        },
+        slots: {},
+    },
+    [PROMPT_RESPONSE_BLOCK_ID]: {
+        id: PROMPT_RESPONSE_BLOCK_ID,
+        widget: 'text',
+        parent: {
+            id: PROMPT_CONTAINER_BLOCK_ID,
+            slot: 'children',
+        },
+        data: {
+            style: {},
+            text: `{{${PROMPT_RESPONSE_BLOCK_ID}.data.response}}`,
+        },
+        listeners: {},
+        slots: {},
+    },
+};
+
+function capitalizeLabel(label: string): string {
+    const words = label.split(' ');
+    for (let i = 0; i < words.length; i++) {
+        words[i] = words[i][0].toUpperCase() + words[i].substring(1);
+    }
+    return words.join(' ');
+}
+function getTextFieldInputBlock(
+    inputType: string,
+    index: number,
+    label: string,
+) {
+    return {
+        id: `${inputType}-input-${index}`,
+        widget: 'text-field',
+        parent: {
+            id: PROMPT_CONTAINER_BLOCK_ID,
+            slot: 'children',
+        },
+        data: {
+            label: label,
+            value: '',
+            type: { inputType },
+        },
+        listeners: {},
+        slots: {},
+    };
+}
+
+export function getBlockForInput(
+    token: Token,
+    inputType: string,
+): Block | null {
+    switch (inputType) {
+        case INPUT_TYPE_DATE:
+        case INPUT_TYPE_NUMBER:
+        case INPUT_TYPE_TEXT:
+            return getTextFieldInputBlock(
+                inputType,
+                token.index,
+                capitalizeLabel(token.key),
+            );
+        default:
+            console.log('Block not implemented for this input type yet.');
+            return null;
+    }
+}
+
+// TODO: this is just a generic query, need to actually process the prompt to make the query
+// waiting on format
+export function getQueryForPrompt(
+    tokens: Token[],
+    inputTypes: object,
+): Record<string, Query> {
+    return {
+        PROMPT_QUERY_ID: {
+            id: PROMPT_QUERY_ID,
+            isInitialized: false,
+            isLoading: false,
+            error: null,
+            query: `LLM(engine=["f5f7fd76-a3e5-4dba-8cbb-ededf0f612b4"], command=["<encode>{{input-3.value}}</encode>"]);`,
+            data: undefined,
+            mode: 'manual',
+        },
+    };
+}
