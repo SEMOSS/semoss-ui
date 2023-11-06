@@ -82,7 +82,6 @@ const StyledCardLeft = styled('div')(({ theme }) => ({
     gap: '1rem',
     flexDirection: 'column',
     alignItems: 'flex-start',
-    
 }));
 
 const StyledCondensedPublishContainer = styled('div')(({ theme }) => ({
@@ -113,12 +112,12 @@ const StyledSubRow = styled('div')({
     alignContent: 'center',
     width: '100%',
     margin: '4px 0 8px 0',
-    '.MuiTypography-body2':{
-        marginLeft:'32px',
+    '.MuiTypography-body2': {
+        marginLeft: '32px',
     },
-    '.MuiFormControl-root':{
-        marginLeft:'32px',
-    }
+    '.MuiFormControl-root': {
+        marginLeft: '32px',
+    },
 });
 
 const StyledSubHeaderContainer = styled('div')(({ theme }) => ({
@@ -143,9 +142,9 @@ const StyledLeftActionDiv = styled('div')({
     justifyContent: 'center',
 });
 
-const StyledTypography = styled('div')({
-    fontWeight:'500',
-})
+const StyledTypography = styled(Typography)({
+    fontWeight: '500',
+});
 
 const StyledActionDivLeft = styled('div')(({ theme }) => ({
     display: 'flex',
@@ -164,17 +163,17 @@ const StyledPublishedIcon = styled(PublishedWithChanges)(() => ({
     marginRight: '5px',
 }));
 
-// const StyledSwitchIcon = styled(ToggleOff)(({ theme }) => ({
-//     display: 'flex',
-//     alignItems: 'flex-start',
-//     marginRight: theme.spacing(1),
-// }));
+const StyledSwitchIcon = styled(ToggleOff)(({ theme }) => ({
+    display: 'flex',
+    alignItems: 'flex-start',
+    marginRight: theme.spacing(1),
+}));
 const StyledPublishIcon = styled(Publish)(({ theme }) => ({
-        display: 'flex',
-        alignItems: 'flex-start',
-        marginRight: theme.spacing(1),
-        color: 'rgba(0, 0, 0, .5)',
-    }));
+    display: 'flex',
+    alignItems: 'flex-start',
+    marginRight: theme.spacing(1),
+    color: 'rgba(0, 0, 0, .5)',
+}));
 
 const StyledRefreshIcon = styled(Cached)(({ theme }) => ({
     display: 'flex',
