@@ -373,87 +373,95 @@ export const SettingsTiles = (props: SettingsTilesProps) => {
         return (
             <StyledGrid container spacing={3}>
                 <Grid item>
-                    <StyledAlert
-                        icon={
-                            <StyledIcon>
-                                <Lock />
-                            </StyledIcon>
-                        }
-                        action={
-                            <Switch
-                                title={
-                                    global
-                                        ? `Make ${name} private`
-                                        : `Make ${name} public`
-                                }
-                                checked={global}
-                                onChange={() => {
-                                    changeGlobal();
-                                }}
-                            ></Switch>
-                        }
-                    >
-                        <Alert.Title>
-                            {global ? 'Public' : 'Private'}
-                        </Alert.Title>
-                        {global
-                            ? 'All members can access'
-                            : 'No one outside of the specified member group can access'}
-                    </StyledAlert>
-                </Grid>
-                <Grid item>
-                    <StyledAlert
-                        icon={
-                            <StyledIcon>
-                                {!discoverable ? (
-                                    <VisibilityOffRounded />
-                                ) : (
-                                    <Visibility />
-                                )}
-                            </StyledIcon>
-                        }
-                        action={
-                            <Switch
-                                title={
-                                    discoverable
-                                        ? `Make ${name} non-discoverable`
-                                        : `Make ${name} discoverable`
-                                }
-                                checked={discoverable}
-                                onChange={() => {
-                                    changeDiscoverable();
-                                }}
-                            ></Switch>
-                        }
-                    >
-                        <Alert.Title>
-                            {discoverable ? 'Discoverable' : 'Non-Discoverable'}
-                        </Alert.Title>
-                        Users {discoverable ? 'can' : 'cannot'} request access
-                        to this {name} if private
-                    </StyledAlert>
-                </Grid>
-                {onDelete ? (
-                    <Grid item>
+                    <Paper>
                         <StyledAlert
                             icon={
                                 <StyledIcon>
-                                    <Delete />
+                                    <Lock />
                                 </StyledIcon>
                             }
                             action={
-                                <Button
-                                    variant="contained"
-                                    color="error"
-                                    onClick={() => setDeleteModal(true)}
-                                >
-                                    Delete
-                                </Button>
+                                <Switch
+                                    title={
+                                        global
+                                            ? `Make ${name} private`
+                                            : `Make ${name} public`
+                                    }
+                                    checked={global}
+                                    onChange={() => {
+                                        changeGlobal();
+                                    }}
+                                ></Switch>
                             }
                         >
-                            <Alert.Title>Delete {name}</Alert.Title>
-                            Remove {name} from catalog
+                            <Alert.Title>
+                                {global ? 'Public' : 'Private'}
+                            </Alert.Title>
+                            {global
+                                ? 'All members can access'
+                                : 'No one outside of the specified member group can access'}
                         </StyledAlert>
+                    </Paper>
+                </Grid>
+                <Grid item>
+                    <Paper>
+                        <StyledAlert
+                            icon={
+                                <StyledIcon>
+                                    {!discoverable ? (
+                                        <VisibilityOffRounded />
+                                    ) : (
+                                        <Visibility />
+                                    )}
+                                </StyledIcon>
+                            }
+                            action={
+                                <Switch
+                                    title={
+                                        discoverable
+                                            ? `Make ${name} non-discoverable`
+                                            : `Make ${name} discoverable`
+                                    }
+                                    checked={discoverable}
+                                    onChange={() => {
+                                        changeDiscoverable();
+                                    }}
+                                ></Switch>
+                            }
+                        >
+                            <Alert.Title>
+                                {discoverable
+                                    ? 'Discoverable'
+                                    : 'Non-Discoverable'}
+                            </Alert.Title>
+                            Users {discoverable ? 'can' : 'cannot'} request
+                            access to this {name} if private
+                        </StyledAlert>
+                    </Paper>
+                </Grid>
+                {onDelete ? (
+                    <Grid item>
+                        <Paper>
+                            <StyledAlert
+                                icon={
+                                    <StyledIcon>
+                                        <Delete />
+                                    </StyledIcon>
+                                }
+                                action={
+                                    <Button
+                                        variant="contained"
+                                        color="error"
+                                        onClick={() => setDeleteModal(true)}
+                                    >
+                                        Delete
+                                    </Button>
+                                }
+                            >
+                                <Alert.Title>Delete {name}</Alert.Title>
+                                Remove {name} from catalog
+                            </StyledAlert>
+                        </Paper>
                         <Modal open={deleteModal}>
                             <Modal.Title>Are you sure?</Modal.Title>
                             <Modal.Content>
