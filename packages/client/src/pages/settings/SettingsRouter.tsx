@@ -40,6 +40,10 @@ const SETTINGS_COMPONETS = {
     'model/:id': () => <EngineSettingsDetailPage type="MODEL" />,
     storage: () => <EngineSettingsIndexPage type="STORAGE" />,
     'storage/:id': () => <EngineSettingsDetailPage type="STORAGE" />,
+    function: () => <EngineSettingsIndexPage type="FUNCTION" />,
+    'function/:id': () => <EngineSettingsDetailPage type="FUNCTION" />,
+    vector: () => <EngineSettingsIndexPage type="VECTOR" />,
+    'vector/:id': () => <EngineSettingsDetailPage type="VECTOR" />,
 };
 
 export const SettingsRouter = observer(() => {

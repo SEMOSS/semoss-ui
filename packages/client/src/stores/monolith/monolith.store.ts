@@ -29,7 +29,6 @@ export class MonolithStore {
         // get the response
         const response = await axios
             .get<{
-                security: boolean;
                 logins: { [key: string]: unknown };
                 loginsAllowed: { [key: string]: boolean };
                 [key: string]: unknown;
@@ -1880,11 +1879,15 @@ export class MonolithStore {
 
         postData += 'user=' + encodeURIComponent(JSON.stringify(user));
 
-        const response = await axios.post<{ success: boolean }>(url, postData, {
-            headers: {
-                'content-type': 'application/x-www-form-urlencoded',
-            },
-        });
+        const response = await axios
+            .post<{ success: boolean }>(url, postData, {
+                headers: {
+                    'content-type': 'application/x-www-form-urlencoded',
+                },
+            })
+            .catch((e) => {
+                throw Error(e);
+            });
 
         return response;
     }
@@ -1996,7 +1999,7 @@ export class MonolithStore {
      */
     async createUserAccessKey(tokenName: string, tokenDescription = '') {
         const url = `${Env.MODULE}/api/auth/user/createUserAccessKey`;
-
+        // debugger;
         let body = 'tokenName=' + encodeURIComponent(tokenName);
         if (tokenDescription) {
             body += '&tokenDescription=' + encodeURIComponent(tokenDescription);

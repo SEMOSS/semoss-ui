@@ -13,6 +13,7 @@ import {
     Code,
     CodeOff,
     Download,
+    Share,
     Settings,
     PersonAdd,
 } from '@mui/icons-material';
@@ -206,7 +207,7 @@ export const AppEditorActions = () => {
                                 setEditorView('code-editor');
                             }}
                         >
-                            <CodeOff />
+                            <Code />
                         </StyledNavbarItem>
                         <StyledNavbarItem
                             selected={editorView === 'settings'}
@@ -238,17 +239,40 @@ export const AppEditorActions = () => {
                         <Code />
                     </StyledHandle>
                 </StyledTrack>
-                {/* <Button
+                <Button
                     size={'small'}
-                    color={'primary'}
+                    color={'secondary'}
                     variant={'outlined'}
                     onClick={() => {
                         downloadApp();
                     }}
+                    sx={{
+                        display: 'flex',
+                        flexDirection: 'row',
+                        alignItems: 'center',
+                        gap: '8px',
+                    }}
                 >
-                    <Download />
-                </Button> */}
-                <StyledShareButton
+                    <Download /> Download
+                </Button>
+                <Button
+                    size={'small'}
+                    color={'secondary'}
+                    variant={'outlined'}
+                    onClick={() => {
+                        setShareModal(true);
+                    }}
+                    sx={{
+                        display: 'flex',
+                        flexDirection: 'row',
+                        alignItems: 'center',
+                        gap: '8px',
+                    }}
+                >
+                    <Share /> Share
+                </Button>
+                {/* <StyledShareButton
+                    size={'small'}
                     variant={'outlined'}
                     color="secondary"
                     onClick={() => {
@@ -274,7 +298,7 @@ export const AppEditorActions = () => {
                         />
                     </svg>
                     Share
-                </StyledShareButton>
+                </StyledShareButton> */}
             </StyledNavbarRight>
             <Modal open={shareModal}>
                 <StyledModalContent>

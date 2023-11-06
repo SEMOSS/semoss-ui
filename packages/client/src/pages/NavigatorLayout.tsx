@@ -90,7 +90,7 @@ export const NavigatorLayout = observer((props) => {
             <StyledSidebar>
                 <Tooltip title={`Open App Library`} placement="right">
                     <StyledSidebarItem
-                        to={''}
+                        to={'/'}
                         selected={!!matchPath('', pathname)}
                         aria-label={'Navigate to app library'}
                     >
@@ -107,7 +107,7 @@ export const NavigatorLayout = observer((props) => {
                         placement="right"
                     >
                         <StyledSidebarItem
-                            to={`engine/${r.path}`}
+                            to={`/engine/${r.path}`}
                             selected={
                                 !!matchPath(`engine/${r.path}/*`, pathname)
                             }
@@ -120,7 +120,7 @@ export const NavigatorLayout = observer((props) => {
                 <Stack flex={1}>&nbsp;</Stack>
                 <Tooltip title={`Open Settings`} placement="right">
                     <StyledSidebarItem
-                        to={'settings'}
+                        to={'/settings'}
                         selected={!!matchPath('settings/*', pathname)}
                         aria-label={'Navigate to settings'}
                     >
