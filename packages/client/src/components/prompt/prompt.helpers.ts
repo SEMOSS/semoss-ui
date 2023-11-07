@@ -226,7 +226,7 @@ export function getQueryForPrompt(
             // TODO preserve punctionation if it was composed near an input
             tokenStrings.push(
                 `{{${getIdForInput(
-                    inputTypes[token.key],
+                    inputTypes[token.index],
                     token.index,
                 )}.value}}`,
             );
