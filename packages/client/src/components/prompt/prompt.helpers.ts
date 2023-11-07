@@ -184,7 +184,7 @@ function getTextFieldInputBlock(
             slot: 'children',
         },
         data: {
-            label: inputType === INPUT_TYPE_DATE ? '' : label,
+            label: label,
             value: '',
             type: inputType,
         },
@@ -223,13 +223,16 @@ export function getQueryForPrompt(
         if (token.type === TOKEN_TYPE_TEXT) {
             tokenStrings.push(token.display);
         } else {
-            // TODO preserve punctionation if it was composed near an input
-            tokenStrings.push(
-                `{{${getIdForInput(
-                    inputTypes[token.index],
-                    token.index,
-                )}.value}}`,
+            // do this to preserve punctuation attached to the token from the prompt
+            const inputTokenParts = token.display.split(
+                new RegExp(`(${token.key})`),
             );
+            let keyIndex = inputTokenParts.indexOf(token.key);
+            inputTokenParts[keyIndex] = `{{${getIdForInput(
+                inputTypes[token.index],
+                token.index,
+            )}.value}}`;
+            tokenStrings.push(inputTokenParts.join(''));
         }
     });
     return {

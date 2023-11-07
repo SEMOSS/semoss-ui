@@ -112,6 +112,13 @@ export const InputSettings = observer(
                             // sync the data on change
                             onChange(e.target.value);
                         }}
+                        placeholder={
+                            data.hasOwnProperty('type') &&
+                            data.type === 'date' &&
+                            path === 'value'
+                                ? 'YYYY-MM-DD'
+                                : null
+                        }
                         size="small"
                         variant="outlined"
                         fullWidth={true}

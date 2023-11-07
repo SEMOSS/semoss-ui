@@ -28,6 +28,9 @@ export const TextFieldBlock: BlockComponent = observer(({ id }) => {
                 ...data.style,
                 margin: '8px',
             }}
+            InputLabelProps={{
+                shrink: true,
+            }}
             type={data.type}
             onChange={(e) => {
                 const value = e.target.value;

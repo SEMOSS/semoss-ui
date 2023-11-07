@@ -118,8 +118,6 @@ function setBlocksAndOpenBuilder(
             queries: query,
         },
     });
-    console.log(JSON.stringify(blocks));
-    console.log(JSON.stringify(query));
     onSuccess(); // This doesn't have meaningful content yet, but adding as placeholder
     navigate('/edit/design');
 }
