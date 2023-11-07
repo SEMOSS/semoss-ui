@@ -930,25 +930,226 @@ const BLOCKS: Record<string, Block> = {
 // if we want a more complex default page, we can set that up here
 export const StateStore = new StateStoreImplementation(
     {
-        blocks: {
-            'page-1': {
-                id: 'page-1',
-                widget: 'page',
-                parent: null,
-                data: {
-                    style: {
-                        fontFamily: 'roboto',
-                    },
+        // blocks: {
+        //     'page-1': {
+        //         id: 'page-1',
+        //         widget: 'page',
+        //         parent: null,
+        //         data: {
+        //             style: {
+        //                 fontFamily: 'roboto',
+        //             },
+        //         },
+        //         listeners: {},
+        //         slots: {
+        //             content: {
+        //                 name: 'content',
+        //                 children: [],
+        //             },
+        //         },
+        //     },
+        // },
+        blocks: JSON.parse(`{
+            "page-1": {
+                "id": "page-1",
+                "widget": "page",
+                "parent": null,
+                "data": {
+                    "style": {
+                        "fontFamily": "roboto"
+                    }
                 },
-                listeners: {},
-                slots: {
-                    content: {
-                        name: 'content',
-                        children: [],
-                    },
-                },
+                "listeners": {},
+                "slots": {
+                    "content": {
+                        "name": "content",
+                        "children": [
+                            "description-container",
+                            "prompt-container"
+                        ]
+                    }
+                }
             },
-        },
+            "description-container": {
+                "id": "description-container",
+                "widget": "container",
+                "parent": {
+                    "id": "page-1",
+                    "slot": "content"
+                },
+                "data": {
+                    "style": {
+                        "background": "white",
+                        "flexDirection": "column",
+                        "gap": "16px",
+                        "padding": "32px",
+                        "width": "100%",
+                        "maxWidth": "900px",
+                        "margin": "0 auto"
+                    }
+                },
+                "listeners": {},
+                "slots": {
+                    "children": {
+                        "name": "children",
+                        "children": [
+                            "title",
+                            "help-text"
+                        ]
+                    }
+                }
+            },
+            "title": {
+                "id": "title",
+                "widget": "text",
+                "parent": {
+                    "id": "description-container",
+                    "slot": "children"
+                },
+                "data": {
+                    "style": {
+                        "fontSize": "2.5rem",
+                        "textAlign": "center"
+                    },
+                    "text": "My App"
+                },
+                "listeners": {},
+                "slots": {}
+            },
+            "help-text": {
+                "id": "help-text",
+                "widget": "text",
+                "parent": {
+                    "id": "description-container",
+                    "slot": "children"
+                },
+                "data": {
+                    "style": {
+                        "textAlign": "center"
+                    },
+                    "text": "Welcome to the UI Builder! Below are pre-configured blocks for your prompt inputs to use in your app."
+                },
+                "listeners": {},
+                "slots": {}
+            },
+            "prompt-container": {
+                "id": "prompt-container",
+                "widget": "container",
+                "parent": {
+                    "id": "page-1",
+                    "slot": "content"
+                },
+                "data": {
+                    "style": {
+                        "background": "white",
+                        "flexDirection": "column",
+                        "gap": "16px",
+                        "padding": "32px",
+                        "width": "100%",
+                        "maxWidth": "900px",
+                        "margin": "0 auto"
+                    }
+                },
+                "listeners": {},
+                "slots": {
+                    "children": {
+                        "name": "children",
+                        "children": [
+                            "date-input-3",
+                            "number-input-6",
+                            "text-input-8",
+                            "prompt-submit",
+                            "prompt-response"
+                        ]
+                    }
+                }
+            },
+            "prompt-submit": {
+                "id": "prompt-submit",
+                "widget": "button",
+                "parent": {
+                    "id": "prompt-container",
+                    "slot": "children"
+                },
+                "data": {
+                    "style": {
+                        "color": "white",
+                        "backgroundColor": "blue"
+                    },
+                    "label": "Submit"
+                },
+                "listeners": {
+                    "onClick": [
+                        {
+                            "message": "RUN_QUERY",
+                            "payload": {
+                                "id": "prompt-query"
+                            }
+                        }
+                    ]
+                },
+                "slots": {}
+            },
+            "prompt-response": {
+                "id": "prompt-response",
+                "widget": "text",
+                "parent": {
+                    "id": "prompt-container",
+                    "slot": "children"
+                },
+                "data": {
+                    "style": {},
+                    "text": "{{prompt-response.data.response ?? ''}}"
+                },
+                "listeners": {},
+                "slots": {}
+            },
+            "date-input-3": {
+                "id": "date-input-3",
+                "widget": "text-field",
+                "parent": {
+                    "id": "prompt-container",
+                    "slot": "children"
+                },
+                "data": {
+                    "label": "",
+                    "value": "",
+                    "type": "date"
+                },
+                "listeners": {},
+                "slots": {}
+            },
+            "number-input-6": {
+                "id": "number-input-6",
+                "widget": "text-field",
+                "parent": {
+                    "id": "prompt-container",
+                    "slot": "children"
+                },
+                "data": {
+                    "label": "Number",
+                    "value": "",
+                    "type": "number"
+                },
+                "listeners": {},
+                "slots": {}
+            },
+            "text-input-8": {
+                "id": "text-input-8",
+                "widget": "text-field",
+                "parent": {
+                    "id": "prompt-container",
+                    "slot": "children"
+                },
+                "data": {
+                    "label": "Text",
+                    "value": "",
+                    "type": "text"
+                },
+                "listeners": {},
+                "slots": {}
+            }
+        }`),
         queries: {},
     },
     {

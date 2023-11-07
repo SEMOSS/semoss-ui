@@ -30,9 +30,28 @@ const StyledBox = styled(Box)(({ theme }) => ({
     display: 'flex',
     justifyContent: 'flex-end',
     marginRight: theme.spacing(1),
+    marginTop: theme.spacing(4),
 }));
 
 const initialBuilder: Builder = {
+    title: {
+        step: 1,
+        value: undefined,
+        required: true,
+        display: 'Title',
+    },
+    tags: {
+        step: 1,
+        value: undefined,
+        required: false,
+        display: 'Tags',
+    },
+    model: {
+        step: 1,
+        value: undefined,
+        required: false,
+        display: 'LLM',
+    },
     context: {
         step: 1,
         value: undefined,
@@ -51,12 +70,12 @@ const initialBuilder: Builder = {
         required: true,
         display: 'Input Types',
     },
-    constraints: {
-        step: 4,
-        value: undefined,
-        required: true,
-        display: 'Constraints',
-    },
+    // constraints: {
+    //     step: 4,
+    //     value: undefined,
+    //     required: true,
+    //     display: 'Constraints',
+    // },
 };
 
 function setBlocksAndOpenBuilder(
@@ -65,7 +84,9 @@ function setBlocksAndOpenBuilder(
     onSuccess: () => void,
 ) {
     // base page
-    let blocks: Record<string, Block> = { ...PROMPT_BASE_BLOCKS };
+    let blocks: Record<string, Block> = JSON.parse(
+        JSON.stringify(PROMPT_BASE_BLOCKS),
+    );
     // inputs
     let childInputIds = [];
     for (const [tokenIndex, inputType] of Object.entries(
@@ -83,16 +104,22 @@ function setBlocksAndOpenBuilder(
         ...childInputIds,
         ...blocks[PROMPT_CONTAINER_BLOCK_ID].slots.children.children,
     ];
+
+    const query = getQueryForPrompt(
+        builder.model.value as string,
+        builder.inputs.value as Token[],
+        builder.inputTypes.value as object,
+    );
+
     StateStore.dispatch({
         message: ActionMessages.SET_STATE,
         payload: {
             blocks: blocks,
-            queries: getQueryForPrompt(
-                builder.inputs.value as Token[],
-                builder.inputTypes.value as object,
-            ),
+            queries: query,
         },
     });
+    console.log(JSON.stringify(blocks));
+    console.log(JSON.stringify(query));
     onSuccess(); // This doesn't have meaningful content yet, but adding as placeholder
     navigate('/edit/design');
 }
@@ -112,9 +139,9 @@ function BuilderStep(props: {
             return <PromptGeneratorBuilderInputStep {...props} />;
         case 3:
             return <PromptGeneratorBuilderInputTypeStep {...props} />;
+        // case 4:
+        //     return <PromptGeneratorBuilderConstraintsStep {...props} />;
         case 4:
-            return <PromptGeneratorBuilderConstraintsStep {...props} />;
-        case 5:
             return <PromptGeneratorBuilderPreviewStep {...props} />;
         default:
             return <StyledPaper elevation={2} square />;
@@ -150,21 +177,21 @@ export function PromptGenerator(props: { onSuccess: () => void }) {
     };
 
     const nextButtonText =
-        currentBuilderStep < 4
+        currentBuilderStep < 3
             ? 'Next'
-            : currentBuilderStep === 4
+            : currentBuilderStep === 3
             ? 'Preview'
             : 'Open in Builder';
 
     const nextButtonAction = () => {
-        currentBuilderStep === 5
+        currentBuilderStep === 4
             ? setBlocksAndOpenBuilder(builder, navigate, props.onSuccess)
             : changeBuilderStep(currentBuilderStep + 1);
     };
 
     return (
         <>
-            <Grid container sx={{ height: '100%' }}>
+            <Grid container>
                 <Grid item xs={3}>
                     <StyledPaper elevation={2}>
                         <PromptGeneratorBuilderSummary

@@ -42,6 +42,8 @@ export const InputSettings = observer(
         label = '',
         path,
     }: InputSettingsProps<D>) => {
+        console.log(id);
+        console.log(path);
         const { data, setData } = useBlockSettings(id);
 
         // track the value

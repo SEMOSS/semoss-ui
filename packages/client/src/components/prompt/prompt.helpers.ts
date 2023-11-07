@@ -3,6 +3,7 @@ import {
     INPUT_TYPE_DATE,
     INPUT_TYPE_NUMBER,
     INPUT_TYPE_TEXT,
+    TOKEN_TYPE_TEXT,
 } from './prompt.constants';
 import { ActionMessages, Block, Query } from '@/stores';
 
@@ -126,7 +127,7 @@ export const PROMPT_BASE_BLOCKS: Record<string, Block> = {
         data: {
             style: {
                 color: 'white',
-                backgroundColor: 'lightblue',
+                backgroundColor: 'blue',
             },
             label: 'Submit',
         },
@@ -165,13 +166,18 @@ function capitalizeLabel(label: string): string {
     }
     return words.join(' ');
 }
+
+function getIdForInput(inputType: string, index: number) {
+    return `${inputType}-input-${index}`;
+}
+
 function getTextFieldInputBlock(
     inputType: string,
     index: number,
     label: string,
 ) {
     return {
-        id: `${inputType}-input-${index}`,
+        id: getIdForInput(inputType, index),
         widget: 'text-field',
         parent: {
             id: PROMPT_CONTAINER_BLOCK_ID,
@@ -206,19 +212,35 @@ export function getBlockForInput(
     }
 }
 
-// TODO: this is just a generic query, need to actually process the prompt to make the query
-// waiting on format
 export function getQueryForPrompt(
+    model: string,
     tokens: Token[],
     inputTypes: object,
 ): Record<string, Query> {
+    let tokenStrings: string[] = [];
+    // compose tokens into a command
+    tokens.forEach((token: Token) => {
+        if (token.type === TOKEN_TYPE_TEXT) {
+            tokenStrings.push(token.display);
+        } else {
+            // TODO preserve punctionation if it was composed near an input
+            tokenStrings.push(
+                `{{${getIdForInput(
+                    inputTypes[token.key],
+                    token.index,
+                )}.value}}`,
+            );
+        }
+    });
     return {
-        PROMPT_QUERY_ID: {
+        [PROMPT_QUERY_ID]: {
             id: PROMPT_QUERY_ID,
             isInitialized: false,
             isLoading: false,
             error: null,
-            query: `LLM(engine=["f5f7fd76-a3e5-4dba-8cbb-ededf0f612b4"], command=["<encode>{{input-3.value}}</encode>"]);`,
+            query: `LLM(engine=["${model}"], command=["<encode>${tokenStrings.join(
+                ' ',
+            )}</encode>"]);`,
             data: {
                 response: 'Fill out the inputs to generate a response.',
             },

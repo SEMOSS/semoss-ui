@@ -37,9 +37,17 @@ export const config: BlockConfig<TextFieldBlockDef> = {
                 },
                 {
                     description: 'Input Type',
-                    render: ({ id }) => (
-                        <InputTypeSettings id={id} label="Type" path="type" />
-                    ),
+                    render: ({ id }) => {
+                        console.log('in config');
+                        console.log(id);
+                        return (
+                            <InputTypeSettings
+                                id={id}
+                                label="Type"
+                                path="type"
+                            />
+                        );
+                    },
                 },
             ],
         },

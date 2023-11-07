@@ -40,20 +40,7 @@ export const ADD_APP_STEPS = {
         ],
     },
     PROMPT_BUILDER: {
-        steps: [
-            {
-                name: 'metavals',
-                title: 'Details',
-            },
-            {
-                name: 'access',
-                title: 'Access',
-            },
-            {
-                name: 'prompt',
-                title: 'Prompt',
-            },
-        ],
+        steps: [],
     },
     UI_BUILDER: {
         steps: [

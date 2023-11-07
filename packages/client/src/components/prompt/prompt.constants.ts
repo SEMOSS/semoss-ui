@@ -13,11 +13,11 @@ export const INPUT_TYPE_RANGE = 'range';
 export const INPUT_TYPES = [
     INPUT_TYPE_TEXT,
     INPUT_TYPE_NUMBER,
-    INPUT_TYPE_VECTOR,
-    INPUT_TYPE_DATABASE,
-    INPUT_TYPE_DATA_PRODUCT,
+    // INPUT_TYPE_VECTOR,
+    // INPUT_TYPE_DATABASE,
+    // INPUT_TYPE_DATA_PRODUCT,
     INPUT_TYPE_DATE,
-    INPUT_TYPE_RANGE,
+    // INPUT_TYPE_RANGE,
 ];
 export const INPUT_TYPE_DISPLAY = {
     [INPUT_TYPE_TEXT]: 'Text',
@@ -41,8 +41,8 @@ export const SUMMARY_STEPS = [
         title: 'Define Input Types',
         icon: DisplaySettings,
     },
-    {
-        title: 'Set Constraints',
-        icon: Block,
-    },
+    // {
+    //     title: 'Set Constraints',
+    //     icon: Block,
+    // },
 ];

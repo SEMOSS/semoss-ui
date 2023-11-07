@@ -22,7 +22,9 @@ export function PromptGeneratorBuilderSummaryStepItem(
                     <ListItemText
                         primary={item.display}
                         secondary={
-                            !item.required || !!item.value
+                            !item.required
+                                ? 'Optional'
+                                : !!item.value
                                 ? 'Complete'
                                 : 'In Progress'
                         }

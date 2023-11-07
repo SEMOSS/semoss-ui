@@ -160,26 +160,34 @@ export const AddAppPage = () => {
             {/* Step 1 */}
             {/* All Import Workflows: Get Metadata, and import type specific properties */}
             {steps.length === 1 ? (
-                <ImportAppForm
-                    data={steps[0].data}
-                    onCreate={(appId) => {
-                        setAppId(appId);
+                steps[0].data.type === 'PROMPT_BUILDER' ? (
+                    <PromptGenerator
+                        onSuccess={() => {
+                            console.warn('navigate to app page');
+                        }}
+                    />
+                ) : (
+                    <ImportAppForm
+                        data={steps[0].data}
+                        onCreate={(appId) => {
+                            setAppId(appId);
 
-                        const stepWithAppId = {
-                            title: 'Access',
-                            description:
-                                'Retrieve Access Permissions for newly added app',
-                            stepInProcess: 1,
-                            data: {
-                                type: 'Import App',
-                                title: 'Import App',
-                                options: appId,
-                            },
-                        };
+                            const stepWithAppId = {
+                                title: 'Access',
+                                description:
+                                    'Retrieve Access Permissions for newly added app',
+                                stepInProcess: 1,
+                                data: {
+                                    type: 'Import App',
+                                    title: 'Import App',
+                                    options: appId,
+                                },
+                            };
 
-                        setSteps([...steps, stepWithAppId], steps.length);
-                    }}
-                />
+                            setSteps([...steps, stepWithAppId], steps.length);
+                        }}
+                    />
+                )
             ) : null}
 
             {/* Step 2:  App has been created and we now have an App Id */}
