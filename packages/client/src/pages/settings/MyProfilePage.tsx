@@ -3,7 +3,7 @@
 // In order to get the Style fixes out, I added a quick StyledAccessTokensPaper with custom padding
 // Either way all three Sections should have a pretty similar structure
 
-import { Add, Delete, ContentCopyOutlined } from '@mui/icons-material';
+import { Add, Delete, ContentCopyOutlined, Key } from '@mui/icons-material';
 
 import { useForm, Controller } from 'react-hook-form';
 import {
@@ -738,16 +738,34 @@ export const MyProfilePage = () => {
                                 }}
                             />
 
-                            <Stack direction="row" justifyContent={'start'}>
-                                <Button
+                            <Stack direction="row" justifyContent={'center'}>
+                                <IconButton
+                                    title="Generate Key"
+                                    type="submit"
+                                    size="large"
+                                    // onClick={() => {
+                                    //     alert("generate key")
+                                    // }}
+                                >
+                                    <div>
+                                        <Key />
+                                    </div>
+                                </IconButton>
+                                {/* <Button
                                     disabled={isCreated}
                                     type="submit"
                                     variant={'outlined'}
                                     color="primary"
-                                >
+                                    >
                                     Generate
-                                </Button>
+                                </Button> */}
                             </Stack>
+                            <Typography
+                                variant={'h6'}
+                                sx={{ display: 'block' }}
+                            >
+                                Generate Key
+                            </Typography>
                             {isCreated && (
                                 <>
                                     <Stack direction="column" spacing={1}>
