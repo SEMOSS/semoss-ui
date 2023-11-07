@@ -14,7 +14,7 @@ const StyledBox = styled(Box)(({ theme }) => ({
 }));
 
 export const ImportConnectionPage = () => {
-    const { monolithStore } = useRootStore();
+    const { monolithStore, configStore } = useRootStore();
     const navigate = useNavigate();
     const notification = useNotification();
     const { steps, setIsLoading } = useStepper();
@@ -36,10 +36,10 @@ export const ImportConnectionPage = () => {
         type: 'VECTOR' | 'STORAGE' | 'MODEL' | 'FUNCTION' | 'UPLOAD';
         name: string;
         fields: unknown[];
+        secondaryFields?: unknown[];
     }) => {
         // let pixel = ''; // 'VECTOR' | 'STORAGE' | 'MODEL' | 'FUNCTION' | 'UPLOAD'
         setIsLoading(true);
-
         if (values.type === 'STORAGE') {
             /** Storage: START */
             const pixel = `CreateStorageEngine(
@@ -53,6 +53,7 @@ export const ImportConnectionPage = () => {
 
                 setIsLoading(false);
 
+                debugger;
                 if (operationType.indexOf('ERROR') > -1) {
                     notification.add({
                         color: 'error',
@@ -83,6 +84,8 @@ export const ImportConnectionPage = () => {
 
                 setIsLoading(false);
 
+                debugger;
+
                 if (operationType.indexOf('ERROR') > -1) {
                     notification.add({
                         color: 'error',
@@ -108,18 +111,16 @@ export const ImportConnectionPage = () => {
                 ) ;
             `;
 
-            console.warn('verify fields went back correctly');
-            monolithStore.runQuery(pixel).then((response) => {
+            monolithStore.runQuery(pixel).then(async (response) => {
                 const output = response.pixelReturn[0].output,
                     operationType = response.pixelReturn[0].operationType;
-
-                setIsLoading(false);
 
                 if (operationType.indexOf('ERROR') > -1) {
                     notification.add({
                         color: 'error',
                         message: output,
                     });
+                    setIsLoading(false);
                     return;
                 }
 
@@ -128,9 +129,41 @@ export const ImportConnectionPage = () => {
                     message: `Successfully added vector database to catalog`,
                 });
 
-                navigate(`/engine/vector/${output.database_id}`);
+                if (values.secondaryFields['EMBEDDINGS']) {
+                    const upload = await monolithStore.uploadFile(
+                        [values.secondaryFields['EMBEDDINGS']],
+                        configStore.store.insightID,
+                    );
+
+                    const secondaryPixel = `CreateEmbeddingsFromDocuments(
+                        engine="${output.database_id}", 
+                        filePaths=["${upload[0].fileLocation}"]
+                    );`;
+
+                    monolithStore.runQuery(secondaryPixel).then((response) => {
+                        const secondaryPixelOutput =
+                                response.pixelReturn[0].output,
+                            operationType =
+                                response.pixelReturn[0].operationType;
+
+                        setIsLoading(false);
+
+                        notification.add({
+                            color:
+                                operationType.indexOf('ERROR') > -1
+                                    ? 'error'
+                                    : 'success',
+                            message: secondaryPixelOutput,
+                        });
+
+                        navigate(`/engine/vector/${output.database_id}`);
+                    });
+                } else {
+                    setIsLoading(false);
+                    navigate(`/engine/vector/${output.database_id}`);
+                }
             });
-            console.log(pixel);
+
             return;
         } else if (values.type === 'FUNCTION') {
             /** Function: START */
@@ -138,27 +171,6 @@ export const ImportConnectionPage = () => {
             CreateRestFunctionEngine(function=["${
                 values.name
             }"],functionDetails=[${JSON.stringify(values.fields)}]);`;
-            //     {
-            //     URL: 'http://127.0.0.1:5000/runML',
-            //     HTTP_METHOD: 'post',
-            //     FUNCTION_NAME: 'myExampleExecution',
-            //     HEADERS: { 'Content-Type': 'application/json' },
-            //     CONTENT_TYPE: 'JSON',
-            //     FUNCTION_REQUIRED_PARAMETERS: ['number1', 'number2'],
-            //     FUNCTION_PARAMETERS: [ // Custom list of maps
-            //         {
-            //             parameterName: 'number1',
-            //             parameterType: 'double',
-            //             parameterDescription: 'the first number to use',
-            //         },
-            //         {
-            //             parameterName: 'number2',
-            //             parameterType: 'double',
-            //             parameterDescription: 'the second number to use',
-            //         },
-            //     ],
-            //     FUNCTION_DESCRIPTION: 'Perform addition',
-            // }
 
             monolithStore.runQuery(pixel).then((response) => {
                 const output = response.pixelReturn[0].output,
@@ -182,28 +194,6 @@ export const ImportConnectionPage = () => {
             });
             return;
         }
-
-        // monolithStore.runQuery(pixel).then((response) => {
-        //     const output = response.pixelReturn[0].output,
-        //         operationType = response.pixelReturn[0].operationType;
-
-        //     setIsLoading(false);
-
-        //     if (operationType.indexOf('ERROR') > -1) {
-        //         notification.add({
-        //             color: 'error',
-        //             message: output,
-        //         });
-        //         return;
-        //     }
-
-        //     // notification.add({
-        //     //     color: 'success',
-        //     //     message: `Successfully added function to catalog`,
-        //     // });
-
-        //     // navigate(`/vector/${output.database_id}`);
-        // });
 
         /** Connect to External: START */
         // I'll be hitting this reactor if dbDriver is in RDBMSTypeEnum on BE
