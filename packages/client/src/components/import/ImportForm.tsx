@@ -37,6 +37,14 @@ const StyledKeyValue = styled('div')(({ theme }) => ({
     marginBottom: theme.spacing(2),
 }));
 
+const StyledDropzoneField = styled('div')(({ theme }) => ({
+    display: 'flex',
+    flexDirection: 'column',
+    gap: theme.spacing(2),
+    width: '100%',
+    height: '100%',
+}));
+
 export const ImportForm = (props) => {
     const { submitFunc, fields } = props;
 
@@ -83,7 +91,10 @@ export const ImportForm = (props) => {
     /**
      * @desc Takes details from submission form and
      * constucts values to parent for submission
-     * @param data // TO DO: Type this out and handle all of this in the parent
+     * @param data
+     * Refactor:  This should only handle the distribution of data
+     * OnSubmit Function will handle Adding of Step or Pixel Call
+     * Also: type this out
      */
     const onSubmit = async (data) => {
         // If it's a File Upload
@@ -135,24 +146,29 @@ export const ImportForm = (props) => {
             );
         } else {
             const connectionDetails = {};
+            const secondaryFields = {};
 
-            // Construct details for submission account for new properties
-            Object.entries(data).forEach((obj) => {
-                if (obj[0] !== 'SMSS_PROPERTIES') {
-                    connectionDetails[obj[0]] = obj[1];
+            fields.forEach((f) => {
+                let fieldValue = data[f.fieldName];
+
+                if (f.options.component === 'number') {
+                    fieldValue = parseInt(fieldValue);
+                }
+
+                if (f.secondary) {
+                    secondaryFields[f.fieldName] = fieldValue;
+                } else {
+                    connectionDetails[f.fieldName] = fieldValue;
                 }
             });
-            /** For custom properties */
-            // data.SMSS_PROPERTIES.forEach((obj) => {
-            //     if (!connectionDetails[obj.KEY]) {
-            //         connectionDetails[obj.KEY] = obj.VALUE;
-            //     }
-            // });
 
             const formVals = {
-                type: steps[0].data, // 'MODEL' | "VECTOR" | "FUNCTION" | "STORAGE" | "DATABASE"
-                name: data.NAME, // Name of engine
+                // 'MODEL' | "VECTOR" | "FUNCTION" | "STORAGE" | "DATABASE"
+                type: steps[0].data,
+                // Name of engine
+                name: data.NAME,
                 fields: connectionDetails,
+                secondaryFields: secondaryFields,
             };
 
             submitFunc(formVals);
@@ -255,20 +271,51 @@ export const ImportForm = (props) => {
                                                 </Select>
                                             );
                                         } else if (
-                                            val.options.component ===
-                                            'zip-upload'
+                                            val.options.component === 'number'
                                         ) {
                                             return (
-                                                <FileDropzone
-                                                    multiple={false}
-                                                    value={field.value}
-                                                    disabled={false}
-                                                    onChange={(newValues) => {
-                                                        field.onChange(
+                                                <TextField
+                                                    type="number"
+                                                    fullWidth
+                                                    required={
+                                                        val.rules.required
+                                                    }
+                                                    label={val.label}
+                                                    disabled={val.disabled}
+                                                    value={
+                                                        field.value
+                                                            ? field.value
+                                                            : ''
+                                                    }
+                                                    onChange={(value) =>
+                                                        field.onChange(value)
+                                                    }
+                                                ></TextField>
+                                            );
+                                        } else if (
+                                            val.options.component ===
+                                            'file-upload'
+                                        ) {
+                                            return (
+                                                <StyledDropzoneField>
+                                                    <Typography
+                                                        variant={'body1'}
+                                                    >
+                                                        {val.label}
+                                                    </Typography>
+                                                    <FileDropzone
+                                                        multiple={false}
+                                                        value={field.value}
+                                                        disabled={false}
+                                                        onChange={(
                                                             newValues,
-                                                        );
-                                                    }}
-                                                />
+                                                        ) => {
+                                                            field.onChange(
+                                                                newValues,
+                                                            );
+                                                        }}
+                                                    />
+                                                </StyledDropzoneField>
                                             );
                                         }
                                     }}
@@ -525,81 +572,7 @@ export const ImportForm = (props) => {
                             })}
                     </>
                 ) : null}
-                {/* {fields.map((property, i) => {
-                    return (
-                        <StyledProperty key={i}>
-                            <StyledFlexEnd>
-                                <IconButton
-                                    onClick={() => {
-                                        remove(i);
-                                    }}
-                                >
-                                    <Delete />
-                                </IconButton>
-                            </StyledFlexEnd>
-                            <StyledKeyValue>
-                                <Controller
-                                    name={`SMSS_PROPERTIES.${i}.KEY`}
-                                    control={control}
-                                    rules={{ required: true }}
-                                    render={({ field, fieldState }) => {
-                                        const hasError = fieldState.error;
-                                        return (
-                                            <TextField
-                                                fullWidth
-                                                required
-                                                label="Key"
-                                                value={
-                                                    field.value
-                                                        ? field.value
-                                                        : ''
-                                                }
-                                                onChange={(value) =>
-                                                    field.onChange(value)
-                                                }
-                                            ></TextField>
-                                        );
-                                    }}
-                                />
-                                <Controller
-                                    name={`SMSS_PROPERTIES.${i}.VALUE`}
-                                    control={control}
-                                    rules={{ required: true }}
-                                    render={({ field, fieldState }) => {
-                                        const hasError = fieldState.error;
-                                        return (
-                                            <TextField
-                                                fullWidth
-                                                required
-                                                label="Value"
-                                                value={
-                                                    field.value
-                                                        ? field.value
-                                                        : ''
-                                                }
-                                                onChange={(value) =>
-                                                    field.onChange(value)
-                                                }
-                                            ></TextField>
-                                        );
-                                    }}
-                                />
-                            </StyledKeyValue>
-                        </StyledProperty>
-                    );
-                })} */}
                 <StyledFlexEnd>
-                    {/* <Button
-                        variant={'contained'}
-                        onClick={() => {
-                            append({
-                                KEY: '',
-                                VALUE: '',
-                            });
-                        }}
-                    >
-                        Add Property
-                    </Button> */}
                     <Button type="submit" variant={'contained'}>
                         Add {steps[0].data.toLowerCase()}
                     </Button>
