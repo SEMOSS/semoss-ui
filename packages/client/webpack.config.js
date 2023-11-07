@@ -6,8 +6,8 @@ const MiniCssExtractPlugin = require('mini-css-extract-plugin');
 const dotenv = require('dotenv');
 // const importMetaEnv = require('@import-meta-env/unplugin');
 
-dotenv.config({ path: '../../.env' });
 dotenv.config({ path: '../../.env.local' });
+dotenv.config({ path: '../../.env' });
 
 const isProduction = process.env.NODE_ENV == 'production';
 

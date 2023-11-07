@@ -38,8 +38,6 @@ export const config: BlockConfig<TextFieldBlockDef> = {
                 {
                     description: 'Input Type',
                     render: ({ id }) => {
-                        console.log('in config');
-                        console.log(id);
                         return (
                             <InputTypeSettings
                                 id={id}

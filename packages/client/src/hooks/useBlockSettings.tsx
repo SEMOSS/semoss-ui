@@ -68,7 +68,6 @@ export const useBlockSettings = <D extends BlockDef = BlockDef>(
             path: P | null,
             value: PathValue<Block<D>['data'], P>,
         ): void => {
-            console.log(id);
             state.dispatch({
                 message: ActionMessages.SET_BLOCK_DATA,
                 payload: {
@@ -78,7 +77,7 @@ export const useBlockSettings = <D extends BlockDef = BlockDef>(
                 },
             });
         },
-        [],
+        [id],
     );
 
     /**
