@@ -128,6 +128,7 @@ export const PROMPT_BASE_BLOCKS: Record<string, Block> = {
             style: {
                 color: 'white',
                 backgroundColor: 'blue',
+                width: '125px',
             },
             label: 'Submit',
         },
