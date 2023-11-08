@@ -355,17 +355,19 @@ export const AddAppSelectionPage = (props: AddAppSelectionPageProps) => {
                                         <StyledBuilderCard
                                             disabled={kv[1].disabled}
                                             onClick={() => {
-                                                const step = {
-                                                    title: kv[1].title,
-                                                    description:
-                                                        kv[1].description,
-                                                    stepInProcess: 0,
-                                                    data: {
-                                                        type: kv[0],
-                                                    },
-                                                };
+                                                if (!kv[1].disabled) {
+                                                    const step = {
+                                                        title: kv[1].title,
+                                                        description:
+                                                            kv[1].description,
+                                                        stepInProcess: 0,
+                                                        data: {
+                                                            type: kv[0],
+                                                        },
+                                                    };
 
-                                                onSelect(step);
+                                                    onSelect(step);
+                                                }
                                             }}
                                         >
                                             <Avatar>
@@ -400,17 +402,22 @@ export const AddAppSelectionPage = (props: AddAppSelectionPageProps) => {
                                                 .disabled
                                         }
                                         onClick={() => {
-                                            const step = {
-                                                title: 'Template App',
-                                                description:
-                                                    'Create app with template',
-                                                stepInProcess: 0,
-                                                data: {
-                                                    type: 'TEMPLATE_APP',
-                                                    options: app,
-                                                },
-                                            };
-                                            onSelect(step);
+                                            if (
+                                                !ADD_APP_STEPS['TEMPLATE_APP']
+                                                    .disabled
+                                            ) {
+                                                const step = {
+                                                    title: 'Template App',
+                                                    description:
+                                                        'Create app with template',
+                                                    stepInProcess: 0,
+                                                    data: {
+                                                        type: 'TEMPLATE_APP',
+                                                        options: app,
+                                                    },
+                                                };
+                                                onSelect(step);
+                                            }
                                         }}
                                     >
                                         <Avatar>
