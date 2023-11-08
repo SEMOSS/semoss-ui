@@ -104,13 +104,19 @@ export const EngineFilePage = () => {
                             control={control}
                             rules={{}}
                             render={({ field }) => {
-                                console.log(field.value);
                                 return (
                                     <FileDropzone
                                         multiple={false}
                                         value={field.value}
-                                        description="Drag and Drop a pdf or a csv file to embed"
-                                        extensions={['.pdf', '.csv']}
+                                        extensions={[
+                                            '.pdf',
+                                            '.csv',
+                                            '.txt',
+                                            '.doc',
+                                            '.ppt',
+                                            '.docx',
+                                            '.pptx',
+                                        ]}
                                         disabled={isLoading}
                                         onChange={(newValues) => {
                                             field.onChange(newValues);
