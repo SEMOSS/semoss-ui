@@ -28,7 +28,7 @@ import { Page, LoadingScreen } from '@/components/ui';
 import { Link, useNavigate } from 'react-router-dom';
 import { useStepper, useRootStore, usePixel } from '@/hooks';
 
-import { ADD_APP_STEPS } from './add-app.constants';
+import { APP_STEP_INTERFACE, ADD_APP_STEPS } from './add-app.constants';
 import { BuildDb } from '@/assets/img/BuildDb';
 
 const StyledContainer = styled('div')(({ theme }) => ({
@@ -58,27 +58,38 @@ const StyledContent = styled('div')(({ theme }) => ({
     flex: '1',
 }));
 
-const StyledBuilderCard = styled(Card)(({ theme }) => ({
-    // height: '300px',
+const StyledBuilderCard = styled(Card, {
+    shouldForwardProp: (prop) => prop !== 'disabled',
+})<{
+    disabled: boolean;
+}>(({ theme, disabled }) => ({
     width: '100%',
-    backgroundColor: theme.palette.background.paper,
     padding: theme.spacing(1),
     display: 'flex',
     justifyContent: 'center',
     flexDirection: 'column',
     alignItems: 'center',
     gap: theme.spacing(1),
+    backgroundColor: disabled
+        ? theme.palette.secondary.light
+        : theme.palette.background.paper,
 }));
 
-const StyledAppCard = styled(Card)(({ theme }) => ({
+const StyledAppCard = styled(Card, {
+    shouldForwardProp: (prop) => prop !== 'disabled',
+})<{
+    disabled: boolean;
+}>(({ theme, disabled }) => ({
     height: '300px',
-    backgroundColor: theme.palette.background.paper,
     padding: theme.spacing(1),
     display: 'flex',
     justifyContent: 'center',
     flexDirection: 'column',
     alignItems: 'center',
     gap: theme.spacing(1),
+    backgroundColor: disabled
+        ? theme.palette.secondary.light
+        : theme.palette.background.paper,
 }));
 
 export const AddAppPage = () => {
@@ -328,101 +339,47 @@ export const AddAppSelectionPage = (props: AddAppSelectionPageProps) => {
             />
             <StyledContent>
                 <Grid container columnSpacing={3} rowSpacing={3}>
-                    <Grid item sm={12} md={4} lg={3} xl={3}>
-                        <StyledBuilderCard
-                            onClick={() => {
-                                const step = {
-                                    title: 'Prompt Builder',
-                                    description:
-                                        'Empower your web design journey with our innovative UI Builder, responding to the prompt to create visually stunning websites effortlessly.  This intuitive platform allows you to design pixel-perfect layouts, customize interactions, and bring ideas to life seamlessly, all while freeing you from code constraints',
-                                    stepInProcess: 0,
-                                    data: {
-                                        type: 'PROMPT_BUILDER',
-                                    },
-                                };
+                    {Object.entries(ADD_APP_STEPS).map(
+                        (kv: [string, APP_STEP_INTERFACE]) => {
+                            console.log(kv);
+                            if (kv[0] !== 'IMPORT_APP') {
+                                return (
+                                    <Grid
+                                        item
+                                        sm={12}
+                                        md={4}
+                                        lg={3}
+                                        xl={3}
+                                        key={kv[0]}
+                                    >
+                                        <StyledBuilderCard
+                                            disabled={kv[1].disabled}
+                                            onClick={() => {
+                                                const step = {
+                                                    title: kv[1].title,
+                                                    description:
+                                                        kv[1].description,
+                                                    stepInProcess: 0,
+                                                    data: {
+                                                        type: kv[0],
+                                                    },
+                                                };
 
-                                onSelect(step);
-                            }}
-                        >
-                            <Avatar>
-                                <BuildDb />
-                            </Avatar>
-                            <Typography variant={'body1'}>
-                                Prompt Builder
-                            </Typography>
-                        </StyledBuilderCard>
-                    </Grid>
-                    <Grid item sm={12} md={4} lg={3} xl={3}>
-                        <StyledBuilderCard
-                            onClick={() => {
-                                const step = {
-                                    title: 'UI Builder',
-                                    description:
-                                        'Craft visually stunning websites effortlessly with our UI Builder. Design pixel-perfect layouts, customize interactions, and bring ideas to life seamlessly, empowering you to create without code constraints.',
-                                    stepInProcess: 0,
-                                    data: {
-                                        type: 'UI_BUILDER',
-                                    },
-                                };
-                                onSelect(step);
-                            }}
-                        >
-                            <Avatar>
-                                <BuildDb />
-                            </Avatar>
-                            <Typography variant={'body1'}>
-                                UI Builder
-                            </Typography>
-                        </StyledBuilderCard>
-                    </Grid>
-                    <Grid item sm={12} md={4} lg={3} xl={3}>
-                        <StyledBuilderCard
-                            onClick={() => {
-                                const step = {
-                                    title: 'Build App',
-                                    description:
-                                        'Define purpose, research market, design UI/UX, choose front-end framework (React, AngularJs, Vue), develop responsive UI components, integrate APIs, test rigorously, ensure security, deploy, monitor, gather feedback, iterate, and launch for a dynamic and visually engaging app.',
-                                    stepInProcess: 0,
-                                    data: {
-                                        type: 'FRAMEWORK_APP',
-                                    },
-                                };
-
-                                onSelect(step);
-                            }}
-                        >
-                            <Avatar>
-                                <BuildDb />
-                            </Avatar>
-                            <Typography variant={'body1'}>
-                                Build with Framework
-                            </Typography>
-                        </StyledBuilderCard>
-                    </Grid>
-                    <Grid item sm={12} md={4} lg={3} xl={3}>
-                        <StyledBuilderCard
-                            onClick={() => {
-                                const step = {
-                                    title: 'Build from scratch',
-                                    description:
-                                        'Define purpose, research market, design UI/UX, choose tech stack, develop frontend/backend, integrate APIs, test rigorously, ensure security, deploy, monitor, gather feedback, iterate, and launch for a successful app.',
-                                    stepInProcess: 0,
-                                    data: {
-                                        type: 'TEMPLATE_APP',
-                                        // options: '',
-                                    },
-                                };
-                                onSelect(step);
-                            }}
-                        >
-                            <Avatar>
-                                <BuildDb />
-                            </Avatar>
-                            <Typography variant={'body1'}>
-                                Start App From Scratch
-                            </Typography>
-                        </StyledBuilderCard>
-                    </Grid>
+                                                onSelect(step);
+                                            }}
+                                        >
+                                            <Avatar>
+                                                <BuildDb />
+                                            </Avatar>
+                                            <Typography variant={'body1'}>
+                                                {kv[1].title}
+                                            </Typography>
+                                        </StyledBuilderCard>
+                                    </Grid>
+                                );
+                            }
+                        },
+                    )}
                 </Grid>
 
                 {myApps.status === 'SUCCESS' && myApps.data.length > 0 ? (
@@ -438,6 +395,10 @@ export const AddAppSelectionPage = (props: AddAppSelectionPageProps) => {
                                     xl={3}
                                 >
                                     <StyledAppCard
+                                        disabled={
+                                            ADD_APP_STEPS['TEMPLATE_APP']
+                                                .disabled
+                                        }
                                         onClick={() => {
                                             const step = {
                                                 title: 'Template App',
@@ -452,6 +413,9 @@ export const AddAppSelectionPage = (props: AddAppSelectionPageProps) => {
                                             onSelect(step);
                                         }}
                                     >
+                                        <Avatar>
+                                            <BuildDb />
+                                        </Avatar>
                                         <Typography variant={'body1'}>
                                             {app.project_name}
                                         </Typography>
