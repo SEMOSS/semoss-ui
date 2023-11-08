@@ -6,6 +6,58 @@
 // Handles the View of or Text Editor alongside the App Explorer (Dir struct, Dependencies)
 // This needs to handle Adding of Folders and Files to projects, and editting contents of existing
 // --------------------
+
+// To-Do for Design Updates (from Jong figma):
+// https://www.figma.com/file/vlOC4OeAkxIVyu8Zmt7kWJ/Edit-App-with-Code-Editor?type=design&node-id=1-44800&mode=design&t=vfzXRBaaRWkin44v-0
+
+// General
+// * highlight for active tab icon dark gray not blue
+// * editor toggle green not blue
+// * get rid of empty white / gray bar under top navbar
+// * restyle download and share buttons
+// * restyle semoss icon
+// * remove SEMOSS text in top left
+// * add collapse caret
+
+// Code Editor (tab)
+// * background color of editor / collapse sidebar
+// * trash icon next to active file (or on hover?)
+// * add filetype icon to breadcrumb for active file
+// * breadcrumb not displaying filepath? ("AddPage.tsx / Link / Link")
+// * gray out far right element of bradcrumb
+// * no blue highlight / or any highlight for active file
+// * green success alert "Your file has been saved!"
+
+// Code Editor / Share Modal
+// * add save button next to cancel (functionality?)
+// * add "Rest API" tab / same styling as URL (tab content?)
+// * add "Rest API" tab / same styling as URL (tab content?)
+
+// Settings (tab)
+// * larger blue toggles
+// * larger border radius on text buttons
+// * add vertical column on left for icons
+// * change / restyle link icon
+// * restyle / blue color for publish button / no icon
+// * wrap update project filedrop and update button in paper
+
+// Access (tab)
+// * add user letter Avatar (gray) left of users
+// * add type of id and id under usernames
+// * widen permission column / match username width not including icon
+// * add blue trashcan icon on right of all users (reactor?)
+// * remove page "<>" arrows at bottom? unless needed maybe?
+// * no lines between users
+// * add / style pending permissions section (need dummy data - add manually in useState?, cant see currently?)
+
+// Add Member(s) Modal
+// * "Add Members" --> "Add Member"
+// * add magnifying glass icon to search on left
+// * get rid of gray background on users displayed in search bar
+// * get rid of user "x" in search bar, the x is in the user displays in middle stack
+// * remove outer gray div for permission cards / make Paper?
+
+// --------------------
 import React, { useEffect, useState, useRef } from 'react';
 import { useRootStore } from '@/hooks';
 import { TextEditor, ControlledFile, TextEditorCodeGeneration } from '../';
