@@ -1,8 +1,10 @@
 import { Command, Flags } from '@oclif/core';
 import { Env, Insight } from '@semoss/sdk';
-import { config, parse } from 'dotenv';
+import { config } from 'dotenv';
 import * as fs from 'node:fs';
 import Listr from 'listr';
+
+import { Config } from '../types.js';
 
 export default class Deploy extends Command {
     static description = 'Initialize a new app';
@@ -24,33 +26,56 @@ init (./src/commands/init.ts)
             char: 'n',
             description: 'Name of the project',
         }),
+        // config
+        config: Flags.string({
+            char: 'c',
+            description: 'Path to the configuration. Default is smss.json',
+        }),
     };
 
     public async run(): Promise<void> {
         const { flags } = await this.parse(Deploy);
 
-        // name of the app
-        const name = flags.name;
-        if (!name) {
-            throw new Error('Name is required');
-        }
         // path to the environment variables
         const envPath = flags.env ?? '.env';
 
-        // load the environment variables if it exists
+        // path to the config (optional)
+        const configPath = flags.config ?? 'smss.json';
+
+        // define the config
+        let configOptions: Config | null = null;
+
         try {
-            // load the dont env config file
+            // load the env
             config({ path: envPath });
+
+            // try to load the configOptions (optional)
+            try {
+                // load it
+                configOptions = JSON.parse(
+                    fs.readFileSync(configPath, 'utf8'),
+                ) as Config;
+            } catch (e) {
+                // noop
+            }
 
             // update the environment
             Env.update({
                 ACCESS_KEY: process.env.ACCESS_KEY,
-                APP: process.env.APP,
                 MODULE: process.env.MODULE,
                 SECRET_KEY: process.env.SECRET_KEY,
             });
         } catch (error) {
             this.error(error as Error);
+        }
+
+        // throw the error
+        const name =
+            configOptions && configOptions.name
+                ? configOptions.name
+                : flags.name;
+        if (!name) {
+            throw new Error('Name is required');
         }
 
         // check the environment
@@ -122,18 +147,23 @@ init (./src/commands/init.ts)
                         throw new Error('No App');
                     }
 
-                    const ENV_VARS = parse(fs.readFileSync(envPath, 'utf8'));
+                    let content = {
+                        app: '',
+                        name: '',
+                    };
 
-                    // set the Variable
-                    ENV_VARS['APP'] = context.APP;
+                    if (configOptions) {
+                        content = configOptions;
+                    }
 
-                    // construct the object
-                    const text = Object.keys(ENV_VARS)
-                        .map((k) => `${k}=${ENV_VARS[k]}`)
-                        .join('\n');
+                    content.app = context.APP;
+                    content.name = name;
 
                     // write it
-                    fs.writeFileSync(envPath, text);
+                    fs.writeFileSync(
+                        configPath,
+                        JSON.stringify(content, null, 4),
+                    );
 
                     return true;
                 },
