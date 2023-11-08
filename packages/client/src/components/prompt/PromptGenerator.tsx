@@ -49,7 +49,7 @@ const initialBuilder: Builder = {
     model: {
         step: 1,
         value: undefined,
-        required: false,
+        required: true,
         display: 'LLM',
     },
     context: {
