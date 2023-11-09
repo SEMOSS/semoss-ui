@@ -10,6 +10,7 @@ import {
 } from '../block-defaults.shared';
 
 import { ButtonBlockDef, ButtonBlock } from './ButtonBlock';
+import { SmartButton } from '@mui/icons-material';
 
 // export the config for the block
 export const config: BlockConfig<ButtonBlockDef> = {
@@ -23,6 +24,7 @@ export const config: BlockConfig<ButtonBlockDef> = {
     },
     slots: {},
     render: ButtonBlock,
+    icon: SmartButton,
     menu: [
         {
             name: 'Button',

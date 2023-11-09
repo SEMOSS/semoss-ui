@@ -74,6 +74,9 @@ export interface BlockConfig<D extends BlockDef = BlockDef> {
     /** Render the block */
     render: BlockComponent;
 
+    /** Icon to render in the builder sidebar */
+    icon: React.FunctionComponent;
+
     /** Settings Menu */
     menu: {
         name: string;

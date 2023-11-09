@@ -1,27 +1,26 @@
 import { observer } from 'mobx-react-lite';
-import { BlockJSON } from '@/stores';
+import { BlockConfig, BlockJSON } from '@/stores';
 
 import { AddMenuItem } from './AddMenuItem';
+import { DefaultBlocks } from '../block-defaults';
 
 export const AddMenu = observer(() => {
     return (
         <>
-            {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((idx) => {
+            {Object.keys(DefaultBlocks).map((key: any) => {
+                const { widget, data, slots, listeners, icon } =
+                    DefaultBlocks[key];
                 return (
                     <AddMenuItem
-                        key={idx}
-                        name={`Add ${idx}`}
+                        key={key}
+                        name={`Add ${key}`}
                         json={{
-                            widget: 'text',
-                            data: {
-                                style: {
-                                    display: 'block',
-                                },
-                                text: `Add ${idx}`,
-                            },
-                            slots: {} as BlockJSON['slots'],
-                            listeners: {},
+                            widget: widget,
+                            data: data,
+                            slots: (slots || {}) as BlockJSON['slots'],
+                            listeners: listeners || {},
                         }}
+                        icon={DefaultBlocks[key].icon}
                     />
                 );
             })}

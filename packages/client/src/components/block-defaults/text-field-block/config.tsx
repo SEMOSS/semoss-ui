@@ -2,6 +2,7 @@ import { BlockConfig } from '@/stores';
 import { InputTypeSettings, InputSettings } from '@/components/block-settings';
 
 import { TextFieldBlockDef, TextFieldBlock } from './TextFieldBlock';
+import { FormatShapes } from '@mui/icons-material';
 
 // export the config for the block
 export const config: BlockConfig<TextFieldBlockDef> = {
@@ -19,6 +20,7 @@ export const config: BlockConfig<TextFieldBlockDef> = {
         content: [],
     },
     render: TextFieldBlock,
+    icon: FormatShapes,
     menu: [
         {
             name: 'Text Field',

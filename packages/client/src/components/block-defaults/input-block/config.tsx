@@ -10,6 +10,7 @@ import {
 } from '../block-defaults.shared';
 
 import { InputBlockDef, InputBlock } from './InputBlock';
+import { SettingsInputComponent } from '@mui/icons-material';
 
 // export the config for the block
 export const config: BlockConfig<InputBlockDef> = {
@@ -27,6 +28,7 @@ export const config: BlockConfig<InputBlockDef> = {
         content: [],
     },
     render: InputBlock,
+    icon: SettingsInputComponent,
     menu: [
         {
             name: 'Input',

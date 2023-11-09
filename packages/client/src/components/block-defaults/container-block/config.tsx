@@ -10,6 +10,7 @@ import {
 } from '../block-defaults.shared';
 
 import { ContainerBlockDef, ContainerBlock } from './ContainerBlock';
+import { FormatShapes } from '@mui/icons-material';
 
 // export the config for the block
 export const config: BlockConfig<ContainerBlockDef> = {
@@ -25,6 +26,7 @@ export const config: BlockConfig<ContainerBlockDef> = {
         children: [],
     },
     render: ContainerBlock,
+    icon: FormatShapes,
     menu: [
         {
             name: 'Layout',

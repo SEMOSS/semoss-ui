@@ -1,20 +1,29 @@
 import { useState, useEffect, useCallback } from 'react';
 import { observer } from 'mobx-react-lite';
-import { styled } from '@semoss/ui';
+import { Icon, Stack, styled, Typography } from '@semoss/ui';
 
 import { ActionMessages, BlockJSON } from '@/stores';
 import { useDesigner } from '@/hooks';
+import { BarChartOutlined } from '@mui/icons-material';
 
 const StyledMenuItem = styled('div')(({ theme }) => ({
     ...theme.typography.subtitle2,
     display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
+    // alignItems: 'center',
+    // justifyContent: 'center',
     height: theme.spacing(8),
     width: '100%',
     cursor: 'move',
     borderWidth: '1px',
     borderColor: theme.palette.grey['700'],
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'flex-end',
+    paddingTop: theme.spacing(1.5),
+    paddingRight: theme.spacing(1),
+    paddingBottom: theme.spacing(1.5),
+    paddingLeft: theme.spacing(2),
+    gap: theme.spacing(1),
     '&:hover': {
         backgroundColor: theme.palette.primary.light,
     },
@@ -26,10 +35,11 @@ interface AddMenuItemProps {
 
     /** Data of the Widget */
     json: BlockJSON;
+    icon: any;
 }
 
 export const AddMenuItem = observer((props: AddMenuItemProps) => {
-    const { name, json } = props;
+    const { name, json, icon: BlockIcon } = props;
 
     const { designer } = useDesigner();
 
@@ -135,6 +145,19 @@ export const AddMenuItem = observer((props: AddMenuItemProps) => {
     }, [designer.drag.active, local, handleDocumentMouseUp]);
 
     return (
-        <StyledMenuItem onMouseDown={handleMouseDown}>{name}</StyledMenuItem>
+        <StyledMenuItem onMouseDown={handleMouseDown}>
+            <Icon fontSize="medium">{<BlockIcon />}</Icon>
+            <Stack flex={'1'} direction="row" alignItems={'center'}>
+                <Typography
+                    variant="body1"
+                    fontWeight="regular"
+                    sx={{
+                        flex: '1',
+                    }}
+                >
+                    {name}
+                </Typography>
+            </Stack>
+        </StyledMenuItem>
     );
 });

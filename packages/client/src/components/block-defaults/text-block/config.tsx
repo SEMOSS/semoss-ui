@@ -9,6 +9,7 @@ import {
 } from '../block-defaults.shared';
 
 import { TextBlockDef, TextBlock } from './TextBlock';
+import { FormatShapes } from '@mui/icons-material';
 
 // export the config for the block
 export const config: BlockConfig<TextBlockDef> = {
@@ -22,6 +23,7 @@ export const config: BlockConfig<TextBlockDef> = {
         test: [],
     },
     render: TextBlock,
+    icon: FormatShapes,
     menu: [
         {
             name: 'Content',

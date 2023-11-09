@@ -21,7 +21,7 @@ export const ButtonBlock: BlockComponent = observer(({ id }) => {
 
     return (
         <Button
-            style={{
+            sx={{
                 ...data.style,
             }}
             onClick={() => {
