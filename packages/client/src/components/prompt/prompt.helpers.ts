@@ -153,7 +153,7 @@ export const PROMPT_BASE_BLOCKS: Record<string, Block> = {
         },
         data: {
             style: {},
-            text: `{{${PROMPT_RESPONSE_BLOCK_ID}.data.response ?? ''}}`,
+            text: `{{${PROMPT_QUERY_ID}.data.response}}`,
         },
         listeners: {},
         slots: {},
@@ -223,7 +223,7 @@ export function getQueryForPrompt(
     tokens.forEach((token: Token) => {
         if (token.type === TOKEN_TYPE_TEXT) {
             tokenStrings.push(token.display);
-        } else {
+        } else if (!token.isHiddenPhraseInputToken) {
             // do this to preserve punctuation attached to the token from the prompt
             const inputTokenParts = token.display.split(
                 new RegExp(`(${token.key})`),

@@ -25,8 +25,6 @@ export const ButtonBlock: BlockComponent = observer(({ id }) => {
                 ...data.style,
             }}
             onClick={() => {
-                console.log('click');
-                // trigger the listeners
                 listeners.onClick();
             }}
             {...attrs}
