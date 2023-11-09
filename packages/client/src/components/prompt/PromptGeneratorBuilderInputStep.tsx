@@ -125,15 +125,7 @@ export function PromptGeneratorBuilderInputStep(props: {
         const selectedInputTokensCopy = [...selectedInputTokens];
         const index = selectedInputTokensCopy.indexOf(tokenIndex);
         // item is not the first or last item, make the selections no longer consectutive
-        if (
-            index > 0 &&
-            (index !== 0 || index !== selectedInputTokens.length - 1)
-        ) {
-            // reset the value on the phrase input to a single word
-            if (selectedInputTokensCopy.length > 1) {
-                const originalWord = tokens[tokenIndex].value.split(' ')[0];
-                setTokenDisplay(selectedInputTokensCopy[0].key, originalWord);
-            }
+        if (index !== 0 && index !== selectedInputTokens.length - 1) {
             setSelectedInputTokens([]);
         } else if (index === 0 && selectedInputTokens.length) {
             // token is first item on phrase
