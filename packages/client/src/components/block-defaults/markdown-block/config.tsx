@@ -8,30 +8,34 @@ import {
     buildTypographySection,
 } from '../block-defaults.shared';
 
-import { TextBlockDef, TextBlock } from './TextBlock';
-import { TextFields } from '@mui/icons-material';
+import { MarkdownBlockDef, MarkdownBlock } from './Markdown';
+import { FormatListBulleted } from '@mui/icons-material';
 
 // export the config for the block
-export const config: BlockConfig<TextBlockDef> = {
-    widget: 'text',
+export const config: BlockConfig<MarkdownBlockDef> = {
+    widget: 'markdown',
     data: {
         style: {},
-        text: 'Hello world',
+        markdown: '**Hello world**',
     },
     listeners: {},
     slots: {
         test: [],
     },
-    render: TextBlock,
-    icon: TextFields,
+    render: MarkdownBlock,
+    icon: FormatListBulleted,
     menu: [
         {
             name: 'Content',
             children: [
                 {
-                    description: 'Text',
+                    description: 'Markdown',
                     render: ({ id }) => (
-                        <InputSettings id={id} label="Text" path="text" />
+                        <InputSettings
+                            id={id}
+                            label="Markdown"
+                            path="markdown"
+                        />
                     ),
                 },
             ],

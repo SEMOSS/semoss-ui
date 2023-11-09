@@ -12,6 +12,10 @@ import {
     config as TextFieldBlockConfig,
     TextFieldBlockDef,
 } from './text-field-block';
+import {
+    config as MarkdownBlockConfig,
+    MarkdownBlockDef,
+} from './markdown-block';
 
 export type DefaultBlockDefinitions =
     | ButtonBlockDef
@@ -19,7 +23,8 @@ export type DefaultBlockDefinitions =
     | InputBlockDef
     | PageBlockDef
     | TextBlockDef
-    | TextFieldBlockDef;
+    | TextFieldBlockDef
+    | MarkdownBlockDef;
 
 export const DefaultBlocks: Registry<DefaultBlockDefinitions> = {
     [ButtonBlockConfig.widget]: ButtonBlockConfig,
@@ -28,4 +33,5 @@ export const DefaultBlocks: Registry<DefaultBlockDefinitions> = {
     [PageBlockConfig.widget]: PageBlockConfig,
     [TextBlockConfig.widget]: TextBlockConfig,
     [TextFieldBlockConfig.widget]: TextFieldBlockConfig,
+    [MarkdownBlockConfig.widget]: MarkdownBlockConfig,
 };
