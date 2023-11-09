@@ -12,7 +12,7 @@ export const Overlay = observer((): JSX.Element => {
     return (
         <Modal
             fullWidth={true}
-            maxWidth={'xl'}
+            maxWidth={'md'}
             open={designer.overlay.open}
             onClose={() => {
                 designer.closeOverlay();

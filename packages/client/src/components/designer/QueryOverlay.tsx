@@ -1,6 +1,13 @@
 import { useEffect } from 'react';
 import { observer } from 'mobx-react-lite';
-import { styled, Stack, TextField, Modal, Button } from '@semoss/ui';
+import {
+    styled,
+    Stack,
+    TextField,
+    Modal,
+    Button,
+    Typography,
+} from '@semoss/ui';
 import { Controller, useForm } from 'react-hook-form';
 import Editor from '@monaco-editor/react';
 
@@ -38,10 +45,17 @@ export const QueryOverlay = observer(
         const { designer } = useDesigner();
 
         // track if it is a new query
-        const isNew = !!id;
+        const isNew = !id;
 
         // create a new form
-        const { control, reset, handleSubmit } = useForm<EditQueryForm>({
+        const {
+            control,
+            reset,
+            handleSubmit,
+            clearErrors,
+            setError,
+            formState: { errors },
+        } = useForm<EditQueryForm>({
             defaultValues: {
                 ID: '',
                 QUERY: '',
@@ -70,14 +84,21 @@ export const QueryOverlay = observer(
          * Allow the user to login
          */
         const onSubmit = handleSubmit((data: EditQueryForm) => {
+            clearErrors();
             if (!data.ID || !data.QUERY) {
-                console.error('ERROR: ID and Query are required');
+                setError(`${!data.ID ? 'ID' : 'QUERY'}`, {
+                    type: 'manual',
+                    message: `Query${!data.ID ? ' ID' : ''} is required`,
+                });
                 return;
             }
 
             // validate the name if it is new
             if (isNew && (state.queries[data.ID] || state.blocks[data.ID])) {
-                console.error(`ERROR: ${data.ID}} already exists`);
+                setError('ID', {
+                    type: 'manual',
+                    message: `Query with ID ${data.ID} already exists`,
+                });
                 return;
             }
 
@@ -114,18 +135,21 @@ export const QueryOverlay = observer(
             <>
                 <Modal.Title>{isNew ? 'New Query' : 'Edit Query'}</Modal.Title>
                 <Modal.Content>
-                    <Stack>
+                    <Stack marginTop={1}>
                         <Controller
                             name={'ID'}
                             control={control}
                             render={({ field }) => {
                                 return (
                                     <TextField
+                                        error={!!errors?.ID?.message}
                                         label="Id"
                                         value={field.value ? field.value : ''}
-                                        onChange={(value) =>
-                                            field.onChange(value)
-                                        }
+                                        onChange={(value) => {
+                                            clearErrors();
+                                            field.onChange(value);
+                                        }}
+                                        helperText={errors?.ID?.message}
                                     />
                                 );
                             }}
@@ -135,27 +159,46 @@ export const QueryOverlay = observer(
                             control={control}
                             render={({ field }) => {
                                 return (
-                                    <StyledEditor
-                                        height="300px"
-                                        defaultLanguage="plaintext"
-                                        value={field.value ? field.value : ''}
-                                        onChange={(value) =>
-                                            field.onChange(value)
-                                        }
-                                    />
+                                    <>
+                                        <StyledEditor
+                                            height="300px"
+                                            defaultLanguage="plaintext"
+                                            value={
+                                                field.value ? field.value : ''
+                                            }
+                                            onChange={(value) => {
+                                                clearErrors();
+                                                field.onChange(value);
+                                            }}
+                                        />
+                                        {errors?.QUERY?.message ? (
+                                            <Typography
+                                                color="error"
+                                                variant="caption"
+                                            >
+                                                {errors.QUERY.message}
+                                            </Typography>
+                                        ) : (
+                                            <></>
+                                        )}
+                                    </>
                                 );
                             }}
                         />
                     </Stack>
                 </Modal.Content>
                 <Modal.Actions>
-                    <Button
-                        type="button"
-                        color={'error'}
-                        onClick={() => onDelete()}
-                    >
-                        Delete
-                    </Button>
+                    {isNew ? (
+                        <></>
+                    ) : (
+                        <Button
+                            type="button"
+                            color="error"
+                            onClick={() => onDelete()}
+                        >
+                            Delete
+                        </Button>
+                    )}
                     <StyledSpacer />
                     <Button
                         variant="text"
@@ -163,7 +206,14 @@ export const QueryOverlay = observer(
                     >
                         Cancel
                     </Button>
-                    <Button onClick={() => onSubmit()}>Submit</Button>
+                    <Button
+                        disabled={
+                            !!errors?.ID?.message || !!errors?.QUERY?.message
+                        }
+                        onClick={() => onSubmit()}
+                    >
+                        Submit
+                    </Button>
                 </Modal.Actions>
             </>
         );

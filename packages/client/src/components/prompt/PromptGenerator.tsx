@@ -62,7 +62,7 @@ const initialBuilder: Builder = {
     inputs: {
         step: 2,
         value: undefined,
-        required: false,
+        required: true,
         display: 'Input',
     },
     inputTypes: {

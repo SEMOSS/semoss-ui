@@ -7,10 +7,11 @@ import {
     Divider,
     TextField,
     IconButton,
-    Stack,
+    InputAdornment,
 } from '@semoss/ui';
+import { ListItemText } from '@mui/material'; // need this component because primaryTypographyProps not exposed on semoss/ui List
 import { useBlocks, useDesigner } from '@/hooks';
-import { Add, Edit } from '@mui/icons-material';
+import { Add, Search } from '@mui/icons-material';
 
 import { QueryOverlay } from './QueryOverlay';
 
@@ -45,6 +46,7 @@ const StyledMenuScroll = styled('div')(({ theme }) => ({
 
 const StyledJson = styled('pre')(({ theme }) => ({
     ...theme.typography.caption,
+    textWrap: 'wrap',
 }));
 
 /**
@@ -77,7 +79,7 @@ export const QueryMenu = observer((): JSX.Element => {
 
     // get the renderedQueries
     const renderedQueries = useMemo(() => {
-        if (querySearch) {
+        if (!querySearch) {
             return queries;
         }
 
@@ -104,7 +106,7 @@ export const QueryMenu = observer((): JSX.Element => {
 
     // get the renderedBlocks
     const renderedBlocks = useMemo(() => {
-        if (blockSearch) {
+        if (!blockSearch) {
             return blocks;
         }
 
@@ -135,6 +137,13 @@ export const QueryMenu = observer((): JSX.Element => {
                     sx={{
                         flex: '1',
                     }}
+                    InputProps={{
+                        endAdornment: (
+                            <InputAdornment position="start">
+                                <Search />
+                            </InputAdornment>
+                        ),
+                    }}
                 />
                 <IconButton
                     size="small"
@@ -151,27 +160,25 @@ export const QueryMenu = observer((): JSX.Element => {
                 <List>
                     {renderedQueries.map((q) => {
                         return (
-                            <List.Item
+                            <List.ItemButton
                                 key={q.id}
                                 dense={true}
-                                secondaryAction={
-                                    <IconButton
-                                        color="default"
-                                        onClick={() => {
-                                            openQueryOverlay(q.id);
-                                        }}
-                                    >
-                                        <Edit />
-                                    </IconButton>
-                                }
+                                onClick={() => {
+                                    openQueryOverlay(q.id);
+                                }}
                             >
                                 <div>
-                                    <List.ItemText primary={q.id} />
+                                    <ListItemText
+                                        primary={q.id}
+                                        primaryTypographyProps={{
+                                            fontWeight: 'bold',
+                                        }}
+                                    />
                                     <StyledJson>
                                         {JSON.stringify(q, null, 2)}
                                     </StyledJson>
                                 </div>
-                            </List.Item>
+                            </List.ItemButton>
                         );
                     })}
                 </List>
@@ -187,6 +194,13 @@ export const QueryMenu = observer((): JSX.Element => {
                     sx={{
                         flex: '1',
                     }}
+                    InputProps={{
+                        endAdornment: (
+                            <InputAdornment position="start">
+                                <Search />
+                            </InputAdornment>
+                        ),
+                    }}
                 />
             </StyledMenuHeader>
             <Divider />
@@ -196,7 +210,12 @@ export const QueryMenu = observer((): JSX.Element => {
                         return (
                             <List.Item key={b.id} dense={true}>
                                 <div>
-                                    <List.ItemText primary={b.id} />
+                                    <ListItemText
+                                        primary={b.id}
+                                        primaryTypographyProps={{
+                                            fontWeight: 'bold',
+                                        }}
+                                    />
                                     <StyledJson>
                                         {JSON.stringify(b.data, null, 2)}
                                     </StyledJson>
