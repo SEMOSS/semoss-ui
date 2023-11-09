@@ -5,6 +5,7 @@ import {
     getQueryForPrompt,
     PROMPT_BASE_BLOCKS,
     PROMPT_CONTAINER_BLOCK_ID,
+    APP_TITLE_BLOCK_ID,
 } from './prompt.helpers';
 import {
     Builder,
@@ -12,7 +13,7 @@ import {
     ConstraintSettings,
     Token,
 } from './prompt.types';
-import { ActionMessages, Block, Query, StateStore } from '@/stores';
+import { ActionMessages, Block, StateStore } from '@/stores';
 import { styled, Box, Button, Grid, Paper } from '@mui/material';
 import { PromptGeneratorBuilderConstraintsStep } from './PromptGeneratorBuilderConstraintsStep';
 import { PromptGeneratorBuilderInputStep } from './PromptGeneratorBuilderInputStep';
@@ -87,6 +88,7 @@ function setBlocksAndOpenBuilder(
     let blocks: Record<string, Block> = JSON.parse(
         JSON.stringify(PROMPT_BASE_BLOCKS),
     );
+    blocks[APP_TITLE_BLOCK_ID].data.text = builder.title.value;
     // inputs
     let childInputIds = [];
     for (const [tokenIndex, inputType] of Object.entries(

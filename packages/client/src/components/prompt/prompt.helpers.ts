@@ -146,14 +146,14 @@ export const PROMPT_BASE_BLOCKS: Record<string, Block> = {
     },
     [PROMPT_RESPONSE_BLOCK_ID]: {
         id: PROMPT_RESPONSE_BLOCK_ID,
-        widget: 'text',
+        widget: 'markdown',
         parent: {
             id: PROMPT_CONTAINER_BLOCK_ID,
             slot: 'children',
         },
         data: {
             style: {},
-            text: `{{${PROMPT_QUERY_ID}.data.response}}`,
+            markdown: `{{${PROMPT_QUERY_ID}.data.response}}`,
         },
         listeners: {},
         slots: {},
@@ -244,7 +244,7 @@ export function getQueryForPrompt(
             error: null,
             query: `LLM(engine=["${model}"], command=["<encode>${tokenStrings.join(
                 ' ',
-            )}</encode>"]);`,
+            )} Generate the response as markdown.</encode>"]);`,
             data: {
                 response: 'Fill out the inputs to generate a response.',
             },
