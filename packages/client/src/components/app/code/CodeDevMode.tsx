@@ -115,6 +115,7 @@ export const CodeDevMode = observer(() => {
         <StyledTopPanel
             sx={{
                 height: '100%',
+                paddingTop: '0',
             }}
         >
             <StyledLeftPanel sx={{ width: leftPanelWidth }}>

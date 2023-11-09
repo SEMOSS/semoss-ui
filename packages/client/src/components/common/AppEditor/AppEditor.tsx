@@ -10,7 +10,7 @@
 // To-Do for Design Updates (from Jong figma):
 // https://www.figma.com/file/vlOC4OeAkxIVyu8Zmt7kWJ/Edit-App-with-Code-Editor?type=design&node-id=1-44800&mode=design&t=vfzXRBaaRWkin44v-0
 
-// General
+// Navbar
 // * highlight for active tab icon dark gray not blue
 // * editor toggle green not blue
 // * get rid of empty white / gray bar under top navbar
@@ -77,6 +77,12 @@ import {
     Typography,
 } from '@semoss/ui';
 
+// import {
+//     Icon as FiletypeIcon,
+// } from '@semoss/components';
+
+import { Icon as FiletypeIcon } from '@mdi/react';
+
 import {
     AutoAwesome,
     ContentCopyOutlined,
@@ -86,6 +92,7 @@ import {
     KeyboardDoubleArrowRight,
     CreateNewFolderOutlined,
     NoteAddOutlined,
+    mdiCodeTags,
 } from '@mui/icons-material/';
 
 const StyledEditorPanel = styled('div')(({ theme }) => ({
@@ -1264,6 +1271,7 @@ export const AppEditor = (props: AppEditorProps) => {
                     width: openAppAssetsPanel
                         ? 'calc(100% - 50px - 250px)'
                         : 'calc(100% - 50px)',
+                    backgroundColor: '#fff',
                 }}
             >
                 <TextEditor
