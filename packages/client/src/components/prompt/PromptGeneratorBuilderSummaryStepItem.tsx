@@ -1,4 +1,5 @@
-import { Builder, BuilderStepItem } from './prompt.types';
+import { TOKEN_TYPE_INPUT } from './prompt.constants';
+import { Builder, BuilderStepItem, Token } from './prompt.types';
 import { List, ListItem, ListItemText } from '@mui/material';
 
 interface BuilderStepItemProps {
@@ -15,6 +16,31 @@ export function PromptGeneratorBuilderSummaryStepItem(
         },
     );
 
+    const isStepItemComplete = (item: BuilderStepItem) => {
+        switch (item.step) {
+            case 2:
+                // input step - need at least one input
+                if (!item.value) {
+                    return false;
+                }
+                return (item.value as Token[]).some((token: Token) => {
+                    return token.type === TOKEN_TYPE_INPUT;
+                });
+            case 3:
+                // input type step - types should not be null
+                if (!item.value) {
+                    return false;
+                }
+                return Object.values(item.value).every(
+                    (type: string | null) => {
+                        return !!type;
+                    },
+                );
+            default:
+                return !!item.value;
+        }
+    };
+
     return (
         <List component="div">
             {Array.from(stepItemsForSummaryStep, (item: BuilderStepItem, i) => (
@@ -24,7 +50,7 @@ export function PromptGeneratorBuilderSummaryStepItem(
                         secondary={
                             !item.required
                                 ? 'Optional'
-                                : !!item.value
+                                : isStepItemComplete(item)
                                 ? 'Complete'
                                 : 'In Progress'
                         }

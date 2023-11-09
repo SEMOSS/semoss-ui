@@ -13,9 +13,10 @@ import {
     ConstraintSettings,
     Token,
 } from './prompt.types';
+import { TOKEN_TYPE_INPUT } from './prompt.constants';
 import { ActionMessages, Block, StateStore } from '@/stores';
 import { styled, Box, Button, Grid, Paper } from '@mui/material';
-import { PromptGeneratorBuilderConstraintsStep } from './PromptGeneratorBuilderConstraintsStep';
+// import { PromptGeneratorBuilderConstraintsStep } from './PromptGeneratorBuilderConstraintsStep';
 import { PromptGeneratorBuilderInputStep } from './PromptGeneratorBuilderInputStep';
 import { PromptGeneratorBuilderInputTypeStep } from './PromptGeneratorBuilderInputTypeStep';
 import { PromptGeneratorBuilderPreviewStep } from './PromptGeneratorBuilderPreviewStep';
@@ -163,19 +164,6 @@ export function PromptGenerator(props: { onSuccess: () => void }) {
         }));
     };
 
-    const isCurrentBuilderStepComplete = () => {
-        return Object.values(builder)
-            .filter((builderStepItem: BuilderStepItem) => {
-                return (
-                    builderStepItem.step === currentBuilderStep &&
-                    builderStepItem.required
-                );
-            })
-            .every((builderStepItem: BuilderStepItem) => {
-                return !!builderStepItem.value;
-            });
-    };
-
     const nextButtonText =
         currentBuilderStep < 3
             ? 'Next'
@@ -187,6 +175,41 @@ export function PromptGenerator(props: { onSuccess: () => void }) {
         currentBuilderStep === 4
             ? setBlocksAndOpenBuilder(builder, navigate, props.onSuccess)
             : changeBuilderStep(currentBuilderStep + 1);
+    };
+
+    const isCurrentBuilderStepComplete = () => {
+        const stepItems = Object.values(builder).filter(
+            (builderStepItem: BuilderStepItem) => {
+                return (
+                    builderStepItem.step === currentBuilderStep &&
+                    builderStepItem.required
+                );
+            },
+        );
+        switch (currentBuilderStep) {
+            case 2:
+                // input step - need at least one input
+                if (!stepItems[0].value) {
+                    return false;
+                }
+                return stepItems[0].value.some((token: Token) => {
+                    return token.type === TOKEN_TYPE_INPUT;
+                });
+            case 3:
+                // input type step - types should not be null
+                if (!stepItems[0].value) {
+                    return false;
+                }
+                return Object.values(stepItems[0].value).every(
+                    (type: string | null) => {
+                        return !!type;
+                    },
+                );
+            default:
+                return stepItems.every((builderStepItem: BuilderStepItem) => {
+                    return !!builderStepItem.value;
+                });
+        }
     };
 
     return (
