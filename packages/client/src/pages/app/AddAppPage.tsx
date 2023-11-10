@@ -1,5 +1,4 @@
-import React, { useState } from 'react';
-import { ArrowBack } from '@mui/icons-material';
+import { useState } from 'react';
 
 import {
     Avatar,
@@ -8,8 +7,6 @@ import {
     Card,
     Chip,
     Grid,
-    Icon,
-    Stack,
     Typography,
     styled,
 } from '@semoss/ui';
@@ -23,12 +20,13 @@ import {
 } from '@/components/app';
 import { PromptGenerator } from '@/components/prompt';
 
-import { Page, LoadingScreen } from '@/components/ui';
+import { LoadingScreen } from '@/components/ui';
 
-import { Link, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { useStepper, useRootStore, usePixel } from '@/hooks';
 
 import { APP_STEP_INTERFACE, ADD_APP_STEPS } from './add-app.constants';
+import { AppShortcut } from '@mui/icons-material';
 import { BuildDb } from '@/assets/img/BuildDb';
 
 const StyledContainer = styled('div')(({ theme }) => ({
@@ -171,26 +169,34 @@ export const AddAppPage = () => {
             {/* Step 1 */}
             {/* All Import Workflows: Get Metadata, and import type specific properties */}
             {steps.length === 1 ? (
-                <ImportAppForm
-                    data={steps[0].data}
-                    onCreate={(appId) => {
-                        setAppId(appId);
+                steps[0].data.type === 'PROMPT_BUILDER' ? (
+                    <PromptGenerator
+                        onSuccess={() => {
+                            console.warn('navigate to app page');
+                        }}
+                    />
+                ) : (
+                    <ImportAppForm
+                        data={steps[0].data}
+                        onCreate={(appId) => {
+                            setAppId(appId);
 
-                        const stepWithAppId = {
-                            title: 'Access',
-                            description:
-                                'Retrieve Access Permissions for newly added app',
-                            stepInProcess: 1,
-                            data: {
-                                type: 'Import App',
-                                title: 'Import App',
-                                options: appId,
-                            },
-                        };
+                            const stepWithAppId = {
+                                title: 'Access',
+                                description:
+                                    'Retrieve Access Permissions for newly added app',
+                                stepInProcess: 1,
+                                data: {
+                                    type: 'Import App',
+                                    title: 'Import App',
+                                    options: appId,
+                                },
+                            };
 
-                        setSteps([...steps, stepWithAppId], steps.length);
-                    }}
-                />
+                            setSteps([...steps, stepWithAppId], steps.length);
+                        }}
+                    />
+                )
             ) : null}
 
             {/* Step 2:  App has been created and we now have an App Id */}
@@ -341,15 +347,13 @@ export const AddAppSelectionPage = (props: AddAppSelectionPageProps) => {
                 <Grid container columnSpacing={3} rowSpacing={3}>
                     {Object.entries(ADD_APP_STEPS).map(
                         (kv: [string, APP_STEP_INTERFACE]) => {
-                            console.log(kv);
-                            if (kv[0] !== 'IMPORT_APP') {
+                            if (kv[0] !== 'IMPORT_APP' && !kv[1].disabled) {
                                 return (
                                     <Grid
                                         item
                                         sm={12}
                                         md={4}
                                         lg={3}
-                                        xl={3}
                                         key={kv[0]}
                                     >
                                         <StyledBuilderCard
@@ -384,7 +388,7 @@ export const AddAppSelectionPage = (props: AddAppSelectionPageProps) => {
                     )}
                 </Grid>
 
-                {myApps.status === 'SUCCESS' && myApps.data.length > 0 ? (
+                {/*myApps.status === 'SUCCESS' && myApps.data.length > 0 ? (
                     <Grid container columnSpacing={3} rowSpacing={3}>
                         {myApps.data.map((app) => {
                             return (
@@ -398,8 +402,7 @@ export const AddAppSelectionPage = (props: AddAppSelectionPageProps) => {
                                 >
                                     <StyledAppCard
                                         disabled={
-                                            ADD_APP_STEPS['TEMPLATE_APP']
-                                                .disabled
+                                            false
                                         }
                                         onClick={() => {
                                             if (
@@ -421,20 +424,20 @@ export const AddAppSelectionPage = (props: AddAppSelectionPageProps) => {
                                         }}
                                     >
                                         <Avatar>
-                                            <BuildDb />
+                                            <AppShortcut />
                                         </Avatar>
                                         <Typography variant={'body1'}>
                                             {app.project_name}
                                         </Typography>
-                                        <Typography variant={'caption'}>
+                                        {<Typography variant={'caption'}>
                                             {app.project_id}
-                                        </Typography>
+                                        </Typography>}
                                     </StyledAppCard>
                                 </Grid>
                             );
                         })}
                     </Grid>
-                ) : null}
+                ) : null */}
             </StyledContent>
         </StyledContainer>
     );

@@ -46,7 +46,6 @@ export const ADD_APP_STEPS = {
         description:
             'Define purpose, research market, design UI/UX, choose front-end framework (React, AngularJs, Vue), develop responsive UI components, integrate APIs, test rigorously, ensure security, deploy, monitor, gather feedback, iterate, and launch for a dynamic and visually engaging app.',
         disabled: true,
-
         steps: [
             {
                 name: 'metavals',
@@ -66,20 +65,7 @@ export const ADD_APP_STEPS = {
         title: 'Prompt Builder',
         description:
             'Empower your web design journey with our innovative UI Builder, responding to the prompt to create visually stunning websites effortlessly.  This intuitive platform allows you to design pixel-perfect layouts, customize interactions, and bring ideas to life seamlessly, all while freeing you from code constraints',
-        steps: [
-            {
-                name: 'metavals',
-                title: 'Details',
-            },
-            {
-                name: 'access',
-                title: 'Access',
-            },
-            {
-                name: 'prompt',
-                title: 'Prompt',
-            },
-        ],
+        steps: [],
     },
     UI_BUILDER: {
         title: 'UI Builder',

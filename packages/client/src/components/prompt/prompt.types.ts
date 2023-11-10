@@ -15,13 +15,22 @@ export interface Token {
 }
 export interface BuilderStepItem {
     step: number;
-    value: string | Token[] | ConstraintSettings | object | undefined;
+    value:
+        | string
+        | string[]
+        | Token[]
+        | ConstraintSettings
+        | object
+        | undefined;
     required: boolean;
     display: string;
 }
 export interface Builder {
+    title: BuilderStepItem;
+    tags: BuilderStepItem;
+    model: BuilderStepItem;
     context: BuilderStepItem;
     inputs: BuilderStepItem;
     inputTypes: BuilderStepItem;
-    constraints: BuilderStepItem;
+    // constraints: BuilderStepItem;
 }

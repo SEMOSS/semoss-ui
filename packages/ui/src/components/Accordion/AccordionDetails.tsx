@@ -13,7 +13,9 @@ export type AccordionDetailsProps = {
     sx?: SxProps;
 };
 export const AccordionDetails = (props: AccordionDetailsProps) => {
+    const { children, ...otherProps } = props;
+
     return (
-        <MuiAccordionDetails {...props}>{props.children}</MuiAccordionDetails>
+        <MuiAccordionDetails {...otherProps}>{children}</MuiAccordionDetails>
     );
 };
