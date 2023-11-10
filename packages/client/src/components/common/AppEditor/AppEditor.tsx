@@ -9,6 +9,7 @@
 
 // To-Do for Design Updates (from Jong figma):
 // https://www.figma.com/file/vlOC4OeAkxIVyu8Zmt7kWJ/Edit-App-with-Code-Editor?type=design&node-id=1-44800&mode=design&t=vfzXRBaaRWkin44v-0
+// http://localhost:9090/semoss-ui/packages/client/dist/#/app/8ef8d4f9-5f6c-46c0-b345-bac797e53333
 
 // Navbar
 // * highlight for active tab icon dark gray not blue
@@ -100,7 +101,8 @@ const StyledEditorPanel = styled('div')(({ theme }) => ({
     flexDirection: 'row',
     width: '100%',
     height: '100%',
-    backgroundColor: theme.palette.secondary.light,
+    // backgroundColor: theme.palette.secondary.light,
+    backgroundColor: '#fff',
 }));
 
 const StyledCollapseTrigger = styled('div')(({ theme }) => ({
@@ -108,6 +110,8 @@ const StyledCollapseTrigger = styled('div')(({ theme }) => ({
     width: '50px',
     backgroundColor: theme.palette.secondary.light,
     padding: theme.spacing(1),
+    display: 'absolute',
+    transition: 'margin-left 0.3s ease',
 }));
 
 const StyledOpenAssetsContainer = styled('div')(({ theme }) => ({
@@ -117,12 +121,19 @@ const StyledOpenAssetsContainer = styled('div')(({ theme }) => ({
 const StyledCollapse = styled(Collapse)(({ theme }) => ({
     paddingTop: theme.spacing(1),
     paddingBottom: theme.spacing(1),
+    // display: "absolute",
+    // marginRight: "-65px",
+    // width: '500px',
+    // border: "2px solid pink",
+    backgroundColor: theme.palette.secondary.light,
 }));
 
 const StyledCollapseContainer = styled('div')(({ theme }) => ({
+    // border: "2px solid blue",
     display: 'flex',
     flexDirection: 'column',
     width: '250px',
+    // width: '350px',
     height: '100%',
     paddingTop: theme.spacing(1),
     paddingBottom: theme.spacing(2),
@@ -1085,42 +1096,16 @@ export const AppEditor = (props: AppEditorProps) => {
 
     return (
         <StyledEditorPanel>
-            {/* Collapse Trigger Container */}
-            <StyledCollapseTrigger
-                sx={{
-                    boxShadow: !openAppAssetsPanel
-                        ? '5px 0 5px -2px rgba(0, 0, 0, 0.04)'
-                        : 'none',
-                }}
-            >
-                <StyledOpenAssetsContainer>
-                    {openAppAssetsPanel ? (
-                        <IconButton
-                            size="small"
-                            onClick={() => {
-                                setOpenAppAssetsPanel(false);
-                            }}
-                        >
-                            <KeyboardDoubleArrowLeft />
-                        </IconButton>
-                    ) : (
-                        <IconButton
-                            size="small"
-                            onClick={() => {
-                                setOpenAppAssetsPanel(true);
-                            }}
-                        >
-                            <KeyboardDoubleArrowRight />
-                        </IconButton>
-                    )}
-                </StyledOpenAssetsContainer>
-            </StyledCollapseTrigger>
-
             {/* If Open: Displays App Explorer */}
             <StyledCollapse
                 in={openAppAssetsPanel}
                 timeout="auto"
                 orientation={'horizontal'}
+                // style={{
+                //     border: "2px solid green",
+                //     display: "absolute",
+                //     marginRight: "-65px"
+                // }}
             >
                 {/* <AppExplorer
                     directory={appDirectory}
@@ -1263,6 +1248,38 @@ export const AppEditor = (props: AppEditorProps) => {
                     )}
                 </StyledCollapseContainer>
             </StyledCollapse>
+
+            {/* Collapse Trigger Container -- new position */}
+            <StyledCollapseTrigger
+                sx={{
+                    boxShadow: !openAppAssetsPanel
+                        ? '5px 0 5px -2px rgba(0, 0, 0, 0.04)'
+                        : 'none',
+                    marginLeft: openAppAssetsPanel ? '-60px' : '0',
+                }}
+            >
+                <StyledOpenAssetsContainer>
+                    {openAppAssetsPanel ? (
+                        <IconButton
+                            size="small"
+                            onClick={() => {
+                                setOpenAppAssetsPanel(false);
+                            }}
+                        >
+                            <KeyboardDoubleArrowLeft />
+                        </IconButton>
+                    ) : (
+                        <IconButton
+                            size="small"
+                            onClick={() => {
+                                setOpenAppAssetsPanel(true);
+                            }}
+                        >
+                            <KeyboardDoubleArrowRight />
+                        </IconButton>
+                    )}
+                </StyledOpenAssetsContainer>
+            </StyledCollapseTrigger>
 
             {/* Text Editor */}
             <div
