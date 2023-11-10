@@ -1,9 +1,5 @@
 import { styled, Stack, Icon, Divider, Paper, Modal } from '@semoss/ui';
-import {
-    DesktopWindowsRounded,
-    SpaceDashboardOutlined,
-    Functions,
-} from '@mui/icons-material';
+import { DataObject, Layers, Widgets } from '@mui/icons-material';
 import { useState } from 'react';
 
 import { DesignerContext } from '@/contexts';
@@ -138,7 +134,7 @@ export const Designer = (props: DesignerProps) => {
                             onClick={() => updateView('outline')}
                         >
                             <Icon>
-                                <DesktopWindowsRounded />
+                                <Layers />
                             </Icon>
                         </StyledSidebarItem>
                         <StyledSidebarItem
@@ -146,7 +142,7 @@ export const Designer = (props: DesignerProps) => {
                             onClick={() => updateView('query')}
                         >
                             <Icon>
-                                <Functions />
+                                <DataObject />
                             </Icon>
                         </StyledSidebarItem>
                         <StyledSidebarDivider />
@@ -155,7 +151,7 @@ export const Designer = (props: DesignerProps) => {
                             onClick={() => updateView('add')}
                         >
                             <Icon>
-                                <SpaceDashboardOutlined />
+                                <Widgets />
                             </Icon>
                         </StyledSidebarItem>
                     </StyledSidebar>

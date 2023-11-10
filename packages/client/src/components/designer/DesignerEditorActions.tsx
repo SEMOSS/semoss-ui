@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Button, IconButton, Modal, useNotification, styled } from '@semoss/ui';
-import { Visibility } from '@mui/icons-material';
+import { Edit, PublishedWithChanges } from '@mui/icons-material';
 
 import { useApp, useRootStore } from '@/hooks';
 import { Env } from '@/env';
@@ -76,10 +76,8 @@ const StyledHandle = styled(IconButton, {
     }),
 }));
 
-const StyledRightButton = styled(Button)(({ theme }) => ({
-    marginLeft: 'auto',
+const StyledButton = styled(Button)(({ theme }) => ({
     height: '32px',
-    paddingRight: theme.spacing(1),
     backgroundColor: theme.palette.primary.light,
     color: theme.palette.common.white,
     '&:hover': {
@@ -105,18 +103,22 @@ export const DesignerEditorActions = () => {
             <StyledNavbarLeft></StyledNavbarLeft>
             <StyledNavbarRight>
                 <StyledTrack
-                    active={!editorMode}
+                    active={editorMode}
                     onClick={() => {
                         setEditorMode(!editorMode);
                     }}
                 >
-                    <StyledHandle active={!editorMode}>
-                        <Visibility />
+                    <StyledHandle active={editorMode}>
+                        <Edit sx={{ padding: '2px' }} />
                     </StyledHandle>
                 </StyledTrack>
-                <StyledRightButton variant="outlined" onClick={() => {}}>
-                    {/* <StyledPublishedIcon /> */}Publish
-                </StyledRightButton>
+                <StyledButton
+                    variant="outlined"
+                    startIcon={<PublishedWithChanges />}
+                    onClick={() => {}}
+                >
+                    Publish
+                </StyledButton>
             </StyledNavbarRight>
         </StyledNavbarChildren>
     );
