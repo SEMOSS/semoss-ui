@@ -3,6 +3,7 @@ import {
     INPUT_TYPE_DATE,
     INPUT_TYPE_NUMBER,
     INPUT_TYPE_TEXT,
+    INPUT_TYPE_SELECT,
     TOKEN_TYPE_TEXT,
 } from './prompt.constants';
 import { ActionMessages, Block, Query } from '@/stores';
@@ -188,6 +189,26 @@ function getTextFieldInputBlock(
             label: label,
             value: '',
             type: inputType,
+            style: {},
+        },
+        listeners: {},
+        slots: {},
+    };
+}
+
+function getSelectInputBlock(inputType: string, index: number, label: string) {
+    return {
+        id: getIdForInput(inputType, index),
+        widget: 'select',
+        parent: {
+            id: PROMPT_CONTAINER_BLOCK_ID,
+            slot: 'children',
+        },
+        data: {
+            label: label,
+            value: '',
+            options: [],
+            style: {},
         },
         listeners: {},
         slots: {},
@@ -203,6 +224,12 @@ export function getBlockForInput(
         case INPUT_TYPE_NUMBER:
         case INPUT_TYPE_TEXT:
             return getTextFieldInputBlock(
+                inputType,
+                token.index,
+                capitalizeLabel(token.key),
+            );
+        case INPUT_TYPE_SELECT:
+            return getSelectInputBlock(
                 inputType,
                 token.index,
                 capitalizeLabel(token.key),

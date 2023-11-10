@@ -1,19 +1,23 @@
 import { BlockConfig } from '@/stores';
-import { InputTypeSettings, InputSettings } from '@/components/block-settings';
+import {
+    InputSettings,
+    InputFromValuesSettings,
+    InputValuesSettings,
+} from '@/components/block-settings';
 
-import { TextFieldBlockDef, TextFieldBlock } from './TextFieldBlock';
-import { FormatShapes } from '@mui/icons-material';
+import { SelectBlockDef, SelectBlock } from './SelectBlock';
+import { ViewList } from '@mui/icons-material';
 
 import { buildSpacingSection } from '../block-defaults.shared';
 
 // export the config for the block
-export const config: BlockConfig<TextFieldBlockDef> = {
-    widget: 'text-field',
+export const config: BlockConfig<SelectBlockDef> = {
+    widget: 'select',
     data: {
         style: {},
         value: '',
-        label: 'Example Input',
-        type: 'text',
+        label: 'Example Select Input',
+        options: [],
     },
     listeners: {
         onChange: [],
@@ -21,16 +25,20 @@ export const config: BlockConfig<TextFieldBlockDef> = {
     slots: {
         content: [],
     },
-    render: TextFieldBlock,
-    icon: FormatShapes,
+    render: SelectBlock,
+    icon: ViewList,
     menu: [
         {
-            name: 'Text Field',
+            name: 'Select',
             children: [
                 {
                     description: 'Value',
                     render: ({ id }) => (
-                        <InputSettings id={id} label="Value" path="value" />
+                        <InputFromValuesSettings
+                            id={id}
+                            label="Value"
+                            path="value"
+                        />
                     ),
                 },
                 {
@@ -40,13 +48,13 @@ export const config: BlockConfig<TextFieldBlockDef> = {
                     ),
                 },
                 {
-                    description: 'Input Type',
+                    description: 'Options',
                     render: ({ id }) => {
                         return (
-                            <InputTypeSettings
+                            <InputValuesSettings
                                 id={id}
-                                label="Type"
-                                path="type"
+                                label="Options"
+                                path="options"
                             />
                         );
                     },

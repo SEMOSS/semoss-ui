@@ -10,13 +10,15 @@ export const INPUT_TYPE_DATABASE = 'database';
 export const INPUT_TYPE_DATA_PRODUCT = 'data-product';
 export const INPUT_TYPE_DATE = 'date';
 export const INPUT_TYPE_RANGE = 'range';
+export const INPUT_TYPE_SELECT = 'select';
 export const INPUT_TYPES = [
     INPUT_TYPE_TEXT,
     INPUT_TYPE_NUMBER,
+    INPUT_TYPE_DATE,
+    INPUT_TYPE_SELECT,
     // INPUT_TYPE_VECTOR,
     // INPUT_TYPE_DATABASE,
     // INPUT_TYPE_DATA_PRODUCT,
-    INPUT_TYPE_DATE,
     // INPUT_TYPE_RANGE,
 ];
 export const INPUT_TYPE_DISPLAY = {
@@ -27,6 +29,7 @@ export const INPUT_TYPE_DISPLAY = {
     [INPUT_TYPE_DATA_PRODUCT]: 'Data Product',
     [INPUT_TYPE_DATE]: 'Date',
     [INPUT_TYPE_RANGE]: 'Range Slider',
+    [INPUT_TYPE_SELECT]: 'Select',
 };
 export const SUMMARY_STEPS = [
     {

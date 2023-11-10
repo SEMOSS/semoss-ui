@@ -16,6 +16,7 @@ import {
     config as MarkdownBlockConfig,
     MarkdownBlockDef,
 } from './markdown-block';
+import { config as SelectBlockConfig, SelectBlockDef } from './select-block';
 
 export type DefaultBlockDefinitions =
     | ButtonBlockDef
@@ -24,14 +25,16 @@ export type DefaultBlockDefinitions =
     | PageBlockDef
     | TextBlockDef
     | TextFieldBlockDef
-    | MarkdownBlockDef;
+    | MarkdownBlockDef
+    | SelectBlockDef;
 
 export const DefaultBlocks: Registry<DefaultBlockDefinitions> = {
-    [ButtonBlockConfig.widget]: ButtonBlockConfig,
-    [ContainerBlockConfig.widget]: ContainerBlockConfig,
-    [InputBlockConfig.widget]: InputBlockConfig,
     [PageBlockConfig.widget]: PageBlockConfig,
+    [ContainerBlockConfig.widget]: ContainerBlockConfig,
     [TextBlockConfig.widget]: TextBlockConfig,
     [TextFieldBlockConfig.widget]: TextFieldBlockConfig,
     [MarkdownBlockConfig.widget]: MarkdownBlockConfig,
+    [SelectBlockConfig.widget]: SelectBlockConfig,
+    [InputBlockConfig.widget]: InputBlockConfig,
+    [ButtonBlockConfig.widget]: ButtonBlockConfig,
 };
