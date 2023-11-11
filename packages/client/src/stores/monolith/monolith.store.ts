@@ -1042,7 +1042,9 @@ export class MonolithStore {
      * @param admin - is admin user
      * @returns Projects retrieved from Promise
      */
-    async getUserProjectPermission(projectId: string) {
+    async getUserProjectPermission(
+        projectId: string,
+    ): Promise<{ permission: Role }> {
         let url = `${Env.MODULE}/api/auth/`;
 
         url += 'project/getUserProjectPermission';

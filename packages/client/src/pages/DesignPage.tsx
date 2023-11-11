@@ -115,6 +115,8 @@ export const DesignPage = () => {
             value={{
                 /** App Id */
                 appId: appId,
+                /** Type */
+                type: 'blocks',
                 /** Current Permission */
                 permission: appPermission,
                 /** Needed for panels in view and navigation */
