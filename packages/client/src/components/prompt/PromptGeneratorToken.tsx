@@ -6,15 +6,9 @@ import {
 } from './prompt.constants';
 import { Token } from './prompt.types';
 import { blue } from '@mui/material/colors';
-import {
-    styled,
-    tooltipClasses,
-    Button,
-    Chip,
-    Tooltip,
-    TooltipProps,
-    Typography,
-} from '@mui/material';
+import { styled, Button, Chip, Typography } from '@semoss/ui';
+import { Tooltip, TooltipProps } from '@mui/material';
+import { tooltipClasses } from '@mui/material';
 import { SaveAlt } from '@mui/icons-material';
 
 interface HoverButtonRootProps {
@@ -111,7 +105,7 @@ export function PromptGeneratorHoverToken(props: {
                     }}
                     title={
                         <React.Fragment>
-                            <Typography mx={1}>
+                            <Typography variant="body1" sx={{ marginX: 1 }}>
                                 {INPUT_TYPE_DISPLAY[props.tokenInputType]}
                             </Typography>
                         </React.Fragment>

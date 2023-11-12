@@ -1,4 +1,4 @@
-import { styled, Paper } from '@mui/material';
+import { styled, Paper } from '@semoss/ui';
 import { grey } from '@mui/material/colors';
 
 export const StyledStepPaper = styled(Paper)(({ theme }) => ({

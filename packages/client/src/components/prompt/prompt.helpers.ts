@@ -1,4 +1,4 @@
-import { Token } from './prompt.types';
+import { Builder, Token } from './prompt.types';
 import {
     INPUT_TYPE_DATE,
     INPUT_TYPE_NUMBER,
@@ -6,7 +6,7 @@ import {
     INPUT_TYPE_SELECT,
     TOKEN_TYPE_TEXT,
 } from './prompt.constants';
-import { ActionMessages, Block, Query } from '@/stores';
+import { ActionMessages, Block, Query, StateStore } from '@/stores';
 
 export const DESCRIPTION_CONTAINER: string = 'description-container';
 export const PROMPT_CONTAINER_BLOCK_ID: string = 'prompt-container';
@@ -278,4 +278,49 @@ export function getQueryForPrompt(
             mode: 'manual',
         },
     };
+}
+
+export function setBlocksAndOpenBuilder(
+    builder: Builder,
+    navigate: (route: string) => void,
+    onSuccess: () => void,
+) {
+    // base page
+    let blocks: Record<string, Block> = JSON.parse(
+        JSON.stringify(PROMPT_BASE_BLOCKS),
+    );
+    blocks[APP_TITLE_BLOCK_ID].data.text = builder.title.value;
+    // inputs
+    let childInputIds = [];
+    for (const [tokenIndex, inputType] of Object.entries(
+        builder.inputTypes.value as object,
+    )) {
+        const token = builder.inputs.value[tokenIndex] as Token;
+        const inputBlock = getBlockForInput(token, inputType);
+        if (!!inputBlock) {
+            childInputIds = [...childInputIds, inputBlock.id];
+            blocks = { ...blocks, [inputBlock.id]: inputBlock };
+        }
+    }
+    // submit
+    blocks[PROMPT_CONTAINER_BLOCK_ID].slots.children.children = [
+        ...childInputIds,
+        ...blocks[PROMPT_CONTAINER_BLOCK_ID].slots.children.children,
+    ];
+
+    const query = getQueryForPrompt(
+        builder.model.value as string,
+        builder.inputs.value as Token[],
+        builder.inputTypes.value as object,
+    );
+
+    StateStore.dispatch({
+        message: ActionMessages.SET_STATE,
+        payload: {
+            blocks: blocks,
+            queries: query,
+        },
+    });
+    onSuccess(); // This doesn't have meaningful content yet, but adding as placeholder
+    navigate('/edit/design');
 }
