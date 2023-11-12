@@ -14,11 +14,15 @@ export function PromptLibraryDialog(props: {
     const navigate = useNavigate();
 
     function openUIBuilderForTemplate(
+        title: string,
         context: string,
         inputs: Token[],
         inputTypes: object,
     ) {
-        const templateBuilder: Builder = { ...props.builder };
+        const templateBuilder: Builder = JSON.parse(
+            JSON.stringify(props.builder),
+        );
+        templateBuilder.title.value = templateBuilder.title.value ?? title;
         templateBuilder.context.value = context;
         templateBuilder.inputs.value = inputs;
         templateBuilder.inputTypes.value = inputTypes;
@@ -52,17 +56,18 @@ export function PromptLibraryDialog(props: {
             </IconButton>
             <Modal.Content>
                 <Grid container spacing={2}>
-                    {Array.from(PromptExamples, (example, i) => {
+                    {Array.from(PromptExamples, (examplePrompt, i) => {
                         return (
                             <Grid item xs={4} key={i}>
                                 <PromptCard
-                                    description={example.description}
-                                    context={example.context}
+                                    title={examplePrompt.title}
+                                    context={examplePrompt.context}
                                     openUIBuilderForTemplate={() => {
                                         openUIBuilderForTemplate(
-                                            example.context,
-                                            example.inputs,
-                                            example.inputTypes,
+                                            examplePrompt.title,
+                                            examplePrompt.context,
+                                            examplePrompt.inputs,
+                                            examplePrompt.inputTypes,
                                         );
                                     }}
                                 />

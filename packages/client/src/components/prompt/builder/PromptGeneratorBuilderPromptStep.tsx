@@ -25,9 +25,8 @@ export function PromptGeneratorBuilderPromptStep(props: {
         InitialCfgLibraryModelsState,
     );
     const filter = createFilterOptions<string>();
-    // need basic app details before allowing selecting from library
-    const isPromptLibraryDisabled =
-        !props.builder.title.value && !props.builder.model.value;
+    // LLM is required before selecting a template
+    const isPromptLibraryDisabled = !props.builder.model.value;
 
     const myModels = usePixel<{ app_id: string; app_name: string }[]>(
         `MyEngines(engineTypes=['MODEL']);`,

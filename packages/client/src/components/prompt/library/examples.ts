@@ -9,13 +9,13 @@ import {
 import { Token } from '../prompt.types';
 
 export const PromptExamples: {
-    description: string;
+    title: string;
     context: string;
     inputs: Token[];
     inputTypes: object;
 }[] = [
     {
-        description: 'Travel Guide',
+        title: 'Travel Guide',
         context:
             "I'm traveling to {{location}}. I want to know about {{instructions}}. Give me an itinerary and suggest places to visit.",
         inputs: [
@@ -159,7 +159,7 @@ export const PromptExamples: {
         },
     },
     {
-        description: 'Translator',
+        title: 'Translator',
         context:
             'I want you to act as a translator. Translate {{question}} from English to {{language}}.',
         inputs: [

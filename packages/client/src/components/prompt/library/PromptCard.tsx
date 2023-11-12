@@ -6,7 +6,7 @@ const StyledCard = styled(Card)(() => ({
 }));
 
 export function PromptCard(props: {
-    description: string;
+    title: string;
     context: string;
     openUIBuilderForTemplate: () => void;
 }) {
@@ -15,7 +15,7 @@ export function PromptCard(props: {
             sx={{ height: '100%' }}
             onClick={props.openUIBuilderForTemplate}
         >
-            <Card.Header title={props.description} />
+            <Card.Header title={props.title} />
             <Card.Content>{props.context}</Card.Content>
         </StyledCard>
     );
