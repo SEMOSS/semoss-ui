@@ -25,6 +25,9 @@ export function PromptGeneratorBuilderPromptStep(props: {
         InitialCfgLibraryModelsState,
     );
     const filter = createFilterOptions<string>();
+    // need basic app details before allowing selecting from library
+    const isPromptLibraryDisabled =
+        !props.builder.title.value && !props.builder.model.value;
 
     const myModels = usePixel<{ app_id: string; app_name: string }[]>(
         `MyEngines(engineTypes=['MODEL']);`,
@@ -135,7 +138,9 @@ export function PromptGeneratorBuilderPromptStep(props: {
             <Stack spacing={2} mt={2}>
                 <Stack direction="row" justifyContent="space-between">
                     <Typography variant="subtitle1">Prompt Context</Typography>
-                    <PromptLibraryDialogButton />
+                    <PromptLibraryDialogButton
+                        disabled={isPromptLibraryDisabled}
+                    />
                 </Stack>
                 <TextField
                     fullWidth

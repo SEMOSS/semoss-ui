@@ -8,8 +8,8 @@ import {
     TextField,
     IconButton,
     InputAdornment,
+    Typography,
 } from '@semoss/ui';
-import { ListItemText } from '@mui/material'; // need this component because primaryTypographyProps not exposed on semoss/ui List
 import { useBlocks, useDesigner } from '@/hooks';
 import { Add, Search } from '@mui/icons-material';
 
@@ -168,11 +168,15 @@ export const QueryMenu = observer((): JSX.Element => {
                                 }}
                             >
                                 <div>
-                                    <ListItemText
-                                        primary={q.id}
-                                        primaryTypographyProps={{
-                                            fontWeight: 'bold',
-                                        }}
+                                    <List.ItemText
+                                        primary={
+                                            <Typography
+                                                variant="body1"
+                                                fontWeight="bold"
+                                            >
+                                                {q.id}
+                                            </Typography>
+                                        }
                                     />
                                     <StyledJson>
                                         {JSON.stringify(q, null, 2)}
@@ -210,11 +214,15 @@ export const QueryMenu = observer((): JSX.Element => {
                         return (
                             <List.Item key={b.id} dense={true}>
                                 <div>
-                                    <ListItemText
-                                        primary={b.id}
-                                        primaryTypographyProps={{
-                                            fontWeight: 'bold',
-                                        }}
+                                    <List.ItemText
+                                        primary={
+                                            <Typography
+                                                variant="body1"
+                                                fontWeight="bold"
+                                            >
+                                                {b.id}
+                                            </Typography>
+                                        }
                                     />
                                     <StyledJson>
                                         {JSON.stringify(b.data, null, 2)}
