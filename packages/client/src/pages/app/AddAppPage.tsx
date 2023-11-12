@@ -170,11 +170,7 @@ export const AddAppPage = () => {
             {/* All Import Workflows: Get Metadata, and import type specific properties */}
             {steps.length === 1 ? (
                 steps[0].data.type === 'PROMPT_BUILDER' ? (
-                    <PromptGenerator
-                        onSuccess={() => {
-                            console.warn('navigate to app page');
-                        }}
-                    />
+                    <PromptGenerator />
                 ) : (
                     <ImportAppForm
                         data={steps[0].data}
@@ -262,11 +258,7 @@ export const AddAppPage = () => {
             {steps.length === 3 ? (
                 <>
                     {steps[0].data.type === 'PROMPT_BUILDER' ? (
-                        <PromptGenerator
-                            onSuccess={() => {
-                                console.warn('navigate to app page');
-                            }}
-                        />
+                        <PromptGenerator />
                     ) : (
                         <ImportAppAccess
                             appId={appId}

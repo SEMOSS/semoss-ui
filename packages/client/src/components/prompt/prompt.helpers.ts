@@ -280,10 +280,9 @@ export function getQueryForPrompt(
     };
 }
 
-export function setBlocksAndOpenBuilder(
+export function setBlocksAndOpenUIBuilder(
     builder: Builder,
     navigate: (route: string) => void,
-    onSuccess: () => void,
 ) {
     // base page
     let blocks: Record<string, Block> = JSON.parse(
@@ -321,6 +320,5 @@ export function setBlocksAndOpenBuilder(
             queries: query,
         },
     });
-    onSuccess(); // This doesn't have meaningful content yet, but adding as placeholder
     navigate('/edit/design');
 }

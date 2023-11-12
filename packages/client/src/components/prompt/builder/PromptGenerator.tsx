@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { setBlocksAndOpenBuilder } from '../prompt.helpers';
+import { setBlocksAndOpenUIBuilder } from '../prompt.helpers';
 import {
     Builder,
     BuilderStepItem,
@@ -97,7 +97,7 @@ function BuilderStep(props: {
     }
 }
 
-export function PromptGenerator(props: { onSuccess: () => void }) {
+export function PromptGenerator() {
     const [builder, setBuilder] = useState(initialBuilder);
     const [currentBuilderStep, changeBuilderStep] = useState(1);
     const navigate = useNavigate();
@@ -121,7 +121,7 @@ export function PromptGenerator(props: { onSuccess: () => void }) {
 
     const nextButtonAction = () => {
         currentBuilderStep === 4
-            ? setBlocksAndOpenBuilder(builder, navigate, props.onSuccess)
+            ? setBlocksAndOpenUIBuilder(builder, navigate)
             : changeBuilderStep(currentBuilderStep + 1);
     };
 

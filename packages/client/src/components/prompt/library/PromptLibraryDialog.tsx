@@ -2,11 +2,29 @@ import { Grid, IconButton, Modal } from '@semoss/ui';
 import CloseIcon from '@mui/icons-material/Close';
 import { PromptCard } from './PromptCard';
 import { PromptExamples } from './examples';
+import { Builder, Token } from '../prompt.types';
+import { setBlocksAndOpenUIBuilder } from '../prompt.helpers';
+import { useNavigate } from 'react-router-dom';
 
 export function PromptLibraryDialog(props: {
+    builder: Builder;
     promptLibraryOpen: boolean;
     closePromptLibrary: () => void;
 }) {
+    const navigate = useNavigate();
+
+    function openUIBuilderForTemplate(
+        context: string,
+        inputs: Token[],
+        inputTypes: object,
+    ) {
+        const templateBuilder: Builder = { ...props.builder };
+        templateBuilder.context.value = context;
+        templateBuilder.inputs.value = inputs;
+        templateBuilder.inputTypes.value = inputTypes;
+        setBlocksAndOpenUIBuilder(templateBuilder, navigate);
+    }
+
     return (
         <Modal
             onClose={(_, reason: string) => {
@@ -16,7 +34,6 @@ export function PromptLibraryDialog(props: {
                 props.closePromptLibrary();
             }}
             aria-labelledby="dialog-title"
-            // disableEscapeKeyDown
             fullWidth
             maxWidth="lg"
             open={props.promptLibraryOpen}
@@ -41,6 +58,13 @@ export function PromptLibraryDialog(props: {
                                 <PromptCard
                                     description={example.description}
                                     context={example.context}
+                                    openUIBuilderForTemplate={() => {
+                                        openUIBuilderForTemplate(
+                                            example.context,
+                                            example.inputs,
+                                            example.inputTypes,
+                                        );
+                                    }}
                                 />
                             </Grid>
                         );

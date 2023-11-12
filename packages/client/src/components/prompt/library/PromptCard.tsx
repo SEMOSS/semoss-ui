@@ -5,13 +5,15 @@ const StyledCard = styled(Card)(() => ({
     cursor: 'pointer',
 }));
 
-export function PromptCard(props: { description: string; context: string }) {
+export function PromptCard(props: {
+    description: string;
+    context: string;
+    openUIBuilderForTemplate: () => void;
+}) {
     return (
         <StyledCard
             sx={{ height: '100%' }}
-            onClick={() => {
-                console.log('clicked');
-            }}
+            onClick={props.openUIBuilderForTemplate}
         >
             <Card.Header title={props.description} />
             <Card.Content>{props.context}</Card.Content>

@@ -2,8 +2,12 @@ import * as React from 'react';
 import { Button } from '@semoss/ui';
 import { ArrowOutward } from '@mui/icons-material';
 import { PromptLibraryDialog } from './PromptLibraryDialog';
+import { Builder } from '../prompt.types';
 
-export function PromptLibraryDialogButton(props: { disabled: boolean }) {
+export function PromptLibraryDialogButton(props: {
+    disabled: boolean;
+    builder: Builder;
+}) {
     const [promptLibraryOpen, setPromptLibraryOpen] = React.useState(false);
 
     const closePromptLibrary = () => {
@@ -24,6 +28,7 @@ export function PromptLibraryDialogButton(props: { disabled: boolean }) {
                 Browse Prompt Templates
             </Button>
             <PromptLibraryDialog
+                builder={props.builder}
                 promptLibraryOpen={promptLibraryOpen}
                 closePromptLibrary={closePromptLibrary}
             />

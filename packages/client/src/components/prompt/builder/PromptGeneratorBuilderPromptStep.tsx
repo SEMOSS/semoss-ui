@@ -140,6 +140,7 @@ export function PromptGeneratorBuilderPromptStep(props: {
                     <Typography variant="subtitle1">Prompt Context</Typography>
                     <PromptLibraryDialogButton
                         disabled={isPromptLibraryDisabled}
+                        builder={props.builder}
                     />
                 </Stack>
                 <TextField
