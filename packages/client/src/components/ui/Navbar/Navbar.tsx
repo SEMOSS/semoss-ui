@@ -2,6 +2,7 @@ import { ReactNode, useState } from 'react';
 import { Link } from 'react-router-dom';
 
 import {
+    Avatar,
     Button,
     styled,
     Stack,
@@ -15,7 +16,6 @@ import { useRootStore } from '@/hooks';
 import { AccountCircle, Logout } from '@mui/icons-material';
 
 import { THEME } from '@/constants';
-import { Avatar } from '@mui/material';
 
 const NAV_HEIGHT = '48px';
 

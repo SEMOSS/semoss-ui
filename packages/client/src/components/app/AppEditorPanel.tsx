@@ -1,6 +1,7 @@
 import React from 'react';
 import {
     Button,
+    Card,
     IconButton,
     FileDropzone,
     useNotification,
@@ -24,7 +25,6 @@ import { AppEditor } from '@/components/common';
 import { MembersTable, SettingsTiles } from '@/components/settings';
 
 import { AppSettings } from './AppSettings';
-import { Card } from '@mui/material';
 
 const StyledContainer = styled('div')(({ theme }) => ({
     display: 'flex',
