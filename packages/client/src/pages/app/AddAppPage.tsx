@@ -12,7 +12,6 @@ import {
 } from '@semoss/ui';
 
 import {
-    App,
     AppFilter,
     ConnectEngines,
     ImportAppForm,
@@ -28,6 +27,7 @@ import { useStepper, useRootStore, usePixel } from '@/hooks';
 import { APP_STEP_INTERFACE, ADD_APP_STEPS } from './add-app.constants';
 import { AppShortcut } from '@mui/icons-material';
 import { BuildDb } from '@/assets/img/BuildDb';
+import { AppMetadata } from '@/components/app';
 
 const StyledContainer = styled('div')(({ theme }) => ({
     display: 'flex',
@@ -279,7 +279,7 @@ interface SelectionStep {
     stepInProcess: number;
     data: {
         type: string;
-        options?: App;
+        options?: AppMetadata;
     };
 }
 interface AddAppSelectionPageProps {
@@ -318,7 +318,7 @@ export const AddAppSelectionPage = (props: AddAppSelectionPageProps) => {
     });
 
     // get the projects
-    const myApps = usePixel<App[]>(
+    const myApps = usePixel<AppMetadata[]>(
         `MyProjects(metaKeys = ${JSON.stringify(
             metaKeys,
         )}, onlyPortals=[true]);`,

@@ -1,4 +1,7 @@
-export interface App {
+/**
+ * Metadata associated with the app
+ */
+export interface AppMetadata {
     project_id: string;
     project_name: string;
     project_type: string;

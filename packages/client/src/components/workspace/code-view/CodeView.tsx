@@ -3,10 +3,10 @@ import { observer } from 'mobx-react-lite';
 import { Refresh } from '@mui/icons-material';
 import { styled, ThemeProvider, IconButton } from '@semoss/ui';
 
-import { useApp } from '@/hooks';
+import { useWorkspace } from '@/hooks';
 
-import { CustomAppRenderer } from './CustomAppRenderer';
-import { CustomAppEditorPanel } from './CustomAppEditorPanel';
+import { AppRenderer } from '../../app/AppRenderer';
+import { CodeViewPanel } from './CodeViewPanel';
 
 // Styles --------------------------------------*
 
@@ -58,15 +58,18 @@ const StyledIconButton = styled(IconButton)(() => ({
     fontSize: 'inherit',
 }));
 
-export const CustomAppEditor = observer(() => {
+export const CodeView = observer(() => {
     // App ID Needed for pixel calls
-    const { editorView, refreshKey, refreshApp } = useApp();
+    const { appId } = useWorkspace();
 
     const [transparentOverlay, setTransparentOverlay] = useState(false);
 
     /**
      * Resizing of Panels Code
      */
+    const [editorView, setEditorView] = useState<
+        'settings' | 'permissions' | 'code-editor'
+    >('code-editor');
     const [leftPanelWidth, setLeftPanelWidth] = useState('50%');
     const [rightPanelWidth, setRightPanelWidth] = useState('50%');
 
@@ -96,7 +99,10 @@ export const CustomAppEditor = observer(() => {
             <StyledLeftPanel sx={{ width: leftPanelWidth }}>
                 {/* Left Panel for Editor Mode, should be Dark Mode */}
                 <ThemeProvider reset={true} type={'light'}>
-                    <CustomAppEditorPanel width={leftPanelWidth} />
+                    <CodeViewPanel
+                        width={leftPanelWidth}
+                        editorView={editorView}
+                    />
                     <StyledVertDivider
                         onMouseDown={(e) => {
                             e.preventDefault();
@@ -138,13 +144,13 @@ export const CustomAppEditor = observer(() => {
                             color={'secondary'}
                             title={'Refresh'}
                             onClick={() => {
-                                refreshApp();
+                                // refreshApp();
                             }}
                         >
                             <Refresh />
                         </StyledIconButton>
                     </StyledRendererActions>
-                    <CustomAppRenderer key={refreshKey} />
+                    <AppRenderer appId={appId} />
                 </StyledRendererContainer>
             </StyledRightPanel>
         </StyledTopPanel>

@@ -12,12 +12,12 @@ import {
     TextField,
     Typography,
     styled,
+    RadioGroup,
 } from '@semoss/ui';
 
 import { Controller, useForm } from 'react-hook-form';
 import { useRootStore } from '@/hooks';
-import { RadioGroup } from '@semoss/ui';
-import { App } from './';
+import { AppMetadata } from './app.types';
 
 const StyledBox = styled(Box)(({ theme }) => ({
     boxShadow: '0px 5px 22px 0px rgba(0, 0, 0, 0.06)',
@@ -135,7 +135,7 @@ interface CreateAppProps {
      */
     data?: {
         type: string; // | 'Blank Template'| 'Build App' | 'Template App' | 'Import App' | 'Prompt Builder' | 'UI Builder';
-        options?: App;
+        options?: AppMetadata;
     };
 }
 

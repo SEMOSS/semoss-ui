@@ -1,0 +1,1 @@
+export { BlocksView } from './BlocksView';

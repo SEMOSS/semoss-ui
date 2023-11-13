@@ -6,7 +6,7 @@ import { DefaultBlocks } from '@/components/block-defaults';
 
 const ACTIVE = 'page-1';
 
-export const BlocksAppEditor = () => {
+export const BlocksView = () => {
     /**
      * Have the designer control the blocks
      */

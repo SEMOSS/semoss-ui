@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
+import { observer } from 'mobx-react-lite';
 import {
     Button,
     IconButton,
@@ -8,40 +9,18 @@ import {
     useNotification,
     styled,
     Typography,
+    Stack,
 } from '@semoss/ui';
-import {
-    Code,
-    CodeOff,
-    Download,
-    Share,
-    Settings,
-    PersonAdd,
-} from '@mui/icons-material';
+import { Code, Download, Share, Settings } from '@mui/icons-material';
 
-import { useApp, useRootStore } from '@/hooks';
+import { useWorkspace, useRootStore } from '@/hooks';
 import { Env } from '@/env';
 
 const NAV_HEIGHT = '48px';
 const NAV_FOOTER = '24px';
 const SIDEBAR_WIDTH = '56px';
 
-const StyledNavbarChildren = styled('div')(({ theme }) => ({
-    display: 'flex',
-    justifyContent: 'space-between',
-}));
-
-const StyledNavbarLeft = styled('div')(({ theme }) => ({
-    display: 'flex',
-    // gap: theme.spacing(2),
-}));
-
-const StyledNavbarRight = styled('div')(({ theme }) => ({
-    display: 'flex',
-    gap: theme.spacing(2),
-    alignItems: 'center',
-}));
-
-const StyledNavbarItem = styled('div', {
+const StyledNavItem = styled('div', {
     shouldForwardProp: (prop) => prop !== 'selected',
 })<{
     /** Track if item is selected */
@@ -123,13 +102,6 @@ const StyledHandle = styled(IconButton, {
     }),
 }));
 
-const StyledShareButton = styled(Button)(({ theme }) => ({
-    display: 'flex',
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: theme.spacing(1),
-}));
-
 const StyledModalContent = styled(Modal.Content)(({ theme }) => ({
     display: 'flex',
     flexDirection: 'column',
@@ -137,28 +109,11 @@ const StyledModalContent = styled(Modal.Content)(({ theme }) => ({
     gap: theme.spacing(2),
 }));
 
-const StyledTabsContent = styled('div')(({ theme }) => ({
-    display: 'flex',
-    flexDirection: 'column',
-}));
-
-const StyledGap = styled('div')(({ theme }) => ({
-    display: 'flex',
-    gap: theme.spacing(1),
-}));
-
-export const AppActions = () => {
+export const WorkspaceActions = observer(() => {
     const { monolithStore, configStore } = useRootStore();
     const notification = useNotification();
-    const {
-        appId,
-        editorMode,
-        editorView,
-        setEditorMode,
-        setEditorView,
-        setIsLoading,
-        isLoading,
-    } = useApp();
+    const { appId, role, view, setView, isEditMode, setEditMode, setLoading } =
+        useWorkspace();
 
     const [shareModal, setShareModal] = useState(false);
     const [shareModalTab, setShareModalTab] = useState(0);
@@ -168,13 +123,13 @@ export const AppActions = () => {
      */
     const downloadApp = async () => {
         // turn on loading
-        setIsLoading(true);
+        setLoading(true);
 
         try {
             const path = 'version/assets/';
 
             // upnzip the file in the new app
-            const response = await monolithStore.runQuery(
+            const response = await monolithStore.runQuery<[string]>(
                 `DownloadAsset(filePath=["${path}"], space=["${appId}"]);`,
             );
             const key = response.pixelReturn[0].output;
@@ -192,86 +147,87 @@ export const AppActions = () => {
             });
         } finally {
             // turn of loading
-            setIsLoading(false);
+            setLoading(false);
         }
     };
 
+    console.log(role, view);
+
     return (
-        <StyledNavbarChildren>
-            <StyledNavbarLeft>
-                {editorMode ? (
-                    <>
-                        <StyledNavbarItem
-                            selected={editorView === 'code-editor'}
-                            onClick={() => {
-                                setEditorView('code-editor');
-                            }}
-                        >
-                            <Code />
-                        </StyledNavbarItem>
-                        <StyledNavbarItem
-                            selected={editorView === 'settings'}
-                            onClick={() => {
-                                setEditorView('settings');
-                            }}
-                        >
-                            <Settings />
-                        </StyledNavbarItem>
-                        <StyledNavbarItem
-                            selected={editorView === 'permissions'}
-                            onClick={() => {
-                                setEditorView('permissions');
-                            }}
-                        >
-                            <PersonAdd />
-                        </StyledNavbarItem>
-                    </>
-                ) : null}
-            </StyledNavbarLeft>
-            <StyledNavbarRight>
-                <StyledTrack
-                    active={editorMode}
-                    onClick={() => {
-                        setEditorMode(!editorMode);
-                    }}
-                >
-                    <StyledHandle active={editorMode}>
+        <Stack direction="row" alignItems={'center'} spacing={2}>
+            {(role === 'OWNER' || role === 'EDIT') && isEditMode ? (
+                <Stack direction="row" alignItems={'center'} spacing={0}>
+                    <StyledNavItem
+                        title={'Design'}
+                        selected={view === 'design'}
+                        onClick={() => {
+                            setView('design');
+                        }}
+                    >
                         <Code />
-                    </StyledHandle>
-                </StyledTrack>
-                <Button
-                    size={'small'}
-                    color={'secondary'}
-                    variant={'outlined'}
-                    onClick={() => {
-                        downloadApp();
-                    }}
-                    sx={{
-                        display: 'flex',
-                        flexDirection: 'row',
-                        alignItems: 'center',
-                        gap: '8px',
-                    }}
-                >
-                    <Download /> Download
-                </Button>
-                <Button
-                    size={'small'}
-                    color={'secondary'}
-                    variant={'outlined'}
-                    onClick={() => {
-                        setShareModal(true);
-                    }}
-                    sx={{
-                        display: 'flex',
-                        flexDirection: 'row',
-                        alignItems: 'center',
-                        gap: '8px',
-                    }}
-                >
-                    <Share /> Share
-                </Button>
-                {/* <StyledShareButton
+                    </StyledNavItem>
+                    {/* <StyledNavItem
+                        title={'Data'}
+                        selected={view === 'data'}
+                        onClick={() => {
+                            setView('data');
+                        }}
+                    >
+                        <Code />
+                    </StyledNavItem> */}
+                    <StyledNavItem
+                        title={'Settings'}
+                        selected={view === 'settings'}
+                        onClick={() => {
+                            setView('settings');
+                        }}
+                    >
+                        <Settings />
+                    </StyledNavItem>
+                </Stack>
+            ) : (
+                <></>
+            )}
+            <Stack flex={1}>&nbsp;</Stack>
+            {role === 'OWNER' || role === 'EDIT' ? (
+                <>
+                    <StyledTrack
+                        active={isEditMode}
+                        onClick={() => {
+                            setEditMode(!isEditMode);
+                        }}
+                    >
+                        <StyledHandle active={isEditMode}>
+                            <Code />
+                        </StyledHandle>
+                    </StyledTrack>
+                    <Button
+                        size={'small'}
+                        color={'secondary'}
+                        variant={'outlined'}
+                        startIcon={<Download />}
+                        onClick={() => {
+                            downloadApp();
+                        }}
+                    >
+                        Download
+                    </Button>
+                </>
+            ) : (
+                <></>
+            )}
+            <Button
+                size={'small'}
+                color={'secondary'}
+                variant={'outlined'}
+                startIcon={<Share />}
+                onClick={() => {
+                    setShareModal(true);
+                }}
+            >
+                Share
+            </Button>
+            {/* <StyledShareButton
                     size={'small'}
                     variant={'outlined'}
                     color="secondary"
@@ -299,7 +255,6 @@ export const AppActions = () => {
                     </svg>
                     Share
                 </StyledShareButton> */}
-            </StyledNavbarRight>
             <Modal open={shareModal}>
                 <StyledModalContent>
                     <Tabs
@@ -313,16 +268,21 @@ export const AppActions = () => {
                         <Tabs.Item disabled label="iframe"></Tabs.Item> */}
                     </Tabs>
                     {shareModalTab === 0 && (
-                        <StyledTabsContent>
+                        <Stack>
                             <Typography variant="subtitle1">
                                 Share a link for external use
                             </Typography>
-                            <StyledGap>
+                            <Stack direction="column" spacing={1}>
                                 <TextField
-                                    disabled
                                     size="small"
-                                    sx={{ width: '90%' }}
                                     value={`${Env.MODULE}/public_home/${appId}/portals/`}
+                                    fullWidth={true}
+                                    InputProps={{
+                                        readOnly: true,
+                                    }}
+                                    sx={{
+                                        flex: 1,
+                                    }}
                                 />
                                 <Button
                                     variant={'outlined'}
@@ -339,28 +299,28 @@ export const AppActions = () => {
                                 >
                                     Copy
                                 </Button>
-                            </StyledGap>
-                        </StyledTabsContent>
+                            </Stack>
+                        </Stack>
                     )}
-                    {shareModalTab === 1 && (
-                        <StyledTabsContent>
+                    {/* {shareModalTab === 1 && (
+                        <Stack>
                             <Typography variant="subtitle1">
                                 Share the Rest API
                             </Typography>
-                        </StyledTabsContent>
+                        </Stack>
                     )}
                     {shareModalTab === 2 && (
-                        <StyledTabsContent>
+                        <Stack>
                             <Typography variant="subtitle1">
                                 Share the iframe?
                             </Typography>
-                        </StyledTabsContent>
-                    )}
+                        </Stack>
+                    )} */}
                 </StyledModalContent>
                 <Modal.Actions>
                     <Button onClick={() => setShareModal(false)}>Cancel</Button>
                 </Modal.Actions>
             </Modal>
-        </StyledNavbarChildren>
+        </Stack>
     );
-};
+});

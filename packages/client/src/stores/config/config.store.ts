@@ -188,7 +188,7 @@ export class ConfigStore {
         const { monolithStore } = this._root;
 
         try {
-            const { pixelReturn, insightID } = await monolithStore.run(
+            const { pixelReturn, insightId } = await monolithStore.run(
                 'new',
                 `GetUserInfo();`,
             );
@@ -205,7 +205,7 @@ export class ConfigStore {
 
             runInAction(() => {
                 // set the insight ID
-                this._store.insightID = insightID;
+                this._store.insightID = insightId;
 
                 let user = {
                     id: '',

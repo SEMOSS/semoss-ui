@@ -1,4 +1,4 @@
-import { Routes, Route, Navigate, Outlet } from 'react-router-dom';
+import { Routes, Route, Navigate } from 'react-router-dom';
 import { observer } from 'mobx-react-lite';
 
 import { useRootStore } from '@/hooks/';
@@ -9,7 +9,6 @@ import { NavigatorLayout } from './NavigatorLayout';
 
 import { LoginPage } from './LoginPage';
 import { HomePage } from './HomePage';
-import { DesignPage } from './DesignPage';
 
 import { EngineRouter } from './engine';
 import { SettingsRouter } from './settings';
@@ -37,9 +36,6 @@ export const Router = observer(() => {
                 <Route path="*" element={<Navigate to="/" replace />} />
             </Route>
             <Route path="/login" element={<LoginPage />}></Route>
-            <Route path="/edit" element={<Outlet />}>
-                <Route path="design" element={<DesignPage />}></Route>
-            </Route>
         </Routes>
     );
 });

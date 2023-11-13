@@ -1,6 +1,5 @@
 import { styled } from '@semoss/ui';
 import { Env } from '@/env';
-import { useApp } from '@/hooks';
 
 const StyledIframe = styled('iframe')(() => ({
     flex: '1',
@@ -9,11 +8,16 @@ const StyledIframe = styled('iframe')(() => ({
     border: 'none',
 }));
 
+interface AppRendererProps {
+    /** Id of the app to render */
+    appId: string;
+}
+
 /**
  * Render an app based on an id
  */
-export const CustomAppRenderer = () => {
-    const { appId } = useApp();
+export const AppRenderer = (props: AppRendererProps) => {
+    const { appId } = props;
 
     // return the app
     return <StyledIframe src={`${Env.MODULE}/public_home/${appId}/portals/`} />;
