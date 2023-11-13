@@ -10,6 +10,11 @@ export type AppContextType = {
     appId: string;
 
     /**
+     * Type of the app
+     */
+    type: 'blocks' | 'custom';
+
+    /**
      * Users Permission with App
      */
     permission: string;

@@ -24,7 +24,7 @@ import { SettingsContext } from '@/contexts';
 import { AppEditor } from '@/components/common';
 import { MembersTable, SettingsTiles } from '@/components/settings';
 
-import { AppSettings } from './AppSettings';
+import { AppSettings } from '../AppSettings';
 
 const StyledContainer = styled('div')(({ theme }) => ({
     display: 'flex',
@@ -61,7 +61,7 @@ type EditAppForm = {
     PROJECT_UPLOAD: File;
 };
 
-export const AppEditorPanel = (props) => {
+export const CustomAppEditorPanel = (props) => {
     const { monolithStore, configStore } = useRootStore();
     const notification = useNotification();
     const navigate = useNavigate();

@@ -1,6 +1,6 @@
 import { ReactNode, useState } from 'react';
 import { Link } from 'react-router-dom';
-
+import { AccountCircle, Logout } from '@mui/icons-material';
 import {
     Avatar,
     Button,
@@ -13,8 +13,6 @@ import {
 } from '@semoss/ui';
 
 import { useRootStore } from '@/hooks';
-import { AccountCircle, Logout } from '@mui/icons-material';
-
 import { THEME } from '@/constants';
 
 const NAV_HEIGHT = '48px';
