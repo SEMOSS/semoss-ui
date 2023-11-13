@@ -6,8 +6,8 @@ import {
 } from './prompt.constants';
 import { Token } from './prompt.types';
 import { blue } from '@mui/material/colors';
-import { styled, Button, Chip, Typography } from '@semoss/ui';
-import { Tooltip, TooltipProps } from '@mui/material';
+import { Button, Typography } from '@semoss/ui';
+import { styled, Chip, Tooltip, TooltipProps } from '@mui/material';
 import { tooltipClasses } from '@mui/material';
 import { SaveAlt } from '@mui/icons-material';
 
