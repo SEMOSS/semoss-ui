@@ -93,6 +93,7 @@ import {
     KeyboardDoubleArrowRight,
     CreateNewFolderOutlined,
     NoteAddOutlined,
+    DeleteOutline,
     // mdiCodeTags,
 } from '@mui/icons-material/';
 
@@ -253,7 +254,6 @@ const CustomAccordionContent = styled(Accordion.Content)(({ theme }) => ({
     display: 'flex',
     overflow: 'scroll',
     padding: '0px',
-    // border: '1px solid red',
     // width: '500px'
     // paddingTop: '8px',
     // paddingTop: '0px',
@@ -308,6 +308,10 @@ export const AppEditor = (props: AppEditorProps) => {
     // Props necessary for TextEditor component
     const [filesToView, setFilesToView] = useState([]);
     const [activeFileIndex, setActiveFileIndex] = useState(null);
+
+    // temp
+    const [isHovered, setIsHovered] = useState(false);
+    const [hoverSet, setHoverSet] = useState(new Set());
 
     useEffect(() => {
         getInitialAppStructure();
@@ -1090,9 +1094,37 @@ export const AppEditor = (props: AppEditorProps) => {
                         key={node.id}
                         nodeId={node.id}
                         title={node.id}
+                        // label={
+                        //     // File svg pack? (Js, html, etc)
+                        //     <TextField>{`${node.name} 🗑️`}</TextField>
+                        // }
+
                         label={
-                            // File svg pack? (Js, html, etc)
-                            node.name
+                            <div
+                                onMouseEnter={() =>
+                                    setHoverSet(new Set([node.id]))
+                                }
+                                onMouseLeave={() => setHoverSet(new Set())}
+                                style={{
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'space-between',
+                                    height: '30px',
+                                    width: '250px',
+                                }}
+                            >
+                                {node.name}
+                                {hoverSet.has(node.id) && (
+                                    <IconButton
+                                        onClick={() => fileDeleteHandler(node)}
+                                        size="small"
+                                    >
+                                        <DeleteOutline
+                                            sx={{ height: '20px' }}
+                                        />
+                                    </IconButton>
+                                )}
+                            </div>
                         }
                     >
                         {node.children && node.children.length > 0
@@ -1102,6 +1134,11 @@ export const AppEditor = (props: AppEditorProps) => {
                 );
             }
         });
+    };
+
+    const fileDeleteHandler = (node) => {
+        alert(`delete ${node.name}`);
+        console.log({ node });
     };
 
     return (
