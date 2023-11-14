@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
     Button,
     Checkbox,
@@ -11,6 +11,7 @@ import {
     Select,
     styled,
     useNotification,
+    CircularProgress,
 } from '@semoss/ui';
 import { ExpandLess, ExpandMore } from '@mui/icons-material';
 
@@ -45,6 +46,11 @@ const StyledDropzoneField = styled('div')(({ theme }) => ({
     height: '100%',
 }));
 
+const StyledSubmitButton = styled(Button)(() => ({
+    textTransform: 'capitalize',
+    minWidth: '128px',
+}));
+
 export const ImportForm = (props) => {
     const { submitFunc, fields } = props;
 
@@ -63,6 +69,7 @@ export const ImportForm = (props) => {
             // SMSS_PROPERTIES: [],
         } || { VECTOR: '' },
     });
+    const [formLoading, setFormLoading] = useState(false);
 
     /**
      * 1. Sets default values for all fields
@@ -97,6 +104,7 @@ export const ImportForm = (props) => {
      * Also: type this out
      */
     const onSubmit = async (data) => {
+        setFormLoading(true);
         // If it's a File Upload
         if (steps[1].id.includes('File Uploads')) {
             if (steps[1].title === 'ZIP') {
@@ -119,12 +127,14 @@ export const ImportForm = (props) => {
                         color: 'error',
                         message: output,
                     });
+                    setFormLoading(false);
                     return;
                 }
 
                 navigate(`/engine/${(steps[0].data as string).toUpperCase()}`);
                 return;
             }
+            setFormLoading(false);
             return;
         }
 
@@ -173,6 +183,7 @@ export const ImportForm = (props) => {
 
             submitFunc(formVals);
         }
+        setFormLoading(false);
     };
 
     return (
@@ -573,9 +584,17 @@ export const ImportForm = (props) => {
                     </>
                 ) : null}
                 <StyledFlexEnd>
-                    <Button type="submit" variant={'contained'}>
-                        Add {steps[0].data.toLowerCase()}
-                    </Button>
+                    <StyledSubmitButton
+                        disabled={formLoading}
+                        type="submit"
+                        variant="contained"
+                    >
+                        {formLoading ? (
+                            <CircularProgress size="1.5em" />
+                        ) : (
+                            `Add ${steps[0].data.toLowerCase()}`
+                        )}
+                    </StyledSubmitButton>
                 </StyledFlexEnd>
             </Stack>
         </form>
