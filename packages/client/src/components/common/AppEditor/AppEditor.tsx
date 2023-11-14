@@ -34,6 +34,7 @@ import {
     KeyboardDoubleArrowRight,
     CreateNewFolderOutlined,
     NoteAddOutlined,
+    DeleteOutline,
 } from '@mui/icons-material/';
 
 const StyledEditorPanel = styled('div')(({ theme }) => ({
@@ -228,6 +229,8 @@ export const AppEditor = (props: AppEditorProps) => {
     // Props necessary for TextEditor component
     const [filesToView, setFilesToView] = useState([]);
     const [activeFileIndex, setActiveFileIndex] = useState(null);
+
+    const [hoverSet, setHoverSet] = useState(new Set());
 
     useEffect(() => {
         getInitialAppStructure();
@@ -571,6 +574,37 @@ export const AppEditor = (props: AppEditorProps) => {
         // set this file as the active file in the editor
 
         // setSelected([nodeReplacement.id]);
+        setCounter(counter + 1);
+    };
+
+    /**
+     *
+     * @desc Method to remove the asset and node
+     */
+    const deleteAsset = async (node) => {
+        const pixel = `
+            DeleteAsset(filePath=["${node.id}"], comment=["Deleting from the App Page editor"], space=["${appId}"])
+        `;
+
+        const { parent } = await findNodeAndParentById(appDirectory, node.id);
+
+        const response = await monolithStore.runQuery(pixel);
+        const output = response.pixelReturn[0].output,
+            operationType = response.pixelReturn[0].operationType;
+
+        if (operationType.indexOf('ERROR') > -1) {
+            notification.add({
+                color: 'error',
+                message: output,
+            });
+
+            await viewAsset(!parent ? ['version/assets/'] : [parent.id]);
+            setSelected(parent ? [parent.id] : []);
+            return;
+        }
+        await viewAsset(!parent ? ['version/assets/'] : [parent.id]);
+        // set this file as the active file in the editor
+        setSelected(!parent ? ['version/assets/'] : [parent.id]);
         setCounter(counter + 1);
     };
 
@@ -1011,8 +1045,31 @@ export const AppEditor = (props: AppEditorProps) => {
                         nodeId={node.id}
                         title={node.id}
                         label={
-                            // File svg pack? (Js, html, etc)
-                            node.name
+                            <div
+                                onMouseEnter={() =>
+                                    setHoverSet(new Set([node.id]))
+                                }
+                                onMouseLeave={() => setHoverSet(new Set())}
+                                style={{
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'space-between',
+                                    height: '30px',
+                                    width: '250px',
+                                }}
+                            >
+                                {node.name}
+                                {hoverSet.has(node.id) && (
+                                    <IconButton
+                                        onClick={() => deleteAsset(node)}
+                                        size="small"
+                                    >
+                                        <DeleteOutline
+                                            sx={{ height: '20px' }}
+                                        />
+                                    </IconButton>
+                                )}
+                            </div>
                         }
                     >
                         {node.children && node.children.length > 0
@@ -1154,14 +1211,10 @@ export const AppEditor = (props: AppEditorProps) => {
                                                 <ChevronRight />
                                             </StyledIcon>
                                         }
-                                        // defaultEndIcon ={
-                                        //     <StyledIcon>
-                                        //         <Download />
-                                        //     </StyledIcon>
-                                        // }
                                     >
                                         {renderTreeNodes(appDirectory)}
                                     </StyledTreeView>
+
                                     {/* </StyledScrollableTreeView> */}
                                 </CustomAccordionContent>
                             </CustomAccordion>
