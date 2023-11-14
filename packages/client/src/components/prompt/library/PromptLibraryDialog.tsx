@@ -65,7 +65,7 @@ export function PromptLibraryDialog(props: {
             maxWidth="xl"
             open={props.promptLibraryOpen}
         >
-            <Modal.Title sx={{ m: 0, p: 2 }}>Prompt Library</Modal.Title>
+            <Modal.Title>Prompt Library</Modal.Title>
             <IconButton
                 aria-label="close"
                 onClick={() => props.closePromptLibrary()}

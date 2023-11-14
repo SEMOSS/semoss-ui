@@ -1,5 +1,13 @@
 import { useState } from 'react';
-import { styled, Card, Chip, IconButton, Stack, Typography } from '@semoss/ui';
+import {
+    styled,
+    Card,
+    Chip,
+    Grid,
+    IconButton,
+    Stack,
+    Typography,
+} from '@semoss/ui';
 import {
     Bookmark,
     BookmarkBorderOutlined,
@@ -13,7 +21,6 @@ const StyledCard = styled(Card)(() => ({
 const StyledChip = styled(Chip)(({ theme }) => ({
     textTransform: 'capitalize',
     paddingLeft: theme.spacing(1),
-    margin: theme.spacing(1),
 }));
 const Spacer = styled('div')(() => ({
     flex: 1,
@@ -55,16 +62,17 @@ export function PromptCard(props: {
             <Card.Content>{props.context}</Card.Content>
             <Spacer />
             <Card.Actions>
-                <Stack direction="row" flexWrap="wrap">
+                <Grid container spacing={1}>
                     {Array.from(props.tags.sort(), (tag, i) => (
-                        <StyledChip
-                            icon={<LocalOfferOutlined fontSize="small" />}
-                            label={tag}
-                            variant="outlined"
-                            key={`${props.cardKey}-tag-${i}`}
-                        />
+                        <Grid item key={`${props.cardKey}-tag-${i}`}>
+                            <StyledChip
+                                icon={<LocalOfferOutlined fontSize="small" />}
+                                label={tag}
+                                variant="outlined"
+                            />
+                        </Grid>
                     ))}
-                </Stack>
+                </Grid>
             </Card.Actions>
         </StyledCard>
     );
