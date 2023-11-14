@@ -4,7 +4,7 @@ import { grey } from '@mui/material/colors';
 export const StyledStepPaper = styled(Paper)(({ theme }) => ({
     padding: theme.spacing(4),
     margin: theme.spacing(1),
-    height: '97%',
+    height: '100%',
 }));
 
 export const StyledTextPaper = styled(Paper)(({ theme }) => ({

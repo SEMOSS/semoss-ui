@@ -23,7 +23,8 @@ import { SettingsContext } from '@/contexts';
 import { AppEditor } from '@/components/common';
 import { MembersTable, SettingsTiles } from '@/components/settings';
 
-import { AppSettings } from './AppSettings';
+import { AppSettings } from '../AppSettings';
+import { Card } from '@mui/material';
 
 const StyledContainer = styled('div')(({ theme }) => ({
     display: 'flex',
@@ -53,13 +54,14 @@ const StyledTopLeftContent = styled('div')(({ theme }) => ({
     display: 'flex',
     width: '100%',
     gap: theme.spacing(2),
+    padding: theme.spacing(2),
 }));
 
 type EditAppForm = {
     PROJECT_UPLOAD: File;
 };
 
-export const AppEditorPanel = (props) => {
+export const CustomAppEditorPanel = (props) => {
     const { monolithStore, configStore } = useRootStore();
     const notification = useNotification();
     const navigate = useNavigate();
@@ -208,35 +210,38 @@ export const AppEditorPanel = (props) => {
                                     <Typography variant="h6">
                                         Update Project
                                     </Typography>
-
-                                    <Controller
-                                        name={'PROJECT_UPLOAD'}
-                                        control={control}
-                                        rules={{}}
-                                        render={({ field }) => {
-                                            return (
-                                                <FileDropzone
-                                                    multiple={false}
-                                                    value={field.value}
-                                                    disabled={isLoading}
-                                                    onChange={(newValues) => {
-                                                        field.onChange(
+                                    <Card>
+                                        <Controller
+                                            name={'PROJECT_UPLOAD'}
+                                            control={control}
+                                            rules={{}}
+                                            render={({ field }) => {
+                                                return (
+                                                    <FileDropzone
+                                                        multiple={false}
+                                                        value={field.value}
+                                                        disabled={isLoading}
+                                                        onChange={(
                                                             newValues,
-                                                        );
-                                                    }}
-                                                />
-                                            );
-                                        }}
-                                    />
-                                    <Stack alignItems={'center'}>
-                                        <Button
-                                            type="submit"
-                                            variant={'contained'}
-                                            disabled={isLoading}
-                                        >
-                                            Update
-                                        </Button>
-                                    </Stack>
+                                                        ) => {
+                                                            field.onChange(
+                                                                newValues,
+                                                            );
+                                                        }}
+                                                    />
+                                                );
+                                            }}
+                                        />
+                                        <Stack alignItems={'center'}>
+                                            <Button
+                                                type="submit"
+                                                variant={'contained'}
+                                                disabled={isLoading}
+                                            >
+                                                Update
+                                            </Button>
+                                        </Stack>
+                                    </Card>
                                 </Stack>
                             </form>
                         </SettingsContext.Provider>

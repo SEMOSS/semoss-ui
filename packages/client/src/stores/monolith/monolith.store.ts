@@ -1042,7 +1042,9 @@ export class MonolithStore {
      * @param admin - is admin user
      * @returns Projects retrieved from Promise
      */
-    async getUserProjectPermission(projectId: string) {
+    async getUserProjectPermission(
+        projectId: string,
+    ): Promise<{ permission: Role }> {
         let url = `${Env.MODULE}/api/auth/`;
 
         url += 'project/getUserProjectPermission';
@@ -1879,11 +1881,15 @@ export class MonolithStore {
 
         postData += 'user=' + encodeURIComponent(JSON.stringify(user));
 
-        const response = await axios.post<{ success: boolean }>(url, postData, {
-            headers: {
-                'content-type': 'application/x-www-form-urlencoded',
-            },
-        });
+        const response = await axios
+            .post<{ success: boolean }>(url, postData, {
+                headers: {
+                    'content-type': 'application/x-www-form-urlencoded',
+                },
+            })
+            .catch((e) => {
+                throw Error(e);
+            });
 
         return response;
     }
@@ -1995,7 +2001,7 @@ export class MonolithStore {
      */
     async createUserAccessKey(tokenName: string, tokenDescription = '') {
         const url = `${Env.MODULE}/api/auth/user/createUserAccessKey`;
-
+        // debugger;
         let body = 'tokenName=' + encodeURIComponent(tokenName);
         if (tokenDescription) {
             body += '&tokenDescription=' + encodeURIComponent(tokenDescription);
