@@ -9,7 +9,7 @@
 
 // To-Do for Design Updates (from Jong figma):
 // https://www.figma.com/file/vlOC4OeAkxIVyu8Zmt7kWJ/Edit-App-with-Code-Editor?type=design&node-id=1-44800&mode=design&t=vfzXRBaaRWkin44v-0
-// http://localhost:9090/semoss-ui/packages/client/dist/#/app/8ef8d4f9-5f6c-46c0-b345-bac797e53333
+// http://localhost:9090/semoss-ui/packages/client/dist/#/app/4e9dc356-c155-4501-b190-cf54e6779273
 
 // Navbar
 // * highlight for active tab icon dark gray not blue
@@ -93,8 +93,12 @@ import {
     KeyboardDoubleArrowRight,
     CreateNewFolderOutlined,
     NoteAddOutlined,
-    mdiCodeTags,
+    // mdiCodeTags,
 } from '@mui/icons-material/';
+
+const TextEditorCodeGenerationWrapper = styled('div')(({ theme }) => ({
+    maxWidth: '90%',
+}));
 
 const StyledEditorPanel = styled('div')(({ theme }) => ({
     display: 'flex',
@@ -124,16 +128,14 @@ const StyledCollapse = styled(Collapse)(({ theme }) => ({
     // display: "absolute",
     // marginRight: "-65px",
     // width: '500px',
-    // border: "2px solid pink",
     backgroundColor: theme.palette.secondary.light,
 }));
 
 const StyledCollapseContainer = styled('div')(({ theme }) => ({
-    // border: "2px solid blue",
     display: 'flex',
     flexDirection: 'column',
-    width: '250px',
-    // width: '350px',
+    // width: '250px',
+    width: '350px',
     height: '100%',
     paddingTop: theme.spacing(1),
     paddingBottom: theme.spacing(2),
@@ -155,7 +157,9 @@ const StyleAppExplorerHeader = styled('div')(({ theme }) => ({
 
 const StyledAppExplorerContainer = styled('div')(({ theme }) => ({
     height: '95%',
-    overflow: 'hidden',
+    // overflow: 'hidden',
+    width: '295px',
+    overflow: 'visible',
 }));
 
 const StyledAppExplorerSection = styled('div')(({ theme }) => ({
@@ -230,6 +234,10 @@ const CustomAccordionTriggerContent = styled('div')(({ theme }) => ({
         width: '20px',
         height: '20px',
     },
+
+    // spaces new file and new folder icons on right
+    justifyContent: 'space-between',
+    width: '267.5px',
 }));
 
 const CustomAccordionTriggerLabel = styled('div')(({ theme }) => ({
@@ -245,6 +253,8 @@ const CustomAccordionContent = styled(Accordion.Content)(({ theme }) => ({
     display: 'flex',
     overflow: 'scroll',
     padding: '0px',
+    // border: '1px solid red',
+    // width: '500px'
     // paddingTop: '8px',
     // paddingTop: '0px',
     // alignItems: 'center',
@@ -1101,11 +1111,6 @@ export const AppEditor = (props: AppEditorProps) => {
                 in={openAppAssetsPanel}
                 timeout="auto"
                 orientation={'horizontal'}
-                // style={{
-                //     border: "2px solid green",
-                //     display: "absolute",
-                //     marginRight: "-65px"
-                // }}
             >
                 {/* <AppExplorer
                     directory={appDirectory}
@@ -1230,9 +1235,13 @@ export const AppEditor = (props: AppEditorProps) => {
                                 <CustomAccordionTrigger
                                     expandIcon={<ChevronRight />}
                                 >
-                                    <Typography variant="body1">
-                                        Dependencies
-                                    </Typography>
+                                    <CustomAccordionTriggerContent>
+                                        <CustomAccordionTriggerLabel>
+                                            <Typography variant="body1">
+                                                Dependencies
+                                            </Typography>
+                                        </CustomAccordionTriggerLabel>
+                                    </CustomAccordionTriggerContent>
                                 </CustomAccordionTrigger>
 
                                 <CustomAccordionContent>
@@ -1244,7 +1253,9 @@ export const AppEditor = (props: AppEditorProps) => {
                         </StyledAppExplorerSection>
                     </StyledAppExplorerContainer>
                     {process.env.NODE_ENV == 'development' && (
-                        <TextEditorCodeGeneration />
+                        <TextEditorCodeGenerationWrapper>
+                            <TextEditorCodeGeneration />
+                        </TextEditorCodeGenerationWrapper>
                     )}
                 </StyledCollapseContainer>
             </StyledCollapse>
