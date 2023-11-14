@@ -1,22 +1,71 @@
-import { styled, Card } from '@semoss/ui';
+import { useState } from 'react';
+import { styled, Card, Chip, IconButton, Stack, Typography } from '@semoss/ui';
+import {
+    Bookmark,
+    BookmarkBorderOutlined,
+    LocalOfferOutlined,
+} from '@mui/icons-material';
 
 const StyledCard = styled(Card)(() => ({
     height: '100%',
     cursor: 'pointer',
 }));
+const StyledChip = styled(Chip)(({ theme }) => ({
+    textTransform: 'capitalize',
+    paddingLeft: theme.spacing(1),
+    margin: theme.spacing(1),
+}));
+const Spacer = styled('div')(() => ({
+    flex: 1,
+}));
 
 export function PromptCard(props: {
+    cardKey: string;
     title: string;
+    tags: string[];
     context: string;
     openUIBuilderForTemplate: () => void;
 }) {
+    // todo: hook this up to a real bookmark system
+    const [isBookmarked, setIsBookmarked] = useState(false);
+
     return (
-        <StyledCard
-            sx={{ height: '100%' }}
-            onClick={props.openUIBuilderForTemplate}
-        >
-            <Card.Header title={props.title} />
+        <StyledCard onClick={props.openUIBuilderForTemplate}>
+            <Card.Header
+                title={
+                    <Stack direction="row" justifyContent="space-between">
+                        <Typography variant="subtitle2">
+                            {props.title}
+                        </Typography>
+                        <IconButton
+                            onClick={(event) => {
+                                event.stopPropagation();
+                                setIsBookmarked(!isBookmarked);
+                            }}
+                        >
+                            {isBookmarked ? (
+                                <Bookmark />
+                            ) : (
+                                <BookmarkBorderOutlined />
+                            )}
+                        </IconButton>
+                    </Stack>
+                }
+            />
             <Card.Content>{props.context}</Card.Content>
+            <Spacer />
+            <Card.Actions>
+                <Stack direction="row" flexWrap="wrap">
+                    {Array.from(props.tags.sort(), (tag, i) => (
+                        <StyledChip
+                            icon={<LocalOfferOutlined fontSize="small" />}
+                            label={tag}
+                            variant="outlined"
+                            key={`${props.cardKey}-tag-${i}`}
+                        />
+                    ))}
+                </Stack>
+            </Card.Actions>
         </StyledCard>
     );
 }

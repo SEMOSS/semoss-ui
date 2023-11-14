@@ -1,4 +1,8 @@
-import { Block, Create, DisplaySettings, Input } from '@mui/icons-material';
+import { Create, DisplaySettings, Input } from '@mui/icons-material';
+
+export const LIBRARY_PROMPT_TAG_TRAVEL = 'travel';
+export const LIBRARY_PROMPT_TAG_COMMUNICATIONS = 'communications';
+export const LIBRARY_PROMPT_TAG_BUSINESS = 'business';
 
 export const TOKEN_TYPE_TEXT = 'text';
 export const TOKEN_TYPE_INPUT = 'input';

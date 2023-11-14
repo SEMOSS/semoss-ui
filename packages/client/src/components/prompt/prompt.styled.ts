@@ -1,5 +1,4 @@
 import { styled, Paper } from '@semoss/ui';
-import { grey } from '@mui/material/colors';
 
 export const StyledStepPaper = styled(Paper)(({ theme }) => ({
     padding: theme.spacing(4),
@@ -10,7 +9,7 @@ export const StyledStepPaper = styled(Paper)(({ theme }) => ({
 export const StyledTextPaper = styled(Paper)(({ theme }) => ({
     borderStyle: 'solid',
     borderWidth: '2px',
-    borderColor: grey[300],
+    borderColor: theme.palette.grey[300],
     minHeight: '50%',
     marginTop: theme.spacing(4),
     paddingTop: theme.spacing(1.5),

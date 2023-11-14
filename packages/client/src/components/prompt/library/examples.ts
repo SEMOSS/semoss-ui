@@ -5,17 +5,24 @@ import {
     TOKEN_TYPE_TEXT,
     TOKEN_TYPE_INPUT,
     INPUT_TYPE_TEXT,
+    LIBRARY_PROMPT_TAG_TRAVEL,
+    LIBRARY_PROMPT_TAG_COMMUNICATIONS,
+    LIBRARY_PROMPT_TAG_BUSINESS,
 } from '../prompt.constants';
 import { Token } from '../prompt.types';
 
-export const PromptExamples: {
+export type Prompt = {
     title: string;
+    tags: string[];
     context: string;
     inputs: Token[];
     inputTypes: object;
-}[] = [
+};
+
+export const PromptExamples: Prompt[] = [
     {
         title: 'Travel Guide',
+        tags: [LIBRARY_PROMPT_TAG_TRAVEL],
         context:
             "I'm traveling to {{location}}. I want to know about {{instructions}}. Give me an itinerary and suggest places to visit.",
         inputs: [
@@ -160,6 +167,7 @@ export const PromptExamples: {
     },
     {
         title: 'Translator',
+        tags: [LIBRARY_PROMPT_TAG_TRAVEL, LIBRARY_PROMPT_TAG_COMMUNICATIONS],
         context:
             'I want you to act as a translator. Translate {{question}} from English to {{language}}.',
         inputs: [
@@ -265,6 +273,143 @@ export const PromptExamples: {
         inputTypes: {
             9: INPUT_TYPE_TEXT,
             13: INPUT_TYPE_TEXT,
+        },
+    },
+    {
+        title: 'Article Generator',
+        tags: [LIBRARY_PROMPT_TAG_COMMUNICATIONS, LIBRARY_PROMPT_TAG_BUSINESS],
+        context:
+            'Write an article about {{topic}}. Include relevant statistics, consider diverse perspectives, and add source links at the end.',
+        inputs: [
+            {
+                index: 0,
+                key: 'Write',
+                display: 'write',
+                type: TOKEN_TYPE_TEXT,
+                isHiddenPhraseInputToken: false,
+            },
+            {
+                index: 1,
+                key: 'an',
+                display: 'an',
+                type: TOKEN_TYPE_TEXT,
+                isHiddenPhraseInputToken: false,
+            },
+            {
+                index: 2,
+                key: 'article',
+                display: 'article',
+                type: TOKEN_TYPE_TEXT,
+                isHiddenPhraseInputToken: false,
+            },
+            {
+                index: 3,
+                key: 'about',
+                display: 'about',
+                type: TOKEN_TYPE_TEXT,
+                isHiddenPhraseInputToken: false,
+            },
+            {
+                index: 4,
+                key: 'topic',
+                display: 'topic.',
+                type: TOKEN_TYPE_INPUT,
+                isHiddenPhraseInputToken: false,
+            },
+            {
+                index: 5,
+                key: 'Include',
+                display: 'Include',
+                type: TOKEN_TYPE_TEXT,
+                isHiddenPhraseInputToken: false,
+            },
+            {
+                index: 6,
+                key: 'relevant',
+                display: 'relevant',
+                type: TOKEN_TYPE_TEXT,
+                isHiddenPhraseInputToken: false,
+            },
+            {
+                index: 7,
+                key: 'statistics',
+                display: 'statistics,',
+                type: TOKEN_TYPE_TEXT,
+                isHiddenPhraseInputToken: false,
+            },
+            {
+                index: 8,
+                key: 'consider',
+                display: 'consider',
+                type: TOKEN_TYPE_TEXT,
+                isHiddenPhraseInputToken: false,
+            },
+            {
+                index: 9,
+                key: 'diverse',
+                display: 'diverse',
+                type: TOKEN_TYPE_TEXT,
+                isHiddenPhraseInputToken: false,
+            },
+            {
+                index: 10,
+                key: 'perspectives',
+                display: 'perspectives,',
+                type: TOKEN_TYPE_TEXT,
+                isHiddenPhraseInputToken: false,
+            },
+            {
+                index: 11,
+                key: 'and',
+                display: 'and',
+                type: TOKEN_TYPE_TEXT,
+                isHiddenPhraseInputToken: false,
+            },
+            {
+                index: 12,
+                key: 'add',
+                display: 'add',
+                type: TOKEN_TYPE_TEXT,
+                isHiddenPhraseInputToken: false,
+            },
+            {
+                index: 13,
+                key: 'source',
+                display: 'source',
+                type: TOKEN_TYPE_TEXT,
+                isHiddenPhraseInputToken: false,
+            },
+            {
+                index: 14,
+                key: 'links',
+                display: 'links',
+                type: TOKEN_TYPE_TEXT,
+                isHiddenPhraseInputToken: false,
+            },
+            {
+                index: 15,
+                key: 'at',
+                display: 'at',
+                type: TOKEN_TYPE_TEXT,
+                isHiddenPhraseInputToken: false,
+            },
+            {
+                index: 16,
+                key: 'the',
+                display: 'the',
+                type: TOKEN_TYPE_TEXT,
+                isHiddenPhraseInputToken: false,
+            },
+            {
+                index: 17,
+                key: 'end',
+                display: 'end',
+                type: TOKEN_TYPE_TEXT,
+                isHiddenPhraseInputToken: false,
+            },
+        ],
+        inputTypes: {
+            4: INPUT_TYPE_TEXT,
         },
     },
 ];

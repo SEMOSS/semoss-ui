@@ -1,10 +1,12 @@
+import { useState } from 'react';
 import { Grid, IconButton, Modal } from '@semoss/ui';
-import CloseIcon from '@mui/icons-material/Close';
-import { PromptCard } from './PromptCard';
+import { PromptLibraryCards } from './PromptLibraryCards';
+import { PromptLibraryList } from './PromptLibraryList';
 import { PromptExamples } from './examples';
 import { Builder, Token } from '../prompt.types';
 import { setBlocksAndOpenUIBuilder } from '../prompt.helpers';
 import { useNavigate } from 'react-router-dom';
+import { Close } from '@mui/icons-material';
 
 export function PromptLibraryDialog(props: {
     builder: Builder;
@@ -12,6 +14,27 @@ export function PromptLibraryDialog(props: {
     closePromptLibrary: () => void;
 }) {
     const navigate = useNavigate();
+    const [filter, setFilter] = useState('all');
+
+    const filteredPrompts = () => {
+        return PromptExamples.filter((prompt) => {
+            if (filter == 'all') {
+                return true;
+            } else {
+                return prompt.tags.includes(filter);
+            }
+        }).sort(function (a, b) {
+            const firstTitle = a.title.toLowerCase();
+            const secondTitle = b.title.toLowerCase();
+            if (firstTitle < secondTitle) {
+                return -1;
+            }
+            if (firstTitle > secondTitle) {
+                return 1;
+            }
+            return 0;
+        });
+    };
 
     function openUIBuilderForTemplate(
         title: string,
@@ -39,7 +62,7 @@ export function PromptLibraryDialog(props: {
             }}
             aria-labelledby="dialog-title"
             fullWidth
-            maxWidth="lg"
+            maxWidth="xl"
             open={props.promptLibraryOpen}
         >
             <Modal.Title sx={{ m: 0, p: 2 }}>Prompt Library</Modal.Title>
@@ -52,28 +75,23 @@ export function PromptLibraryDialog(props: {
                     top: 8,
                 }}
             >
-                <CloseIcon />
+                <Close />
             </IconButton>
-            <Modal.Content>
+            <Modal.Content sx={{ height: '60vh' }}>
                 <Grid container spacing={2}>
-                    {Array.from(PromptExamples, (examplePrompt, i) => {
-                        return (
-                            <Grid item xs={4} key={i}>
-                                <PromptCard
-                                    title={examplePrompt.title}
-                                    context={examplePrompt.context}
-                                    openUIBuilderForTemplate={() => {
-                                        openUIBuilderForTemplate(
-                                            examplePrompt.title,
-                                            examplePrompt.context,
-                                            examplePrompt.inputs,
-                                            examplePrompt.inputTypes,
-                                        );
-                                    }}
-                                />
-                            </Grid>
-                        );
-                    })}
+                    <Grid item xs={2}>
+                        <PromptLibraryList
+                            filter={filter}
+                            setFilter={setFilter}
+                        />
+                    </Grid>
+                    <Grid item xs={10}>
+                        <PromptLibraryCards
+                            filter={filter}
+                            prompts={filteredPrompts()}
+                            openUIBuilderForTemplate={openUIBuilderForTemplate}
+                        />
+                    </Grid>
                 </Grid>
             </Modal.Content>
         </Modal>
