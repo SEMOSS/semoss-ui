@@ -23,17 +23,66 @@ export function PromptGeneratorBuilderInputStep(props: {
             typeof props.builder.context.value === 'string'
                 ? props.builder.context.value.replace('\n', '\n ')
                 : '';
-        const tokenArray = contextString.split(' ');
-        const tokenObjectArray = tokenArray.map((token, index) => {
-            const value = token.replace(/\W/g, '');
-            const tokenObject: Token = {
-                index: index,
-                key: value,
-                display: token,
-                type: TOKEN_TYPE_TEXT,
-                isHiddenPhraseInputToken: false,
-            };
-            return tokenObject;
+        // split by space except for what's in double brackets
+        const tokenArray = contextString.match(
+            /(?:[^\s\{\{\}\}]+|\{\{[^\{\{\}\}]*\}\})+/g,
+        );
+        console.log(tokenArray);
+        let preconfiguredInputs = {};
+        let tokenObjectArray: Token[] = [];
+        tokenArray.forEach((token) => {
+            let tokenObjectArrayIndex = tokenObjectArray.length;
+            console.log(token.match(/(\{\{.+?\}\})/g));
+            if (token.match(/(\{\{.+?\}\})/g)?.length > 0) {
+                if (!preconfiguredInputs.hasOwnProperty(token)) {
+                    preconfiguredInputs[token] = tokenObjectArrayIndex;
+                }
+                const inputToken = token.replace('{{', '').replace('}}', ''); // preserve punctuation outside braces
+                const fullTokenValue = inputToken.replace(
+                    /[.,\/#!$%\^&\*;:{}=\-_`~()]/g,
+                    '',
+                );
+                inputToken.split(' ').forEach((tokenWord, i) => {
+                    let tokenObject: Token;
+                    if (i === 0) {
+                        tokenObject = {
+                            index: tokenObjectArrayIndex,
+                            key: fullTokenValue,
+                            display: inputToken,
+                            type: TOKEN_TYPE_INPUT,
+                            isHiddenPhraseInputToken: false,
+                            linkedInputToken:
+                                preconfiguredInputs[token] ?? false,
+                        };
+                    } else {
+                        tokenObject = {
+                            index: tokenObjectArrayIndex,
+                            key: tokenWord.replace(
+                                /[.,\/#!$%\^&\*;:{}=\-_`~()]/g,
+                                '',
+                            ),
+                            display: tokenWord,
+                            type: TOKEN_TYPE_INPUT,
+                            isHiddenPhraseInputToken: true,
+                            linkedInputToken:
+                                preconfiguredInputs[token] ?? false,
+                        };
+                    }
+                    tokenObjectArray.push(tokenObject);
+                    tokenObjectArrayIndex++;
+                });
+            } else {
+                const value = token.replace(/\W/g, '');
+                const tokenObject: Token = {
+                    index: tokenObjectArrayIndex,
+                    key: value,
+                    display: token,
+                    type: TOKEN_TYPE_TEXT,
+                    isHiddenPhraseInputToken: false,
+                    linkedInputToken: undefined,
+                };
+                tokenObjectArray.push(tokenObject);
+            }
         });
         const initialTokens = tokenObjectArray.reduce((acc, currToken) => {
             acc[currToken.index] = currToken;

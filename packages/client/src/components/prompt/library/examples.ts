@@ -32,6 +32,7 @@ export const PromptExamples: Prompt[] = [
                 display: "I'm",
                 type: TOKEN_TYPE_TEXT,
                 isHiddenPhraseInputToken: false,
+                linkedInputToken: undefined,
             },
             {
                 index: 1,
@@ -39,6 +40,7 @@ export const PromptExamples: Prompt[] = [
                 display: 'traveling',
                 type: TOKEN_TYPE_TEXT,
                 isHiddenPhraseInputToken: false,
+                linkedInputToken: undefined,
             },
             {
                 index: 2,
@@ -46,6 +48,7 @@ export const PromptExamples: Prompt[] = [
                 display: 'to',
                 type: TOKEN_TYPE_TEXT,
                 isHiddenPhraseInputToken: false,
+                linkedInputToken: undefined,
             },
             {
                 index: 3,
@@ -53,6 +56,7 @@ export const PromptExamples: Prompt[] = [
                 display: 'location.',
                 type: TOKEN_TYPE_INPUT,
                 isHiddenPhraseInputToken: false,
+                linkedInputToken: undefined,
             },
             {
                 index: 4,
@@ -60,6 +64,7 @@ export const PromptExamples: Prompt[] = [
                 display: 'I',
                 type: TOKEN_TYPE_TEXT,
                 isHiddenPhraseInputToken: false,
+                linkedInputToken: undefined,
             },
             {
                 index: 5,
@@ -67,6 +72,7 @@ export const PromptExamples: Prompt[] = [
                 display: 'want',
                 type: TOKEN_TYPE_TEXT,
                 isHiddenPhraseInputToken: false,
+                linkedInputToken: undefined,
             },
             {
                 index: 6,
@@ -74,6 +80,7 @@ export const PromptExamples: Prompt[] = [
                 display: 'to',
                 type: TOKEN_TYPE_TEXT,
                 isHiddenPhraseInputToken: false,
+                linkedInputToken: undefined,
             },
             {
                 index: 7,
@@ -81,6 +88,7 @@ export const PromptExamples: Prompt[] = [
                 display: 'know',
                 type: TOKEN_TYPE_TEXT,
                 isHiddenPhraseInputToken: false,
+                linkedInputToken: undefined,
             },
             {
                 index: 8,
@@ -88,6 +96,7 @@ export const PromptExamples: Prompt[] = [
                 display: 'about',
                 type: TOKEN_TYPE_TEXT,
                 isHiddenPhraseInputToken: false,
+                linkedInputToken: undefined,
             },
             {
                 index: 9,
@@ -95,6 +104,7 @@ export const PromptExamples: Prompt[] = [
                 display: 'instructions.',
                 type: TOKEN_TYPE_INPUT,
                 isHiddenPhraseInputToken: false,
+                linkedInputToken: undefined,
             },
             {
                 index: 10,
@@ -102,6 +112,7 @@ export const PromptExamples: Prompt[] = [
                 display: 'Give',
                 type: TOKEN_TYPE_TEXT,
                 isHiddenPhraseInputToken: false,
+                linkedInputToken: undefined,
             },
             {
                 index: 11,
@@ -109,6 +120,7 @@ export const PromptExamples: Prompt[] = [
                 display: 'me',
                 type: TOKEN_TYPE_TEXT,
                 isHiddenPhraseInputToken: false,
+                linkedInputToken: undefined,
             },
             {
                 index: 12,
@@ -116,6 +128,7 @@ export const PromptExamples: Prompt[] = [
                 display: 'an',
                 type: TOKEN_TYPE_TEXT,
                 isHiddenPhraseInputToken: false,
+                linkedInputToken: undefined,
             },
             {
                 index: 13,
@@ -123,6 +136,7 @@ export const PromptExamples: Prompt[] = [
                 display: 'itinerary',
                 type: TOKEN_TYPE_TEXT,
                 isHiddenPhraseInputToken: false,
+                linkedInputToken: undefined,
             },
             {
                 index: 14,
@@ -130,6 +144,7 @@ export const PromptExamples: Prompt[] = [
                 display: 'and',
                 type: TOKEN_TYPE_TEXT,
                 isHiddenPhraseInputToken: false,
+                linkedInputToken: undefined,
             },
             {
                 index: 15,
@@ -137,6 +152,7 @@ export const PromptExamples: Prompt[] = [
                 display: 'suggest',
                 type: TOKEN_TYPE_TEXT,
                 isHiddenPhraseInputToken: false,
+                linkedInputToken: undefined,
             },
             {
                 index: 16,
@@ -144,6 +160,7 @@ export const PromptExamples: Prompt[] = [
                 display: 'place',
                 type: TOKEN_TYPE_TEXT,
                 isHiddenPhraseInputToken: false,
+                linkedInputToken: undefined,
             },
             {
                 index: 17,
@@ -151,6 +168,7 @@ export const PromptExamples: Prompt[] = [
                 display: 'to',
                 type: TOKEN_TYPE_TEXT,
                 isHiddenPhraseInputToken: false,
+                linkedInputToken: undefined,
             },
             {
                 index: 18,
@@ -158,6 +176,7 @@ export const PromptExamples: Prompt[] = [
                 display: 'visit.',
                 type: TOKEN_TYPE_TEXT,
                 isHiddenPhraseInputToken: false,
+                linkedInputToken: undefined,
             },
         ],
         inputTypes: {
@@ -177,6 +196,7 @@ export const PromptExamples: Prompt[] = [
                 display: 'I',
                 type: TOKEN_TYPE_TEXT,
                 isHiddenPhraseInputToken: false,
+                linkedInputToken: undefined,
             },
             {
                 index: 1,
@@ -184,6 +204,7 @@ export const PromptExamples: Prompt[] = [
                 display: 'want',
                 type: TOKEN_TYPE_TEXT,
                 isHiddenPhraseInputToken: false,
+                linkedInputToken: undefined,
             },
             {
                 index: 2,
@@ -191,6 +212,7 @@ export const PromptExamples: Prompt[] = [
                 display: 'you',
                 type: TOKEN_TYPE_TEXT,
                 isHiddenPhraseInputToken: false,
+                linkedInputToken: undefined,
             },
             {
                 index: 3,
@@ -198,6 +220,7 @@ export const PromptExamples: Prompt[] = [
                 display: 'to',
                 type: TOKEN_TYPE_TEXT,
                 isHiddenPhraseInputToken: false,
+                linkedInputToken: undefined,
             },
             {
                 index: 4,
@@ -205,6 +228,7 @@ export const PromptExamples: Prompt[] = [
                 display: 'act',
                 type: TOKEN_TYPE_TEXT,
                 isHiddenPhraseInputToken: false,
+                linkedInputToken: undefined,
             },
             {
                 index: 5,
@@ -212,6 +236,7 @@ export const PromptExamples: Prompt[] = [
                 display: 'as',
                 type: TOKEN_TYPE_TEXT,
                 isHiddenPhraseInputToken: false,
+                linkedInputToken: undefined,
             },
             {
                 index: 6,
@@ -219,6 +244,7 @@ export const PromptExamples: Prompt[] = [
                 display: 'a',
                 type: TOKEN_TYPE_TEXT,
                 isHiddenPhraseInputToken: false,
+                linkedInputToken: undefined,
             },
             {
                 index: 7,
@@ -226,6 +252,7 @@ export const PromptExamples: Prompt[] = [
                 display: 'translator.',
                 type: TOKEN_TYPE_TEXT,
                 isHiddenPhraseInputToken: false,
+                linkedInputToken: undefined,
             },
             {
                 index: 8,
@@ -233,6 +260,7 @@ export const PromptExamples: Prompt[] = [
                 display: 'Translate',
                 type: TOKEN_TYPE_TEXT,
                 isHiddenPhraseInputToken: false,
+                linkedInputToken: undefined,
             },
             {
                 index: 9,
@@ -240,6 +268,7 @@ export const PromptExamples: Prompt[] = [
                 display: 'question',
                 type: TOKEN_TYPE_INPUT,
                 isHiddenPhraseInputToken: false,
+                linkedInputToken: undefined,
             },
             {
                 index: 10,
@@ -247,6 +276,7 @@ export const PromptExamples: Prompt[] = [
                 display: 'from',
                 type: TOKEN_TYPE_TEXT,
                 isHiddenPhraseInputToken: false,
+                linkedInputToken: undefined,
             },
             {
                 index: 11,
@@ -254,6 +284,7 @@ export const PromptExamples: Prompt[] = [
                 display: 'English',
                 type: TOKEN_TYPE_TEXT,
                 isHiddenPhraseInputToken: false,
+                linkedInputToken: undefined,
             },
             {
                 index: 12,
@@ -261,6 +292,7 @@ export const PromptExamples: Prompt[] = [
                 display: 'to',
                 type: TOKEN_TYPE_TEXT,
                 isHiddenPhraseInputToken: false,
+                linkedInputToken: undefined,
             },
             {
                 index: 13,
@@ -268,6 +300,7 @@ export const PromptExamples: Prompt[] = [
                 display: 'language.',
                 type: TOKEN_TYPE_INPUT,
                 isHiddenPhraseInputToken: false,
+                linkedInputToken: undefined,
             },
         ],
         inputTypes: {
@@ -287,6 +320,7 @@ export const PromptExamples: Prompt[] = [
                 display: 'write',
                 type: TOKEN_TYPE_TEXT,
                 isHiddenPhraseInputToken: false,
+                linkedInputToken: undefined,
             },
             {
                 index: 1,
@@ -294,6 +328,7 @@ export const PromptExamples: Prompt[] = [
                 display: 'an',
                 type: TOKEN_TYPE_TEXT,
                 isHiddenPhraseInputToken: false,
+                linkedInputToken: undefined,
             },
             {
                 index: 2,
@@ -301,6 +336,7 @@ export const PromptExamples: Prompt[] = [
                 display: 'article',
                 type: TOKEN_TYPE_TEXT,
                 isHiddenPhraseInputToken: false,
+                linkedInputToken: undefined,
             },
             {
                 index: 3,
@@ -308,6 +344,7 @@ export const PromptExamples: Prompt[] = [
                 display: 'about',
                 type: TOKEN_TYPE_TEXT,
                 isHiddenPhraseInputToken: false,
+                linkedInputToken: undefined,
             },
             {
                 index: 4,
@@ -315,6 +352,7 @@ export const PromptExamples: Prompt[] = [
                 display: 'topic.',
                 type: TOKEN_TYPE_INPUT,
                 isHiddenPhraseInputToken: false,
+                linkedInputToken: undefined,
             },
             {
                 index: 5,
@@ -322,6 +360,7 @@ export const PromptExamples: Prompt[] = [
                 display: 'Include',
                 type: TOKEN_TYPE_TEXT,
                 isHiddenPhraseInputToken: false,
+                linkedInputToken: undefined,
             },
             {
                 index: 6,
@@ -329,6 +368,7 @@ export const PromptExamples: Prompt[] = [
                 display: 'relevant',
                 type: TOKEN_TYPE_TEXT,
                 isHiddenPhraseInputToken: false,
+                linkedInputToken: undefined,
             },
             {
                 index: 7,
@@ -336,6 +376,7 @@ export const PromptExamples: Prompt[] = [
                 display: 'statistics,',
                 type: TOKEN_TYPE_TEXT,
                 isHiddenPhraseInputToken: false,
+                linkedInputToken: undefined,
             },
             {
                 index: 8,
@@ -343,6 +384,7 @@ export const PromptExamples: Prompt[] = [
                 display: 'consider',
                 type: TOKEN_TYPE_TEXT,
                 isHiddenPhraseInputToken: false,
+                linkedInputToken: undefined,
             },
             {
                 index: 9,
@@ -350,6 +392,7 @@ export const PromptExamples: Prompt[] = [
                 display: 'diverse',
                 type: TOKEN_TYPE_TEXT,
                 isHiddenPhraseInputToken: false,
+                linkedInputToken: undefined,
             },
             {
                 index: 10,
@@ -357,6 +400,7 @@ export const PromptExamples: Prompt[] = [
                 display: 'perspectives,',
                 type: TOKEN_TYPE_TEXT,
                 isHiddenPhraseInputToken: false,
+                linkedInputToken: undefined,
             },
             {
                 index: 11,
@@ -364,6 +408,7 @@ export const PromptExamples: Prompt[] = [
                 display: 'and',
                 type: TOKEN_TYPE_TEXT,
                 isHiddenPhraseInputToken: false,
+                linkedInputToken: undefined,
             },
             {
                 index: 12,
@@ -371,6 +416,7 @@ export const PromptExamples: Prompt[] = [
                 display: 'add',
                 type: TOKEN_TYPE_TEXT,
                 isHiddenPhraseInputToken: false,
+                linkedInputToken: undefined,
             },
             {
                 index: 13,
@@ -378,6 +424,7 @@ export const PromptExamples: Prompt[] = [
                 display: 'source',
                 type: TOKEN_TYPE_TEXT,
                 isHiddenPhraseInputToken: false,
+                linkedInputToken: undefined,
             },
             {
                 index: 14,
@@ -385,6 +432,7 @@ export const PromptExamples: Prompt[] = [
                 display: 'links',
                 type: TOKEN_TYPE_TEXT,
                 isHiddenPhraseInputToken: false,
+                linkedInputToken: undefined,
             },
             {
                 index: 15,
@@ -392,6 +440,7 @@ export const PromptExamples: Prompt[] = [
                 display: 'at',
                 type: TOKEN_TYPE_TEXT,
                 isHiddenPhraseInputToken: false,
+                linkedInputToken: undefined,
             },
             {
                 index: 16,
@@ -399,6 +448,7 @@ export const PromptExamples: Prompt[] = [
                 display: 'the',
                 type: TOKEN_TYPE_TEXT,
                 isHiddenPhraseInputToken: false,
+                linkedInputToken: undefined,
             },
             {
                 index: 17,
@@ -406,6 +456,7 @@ export const PromptExamples: Prompt[] = [
                 display: 'end',
                 type: TOKEN_TYPE_TEXT,
                 isHiddenPhraseInputToken: false,
+                linkedInputToken: undefined,
             },
         ],
         inputTypes: {
