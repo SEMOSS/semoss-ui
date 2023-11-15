@@ -4,7 +4,7 @@ import { DesignerStore, StateStore } from '@/stores';
 import { Designer } from '@/components/designer';
 import { Blocks, Renderer } from '@/components/blocks';
 import { DefaultBlocks } from '@/components/block-defaults';
-import { styled } from '@semoss/ui';
+import { styled, Stack, Typography } from '@semoss/ui';
 import { Navbar } from '@/components/ui';
 import { useParams } from 'react-router-dom';
 import { AppContext } from '@/contexts';
@@ -26,6 +26,24 @@ const StyledContent = styled('div')(() => ({
     width: '100%',
     overflow: 'hidden',
     paddingTop: NAV_HEIGHT,
+}));
+
+/**
+ * Temporarily using a custom header so it can be used in an app iframe
+ */
+const StyledHeader = styled('div')(({ theme }) => ({
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    height: NAV_HEIGHT,
+    display: 'flex',
+    alignItems: 'center',
+    overflow: 'hidden',
+    color: 'rgba(235, 238, 254, 1)',
+    backgroundColor: theme.palette.common.black,
+    zIndex: 10,
+    padding: `0px ${theme.spacing(3)}`,
 }));
 
 const ACTIVE = 'page-1';
@@ -138,11 +156,20 @@ export const DesignPage = () => {
             }}
         >
             <StyledViewport>
-                <Navbar>
+                <StyledHeader>
                     {/* Actions to Open Editor Mode */}
-                    {(appPermission === 'OWNER' ||
-                        appPermission === 'EDIT') && <DesignerEditorActions />}
-                </Navbar>
+                    <Stack
+                        direction="row"
+                        flex={1}
+                        justifyContent="space-between"
+                    >
+                        <Typography variant="h5">UI Builder</Typography>
+                        {(appPermission === 'OWNER' ||
+                            appPermission === 'EDIT') && (
+                            <DesignerEditorActions />
+                        )}
+                    </Stack>
+                </StyledHeader>
                 <StyledContent>
                     <Blocks state={StateStore} registry={DefaultBlocks}>
                         {editMode ? (
