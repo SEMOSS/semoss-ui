@@ -1841,7 +1841,7 @@ export class MonolithStore {
      * @param admin - is admin user
      * @returns MemberInterface[]
      */
-    async getAllUsers(admin) {
+    async getAllUsers(admin: boolean) {
         let url = `${Env.MODULE}/api/auth/`;
 
         if (admin) {
@@ -1852,9 +1852,21 @@ export class MonolithStore {
 
         url += 'user/getAllUsers';
         // get the response
-        const response = await axios.get(url).catch((error) => {
-            throw Error(error);
-        });
+        const response = await axios
+            .get<
+                {
+                    id: string;
+                    type: string;
+                    name?: string;
+                    admin?: boolean;
+                    publisher?: boolean;
+                    exporter?: boolean;
+                    email?: string;
+                }[]
+            >(url)
+            .catch((error) => {
+                throw Error(error);
+            });
 
         // there was no response, that is an error
         if (!response) {

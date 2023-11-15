@@ -240,13 +240,29 @@ export const MemberSettingsPage = () => {
 
     const getMembers = useAPI(['getAllUsers', adminMode]);
 
+    // TODO: Remove this useEffect. It is unnecessary.
     useEffect(() => {
         // REST call to get all apps
         if (getMembers.status !== 'SUCCESS' || !getMembers.data) {
             return;
         }
 
-        setMembers(getMembers.data);
+        // flush into a non optional object
+        const updated: Member[] = getMembers.data.map((m) => ({
+            admin: false,
+            email: '',
+            name: '',
+            username: '',
+            password: '',
+            phone: '',
+            publisher: false,
+            exporter: false,
+            phoneextension: '',
+            countrycode: '',
+            ...m,
+        }));
+
+        setMembers(updated);
 
         () => {
             console.warn('Cleaning up getMembers');
