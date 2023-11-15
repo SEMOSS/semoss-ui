@@ -12,7 +12,9 @@ export function PromptGeneratorBuilderPreviewStep(props: {
         if (token.type === TOKEN_TYPE_TEXT || token.isHiddenPhraseInputToken) {
             return null;
         } else {
-            return props.builder.inputTypes.value[token.index];
+            return props.builder.inputTypes.value[
+                token.linkedInputToken ?? token.index
+            ];
         }
     };
     const getBuilderTokens = (builder: Builder) => {
