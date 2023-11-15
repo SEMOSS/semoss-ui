@@ -29,24 +29,6 @@ const StyledContent = styled('div')(() => ({
     paddingTop: NAV_HEIGHT,
 }));
 
-/**
- * Temporarily using a custom header so it can be used in an app iframe
- */
-const StyledHeader = styled('div')(({ theme }) => ({
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    height: NAV_HEIGHT,
-    display: 'flex',
-    alignItems: 'center',
-    overflow: 'hidden',
-    color: 'rgba(235, 238, 254, 1)',
-    backgroundColor: theme.palette.common.black,
-    zIndex: 10,
-    padding: `0px ${theme.spacing(3)}`,
-}));
-
 const ACTIVE = 'page-1';
 
 export const DesignPage = () => {
