@@ -586,6 +586,12 @@ export const AppEditor = (props: AppEditorProps) => {
             });
         }
 
+        // success notification
+        notification.add({
+            color: 'success',
+            message: `"Your file has been saved!"`,
+        });
+
         // Refreshes App Renderer
         onSave(true);
 
