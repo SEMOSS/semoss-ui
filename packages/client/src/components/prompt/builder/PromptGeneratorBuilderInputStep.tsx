@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { TOKEN_TYPE_TEXT, TOKEN_TYPE_INPUT } from '../prompt.constants';
 import { Builder, Token } from '../prompt.types';
 import { StyledStepPaper, StyledTextPaper } from '../prompt.styled';
@@ -18,11 +18,12 @@ export function PromptGeneratorBuilderInputStep(props: {
      * Split context into tokens by word
      */
     useEffect(() => {
-        const tokenArray =
+        const contextString =
             props.builder.context.value &&
             typeof props.builder.context.value === 'string'
-                ? props.builder.context.value.split(' ')
-                : [];
+                ? props.builder.context.value.replace('\n', '\n ')
+                : '';
+        const tokenArray = contextString.split(' ');
         const tokenObjectArray = tokenArray.map((token, index) => {
             const value = token.replace(/\W/g, '');
             const tokenObject: Token = {
@@ -214,15 +215,23 @@ export function PromptGeneratorBuilderInputStep(props: {
             </Box>
             <StyledTextPaper>
                 {Array.from(Object.values(tokens), (token: Token) => (
-                    <PromptGeneratorSetToken
-                        key={token.index}
-                        token={token}
-                        selectedInputTokens={selectedInputTokens}
-                        addSelectedInputToken={addSelectedInputToken}
-                        removeSelectedInputToken={removeSelectedInputToken}
-                        resetInputToken={resetInputToken}
-                        setSelectedTokensAsInputs={setSelectedTokensAsInputs}
-                    />
+                    <React.Fragment key={token.index}>
+                        <PromptGeneratorSetToken
+                            token={token}
+                            selectedInputTokens={selectedInputTokens}
+                            addSelectedInputToken={addSelectedInputToken}
+                            removeSelectedInputToken={removeSelectedInputToken}
+                            resetInputToken={resetInputToken}
+                            setSelectedTokensAsInputs={
+                                setSelectedTokensAsInputs
+                            }
+                        />
+                        {token.display.endsWith('\n') ? (
+                            <div style={{ flex: 1 }} />
+                        ) : (
+                            <></>
+                        )}
+                    </React.Fragment>
                 ))}
             </StyledTextPaper>
         </StyledStepPaper>
