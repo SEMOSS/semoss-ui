@@ -9,8 +9,6 @@ export function PromptGeneratorBuilderInputStep(props: {
     builder: Builder;
     setBuilderValue: (builderStepKey: string, value: Token[]) => void;
 }) {
-    // Tokens (words) in context
-    const [tokens, setTokens] = useState({});
     // Tokens in input, necessary to accomodate multiple word inputs
     const [selectedInputTokens, setSelectedInputTokens] = useState([]);
 
@@ -27,21 +25,19 @@ export function PromptGeneratorBuilderInputStep(props: {
         const tokenArray = contextString.match(
             /(?:[^\s\{\{\}\}]+|\{\{[^\{\{\}\}]*\}\})+/g,
         );
-        console.log(tokenArray);
         let preconfiguredInputs = {};
         let tokenObjectArray: Token[] = [];
         tokenArray.forEach((token) => {
             let tokenObjectArrayIndex = tokenObjectArray.length;
-            console.log(token.match(/(\{\{.+?\}\})/g));
             if (token.match(/(\{\{.+?\}\})/g)?.length > 0) {
-                if (!preconfiguredInputs.hasOwnProperty(token)) {
-                    preconfiguredInputs[token] = tokenObjectArrayIndex;
-                }
                 const inputToken = token.replace('{{', '').replace('}}', ''); // preserve punctuation outside braces
                 const fullTokenValue = inputToken.replace(
                     /[.,\/#!$%\^&\*;:{}=\-_`~()]/g,
                     '',
                 );
+                if (!preconfiguredInputs.hasOwnProperty(fullTokenValue)) {
+                    preconfiguredInputs[fullTokenValue] = tokenObjectArrayIndex;
+                }
                 inputToken.split(' ').forEach((tokenWord, i) => {
                     let tokenObject: Token;
                     if (i === 0) {
@@ -52,7 +48,8 @@ export function PromptGeneratorBuilderInputStep(props: {
                             type: TOKEN_TYPE_INPUT,
                             isHiddenPhraseInputToken: false,
                             linkedInputToken:
-                                preconfiguredInputs[token] ?? false,
+                                preconfiguredInputs[fullTokenValue] ??
+                                undefined,
                         };
                     } else {
                         tokenObject = {
@@ -65,7 +62,8 @@ export function PromptGeneratorBuilderInputStep(props: {
                             type: TOKEN_TYPE_INPUT,
                             isHiddenPhraseInputToken: true,
                             linkedInputToken:
-                                preconfiguredInputs[token] ?? false,
+                                preconfiguredInputs[fullTokenValue] ??
+                                undefined,
                         };
                     }
                     tokenObjectArray.push(tokenObject);
@@ -84,27 +82,16 @@ export function PromptGeneratorBuilderInputStep(props: {
                 tokenObjectArray.push(tokenObject);
             }
         });
-        const initialTokens = tokenObjectArray.reduce((acc, currToken) => {
-            acc[currToken.index] = currToken;
-            return acc;
-        }, {});
-        setTokens(initialTokens);
+        props.setBuilderValue('inputs', tokenObjectArray);
     }, []);
     /**
      * Change the token type
      * @param tokenIndex
      */
     const setTokenType = (tokenIndex: number, tokenType: string) => {
-        setTokens((state) => {
-            const newTokens = {
-                ...state,
-                [tokenIndex]: {
-                    ...state[tokenIndex],
-                    type: tokenType,
-                },
-            };
-            return newTokens;
-        });
+        let newTokens = [...(props.builder.inputs.value as Token[])];
+        newTokens[tokenIndex] = { ...newTokens[tokenIndex], type: tokenType };
+        props.setBuilderValue('inputs', newTokens);
     };
     /**
      * Change the token value and display, used to handle merged tokens
@@ -112,19 +99,14 @@ export function PromptGeneratorBuilderInputStep(props: {
      * @param tokenValue
      */
     const setTokenDisplay = (tokenIndex: number, tokenDisplay: string) => {
-        setTokens((state) => {
-            const value = tokenDisplay.replace(/[\W_]+/g, ' ').trim();
-            const newTokens = {
-                ...state,
-                [tokenIndex]: {
-                    ...state[tokenIndex],
-                    display: tokenDisplay,
-                    key: value,
-                    value: value,
-                },
-            };
-            return newTokens;
-        });
+        const value = tokenDisplay.replace(/[\W_]+/g, ' ').trim();
+        let newTokens = [...(props.builder.inputs.value as Token[])];
+        newTokens[tokenIndex] = {
+            ...newTokens[tokenIndex],
+            display: tokenDisplay,
+            key: value,
+        };
+        props.setBuilderValue('inputs', newTokens);
     };
     /**
      * Used the hide/unhide tokens that were merged
@@ -132,16 +114,12 @@ export function PromptGeneratorBuilderInputStep(props: {
      * @param hideToken
      */
     const setHideToken = (tokenIndex: number, hideToken: boolean) => {
-        setTokens((state) => {
-            const newTokens = {
-                ...state,
-                [tokenIndex]: {
-                    ...state[tokenIndex],
-                    isHiddenPhraseInputToken: hideToken,
-                },
-            };
-            return newTokens;
-        });
+        let newTokens = [...(props.builder.inputs.value as Token[])];
+        newTokens[tokenIndex] = {
+            ...newTokens[tokenIndex],
+            isHiddenPhraseInputToken: hideToken,
+        };
+        props.setBuilderValue('inputs', newTokens);
     };
     /**
      * Add new token to selections
@@ -201,7 +179,7 @@ export function PromptGeneratorBuilderInputStep(props: {
      * @param tokenIndex
      */
     const resetInputToken = (tokenIndex: number) => {
-        const phrase = tokens[tokenIndex].display;
+        const phrase = props.builder.inputs.value[tokenIndex].display;
         const phraseArray = phrase.split(' ');
         if (phrase.length === 1) {
             setTokenType(tokenIndex, TOKEN_TYPE_TEXT);
@@ -228,7 +206,7 @@ export function PromptGeneratorBuilderInputStep(props: {
             const newTokenValue = selectedInputTokensCopy
                 .reduce(
                     (accumulator, currentKey) =>
-                        `${accumulator} ${tokens[currentKey].display}`,
+                        `${accumulator} ${props.builder.inputs.value[currentKey].display}`,
                     '',
                 )
                 .trim();
@@ -249,10 +227,7 @@ export function PromptGeneratorBuilderInputStep(props: {
         }
         setSelectedInputTokens([]);
     };
-    // Update main builder state when tokens update
-    useEffect(() => {
-        props.setBuilderValue('inputs', Object.values(tokens));
-    }, [tokens]);
+
     return (
         <StyledStepPaper elevation={2} square>
             <Box>
@@ -263,25 +238,30 @@ export function PromptGeneratorBuilderInputStep(props: {
                 </Typography>
             </Box>
             <StyledTextPaper>
-                {Array.from(Object.values(tokens), (token: Token) => (
-                    <React.Fragment key={token.index}>
-                        <PromptGeneratorSetToken
-                            token={token}
-                            selectedInputTokens={selectedInputTokens}
-                            addSelectedInputToken={addSelectedInputToken}
-                            removeSelectedInputToken={removeSelectedInputToken}
-                            resetInputToken={resetInputToken}
-                            setSelectedTokensAsInputs={
-                                setSelectedTokensAsInputs
-                            }
-                        />
-                        {token.display.endsWith('\n') ? (
-                            <div style={{ flex: 1 }} />
-                        ) : (
-                            <></>
-                        )}
-                    </React.Fragment>
-                ))}
+                {Array.from(
+                    (props.builder.inputs.value as Token[]) ?? [],
+                    (token: Token) => (
+                        <React.Fragment key={token.index}>
+                            <PromptGeneratorSetToken
+                                token={token}
+                                selectedInputTokens={selectedInputTokens}
+                                addSelectedInputToken={addSelectedInputToken}
+                                removeSelectedInputToken={
+                                    removeSelectedInputToken
+                                }
+                                resetInputToken={resetInputToken}
+                                setSelectedTokensAsInputs={
+                                    setSelectedTokensAsInputs
+                                }
+                            />
+                            {token.display.endsWith('\n') ? (
+                                <div style={{ flex: 1 }} />
+                            ) : (
+                                <></>
+                            )}
+                        </React.Fragment>
+                    ),
+                )}
             </StyledTextPaper>
         </StyledStepPaper>
     );

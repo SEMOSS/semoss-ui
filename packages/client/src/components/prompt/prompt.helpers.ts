@@ -235,7 +235,7 @@ export function getBlockForInput(
                 capitalizeLabel(token.key),
             );
         default:
-            console.log('Block not implemented for this input type yet.');
+            alert('Block not implemented for this input type yet.');
             return null;
     }
 }
@@ -257,8 +257,10 @@ export function getQueryForPrompt(
             );
             let keyIndex = inputTokenParts.indexOf(token.key);
             inputTokenParts[keyIndex] = `{{${getIdForInput(
-                inputTypes[token.index],
-                token.index,
+                token.linkedInputToken
+                    ? inputTypes[token.linkedInputToken]
+                    : inputTypes[token.index],
+                token.linkedInputToken ?? token.index,
             )}.value}}`;
             tokenStrings.push(inputTokenParts.join(''));
         }
@@ -320,5 +322,7 @@ export function setBlocksAndOpenUIBuilder(
             queries: query,
         },
     });
-    navigate('/edit/design');
+    // TODO make app here instead
+    alert('App API call here');
+    // navigate('/edit/design');
 }

@@ -72,7 +72,8 @@ export function PromptGeneratorBuilderInputTypeStep(props: {
         const filteredTokens = tokens.filter(
             (token) =>
                 token.type === TOKEN_TYPE_INPUT &&
-                !token.isHiddenPhraseInputToken,
+                !token.isHiddenPhraseInputToken &&
+                token.index === token.linkedInputToken,
         );
         setInputTokens(filteredTokens);
         const keyedInputs = filteredTokens.reduce((acc, token: Token) => {

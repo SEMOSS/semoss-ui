@@ -115,7 +115,7 @@ export function PromptGeneratorBuilderPromptStep(props: {
                             options={cfgLibraryModels.modelIds}
                             value={props.builder.model.value ?? null}
                             getOptionLabel={(modelId: string) =>
-                                cfgLibraryModels.modelDisplay[modelId]
+                                cfgLibraryModels.modelDisplay[modelId] ?? ''
                             }
                             onChange={(_, newModelId) => {
                                 props.setBuilderValue(
