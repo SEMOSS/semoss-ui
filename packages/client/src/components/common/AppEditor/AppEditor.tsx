@@ -97,8 +97,16 @@ import {
     // mdiCodeTags,
 } from '@mui/icons-material/';
 
+const DeleteIconWrapper = styled('div')(({ theme }) => ({
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    height: '30px',
+    width: '100%',
+}));
+
 const TextEditorCodeGenerationWrapper = styled('div')(({ theme }) => ({
-    maxWidth: '90%',
+    maxWidth: '85%',
 }));
 
 const StyledEditorPanel = styled('div')(({ theme }) => ({
@@ -192,7 +200,9 @@ const CustomAccordion = styled(Accordion)(({ theme }) => ({
     boxShadow: 'none',
     padding: '0',
     borderRadius: '0px',
-    borderBottom: `1px solid ${theme.palette.divider}`,
+    // borderBottom: `1px solid ${theme.palette.divider}`,
+    // borderBottom: `1px solid red`,
+    marginBottom: '-15px',
     '&:before': {
         display: 'none',
     },
@@ -238,7 +248,7 @@ const CustomAccordionTriggerContent = styled('div')(({ theme }) => ({
 
     // spaces new file and new folder icons on right
     justifyContent: 'space-between',
-    width: '267.5px',
+    width: '93%',
 }));
 
 const CustomAccordionTriggerLabel = styled('div')(({ theme }) => ({
@@ -1094,37 +1104,30 @@ export const AppEditor = (props: AppEditorProps) => {
                         key={node.id}
                         nodeId={node.id}
                         title={node.id}
-                        // label={
-                        //     // File svg pack? (Js, html, etc)
-                        //     <TextField>{`${node.name} 🗑️`}</TextField>
-                        // }
-
                         label={
-                            <div
+                            <DeleteIconWrapper
                                 onMouseEnter={() =>
                                     setHoverSet(new Set([node.id]))
                                 }
                                 onMouseLeave={() => setHoverSet(new Set())}
-                                style={{
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    justifyContent: 'space-between',
-                                    height: '30px',
-                                    width: '250px',
-                                }}
                             >
-                                {node.name}
+                                <Typography variant="body1">
+                                    {node.name}
+                                </Typography>
                                 {hoverSet.has(node.id) && (
                                     <IconButton
                                         onClick={() => fileDeleteHandler(node)}
                                         size="small"
                                     >
                                         <DeleteOutline
-                                            sx={{ height: '20px' }}
+                                            sx={{
+                                                height: '20px',
+                                                color: 'rgba(0, 0, 0, 0.3)',
+                                            }}
                                         />
                                     </IconButton>
                                 )}
-                            </div>
+                            </DeleteIconWrapper>
                         }
                     >
                         {node.children && node.children.length > 0
@@ -1303,7 +1306,8 @@ export const AppEditor = (props: AppEditorProps) => {
                     boxShadow: !openAppAssetsPanel
                         ? '5px 0 5px -2px rgba(0, 0, 0, 0.04)'
                         : 'none',
-                    marginLeft: openAppAssetsPanel ? '-60px' : '0',
+                    marginLeft: openAppAssetsPanel ? '-90px' : '0px',
+                    // borderRight: openAppAssetsPanel ? "15px solid rgb(242, 242, 242)red" : "0px solid rgb(242, 242, 242)",
                 }}
             >
                 <StyledOpenAssetsContainer>
