@@ -9,6 +9,7 @@ import {
     Typography,
     Tooltip,
     useNotification,
+    CircularProgress,
 } from '@semoss/ui';
 
 import { Env } from '@/env';
@@ -106,6 +107,9 @@ export const EngineShell = (props: EngineShellProps) => {
     // track the edit state
     const [edit, setEdit] = useState(false);
 
+    // export loading state
+    const [exportLoading, setExportLoading] = useState(false);
+
     // get the engine info
     const { status, data } = usePixel<{
         database_name: string;
@@ -121,6 +125,7 @@ export const EngineShell = (props: EngineShellProps) => {
      * @desc export DB pixel
      */
     const exportDB = () => {
+        setExportLoading(true);
         const pixel = `META | ExportEngine(engine=["${id}"] );`;
 
         monolithStore.runQuery(pixel).then((response) => {
@@ -129,6 +134,7 @@ export const EngineShell = (props: EngineShellProps) => {
 
             monolithStore.download(insightId, output);
         });
+        setExportLoading(false);
     };
 
     // show a loading screen when it is pending
@@ -155,7 +161,14 @@ export const EngineShell = (props: EngineShellProps) => {
                             <EngineAccessButton />
                             {role === 'OWNER' && (
                                 <Button
-                                    startIcon={<SimCardDownload />}
+                                    disabled={exportLoading}
+                                    startIcon={
+                                        exportLoading ? (
+                                            <CircularProgress size="1em" />
+                                        ) : (
+                                            <SimCardDownload />
+                                        )
+                                    }
                                     variant="outlined"
                                     onClick={() => exportDB()}
                                 >
