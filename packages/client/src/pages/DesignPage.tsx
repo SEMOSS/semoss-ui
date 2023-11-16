@@ -11,7 +11,8 @@ import { AppContext } from '@/contexts';
 import { DesignerEditorActions } from '@/components/designer/DesignerEditorActions';
 import { useRootStore } from '@/hooks';
 
-const NAV_HEIGHT = '48px';
+// const NAV_HEIGHT = '48px';
+const NAV_HEIGHT = '0px';
 
 const StyledViewport = styled('div')(() => ({
     display: 'flex',
@@ -37,7 +38,7 @@ export const DesignPage = () => {
     const { appId } = useParams();
 
     const [appPermission, setAppPermission] = useState('READ_ONLY');
-    const [editMode, setEditMode] = useState<boolean>(false);
+    const [editMode, setEditMode] = useState<boolean>(true);
     const [isLoading, setIsLoading] = useState(false);
     const [counter, setCounter] = useState(0);
     const [view, setView] = useState<
@@ -138,20 +139,24 @@ export const DesignPage = () => {
             }}
         >
             <StyledViewport>
-                <Navbar>
-                    {/* Actions to Open Editor Mode */}
+                {/* <Navbar>
                     {(appPermission === 'OWNER' ||
-                        appPermission === 'EDIT') && <DesignerEditorActions />}
-                </Navbar>
+                        appPermission === 'EDIT') && (
+                        <DesignerEditorActions />
+                    )}
+                </Navbar> */}
                 <StyledContent>
                     <Blocks state={StateStore} registry={DefaultBlocks}>
-                        {editMode ? (
+                        {/* {editMode ? (
                             <Designer designer={designer}>
                                 <Renderer id={ACTIVE} />
                             </Designer>
                         ) : (
                             <Renderer id={ACTIVE} />
-                        )}
+                        )} */}
+                        <Designer designer={designer}>
+                            <Renderer id={ACTIVE} />
+                        </Designer>
                     </Blocks>
                 </StyledContent>
             </StyledViewport>
