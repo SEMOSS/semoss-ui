@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Button, Table, styled, Typography } from '@semoss/ui';
-import { useEngine, useRootStore, usePixel } from '@/hooks';
+import { useEngine } from '@/hooks';
 import { FileTable } from '@/components/settings';
 
 const StyledContainer = styled('div')(({ theme }) => ({

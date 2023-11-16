@@ -6,11 +6,19 @@ import React, {
     SyntheticEvent,
 } from 'react';
 import Editor, { loader } from '@monaco-editor/react';
-import { IconButton, Typography, Tabs, styled, keyframes } from '@semoss/ui';
+import {
+    IconButton,
+    Typography,
+    Tabs,
+    styled,
+    keyframes,
+    Link,
+} from '@semoss/ui';
 import { File, ControlledFile } from '../';
 import { Clear, SaveOutlined } from '@mui/icons-material';
 import { Button } from '@semoss/ui';
 import { Container } from '../../../../../ui/dist';
+import { DOCUMENTATION_URL } from '@/constants';
 
 // Weird thing with Monaco Editor and does not get loaded in correctly from install
 // loader.config({
@@ -112,6 +120,8 @@ interface TextEditorProps {
 
 export const TextEditor = (props: TextEditorProps) => {
     const { files, activeIndex, setActiveIndex, onSave, onClose } = props;
+
+    const documentation = DOCUMENTATION_URL;
 
     // Refresh Controlled Values
     const [controlledFiles, setControlledFiles] = useState<ControlledFile[]>(
@@ -271,9 +281,11 @@ export const TextEditor = (props: TextEditorProps) => {
                             Github Documentation
                         </Typography>
                         <ul>
-                            <li>Link</li>
-                            <li>Link</li>
-                            <li>Link</li>
+                            <li>
+                                <Link href={`${documentation}`} target="_blank">
+                                    Documentation
+                                </Link>
+                            </li>
                         </ul>
                     </Container>
                 </StyledEmptyFiles>
