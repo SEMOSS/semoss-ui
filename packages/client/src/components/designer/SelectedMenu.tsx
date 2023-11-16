@@ -86,28 +86,20 @@ const DeleteBlockMenuItem = observer(({ id }: DeleteBlockMenuItemProps) => {
                 designer.rendered === id ? (
                     <></>
                 ) : (
-                    <>
-                        <Divider />
-                        <Stack
-                            direction="row"
-                            alignItems={'center'}
-                            padding={2}
+                    <Stack direction="row" padding={2}>
+                        <Button
+                            color="error"
+                            fullWidth
+                            startIcon={<DeleteOutline />}
+                            variant="outlined"
+                            onClick={() => {
+                                deleteBlock();
+                                designer.setSelected('');
+                            }}
                         >
-                            <Stack flex={'1'}>
-                                <Button
-                                    color="error"
-                                    startIcon={<DeleteOutline />}
-                                    variant="outlined"
-                                    onClick={() => {
-                                        deleteBlock();
-                                        designer.setSelected('');
-                                    }}
-                                >
-                                    Delete Block
-                                </Button>
-                            </Stack>
-                        </Stack>
-                    </>
+                            Delete Block
+                        </Button>
+                    </Stack>
                 )
             }
         </>
