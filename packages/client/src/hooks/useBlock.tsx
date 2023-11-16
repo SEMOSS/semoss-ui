@@ -46,6 +46,11 @@ interface useBlockReturn<D extends BlockDef = BlockDef> {
      * @param path - path of the data to delete
      */
     deleteData: <P extends Paths<Block<D>['data'], 4>>(path: P) => void;
+
+    /**
+     * Dispatch a message to delete the block
+     */
+    deleteBlock: () => void;
 }
 
 /**
@@ -103,6 +108,16 @@ export const useBlock = <D extends BlockDef = BlockDef>(
         },
         [],
     );
+
+    const deleteBlock = useCallback((): void => {
+        state.dispatch({
+            message: ActionMessages.REMOVE_BLOCK,
+            payload: {
+                id: id,
+                keep: false,
+            },
+        });
+    }, []);
 
     // construct the listeners to add to the widget
     const listeners = useMemo(() => {
@@ -164,5 +179,6 @@ export const useBlock = <D extends BlockDef = BlockDef>(
         },
         setData: setData,
         deleteData: deleteData,
+        deleteBlock: deleteBlock,
     };
 };
