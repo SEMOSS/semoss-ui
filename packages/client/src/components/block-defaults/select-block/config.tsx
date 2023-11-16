@@ -8,7 +8,10 @@ import {
 import { SelectBlockDef, SelectBlock } from './SelectBlock';
 import { ViewList } from '@mui/icons-material';
 
-import { buildSpacingSection } from '../block-defaults.shared';
+import {
+    buildDimensionsSection,
+    buildSpacingSection,
+} from '../block-defaults.shared';
 
 // export the config for the block
 export const config: BlockConfig<SelectBlockDef> = {
@@ -62,5 +65,6 @@ export const config: BlockConfig<SelectBlockDef> = {
             ],
         },
         buildSpacingSection(),
+        buildDimensionsSection(),
     ],
 };

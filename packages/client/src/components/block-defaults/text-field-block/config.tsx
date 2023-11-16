@@ -4,13 +4,18 @@ import { InputTypeSettings, InputSettings } from '@/components/block-settings';
 import { TextFieldBlockDef, TextFieldBlock } from './TextFieldBlock';
 import { FormatShapes } from '@mui/icons-material';
 
-import { buildSpacingSection } from '../block-defaults.shared';
+import {
+    buildDimensionsSection,
+    buildSpacingSection,
+} from '../block-defaults.shared';
 
 // export the config for the block
 export const config: BlockConfig<TextFieldBlockDef> = {
     widget: 'text-field',
     data: {
-        style: {},
+        style: {
+            width: '100%',
+        },
         value: '',
         label: 'Example Input',
         type: 'text',
@@ -54,5 +59,6 @@ export const config: BlockConfig<TextFieldBlockDef> = {
             ],
         },
         buildSpacingSection(),
+        buildDimensionsSection(),
     ],
 };
