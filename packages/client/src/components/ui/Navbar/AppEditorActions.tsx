@@ -25,6 +25,27 @@ const NAV_HEIGHT = '48px';
 const NAV_FOOTER = '24px';
 const SIDEBAR_WIDTH = '56px';
 
+const tempTheme = {
+    palette: {
+        primary: {
+            main: '#26890D',
+            light: '#86BC25',
+            dark: '#046A38',
+        },
+    },
+};
+
+const SearchBarPlaceholder = styled('input')(({ theme }) => ({
+    backgroundColor: '#fff',
+    color: '#000',
+    display: 'block',
+    width: '300px',
+    border: '1px solid white',
+    borderRadius: '5px',
+    fontSize: '14px',
+    padding: '5px 10px',
+}));
+
 const StyledNavbarChildren = styled('div')(({ theme }) => ({
     display: 'flex',
     justifyContent: 'space-between',
@@ -57,13 +78,13 @@ const StyledNavbarItem = styled('div', {
     width: SIDEBAR_WIDTH,
     cursor: 'pointer',
     backgroundColor: selected
-        ? theme.palette.primary.main
+        ? tempTheme.palette.primary.main
         : theme.palette.common.black,
     transition: 'backgroundColor 2s ease',
     '&:hover': {
         backgroundColor: selected
-            ? theme.palette.primary.main
-            : `${theme.palette.primary.dark}4D`,
+            ? tempTheme.palette.primary.main
+            : `${tempTheme.palette.primary.dark}4D`,
         transition: 'backgroundColor 2s ease',
     },
 }));
@@ -84,10 +105,10 @@ const StyledTrack = styled('div', {
     borderWidth: '2px',
     borderStyle: 'solid',
     borderColor: active
-        ? theme.palette.primary.light
+        ? tempTheme.palette.primary.light
         : theme.palette.grey['500'],
     backgroundColor: active
-        ? theme.palette.primary.light
+        ? tempTheme.palette.primary.light
         : theme.palette.action.active,
     '&:hover': {
         borderColor: active
@@ -111,7 +132,7 @@ const StyledHandle = styled(IconButton, {
     borderRadius: '23px',
     color: active ? theme.palette.common.white : theme.palette.common.black,
     backgroundColor: active
-        ? theme.palette.primary.main
+        ? tempTheme.palette.primary.main
         : theme.palette.grey['500'],
     '&:hover': {
         backgroundColor: active
@@ -228,6 +249,11 @@ export const AppEditorActions = () => {
                     </>
                 ) : null}
             </StyledNavbarLeft>
+
+            {/* <StyledNavbarRight>
+                <SearchBarPlaceholder/>
+            </StyledNavbarRight> */}
+
             <StyledNavbarRight>
                 <StyledTrack
                     active={editorMode}
