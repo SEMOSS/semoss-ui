@@ -80,7 +80,7 @@ export const Navbar = (props: NavbarProps) => {
         <StyledHeader>
             <StyledHeaderLogo to={'/'}>
                 {THEME.logo ? <StyledHeaderLogoImg src={THEME.logo} /> : null}
-                {THEME.name}
+                {/* {THEME.name} */}
             </StyledHeaderLogo>
             <Stack flex={1}>{children}</Stack>
             <IconButton

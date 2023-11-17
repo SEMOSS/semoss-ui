@@ -36,6 +36,9 @@ const tempTheme = {
         action: {
             hoverOpacity: 0.8,
         },
+        grey: {
+            ['500']: '#6D6D6D4D',
+        },
     },
 };
 
@@ -77,18 +80,26 @@ const StyledNavbarItem = styled('div', {
     alignItems: 'center',
     justifyContent: 'center',
     color: 'inherit',
+    // color: selected
+    //     ? theme.palette.common.black
+    //     : 'inherit',
     textDecoration: 'none',
     height: NAV_HEIGHT,
     width: SIDEBAR_WIDTH,
     cursor: 'pointer',
     backgroundColor: selected
-        ? tempTheme.palette.primary.main
+        ? // ? tempTheme.palette.primary.main
+          tempTheme.palette.grey[500]
         : theme.palette.common.black,
     transition: 'backgroundColor 2s ease',
     '&:hover': {
         backgroundColor: selected
-            ? tempTheme.palette.primary.main
-            : `${tempTheme.palette.primary.dark}4D`,
+            ? // ? tempTheme.palette.primary.main
+              // : `${tempTheme.palette.primary.dark}4D`,
+              // : `${tempTheme.palette.primary.dark}`,
+              // : `${theme.palette.primary.dark}`,
+              tempTheme.palette.grey[500]
+            : `${tempTheme.palette.primary.main}`,
         transition: 'backgroundColor 2s ease',
     },
 }));
