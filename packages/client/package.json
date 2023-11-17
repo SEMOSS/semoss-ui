@@ -19,6 +19,7 @@
         "@mui/icons-material": "^5.11.16",
         "@mui/material": "^5.13.5",
         "@semoss/ui": "workspace:*",
+        "@semoss/blocks": "workspace:*",
         "axios": "^1.5.0",
         "dayjs": "^1.11.4",
         "dompurify": "^2.3.10",
