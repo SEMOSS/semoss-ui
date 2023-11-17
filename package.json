@@ -8,6 +8,7 @@
         "dev": "pnpm run --filter=@semoss/legacy --filter=@semoss/ui --filter=@semoss/client --stream --parallel dev",
         "dev:ui-client": "pnpm run --filter=@semoss/ui --filter=@semoss/client --stream --parallel dev",
         "dev:client": "pnpm run --filter=@semoss/client --stream --parallel dev",
+        "dev:blocks-client": "pnpm run --filter=@semoss/client --filter=@semoss/blocks --stream --parallel dev",
         "dev:legacy": "pnpm run --filter=@semoss/legacy --stream --parallel dev",
         "build": "pnpm run --filter=@semoss/legacy --filter=@semoss/ui  --filter=@semoss/blocks --filter=@semoss/client build",
         "fix": "pnpm run --filter=@semoss/legacy --filter=@semoss/ui --filter=@semoss/blocks --filter=@semoss/client fix"

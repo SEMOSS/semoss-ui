@@ -33,6 +33,7 @@
         "react-router-dom": "^6.3.0"
     },
     "devDependencies": {
+        "@semoss/blocks": "workspace:*",
         "@types/node": "^16.11.47",
         "@types/react": "^17.0.48",
         "@types/react-router-dom": "^5.3.3",
