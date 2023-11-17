@@ -29,8 +29,12 @@ const tempTheme = {
     palette: {
         primary: {
             main: '#26890D',
-            light: '#86BC25',
+            // light: '#86BC25',
+            light: '#C4DD98',
             dark: '#046A38',
+        },
+        action: {
+            hoverOpacity: 0.8,
         },
     },
 };
@@ -136,7 +140,8 @@ const StyledHandle = styled(IconButton, {
         : theme.palette.grey['500'],
     '&:hover': {
         backgroundColor: active
-            ? `rgba(255, 255, 255, ${theme.palette.action.hoverOpacity})`
+            ? // ? `rgba(255, 255, 255, ${theme.palette.action.hoverOpacity})`
+              `${tempTheme.palette.primary.main}AA`
             : theme.palette.grey['400'],
     },
     transition: theme.transitions.create(['left'], {
@@ -156,6 +161,11 @@ const StyledModalContent = styled(Modal.Content)(({ theme }) => ({
     flexDirection: 'column',
     width: '600px',
     gap: theme.spacing(2),
+    padding: '15px 15px 15px 15px',
+}));
+
+const StyledModalActions = styled(Modal.Actions)(({ theme }) => ({
+    padding: '0px 15px 15px 15px',
 }));
 
 const StyledTabsContent = styled('div')(({ theme }) => ({
@@ -215,6 +225,11 @@ export const AppEditorActions = () => {
             // turn of loading
             setIsLoading(false);
         }
+    };
+
+    const ShareSaveHandler = () => {
+        alert('ShareSaveHandler()');
+        setShareModal(false);
     };
 
     return (
@@ -335,12 +350,16 @@ export const AppEditorActions = () => {
                         }}
                     >
                         <Tabs.Item label="URL"></Tabs.Item>
-                        {/* <Tabs.Item disabled label="REST API"></Tabs.Item>
-                        <Tabs.Item disabled label="iframe"></Tabs.Item> */}
+                        <Tabs.Item disabled label="REST API"></Tabs.Item>
+                        <Tabs.Item disabled label="iframe"></Tabs.Item>
                     </Tabs>
                     {shareModalTab === 0 && (
                         <StyledTabsContent>
-                            <Typography variant="subtitle1">
+                            <Typography
+                                variant="subtitle1"
+                                paddingBottom="20px"
+                                paddingLeft="10px"
+                            >
                                 Share a link for external use
                             </Typography>
                             <StyledGap>
@@ -383,9 +402,24 @@ export const AppEditorActions = () => {
                         </StyledTabsContent>
                     )}
                 </StyledModalContent>
-                <Modal.Actions>
-                    <Button onClick={() => setShareModal(false)}>Cancel</Button>
-                </Modal.Actions>
+                <StyledModalActions>
+                    <Button
+                        onClick={() => setShareModal(false)}
+                        size={'medium'}
+                        color={'primary'}
+                        variant={'outlined'}
+                    >
+                        Cancel
+                    </Button>
+                    <Button
+                        onClick={ShareSaveHandler}
+                        size={'medium'}
+                        color={'primary'}
+                        variant={'contained'}
+                    >
+                        Save
+                    </Button>
+                </StyledModalActions>
             </Modal>
         </StyledNavbarChildren>
     );
