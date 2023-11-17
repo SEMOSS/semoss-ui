@@ -6,7 +6,7 @@ interface BuilderStepItemProps {
     currentBuilderStep: number;
 }
 
-export function PromptGeneratorBuilderSummaryStepItem(
+export function PromptBuilderBuilderSummaryStepItem(
     props: BuilderStepItemProps,
 ) {
     const stepItemsForSummaryStep = Object.values(props.builder).filter(

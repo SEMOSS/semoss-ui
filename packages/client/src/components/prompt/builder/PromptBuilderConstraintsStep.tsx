@@ -124,7 +124,7 @@ const StyledSwitch = styled((props: SwitchProps) => (
     },
 }));
 
-function PromptGeneratorConstraint(props: {
+function PromptBuilderConstraint(props: {
     constraint: Constraint;
     constraintSettings: ConstraintSettings;
     setBuilderValue: (
@@ -158,7 +158,7 @@ function PromptGeneratorConstraint(props: {
     );
 }
 
-export function PromptGeneratorBuilderConstraintsStep(props: {
+export function PromptBuilderBuilderConstraintsStep(props: {
     builder: Builder;
     setBuilderValue: (
         builderStepKey: string,
@@ -195,7 +195,7 @@ export function PromptGeneratorBuilderConstraintsStep(props: {
                 {Array.from(
                     Object.values(inputConstraints),
                     (constraint: Constraint, i) => (
-                        <PromptGeneratorConstraint
+                        <PromptBuilderConstraint
                             key={constraint.key}
                             constraint={constraint}
                             constraintSettings={constraintSettings}
@@ -208,7 +208,7 @@ export function PromptGeneratorBuilderConstraintsStep(props: {
                 {Array.from(
                     Object.values(outputConstraints),
                     (constraint: Constraint, i) => (
-                        <PromptGeneratorConstraint
+                        <PromptBuilderConstraint
                             key={constraint.key}
                             constraint={constraint}
                             constraintSettings={constraintSettings}

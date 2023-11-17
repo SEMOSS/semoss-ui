@@ -16,12 +16,12 @@ import {
     TOKEN_TYPE_INPUT,
 } from '../prompt.constants';
 import { styled, Box, Button, Grid, Paper } from '@semoss/ui';
-// import { PromptGeneratorBuilderConstraintsStep } from './PromptGeneratorBuilderConstraintsStep';
-import { PromptGeneratorBuilderInputStep } from './PromptGeneratorBuilderInputStep';
-import { PromptGeneratorBuilderInputTypeStep } from './PromptGeneratorBuilderInputTypeStep';
-import { PromptGeneratorBuilderPreviewStep } from './PromptGeneratorBuilderPreviewStep';
-import { PromptGeneratorBuilderContextStep } from './PromptGeneratorBuilderContextStep';
-import { PromptGeneratorBuilderSummary } from './PromptGeneratorBuilderSummary';
+// import { PromptBuilderBuilderConstraintsStep } from './PromptBuilderBuilderConstraintsStep';
+import { PromptBuilderBuilderInputStep } from './PromptBuilderInputStep';
+import { PromptBuilderBuilderInputTypeStep } from './PromptBuilderInputTypeStep';
+import { PromptBuilderBuilderPreviewStep } from './PromptBuilderPreviewStep';
+import { PromptBuilderBuilderContextStep } from './PromptBuilderContextStep';
+import { PromptBuilderBuilderSummary } from './PromptBuilderSummary';
 
 const StyledPaper = styled(Paper)(({ theme }) => ({
     padding: theme.spacing(4),
@@ -90,21 +90,21 @@ function BuilderStep(props: {
 }) {
     switch (props.currentBuilderStep) {
         case PROMPT_BUILDER_CONTEXT_STEP:
-            return <PromptGeneratorBuilderContextStep {...props} />;
+            return <PromptBuilderBuilderContextStep {...props} />;
         case PROMPT_BUILDER_INPUTS_STEP:
-            return <PromptGeneratorBuilderInputStep {...props} />;
+            return <PromptBuilderBuilderInputStep {...props} />;
         case PROMPT_BUILDER_INPUT_TYPES_STEP:
-            return <PromptGeneratorBuilderInputTypeStep {...props} />;
+            return <PromptBuilderBuilderInputTypeStep {...props} />;
         // case PROMPT_BUILDER_CONSTRAINTS_STEP:
-        //     return <PromptGeneratorBuilderConstraintsStep {...props} />;
+        //     return <PromptBuilderBuilderConstraintsStep {...props} />;
         case PROMPT_BUILDER_PREVIEW_STEP:
-            return <PromptGeneratorBuilderPreviewStep {...props} />;
+            return <PromptBuilderBuilderPreviewStep {...props} />;
         default:
             return <StyledPaper elevation={2} square />;
     }
 }
 
-export function PromptGenerator() {
+export function PromptBuilder() {
     const [builder, setBuilder] = useState(initialBuilder);
     const [currentBuilderStep, changeBuilderStep] = useState(1);
     const navigate = useNavigate();
@@ -188,7 +188,7 @@ export function PromptGenerator() {
             <Grid container>
                 <Grid item xs={3}>
                     <StyledPaper elevation={2}>
-                        <PromptGeneratorBuilderSummary
+                        <PromptBuilderBuilderSummary
                             builder={builder}
                             currentBuilderStep={currentBuilderStep}
                         />

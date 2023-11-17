@@ -79,7 +79,7 @@ const StyledTooltipContentButton = styled(Button)(({ theme }) => ({
     borderRadius: 0,
 }));
 
-export function PromptGeneratorReadonlyInputToken(props: { token: Token }) {
+export function PromptReadonlyInputToken(props: { token: Token }) {
     return (
         <StyledChip
             isChipSelected={false}
@@ -91,7 +91,7 @@ export function PromptGeneratorReadonlyInputToken(props: { token: Token }) {
     );
 }
 
-export function PromptGeneratorHoverToken(props: {
+export function PromptHoverToken(props: {
     token: Token;
     tokenInputType: string | undefined;
 }) {
@@ -136,7 +136,7 @@ export function PromptGeneratorHoverToken(props: {
     );
 }
 
-export function PromptGeneratorSetToken(props: {
+export function PromptSetToken(props: {
     token: Token;
     selectedInputTokens: number[];
     isSelectedLinkable: number | false;

@@ -8,7 +8,7 @@ import {
     INPUT_TYPES,
     INPUT_TYPE_DISPLAY,
 } from '../prompt.constants';
-import { PromptGeneratorReadonlyInputToken } from '../PromptGeneratorToken';
+import { PromptReadonlyInputToken } from '../PromptToken';
 
 function InputSelection(props: {
     inputToken: Token;
@@ -26,7 +26,7 @@ function InputSelection(props: {
             direction="row"
         >
             <Grid item>
-                <PromptGeneratorReadonlyInputToken token={props.inputToken} />
+                <PromptReadonlyInputToken token={props.inputToken} />
             </Grid>
             <Grid item xs={8} md={4}>
                 <Autocomplete
@@ -54,7 +54,7 @@ function InputSelection(props: {
     );
 }
 
-export function PromptGeneratorBuilderInputTypeStep(props: {
+export function PromptBuilderBuilderInputTypeStep(props: {
     builder: Builder;
     setBuilderValue: (builderStepKey: string, value: object) => void;
 }) {

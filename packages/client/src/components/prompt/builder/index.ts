@@ -1,1 +1,1 @@
-export * from './PromptGenerator';
+export * from './PromptBuilder';

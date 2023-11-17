@@ -3,9 +3,9 @@ import { TOKEN_TYPE_TEXT, TOKEN_TYPE_INPUT } from '../prompt.constants';
 import { Builder, Token } from '../prompt.types';
 import { StyledStepPaper, StyledTextPaper } from '../prompt.styled';
 import { Box, Typography } from '@semoss/ui';
-import { PromptGeneratorSetToken } from '../PromptGeneratorToken';
+import { PromptSetToken } from '../PromptToken';
 
-export function PromptGeneratorBuilderInputStep(props: {
+export function PromptBuilderBuilderInputStep(props: {
     builder: Builder;
     setBuilderValue: (builderStepKey: string, value: Token[]) => void;
 }) {
@@ -314,7 +314,7 @@ export function PromptGeneratorBuilderInputStep(props: {
             <StyledTextPaper>
                 {Array.from(tokens, (token: Token) => (
                     <React.Fragment key={token.index}>
-                        <PromptGeneratorSetToken
+                        <PromptSetToken
                             token={token}
                             selectedInputTokens={selectedInputTokens}
                             isSelectedLinkable={isSelectedLinkable()}

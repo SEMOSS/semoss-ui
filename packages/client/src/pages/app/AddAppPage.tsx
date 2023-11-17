@@ -17,7 +17,7 @@ import {
     ImportAppForm,
     ImportAppAccess,
 } from '@/components/app';
-import { PromptGenerator } from '@/components/prompt';
+import { PromptBuilder } from '@/components/prompt';
 
 import { LoadingScreen } from '@/components/ui';
 
@@ -170,7 +170,7 @@ export const AddAppPage = () => {
             {/* All Import Workflows: Get Metadata, and import type specific properties */}
             {steps.length === 1 ? (
                 steps[0].data.type === 'PROMPT_BUILDER' ? (
-                    <PromptGenerator />
+                    <PromptBuilder />
                 ) : (
                     <ImportAppForm
                         data={steps[0].data}
@@ -258,7 +258,7 @@ export const AddAppPage = () => {
             {steps.length === 3 ? (
                 <>
                     {steps[0].data.type === 'PROMPT_BUILDER' ? (
-                        <PromptGenerator />
+                        <PromptBuilder />
                     ) : (
                         <ImportAppAccess
                             appId={appId}

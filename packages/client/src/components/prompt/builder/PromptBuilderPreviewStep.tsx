@@ -2,9 +2,9 @@ import { TOKEN_TYPE_TEXT } from '../prompt.constants';
 import { Builder, Token } from '../prompt.types';
 import { StyledStepPaper, StyledTextPaper } from '../prompt.styled';
 import { Box, Typography } from '@mui/material';
-import { PromptGeneratorHoverToken } from '../PromptGeneratorToken';
+import { PromptHoverToken } from '../PromptToken';
 
-export function PromptGeneratorBuilderPreviewStep(props: {
+export function PromptBuilderBuilderPreviewStep(props: {
     builder: Builder;
     setBuilderValue: (builderStepKey: string, value: Token[]) => void;
 }) {
@@ -31,7 +31,7 @@ export function PromptGeneratorBuilderPreviewStep(props: {
             </Box>
             <StyledTextPaper>
                 {Array.from(getBuilderTokens(props.builder), (token: Token) => (
-                    <PromptGeneratorHoverToken
+                    <PromptHoverToken
                         key={token.index}
                         token={token}
                         tokenInputType={getTokenInputType(token)}

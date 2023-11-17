@@ -12,7 +12,7 @@ import {
 } from '@semoss/ui';
 import { List, ListItem, ListItemAvatar, ListItemText } from '@mui/material';
 import { PendingOutlined, CheckCircleOutlined } from '@mui/icons-material';
-import { PromptGeneratorBuilderSummaryStepItem } from './PromptGeneratorBuilderSummaryStepItem';
+import { PromptBuilderBuilderSummaryStepItem } from './PromptBuilderSummaryStepItem';
 
 const StyledListItem = styled(ListItem)(({ theme }) => ({
     backgroundColor: grey[100],
@@ -31,7 +31,7 @@ interface BuilderSummaryProps {
     currentBuilderStep: number;
 }
 
-function PromptGeneratorBuilderSummaryProgress(
+function PromptBuilderBuilderSummaryProgress(
     props: LinearProgressProps & { progress: number },
 ) {
     return (
@@ -48,7 +48,7 @@ function PromptGeneratorBuilderSummaryProgress(
     );
 }
 
-export function PromptGeneratorBuilderSummary(props: BuilderSummaryProps) {
+export function PromptBuilderBuilderSummary(props: BuilderSummaryProps) {
     // step is complete if all the required step items have values
     const isBuilderStepComplete = (summaryStep) => {
         return Object.values(props.builder)
@@ -109,7 +109,7 @@ export function PromptGeneratorBuilderSummary(props: BuilderSummaryProps) {
                         </Typography>
                     }
                     secondary={
-                        <PromptGeneratorBuilderSummaryProgress
+                        <PromptBuilderBuilderSummaryProgress
                             progress={builderProgress()}
                         />
                     }
@@ -162,7 +162,7 @@ export function PromptGeneratorBuilderSummary(props: BuilderSummaryProps) {
                         />
                     </StyledListItem>
                     <Collapse in={props.currentBuilderStep === i + 1}>
-                        <PromptGeneratorBuilderSummaryStepItem
+                        <PromptBuilderBuilderSummaryStepItem
                             builder={props.builder}
                             currentBuilderStep={i + 1}
                         />
