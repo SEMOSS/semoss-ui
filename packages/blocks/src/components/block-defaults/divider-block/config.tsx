@@ -9,12 +9,12 @@ import {
     buildTypographySection,
 } from '../block-defaults.shared';
 
-import { ContainerBlockDef, ContainerBlock } from './ContainerBlock';
+import { DividerBlockDef, DividerBlock } from './DividerBlock';
 import { FormatShapes } from '@mui/icons-material';
 
 // export the config for the block
-export const config: BlockConfig<ContainerBlockDef> = {
-    widget: 'container',
+export const config: BlockConfig<DividerBlockDef> = {
+    widget: 'divider',
     data: {
         style: {
             display: 'flex',
@@ -25,7 +25,7 @@ export const config: BlockConfig<ContainerBlockDef> = {
     slots: {
         children: [],
     },
-    render: ContainerBlock,
+    render: DividerBlock,
     icon: FormatShapes,
     menu: [
         {

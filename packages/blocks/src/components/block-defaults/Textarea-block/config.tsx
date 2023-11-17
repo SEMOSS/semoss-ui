@@ -1,16 +1,19 @@
 import { BlockConfig } from '@/stores';
-import { InputTypeSettings, InputSettings } from '@/components/block-settings';
+import { InputSettings } from '@/components/block-settings';
 
-import { TextareaDef, Textarea } from './Textarea';
+import { TextareaDef, TextareaBlock } from './TextareaBlock';
 import { FormatShapes } from '@mui/icons-material';
 
 // export the config for the block
 export const config: BlockConfig<TextareaDef> = {
-    widget: 'text-area',
+    widget: 'textarea',
     data: {
         style: {},
         value: '',
         label: 'Example Input',
+        multiline: false,
+        rows: 4,
+        type: '',
     },
     listeners: {
         onChange: [],
@@ -18,7 +21,7 @@ export const config: BlockConfig<TextareaDef> = {
     slots: {
         content: [],
     },
-    render: Textarea,
+    render: TextareaBlock,
     icon: FormatShapes,
     menu: [
         {
@@ -40,6 +43,16 @@ export const config: BlockConfig<TextareaDef> = {
                     description: 'Rows',
                     render: ({ id }) => (
                         <InputSettings id={id} label="Rows" path="rows" />
+                    ),
+                },
+                {
+                    description: 'Multiline',
+                    render: ({ id }) => (
+                        <InputSettings
+                            id={id}
+                            label="Multiline"
+                            path="multiline"
+                        />
                     ),
                 },
             ],
