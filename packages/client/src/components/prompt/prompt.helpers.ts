@@ -257,7 +257,7 @@ export function getQueryForPrompt(
             );
             let keyIndex = inputTokenParts.indexOf(token.key);
             inputTokenParts[keyIndex] = `{{${getIdForInput(
-                token.linkedInputToken
+                token.linkedInputToken !== undefined
                     ? inputTypes[token.linkedInputToken]
                     : inputTypes[token.index],
                 token.linkedInputToken ?? token.index,

@@ -9,7 +9,7 @@ import { blue } from '@mui/material/colors';
 import { Button, Typography } from '@semoss/ui';
 import { styled, Chip, Tooltip, TooltipProps } from '@mui/material';
 import { tooltipClasses } from '@mui/material';
-import { SaveAlt } from '@mui/icons-material';
+import { SaveAlt, SyncAlt } from '@mui/icons-material';
 
 interface HoverButtonRootProps {
     disableHover: boolean;
@@ -62,9 +62,14 @@ const StyledTooltip = styled(({ className, ...props }: TooltipProps) => (
         backgroundColor: theme.palette.background.default,
         color: 'inherit',
         fontSize: theme.typography.pxToRem(12),
-        border: '1px solid #dadde9',
+        border: `1px solid ${theme.palette.divider}`,
         padding: 0,
     },
+}));
+
+const StyledTooltipContentButton = styled(Button)(({ theme }) => ({
+    padding: `${theme.spacing(0.5)} ${theme.spacing(1.5)}`,
+    borderRadius: 0,
 }));
 
 export function PromptGeneratorReadonlyInputToken(props: { token: Token }) {
@@ -127,20 +132,19 @@ export function PromptGeneratorHoverToken(props: {
 export function PromptGeneratorSetToken(props: {
     token: Token;
     selectedInputTokens: number[];
+    isSelectedLinkable: number | false;
     addSelectedInputToken: (tokenIndex: number) => void;
     removeSelectedInputToken: (tokenIndex: number) => void;
     resetInputToken: (tokenIndex: number) => void;
     setSelectedTokensAsInputs: () => void;
 }) {
     const [isTooltipOpen, setTooltipIsOpen] = useState(false);
-    const [isPhraseInput, setPhraseInput] = useState(false);
     useEffect(() => {
         setTooltipIsOpen(
             props.selectedInputTokens.length > 0
                 ? props.selectedInputTokens[0] === props.token.index
                 : false,
         );
-        setPhraseInput(props.selectedInputTokens.length > 1);
     }, [props.selectedInputTokens]);
 
     const [isTokenSelected, setTokenSelected] = useState(false);
@@ -167,18 +171,24 @@ export function PromptGeneratorSetToken(props: {
                         ],
                     }}
                     title={
-                        <React.Fragment>
-                            <Button
-                                color="primary"
-                                endIcon={<SaveAlt />}
-                                variant="contained"
-                                onClick={() =>
-                                    props.setSelectedTokensAsInputs()
-                                }
-                            >
-                                Set {isPhraseInput ? 'Phrase' : 'Word'} as Input
-                            </Button>
-                        </React.Fragment>
+                        <StyledTooltipContentButton
+                            fullWidth
+                            variant="text"
+                            startIcon={
+                                props.isSelectedLinkable === false ? (
+                                    <SaveAlt />
+                                ) : (
+                                    <SyncAlt />
+                                )
+                            }
+                            onClick={() => props.setSelectedTokensAsInputs()}
+                        >
+                            {`${
+                                props.isSelectedLinkable === false
+                                    ? 'Set'
+                                    : 'Link'
+                            } Input`}
+                        </StyledTooltipContentButton>
                     }
                 >
                     {props.token.type === TOKEN_TYPE_TEXT &&

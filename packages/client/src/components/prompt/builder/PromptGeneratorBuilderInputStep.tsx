@@ -89,6 +89,19 @@ export function PromptGeneratorBuilderInputStep(props: {
         });
         setTokens(tokenObjectArray);
     }, []);
+    const inputTokenKeys = () => {
+        const inputTokens = tokens.filter(
+            (token) =>
+                token.type === TOKEN_TYPE_INPUT &&
+                !token.isHiddenPhraseInputToken &&
+                (token.linkedInputToken !== undefined
+                    ? token.index === token.linkedInputToken
+                    : true),
+        );
+        return inputTokens.reduce((acc, token: Token) => {
+            return { ...acc, [token.key.toLowerCase()]: token.index };
+        }, {});
+    };
     /**
      * Change the token type
      * @param tokenIndex
@@ -134,6 +147,20 @@ export function PromptGeneratorBuilderInputStep(props: {
                 ...newTokens[tokenIndex],
                 isHiddenPhraseInputToken: hideToken,
             };
+            return newTokens;
+        });
+    };
+    const setLinkedInputToken = (
+        tokenIndex: number,
+        linkedTokenIndex: number,
+    ) => {
+        setTokens((previousState) => {
+            let newTokens = [...previousState];
+            newTokens[tokenIndex] = {
+                ...newTokens[tokenIndex],
+                linkedInputToken: linkedTokenIndex,
+            };
+            console.log(newTokens);
             return newTokens;
         });
     };
@@ -212,14 +239,42 @@ export function PromptGeneratorBuilderInputStep(props: {
         }
     };
     /**
-     * Everything selected should become an input token
-     * Multi-word inputs should be merged
+     * Check if selected tokens match an existing input
+     * @returns false if no match; index of match if exists
      */
-    const setSelectedTokensAsInputs = () => {
+    const isSelectedLinkable = () => {
+        if (selectedInputTokens.length === 0) {
+            return false;
+        }
+        let tokenKey;
         if (selectedInputTokens.length > 1) {
             const selectedInputTokensCopy = [...selectedInputTokens];
             selectedInputTokensCopy.sort((a, b) => a - b);
-            const newTokenValue = selectedInputTokensCopy
+            tokenKey = selectedInputTokensCopy
+                .reduce(
+                    (accumulator, currentKey) =>
+                        `${accumulator} ${tokens[currentKey].display}`,
+                    '',
+                )
+                .trim();
+        } else {
+            tokenKey = tokens[selectedInputTokens[0]].key;
+        }
+        const currentInputTokenKeys = inputTokenKeys();
+        if (currentInputTokenKeys.hasOwnProperty(tokenKey.toLowerCase())) {
+            return currentInputTokenKeys[tokenKey.toLowerCase()];
+        }
+        return false;
+    };
+    /**
+     * Everything selected should become an input token
+     * Multi-word inputs should be merged
+     */
+    const setSelectedTokensAsInputs = (setLinked: false | number = false) => {
+        if (selectedInputTokens.length > 1) {
+            const selectedInputTokensCopy = [...selectedInputTokens];
+            selectedInputTokensCopy.sort((a, b) => a - b);
+            const tokenKey = selectedInputTokensCopy
                 .reduce(
                     (accumulator, currentKey) =>
                         `${accumulator} ${tokens[currentKey].display}`,
@@ -230,7 +285,7 @@ export function PromptGeneratorBuilderInputStep(props: {
                 (selectedInputTokenIndex, selectedArrayIndex) => {
                     if (selectedArrayIndex === 0) {
                         // set the new token value/display for the phrase input
-                        setTokenDisplay(selectedInputTokenIndex, newTokenValue);
+                        setTokenDisplay(selectedInputTokenIndex, tokenKey);
                     } else {
                         // hide the rest of the tokens in the phrase
                         setHideToken(selectedInputTokenIndex, true);
@@ -240,6 +295,9 @@ export function PromptGeneratorBuilderInputStep(props: {
             );
         } else {
             setTokenType(selectedInputTokens[0], TOKEN_TYPE_INPUT);
+        }
+        if (isSelectedLinkable() !== false) {
+            setLinkedInputToken(selectedInputTokens[0], isSelectedLinkable());
         }
         setSelectedInputTokens([]);
     };
@@ -259,6 +317,7 @@ export function PromptGeneratorBuilderInputStep(props: {
                         <PromptGeneratorSetToken
                             token={token}
                             selectedInputTokens={selectedInputTokens}
+                            isSelectedLinkable={isSelectedLinkable()}
                             addSelectedInputToken={addSelectedInputToken}
                             removeSelectedInputToken={removeSelectedInputToken}
                             resetInputToken={resetInputToken}
