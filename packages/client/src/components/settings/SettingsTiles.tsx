@@ -15,7 +15,10 @@ import {
     Lock,
     Visibility,
     VisibilityOffRounded,
+    MonitorRounded,
 } from '@mui/icons-material';
+import { SwitchProps } from '@mui/material/Switch';
+
 import { AxiosResponse } from 'axios';
 
 import { useRootStore, usePixel, useSettings } from '@/hooks';
@@ -23,18 +26,91 @@ import { LoadingScreen } from '@/components/ui';
 
 import { SETTINGS_MODE } from './settings.types';
 
+const StyledHr = styled('div')(({ theme }) => ({
+    width: '95%',
+    height: '1px',
+    borderBottom: `1px solid ${theme.palette.secondary.main}`,
+    display: 'block',
+    margin: '10px auto',
+}));
+
 const StyledIcon = styled(Icon)(() => ({
     color: 'rgba(0, 0, 0, .5)',
 }));
 
 const StyledAlert = styled(Alert)(({ theme }) => ({
     width: '468px',
-    height: theme.spacing(13),
+    // height: theme.spacing(13),
+    height: theme.spacing(10),
     backgroundColor: theme.palette.background.paper,
+    // border: "1px solid red",
 }));
 
 const StyledGrid = styled(Grid)(() => ({
     flex: '1',
+}));
+
+const StyledMuiSwitch = styled((props: SwitchProps) => (
+    <Switch
+        focusVisibleClassName=".Mui-focusVisible"
+        disableRipple
+        {...props}
+    />
+))(({ theme }) => ({
+    width: 42,
+    height: 26,
+    padding: 0,
+    '& .MuiSwitch-switchBase': {
+        padding: 0,
+        margin: 3,
+        transitionDuration: '300ms',
+        '&.Mui-checked': {
+            transform: 'translateX(16px)',
+            color: '#fff',
+            '& + .MuiSwitch-track': {
+                // background color for switch off
+                //   backgroundColor: theme.palette.mode === 'dark' ? '#2ECA45' : '#65C466',
+                backgroundColor:
+                    theme.palette.mode === 'dark'
+                        ? theme.palette.primary.main
+                        : theme.palette.primary.main,
+                opacity: 1,
+                border: 0,
+            },
+            '&.Mui-disabled + .MuiSwitch-track': {
+                opacity: 0.5,
+            },
+        },
+        '&.Mui-focusVisible .MuiSwitch-thumb': {
+            color: '#33cf4d',
+            border: '6px solid #fff',
+        },
+        '&.Mui-disabled .MuiSwitch-thumb': {
+            color:
+                theme.palette.mode === 'light'
+                    ? theme.palette.grey[100]
+                    : theme.palette.grey[600],
+        },
+        '&.Mui-disabled + .MuiSwitch-track': {
+            opacity: theme.palette.mode === 'light' ? 0.7 : 0.3,
+        },
+    },
+    '& .MuiSwitch-thumb': {
+        boxSizing: 'border-box',
+        //   width: 22,
+        //   height: 22,
+        width: 20,
+        height: 20,
+    },
+    '& .MuiSwitch-track': {
+        borderRadius: 26 / 2,
+        // background color for switch off
+        backgroundColor: theme.palette.mode === 'light' ? '#E9E9EA' : '#39393D',
+        opacity: 1,
+        transition: theme.transitions.create(['background-color'], {
+            duration: 500,
+        }),
+    },
 }));
 
 interface SettingsTilesProps {
@@ -270,7 +346,7 @@ export const SettingsTiles = (props: SettingsTilesProps) => {
 
     if (condensed) {
         return (
-            <Paper sx={{ width: '100%' }}>
+            <Paper sx={{ width: '100%', padding: '10px' }}>
                 <StyledAlert
                     sx={{ width: '100%', boxShadow: 'none' }}
                     icon={
@@ -279,7 +355,7 @@ export const SettingsTiles = (props: SettingsTilesProps) => {
                         </StyledIcon>
                     }
                     action={
-                        <Switch
+                        <StyledMuiSwitch
                             title={
                                 global
                                     ? `Make ${name} private`
@@ -289,7 +365,7 @@ export const SettingsTiles = (props: SettingsTilesProps) => {
                             onChange={() => {
                                 changeGlobal();
                             }}
-                        ></Switch>
+                        ></StyledMuiSwitch>
                     }
                 >
                     <Alert.Title>{global ? 'Public' : 'Private'}</Alert.Title>
@@ -297,6 +373,7 @@ export const SettingsTiles = (props: SettingsTilesProps) => {
                         ? 'All members can access'
                         : 'No one outside of the specified member group can access'}
                 </StyledAlert>
+                <StyledHr />
                 <StyledAlert
                     sx={{ width: '100%', boxShadow: 'none' }}
                     icon={
@@ -309,7 +386,7 @@ export const SettingsTiles = (props: SettingsTilesProps) => {
                         </StyledIcon>
                     }
                     action={
-                        <Switch
+                        <StyledMuiSwitch
                             title={
                                 discoverable
                                     ? `Make ${name} non-discoverable`
@@ -319,7 +396,7 @@ export const SettingsTiles = (props: SettingsTilesProps) => {
                             onChange={() => {
                                 changeDiscoverable();
                             }}
-                        ></Switch>
+                        ></StyledMuiSwitch>
                     }
                 >
                     <Alert.Title>
@@ -328,11 +405,13 @@ export const SettingsTiles = (props: SettingsTilesProps) => {
                     Users {discoverable ? 'can' : 'cannot'} request access to
                     this {name} if private
                 </StyledAlert>
+                <StyledHr />
                 <StyledAlert
                     sx={{ width: '100%', boxShadow: 'none' }}
                     icon={
                         <StyledIcon>
-                            <Delete />
+                            {/* <Delete /> */}
+                            <MonitorRounded />
                         </StyledIcon>
                     }
                     action={
@@ -380,7 +459,7 @@ export const SettingsTiles = (props: SettingsTilesProps) => {
                             </StyledIcon>
                         }
                         action={
-                            <Switch
+                            <StyledMuiSwitch
                                 title={
                                     global
                                         ? `Make ${name} private`
@@ -390,7 +469,7 @@ export const SettingsTiles = (props: SettingsTilesProps) => {
                                 onChange={() => {
                                     changeGlobal();
                                 }}
-                            ></Switch>
+                            ></StyledMuiSwitch>
                         }
                     >
                         <Alert.Title>
@@ -413,7 +492,7 @@ export const SettingsTiles = (props: SettingsTilesProps) => {
                             </StyledIcon>
                         }
                         action={
-                            <Switch
+                            <StyledMuiSwitch
                                 title={
                                     discoverable
                                         ? `Make ${name} non-discoverable`
@@ -423,7 +502,7 @@ export const SettingsTiles = (props: SettingsTilesProps) => {
                                 onChange={() => {
                                     changeDiscoverable();
                                 }}
-                            ></Switch>
+                            ></StyledMuiSwitch>
                         }
                     >
                         <Alert.Title>
@@ -438,7 +517,8 @@ export const SettingsTiles = (props: SettingsTilesProps) => {
                         <StyledAlert
                             icon={
                                 <StyledIcon>
-                                    <Delete />
+                                    {/* <Delete /> */}
+                                    <MonitorRounded />
                                 </StyledIcon>
                             }
                             action={
