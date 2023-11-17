@@ -56,7 +56,7 @@ const initialBuilder: Builder = {
     inputs: {
         step: 2,
         value: undefined,
-        required: true,
+        required: false,
         display: 'Input',
     },
     inputTypes: {
@@ -120,9 +120,31 @@ export function PromptGenerator() {
             : 'Open in Builder';
 
     const nextButtonAction = () => {
-        currentBuilderStep === 4
-            ? setBlocksAndOpenUIBuilder(builder, navigate)
-            : changeBuilderStep(currentBuilderStep + 1);
+        if (currentBuilderStep === 4) {
+            // prompt flow finished, move on
+            setBlocksAndOpenUIBuilder(builder, navigate);
+        } else if (currentBuilderStep === 2) {
+            // skip input types step if not inputs configured
+            const hasInputs = (builder.inputs.value as Token[]).some(
+                (token: Token) => {
+                    return token.type === TOKEN_TYPE_INPUT;
+                },
+            );
+            changeBuilderStep(currentBuilderStep + (hasInputs ? 1 : 2));
+        } else {
+            changeBuilderStep(currentBuilderStep + 1);
+        }
+    };
+    const backButtonAction = () => {
+        if (currentBuilderStep === 4) {
+            // moving back from preview step - if no input types, skip that step moving backwards
+            changeBuilderStep(
+                currentBuilderStep -
+                    (builder.inputTypes.value === undefined ? 2 : 1),
+            );
+        } else {
+            changeBuilderStep(currentBuilderStep - 1);
+        }
     };
 
     const isCurrentBuilderStepComplete = () => {
@@ -135,17 +157,9 @@ export function PromptGenerator() {
             },
         );
         switch (currentBuilderStep) {
-            case 2:
-                // input step - need at least one input
-                if (!stepItems[0].value) {
-                    return false;
-                }
-                return stepItems[0].value.some((token: Token) => {
-                    return token.type === TOKEN_TYPE_INPUT;
-                });
             case 3:
-                // input type step - types should not be null
-                if (!stepItems[0].value) {
+                // input type step - required only if there are inputs
+                if (stepItems[0].value === undefined) {
                     return false;
                 }
                 return Object.values(stepItems[0].value).every(
@@ -155,7 +169,9 @@ export function PromptGenerator() {
                 );
             default:
                 return stepItems.every((builderStepItem: BuilderStepItem) => {
-                    return !!builderStepItem.value;
+                    return builderStepItem.required
+                        ? !!builderStepItem.value
+                        : true;
                 });
         }
     };
@@ -187,9 +203,7 @@ export function PromptGenerator() {
                         color="primary"
                         variant="text"
                         sx={{ marginRight: '8px' }}
-                        onClick={() =>
-                            changeBuilderStep(currentBuilderStep - 1)
-                        }
+                        onClick={backButtonAction}
                     >
                         Back
                     </Button>
@@ -198,7 +212,7 @@ export function PromptGenerator() {
                     color="primary"
                     disabled={!isCurrentBuilderStepComplete()}
                     variant="contained"
-                    onClick={() => nextButtonAction()}
+                    onClick={nextButtonAction}
                 >
                     {nextButtonText}
                 </Button>

@@ -1,5 +1,4 @@
-import { TOKEN_TYPE_INPUT } from '../prompt.constants';
-import { Builder, BuilderStepItem, Token } from '../prompt.types';
+import { Builder, BuilderStepItem } from '../prompt.types';
 import { List } from '@semoss/ui';
 
 interface BuilderStepItemProps {
@@ -18,17 +17,9 @@ export function PromptGeneratorBuilderSummaryStepItem(
 
     const isStepItemComplete = (item: BuilderStepItem) => {
         switch (item.step) {
-            case 2:
-                // input step - need at least one input
-                if (!item.value) {
-                    return false;
-                }
-                return (item.value as Token[]).some((token: Token) => {
-                    return token.type === TOKEN_TYPE_INPUT;
-                });
             case 3:
                 // input type step - types should not be null
-                if (!item.value) {
+                if (item.value === undefined) {
                     return false;
                 }
                 return Object.values(item.value).every(

@@ -64,10 +64,14 @@ export function PromptGeneratorBuilderSummary(props: BuilderSummaryProps) {
     };
 
     const markBuilderStepComplete = (summaryStep, currentBuilderStep) => {
-        return (
-            isBuilderStepComplete(summaryStep) &&
-            summaryStep <= currentBuilderStep
-        );
+        if (summaryStep < currentBuilderStep) {
+            return true;
+        } else {
+            return (
+                isBuilderStepComplete(summaryStep) &&
+                summaryStep <= currentBuilderStep
+            );
+        }
     };
 
     // don't count optional step items as part of overall completion until the step is active

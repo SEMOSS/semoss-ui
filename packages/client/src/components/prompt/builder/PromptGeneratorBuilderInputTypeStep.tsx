@@ -85,10 +85,7 @@ export function PromptGeneratorBuilderInputTypeStep(props: {
     }, []);
 
     useEffect(() => {
-        if (
-            Object.values(inputTypes).length &&
-            Object.values(inputTypes).every((inputType) => !!inputType)
-        ) {
+        if (Object.values(inputTypes).every((inputType) => !!inputType)) {
             props.setBuilderValue('inputTypes', inputTypes);
         }
     }, [inputTypes]);

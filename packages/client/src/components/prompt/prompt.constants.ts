@@ -1,4 +1,4 @@
-import { Create, DisplaySettings, Input } from '@mui/icons-material';
+import { Create, DisplaySettings, Input, Preview } from '@mui/icons-material';
 
 export const LIBRARY_PROMPT_TAG_TRAVEL = 'travel';
 export const LIBRARY_PROMPT_TAG_COMMUNICATIONS = 'communications';
@@ -52,4 +52,8 @@ export const SUMMARY_STEPS = [
     //     title: 'Set Constraints',
     //     icon: Block,
     // },
+    {
+        title: 'Preview Prompt',
+        icon: Preview,
+    },
 ];
