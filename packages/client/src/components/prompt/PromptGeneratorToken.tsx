@@ -6,10 +6,10 @@ import {
 } from './prompt.constants';
 import { Token } from './prompt.types';
 import { blue } from '@mui/material/colors';
-import { Button, Typography } from '@semoss/ui';
+import { Button, List, Typography } from '@semoss/ui';
 import { styled, Chip, Tooltip, TooltipProps } from '@mui/material';
 import { tooltipClasses } from '@mui/material';
-import { SaveAlt, SyncAlt } from '@mui/icons-material';
+import { SaveAlt, Sync } from '@mui/icons-material';
 
 interface HoverButtonRootProps {
     disableHover: boolean;
@@ -62,8 +62,15 @@ const StyledTooltip = styled(({ className, ...props }: TooltipProps) => (
         backgroundColor: theme.palette.background.default,
         color: 'inherit',
         fontSize: theme.typography.pxToRem(12),
-        border: `1px solid ${theme.palette.divider}`,
         padding: 0,
+    },
+}));
+
+const StyledListItem = styled(List.Item)(({ theme }) => ({
+    padding: 0,
+    border: `1px solid ${theme.palette.primary.main}`,
+    '&:not(:last-child)': {
+        borderBottom: '0px',
     },
 }));
 
@@ -136,7 +143,7 @@ export function PromptGeneratorSetToken(props: {
     addSelectedInputToken: (tokenIndex: number) => void;
     removeSelectedInputToken: (tokenIndex: number) => void;
     resetInputToken: (tokenIndex: number) => void;
-    setSelectedTokensAsInputs: () => void;
+    setSelectedTokensAsInputs: (setAsLinked?: boolean) => void;
 }) {
     const [isTooltipOpen, setTooltipIsOpen] = useState(false);
     useEffect(() => {
@@ -171,24 +178,38 @@ export function PromptGeneratorSetToken(props: {
                         ],
                     }}
                     title={
-                        <StyledTooltipContentButton
-                            fullWidth
-                            variant="text"
-                            startIcon={
-                                props.isSelectedLinkable === false ? (
-                                    <SaveAlt />
-                                ) : (
-                                    <SyncAlt />
-                                )
-                            }
-                            onClick={() => props.setSelectedTokensAsInputs()}
-                        >
-                            {`${
-                                props.isSelectedLinkable === false
-                                    ? 'Set'
-                                    : 'Link'
-                            } Input`}
-                        </StyledTooltipContentButton>
+                        <List disablePadding>
+                            {props.isSelectedLinkable !== false ? (
+                                <StyledListItem>
+                                    <StyledTooltipContentButton
+                                        fullWidth
+                                        variant="text"
+                                        startIcon={<Sync />}
+                                        onClick={() =>
+                                            props.setSelectedTokensAsInputs(
+                                                true,
+                                            )
+                                        }
+                                    >
+                                        Link Input
+                                    </StyledTooltipContentButton>
+                                </StyledListItem>
+                            ) : (
+                                <></>
+                            )}
+                            <StyledListItem>
+                                <StyledTooltipContentButton
+                                    fullWidth
+                                    variant="text"
+                                    startIcon={<SaveAlt />}
+                                    onClick={() =>
+                                        props.setSelectedTokensAsInputs()
+                                    }
+                                >
+                                    Set Input
+                                </StyledTooltipContentButton>
+                            </StyledListItem>
+                        </List>
                     }
                 >
                     {props.token.type === TOKEN_TYPE_TEXT &&

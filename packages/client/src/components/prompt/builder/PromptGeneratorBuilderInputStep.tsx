@@ -270,7 +270,7 @@ export function PromptGeneratorBuilderInputStep(props: {
      * Everything selected should become an input token
      * Multi-word inputs should be merged
      */
-    const setSelectedTokensAsInputs = (setLinked: false | number = false) => {
+    const setSelectedTokensAsInputs = (setAsLinked: boolean = false) => {
         if (selectedInputTokens.length > 1) {
             const selectedInputTokensCopy = [...selectedInputTokens];
             selectedInputTokensCopy.sort((a, b) => a - b);
@@ -296,7 +296,7 @@ export function PromptGeneratorBuilderInputStep(props: {
         } else {
             setTokenType(selectedInputTokens[0], TOKEN_TYPE_INPUT);
         }
-        if (isSelectedLinkable() !== false) {
+        if (setAsLinked) {
             setLinkedInputToken(selectedInputTokens[0], isSelectedLinkable());
         }
         setSelectedInputTokens([]);
