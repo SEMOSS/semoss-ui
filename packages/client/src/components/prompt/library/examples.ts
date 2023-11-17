@@ -317,7 +317,7 @@ export const PromptExamples: Prompt[] = [
             {
                 index: 0,
                 key: 'Write',
-                display: 'write',
+                display: 'Write',
                 type: TOKEN_TYPE_TEXT,
                 isHiddenPhraseInputToken: false,
                 linkedInputToken: undefined,

@@ -38,7 +38,6 @@ export function PromptLibraryDialog(props: {
 
     function openUIBuilderForTemplate(
         title: string,
-        context: string,
         inputs: Token[],
         inputTypes: object,
     ) {
@@ -46,7 +45,6 @@ export function PromptLibraryDialog(props: {
             JSON.stringify(props.builder),
         );
         templateBuilder.title.value = templateBuilder.title.value ?? title;
-        templateBuilder.context.value = context;
         templateBuilder.inputs.value = inputs;
         templateBuilder.inputTypes.value = inputTypes;
         setBlocksAndOpenUIBuilder(templateBuilder, navigate);

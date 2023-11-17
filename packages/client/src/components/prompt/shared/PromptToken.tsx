@@ -3,8 +3,8 @@ import {
     TOKEN_TYPE_TEXT,
     TOKEN_TYPE_INPUT,
     INPUT_TYPE_DISPLAY,
-} from './prompt.constants';
-import { Token } from './prompt.types';
+} from '../prompt.constants';
+import { Token } from '../prompt.types';
 import { blue } from '@mui/material/colors';
 import { Button, List, Typography } from '@semoss/ui';
 import { styled, Chip, Tooltip, TooltipProps } from '@mui/material';
@@ -61,6 +61,7 @@ const StyledTooltip = styled(({ className, ...props }: TooltipProps) => (
     [`& .${tooltipClasses.tooltip}`]: {
         backgroundColor: theme.palette.background.default,
         color: 'inherit',
+        border: `1px solid ${theme.palette.primary.main}`,
         fontSize: theme.typography.pxToRem(12),
         padding: 0,
     },

@@ -8,7 +8,7 @@ import {
     INPUT_TYPES,
     INPUT_TYPE_DISPLAY,
 } from '../prompt.constants';
-import { PromptReadonlyInputToken } from '../PromptToken';
+import { PromptReadonlyInputToken } from '../shared/PromptToken';
 
 function InputSelection(props: {
     inputToken: Token;

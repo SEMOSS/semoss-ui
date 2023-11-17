@@ -1,22 +1,12 @@
-import { TOKEN_TYPE_TEXT } from '../prompt.constants';
 import { Builder, Token } from '../prompt.types';
 import { StyledStepPaper, StyledTextPaper } from '../prompt.styled';
 import { Box, Typography } from '@mui/material';
-import { PromptHoverToken } from '../PromptToken';
+import { PromptPreview } from '../shared';
 
 export function PromptBuilderBuilderPreviewStep(props: {
     builder: Builder;
     setBuilderValue: (builderStepKey: string, value: Token[]) => void;
 }) {
-    const getTokenInputType = (token: Token) => {
-        if (token.type === TOKEN_TYPE_TEXT || token.isHiddenPhraseInputToken) {
-            return null;
-        } else {
-            return props.builder.inputTypes.value[
-                token.linkedInputToken ?? token.index
-            ];
-        }
-    };
     const getBuilderTokens = (builder: Builder) => {
         return Array.isArray(builder.inputs.value) ? builder.inputs.value : [];
     };
@@ -30,13 +20,14 @@ export function PromptBuilderBuilderPreviewStep(props: {
                 </Typography>
             </Box>
             <StyledTextPaper>
-                {Array.from(getBuilderTokens(props.builder), (token: Token) => (
-                    <PromptHoverToken
-                        key={token.index}
-                        token={token}
-                        tokenInputType={getTokenInputType(token)}
-                    />
-                ))}
+                <PromptPreview
+                    tokens={getBuilderTokens(props.builder)}
+                    inputTypes={
+                        props.builder.inputTypes.value
+                            ? (props.builder.inputTypes.value as object)
+                            : {}
+                    }
+                />
             </StyledTextPaper>
         </StyledStepPaper>
     );

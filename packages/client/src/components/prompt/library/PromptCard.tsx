@@ -13,6 +13,8 @@ import {
     BookmarkBorderOutlined,
     LocalOfferOutlined,
 } from '@mui/icons-material';
+import { PromptPreview } from '../shared';
+import { Token } from '../prompt.types';
 
 const StyledCard = styled(Card)(() => ({
     height: '100%',
@@ -30,7 +32,8 @@ export function PromptCard(props: {
     cardKey: string;
     title: string;
     tags: string[];
-    context: string;
+    tokens: Token[];
+    inputTypes: object;
     openUIBuilderForTemplate: () => void;
 }) {
     // todo: hook this up to a real bookmark system
@@ -59,7 +62,14 @@ export function PromptCard(props: {
                     </Stack>
                 }
             />
-            <Card.Content>{props.context}</Card.Content>
+            <Card.Content>
+                <Grid container>
+                    <PromptPreview
+                        tokens={props.tokens}
+                        inputTypes={props.inputTypes}
+                    />
+                </Grid>
+            </Card.Content>
             <Spacer />
             <Card.Actions>
                 <Grid container spacing={1}>

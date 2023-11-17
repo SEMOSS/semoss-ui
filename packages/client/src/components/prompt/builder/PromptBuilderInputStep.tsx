@@ -3,7 +3,7 @@ import { TOKEN_TYPE_TEXT, TOKEN_TYPE_INPUT } from '../prompt.constants';
 import { Builder, Token } from '../prompt.types';
 import { StyledStepPaper, StyledTextPaper } from '../prompt.styled';
 import { Box, Typography } from '@semoss/ui';
-import { PromptSetToken } from '../PromptToken';
+import { PromptSetToken } from '../shared/PromptToken';
 
 export function PromptBuilderBuilderInputStep(props: {
     builder: Builder;

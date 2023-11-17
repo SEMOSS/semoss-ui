@@ -12,7 +12,6 @@ export function PromptLibraryCards(props: {
     filter: string;
     openUIBuilderForTemplate: (
         title: string,
-        context: string,
         inputs: Token[],
         inputTypes: object,
     ) => void;
@@ -31,11 +30,11 @@ export function PromptLibraryCards(props: {
                             cardKey={`${i}`}
                             title={prompt.title}
                             tags={prompt.tags}
-                            context={prompt.context}
+                            tokens={prompt.inputs}
+                            inputTypes={prompt.inputTypes}
                             openUIBuilderForTemplate={() => {
                                 props.openUIBuilderForTemplate(
                                     prompt.title,
-                                    prompt.context,
                                     prompt.inputs,
                                     prompt.inputTypes,
                                 );
