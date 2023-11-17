@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import {
     TOKEN_TYPE_TEXT,
     TOKEN_TYPE_INPUT,
@@ -8,8 +8,7 @@ import { Token } from '../prompt.types';
 import { StyledTooltip } from '../prompt.styled';
 import { blue } from '@mui/material/colors';
 import { Button, List, Typography } from '@semoss/ui';
-import { styled, Chip, Tooltip, TooltipProps } from '@mui/material';
-import { tooltipClasses } from '@mui/material';
+import { styled, Chip } from '@mui/material';
 import { SaveAlt, Sync } from '@mui/icons-material';
 
 interface HoverButtonRootProps {
@@ -56,18 +55,6 @@ const StyledChip = styled(Chip, {
     },
 }));
 
-// const StyledTooltip = styled(({ className, ...props }: TooltipProps) => (
-//     <Tooltip {...props} classes={{ popper: className }} />
-// ))(({ theme }) => ({
-//     [`& .${tooltipClasses.tooltip}`]: {
-//         backgroundColor: theme.palette.background.default,
-//         color: 'inherit',
-//         border: `1px solid ${theme.palette.primary.main}`,
-//         fontSize: theme.typography.pxToRem(12),
-//         padding: 0,
-//     },
-// }));
-
 const StyledListItem = styled(List.Item)(({ theme }) => ({
     padding: 0,
     border: `1px solid ${theme.palette.primary.main}`,
@@ -107,22 +94,10 @@ export function PromptHoverToken(props: {
                 </StyledTextButton>
             ) : (
                 <StyledTooltip
-                    PopperProps={{
-                        modifiers: [
-                            {
-                                name: 'offset',
-                                options: {
-                                    offset: [0, -10],
-                                },
-                            },
-                        ],
-                    }}
                     title={
-                        <React.Fragment>
-                            <Typography variant="body1" sx={{ marginX: 1 }}>
-                                {INPUT_TYPE_DISPLAY[props.tokenInputType]}
-                            </Typography>
-                        </React.Fragment>
+                        <Typography variant="body1" sx={{ marginX: 1 }}>
+                            {INPUT_TYPE_DISPLAY[props.tokenInputType]}
+                        </Typography>
                     }
                 >
                     <StyledChip

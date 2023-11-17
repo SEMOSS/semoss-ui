@@ -24,7 +24,20 @@ interface StyledTooltipProps {
 }
 export const StyledTooltip = styled(
     ({ className, ...props }: TooltipProps) => (
-        <Tooltip {...props} classes={{ popper: className }} />
+        <Tooltip
+            {...props}
+            classes={{ popper: className }}
+            PopperProps={{
+                modifiers: [
+                    {
+                        name: 'offset',
+                        options: {
+                            offset: [0, -10],
+                        },
+                    },
+                ],
+            }}
+        />
     ),
     {
         shouldForwardProp: (prop) => prop !== 'disableBorder',
