@@ -70,10 +70,9 @@ export const Sidebar = ({
         <StyledSidebar>
             <StyledList disablePadding>
                 <List.Item>
-                    <List.ItemButton>
-                        <EditOutlined />
-                    </List.ItemButton>
+                    <EditOutlined />
                     <List.ItemText
+                        sx={{ marginLeft: '5px' }}
                         primary={
                             <Typography variant="subtitle2">
                                 Adjust Configurations

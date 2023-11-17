@@ -16,19 +16,37 @@ import {
 import { Add, Delete } from '@mui/icons-material';
 import { usePixel, useRootStore } from '@/hooks';
 
+const StyledTableContainer = styled(Table.Container)({
+    borderRadius: '12px',
+    // background: #FFF;
+    /* Devias Drop Shadow */
+    boxShadow: '0px 5px 22px 0px rgba(0, 0, 0, 0.06)',
+});
+
+const StyledTableTitleContainer = styled('div')({
+    display: 'flex',
+    alignItems: 'center',
+    alignSelf: 'stretch',
+    boxShadow: '0px -1px 0px 0px rgba(0, 0, 0, 0.12) inset',
+    backgroundColor: 'white',
+    justifyContent: 'space-between',
+});
+
 const StyledFileContent = styled('div')({
     display: 'flex',
     width: '100%',
     flexDirection: 'column',
     alignItems: 'flex-start',
+    justifyContent: 'space-between',
     gap: '25px',
     flexShrink: '0',
+    paddingLeft: '5px',
 });
 
-const StyledTopDiv = styled('div')({
+const StyledTableTitleDiv = styled('div')({
     display: 'flex',
-    justifyContent: 'space-between',
-    width: '100%',
+    padding: '12px 24px 12px 16px',
+    alignItems: 'center',
     gap: '10px',
 });
 
@@ -46,7 +64,7 @@ interface FileTableProps {
 }
 
 type FileUploadForm = {
-    PROJECT_UPLOAD: File;
+    PROJECT_UPLOAD: File[];
 };
 
 interface FileExplorerProps {
@@ -90,7 +108,7 @@ export const FileTable = (props: FileTableProps) => {
     //For filtering files
     const { control, watch, setValue, handleSubmit } = useForm<{
         FILES: FileExplorerProps[];
-        PROJECT_UPLOAD: File;
+        PROJECT_UPLOAD: File[];
         SEARCH_FILTER: string;
     }>({
         defaultValues: {
@@ -98,7 +116,7 @@ export const FileTable = (props: FileTableProps) => {
             FILES: [],
             // Filters for Files table
             SEARCH_FILTER: '',
-            PROJECT_UPLOAD: null,
+            PROJECT_UPLOAD: [],
         },
     });
 
@@ -150,18 +168,31 @@ export const FileTable = (props: FileTableProps) => {
     //Method that is called for embedding a file
     const embedFile = handleSubmit(async (data: FileUploadForm) => {
         setIsLoading(true);
+
+        //string that will become the filePaths
+        let fileLocations = '';
+
         try {
             //upload the file
             const upload = await monolithStore.uploadFile(
-                [data.PROJECT_UPLOAD],
+                data.PROJECT_UPLOAD,
                 configStore.store.insightID,
             );
 
-            const { fileLocation } = upload[0];
+            upload.map((file, index) => {
+                const { fileLocation } = file;
+                if (index + 1 === upload.length) {
+                    //last member
+                    fileLocations = fileLocations += `"${fileLocation}"`;
+                } else {
+                    //all other members
+                    fileLocations = fileLocations += `"${fileLocation}", `;
+                }
+            });
 
             // Embedding the File
             await monolithStore.runQuery(`
-                CreateEmbeddingsFromDocuments( engine= "${id}", filePaths= ["${fileLocation}"])
+                CreateEmbeddingsFromDocuments( engine= "${id}", filePaths= [${fileLocations}])
             `);
         } catch (e) {
             console.error(e);
@@ -173,8 +204,8 @@ export const FileTable = (props: FileTableProps) => {
     });
 
     const deleteFile = async (file: FileExplorerProps) => {
+        const { fileName } = file;
         try {
-            const { fileName } = file;
             await monolithStore.runQuery(`
             RemoveDocumentFromVectorDatabase(engine = "${id}", fileNames=["${fileName}"])
             `);
@@ -190,20 +221,20 @@ export const FileTable = (props: FileTableProps) => {
     };
 
     const deleteSelectedFiles = async (files: FileExplorerProps[]) => {
-        try {
-            // construct the string of files
-            let fileArray = '';
-            files.map((file, index) => {
-                const { fileName } = file;
-                if (index + 1 === files.length) {
-                    //structuring the last element
-                    fileArray = fileArray + `"${fileName}"`;
-                } else {
-                    // all but the last element
-                    fileArray = fileArray + `"${fileName}", `;
-                }
-            });
+        // construct the string of files
+        let fileArray = '';
+        files.map((file, index) => {
+            const { fileName } = file;
+            if (index + 1 === files.length) {
+                //structuring the last element
+                fileArray = fileArray + `"${fileName}"`;
+            } else {
+                // all but the last element
+                fileArray = fileArray + `"${fileName}", `;
+            }
+        });
 
+        try {
             await monolithStore.runQuery(`
                 RemoveDocumentFromVectorDatabase(engine = "${id}", fileNames=[${fileArray}])
             `);
@@ -222,155 +253,168 @@ export const FileTable = (props: FileTableProps) => {
 
     return (
         <StyledFileContent>
-            <StyledTopDiv>
-                <Typography variant={'h6'}>Files</Typography>
-                <div>
-                    <Search
-                        ref={fileSearchRef}
-                        placeholder={'Search Files'}
-                        size="small"
-                        sx={{ marginRight: '20px' }}
-                        value={searchFilter}
-                        onChange={(e) => {
-                            setValue('SEARCH_FILTER', e.target.value);
-                        }}
-                    />
-                    {selectedFiles.length > 0 && (
+            <StyledTableContainer>
+                <StyledTableTitleContainer>
+                    <StyledTableTitleDiv>
+                        <Typography variant={'h6'}>Files</Typography>
+                    </StyledTableTitleDiv>
+
+                    <div>
+                        <Search
+                            ref={fileSearchRef}
+                            placeholder={'Search Files'}
+                            size="small"
+                            sx={{ marginRight: '20px' }}
+                            value={searchFilter}
+                            onChange={(e) => {
+                                setValue('SEARCH_FILTER', e.target.value);
+                            }}
+                        />
+                        {selectedFiles.length > 0 && (
+                            <Button
+                                variant={'outlined'}
+                                color="error"
+                                sx={{ marginRight: '10px' }}
+                                onClick={() => setDeleteFilesModal(true)}
+                            >
+                                Delete Selected
+                            </Button>
+                        )}
                         <Button
-                            variant={'outlined'}
-                            color="error"
-                            sx={{ marginRight: '10px' }}
-                            onClick={() => setDeleteFilesModal(true)}
+                            onClick={() => setOpen(true)}
+                            variant="contained"
                         >
-                            Delete Selected
+                            <StyledIcon fontSize="small" /> Embed New Document
                         </Button>
-                    )}
-                    <Button onClick={() => setOpen(true)} variant="contained">
-                        <StyledIcon fontSize="small" /> Embed New Document
-                    </Button>
-                </div>
-            </StyledTopDiv>
+                    </div>
+                </StyledTableTitleContainer>
 
-            <StyledFileTable>
-                <Table.Head>
-                    <Table.Cell size="small">
-                        <Checkbox
-                            checked={
-                                selectedFiles.length === verifiedFiles.length &&
-                                verifiedFiles.length > 0
-                            }
-                            onChange={() => {
-                                if (
-                                    selectedFiles.length !==
-                                    verifiedFiles.length
-                                ) {
-                                    setSelectedFiles(verifiedFiles);
-                                } else {
-                                    setSelectedFiles([]);
+                <StyledFileTable>
+                    <Table.Head>
+                        <Table.Cell size="small">
+                            <Checkbox
+                                checked={
+                                    selectedFiles.length ===
+                                        verifiedFiles.length &&
+                                    verifiedFiles.length > 0
                                 }
-                            }}
-                        />
-                    </Table.Cell>
-                    <Table.Cell size="small">Name</Table.Cell>
-                    <Table.Cell size="small">Date Modified</Table.Cell>
-                    <Table.Cell size="small">Size</Table.Cell>
-                    <Table.Cell size="small">Action</Table.Cell>
-                </Table.Head>
-                <Table.Body>
-                    {verifiedFiles.map((x, i) => {
-                        const file = verifiedFiles[i];
+                                onChange={() => {
+                                    if (
+                                        selectedFiles.length !==
+                                        verifiedFiles.length
+                                    ) {
+                                        setSelectedFiles(verifiedFiles);
+                                    } else {
+                                        setSelectedFiles([]);
+                                    }
+                                }}
+                            />
+                        </Table.Cell>
+                        <Table.Cell size="small">Name</Table.Cell>
+                        <Table.Cell size="small">Date Modified</Table.Cell>
+                        <Table.Cell size="small">Size</Table.Cell>
+                        <Table.Cell size="small">Action</Table.Cell>
+                    </Table.Head>
+                    <Table.Body>
+                        {verifiedFiles.map((x, i) => {
+                            const file = verifiedFiles[i];
 
-                        let isSelected = false;
+                            let isSelected = false;
 
-                        if (file) {
-                            isSelected = selectedFiles.some((value) => {
-                                return value.fileName === file.fileName;
-                            });
-                        }
-                        if (file) {
-                            return (
-                                <Table.Row key={i}>
-                                    <Table.Cell size="medium">
-                                        <Checkbox
-                                            checked={isSelected}
-                                            onChange={() => {
-                                                if (isSelected) {
-                                                    const selFiles = [];
-                                                    selectedFiles.forEach(
-                                                        (u) => {
-                                                            if (
-                                                                u.fileName !==
-                                                                file.fileName
-                                                            ) {
-                                                                selFiles.push(
-                                                                    u,
-                                                                );
-                                                            }
-                                                        },
-                                                    );
-                                                    setSelectedFiles(selFiles);
-                                                } else {
-                                                    setSelectedFiles([
-                                                        ...selectedFiles,
-                                                        file,
-                                                    ]);
-                                                }
-                                            }}
-                                        />
-                                    </Table.Cell>
-                                    <Table.Cell
-                                        size="medium"
-                                        component="td"
-                                        scope="row"
-                                    >
-                                        {file.fileName}
-                                    </Table.Cell>
-                                    <Table.Cell
-                                        size="medium"
-                                        component="td"
-                                        scope="row"
-                                    >
-                                        {file.lastModified}
-                                    </Table.Cell>
-                                    <Table.Cell
-                                        size="medium"
-                                        component="td"
-                                        scope="row"
-                                    >
-                                        {Math.round(file.fileSize * 10) / 10} KB
-                                    </Table.Cell>
-                                    <Table.Cell>
-                                        <IconButton
-                                            onClick={() => {
-                                                setDeleteFileModal(true);
-                                                setFileToDelete(file);
-                                            }}
-                                        >
-                                            <Delete />
-                                        </IconButton>
-                                    </Table.Cell>
-                                </Table.Row>
-                            );
-                        }
-                    })}
-                </Table.Body>
-                <Table.Footer>
-                    <Table.Row>
-                        <Table.Pagination
-                            rowsPerPageOptions={
-                                paginationOptions.filePageCounts
+                            if (file) {
+                                isSelected = selectedFiles.some((value) => {
+                                    return value.fileName === file.fileName;
+                                });
                             }
-                            onPageChange={(e, v) => {
-                                setFilePage(v + 1);
-                                setSelectedFiles([]);
-                            }}
-                            page={filePage - 1}
-                            rowsPerPage={5}
-                            count={filteredFileCount}
-                        />
-                    </Table.Row>
-                </Table.Footer>
-            </StyledFileTable>
+                            if (file) {
+                                return (
+                                    <Table.Row key={i}>
+                                        <Table.Cell size="medium">
+                                            <Checkbox
+                                                checked={isSelected}
+                                                onChange={() => {
+                                                    if (isSelected) {
+                                                        const selFiles = [];
+                                                        selectedFiles.forEach(
+                                                            (u) => {
+                                                                if (
+                                                                    u.fileName !==
+                                                                    file.fileName
+                                                                ) {
+                                                                    selFiles.push(
+                                                                        u,
+                                                                    );
+                                                                }
+                                                            },
+                                                        );
+                                                        setSelectedFiles(
+                                                            selFiles,
+                                                        );
+                                                    } else {
+                                                        setSelectedFiles([
+                                                            ...selectedFiles,
+                                                            file,
+                                                        ]);
+                                                    }
+                                                }}
+                                            />
+                                        </Table.Cell>
+                                        <Table.Cell
+                                            size="medium"
+                                            component="td"
+                                            scope="row"
+                                        >
+                                            {file.fileName}
+                                        </Table.Cell>
+                                        <Table.Cell
+                                            size="medium"
+                                            component="td"
+                                            scope="row"
+                                        >
+                                            {file.lastModified}
+                                        </Table.Cell>
+                                        <Table.Cell
+                                            size="medium"
+                                            component="td"
+                                            scope="row"
+                                        >
+                                            {Math.round(file.fileSize * 10) /
+                                                10}{' '}
+                                            KB
+                                        </Table.Cell>
+                                        <Table.Cell>
+                                            <IconButton
+                                                onClick={() => {
+                                                    setDeleteFileModal(true);
+                                                    setFileToDelete(file);
+                                                }}
+                                            >
+                                                <Delete />
+                                            </IconButton>
+                                        </Table.Cell>
+                                    </Table.Row>
+                                );
+                            }
+                        })}
+                    </Table.Body>
+                    <Table.Footer>
+                        <Table.Row>
+                            <Table.Pagination
+                                rowsPerPageOptions={
+                                    paginationOptions.filePageCounts
+                                }
+                                onPageChange={(e, v) => {
+                                    setFilePage(v + 1);
+                                    setSelectedFiles([]);
+                                }}
+                                page={filePage - 1}
+                                rowsPerPage={5}
+                                count={filteredFileCount}
+                            />
+                        </Table.Row>
+                    </Table.Footer>
+                </StyledFileTable>
+            </StyledTableContainer>
             <Modal open={open} onClose={() => setOpen(false)} fullWidth>
                 <Modal.Title>Upload Files</Modal.Title>
                 <form onSubmit={embedFile}>
@@ -382,7 +426,7 @@ export const FileTable = (props: FileTableProps) => {
                             render={({ field }) => {
                                 return (
                                     <FileDropzone
-                                        multiple={false}
+                                        multiple={true}
                                         value={field.value}
                                         extensions={[
                                             '.pdf',

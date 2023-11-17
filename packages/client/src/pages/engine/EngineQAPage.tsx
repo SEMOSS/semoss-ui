@@ -9,6 +9,7 @@ import {
     TextField,
     Typography,
     Paper,
+    CircularProgress,
 } from '@semoss/ui';
 import { useForm, Controller } from 'react-hook-form';
 import { Sidebar } from '@/components/settings';
@@ -81,15 +82,17 @@ export const EngineQAPage = () => {
      * Allow the user to ask a question
      */
     const ask = handleSubmit(async (data: { QUESTION: string }) => {
-        try {
-            // turn on loading
-            setError('');
-            setIsLoading(true);
-            setIsAnswered(false);
+        // turn on loading
+        setError('');
+        setIsLoading(true);
+        setIsAnswered(false);
 
-            if (!data.QUESTION) {
-                throw new Error('Question is required');
-            }
+        let finalContent = ``;
+
+        if (!data.QUESTION) {
+            throw new Error('Question is required');
+        }
+        try {
             let pixel = `
             VectorDatabaseQuery(engine="${id}" , command="${data.QUESTION}", limit=${limit})
             `;
@@ -100,8 +103,6 @@ export const EngineQAPage = () => {
 
             if (operationType.indexOf('ERROR') > -1)
                 throw new Error(output.response);
-
-            let finalContent = ``;
 
             //Looping through Vector Database Query and forming a content string with name, page, and content
             for (let i = 0; i <= output.length - 1; i++) {
@@ -230,6 +231,13 @@ export const EngineQAPage = () => {
                                         disabled={isLoading}
                                         onClick={ask}
                                         sx={{ width: '20%' }}
+                                        startIcon={
+                                            isLoading ? (
+                                                <CircularProgress size="1em" />
+                                            ) : (
+                                                <></>
+                                            )
+                                        }
                                     >
                                         Generate Answer
                                     </Button>
