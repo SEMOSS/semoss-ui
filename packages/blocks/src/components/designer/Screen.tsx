@@ -21,10 +21,10 @@ const StyledContainer = styled('div')(({ theme }) => ({
     height: '100%',
     width: '100%',
     paddingTop: theme.spacing(1),
-    paddingLeft: theme.spacing(2),
+    // paddingLeft: theme.spacing(2),
     paddingBottom: theme.spacing(1),
-    paddingRight: theme.spacing(2),
-    overflow: 'auto',
+    // paddingRight: theme.spacing(2),
+    // overflow: 'auto',
 }));
 
 const StyledContent = styled('div', {

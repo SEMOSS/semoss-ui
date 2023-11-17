@@ -133,7 +133,6 @@ export const Designer = (props: DesignerProps) => {
         <DesignerContext.Provider
             value={{
                 designer: designer,
-                active: view == 'app',
             }}
         >
             <Overlay />

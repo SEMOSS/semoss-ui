@@ -23,7 +23,6 @@ const StyledTitle = styled('div')(({ theme }) => ({
     display: 'inline-flex',
     alignItems: 'center',
     position: 'absolute',
-    padding: theme.spacing(4), // Needed?
     top: theme.spacing(-3),
     left: `-1px`,
     height: theme.spacing(3),

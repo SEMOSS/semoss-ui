@@ -14,7 +14,6 @@ export interface RendererProps {
 export const Renderer = observer(({ id }: RendererProps): JSX.Element => {
     // get the store and mode
     const { state, registry } = useBlocks();
-    const { active } = useDesigner();
 
     // get the block
     const block = state.getBlock(id);

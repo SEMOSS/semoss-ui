@@ -1,7 +1,15 @@
 import React from 'react';
 import { observer } from 'mobx-react-lite';
-import { styled, List, Typography, Divider } from '@semoss/ui';
+import {
+    styled,
+    List,
+    Typography,
+    Divider,
+    Tooltip,
+    IconButton,
+} from '@semoss/ui';
 import { useBlocks, useDesigner } from '@/hooks';
+import { ContentCopyOutlined } from '@mui/icons-material';
 
 const StyledMenu = styled('div')(({ theme }) => ({
     display: 'flex',
@@ -47,6 +55,11 @@ const StyledListItemButton = styled(List.ItemButton, {
 
 const StyledListIndent = styled('div')(({ theme }) => ({
     paddingLeft: theme.spacing(2),
+}));
+
+const StyledIconButton = styled(IconButton)(({ theme }) => ({
+    marginTop: '-3px',
+    marginLeft: '2px',
 }));
 
 /**
@@ -112,7 +125,31 @@ export const OutlineMenu = observer((): JSX.Element => {
     return (
         <StyledMenu>
             <StyledMenuHeader>
-                <Typography variant="body1">Structure</Typography>
+                <Typography variant="body1">Structure</Typography>{' '}
+                <StyledIconButton
+                    aria-label={`Copy Builder Config`}
+                    size="small"
+                    onClick={(e) => {
+                        // prevent the default action
+                        e.preventDefault();
+
+                        // copy
+                        try {
+                            navigator.clipboard.writeText(
+                                JSON.stringify({
+                                    blocks: state.blocks,
+                                    queries: state.queries,
+                                }),
+                            );
+                        } catch (e) {
+                            console.error(e);
+                        }
+                    }}
+                >
+                    <Tooltip title={`Copy ${name} ID`}>
+                        <ContentCopyOutlined fontSize="inherit" />
+                    </Tooltip>
+                </StyledIconButton>
             </StyledMenuHeader>
             <Divider />
             <StyledMenuScroll>

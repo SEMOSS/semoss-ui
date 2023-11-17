@@ -3,6 +3,7 @@ import { observer } from 'mobx-react-lite';
 import {
     styled,
     Accordion,
+    Button,
     Stack,
     Icon,
     Typography,
@@ -10,11 +11,12 @@ import {
     Divider,
 } from '@semoss/ui';
 
-import { useBlocks, useDesigner } from '@/hooks';
+import { useBlock, useBlocks, useDesigner } from '@/hooks';
 import {
     BarChartOutlined,
     SearchOutlined,
     ExpandMore,
+    DeleteOutline,
 } from '@mui/icons-material';
 
 const StyledMenu = styled('div')(({ theme }) => ({
@@ -66,6 +68,43 @@ const StyledMenuSectionTitle = styled(Accordion.Trigger)(({ theme }) => ({
     minHeight: 'auto !important',
     height: theme.spacing(6),
 }));
+
+interface DeleteBlockMenuItemProps {
+    /**
+     * Id of the block that is being worked with
+     */
+    id: string;
+}
+
+const DeleteBlockMenuItem = observer(({ id }: DeleteBlockMenuItemProps) => {
+    const { deleteBlock } = useBlock(id);
+    const { designer } = useDesigner();
+    return (
+        <>
+            {
+                // don't allow deletion of the base rendered element (page)
+                designer.rendered === id ? (
+                    <></>
+                ) : (
+                    <Stack direction="row" padding={2}>
+                        <Button
+                            color="error"
+                            fullWidth
+                            startIcon={<DeleteOutline />}
+                            variant="outlined"
+                            onClick={() => {
+                                deleteBlock();
+                                designer.setSelected('');
+                            }}
+                        >
+                            Delete Block
+                        </Button>
+                    </Stack>
+                )
+            }
+        </>
+    );
+});
 
 export const SelectedMenu = observer(() => {
     const { designer } = useDesigner();
@@ -159,10 +198,10 @@ export const SelectedMenu = observer(() => {
                                     ) : null}
                                 </Accordion.Content>
                             </StyledMenuSection>
-                            {/* <Divider /> */}
                         </React.Fragment>
                     );
                 })}
+                <DeleteBlockMenuItem id={block?.id} />
             </StyledMenuScroll>
         </StyledMenu>
     );

@@ -3,6 +3,10 @@ import { InputTypeSettings, InputSettings } from '@/components/block-settings';
 
 import { TextFieldBlockDef, TextFieldBlock } from './TextFieldBlock';
 import { FormatShapes } from '@mui/icons-material';
+import {
+    buildDimensionsSection,
+    buildSpacingSection,
+} from '../block-defaults.shared';
 
 // export the config for the block
 export const config: BlockConfig<TextFieldBlockDef> = {
@@ -51,5 +55,7 @@ export const config: BlockConfig<TextFieldBlockDef> = {
                 },
             ],
         },
+        buildSpacingSection(),
+        buildDimensionsSection(),
     ],
 };

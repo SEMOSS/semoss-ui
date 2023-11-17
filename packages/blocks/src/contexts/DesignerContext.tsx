@@ -8,7 +8,6 @@ import { DesignerStore } from '@/stores';
 export type DesignerContextType = {
     /** Store holding designer information */
     designer: DesignerStore;
-    active: boolean;
 };
 
 /**

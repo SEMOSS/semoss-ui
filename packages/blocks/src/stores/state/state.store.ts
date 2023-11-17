@@ -10,6 +10,7 @@ import {
     RemoveBlockAction,
 } from './state.actions';
 import { Query, Block, BlockJSON, ListenerActions } from './state.types';
+import { RunPixel } from '@/types';
 
 interface StateStoreInterface {
     /** Queries rendered in the insight */
@@ -17,6 +18,9 @@ interface StateStoreInterface {
 
     /** Blocks rendered in the insight */
     blocks: Record<string, Block>;
+
+    /** Run pixel */
+    run: RunPixel | undefined;
 }
 
 /**
@@ -26,6 +30,7 @@ export class StateStoreImplementation {
     private _store: StateStoreInterface = {
         queries: {},
         blocks: {},
+        run: () => new Promise<any>(() => null),
     };
 
     /**
@@ -67,6 +72,9 @@ export class StateStoreImplementation {
 
             /** Blocks that will be loaded into the view */
             blocks?: Record<string, Block>;
+
+            /** Run pixel */
+            run?: RunPixel | undefined;
         },
         callbacks: {
             onQuery: (event: { query: string }) => Promise<{
@@ -119,6 +127,7 @@ export class StateStoreImplementation {
         runInAction(() => {
             this._store.blocks = config.blocks || {};
             this._store.queries = config.queries || {};
+            this._store.run = config.run || undefined;
         });
     }
 
@@ -812,6 +821,7 @@ export class StateStoreImplementation {
 //             },
 //         },
 //         queries: {},
+//         run: runPixel,
 //     },
 //     {
 //         onQuery: async ({ query }) => {

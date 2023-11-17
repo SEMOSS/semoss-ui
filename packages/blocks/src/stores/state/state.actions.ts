@@ -1,5 +1,5 @@
 import { BlockJSON, ListenerActions } from './state.types';
-import { StateStoreImplementation } from './state.storenew';
+import { StateStoreImplementation } from './state.store';
 
 export enum ActionMessages {
     SET_STATE = 'SET_STATE',

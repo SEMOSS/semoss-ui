@@ -1,3 +1,3 @@
-export * from './state.storenew';
+export * from './state.store';
 export * from './state.actions';
 export * from './state.types';

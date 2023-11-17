@@ -28,7 +28,6 @@ export const Slot = observer(<W extends BlockDef>({ slot }: SlotProps<W>) => {
                         alignItems: 'center',
                         justifyContent: 'center',
                         textOverflow: 'hidden',
-                        padding: '20px',
                     }}
                 >
                     Add Content
