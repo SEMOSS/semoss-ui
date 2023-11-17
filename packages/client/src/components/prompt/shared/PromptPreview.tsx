@@ -7,7 +7,7 @@ export function PromptPreview(props: { tokens: Token[]; inputTypes: object }) {
         if (token.type === TOKEN_TYPE_TEXT || token.isHiddenPhraseInputToken) {
             return null;
         } else {
-            return props.inputTypes[token.linkedInputToken ?? token.index];
+            return props.inputTypes[token?.linkedInputToken ?? token.index];
         }
     };
 

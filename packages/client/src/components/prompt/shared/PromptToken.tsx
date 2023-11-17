@@ -5,6 +5,7 @@ import {
     INPUT_TYPE_DISPLAY,
 } from '../prompt.constants';
 import { Token } from '../prompt.types';
+import { StyledTooltip } from '../prompt.styled';
 import { blue } from '@mui/material/colors';
 import { Button, List, Typography } from '@semoss/ui';
 import { styled, Chip, Tooltip, TooltipProps } from '@mui/material';
@@ -55,17 +56,17 @@ const StyledChip = styled(Chip, {
     },
 }));
 
-const StyledTooltip = styled(({ className, ...props }: TooltipProps) => (
-    <Tooltip {...props} classes={{ popper: className }} />
-))(({ theme }) => ({
-    [`& .${tooltipClasses.tooltip}`]: {
-        backgroundColor: theme.palette.background.default,
-        color: 'inherit',
-        border: `1px solid ${theme.palette.primary.main}`,
-        fontSize: theme.typography.pxToRem(12),
-        padding: 0,
-    },
-}));
+// const StyledTooltip = styled(({ className, ...props }: TooltipProps) => (
+//     <Tooltip {...props} classes={{ popper: className }} />
+// ))(({ theme }) => ({
+//     [`& .${tooltipClasses.tooltip}`]: {
+//         backgroundColor: theme.palette.background.default,
+//         color: 'inherit',
+//         border: `1px solid ${theme.palette.primary.main}`,
+//         fontSize: theme.typography.pxToRem(12),
+//         padding: 0,
+//     },
+// }));
 
 const StyledListItem = styled(List.Item)(({ theme }) => ({
     padding: 0,
@@ -166,6 +167,7 @@ export function PromptSetToken(props: {
                 <></>
             ) : (
                 <StyledTooltip
+                    disableBorder
                     disableHoverListener
                     open={isTooltipOpen}
                     PopperProps={{

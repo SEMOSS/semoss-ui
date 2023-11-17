@@ -18,14 +18,15 @@ export function PromptBuilderBuilderSummaryStepItem(
     const isStepItemComplete = (item: BuilderStepItem) => {
         switch (item.step) {
             case 3:
-                // input type step - types should not be null
+                // input type step
                 if (item.value === undefined) {
                     return false;
                 }
-                return Object.values(item.value).every(
-                    (type: string | null) => {
+                return (
+                    Object.values(item.value).length &&
+                    Object.values(item.value).every((type: string | null) => {
                         return !!type;
-                    },
+                    })
                 );
             default:
                 return !!item.value;

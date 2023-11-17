@@ -1,4 +1,7 @@
-import { SUMMARY_STEPS } from '../prompt.constants';
+import {
+    PROMPT_BUILDER_INPUT_TYPES_STEP,
+    SUMMARY_STEPS,
+} from '../prompt.constants';
 import { Builder, BuilderStepItem } from '../prompt.types';
 import { grey } from '@mui/material/colors';
 import {
@@ -26,11 +29,6 @@ const FlexBox = styled(Box)(() => ({
     alignItems: 'center',
 }));
 
-interface BuilderSummaryProps {
-    builder: Builder;
-    currentBuilderStep: number;
-}
-
 function PromptBuilderBuilderSummaryProgress(
     props: LinearProgressProps & { progress: number },
 ) {
@@ -48,27 +46,20 @@ function PromptBuilderBuilderSummaryProgress(
     );
 }
 
-export function PromptBuilderBuilderSummary(props: BuilderSummaryProps) {
-    // step is complete if all the required step items have values
-    const isBuilderStepComplete = (summaryStep) => {
-        return Object.values(props.builder)
-            .filter((builderStepItem: BuilderStepItem) => {
-                return (
-                    builderStepItem.step === summaryStep &&
-                    builderStepItem.required
-                );
-            })
-            .every(
-                (builderStepItem: BuilderStepItem) => !!builderStepItem.value,
-            );
-    };
-
-    const markBuilderStepComplete = (summaryStep, currentBuilderStep) => {
+export function PromptBuilderBuilderSummary(props: {
+    builder: Builder;
+    currentBuilderStep: number;
+    isBuilderStepComplete: (step: number) => boolean;
+}) {
+    const markBuilderStepComplete = (
+        summaryStep: number,
+        currentBuilderStep: number,
+    ) => {
         if (summaryStep < currentBuilderStep) {
             return true;
         } else {
             return (
-                isBuilderStepComplete(summaryStep) &&
+                props.isBuilderStepComplete(summaryStep) &&
                 summaryStep <= currentBuilderStep
             );
         }
@@ -84,7 +75,12 @@ export function PromptBuilderBuilderSummary(props: BuilderSummaryProps) {
                     (builderStepItem.step === props.currentBuilderStep &&
                         (!builderStepItem.required ||
                             (builderStepItem.required &&
-                                !!builderStepItem.value)))
+                                (builderStepItem.step ===
+                                PROMPT_BUILDER_INPUT_TYPES_STEP
+                                    ? props.isBuilderStepComplete(
+                                          PROMPT_BUILDER_INPUT_TYPES_STEP,
+                                      )
+                                    : !!builderStepItem.value))))
                 );
             },
         );

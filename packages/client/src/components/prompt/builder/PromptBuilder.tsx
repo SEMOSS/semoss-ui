@@ -143,36 +143,40 @@ export function PromptBuilder() {
         }
     };
     const backButtonAction = () => {
-        if (currentBuilderStep === 4) {
+        if (currentBuilderStep === PROMPT_BUILDER_PREVIEW_STEP) {
             // moving back from preview step - if no input types, skip that step moving backwards
-            changeBuilderStep(
-                currentBuilderStep -
-                    (builder.inputTypes.value === undefined ? 2 : 1),
+            const hasInputs = (builder.inputs.value as Token[]).some(
+                (token: Token) => {
+                    return token.type === TOKEN_TYPE_INPUT;
+                },
             );
+            changeBuilderStep(currentBuilderStep - (hasInputs ? 1 : 2));
         } else {
             changeBuilderStep(currentBuilderStep - 1);
         }
     };
 
-    const isCurrentBuilderStepComplete = () => {
+    const isBuilderStepComplete = (step: number) => {
         const stepItems = Object.values(builder).filter(
             (builderStepItem: BuilderStepItem) => {
                 return (
-                    builderStepItem.step === currentBuilderStep &&
-                    builderStepItem.required
+                    builderStepItem.step === step && builderStepItem.required
                 );
             },
         );
-        switch (currentBuilderStep) {
+        switch (step) {
             case PROMPT_BUILDER_INPUT_TYPES_STEP:
                 // input type step - required only if there are inputs
                 if (stepItems[0].value === undefined) {
                     return false;
                 }
-                return Object.values(stepItems[0].value).every(
-                    (type: string | null) => {
-                        return !!type;
-                    },
+                return (
+                    Object.values(stepItems[0].value).length &&
+                    Object.values(stepItems[0].value).every(
+                        (type: string | null) => {
+                            return !!type;
+                        },
+                    )
                 );
             default:
                 return stepItems.every((builderStepItem: BuilderStepItem) => {
@@ -191,6 +195,7 @@ export function PromptBuilder() {
                         <PromptBuilderBuilderSummary
                             builder={builder}
                             currentBuilderStep={currentBuilderStep}
+                            isBuilderStepComplete={isBuilderStepComplete}
                         />
                     </StyledPaper>
                 </Grid>
@@ -217,7 +222,7 @@ export function PromptBuilder() {
                 )}
                 <Button
                     color="primary"
-                    disabled={!isCurrentBuilderStepComplete()}
+                    disabled={!isBuilderStepComplete(currentBuilderStep)}
                     variant="contained"
                     onClick={nextButtonAction}
                 >
