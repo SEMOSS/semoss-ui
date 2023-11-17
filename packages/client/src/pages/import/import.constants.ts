@@ -278,6 +278,26 @@ export const CONNECTION_OPTIONS = {
                         disabled: false,
                         rules: { required: true },
                     },
+                    {
+                        fieldName: 'MAX_TOKENS',
+                        label: 'Max Tokens',
+                        defaultValue: 0,
+                        rules: { required: false, min: 0 },
+                        options: {
+                            component: 'number',
+                        },
+                        disabled: false,
+                    },
+                    {
+                        fieldName: 'MAX_INPUT_TOKENS',
+                        label: 'Max Input Tokens',
+                        defaultValue: 0,
+                        rules: { required: false, min: 0 },
+                        options: {
+                            component: 'number',
+                        },
+                        disabled: false,
+                    },
                 ],
             },
             {
@@ -400,6 +420,26 @@ export const CONNECTION_OPTIONS = {
                         },
                         disabled: false,
                         rules: { required: true },
+                    },
+                    {
+                        fieldName: 'MAX_TOKENS',
+                        label: 'Max Tokens',
+                        defaultValue: 0,
+                        rules: { required: false, min: 0 },
+                        options: {
+                            component: 'number',
+                        },
+                        disabled: false,
+                    },
+                    {
+                        fieldName: 'MAX_INPUT_TOKENS',
+                        label: 'Max Input Tokens',
+                        defaultValue: 0,
+                        rules: { required: false, min: 0 },
+                        options: {
+                            component: 'number',
+                        },
+                        disabled: false,
                     },
                 ],
             },
@@ -534,6 +574,26 @@ export const CONNECTION_OPTIONS = {
                         disabled: false,
                         rules: { required: true },
                     },
+                    {
+                        fieldName: 'MAX_TOKENS',
+                        label: 'Max Tokens',
+                        defaultValue: 0,
+                        rules: { required: false, min: 0 },
+                        options: {
+                            component: 'number',
+                        },
+                        disabled: false,
+                    },
+                    {
+                        fieldName: 'MAX_INPUT_TOKENS',
+                        label: 'Max Input Tokens',
+                        defaultValue: 0,
+                        rules: { required: false, min: 0 },
+                        options: {
+                            component: 'number',
+                        },
+                        disabled: false,
+                    },
                 ],
             },
         ],
@@ -653,6 +713,26 @@ export const CONNECTION_OPTIONS = {
                         disabled: false,
                         rules: { required: true },
                     },
+                    {
+                        fieldName: 'MAX_TOKENS',
+                        label: 'Max Tokens',
+                        defaultValue: 0,
+                        rules: { required: false, min: 0 },
+                        options: {
+                            component: 'number',
+                        },
+                        disabled: false,
+                    },
+                    {
+                        fieldName: 'MAX_INPUT_TOKENS',
+                        label: 'Max Input Tokens',
+                        defaultValue: 0,
+                        rules: { required: false, min: 0 },
+                        options: {
+                            component: 'number',
+                        },
+                        disabled: false,
+                    },
                 ],
             },
             {
@@ -769,6 +849,26 @@ export const CONNECTION_OPTIONS = {
                         },
                         disabled: false,
                         rules: { required: true },
+                    },
+                    {
+                        fieldName: 'MAX_TOKENS',
+                        label: 'Max Tokens',
+                        defaultValue: 0,
+                        rules: { required: false, min: 0 },
+                        options: {
+                            component: 'number',
+                        },
+                        disabled: false,
+                    },
+                    {
+                        fieldName: 'MAX_INPUT_TOKENS',
+                        label: 'Max Input Tokens',
+                        defaultValue: 0,
+                        rules: { required: false, min: 0 },
+                        options: {
+                            component: 'number',
+                        },
+                        disabled: false,
                     },
                 ],
             },
@@ -887,6 +987,26 @@ export const CONNECTION_OPTIONS = {
                         disabled: false,
                         rules: { required: true },
                     },
+                    {
+                        fieldName: 'MAX_TOKENS',
+                        label: 'Max Tokens',
+                        defaultValue: 0,
+                        rules: { required: false, min: 0 },
+                        options: {
+                            component: 'number',
+                        },
+                        disabled: false,
+                    },
+                    {
+                        fieldName: 'MAX_INPUT_TOKENS',
+                        label: 'Max Input Tokens',
+                        defaultValue: 0,
+                        rules: { required: false, min: 0 },
+                        options: {
+                            component: 'number',
+                        },
+                        disabled: false,
+                    },
                 ],
             },
             {
@@ -1003,6 +1123,26 @@ export const CONNECTION_OPTIONS = {
                         },
                         disabled: false,
                         rules: { required: true },
+                    },
+                    {
+                        fieldName: 'MAX_TOKENS',
+                        label: 'Max Tokens',
+                        defaultValue: 0,
+                        rules: { required: false, min: 0 },
+                        options: {
+                            component: 'number',
+                        },
+                        disabled: false,
+                    },
+                    {
+                        fieldName: 'MAX_INPUT_TOKENS',
+                        label: 'Max Input Tokens',
+                        defaultValue: 0,
+                        rules: { required: false, min: 0 },
+                        options: {
+                            component: 'number',
+                        },
+                        disabled: false,
                     },
                 ],
             },
@@ -1121,6 +1261,26 @@ export const CONNECTION_OPTIONS = {
                         disabled: false,
                         rules: { required: true },
                     },
+                    {
+                        fieldName: 'MAX_TOKENS',
+                        label: 'Max Tokens',
+                        defaultValue: 0,
+                        rules: { required: false, min: 0 },
+                        options: {
+                            component: 'number',
+                        },
+                        disabled: false,
+                    },
+                    {
+                        fieldName: 'MAX_INPUT_TOKENS',
+                        label: 'Max Input Tokens',
+                        defaultValue: 0,
+                        rules: { required: false, min: 0 },
+                        options: {
+                            component: 'number',
+                        },
+                        disabled: false,
+                    },
                 ],
             },
             {
@@ -1237,6 +1397,26 @@ export const CONNECTION_OPTIONS = {
                         },
                         disabled: false,
                         rules: { required: true },
+                    },
+                    {
+                        fieldName: 'MAX_TOKENS',
+                        label: 'Max Tokens',
+                        defaultValue: 0,
+                        rules: { required: false, min: 0 },
+                        options: {
+                            component: 'number',
+                        },
+                        disabled: false,
+                    },
+                    {
+                        fieldName: 'MAX_INPUT_TOKENS',
+                        label: 'Max Input Tokens',
+                        defaultValue: 0,
+                        rules: { required: false, min: 0 },
+                        options: {
+                            component: 'number',
+                        },
+                        disabled: false,
                     },
                 ],
             },
@@ -1355,6 +1535,26 @@ export const CONNECTION_OPTIONS = {
                         disabled: false,
                         rules: { required: true },
                     },
+                    {
+                        fieldName: 'MAX_TOKENS',
+                        label: 'Max Tokens',
+                        defaultValue: 0,
+                        rules: { required: false, min: 0 },
+                        options: {
+                            component: 'number',
+                        },
+                        disabled: false,
+                    },
+                    {
+                        fieldName: 'MAX_INPUT_TOKENS',
+                        label: 'Max Input Tokens',
+                        defaultValue: 0,
+                        rules: { required: false, min: 0 },
+                        options: {
+                            component: 'number',
+                        },
+                        disabled: false,
+                    },
                 ],
             },
             {
@@ -1471,6 +1671,26 @@ export const CONNECTION_OPTIONS = {
                         },
                         disabled: false,
                         rules: { required: true },
+                    },
+                    {
+                        fieldName: 'MAX_TOKENS',
+                        label: 'Max Tokens',
+                        defaultValue: 0,
+                        rules: { required: false, min: 0 },
+                        options: {
+                            component: 'number',
+                        },
+                        disabled: false,
+                    },
+                    {
+                        fieldName: 'MAX_INPUT_TOKENS',
+                        label: 'Max Input Tokens',
+                        defaultValue: 0,
+                        rules: { required: false, min: 0 },
+                        options: {
+                            component: 'number',
+                        },
+                        disabled: false,
                     },
                 ],
             },
@@ -1589,6 +1809,26 @@ export const CONNECTION_OPTIONS = {
                         disabled: false,
                         rules: { required: true },
                     },
+                    {
+                        fieldName: 'MAX_TOKENS',
+                        label: 'Max Tokens',
+                        defaultValue: 0,
+                        rules: { required: false, min: 0 },
+                        options: {
+                            component: 'number',
+                        },
+                        disabled: false,
+                    },
+                    {
+                        fieldName: 'MAX_INPUT_TOKENS',
+                        label: 'Max Input Tokens',
+                        defaultValue: 0,
+                        rules: { required: false, min: 0 },
+                        options: {
+                            component: 'number',
+                        },
+                        disabled: false,
+                    },
                 ],
             },
             {
@@ -1705,6 +1945,26 @@ export const CONNECTION_OPTIONS = {
                         },
                         disabled: false,
                         rules: { required: true },
+                    },
+                    {
+                        fieldName: 'MAX_TOKENS',
+                        label: 'Max Tokens',
+                        defaultValue: 0,
+                        rules: { required: false, min: 0 },
+                        options: {
+                            component: 'number',
+                        },
+                        disabled: false,
+                    },
+                    {
+                        fieldName: 'MAX_INPUT_TOKENS',
+                        label: 'Max Input Tokens',
+                        defaultValue: 0,
+                        rules: { required: false, min: 0 },
+                        options: {
+                            component: 'number',
+                        },
+                        disabled: false,
                     },
                 ],
             },
@@ -1823,6 +2083,26 @@ export const CONNECTION_OPTIONS = {
                         disabled: false,
                         rules: { required: true },
                     },
+                    {
+                        fieldName: 'MAX_TOKENS',
+                        label: 'Max Tokens',
+                        defaultValue: 0,
+                        rules: { required: false, min: 0 },
+                        options: {
+                            component: 'number',
+                        },
+                        disabled: false,
+                    },
+                    {
+                        fieldName: 'MAX_INPUT_TOKENS',
+                        label: 'Max Input Tokens',
+                        defaultValue: 0,
+                        rules: { required: false, min: 0 },
+                        options: {
+                            component: 'number',
+                        },
+                        disabled: false,
+                    },
                 ],
             },
             {
@@ -1939,6 +2219,26 @@ export const CONNECTION_OPTIONS = {
                         },
                         disabled: false,
                         rules: { required: true },
+                    },
+                    {
+                        fieldName: 'MAX_TOKENS',
+                        label: 'Max Tokens',
+                        defaultValue: 0,
+                        rules: { required: false, min: 0 },
+                        options: {
+                            component: 'number',
+                        },
+                        disabled: false,
+                    },
+                    {
+                        fieldName: 'MAX_INPUT_TOKENS',
+                        label: 'Max Input Tokens',
+                        defaultValue: 0,
+                        rules: { required: false, min: 0 },
+                        options: {
+                            component: 'number',
+                        },
+                        disabled: false,
                     },
                 ],
             },
@@ -2057,6 +2357,26 @@ export const CONNECTION_OPTIONS = {
                         disabled: false,
                         rules: { required: true },
                     },
+                    {
+                        fieldName: 'MAX_TOKENS',
+                        label: 'Max Tokens',
+                        defaultValue: 0,
+                        rules: { required: false, min: 0 },
+                        options: {
+                            component: 'number',
+                        },
+                        disabled: false,
+                    },
+                    {
+                        fieldName: 'MAX_INPUT_TOKENS',
+                        label: 'Max Input Tokens',
+                        defaultValue: 0,
+                        rules: { required: false, min: 0 },
+                        options: {
+                            component: 'number',
+                        },
+                        disabled: false,
+                    },
                 ],
             },
             {
@@ -2173,6 +2493,26 @@ export const CONNECTION_OPTIONS = {
                         },
                         disabled: false,
                         rules: { required: true },
+                    },
+                    {
+                        fieldName: 'MAX_TOKENS',
+                        label: 'Max Tokens',
+                        defaultValue: 0,
+                        rules: { required: false, min: 0 },
+                        options: {
+                            component: 'number',
+                        },
+                        disabled: false,
+                    },
+                    {
+                        fieldName: 'MAX_INPUT_TOKENS',
+                        label: 'Max Input Tokens',
+                        defaultValue: 0,
+                        rules: { required: false, min: 0 },
+                        options: {
+                            component: 'number',
+                        },
+                        disabled: false,
                     },
                 ],
             },
@@ -2291,6 +2631,26 @@ export const CONNECTION_OPTIONS = {
                         disabled: false,
                         rules: { required: true },
                     },
+                    {
+                        fieldName: 'MAX_TOKENS',
+                        label: 'Max Tokens',
+                        defaultValue: 0,
+                        rules: { required: false, min: 0 },
+                        options: {
+                            component: 'number',
+                        },
+                        disabled: false,
+                    },
+                    {
+                        fieldName: 'MAX_INPUT_TOKENS',
+                        label: 'Max Input Tokens',
+                        defaultValue: 0,
+                        rules: { required: false, min: 0 },
+                        options: {
+                            component: 'number',
+                        },
+                        disabled: false,
+                    },
                 ],
             },
             {
@@ -2407,6 +2767,26 @@ export const CONNECTION_OPTIONS = {
                         },
                         disabled: false,
                         rules: { required: true },
+                    },
+                    {
+                        fieldName: 'MAX_TOKENS',
+                        label: 'Max Tokens',
+                        defaultValue: 0,
+                        rules: { required: false, min: 0 },
+                        options: {
+                            component: 'number',
+                        },
+                        disabled: false,
+                    },
+                    {
+                        fieldName: 'MAX_INPUT_TOKENS',
+                        label: 'Max Input Tokens',
+                        defaultValue: 0,
+                        rules: { required: false, min: 0 },
+                        options: {
+                            component: 'number',
+                        },
+                        disabled: false,
                     },
                 ],
             },
@@ -2529,6 +2909,26 @@ export const CONNECTION_OPTIONS = {
                         disabled: false,
                         rules: { required: true },
                     },
+                    {
+                        fieldName: 'MAX_TOKENS',
+                        label: 'Max Tokens',
+                        defaultValue: 0,
+                        rules: { required: false, min: 0 },
+                        options: {
+                            component: 'number',
+                        },
+                        disabled: false,
+                    },
+                    {
+                        fieldName: 'MAX_INPUT_TOKENS',
+                        label: 'Max Input Tokens',
+                        defaultValue: 0,
+                        rules: { required: false, min: 0 },
+                        options: {
+                            component: 'number',
+                        },
+                        disabled: false,
+                    },
                 ],
             },
             {
@@ -2641,6 +3041,26 @@ export const CONNECTION_OPTIONS = {
                         },
                         disabled: false,
                         rules: { required: true },
+                    },
+                    {
+                        fieldName: 'MAX_TOKENS',
+                        label: 'Max Tokens',
+                        defaultValue: 0,
+                        rules: { required: false, min: 0 },
+                        options: {
+                            component: 'number',
+                        },
+                        disabled: false,
+                    },
+                    {
+                        fieldName: 'MAX_INPUT_TOKENS',
+                        label: 'Max Input Tokens',
+                        defaultValue: 0,
+                        rules: { required: false, min: 0 },
+                        options: {
+                            component: 'number',
+                        },
+                        disabled: false,
                     },
                 ],
             },
@@ -2755,6 +3175,26 @@ export const CONNECTION_OPTIONS = {
                         disabled: false,
                         rules: { required: true },
                     },
+                    {
+                        fieldName: 'MAX_TOKENS',
+                        label: 'Max Tokens',
+                        defaultValue: 0,
+                        rules: { required: false, min: 0 },
+                        options: {
+                            component: 'number',
+                        },
+                        disabled: false,
+                    },
+                    {
+                        fieldName: 'MAX_INPUT_TOKENS',
+                        label: 'Max Input Tokens',
+                        defaultValue: 0,
+                        rules: { required: false, min: 0 },
+                        options: {
+                            component: 'number',
+                        },
+                        disabled: false,
+                    },
                 ],
             },
             {
@@ -2775,7 +3215,7 @@ export const CONNECTION_OPTIONS = {
                         label: 'Zip File',
                         defaultValue: null,
                         options: {
-                            component: 'zip-upload',
+                            component: 'file-upload',
                         },
                         disabled: true,
                         rules: { required: true },
@@ -2919,7 +3359,7 @@ export const CONNECTION_OPTIONS = {
                         label: 'Zip File',
                         defaultValue: null,
                         options: {
-                            component: 'zip-upload',
+                            component: 'file-upload',
                         },
                         disabled: true,
                         rules: { required: true },
@@ -2995,6 +3435,17 @@ export const CONNECTION_OPTIONS = {
                         disabled: false,
                         rules: { required: true },
                     },
+                    {
+                        fieldName: 'EMBEDDINGS',
+                        label: 'Embeddings',
+                        defaultValue: null,
+                        options: {
+                            component: 'file-upload',
+                        },
+                        disabled: true,
+                        secondary: true,
+                        rules: {},
+                    },
                 ],
             },
             {
@@ -3027,7 +3478,7 @@ export const CONNECTION_OPTIONS = {
                         label: 'Zip File',
                         defaultValue: null,
                         options: {
-                            component: 'zip-upload',
+                            component: 'file-upload',
                         },
                         disabled: true,
                         rules: { required: true },
@@ -3049,7 +3500,7 @@ export const CONNECTION_OPTIONS = {
                         label: 'Zip File',
                         defaultValue: null,
                         options: {
-                            component: 'zip-upload',
+                            component: 'file-upload',
                         },
                         disabled: true,
                         rules: { required: true },
@@ -8488,7 +8939,7 @@ export const CONNECTION_OPTIONS = {
                         label: 'Zip File',
                         defaultValue: null,
                         options: {
-                            component: 'zip-upload',
+                            component: 'file-upload',
                         },
                         disabled: true,
                         rules: { required: true },

@@ -147,7 +147,7 @@ const StyledGap = styled('div')(({ theme }) => ({
     gap: theme.spacing(1),
 }));
 
-export const AppEditorActions = () => {
+export const AppActions = () => {
     const { monolithStore, configStore } = useRootStore();
     const notification = useNotification();
     const {

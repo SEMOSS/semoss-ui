@@ -1,29 +1,13 @@
-/**
- * ---------------------------*------------------------------------
- * This will be your app page, what this component
- * really does is handle the layout and switching between the
- * different { editor mode } nav items.
- *
- * - We have a Resizable Bottom Panel for the console. (Removed)
- *      - AppConsole
- * - Resizable Left Right Panel
- *      - AppEditorPanel (also resizable),
- * - The Bigger Components that get consumed here are:
- *      - AppEditorPanel, AppConsole, AppRenderer
- *
- * Update: 9/28/2023 -
- * Bottom Debug Console commented out so no horizontal bottom panel resize
- * ---------------------------*------------------------------------
- *
- */
-import { useState, useEffect } from 'react';
-import { useParams } from 'react-router-dom';
+import { useState } from 'react';
+import { useParams, Navigate } from 'react-router-dom';
 import { observer } from 'mobx-react-lite';
+import { styled, useNotification } from '@semoss/ui';
+
 import { AppContext } from '@/contexts';
-import { useRootStore } from '@/hooks';
-import { AppEditorActions, Navbar } from '@/components/ui';
-import { Renderer, CodeDevMode } from '@/components/app';
-import { styled } from '@semoss/ui';
+import { useAPI, usePixel } from '@/hooks';
+import { Navbar, LoadingScreen } from '@/components/ui';
+
+import { AppActions, AppView } from '@/components/app';
 
 const NAV_HEIGHT = '48px';
 
@@ -43,12 +27,10 @@ const StyledContent = styled('div')(() => ({
 }));
 
 export const AppPage = observer(() => {
-    const { monolithStore } = useRootStore();
-
     // App ID Needed for pixel calls
     const { appId } = useParams();
+    const notification = useNotification();
 
-    const [appPermission, setAppPermission] = useState('READ_ONLY');
     const [editMode, setEditMode] = useState<boolean>(false);
     const [isLoading, setIsLoading] = useState(false);
     const [counter, setCounter] = useState(0);
@@ -56,27 +38,20 @@ export const AppPage = observer(() => {
         'code-editor' | 'settings' | 'permissions' | ''
     >('');
 
-    /**
-     * Effects
-     * TODO - See what type of App we have
-     * UI Builder or Template (code-editor)
-     */
-    useEffect(() => {
-        getAppPermission();
-        return () => {
-            // disable edit
-            setAppPermission('READ_ONLY');
-        };
-    }, []);
+    // get the permission
+    const getUserProjectPermission = useAPI([
+        'getUserProjectPermission',
+        appId,
+    ]);
 
-    /**
-     * @desc Determines whether user is allowed to edit or export the app in view
-     */
-    const getAppPermission = async () => {
-        const response = await monolithStore.getUserProjectPermission(appId);
-
-        setAppPermission(response.permission);
-    };
+    // get the metadata if the permissions come back
+    const getAppInfo = usePixel<{
+        project_type?: 'blocks' | 'custom';
+    }>(
+        getUserProjectPermission.status === 'SUCCESS'
+            ? `ProjectInfo(project=["${appId}"]);`
+            : '',
+    );
 
     /**
      * Turns Edit Mode off and handles layout
@@ -113,18 +88,39 @@ export const AppPage = observer(() => {
         });
     };
 
-    /**
-     * Resizing of Panels Code
-     */
-    const [bottomPanelHeight, setBottomPanelHeight] = useState('3.5%');
+    // throw an error if unable to authenticate
+    if (getUserProjectPermission.status === 'ERROR') {
+        notification.add({
+            color: 'error',
+            message: 'Unable to authenticate',
+        });
+
+        return <Navigate to="/" />;
+    }
+
+    if (getUserProjectPermission.status !== 'SUCCESS') {
+        return <LoadingScreen.Trigger description="Checking permissions" />;
+    }
+
+    // get the permission
+    const permission = getUserProjectPermission.data.permission || 'READ_ONLY';
+
+    if (getAppInfo.status !== 'SUCCESS') {
+        return <LoadingScreen.Trigger description="Initializing app" />;
+    }
+
+    // const type = getAppInfo.data.project_type;
+    const type = 'custom';
 
     return (
         <AppContext.Provider
             value={{
                 /** App Id */
                 appId: appId,
+                /** Type */
+                type: type,
                 /** Current Permission */
-                permission: appPermission,
+                permission: permission,
                 /** Needed for panels in view and navigation */
                 editorMode: editMode,
                 /** Editor View (code-editor, settings, permissions) */
@@ -145,12 +141,13 @@ export const AppPage = observer(() => {
         >
             <StyledViewport>
                 <Navbar>
-                    {/* Actions to Open Editor Mode */}
-                    {(appPermission === 'OWNER' ||
-                        appPermission === 'EDIT') && <AppEditorActions />}
+                    {/* Actions for edit mode */}
+                    {(permission === 'OWNER' || permission === 'EDIT') && (
+                        <AppActions />
+                    )}
                 </Navbar>
                 <StyledContent>
-                    {editMode ? <CodeDevMode /> : <Renderer appId={appId} />}
+                    <AppView />
                 </StyledContent>
             </StyledViewport>
         </AppContext.Provider>

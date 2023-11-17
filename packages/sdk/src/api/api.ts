@@ -305,3 +305,17 @@ export const partial = async (insightId: string) => {
 
     return response.data;
 };
+
+/**
+ * Get the console message from an insight
+ * @param insightId - id of the insight to run
+ */
+export const console = async (insightId: string) => {
+    const response = await post<{
+        message: string[];
+    }>(`${Env.MODULE}/api/engine/console`, {
+        jobId: insightId,
+    });
+
+    return response.data;
+};
