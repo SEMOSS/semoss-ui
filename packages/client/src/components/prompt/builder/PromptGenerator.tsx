@@ -7,13 +7,20 @@ import {
     ConstraintSettings,
     Token,
 } from '../prompt.types';
-import { TOKEN_TYPE_INPUT } from '../prompt.constants';
+import {
+    PROMPT_BUILDER_CONTEXT_STEP,
+    PROMPT_BUILDER_INPUTS_STEP,
+    PROMPT_BUILDER_INPUT_TYPES_STEP,
+    PROMPT_BUILDER_CONSTRAINTS_STEP,
+    PROMPT_BUILDER_PREVIEW_STEP,
+    TOKEN_TYPE_INPUT,
+} from '../prompt.constants';
 import { styled, Box, Button, Grid, Paper } from '@semoss/ui';
 // import { PromptGeneratorBuilderConstraintsStep } from './PromptGeneratorBuilderConstraintsStep';
 import { PromptGeneratorBuilderInputStep } from './PromptGeneratorBuilderInputStep';
 import { PromptGeneratorBuilderInputTypeStep } from './PromptGeneratorBuilderInputTypeStep';
 import { PromptGeneratorBuilderPreviewStep } from './PromptGeneratorBuilderPreviewStep';
-import { PromptGeneratorBuilderPromptStep } from './PromptGeneratorBuilderPromptStep';
+import { PromptGeneratorBuilderContextStep } from './PromptGeneratorBuilderContextStep';
 import { PromptGeneratorBuilderSummary } from './PromptGeneratorBuilderSummary';
 
 const StyledPaper = styled(Paper)(({ theme }) => ({
@@ -30,43 +37,43 @@ const StyledBox = styled(Box)(({ theme }) => ({
 
 const initialBuilder: Builder = {
     title: {
-        step: 1,
+        step: PROMPT_BUILDER_CONTEXT_STEP,
         value: undefined,
         required: true,
         display: 'Title',
     },
     tags: {
-        step: 1,
+        step: PROMPT_BUILDER_CONTEXT_STEP,
         value: undefined,
         required: false,
         display: 'Tags',
     },
     model: {
-        step: 1,
+        step: PROMPT_BUILDER_CONTEXT_STEP,
         value: undefined,
         required: true,
         display: 'LLM',
     },
     context: {
-        step: 1,
+        step: PROMPT_BUILDER_CONTEXT_STEP,
         value: undefined,
         required: true,
         display: 'Context',
     },
     inputs: {
-        step: 2,
+        step: PROMPT_BUILDER_INPUTS_STEP,
         value: undefined,
         required: false,
         display: 'Input',
     },
     inputTypes: {
-        step: 3,
+        step: PROMPT_BUILDER_INPUT_TYPES_STEP,
         value: undefined,
         required: true,
         display: 'Input Types',
     },
     // constraints: {
-    //     step: 4,
+    //     step: PROMPT_BUILDER_CONSTRAINTS_STEP,
     //     value: undefined,
     //     required: true,
     //     display: 'Constraints',
@@ -82,15 +89,15 @@ function BuilderStep(props: {
     ) => void;
 }) {
     switch (props.currentBuilderStep) {
-        case 1:
-            return <PromptGeneratorBuilderPromptStep {...props} />;
-        case 2:
+        case PROMPT_BUILDER_CONTEXT_STEP:
+            return <PromptGeneratorBuilderContextStep {...props} />;
+        case PROMPT_BUILDER_INPUTS_STEP:
             return <PromptGeneratorBuilderInputStep {...props} />;
-        case 3:
+        case PROMPT_BUILDER_INPUT_TYPES_STEP:
             return <PromptGeneratorBuilderInputTypeStep {...props} />;
-        // case 4:
+        // case PROMPT_BUILDER_CONSTRAINTS_STEP:
         //     return <PromptGeneratorBuilderConstraintsStep {...props} />;
-        case 4:
+        case PROMPT_BUILDER_PREVIEW_STEP:
             return <PromptGeneratorBuilderPreviewStep {...props} />;
         default:
             return <StyledPaper elevation={2} square />;
@@ -113,14 +120,14 @@ export function PromptGenerator() {
     };
 
     const nextButtonText =
-        currentBuilderStep < 3
+        currentBuilderStep < PROMPT_BUILDER_INPUT_TYPES_STEP
             ? 'Next'
-            : currentBuilderStep === 3
+            : currentBuilderStep === PROMPT_BUILDER_INPUT_TYPES_STEP
             ? 'Preview'
             : 'Open in Builder';
 
     const nextButtonAction = () => {
-        if (currentBuilderStep === 4) {
+        if (currentBuilderStep === PROMPT_BUILDER_PREVIEW_STEP) {
             // prompt flow finished, move on
             setBlocksAndOpenUIBuilder(builder, navigate);
         } else if (currentBuilderStep === 2) {
@@ -157,7 +164,7 @@ export function PromptGenerator() {
             },
         );
         switch (currentBuilderStep) {
-            case 3:
+            case PROMPT_BUILDER_INPUT_TYPES_STEP:
                 // input type step - required only if there are inputs
                 if (stepItems[0].value === undefined) {
                     return false;
@@ -196,7 +203,7 @@ export function PromptGenerator() {
                 </Grid>
             </Grid>
             <StyledBox>
-                {currentBuilderStep === 1 ? (
+                {currentBuilderStep === PROMPT_BUILDER_CONTEXT_STEP ? (
                     <></>
                 ) : (
                     <Button

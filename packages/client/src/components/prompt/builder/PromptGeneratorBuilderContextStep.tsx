@@ -17,7 +17,7 @@ const InitialCfgLibraryModelsState: CfgLibraryModelsState = {
     modelDisplay: {},
 };
 
-export function PromptGeneratorBuilderPromptStep(props: {
+export function PromptGeneratorBuilderContextStep(props: {
     builder: Builder;
     setBuilderValue: (builderStepKey: string, value: string | string[]) => void;
 }) {
