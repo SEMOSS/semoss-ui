@@ -1,5 +1,5 @@
 import { BlockConfig } from '@/stores';
-import { FormatShapes } from '@mui/icons-material';
+import { FileCopyOutlined } from '@mui/icons-material';
 
 import {
     buildLayoutSection,
@@ -22,7 +22,7 @@ export const config: BlockConfig<PageBlockDef> = {
         content: [],
     },
     render: PageBlock,
-    icon: FormatShapes,
+    icon: FileCopyOutlined,
     menu: [
         buildLayoutSection(),
         buildSpacingSection(),
