@@ -184,7 +184,7 @@ function scheduler(semossCoreService, CONFIG) {
             'Coordinated Universal Time',
             'Cuba Standard Time',
             'Davis Time',
-            'Dumont-d\'Urville Time',
+            "Dumont-d'Urville Time",
             'East Indonesia Time',
             'Easter Is. Time',
             'Eastern African Time',
@@ -1244,7 +1244,7 @@ function scheduler(semossCoreService, CONFIG) {
             schedule.jobBeingEdited = JSON.parse(
                 JSON.stringify(schedule.rowData[idx])
             );
-            // schedule.jobBeingEdited.recipe = decodeURIComponent(schedule.jobBeingEdited.recipe);
+            // overwrite
             schedule.jobBeingEdited.curJobId = schedule.jobBeingEdited.jobId;
             schedule.jobBeingEdited.curJobName =
                 schedule.jobBeingEdited.jobName;
@@ -1262,10 +1262,10 @@ function scheduler(semossCoreService, CONFIG) {
                 schedule.jobBeingEdited.customCron = true;
             }
             // set default time zone if none is defined
-            // we will just assume it is EST even though it could technically be different 
+            // we will just assume it is EST even though it could technically be different
             // since it uses the RDF_Map.prop value - but that is EST if not defined
-            if(!schedule.jobBeingEdited.cronTimeZone) {
-                schedule.jobBeingEdited.cronTimeZone = 'Eastern Standard Time';  
+            if (!schedule.jobBeingEdited.cronTimeZone) {
+                schedule.jobBeingEdited.cronTimeZone = 'Eastern Standard Time';
             }
         }
 
@@ -2157,6 +2157,11 @@ function scheduler(semossCoreService, CONFIG) {
                                     jobJson.jobType = 'Backup Database';
                                 } else if (jobJson.jobType.startsWith('Sync')) {
                                     jobJson.jobType = 'Sync Database';
+                                }
+
+                                // update the recipe to match for custom jobs (this is the original version)
+                                if (jobJson.jobType === 'Custom Job') {
+                                    jobJson.recipe = job.recipe;
                                 }
 
                                 if (
