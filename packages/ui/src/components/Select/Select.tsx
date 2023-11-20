@@ -1,4 +1,8 @@
-import { TextField as MuiTextField, SxProps } from "@mui/material";
+import {
+    TextField as MuiTextField,
+    SxProps,
+    InternalStandardProps as StandardProps,
+} from "@mui/material";
 
 export interface SelectProps {
     /**
@@ -119,6 +123,8 @@ export interface SelectProps {
      * @default outlined
      */
     variant?: "outlined" | "standard" | "filled";
+
+    InputProps?: unknown;
 }
 
 export const Select = (props: SelectProps) => {
