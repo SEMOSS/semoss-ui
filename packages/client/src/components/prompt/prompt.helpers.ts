@@ -323,6 +323,6 @@ export function setBlocksAndOpenUIBuilder(
         },
     });
     // TODO make app here instead
-    alert('App API call here');
-    // navigate('/edit/design');
+    // alert('App API call here');
+    navigate('/design');
 }
