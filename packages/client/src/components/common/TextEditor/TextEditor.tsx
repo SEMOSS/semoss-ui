@@ -231,6 +231,93 @@ interface TextEditorProps {
     onClose?: (index) => void;
 }
 
+const formatFilePath = (activeFileid) => {
+    if (activeFileid[activeFileid.length - 1] == '/') {
+        activeFileid = activeFileid.slice(0, -1);
+    }
+
+    activeFileid = activeFileid.replace('version/assets/', '');
+    activeFileid = activeFileid.replace('version/assets', '');
+
+    if (activeFileid[0] == '/') {
+        activeFileid = activeFileid.slice(1);
+    }
+
+    const splitId = activeFileid.split('/');
+
+    let nonGrayPath = splitId.slice(0, splitId.length - 1).join('/');
+    nonGrayPath = nonGrayPath.replace('/', ' / ');
+
+    if (nonGrayPath.length > 0) {
+        nonGrayPath = nonGrayPath + ' / ';
+    }
+
+    const grayFilename = splitId.slice(-1)[0];
+
+    console.log({ activeFileid, nonGrayPath, grayFilename });
+
+    return (
+        <>
+            <FiletypeIcon
+                path={
+                    fileIcons[activeFileid?.split('.').slice(-1)[0]] ||
+                    fileIcons.document
+                }
+                size={1}
+                style={{
+                    color: 'rgba(0, 0, 0, 0.6)',
+                    height: '24px',
+                    width: '24px',
+                    marginRight: '8px',
+                }}
+            ></FiletypeIcon>
+            <Typography
+                variant={'body2'}
+                sx={{
+                    marginLeft: '0px',
+                    paddingLeft: '0px',
+                }}
+            >
+                {/* {activeFile.id
+                    .replace('version/assets/', '')
+                .replace('/', ' / ')} */}
+                {/* { formatFilePath(activeFile.id) } */}
+                {nonGrayPath.length > 0 && (
+                    <Typography
+                        variant="body2"
+                        sx={{
+                            marginLeft: '0px',
+                            paddingLeft: '0px',
+                            marginRight: '5px',
+                            display: 'inline-block',
+                        }}
+                    >
+                        {nonGrayPath}
+                    </Typography>
+                )}
+
+                <Typography
+                    variant="body2"
+                    sx={{
+                        display: 'inline-block',
+                        opacity: 0.6,
+                        marginLeft: '0px',
+                        paddingLeft: '0px',
+                    }}
+                >
+                    {grayFilename}
+                </Typography>
+            </Typography>
+        </>
+    );
+};
+{
+    /* {activeFile.id
+                                .replace('version/assets/', '')
+                                .replace('/', ' / ')} */
+}
+// { formatFilePath(activeFile.id) }
+
 export const TextEditor = (props: TextEditorProps) => {
     const { files, activeIndex, setActiveIndex, onSave, onClose } = props;
 
@@ -511,29 +598,7 @@ export const TextEditor = (props: TextEditorProps) => {
                         </StyledIconButton>
                     </StyledFileTabs>
                     <StyledActiveFilePath sx={{ alignItems: 'center' }}>
-                        <FiletypeIcon
-                            path={
-                                fileIcons[
-                                    activeFile?.id?.split('.').slice(-1)[0]
-                                ] || fileIcons.document
-                            }
-                            size={1}
-                            style={{
-                                color: 'rgba(0, 0, 0, 0.6)',
-                            }}
-                        ></FiletypeIcon>
-
-                        {/* <FiletypeIcon path={mdiLanguageTypescript} size={1}></FiletypeIcon> */}
-                        <Typography
-                            variant={'body2'}
-                            sx={{
-                                marginLeft: '5px',
-                            }}
-                        >
-                            {activeFile.id
-                                .replace('version/assets/', '')
-                                .replace('/', ' / ')}
-                        </Typography>
+                        {formatFilePath(activeFile.id)}
                     </StyledActiveFilePath>
                     <Editor
                         // theme={'vs-dark'}

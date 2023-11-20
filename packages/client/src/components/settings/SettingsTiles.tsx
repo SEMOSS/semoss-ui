@@ -332,14 +332,14 @@ export const SettingsTiles = (props: SettingsTilesProps) => {
                 notification.add({
                     color: 'success',
                     message: `Successfully made ${name} ${
-                        global ? 'global' : 'private'
+                        !global ? 'global' : 'private'
                     }`,
                 });
             } else {
                 notification.add({
                     color: 'error',
                     message: `Error making ${name} ${
-                        global ? 'global' : 'private'
+                        !global ? 'global' : 'private'
                     }`,
                 });
             }
