@@ -19,6 +19,7 @@ import {
     PublishedWithChanges,
     InsertLink,
     Publish,
+    Visibility,
 } from '@mui/icons-material';
 
 import { usePixel, useRootStore } from '@/hooks';
@@ -28,8 +29,21 @@ import { Java } from '@/assets/img/Java';
 
 import { SwitchProps } from '@mui/material/Switch';
 
-const SwitchSizeMultiplier = 1.3;
+const StyledButtonSmall = styled(Button)(({ theme }) => ({
+    borderRadius: '13px',
+    padding: '5px 13px',
+    marginLeft: 'auto',
+}));
 
+const StyledHr = styled('div')(({ theme }) => ({
+    width: '95%',
+    height: '1px',
+    borderBottom: `1px solid ${theme.palette.secondary.main}`,
+    display: 'block',
+    margin: '10px auto',
+}));
+
+const SwitchSizeMultiplier = 1.3;
 const StyledMuiSwitch = styled((props: SwitchProps) => (
     <Switch
         focusVisibleClassName=".Mui-focusVisible"
@@ -180,7 +194,8 @@ const StyledSubRow = styled('div')({
     alignItems: 'center',
     alignContent: 'center',
     width: '100%',
-    margin: '10px 0',
+    // margin: '10px 0',
+    margin: '0',
 });
 
 const StyledSubHeaderContainer = styled('div')(({ theme }) => ({
@@ -525,14 +540,17 @@ export const AppSettings = (props: AppSettingsProps) => {
                         </StyledSubHeaderContainer>
 
                         <StyledSubRow>
-                            <Typography variant="body2">
+                            <Typography
+                                variant="body2"
+                                sx={{ marginLeft: '32.5px' }}
+                            >
                                 Enable the publishing of the portal.
                             </Typography>
                         </StyledSubRow>
                     </StyledSubColumn>
 
                     <>
-                        <Divider />
+                        <StyledHr />
 
                         <StyledSubColumn style={{ width: '100%' }}>
                             <StyledSubRow>
@@ -548,20 +566,23 @@ export const AppSettings = (props: AppSettingsProps) => {
                                     </Typography>
                                 </div>
 
-                                <StyledRightButton
+                                <StyledButtonSmall
                                     disabled={!portalDetails.project_has_portal}
-                                    variant="outlined"
+                                    variant="contained"
                                     onClick={() => {
                                         publish();
                                     }}
                                 >
-                                    <StyledPublishedIcon />
+                                    {/* <StyledPublishedIcon /> */}
                                     Publish
-                                </StyledRightButton>
+                                </StyledButtonSmall>
                             </StyledSubRow>
 
                             <StyledSubRow>
-                                <Typography variant="body2">
+                                <Typography
+                                    variant="body2"
+                                    sx={{ marginLeft: '32.5px' }}
+                                >
                                     Publish the portal to generate a shareable
                                     link.
                                 </Typography>
@@ -577,9 +598,17 @@ export const AppSettings = (props: AppSettingsProps) => {
                                             ? portalDetails.project_portal_url
                                             : ''
                                     }
-                                    sx={{ width: '100%' }}
+                                    sx={{
+                                        width: '75%',
+                                        marginTop: '20px',
+                                        marginLeft: '32.5px',
+                                    }}
                                     InputProps={{
-                                        startAdornment: <InsertLink />,
+                                        startAdornment: (
+                                            <Visibility
+                                                sx={{ marginRight: '7.5px' }}
+                                            />
+                                        ),
                                     }}
                                 >
                                     {portalDetails.project_has_portal
@@ -638,7 +667,10 @@ export const AppSettings = (props: AppSettingsProps) => {
                                 </StyledSubRow>
 
                                 <StyledSubRow>
-                                    <Typography variant="body2">
+                                    <Typography
+                                        variant="body2"
+                                        sx={{ marginLeft: '32.5px' }}
+                                    >
                                         Enable the publishing of the portal.
                                     </Typography>
 
@@ -655,7 +687,7 @@ export const AppSettings = (props: AppSettingsProps) => {
                             </StyledSubColumn>
 
                             <>
-                                <Divider />
+                                <StyledHr />
 
                                 <StyledSubColumn>
                                     <StyledSubRow>
@@ -666,12 +698,15 @@ export const AppSettings = (props: AppSettingsProps) => {
                                     </StyledSubRow>
 
                                     <StyledSubRow>
-                                        <Typography variant="body2">
+                                        <Typography
+                                            variant="body2"
+                                            sx={{ marginLeft: '32.5px' }}
+                                        >
                                             Publish the portal to generate a
                                             shareable link.
                                         </Typography>
 
-                                        <StyledRightButton
+                                        <StyledButtonSmall
                                             disabled={
                                                 !portalDetails.project_has_portal
                                             }
@@ -680,9 +715,9 @@ export const AppSettings = (props: AppSettingsProps) => {
                                                 publish();
                                             }}
                                         >
-                                            <StyledPublishedIcon />
+                                            {/* <StyledPublishedIcon /> */}
                                             Publish
-                                        </StyledRightButton>
+                                        </StyledButtonSmall>
                                     </StyledSubRow>
 
                                     <StyledSubRow>

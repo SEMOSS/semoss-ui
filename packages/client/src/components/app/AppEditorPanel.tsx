@@ -190,6 +190,7 @@ export const AppEditorPanel = (props) => {
                                     spacing={1}
                                     sx={{
                                         width: '100%',
+                                        paddingBottom: '40px',
                                     }}
                                 >
                                     <Typography variant={'h5'}>
