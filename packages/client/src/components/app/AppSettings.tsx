@@ -18,12 +18,80 @@ import {
     Cached,
     PublishedWithChanges,
     InsertLink,
+    Publish,
 } from '@mui/icons-material';
 
 import { usePixel, useRootStore } from '@/hooks';
 import { LoadingScreen } from '@/components/ui';
 
 import { Java } from '@/assets/img/Java';
+
+import { SwitchProps } from '@mui/material/Switch';
+
+const SwitchSizeMultiplier = 1.3;
+
+const StyledMuiSwitch = styled((props: SwitchProps) => (
+    <Switch
+        focusVisibleClassName=".Mui-focusVisible"
+        disableRipple
+        {...props}
+    />
+))(({ theme }) => ({
+    width: 42 * SwitchSizeMultiplier,
+    height: 26 * SwitchSizeMultiplier,
+    padding: 0,
+    '& .MuiSwitch-switchBase': {
+        padding: 0,
+        margin: 3 * SwitchSizeMultiplier,
+        transitionDuration: '300ms',
+        '&.Mui-checked': {
+            transform: `translateX(${16 * SwitchSizeMultiplier}px)`,
+            color: '#fff',
+            '& + .MuiSwitch-track': {
+                // background color for switch off
+                //   backgroundColor: theme.palette.mode === 'dark' ? '#2ECA45' : '#65C466',
+                backgroundColor:
+                    theme.palette.mode === 'dark'
+                        ? theme.palette.primary.main
+                        : theme.palette.primary.main,
+                opacity: 1,
+                border: 0,
+            },
+            '&.Mui-disabled + .MuiSwitch-track': {
+                opacity: 0.5,
+            },
+        },
+        '&.Mui-focusVisible .MuiSwitch-thumb': {
+            color: '#33cf4d',
+            border: '6px solid #fff',
+        },
+        '&.Mui-disabled .MuiSwitch-thumb': {
+            color:
+                theme.palette.mode === 'light'
+                    ? theme.palette.grey[100]
+                    : theme.palette.grey[600],
+        },
+        '&.Mui-disabled + .MuiSwitch-track': {
+            opacity: theme.palette.mode === 'light' ? 0.7 : 0.3,
+        },
+    },
+    '& .MuiSwitch-thumb': {
+        boxSizing: 'border-box',
+        //   width: 22,
+        //   height: 22,
+        width: 20 * SwitchSizeMultiplier,
+        height: 20 * SwitchSizeMultiplier,
+    },
+    '& .MuiSwitch-track': {
+        borderRadius: (26 * SwitchSizeMultiplier) / 2,
+        // background color for switch off
+        backgroundColor: theme.palette.mode === 'light' ? '#E9E9EA' : '#39393D',
+        opacity: 1,
+        transition: theme.transitions.create(['background-color'], {
+            duration: 500,
+        }),
+    },
+}));
 
 const StyledAppSettings = styled('div')(({ theme }) => ({
     display: 'flex',
@@ -89,6 +157,8 @@ const StyledCondensedPublishContainer = styled('div')(({ theme }) => ({
     gap: '1rem',
     flexDirection: 'column',
     alignItems: 'flex-start',
+    // border: "1px solid red",
+    padding: '10px',
 }));
 
 const StyledListItemHeader = styled('div')(({ theme }) => ({
@@ -152,16 +222,19 @@ const StyledPublishedIcon = styled(PublishedWithChanges)(() => ({
     marginRight: '5px',
 }));
 
-const StyledSwitchIcon = styled(ToggleOff)(({ theme }) => ({
+// const StyledSwitchIcon = styled(ToggleOff)(({ theme }) => ({
+const StyledSwitchIcon = styled(Publish)(({ theme }) => ({
     display: 'flex',
     alignItems: 'flex-start',
     marginRight: theme.spacing(1),
+    opacity: 0.6,
 }));
 
 const StyledRefreshIcon = styled(Cached)(({ theme }) => ({
     display: 'flex',
     alignItems: 'flex-start',
     marginRight: theme.spacing(1),
+    opacity: 0.6,
 }));
 
 const StyledCardRight = styled('div')(() => ({
@@ -435,17 +508,20 @@ export const AppSettings = (props: AppSettingsProps) => {
                                 }}
                             >
                                 <StyledSwitchIcon />
+                                {/* <Publish sx={{ marginRight: "10px", opacity: 0.6 }}/> */}
                                 <Typography variant="subtitle1">
                                     Enable Publishing
                                 </Typography>
                             </div>
-                            <StyledRightSwitch
+                            {/* <StyledRightSwitch */}
+                            <StyledMuiSwitch
                                 checked={portalDetails.project_has_portal}
                                 value={portalDetails.project_has_portal}
                                 onChange={() => {
                                     enablePublishing();
                                 }}
-                            ></StyledRightSwitch>
+                            ></StyledMuiSwitch>
+                            {/* ></StyledRightSwitch> */}
                         </StyledSubHeaderContainer>
 
                         <StyledSubRow>
@@ -555,6 +631,7 @@ export const AppSettings = (props: AppSettingsProps) => {
                             <StyledSubColumn>
                                 <StyledSubRow>
                                     <StyledSwitchIcon />
+                                    {/* <Publish /> */}
                                     <Typography variant="subtitle1">
                                         Enable Publishing
                                     </Typography>

@@ -6,6 +6,7 @@ import {
     useNotification,
     Typography,
     Stack,
+    Paper,
     styled,
 } from '@semoss/ui';
 import {
@@ -24,6 +25,11 @@ import { AppEditor } from '@/components/common';
 import { MembersTable, SettingsTiles } from '@/components/settings';
 
 import { AppSettings } from './AppSettings';
+
+const StyledButton = styled(Button)(({ theme }) => ({
+    borderRadius: '13px',
+    padding: '5px 13px',
+}));
 
 const StyledContainer = styled('div')(({ theme }) => ({
     display: 'flex',
@@ -189,7 +195,13 @@ export const AppEditorPanel = (props) => {
                                     <Typography variant={'h5'}>
                                         Settings
                                     </Typography>
-                                    <Typography variant={'h6'}>
+                                    <Typography
+                                        variant={'h6'}
+                                        sx={{
+                                            paddingTop: '8px',
+                                            paddingBottom: '8px',
+                                        }}
+                                    >
                                         Access
                                     </Typography>
                                     <SettingsTiles
@@ -201,42 +213,57 @@ export const AppEditorPanel = (props) => {
                                             navigate('/');
                                         }}
                                     />
-                                    <Typography variant={'h6'}>
+                                    <Typography
+                                        variant={'h6'}
+                                        sx={{
+                                            paddingTop: '8px',
+                                            paddingBottom: '8px',
+                                        }}
+                                    >
                                         Publish
                                     </Typography>
                                     <AppSettings id={appId} condensed={true} />
-                                    <Typography variant="h6">
+                                    <Typography
+                                        variant="h6"
+                                        sx={{
+                                            paddingTop: '8px',
+                                            paddingBottom: '8px',
+                                        }}
+                                    >
                                         Update Project
                                     </Typography>
-
-                                    <Controller
-                                        name={'PROJECT_UPLOAD'}
-                                        control={control}
-                                        rules={{}}
-                                        render={({ field }) => {
-                                            return (
-                                                <FileDropzone
-                                                    multiple={false}
-                                                    value={field.value}
-                                                    disabled={isLoading}
-                                                    onChange={(newValues) => {
-                                                        field.onChange(
+                                    <Paper sx={{ paddingBottom: '20px' }}>
+                                        <Controller
+                                            name={'PROJECT_UPLOAD'}
+                                            control={control}
+                                            rules={{}}
+                                            render={({ field }) => {
+                                                return (
+                                                    <FileDropzone
+                                                        multiple={false}
+                                                        value={field.value}
+                                                        disabled={isLoading}
+                                                        onChange={(
                                                             newValues,
-                                                        );
-                                                    }}
-                                                />
-                                            );
-                                        }}
-                                    />
-                                    <Stack alignItems={'center'}>
-                                        <Button
-                                            type="submit"
-                                            variant={'contained'}
-                                            disabled={isLoading}
-                                        >
-                                            Update
-                                        </Button>
-                                    </Stack>
+                                                        ) => {
+                                                            field.onChange(
+                                                                newValues,
+                                                            );
+                                                        }}
+                                                    />
+                                                );
+                                            }}
+                                        />
+                                        <Stack alignItems={'center'}>
+                                            <StyledButton
+                                                type="submit"
+                                                variant={'contained'}
+                                                disabled={isLoading}
+                                            >
+                                                Update
+                                            </StyledButton>
+                                        </Stack>
+                                    </Paper>
                                 </Stack>
                             </form>
                         </SettingsContext.Provider>

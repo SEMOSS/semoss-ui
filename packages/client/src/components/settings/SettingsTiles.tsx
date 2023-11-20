@@ -27,6 +27,11 @@ import { LoadingScreen } from '@/components/ui';
 
 import { SETTINGS_MODE } from './settings.types';
 
+const StyledButton = styled(Button)(({ theme }) => ({
+    borderRadius: '13px',
+    padding: '5px 13px',
+}));
+
 const StyledHr = styled('div')(({ theme }) => ({
     width: '95%',
     height: '1px',
@@ -428,14 +433,13 @@ export const SettingsTiles = (props: SettingsTilesProps) => {
                         </StyledIcon>
                     }
                     action={
-                        <Button
+                        <StyledButton
                             variant="contained"
                             color="error"
                             onClick={() => setDeleteModal(true)}
-                            sx={{ borderRadius: '13px', padding: '5px 13px' }}
                         >
                             Delete
-                        </Button>
+                        </StyledButton>
                     }
                 >
                     <Alert.Title>Delete {name}</Alert.Title>
@@ -452,16 +456,16 @@ export const SettingsTiles = (props: SettingsTilesProps) => {
                         delete this {name}.
                     </Modal.Content>
                     <Modal.Actions>
-                        <Button onClick={() => setDeleteModal(false)}>
+                        <StyledButton onClick={() => setDeleteModal(false)}>
                             Cancel
-                        </Button>
-                        <Button
+                        </StyledButton>
+                        <StyledButton
                             color={'error'}
                             variant={'contained'}
                             onClick={() => deleteWorkflow()}
                         >
                             Delete
-                        </Button>
+                        </StyledButton>
                     </Modal.Actions>
                 </Modal>
             </Paper>
@@ -540,13 +544,13 @@ export const SettingsTiles = (props: SettingsTilesProps) => {
                                 </StyledIcon>
                             }
                             action={
-                                <Button
+                                <StyledButton
                                     variant="contained"
                                     color="error"
                                     onClick={() => setDeleteModal(true)}
                                 >
                                     Delete
-                                </Button>
+                                </StyledButton>
                             }
                         >
                             <Alert.Title>Delete {name}</Alert.Title>
@@ -559,16 +563,18 @@ export const SettingsTiles = (props: SettingsTilesProps) => {
                                 permanentely delete this {name}.
                             </Modal.Content>
                             <Modal.Actions>
-                                <Button onClick={() => setDeleteModal(false)}>
+                                <StyledButton
+                                    onClick={() => setDeleteModal(false)}
+                                >
                                     Cancel
-                                </Button>
-                                <Button
+                                </StyledButton>
+                                <StyledButton
                                     color={'error'}
                                     variant={'contained'}
                                     onClick={() => deleteWorkflow()}
                                 >
                                     Delete
-                                </Button>
+                                </StyledButton>
                             </Modal.Actions>
                         </Modal>
                     </Grid>
