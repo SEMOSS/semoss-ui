@@ -13,6 +13,7 @@ import {
 import {
     Delete,
     Lock,
+    LockOpen,
     Visibility,
     VisibilityOffRounded,
     MonitorRounded,
@@ -35,7 +36,7 @@ const StyledHr = styled('div')(({ theme }) => ({
 }));
 
 const StyledIcon = styled(Icon)(() => ({
-    color: 'rgba(0, 0, 0, .5)',
+    color: 'rgba(0, 0, 0, .6)',
 }));
 
 const StyledAlert = styled(Alert)(({ theme }) => ({
@@ -43,12 +44,13 @@ const StyledAlert = styled(Alert)(({ theme }) => ({
     // height: theme.spacing(13),
     height: theme.spacing(10),
     backgroundColor: theme.palette.background.paper,
-    // border: "1px solid red",
 }));
 
 const StyledGrid = styled(Grid)(() => ({
     flex: '1',
 }));
+
+const SwitchSizeMultiplier = 1.3;
 
 const StyledMuiSwitch = styled((props: SwitchProps) => (
     <Switch
@@ -57,15 +59,15 @@ const StyledMuiSwitch = styled((props: SwitchProps) => (
         {...props}
     />
 ))(({ theme }) => ({
-    width: 42,
-    height: 26,
+    width: 42 * SwitchSizeMultiplier,
+    height: 26 * SwitchSizeMultiplier,
     padding: 0,
     '& .MuiSwitch-switchBase': {
         padding: 0,
-        margin: 3,
+        margin: 3 * SwitchSizeMultiplier,
         transitionDuration: '300ms',
         '&.Mui-checked': {
-            transform: 'translateX(16px)',
+            transform: `translateX(${16 * SwitchSizeMultiplier}px)`,
             color: '#fff',
             '& + .MuiSwitch-track': {
                 // background color for switch off
@@ -99,11 +101,11 @@ const StyledMuiSwitch = styled((props: SwitchProps) => (
         boxSizing: 'border-box',
         //   width: 22,
         //   height: 22,
-        width: 20,
-        height: 20,
+        width: 20 * SwitchSizeMultiplier,
+        height: 20 * SwitchSizeMultiplier,
     },
     '& .MuiSwitch-track': {
-        borderRadius: 26 / 2,
+        borderRadius: (26 * SwitchSizeMultiplier) / 2,
         // background color for switch off
         backgroundColor: theme.palette.mode === 'light' ? '#E9E9EA' : '#39393D',
         opacity: 1,
@@ -268,12 +270,16 @@ export const SettingsTiles = (props: SettingsTilesProps) => {
 
                 notification.add({
                     color: 'success',
-                    message: `Successfully made ${name} discoverable`,
+                    message: `Successfully made ${name} ${
+                        !discoverable ? 'discoverable' : 'non-discoverable'
+                    }`,
                 });
             } else {
                 notification.add({
                     color: 'error',
-                    message: `Error making ${name} discoverable`,
+                    message: `Error making ${name} ${
+                        !discoverable ? 'discoverable' : 'non-discoverable'
+                    }`,
                 });
             }
         } catch (e) {
@@ -320,12 +326,16 @@ export const SettingsTiles = (props: SettingsTilesProps) => {
 
                 notification.add({
                     color: 'success',
-                    message: `Successfully made ${name} global`,
+                    message: `Successfully made ${name} ${
+                        global ? 'global' : 'private'
+                    }`,
                 });
             } else {
                 notification.add({
                     color: 'error',
-                    message: `Error making ${name} global`,
+                    message: `Error making ${name} ${
+                        global ? 'global' : 'private'
+                    }`,
                 });
             }
         } catch (e) {
@@ -346,12 +356,12 @@ export const SettingsTiles = (props: SettingsTilesProps) => {
 
     if (condensed) {
         return (
-            <Paper sx={{ width: '100%', padding: '10px' }}>
+            <Paper sx={{ width: '100%', padding: '8px 5px' }}>
                 <StyledAlert
                     sx={{ width: '100%', boxShadow: 'none' }}
                     icon={
                         <StyledIcon>
-                            <Lock />
+                            {global ? <LockOpen /> : <Lock />}
                         </StyledIcon>
                     }
                     action={
@@ -361,7 +371,7 @@ export const SettingsTiles = (props: SettingsTilesProps) => {
                                     ? `Make ${name} private`
                                     : `Make ${name} public`
                             }
-                            checked={global}
+                            checked={!global}
                             onChange={() => {
                                 changeGlobal();
                             }}
@@ -391,8 +401,10 @@ export const SettingsTiles = (props: SettingsTilesProps) => {
                                 discoverable
                                     ? `Make ${name} non-discoverable`
                                     : `Make ${name} discoverable`
+                                // ? `Make ${name} discoverable`
+                                // : `Make ${name} non-discoverable`
                             }
-                            checked={discoverable}
+                            checked={!discoverable}
                             onChange={() => {
                                 changeDiscoverable();
                             }}
@@ -401,6 +413,7 @@ export const SettingsTiles = (props: SettingsTilesProps) => {
                 >
                     <Alert.Title>
                         {discoverable ? 'Discoverable' : 'Non-Discoverable'}
+                        {/* {discoverable ? 'Non-Discoverable' : 'Discoverable'} */}
                     </Alert.Title>
                     Users {discoverable ? 'can' : 'cannot'} request access to
                     this {name} if private
@@ -419,13 +432,18 @@ export const SettingsTiles = (props: SettingsTilesProps) => {
                             variant="contained"
                             color="error"
                             onClick={() => setDeleteModal(true)}
+                            sx={{ borderRadius: '13px', padding: '5px 13px' }}
                         >
                             Delete
                         </Button>
                     }
                 >
                     <Alert.Title>Delete {name}</Alert.Title>
-                    Remove {name} from catalog
+
+                    {/* Remove {name} from catalog */}
+                    {/* ^ old text */}
+
+                    {`Permanently delete ${name} form CFG AI Server`}
                 </StyledAlert>
                 <Modal open={deleteModal}>
                     <Modal.Title>Are you sure?</Modal.Title>

@@ -39,10 +39,10 @@ const StyledTopLeft = styled('div')(({ theme }) => ({
     overflowX: 'hidden',
     backgroundColor: theme.palette.secondary.light,
     justifyContent: 'space-between',
-    paddingLeft: theme.spacing(2),
-    paddingTop: theme.spacing(2),
-    paddingBottom: theme.spacing(2),
-    paddingRight: theme.spacing(2),
+    paddingLeft: theme.spacing(4),
+    paddingTop: theme.spacing(4),
+    paddingBottom: theme.spacing(4),
+    paddingRight: theme.spacing(4),
 
     // Take in prop that will resize width of left portion
     height: '100%',

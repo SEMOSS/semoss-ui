@@ -201,7 +201,6 @@ const CustomAccordion = styled(Accordion)(({ theme }) => ({
     padding: '0',
     borderRadius: '0px',
     // borderBottom: `1px solid ${theme.palette.divider}`,
-    // borderBottom: `1px solid red`,
     marginBottom: '-15px',
     '&:before': {
         display: 'none',
@@ -320,7 +319,7 @@ export const AppEditor = (props: AppEditorProps) => {
     const [activeFileIndex, setActiveFileIndex] = useState(null);
 
     // temp
-    const [isHovered, setIsHovered] = useState(false);
+    // const [isHovered, setIsHovered] = useState(false);
     const [hoverSet, setHoverSet] = useState(new Set());
 
     useEffect(() => {
@@ -1313,7 +1312,6 @@ export const AppEditor = (props: AppEditorProps) => {
                         ? '5px 0 5px -2px rgba(0, 0, 0, 0.04)'
                         : 'none',
                     marginLeft: openAppAssetsPanel ? '-90px' : '0px',
-                    // borderRight: openAppAssetsPanel ? "15px solid rgb(242, 242, 242)red" : "0px solid rgb(242, 242, 242)",
                 }}
             >
                 <StyledOpenAssetsContainer>
