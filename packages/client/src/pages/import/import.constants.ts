@@ -3384,6 +3384,7 @@ export const CONNECTION_OPTIONS = {
                         },
                         disabled: false,
                         rules: { required: true },
+                        description: 'hey',
                     },
                     {
                         fieldName: 'VECTOR_TYPE',
@@ -3392,12 +3393,14 @@ export const CONNECTION_OPTIONS = {
                         options: {
                             component: 'text-field',
                         },
+                        hidden: true,
                         disabled: true,
                         rules: { required: true },
                     },
                     {
                         fieldName: 'CONNECTION_URL',
                         label: 'Connection URL',
+                        hidden: true,
                         defaultValue: '@BaseFolder@/vector/@ENGINE@/',
                         options: {
                             component: 'text-field',
@@ -3405,35 +3408,74 @@ export const CONNECTION_OPTIONS = {
                         disabled: true,
                         rules: { required: true },
                     },
+                    // {
+                    //     fieldName: 'ENCODER_NAME',
+                    //     label: 'Encoder Name',
+                    //     defaultValue: '',
+                    //     options: {
+                    //         component: 'text-field',
+                    //     },
+                    //     disabled: false,
+                    //     rules: { required: true },
+                    // },
+                    // {
+                    //     fieldName: 'ENCODER_TYPE',
+                    //     label: 'Encoder Type',
+                    //     defaultValue: '',
+                    //     options: {
+                    //         component: 'text-field',
+                    //     },
+                    //     disabled: false,
+                    //     rules: { required: true },
+                    // },
+                    // {
+                    //     fieldName: 'ENCODER_API_KEY',
+                    //     label: 'Encoder API Key',
+                    //     defaultValue: '',
+                    //     options: {
+                    //         component: 'text-field',
+                    //     },
+                    //     disabled: false,
+                    //     rules: { required: true },
+                    // },
                     {
-                        fieldName: 'ENCODER_NAME',
-                        label: 'Encoder Name',
+                        fieldName: 'EMBEDDER_ENGINE_ID',
+                        label: 'Embedder',
                         defaultValue: '',
                         options: {
-                            component: 'text-field',
+                            component: 'select',
+                            options: [],
+                            pixel: `MyEngines ( metaKeys = [] , metaFilters = [] , engineTypes = [ 'MODEL' ] ) ;`,
                         },
                         disabled: false,
                         rules: { required: true },
+                        helperText:
+                            'The registered model engine responsible for converting input strings into fixed-size vectors, known as embeddings, capturing semantic information for downstream machine learning and natural language processing tasks.',
                     },
                     {
-                        fieldName: 'ENCODER_TYPE',
-                        label: 'Encoder Type',
-                        defaultValue: '',
+                        fieldName: 'CONTENT_LENGTH',
+                        label: 'Content Length',
+                        defaultValue: '512',
                         options: {
                             component: 'text-field',
                         },
                         disabled: false,
                         rules: { required: true },
+                        helperText:
+                            "The content length represents the upper limit of tokens within a chunk, as determined by the embedder's tokenizer.",
                     },
                     {
-                        fieldName: 'ENCODER_API_KEY',
-                        label: 'Encoder API Key',
-                        defaultValue: '',
+                        fieldName: 'CONTENT_OVERLAP',
+                        label: 'Content Overlap',
+                        defaultValue: '0',
                         options: {
                             component: 'text-field',
+                            options: [],
                         },
                         disabled: false,
                         rules: { required: true },
+                        helperText:
+                            'The number of tokens from prior chunks that are carried over into the current chunk when processing content.',
                     },
                     {
                         fieldName: 'EMBEDDINGS',

@@ -12,8 +12,9 @@ import {
     styled,
     useNotification,
     CircularProgress,
+    Tooltip,
 } from '@semoss/ui';
-import { ExpandLess, ExpandMore } from '@mui/icons-material';
+import { ExpandLess, ExpandMore, Help } from '@mui/icons-material';
 
 import { useStepper, useRootStore } from '@/hooks';
 import { useNavigate } from 'react-router-dom';
@@ -34,6 +35,7 @@ const StyledProperty = styled('div')(({ theme }) => ({
 
 const StyledKeyValue = styled('div')(({ theme }) => ({
     display: 'flex',
+    flexDirection: 'column',
     gap: theme.spacing(2),
     marginBottom: theme.spacing(2),
 }));
@@ -71,29 +73,102 @@ export const ImportForm = (props) => {
     });
     const [formLoading, setFormLoading] = useState(false);
 
+    useEffect(() => {
+        setInitialFieldState();
+    }, [steps.length]);
+
     /**
-     * 1. Sets default values for all fields
+     * 1a. Set Default values for all fields
+     * 1b. Set options for fields that use pixel to show options and default value
      * 2. Set Default and Advanced Fields to loop
      */
-    useEffect(() => {
+    const setInitialFieldState = async () => {
         const defaultVals = {};
         const defFields = [];
         const advFields = [];
 
-        fields.forEach((f) => {
-            defaultVals[f.fieldName] = f.defaultValue;
-            if (f.advanced) {
-                advFields.push(f);
-            } else {
-                defFields.push(f);
+        for (const f of fields) {
+            const finalFieldState = f;
+            defaultVals[finalFieldState.fieldName] =
+                finalFieldState.defaultValue;
+
+            if (finalFieldState.pixel || finalFieldState.options.pixel) {
+                let pixelToExecute = '';
+
+                if (finalFieldState.pixel) {
+                    pixelToExecute += finalFieldState.pixel;
+                }
+                if (finalFieldState.options.pixel) {
+                    pixelToExecute += finalFieldState.options.pixel;
+                }
+
+                const result = await monolithStore.runQuery(pixelToExecute);
+
+                let output = result.pixelReturn[0].output,
+                    operationType = result.pixelReturn[0].operationType;
+
+                if (operationType.indexOf('ERROR') > -1) {
+                    notification.add({
+                        color: 'error',
+                        message: output,
+                    });
+                }
+
+                if (finalFieldState.pixel && !finalFieldState.options.pixel) {
+                    console.log('populate default value');
+                    defaultVals[finalFieldState.fieldName] = output;
+                } else if (
+                    !finalFieldState.pixel &&
+                    finalFieldState.options.pixel
+                ) {
+                    console.log('populate select options');
+                    const opts = [];
+
+                    output.forEach((opt) => {
+                        opts.push({
+                            display: opt.database_name,
+                            value: opt.database_id,
+                        });
+                    });
+
+                    finalFieldState.options = {
+                        ...f.options,
+                        options: opts,
+                    };
+                } else {
+                    console.log('populate default value and select options');
+                    defaultVals[finalFieldState.fieldName] = output;
+
+                    output = result.pixelReturn[1].output;
+                    operationType = result.pixelReturn[1].operationType;
+                    const opts = [];
+
+                    output.forEach((opt) => {
+                        opts.push({
+                            display: opt.database_name,
+                            value: opt.database_id,
+                        });
+                    });
+
+                    finalFieldState.options = {
+                        ...f.options,
+                        options: opts,
+                    };
+                }
             }
-        });
+
+            if (finalFieldState.advanced) {
+                advFields.push(finalFieldState);
+            } else {
+                defFields.push(finalFieldState);
+            }
+        }
 
         setDefaultFields(defFields);
         setAdvancedFields(advFields);
 
         reset(defaultVals);
-    }, [steps.length]);
+    };
 
     /**
      * @desc Takes details from submission form and
@@ -219,6 +294,25 @@ export const ImportForm = (props) => {
                                                     onChange={(value) =>
                                                         field.onChange(value)
                                                     }
+                                                    // InputProps={{
+                                                    //     startAdornment:
+                                                    //         val.helperText ? (
+                                                    //             <Tooltip
+                                                    //                 title={
+                                                    //                     val.helperText
+                                                    //                 }
+                                                    //             >
+                                                    //                 <IconButton
+                                                    //                     size={
+                                                    //                         'small'
+                                                    //                     }
+                                                    //                 >
+                                                    //                     <Help />
+                                                    //                 </IconButton>
+                                                    //             </Tooltip>
+                                                    //         ) : null,
+                                                    // }}
+                                                    helperText={val.helperText}
                                                 ></TextField>
                                             );
                                         } else if (
@@ -241,6 +335,7 @@ export const ImportForm = (props) => {
                                                     onChange={(value) =>
                                                         field.onChange(value)
                                                     }
+                                                    helperText={val.helperText}
                                                 ></TextField>
                                             );
                                         } else if (
@@ -262,6 +357,7 @@ export const ImportForm = (props) => {
                                                     onChange={(value) =>
                                                         field.onChange(value)
                                                     }
+                                                    helperText={val.helperText}
                                                 >
                                                     {val.options.options.map(
                                                         (opt, i) => {
@@ -301,6 +397,7 @@ export const ImportForm = (props) => {
                                                     onChange={(value) =>
                                                         field.onChange(value)
                                                     }
+                                                    helperText={val.helperText}
                                                 ></TextField>
                                             );
                                         } else if (
@@ -400,6 +497,9 @@ export const ImportForm = (props) => {
                                                                         value,
                                                                     )
                                                                 }
+                                                                helperText={
+                                                                    val.helperText
+                                                                }
                                                             ></TextField>
                                                         );
                                                     } else if (
@@ -433,6 +533,9 @@ export const ImportForm = (props) => {
                                                                         value,
                                                                     )
                                                                 }
+                                                                helperText={
+                                                                    val.helperText
+                                                                }
                                                             ></TextField>
                                                         );
                                                     } else if (
@@ -465,6 +568,9 @@ export const ImportForm = (props) => {
                                                                     field.onChange(
                                                                         value,
                                                                     )
+                                                                }
+                                                                helperText={
+                                                                    val.helperText
                                                                 }
                                                             ></TextField>
                                                         );
@@ -529,6 +635,9 @@ export const ImportForm = (props) => {
                                                                         value,
                                                                     )
                                                                 }
+                                                                helperText={
+                                                                    val.helperText
+                                                                }
                                                             >
                                                                 {val.options.options.map(
                                                                     (
@@ -592,7 +701,7 @@ export const ImportForm = (props) => {
                         {formLoading ? (
                             <CircularProgress size="1.5em" />
                         ) : (
-                            `Add ${steps[0].data.toLowerCase()}`
+                            `Create ${steps[0].data.toLowerCase()}`
                         )}
                     </StyledSubmitButton>
                 </StyledFlexEnd>
