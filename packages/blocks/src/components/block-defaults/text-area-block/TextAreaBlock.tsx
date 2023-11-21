@@ -19,7 +19,7 @@ export interface TextAreaBlockDef extends BlockDef<'text-area'> {
 }
 
 export const TextAreaBlock: BlockComponent = observer(({ id }) => {
-    const { attrs, data, setData } = useBlock<TextAreaDef>(id);
+    const { attrs, data, setData } = useBlock<TextAreaBlockDef>(id);
 
     return (
         <TextArea
