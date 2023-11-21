@@ -78,9 +78,10 @@ export const ImportForm = (props) => {
     }, [steps.length]);
 
     /**
-     * 1a. Set Default values for all fields
-     * 1b. Set options for fields that use pixel to show options and default value
-     * 2. Set Default and Advanced Fields to loop
+     * 1. Set Default values for all fields, if default value is present
+     * 2. Set options for fields that use pixel to show dropdown options
+     * 3. If default value depends on another value that is present,
+     * -- set a ref for that and listen for changes to that ref
      */
     const setInitialFieldState = async () => {
         const defaultVals = {};

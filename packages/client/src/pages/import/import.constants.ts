@@ -147,9 +147,11 @@ export type EngineFields = {
         options: {
             component: string;
             options?: { value: string; display: string }[];
+            pixel?: string; // Pixel to populate options for select
         };
         disabled: boolean;
         rules: Record<string, any>; // react hook form
+        pixel?: string; // used to populate default value
     }[];
 }[];
 
@@ -3384,7 +3386,6 @@ export const CONNECTION_OPTIONS = {
                         },
                         disabled: false,
                         rules: { required: true },
-                        description: 'hey',
                     },
                     {
                         fieldName: 'VECTOR_TYPE',
@@ -3445,7 +3446,8 @@ export const CONNECTION_OPTIONS = {
                         options: {
                             component: 'select',
                             options: [],
-                            pixel: `MyEngines ( metaKeys = [] , metaFilters = [] , engineTypes = [ 'MODEL' ] ) ;`,
+                            // pixel: `MyEngines ( metaKeys = [] , metaFilters = [] , engineTypes = [ 'MODEL' ] ) ;`,
+                            pixel: `MyEngines ( metaKeys = [] , metaFilters = [{ "tag" : "embeddings" }] , engineTypes = [ 'MODEL' ] ) ;`,
                         },
                         disabled: false,
                         rules: { required: true },
@@ -3463,6 +3465,7 @@ export const CONNECTION_OPTIONS = {
                         rules: { required: true },
                         helperText:
                             "The content length represents the upper limit of tokens within a chunk, as determined by the embedder's tokenizer.",
+                        // pixel: `GetModelMaxTokenLength ( engine = "<EMBEDDER_ENGINE_ID>" ) ;`,
                     },
                     {
                         fieldName: 'CONTENT_OVERLAP',
