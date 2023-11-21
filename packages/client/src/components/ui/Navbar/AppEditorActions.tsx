@@ -323,34 +323,6 @@ export const AppEditorActions = () => {
                 >
                     <Share /> Share
                 </Button>
-                {/* <StyledShareButton
-                    size={'small'}
-                    variant={'outlined'}
-                    color="secondary"
-                    onClick={() => {
-                        setShareModal(true);
-                    }}
-                    sx={{
-                        display: 'flex',
-                        flexDirection: 'row',
-                        alignItems: 'center',
-                        gap: '8px',
-                    }}
-                >
-                    <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        width="19"
-                        height="18"
-                        viewBox="0 0 19 18"
-                        fill="none"
-                    >
-                        <path
-                            d="M14 12.06C13.43 12.06 12.92 12.285 12.53 12.6375L7.1825 9.525C7.22 9.3525 7.25 9.18 7.25 9C7.25 8.82 7.22 8.6475 7.1825 8.475L12.47 5.3925C12.875 5.7675 13.4075 6 14 6C15.245 6 16.25 4.995 16.25 3.75C16.25 2.505 15.245 1.5 14 1.5C12.755 1.5 11.75 2.505 11.75 3.75C11.75 3.93 11.78 4.1025 11.8175 4.275L6.53 7.3575C6.125 6.9825 5.5925 6.75 5 6.75C3.755 6.75 2.75 7.755 2.75 9C2.75 10.245 3.755 11.25 5 11.25C5.5925 11.25 6.125 11.0175 6.53 10.6425L11.87 13.7625C11.8325 13.92 11.81 14.085 11.81 14.25C11.81 15.4575 12.7925 16.44 14 16.44C15.2075 16.44 16.19 15.4575 16.19 14.25C16.19 13.0425 15.2075 12.06 14 12.06ZM14 3C14.4125 3 14.75 3.3375 14.75 3.75C14.75 4.1625 14.4125 4.5 14 4.5C13.5875 4.5 13.25 4.1625 13.25 3.75C13.25 3.3375 13.5875 3 14 3ZM5 9.75C4.5875 9.75 4.25 9.4125 4.25 9C4.25 8.5875 4.5875 8.25 5 8.25C5.4125 8.25 5.75 8.5875 5.75 9C5.75 9.4125 5.4125 9.75 5 9.75ZM14 15.015C13.5875 15.015 13.25 14.6775 13.25 14.265C13.25 13.8525 13.5875 13.515 14 13.515C14.4125 13.515 14.75 13.8525 14.75 14.265C14.75 14.6775 14.4125 15.015 14 15.015Z"
-                            fill="#EBEEFE"
-                        />
-                    </svg>
-                    Share
-                </StyledShareButton> */}
             </StyledNavbarRight>
             <Modal open={shareModal}>
                 <StyledModalContent>
@@ -368,8 +340,10 @@ export const AppEditorActions = () => {
                         <StyledTabsContent>
                             <Typography
                                 variant="subtitle1"
-                                paddingBottom="20px"
-                                paddingLeft="10px"
+                                sx={{
+                                    paddingBottom: '20px',
+                                    paddingLeft: '10px',
+                                }}
                             >
                                 Share a link for external use
                             </Typography>

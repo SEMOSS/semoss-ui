@@ -75,8 +75,6 @@ const StyledMuiSwitch = styled((props: SwitchProps) => (
             transform: `translateX(${16 * SwitchSizeMultiplier}px)`,
             color: '#fff',
             '& + .MuiSwitch-track': {
-                // background color for switch off
-                //   backgroundColor: theme.palette.mode === 'dark' ? '#2ECA45' : '#65C466',
                 backgroundColor:
                     theme.palette.mode === 'dark'
                         ? theme.palette.primary.main
@@ -418,7 +416,6 @@ export const SettingsTiles = (props: SettingsTilesProps) => {
                 >
                     <Alert.Title>
                         {discoverable ? 'Discoverable' : 'Non-Discoverable'}
-                        {/* {discoverable ? 'Non-Discoverable' : 'Discoverable'} */}
                     </Alert.Title>
                     Users {discoverable ? 'can' : 'cannot'} request access to
                     this {name} if private
@@ -428,7 +425,6 @@ export const SettingsTiles = (props: SettingsTilesProps) => {
                     sx={{ width: '100%', boxShadow: 'none' }}
                     icon={
                         <StyledIcon>
-                            {/* <Delete /> */}
                             <MonitorRounded />
                         </StyledIcon>
                     }
@@ -443,9 +439,6 @@ export const SettingsTiles = (props: SettingsTilesProps) => {
                     }
                 >
                     <Alert.Title>Delete {name}</Alert.Title>
-
-                    {/* Remove {name} from catalog */}
-                    {/* ^ old text */}
 
                     {`Permanently delete ${name} form CFG AI Server`}
                 </StyledAlert>
@@ -539,7 +532,6 @@ export const SettingsTiles = (props: SettingsTilesProps) => {
                         <StyledAlert
                             icon={
                                 <StyledIcon>
-                                    {/* <Delete /> */}
                                     <MonitorRounded />
                                 </StyledIcon>
                             }

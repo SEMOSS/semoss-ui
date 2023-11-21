@@ -37,7 +37,6 @@ const StyledContainer = styled('div')(({ theme }) => ({
     justifyContent: 'space-between',
     width: '100%',
     height: '100%',
-    // height: 'calc(100% - 42px)',
 }));
 
 const StyledTopLeft = styled('div')(({ theme }) => ({
@@ -294,14 +293,6 @@ export const AppEditorPanel = (props) => {
                                     name={'app'}
                                     condensed={true}
                                 />
-                                {/* <Typography variant="h6">
-                                                Pending Permissions
-                                            </Typography> */}
-                                {/* <PendingMembersTable
-                                                mode={'app'}
-                                                id={appId}
-                                            /> */}
-                                {/* </div> */}
                             </Stack>
                         </SettingsContext.Provider>
                     </StyledTopLeftContent>

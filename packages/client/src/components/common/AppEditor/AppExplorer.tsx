@@ -39,7 +39,6 @@ const StyledCollapseContainer = styled('div')(({ theme }) => ({
 }));
 
 const StyleAppExplorerHeader = styled('div')(({ theme }) => ({
-    // border: 'solid green',
     display: 'flex',
     justifyContent: 'space-between',
     overflow: 'hidden',
@@ -50,7 +49,6 @@ const StyleAppExplorerHeader = styled('div')(({ theme }) => ({
 }));
 
 const CustomAccordionTrigger = styled('div')(({ theme }) => ({
-    // border: 'solid red',
     display: 'flex',
     flexDirection: 'row',
     '&:hover': {
@@ -116,7 +114,6 @@ export const AppExplorer = (props) => {
                 defaultExpandIcon={<ChevronRight />}
                 multiSelect
             >
-                Hey
                 {renderTreeNodes(directory)}
             </TreeView>
         </StyledCollapseContainer>

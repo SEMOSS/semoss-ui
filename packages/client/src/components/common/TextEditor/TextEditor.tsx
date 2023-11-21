@@ -13,7 +13,6 @@ import { Button } from '@semoss/ui';
 import { Container } from '../../../../../ui/dist';
 
 import { Icon as FiletypeIcon } from '@mdi/react';
-// import { mdiLanguageTypescript } from '@mdi/js';
 
 // aded filetype icons
 import {
@@ -140,6 +139,13 @@ const fileIcons: Record<string, string> = {
 //     },
 // });
 
+const StyledFiletypeIcon = styled(FiletypeIcon)(({ theme }) => ({
+    color: 'rgba(0, 0, 0, 0.6)',
+    height: '24px',
+    width: '24px',
+    marginRight: '8px',
+}));
+
 const StyledContainer = styled('div')(({ theme }) => ({
     width: '100%',
     height: '100%',
@@ -172,7 +178,6 @@ const StyledFileTabs = styled('div')(({ theme }) => ({
 const StyledActiveFilePath = styled('div')(({ theme }) => ({
     display: 'flex',
     backgroundColor: theme.palette.background.paper,
-    // border: 'solid green',
     padding: theme.spacing(1),
 }));
 
@@ -258,19 +263,13 @@ const formatFilePath = (activeFileid) => {
 
     return (
         <>
-            <FiletypeIcon
+            <StyledFiletypeIcon
                 path={
                     fileIcons[activeFileid?.split('.').slice(-1)[0]] ||
                     fileIcons.document
                 }
                 size={1}
-                style={{
-                    color: 'rgba(0, 0, 0, 0.6)',
-                    height: '24px',
-                    width: '24px',
-                    marginRight: '8px',
-                }}
-            ></FiletypeIcon>
+            ></StyledFiletypeIcon>
             <Typography
                 variant={'body2'}
                 sx={{
@@ -278,10 +277,6 @@ const formatFilePath = (activeFileid) => {
                     paddingLeft: '0px',
                 }}
             >
-                {/* {activeFile.id
-                    .replace('version/assets/', '')
-                .replace('/', ' / ')} */}
-                {/* { formatFilePath(activeFile.id) } */}
                 {nonGrayPath.length > 0 && (
                     <Typography
                         variant="body2"
@@ -311,12 +306,6 @@ const formatFilePath = (activeFileid) => {
         </>
     );
 };
-{
-    /* {activeFile.id
-                                .replace('version/assets/', '')
-                                .replace('/', ' / ')} */
-}
-// { formatFilePath(activeFile.id) }
 
 export const TextEditor = (props: TextEditorProps) => {
     const { files, activeIndex, setActiveIndex, onSave, onClose } = props;
@@ -544,8 +533,6 @@ export const TextEditor = (props: TextEditorProps) => {
                                                 <IconButton
                                                     size={'small'}
                                                     sx={{
-                                                        // width: '24px',
-                                                        // height: '50px',
                                                         fontSize: '16px',
                                                     }}
                                                     onClick={async (e) => {

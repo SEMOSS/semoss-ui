@@ -7,58 +7,6 @@
 // This needs to handle Adding of Folders and Files to projects, and editting contents of existing
 // --------------------
 
-// To-Do for Design Updates (from Jong figma):
-// https://www.figma.com/file/vlOC4OeAkxIVyu8Zmt7kWJ/Edit-App-with-Code-Editor?type=design&node-id=1-44800&mode=design&t=vfzXRBaaRWkin44v-0
-// http://localhost:9090/semoss-ui/packages/client/dist/#/app/4e9dc356-c155-4501-b190-cf54e6779273
-
-// Navbar
-// * highlight for active tab icon dark gray not blue
-// * editor toggle green not blue
-// * get rid of empty white / gray bar under top navbar
-// * restyle download and share buttons
-// * restyle semoss icon
-// * remove SEMOSS text in top left
-// * add collapse caret
-
-// Code Editor (tab)
-// * background color of editor / collapse sidebar
-// * trash icon next to active file (or on hover?)
-// * add filetype icon to breadcrumb for active file
-// * breadcrumb not displaying filepath? ("AddPage.tsx / Link / Link")
-// * gray out far right element of bradcrumb
-// * no blue highlight / or any highlight for active file
-// * green success alert "Your file has been saved!"
-
-// Code Editor / Share Modal
-// * add save button next to cancel (functionality?)
-// * add "Rest API" tab / same styling as URL (tab content?)
-// * add "Rest API" tab / same styling as URL (tab content?)
-
-// Settings (tab)
-// * larger blue toggles
-// * larger border radius on text buttons
-// * add vertical column on left for icons
-// * change / restyle link icon
-// * restyle / blue color for publish button / no icon
-// * wrap update project filedrop and update button in paper
-
-// Access (tab)
-// * add user letter Avatar (gray) left of users
-// * add type of id and id under usernames
-// * widen permission column / match username width not including icon
-// * add blue trashcan icon on right of all users (reactor?)
-// * remove page "<>" arrows at bottom? unless needed maybe?
-// * no lines between users
-// * add / style pending permissions section (need dummy data - add manually in useState?, cant see currently?)
-
-// Add Member(s) Modal
-// * "Add Members" --> "Add Member"
-// * add magnifying glass icon to search on left
-// * get rid of gray background on users displayed in search bar
-// * get rid of user "x" in search bar, the x is in the user displays in middle stack
-// * remove outer gray div for permission cards / make Paper?
-
-// --------------------
 import React, { useEffect, useState, useRef } from 'react';
 import { useRootStore } from '@/hooks';
 import { TextEditor, ControlledFile, TextEditorCodeGeneration } from '../';
@@ -78,10 +26,6 @@ import {
     Typography,
 } from '@semoss/ui';
 
-// import {
-//     Icon as FiletypeIcon,
-// } from '@semoss/components';
-
 import { Icon as FiletypeIcon } from '@mdi/react';
 
 import {
@@ -94,7 +38,6 @@ import {
     CreateNewFolderOutlined,
     NoteAddOutlined,
     DeleteOutline,
-    // mdiCodeTags,
 } from '@mui/icons-material/';
 
 const DeleteIconWrapper = styled('div')(({ theme }) => ({
@@ -114,7 +57,6 @@ const StyledEditorPanel = styled('div')(({ theme }) => ({
     flexDirection: 'row',
     width: '100%',
     height: '100%',
-    // backgroundColor: theme.palette.secondary.light,
     backgroundColor: '#fff',
 }));
 
@@ -134,16 +76,12 @@ const StyledOpenAssetsContainer = styled('div')(({ theme }) => ({
 const StyledCollapse = styled(Collapse)(({ theme }) => ({
     paddingTop: theme.spacing(1),
     paddingBottom: theme.spacing(1),
-    // display: "absolute",
-    // marginRight: "-65px",
-    // width: '500px',
     backgroundColor: theme.palette.secondary.light,
 }));
 
 const StyledCollapseContainer = styled('div')(({ theme }) => ({
     display: 'flex',
     flexDirection: 'column',
-    // width: '250px',
     width: '350px',
     height: '100%',
     paddingTop: theme.spacing(1),
@@ -159,14 +97,11 @@ const StyleAppExplorerHeader = styled('div')(({ theme }) => ({
     overflow: 'hidden',
     textOverflow: 'ellipsis',
     whiteSpace: 'nowrap',
-    // height: '5%',
-    // paddingTop: '2px',
     alignItems: 'center',
 }));
 
 const StyledAppExplorerContainer = styled('div')(({ theme }) => ({
     height: '95%',
-    // overflow: 'hidden',
     width: '295px',
     overflow: 'visible',
 }));
@@ -200,14 +135,10 @@ const CustomAccordion = styled(Accordion)(({ theme }) => ({
     boxShadow: 'none',
     padding: '0',
     borderRadius: '0px',
-    // borderBottom: `1px solid ${theme.palette.divider}`,
     marginBottom: '-15px',
     '&:before': {
         display: 'none',
     },
-    // '&:not(:last-child)': {
-    //     borderBottom: 0,
-    // },
 }));
 
 const CustomAccordionTrigger = styled(Accordion.Trigger)(({ theme }) => ({
@@ -235,7 +166,6 @@ const CustomAccordionTriggerContent = styled('div')(({ theme }) => ({
     display: 'flex',
     flexDirection: 'row',
     gap: theme.spacing(4),
-    // Icon Button Size
     height: `calc(1rem + 0px)`,
     '.MuiButtonBase-root': {
         padding: '0px',
@@ -244,8 +174,6 @@ const CustomAccordionTriggerContent = styled('div')(({ theme }) => ({
         width: '20px',
         height: '20px',
     },
-
-    // spaces new file and new folder icons on right
     justifyContent: 'space-between',
     width: '93%',
 }));
@@ -263,10 +191,6 @@ const CustomAccordionContent = styled(Accordion.Content)(({ theme }) => ({
     display: 'flex',
     overflow: 'scroll',
     padding: '0px',
-    // width: '500px'
-    // paddingTop: '8px',
-    // paddingTop: '0px',
-    // alignItems: 'center',
 }));
 
 interface AppEditorProps {
@@ -1157,12 +1081,6 @@ export const AppEditor = (props: AppEditorProps) => {
                 timeout="auto"
                 orientation={'horizontal'}
             >
-                {/* <AppExplorer
-                    directory={appDirectory}
-                    packages={[]}
-                    onSelect={handleSelect}
-                /> */}
-
                 {/* Move into smaller component */}
                 <StyledCollapseContainer>
                     <StyleAppExplorerHeader>
@@ -1229,7 +1147,6 @@ export const AppEditor = (props: AppEditorProps) => {
                                     </CustomAccordionTriggerContent>
                                 </CustomAccordionTrigger>
                                 <CustomAccordionContent>
-                                    {/* <StyledScrollableTreeView> */}
                                     <StyledTreeView
                                         multiSelect
                                         expanded={expanded}
@@ -1248,15 +1165,9 @@ export const AppEditor = (props: AppEditorProps) => {
                                                 <ChevronRight />
                                             </StyledIcon>
                                         }
-                                        // defaultEndIcon ={
-                                        //     <StyledIcon>
-                                        //         <Download />
-                                        //     </StyledIcon>
-                                        // }
                                     >
                                         {renderTreeNodes(appDirectory)}
                                     </StyledTreeView>
-                                    {/* </StyledScrollableTreeView> */}
                                 </CustomAccordionContent>
                             </CustomAccordion>
                         </StyledAppExplorerSection>

@@ -8,13 +8,11 @@ import {
     Switch,
     Table,
     Typography,
-    Divider,
     TextField,
 } from '@semoss/ui';
 
 import {
     Person,
-    ToggleOff,
     Cached,
     PublishedWithChanges,
     InsertLink,
@@ -28,6 +26,11 @@ import { LoadingScreen } from '@/components/ui';
 import { Java } from '@/assets/img/Java';
 
 import { SwitchProps } from '@mui/material/Switch';
+
+const PublishPortalWrapper = styled('div')(({ theme }) => ({
+    display: 'flex',
+    alignItems: 'center',
+}));
 
 const StyledButtonSmall = styled(Button)(({ theme }) => ({
     borderRadius: '13px',
@@ -43,6 +46,7 @@ const StyledHr = styled('div')(({ theme }) => ({
     margin: '10px auto',
 }));
 
+// need to track down / address this TS error if new toggle style is used
 const SwitchSizeMultiplier = 1.3;
 const StyledMuiSwitch = styled((props: SwitchProps) => (
     <Switch
@@ -62,8 +66,6 @@ const StyledMuiSwitch = styled((props: SwitchProps) => (
             transform: `translateX(${16 * SwitchSizeMultiplier}px)`,
             color: '#fff',
             '& + .MuiSwitch-track': {
-                // background color for switch off
-                //   backgroundColor: theme.palette.mode === 'dark' ? '#2ECA45' : '#65C466',
                 backgroundColor:
                     theme.palette.mode === 'dark'
                         ? theme.palette.primary.main
@@ -91,14 +93,11 @@ const StyledMuiSwitch = styled((props: SwitchProps) => (
     },
     '& .MuiSwitch-thumb': {
         boxSizing: 'border-box',
-        //   width: 22,
-        //   height: 22,
         width: 20 * SwitchSizeMultiplier,
         height: 20 * SwitchSizeMultiplier,
     },
     '& .MuiSwitch-track': {
         borderRadius: (26 * SwitchSizeMultiplier) / 2,
-        // background color for switch off
         backgroundColor: theme.palette.mode === 'light' ? '#E9E9EA' : '#39393D',
         opacity: 1,
         transition: theme.transitions.create(['background-color'], {
@@ -171,7 +170,6 @@ const StyledCondensedPublishContainer = styled('div')(({ theme }) => ({
     gap: '1rem',
     flexDirection: 'column',
     alignItems: 'flex-start',
-    // border: "1px solid red",
     padding: '10px',
 }));
 
@@ -194,7 +192,6 @@ const StyledSubRow = styled('div')({
     alignItems: 'center',
     alignContent: 'center',
     width: '100%',
-    // margin: '10px 0',
     margin: '0',
 });
 
@@ -237,7 +234,6 @@ const StyledPublishedIcon = styled(PublishedWithChanges)(() => ({
     marginRight: '5px',
 }));
 
-// const StyledSwitchIcon = styled(ToggleOff)(({ theme }) => ({
 const StyledSwitchIcon = styled(Publish)(({ theme }) => ({
     display: 'flex',
     alignItems: 'flex-start',
@@ -269,7 +265,6 @@ const StyledPaper = styled(Paper)(({ theme }) => ({
     padding: theme.spacing(1),
 }));
 
-// User Table
 interface User {
     id: string;
     name: string;
@@ -303,7 +298,6 @@ export const AppSettings = (props: AppSettingsProps) => {
     const [portalDetails, setPortalDetails] = useState<{
         url?: string;
         hasPortal?: boolean;
-        // isPublished: boolean;
         project_has_portal: boolean;
         project_portal_url?: string;
         lastCompiled?: string;
@@ -311,7 +305,6 @@ export const AppSettings = (props: AppSettingsProps) => {
     }>({
         url: '',
         hasPortal: false,
-        // isPublished: false,
         project_has_portal: false,
         project_portal_url: '',
         lastCompiled: '12/25/2022',
@@ -321,7 +314,6 @@ export const AppSettings = (props: AppSettingsProps) => {
     const getPortalDetails = usePixel<{
         url?: string;
         hasPortal?: boolean;
-        // isPublished: boolean;
         project_has_portal: boolean;
         project_portal_url?: string;
         lastCompiled?: string;
@@ -335,12 +327,10 @@ export const AppSettings = (props: AppSettingsProps) => {
             return;
         }
 
-        // Set Details for Portal
         setPortalDetails({
             ...getPortalDetails.data,
         });
 
-        // Get the portal reactors if we have a portal
         if (getPortalDetails.data.project_has_portal) {
             getPortalReactors();
         }
@@ -514,21 +504,14 @@ export const AppSettings = (props: AppSettingsProps) => {
         return (
             <StyledPaper>
                 <StyledCondensedPublishContainer>
-                    <StyledSubColumn style={{ width: '100%' }}>
+                    <StyledSubColumn sx={{ width: '100%' }}>
                         <StyledSubHeaderContainer>
-                            <div
-                                style={{
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                }}
-                            >
+                            <PublishPortalWrapper>
                                 <StyledSwitchIcon />
-                                {/* <Publish sx={{ marginRight: "10px", opacity: 0.6 }}/> */}
                                 <Typography variant="subtitle1">
                                     Enable Publishing
                                 </Typography>
-                            </div>
-                            {/* <StyledRightSwitch */}
+                            </PublishPortalWrapper>
                             <StyledMuiSwitch
                                 checked={portalDetails.project_has_portal}
                                 value={portalDetails.project_has_portal}
@@ -536,7 +519,6 @@ export const AppSettings = (props: AppSettingsProps) => {
                                     enablePublishing();
                                 }}
                             ></StyledMuiSwitch>
-                            {/* ></StyledRightSwitch> */}
                         </StyledSubHeaderContainer>
 
                         <StyledSubRow>
@@ -552,19 +534,14 @@ export const AppSettings = (props: AppSettingsProps) => {
                     <>
                         <StyledHr />
 
-                        <StyledSubColumn style={{ width: '100%' }}>
+                        <StyledSubColumn sx={{ width: '100%' }}>
                             <StyledSubRow>
-                                <div
-                                    style={{
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                    }}
-                                >
+                                <PublishPortalWrapper>
                                     <StyledRefreshIcon />
                                     <Typography variant="subtitle1">
                                         Publish Portal
                                     </Typography>
-                                </div>
+                                </PublishPortalWrapper>
 
                                 <StyledButtonSmall
                                     disabled={!portalDetails.project_has_portal}
@@ -573,7 +550,6 @@ export const AppSettings = (props: AppSettingsProps) => {
                                         publish();
                                     }}
                                 >
-                                    {/* <StyledPublishedIcon /> */}
                                     Publish
                                 </StyledButtonSmall>
                             </StyledSubRow>
@@ -660,7 +636,6 @@ export const AppSettings = (props: AppSettingsProps) => {
                             <StyledSubColumn>
                                 <StyledSubRow>
                                     <StyledSwitchIcon />
-                                    {/* <Publish /> */}
                                     <Typography variant="subtitle1">
                                         Enable Publishing
                                     </Typography>
@@ -715,7 +690,6 @@ export const AppSettings = (props: AppSettingsProps) => {
                                                 publish();
                                             }}
                                         >
-                                            {/* <StyledPublishedIcon /> */}
                                             Publish
                                         </StyledButtonSmall>
                                     </StyledSubRow>
@@ -781,9 +755,6 @@ export const AppSettings = (props: AppSettingsProps) => {
                                             <Typography variant="body2">
                                                 {portalReactors.compiledBy}
                                             </Typography>
-                                            {/* <Typography variant="body2">
-                                            {user.time}
-                                        </Typography> */}
                                             <Typography variant="body2">
                                                 on
                                             </Typography>
