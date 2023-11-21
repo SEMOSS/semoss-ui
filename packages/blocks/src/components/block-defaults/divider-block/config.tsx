@@ -10,11 +10,13 @@ import {
 } from '../block-defaults.shared';
 
 import { DividerBlockDef, DividerBlock } from './DividerBlock';
-import { FormatShapes } from '@mui/icons-material';
+import { HorizontalRule } from '@mui/icons-material';
+import { BLOCK_TYPE_LAYOUT } from '../block-defaults.constants';
 
 // export the config for the block
 export const config: BlockConfig<DividerBlockDef> = {
     widget: 'divider',
+    type: BLOCK_TYPE_LAYOUT,
     data: {
         style: {
             display: 'flex',
@@ -26,7 +28,7 @@ export const config: BlockConfig<DividerBlockDef> = {
         children: [],
     },
     render: DividerBlock,
-    icon: FormatShapes,
+    icon: HorizontalRule,
     menu: [
         {
             name: 'Layout',

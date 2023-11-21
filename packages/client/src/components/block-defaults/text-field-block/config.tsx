@@ -8,10 +8,12 @@ import {
     buildDimensionsSection,
     buildSpacingSection,
 } from '../block-defaults.shared';
+import { BLOCK_TYPE_INPUT } from '../block-defaults.constants';
 
 // export the config for the block
 export const config: BlockConfig<TextFieldBlockDef> = {
     widget: 'text-field',
+    type: BLOCK_TYPE_INPUT,
     data: {
         style: {
             width: '100%',

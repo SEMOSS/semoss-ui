@@ -10,10 +10,13 @@ import {
 } from '../block-defaults.shared';
 
 import { FormBlockDef, FormBlock } from './FormBlock';
+import { DynamicForm } from '@mui/icons-material';
+import { BLOCK_TYPE_INPUT } from '../block-defaults.constants';
 
 // export the config for the block
 export const config: BlockConfig<FormBlockDef> = {
     widget: 'form',
+    type: BLOCK_TYPE_INPUT,
     data: {
         style: {
             display: 'flex',
@@ -25,6 +28,7 @@ export const config: BlockConfig<FormBlockDef> = {
         children: [],
     },
     render: FormBlock,
+    icon: DynamicForm,
     menu: [
         {
             name: 'Layout',

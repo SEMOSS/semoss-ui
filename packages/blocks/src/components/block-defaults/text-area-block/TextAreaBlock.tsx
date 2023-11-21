@@ -6,8 +6,8 @@ import { BlockComponent, BlockDef } from '@/stores';
 
 import { TextArea } from '@semoss/ui';
 
-export interface TextareaDef extends BlockDef<'textarea'> {
-    widget: 'textarea';
+export interface TextAreaBlockDef extends BlockDef<'text-area'> {
+    widget: 'text-area';
     data: {
         style: CSSProperties;
         label: string;
@@ -18,8 +18,8 @@ export interface TextareaDef extends BlockDef<'textarea'> {
     };
 }
 
-export const TextareaBlock: BlockComponent = observer(({ id }) => {
-    const { attrs, data, setData } = useBlock<TextareaDef>(id);
+export const TextAreaBlock: BlockComponent = observer(({ id }) => {
+    const { attrs, data, setData } = useBlock<TextAreaDef>(id);
 
     return (
         <TextArea

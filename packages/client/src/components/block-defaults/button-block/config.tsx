@@ -11,10 +11,12 @@ import {
 
 import { ButtonBlockDef, ButtonBlock } from './ButtonBlock';
 import { SmartButton } from '@mui/icons-material';
+import { BLOCK_TYPE_ACTION } from '../block-defaults.constants';
 
 // export the config for the block
 export const config: BlockConfig<ButtonBlockDef> = {
     widget: 'button',
+    type: BLOCK_TYPE_ACTION,
     data: {
         style: {},
         label: 'Submit',

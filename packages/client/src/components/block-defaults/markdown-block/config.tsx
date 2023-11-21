@@ -10,10 +10,12 @@ import {
 
 import { MarkdownBlockDef, MarkdownBlock } from './Markdown';
 import { FormatListBulleted } from '@mui/icons-material';
+import { BLOCK_TYPE_DISPLAY } from '../block-defaults.constants';
 
 // export the config for the block
 export const config: BlockConfig<MarkdownBlockDef> = {
     widget: 'markdown',
+    type: BLOCK_TYPE_DISPLAY,
     data: {
         style: {},
         markdown: '**Hello world**',

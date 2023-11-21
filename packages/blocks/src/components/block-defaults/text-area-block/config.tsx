@@ -1,12 +1,14 @@
 import { BlockConfig } from '@/stores';
 import { InputSettings } from '@/components/block-settings';
 
-import { TextareaDef, TextareaBlock } from './TextareaBlock';
+import { TextAreaBlockDef, TextAreaBlock } from './TextAreaBlock';
 import { FormatShapes } from '@mui/icons-material';
+import { BLOCK_TYPE_INPUT } from '../block-defaults.constants';
 
 // export the config for the block
-export const config: BlockConfig<TextareaDef> = {
-    widget: 'textarea',
+export const config: BlockConfig<TextAreaBlockDef> = {
+    widget: 'text-area',
+    type: BLOCK_TYPE_INPUT,
     data: {
         style: {},
         value: '',
@@ -21,7 +23,7 @@ export const config: BlockConfig<TextareaDef> = {
     slots: {
         content: [],
     },
-    render: TextareaBlock,
+    render: TextAreaBlock,
     icon: FormatShapes,
     menu: [
         {

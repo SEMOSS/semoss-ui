@@ -2,7 +2,7 @@ import { RunQueryAction, DispatchEventAction } from './state.actions';
 /**
  * Block
  */
-export type     Block<D extends BlockDef = BlockDef> = D extends D
+export type Block<D extends BlockDef = BlockDef> = D extends D
     ? {
           /** ID of the Block */
           id: string;
@@ -61,6 +61,9 @@ export interface BlockDef<W extends string = string> {
 export interface BlockConfig<D extends BlockDef = BlockDef> {
     /** Unique widget name */
     widget: D['widget'];
+
+    /** Widget type */
+    type: string;
 
     /** Data associated with the block */
     data: D['data'];

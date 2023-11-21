@@ -10,10 +10,12 @@ import {
 } from '../block-defaults.shared';
 
 import { PageBlockDef, PageBlock } from './PageBlock';
+import { BLOCK_TYPE_LAYOUT } from '../block-defaults.constants';
 
 // export the config for the block
 export const config: BlockConfig<PageBlockDef> = {
     widget: 'page',
+    type: BLOCK_TYPE_LAYOUT,
     data: {
         style: {},
     },

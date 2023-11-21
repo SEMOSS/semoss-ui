@@ -11,10 +11,12 @@ import {
 
 import { ContainerBlockDef, ContainerBlock } from './ContainerBlock';
 import { HighlightAlt } from '@mui/icons-material';
+import { BLOCK_TYPE_LAYOUT } from '../block-defaults.constants';
 
 // export the config for the block
 export const config: BlockConfig<ContainerBlockDef> = {
     widget: 'container',
+    type: BLOCK_TYPE_LAYOUT,
     data: {
         style: {
             display: 'flex',
