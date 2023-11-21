@@ -44,3 +44,7 @@ export const DefaultBlocks: Registry<DefaultBlockDefinitions> = {
     [TextBlockConfig.widget]: TextBlockConfig,
     [TextFieldBlockConfig.widget]: TextFieldBlockConfig,
 };
+
+export function getIconForBlock(widget: string) {
+    return DefaultBlocks[widget]?.icon;
+}

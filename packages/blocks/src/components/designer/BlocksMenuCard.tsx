@@ -1,33 +1,18 @@
 import { useState, useEffect, useCallback } from 'react';
 import { observer } from 'mobx-react-lite';
-import { styled, Avatar, Card, Stack, Typography } from '@semoss/ui';
+import { styled, Card } from '@semoss/ui';
 
 import { ActionMessages, BlockConfig, BlockJSON } from '@/stores';
 import { useDesigner } from '@/hooks';
-
-const StyledAvatar = styled(Avatar)(({ theme }) => ({
-    backgroundColor: `${theme.palette.primary.light}33`,
-    border: `1px solid ${theme.palette.primary.main}`,
-    color: theme.palette.primary.main
-}));
+import { BlocksMenuCardContent } from './BlocksMenuCardContent';
 
 const StyledCard = styled(Card)(() => ({
     borderRadius: '8px',
     boxShadow: '0px 5px 22px 0px rgba(0, 0, 0, 0.06)',
-    cursor: 'pointer'
-}))
-
-const StyledStack = styled(Stack)(() => ({
-    alignItems: 'center',
-    justifyContent: 'center'
+    cursor: 'grab'
 }));
 
-const StyledTypography = styled(Typography)(() => ({
-    textTransform: "capitalize"
-}));
-
-
-export const AddMenuBlockItem = observer((props: {
+export const BlocksMenuCard = observer((props: {
     block: BlockConfig
 }) => {
     const json: BlockJSON = {
@@ -42,14 +27,12 @@ export const AddMenuBlockItem = observer((props: {
     // track if it is this one that is dragging
     const [local, setLocal] = useState(false);
 
-    const blockDisplay = props.block.widget.replaceAll('-', ' ');
-
     /**
      * Handle the mousedown on the widget.
      */
     const handleMouseDown = () => {
         // set the dragged
-        designer.activateDrag(`Add ${blockDisplay}`, () => {
+        designer.activateDrag(props.block.widget, () => {
             return true;
         });
 
@@ -144,14 +127,10 @@ export const AddMenuBlockItem = observer((props: {
 
     return (
         <StyledCard onMouseDown={handleMouseDown}>
-            <StyledStack direction="column" padding={1} spacing={1}>
-                <StyledAvatar variant="rounded">
-                    <props.block.icon/>
-                </StyledAvatar>
-                <StyledTypography variant="subtitle2">
-                    {blockDisplay}
-                </StyledTypography>
-            </StyledStack>
+            <BlocksMenuCardContent
+                widget={props.block.widget}
+                icon={props.block.icon}
+            />
         </StyledCard>
     );
 });

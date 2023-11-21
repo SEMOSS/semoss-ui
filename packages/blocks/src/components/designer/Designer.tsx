@@ -1,12 +1,12 @@
 import { styled, Stack, Icon, Divider, Paper, Modal } from '@semoss/ui';
 import { DataObject, Layers, Visibility, Widgets } from '@mui/icons-material';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 
 import { DesignerContext } from '@/contexts';
 import { DesignerStore } from '@/stores';
 
 import { Overlay } from './Overlay';
-import { AddMenu } from './AddMenu';
+import { BlocksMenu } from './BlocksMenu';
 import { SelectedMenu } from './SelectedMenu';
 import { OutlineMenu } from './OutlineMenu';
 import { QueryMenu } from './QueryMenu';
@@ -90,6 +90,16 @@ const StyledSidebarContentInner = styled('div')(({ theme }) => ({
     width: '100%',
 }));
 
+const StyledDesignerContainer = styled(Stack, {
+    shouldForwardProp: (prop) => prop !== 'isDragging' 
+})<{
+    isDragging: boolean
+}>(({ isDragging }) => ({
+    height: '100%',
+    width: '100%',
+    cursor: isDragging ? 'grabbing!important' : 'unset'
+}));
+
 const StyledRightMenu = styled(Paper)(({ theme }) => ({
     display: 'flex',
     height: '100%',
@@ -136,7 +146,7 @@ export const Designer = (props: DesignerProps) => {
             }}
         >
             <Overlay />
-            <Stack height="100%" width={'100%'} direction="row" spacing={0}>
+            <StyledDesignerContainer direction="row" isDragging={!!designer.drag.ghostWidget}>
                 <StyledLeftMenu>
                     <StyledSidebar>
                         <StyledSidebarItem
@@ -194,7 +204,7 @@ export const Designer = (props: DesignerProps) => {
                             <StyledSidebarContentInner>
                                 {view === 'outline' ? <OutlineMenu /> : null}
                                 {view === 'query' ? <QueryMenu /> : null}
-                                {view === 'add' ? <AddMenu /> : null}
+                                {view === 'add' ? <BlocksMenu /> : null}
                             </StyledSidebarContentInner>
                         </StyledSidebarContent>
                     ) : null}
@@ -209,7 +219,7 @@ export const Designer = (props: DesignerProps) => {
                 ) : (
                     <></>
                 )}
-            </Stack>
+            </StyledDesignerContainer>
         </DesignerContext.Provider>
     );
 };

@@ -1,22 +1,30 @@
 import { observer } from 'mobx-react-lite';
-import { Typography, styled } from '@semoss/ui';
+import { Card, Typography, styled } from '@semoss/ui';
 
 import { useDesigner } from '@/hooks';
 import { DesignerStoreInterface } from '@/stores';
+import { getIconForBlock } from '../block-defaults';
+import { BlocksMenuCardContent } from './BlocksMenuCardContent';
+
+const StyledCard = styled(Card)(({ theme }) => ({
+    border: `1px solid ${theme.palette.primary.main}`,
+    borderRadius: '8px',
+    boxShadow: 'none',
+    padding: `${theme.spacing(0.5)} ${theme.spacing(2)}`,
+    opacity: 0.5
+}));
 
 const StyledGhost = styled('div')(({ theme }) => ({
     display: 'flex',
     alignItems: 'center',
     position: 'fixed',
     zIndex: '20',
-    height: theme.spacing(3),
     paddingLeft: theme.spacing(1),
     paddingRight: theme.spacing(1),
     pointerEvents: 'auto',
     userSelect: 'none',
-    backgroundColor: theme.palette.primary.main,
-    color: theme.palette.common.white,
     whiteSpace: 'nowrap',
+    cursor: 'grabbing'
 }));
 
 /**
@@ -56,11 +64,13 @@ export const Ghost = observer(() => {
         <StyledGhost
             style={{
                 ...getGhostStyle(designer.drag.ghostPosition),
-            }}
-        >
-            <Typography variant={'body2'}>
-                {designer.drag.ghostTitle}
-            </Typography>
+            }}>
+            <StyledCard>
+                <BlocksMenuCardContent
+                    widget={designer.drag.ghostWidget}
+                    icon={getIconForBlock(designer.drag.ghostWidget)}
+                />
+            </StyledCard>
         </StyledGhost>
     );
 });

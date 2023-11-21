@@ -5,7 +5,7 @@ import { DefaultBlocks } from '../block-defaults';
 import { BLOCK_TYPES } from '../block-defaults/block-defaults.constants';
 import { styled, Stack, TextField } from '@semoss/ui';
 import { Search } from '@mui/icons-material';
-import { AddMenuBlockTypeSection } from './AddMenuBlockTypeSection';
+import { BlocksMenuBlockTypeSection } from './BlocksMenuBlockTypeSection';
 
 const StyledTextFieldContainer = styled('div')(({ theme }) => ({
     margin: theme.spacing(2),
@@ -24,7 +24,7 @@ const StyledSearchIcon = styled(Search)(({ theme }) => ({
     width: '1em'
 }))
 
-export const AddMenu = observer(() => {
+export const BlocksMenu = observer(() => {
     const [search, setSearch] = useState('');
 
     const getBlocksForType = (blockType: string) => {
@@ -59,12 +59,12 @@ export const AddMenu = observer(() => {
             <StyledBlockSectionContainer>
                 {
                     !!search ? 
-                    <AddMenuBlockTypeSection
+                    <BlocksMenuBlockTypeSection
                         blocks={getBlocksForSearch()}
                     /> :
                     Array.from(BLOCK_TYPES, (blockType, i) => {
                         return (
-                            <AddMenuBlockTypeSection
+                            <BlocksMenuBlockTypeSection
                                 key={`${blockType}-${i}`}
                                 title={blockType}
                                 blocks={getBlocksForType(blockType)}

@@ -63,7 +63,7 @@ export const SelectedMask = observer(() => {
      */
     const handleMouseDown = () => {
         // set the dragged
-        designer.activateDrag(block.widget, (parent) => {
+        designer.activateDrag(block?.widget as string, (parent) => {
             // if the parent block is a child of the selected, we cannot add
             if (designer.blocks.containsBlock(designer.selected, parent)) {
                 return false;

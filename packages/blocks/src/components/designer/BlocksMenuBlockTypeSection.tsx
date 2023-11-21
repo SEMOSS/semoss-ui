@@ -1,6 +1,6 @@
 import { BlockConfig } from "@/stores";
 import { styled, Grid, Typography } from "@semoss/ui";
-import { AddMenuBlockItem } from "./AddMenuBlockItem";
+import { BlocksMenuCard } from "./BlocksMenuCard";
 
 const StyledGrid = styled(Grid)(({ theme }) => ({
     paddingBottom: theme.spacing(3),
@@ -17,7 +17,7 @@ const StyledTypography = styled(Typography)(({ theme }) => ({
     marginBottom: theme.spacing(1)
 }));
 
-export function AddMenuBlockTypeSection(props: {
+export function BlocksMenuBlockTypeSection(props: {
     title?: string;
     blocks: BlockConfig[]
 }) {
@@ -37,7 +37,7 @@ export function AddMenuBlockTypeSection(props: {
                                 key={block.widget}
                                 xs={4}
                             >
-                                <AddMenuBlockItem
+                                <BlocksMenuCard
                                     block={block}
                                 />
                             </Grid>
