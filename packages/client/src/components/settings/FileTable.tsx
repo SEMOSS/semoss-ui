@@ -6,6 +6,7 @@ import {
     FileDropzone,
     IconButton,
     LinearProgress,
+    CircularProgress,
     Modal,
     Search,
     styled,
@@ -198,13 +199,16 @@ export const FileTable = (props: FileTableProps) => {
             console.error(e);
         } finally {
             //turn off loading
+            getFileDetails.refresh();
             setIsLoading(false);
+            setValue('PROJECT_UPLOAD', []);
             setOpen(false);
         }
     });
 
     const deleteFile = async (file: FileExplorerProps) => {
         const { fileName } = file;
+        setIsLoading(true);
         try {
             await monolithStore.runQuery(`
             RemoveDocumentFromVectorDatabase(engine = "${id}", fileNames=["${fileName}"])
@@ -216,12 +220,14 @@ export const FileTable = (props: FileTableProps) => {
             });
         } finally {
             getFileDetails.refresh();
+            setIsLoading(false);
             setDeleteFileModal(false);
         }
     };
 
     const deleteSelectedFiles = async (files: FileExplorerProps[]) => {
         // construct the string of files
+        setIsLoading(true);
         let fileArray = '';
         files.map((file, index) => {
             const { fileName } = file;
@@ -246,6 +252,7 @@ export const FileTable = (props: FileTableProps) => {
         } finally {
             //refresh files list, null the file to Delete, and close modal
             getFileDetails.refresh();
+            setIsLoading(false);
             setFileToDelete(null);
             setDeleteFilesModal(false);
         }
@@ -458,6 +465,13 @@ export const FileTable = (props: FileTableProps) => {
                             type="submit"
                             variant={'contained'}
                             disabled={isLoading}
+                            startIcon={
+                                isLoading ? (
+                                    <CircularProgress size="1em" />
+                                ) : (
+                                    <></>
+                                )
+                            }
                         >
                             Embed
                         </Button>
@@ -494,6 +508,9 @@ export const FileTable = (props: FileTableProps) => {
                             }
                             deleteFile(fileToDelete);
                         }}
+                        startIcon={
+                            isLoading ? <CircularProgress size="1em" /> : <></>
+                        }
                     >
                         Confirm
                     </Button>
@@ -514,9 +531,13 @@ export const FileTable = (props: FileTableProps) => {
                     <Button
                         variant={'contained'}
                         color="error"
+                        disabled={isLoading}
                         onClick={() => {
                             deleteSelectedFiles(selectedFiles);
                         }}
+                        startIcon={
+                            isLoading ? <CircularProgress size="1em" /> : <></>
+                        }
                     >
                         Confirm
                     </Button>
