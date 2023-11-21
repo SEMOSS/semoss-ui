@@ -16,7 +16,10 @@ export const config: BlockConfig<SelectBlockDef> = {
     widget: 'select',
     type: BLOCK_TYPE_INPUT,
     data: {
-        style: {},
+        style: {
+            width: '100%',
+            padding: '8px'
+        },
         value: '',
         label: 'Example Select Input',
         options: [],

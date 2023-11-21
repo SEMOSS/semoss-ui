@@ -28,8 +28,7 @@ export const TextAreaBlock: BlockComponent = observer(({ id }) => {
             value={data.value}
             label={data.label}
             sx={{
-                ...data.style,
-                margin: '8px',
+                ...data.style
             }}
             onChange={(e) => {
                 const value = e.target.value;

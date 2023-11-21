@@ -10,7 +10,10 @@ export const config: BlockConfig<TextAreaBlockDef> = {
     widget: 'text-area',
     type: BLOCK_TYPE_INPUT,
     data: {
-        style: {},
+        style: {
+            width: '100%',
+            padding: '8px'
+        },
         value: '',
         label: 'Example Input',
         multiline: false,

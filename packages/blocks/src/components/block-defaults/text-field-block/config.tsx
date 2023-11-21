@@ -14,7 +14,10 @@ export const config: BlockConfig<TextFieldBlockDef> = {
     widget: 'text-field',
     type: BLOCK_TYPE_INPUT,
     data: {
-        style: {},
+        style: {
+            width: '100%',
+            padding: '8px'
+        },
         value: '',
         label: 'Example Input',
         type: 'text',
