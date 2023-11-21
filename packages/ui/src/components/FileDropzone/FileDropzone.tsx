@@ -39,7 +39,6 @@ const StyledDropzone = styled("div", {
     alignItems: "center",
     borderWidth: "2px",
     borderStyle: "dashed",
-    // borderRadius: "0.25rem",
     borderRadius: "8px",
     width: "100%",
     height: "100%",
