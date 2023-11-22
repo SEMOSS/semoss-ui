@@ -26,6 +26,37 @@ import { MembersTable, SettingsTiles } from '@/components/settings';
 
 import { AppSettings } from './AppSettings';
 
+import { useEffect, useMemo, useState } from 'react';
+import { ContentCopyOutlined } from '@mui/icons-material';
+import {
+    Outlet,
+    Link,
+    useLocation,
+    matchPath,
+    useParams,
+} from 'react-router-dom';
+import {
+    // styled,
+    // Typography,
+    Breadcrumbs,
+    // Stack,
+    ToggleButton,
+    Tooltip,
+    // Paper,
+    // useNotification,
+    // IconButton,
+} from '@semoss/ui';
+
+// import { useRootStore } from '@/hooks';
+// import { SettingsContext } from '@/contexts';
+import { Page } from '@/components/ui/';
+// import { SETTINGS_ROUTES } from './settings.constants';
+import { SETTINGS_ROUTES } from '../../pages/settings/settings.constants';
+import { observer } from 'mobx-react-lite';
+import { AdminPanelSettingsOutlined } from '@mui/icons-material';
+
+// console.log({SETTINGS_ROUTES})
+
 const StyledButton = styled(Button)(({ theme }) => ({
     borderRadius: '13px',
     padding: '5px 13px',
@@ -58,6 +89,27 @@ const StyledTopLeftContent = styled('div')(({ theme }) => ({
     display: 'flex',
     width: '100%',
     gap: theme.spacing(2),
+}));
+
+const StyledLink = {
+    textDecoration: 'none',
+    color: 'inherit',
+};
+
+const StyledAdminContainer = styled(Paper)(({ theme }) => ({
+    position: 'absolute',
+    top: theme.spacing(1),
+    right: theme.spacing(1),
+    zIndex: 1,
+}));
+
+const IdContainer = styled('span')(({ theme }) => ({
+    display: 'flex',
+    alignItems: 'center',
+}));
+
+const StyledId = styled(Typography)(({ theme }) => ({
+    color: theme.palette.secondary.dark,
 }));
 
 type EditAppForm = {
@@ -167,6 +219,39 @@ export const AppEditorPanel = (props) => {
         }
     };
 
+    const copy = async (text: string) => {
+        try {
+            await navigator.clipboard.writeText(text);
+
+            notification.add({
+                color: 'success',
+                message: 'Successfully copied id',
+            });
+        } catch (e) {
+            notification.add({
+                color: 'error',
+                message: 'Unable to copy id',
+            });
+        }
+    };
+
+    const { pathname, state } = useLocation();
+    const { id } = useParams();
+    const [adminMode, setAdminMode] = useState(false);
+
+    const matchedRoute = useMemo(() => {
+        for (const r of SETTINGS_ROUTES) {
+            if (matchPath(`/${r.path}`, pathname)) {
+                // alert(pathname)
+                // a match is being found here so the r should be valid
+                console.log({ r });
+                return r;
+            }
+        }
+
+        return null;
+    }, [pathname]);
+
     return (
         <StyledContainer>
             {editorView === 'settings' && (
@@ -177,7 +262,178 @@ export const AppEditorPanel = (props) => {
                                 adminMode: configStore.store.user.admin,
                             }}
                         >
-                            <form
+                            <Page
+                                header={
+                                    <Stack>
+                                        {matchedRoute.path ? (
+                                            <div
+                                                style={{
+                                                    display: 'flex',
+                                                    justifyContent:
+                                                        'space-between',
+                                                }}
+                                            >
+                                                <Breadcrumbs separator="/">
+                                                    <Link
+                                                        to={'.'}
+                                                        style={StyledLink}
+                                                    >
+                                                        Settings
+                                                    </Link>
+                                                    {/* ### tom note --- start here on monday */}
+                                                    {matchedRoute.history.map(
+                                                        (link, i) => {
+                                                            return (
+                                                                <Link
+                                                                    style={
+                                                                        StyledLink
+                                                                    }
+                                                                    to={link.replace(
+                                                                        '<id>',
+                                                                        id,
+                                                                    )}
+                                                                    key={
+                                                                        i + link
+                                                                    }
+                                                                    state={...state}
+                                                                >
+                                                                    {link.includes(
+                                                                        '<id>',
+                                                                    )
+                                                                        ? id
+                                                                        : matchedRoute.title}
+                                                                </Link>
+                                                            );
+                                                        },
+                                                    )}
+                                                    <Link
+                                                        to={'.'}
+                                                        style={StyledLink}
+                                                    >
+                                                        {
+                                                            pathname.split('/')[
+                                                                pathname.split(
+                                                                    '/',
+                                                                ).length - 1
+                                                            ]
+                                                        }
+                                                    </Link>
+                                                </Breadcrumbs>
+                                                {configStore.store.user
+                                                    .admin ? (
+                                                    <StyledAdminContainer>
+                                                        <Tooltip
+                                                            title={
+                                                                !adminMode
+                                                                    ? 'Enable Admin Mode'
+                                                                    : 'Disable Admin Mode'
+                                                            }
+                                                        >
+                                                            <div>
+                                                                <ToggleButton
+                                                                    size="small"
+                                                                    color={
+                                                                        'primary'
+                                                                    }
+                                                                    value={
+                                                                        'adminMode'
+                                                                    }
+                                                                    selected={
+                                                                        adminMode
+                                                                    }
+                                                                    onClick={() =>
+                                                                        setAdminMode(
+                                                                            !adminMode,
+                                                                        )
+                                                                    }
+                                                                >
+                                                                    <AdminPanelSettingsOutlined />
+                                                                </ToggleButton>
+                                                            </div>
+                                                        </Tooltip>
+                                                    </StyledAdminContainer>
+                                                ) : null}
+                                            </div>
+                                        ) : (
+                                            <div
+                                                style={{
+                                                    height: '24px',
+                                                    display: 'flex',
+                                                    justifyContent: 'flex-end',
+                                                }}
+                                            >
+                                                {configStore.store.user
+                                                    .admin ? (
+                                                    <StyledAdminContainer>
+                                                        <Tooltip
+                                                            title={
+                                                                !adminMode
+                                                                    ? 'Enable Admin Mode'
+                                                                    : 'Disable Admin Mode'
+                                                            }
+                                                        >
+                                                            <div>
+                                                                <ToggleButton
+                                                                    size="small"
+                                                                    color={
+                                                                        'primary'
+                                                                    }
+                                                                    value={
+                                                                        'adminMode'
+                                                                    }
+                                                                    selected={
+                                                                        adminMode
+                                                                    }
+                                                                    onClick={() =>
+                                                                        setAdminMode(
+                                                                            !adminMode,
+                                                                        )
+                                                                    }
+                                                                >
+                                                                    <AdminPanelSettingsOutlined />
+                                                                </ToggleButton>
+                                                            </div>
+                                                        </Tooltip>
+                                                    </StyledAdminContainer>
+                                                ) : null}
+                                            </div>
+                                        )}
+                                        <Typography variant="h4">
+                                            {matchedRoute.history.length < 2
+                                                ? matchedRoute.title
+                                                : state
+                                                ? state.name
+                                                : matchedRoute.title}
+                                        </Typography>
+                                        {id ? (
+                                            <IdContainer>
+                                                <StyledId variant={'subtitle2'}>
+                                                    {id}
+                                                </StyledId>
+                                                <IconButton
+                                                    size="small"
+                                                    onClick={() => {
+                                                        copy(id);
+                                                    }}
+                                                >
+                                                    <Tooltip title={`Copy ID`}>
+                                                        <ContentCopyOutlined fontSize="inherit" />
+                                                    </Tooltip>
+                                                </IconButton>
+                                            </IdContainer>
+                                        ) : null}
+                                        <Typography variant="body1">
+                                            {!adminMode ||
+                                            matchedRoute.path !== ''
+                                                ? matchedRoute.description
+                                                : matchedRoute.adminDescription}
+                                        </Typography>
+                                    </Stack>
+                                }
+                            >
+                                <Outlet />
+                            </Page>
+                            {/* <form
                                 onSubmit={editApp}
                                 style={{
                                     width: '100%',
@@ -265,7 +521,7 @@ export const AppEditorPanel = (props) => {
                                         </Stack>
                                     </Paper>
                                 </Stack>
-                            </form>
+                            </form> */}
                         </SettingsContext.Provider>
                     </StyledTopLeftContent>
                 </StyledTopLeft>
