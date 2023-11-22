@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef, useMemo, useReducer } from 'react';
 import {
     Button,
     Checkbox,
@@ -53,6 +53,23 @@ const StyledSubmitButton = styled(Button)(() => ({
     minWidth: '128px',
 }));
 
+const initialState = {
+    defaultFields: [],
+    advancedFields: [],
+};
+
+const reducer = (state, action) => {
+    switch (action.type) {
+        case 'field': {
+            return {
+                ...state,
+                [action.field]: action.value,
+            };
+        }
+    }
+    return state;
+};
+
 export const ImportForm = (props) => {
     const { submitFunc, fields } = props;
 
@@ -61,27 +78,82 @@ export const ImportForm = (props) => {
     const { monolithStore, configStore } = useRootStore();
     const navigate = useNavigate();
 
-    const [defaultFields, setDefaultFields] = useState([]);
-    const [advancedFields, setAdvancedFields] = useState([]);
+    const [state, dispatch] = useReducer(reducer, initialState);
+    const { defaultFields, advancedFields } = state;
     const [openAdvanced, setOpenAdvanced] = useState(false);
-
-    const { control, handleSubmit, reset } = useForm({
-        defaultValues: {
-            MODEL: '',
-            // SMSS_PROPERTIES: [],
-        } || { VECTOR: '' },
-    });
     const [formLoading, setFormLoading] = useState(false);
 
+    const watchedFieldRef = useRef({});
+
+    const { control, handleSubmit, reset, watch, setValue } = useForm();
+
+    /** Used to Trigger useEffect anytime these vals change */
+    const fieldsToWatch = useMemo(() => {
+        const f2w = [];
+        for (const f of fields) {
+            if (f.pixel) {
+                const pixelParams = f.pixel.match(/<([^>]+)>/g);
+                if (pixelParams) {
+                    pixelParams.forEach((p) => {
+                        const strippedVal = p.replace(/[<>]/g, '');
+                        f2w.push(strippedVal);
+                    });
+                }
+            }
+            if (f.options.pixel) {
+                const pixelParams = f.options.pixel.match(/<([^>]+)>/g);
+                if (pixelParams) {
+                    pixelParams.forEach((p) => {
+                        const strippedVal = p.replace(/[<>]/g, '');
+                        f2w.push(strippedVal);
+                    });
+                }
+            }
+        }
+        return f2w;
+    }, []);
+
+    /**
+     * Set Form Fields State
+     * 1. Set Default values with react hook form
+     * 2. Splits out Advanced and Default fields
+     */
     useEffect(() => {
         setInitialFieldState();
     }, [steps.length]);
 
     /**
+     * Anytime a watched field changes trigger this
+     * to call the reactor that dependsOn that field
+     */
+    useEffect(() => {
+        console.warn('WATCHED FIELD CHANGED');
+        const destructuredFieldRefs = Object.entries(watchedFieldRef.current);
+
+        if (!destructuredFieldRefs.length) {
+            setNewWatchedFieldReferences();
+            return;
+        } else {
+            // 1. Loop through default fields
+            defaultFields.forEach((f) => {
+                checkFieldParamsAndExecutePixel(f);
+            });
+
+            // 2. Loop through advanced fields
+            advancedFields.forEach((f) => {
+                checkFieldParamsAndExecutePixel(f);
+            });
+
+            // 3. Set Reference of fields for next useEffect so we only call pixels that are affected
+            setNewWatchedFieldReferences();
+        }
+    }, [...fieldsToWatch.map((field) => watch(field))]);
+
+    /**
      * 1. Set Default values for all fields, if default value is present
-     * 2. Set options for fields that use pixel to show dropdown options
-     * 3. If default value depends on another value that is present,
-     * -- set a ref for that and listen for changes to that ref
+     * 2. Field uses a pixel to populate default value,
+     * - a. call that pixel if no dependent param vals are present in pixel
+     * 3. Set options for fields that use pixel to show dropdown options
      */
     const setInitialFieldState = async () => {
         const defaultVals = {};
@@ -90,17 +162,51 @@ export const ImportForm = (props) => {
 
         for (const f of fields) {
             const finalFieldState = f;
+
+            // 1. Set default vals for field
             defaultVals[finalFieldState.fieldName] =
                 finalFieldState.defaultValue;
 
             if (finalFieldState.pixel || finalFieldState.options.pixel) {
                 let pixelToExecute = '';
 
+                // 2. Add to Pixel string for default value
                 if (finalFieldState.pixel) {
-                    pixelToExecute += finalFieldState.pixel;
+                    const pixelParams =
+                        finalFieldState.pixel.match(/<([^>]+)>/g);
+
+                    // 2a. No dependent param vals for pixel
+                    if (!pixelParams) {
+                        pixelToExecute += finalFieldState.pixel;
+                    } else {
+                        if (finalFieldState.advanced) {
+                            advFields.push(finalFieldState);
+                        } else {
+                            defFields.push(finalFieldState);
+                        }
+                        continue;
+                    }
                 }
+
+                // 3. Add to Pixel String to get options for field dropdown
                 if (finalFieldState.options.pixel) {
-                    pixelToExecute += finalFieldState.options.pixel;
+                    const pixelParams =
+                        finalFieldState.options.pixel.match(/<([^>]+)>/g);
+                    if (!pixelParams) {
+                        pixelToExecute += finalFieldState.options.pixel;
+                    } else {
+                        if (finalFieldState.advanced) {
+                            advFields.push(finalFieldState);
+                        } else {
+                            defFields.push(finalFieldState);
+                        }
+                        continue;
+                    }
+                }
+
+                // If no pixel to execute
+                if (!pixelToExecute) {
+                    continue;
                 }
 
                 const result = await monolithStore.runQuery(pixelToExecute);
@@ -116,13 +222,17 @@ export const ImportForm = (props) => {
                 }
 
                 if (finalFieldState.pixel && !finalFieldState.options.pixel) {
-                    console.log('populate default value');
+                    console.log(
+                        `Populating default value for ${finalFieldState.fieldName}`,
+                    );
                     defaultVals[finalFieldState.fieldName] = output;
                 } else if (
                     !finalFieldState.pixel &&
                     finalFieldState.options.pixel
                 ) {
-                    console.log('populate select options');
+                    console.log(
+                        `Populating options for ${finalFieldState.fieldName}`,
+                    );
                     const opts = [];
 
                     output.forEach((opt) => {
@@ -137,7 +247,9 @@ export const ImportForm = (props) => {
                         options: opts,
                     };
                 } else {
-                    console.log('populate default value and select options');
+                    console.log(
+                        `Populating default value and options for ${finalFieldState.fieldName}`,
+                    );
                     defaultVals[finalFieldState.fieldName] = output;
 
                     output = result.pixelReturn[1].output;
@@ -165,10 +277,80 @@ export const ImportForm = (props) => {
             }
         }
 
-        setDefaultFields(defFields);
-        setAdvancedFields(advFields);
+        dispatch({
+            type: 'field',
+            field: 'defaultFields',
+            value: defFields,
+        });
+
+        dispatch({
+            type: 'field',
+            field: 'advancedFields',
+            value: advFields,
+        });
 
         reset(defaultVals);
+    };
+
+    const executeWatchedFieldPixel = async (
+        fieldName,
+        pixel: string,
+        type: 'value' | 'options',
+    ) => {
+        const response = await monolithStore.runQuery(pixel);
+        const output = response.pixelReturn[0].output,
+            operationType = response.pixelReturn[0].operationType;
+
+        if (operationType.indexOf('ERROR') > -1) {
+            notification.add({
+                color: 'error',
+                message: output,
+            });
+            return;
+        }
+
+        if (type === 'value') {
+            setValue(fieldName, output);
+        } else {
+            const output = [
+                { display: 'ERROR: FORMAT OUTPUT VALUES', value: 'ERROR' },
+            ];
+            let defaultFieldIndex = -1;
+            defaultFields.forEach((f, i) => {
+                if (f.fieldName === fieldName) {
+                    defaultFieldIndex = i;
+                }
+            });
+
+            if (defaultFieldIndex > -1) {
+                const copy = defaultFields;
+                copy[defaultFieldIndex].options.options = output;
+
+                dispatch({
+                    type: 'field',
+                    field: 'defaultFields',
+                    value: copy,
+                });
+            }
+
+            let advancedFieldIndex = -1;
+            advancedFields.forEach((f, i) => {
+                if (f.fieldName === fieldName) {
+                    advancedFieldIndex = i;
+                }
+            });
+
+            if (advancedFieldIndex > -1) {
+                const copy = advancedFields;
+                copy[advancedFieldIndex].options.options = output;
+
+                dispatch({
+                    type: 'field',
+                    field: 'advancedFields',
+                    value: copy,
+                });
+            }
+        }
     };
 
     /**
@@ -261,6 +443,103 @@ export const ImportForm = (props) => {
         }
         setFormLoading(false);
     };
+
+    /**
+     * ---------------------------
+     * Helpers -------------------
+     * ---------------------------
+     */
+
+    /**
+     * 1. if f.pixel or fields.options.pixel hold respective pixel as constant to execute where we replace param vals
+     * 2. Loop through fieldsToWatch
+     * -- 2a. if f.pixel.match(<'VALUE'>) replace it with form val
+     * 3. if either of those pixels held as constant has no param blockers this means pixel can be executed
+     * @param f
+     */
+    const checkFieldParamsAndExecutePixel = (f) => {
+        let pixel = f.pixel;
+        let optionsPixel = f.options.pixel;
+
+        if (pixel) {
+            if (hasParameterizedValue(pixel)) {
+                let pixelParamChanged = false;
+                fieldsToWatch.forEach((fieldName) => {
+                    const val = watch(fieldName);
+                    if (
+                        watchedFieldRef.current[fieldName] !== undefined &&
+                        val
+                    ) {
+                        // A watched value changed from what it was before
+                        if (val !== watchedFieldRef.current[fieldName]) {
+                            pixelParamChanged = true;
+                        }
+                        pixel = pixel.replaceAll(`<${fieldName}>`, val);
+                    }
+                });
+
+                // Execute pixel if dependency changed and there aren't any params in string
+                if (!hasParameterizedValue(pixel) && pixelParamChanged) {
+                    executeWatchedFieldPixel(f.fieldName, pixel, 'value');
+                }
+            }
+        }
+
+        if (optionsPixel) {
+            if (hasParameterizedValue(optionsPixel)) {
+                let pixelParamChanged = false;
+                fieldsToWatch.forEach((fieldName) => {
+                    const val = watch(fieldName);
+                    if (
+                        watchedFieldRef.current[fieldName] !== undefined &&
+                        val
+                    ) {
+                        // A watched value changed from what it was before
+                        if (val !== watchedFieldRef.current[fieldName]) {
+                            pixelParamChanged = true;
+                        }
+                        optionsPixel = optionsPixel.replaceAll(
+                            `<${fieldName}>`,
+                            val,
+                        );
+                    }
+                });
+
+                // Execute pixel if dependency changed and there aren't any params in string
+                if (!hasParameterizedValue(optionsPixel) && pixelParamChanged) {
+                    executeWatchedFieldPixel(
+                        f.fieldName,
+                        optionsPixel,
+                        'options',
+                    );
+                }
+            }
+        }
+    };
+
+    /**
+     * Sets new Reference Value of field
+     */
+    const setNewWatchedFieldReferences = () => {
+        fieldsToWatch.forEach((fieldName) => {
+            const val = watch(fieldName);
+
+            watchedFieldRef.current[fieldName] = val;
+        });
+    };
+
+    /**
+     *
+     * @param inputString
+     * @returns
+     */
+    function hasParameterizedValue(inputString) {
+        // Define a regular expression to match any value within "<>"
+        const regex = /<([^>]+)>/;
+
+        // Test if the input string matches the pattern
+        return regex.test(inputString);
+    }
 
     return (
         <form onSubmit={handleSubmit(onSubmit)}>

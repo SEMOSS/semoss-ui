@@ -3439,6 +3439,33 @@ export const CONNECTION_OPTIONS = {
                     //     disabled: false,
                     //     rules: { required: true },
                     // },
+                    // {
+                    //     fieldName: 'TEST_FIELD',
+                    //     label: 'TEST FIELD WITH OPTION REACTOR PARAMS',
+                    //     defaultValue: '',
+                    //     options: {
+                    //         component: 'select',
+                    //         options: [],
+                    //         pixel: `MyEngines ( metaKeys = [] , metaFilters = [{ "tag" : "<NAME>" }] , engineTypes = [ 'MODEL' ] ) ;`,
+                    //     },
+                    //     disabled: false,
+                    //     rules: { required: true },
+                    //     helperText: 'Test',
+                    // },
+                    // {
+                    //     fieldName: 'RAM',
+                    //     label: 'TEST ADVANCED FIELD WITH OPTION PARAMS',
+                    //     defaultValue: '',
+                    //     options: {
+                    //         component: 'select',
+                    //         options: [],
+                    //         pixel: `MyEngines ( metaKeys = [] , metaFilters = [{ "tag" : "<EMBEDDER_ENGINE_ID>" }] , engineTypes = [ 'MODEL' ] ) ;`,
+                    //     },
+                    //     advanced: true,
+                    //     disabled: false,
+                    //     rules: { required: true },
+                    //     helperText: 'Test',
+                    // },
                     {
                         fieldName: 'EMBEDDER_ENGINE_ID',
                         label: 'Embedder',
@@ -3446,7 +3473,6 @@ export const CONNECTION_OPTIONS = {
                         options: {
                             component: 'select',
                             options: [],
-                            // pixel: `MyEngines ( metaKeys = [] , metaFilters = [] , engineTypes = [ 'MODEL' ] ) ;`,
                             pixel: `MyEngines ( metaKeys = [] , metaFilters = [{ "tag" : "embeddings" }] , engineTypes = [ 'MODEL' ] ) ;`,
                         },
                         disabled: false,
@@ -3457,7 +3483,7 @@ export const CONNECTION_OPTIONS = {
                     {
                         fieldName: 'CONTENT_LENGTH',
                         label: 'Content Length',
-                        defaultValue: '512',
+                        defaultValue: '',
                         options: {
                             component: 'text-field',
                         },
@@ -3465,7 +3491,7 @@ export const CONNECTION_OPTIONS = {
                         rules: { required: true },
                         helperText:
                             "The content length represents the upper limit of tokens within a chunk, as determined by the embedder's tokenizer.",
-                        // pixel: `GetModelMaxTokenLength ( engine = "<EMBEDDER_ENGINE_ID>" ) ;`,
+                        pixel: `GetModelMaxTokenLength ( engine = "<EMBEDDER_ENGINE_ID>") ;`,
                     },
                     {
                         fieldName: 'CONTENT_OVERLAP',
@@ -3479,6 +3505,28 @@ export const CONNECTION_OPTIONS = {
                         rules: { required: true },
                         helperText:
                             'The number of tokens from prior chunks that are carried over into the current chunk when processing content.',
+                    },
+                    {
+                        fieldName: 'DISTANCE_METHOD',
+                        label: 'Distance Method',
+                        defaultValue: 'cosine similarity',
+                        options: {
+                            component: 'select',
+                            options: [
+                                {
+                                    display: 'Squared Euclidean (L2) distance',
+                                    value: 'Squared Euclidean (L2) distance',
+                                },
+                                {
+                                    display: 'cosine similarity',
+                                    value: 'cosine similarity',
+                                },
+                            ],
+                        },
+                        disabled: false,
+                        rules: { required: false },
+                        advanced: true,
+                        helperText: '',
                     },
                     {
                         fieldName: 'EMBEDDINGS',
