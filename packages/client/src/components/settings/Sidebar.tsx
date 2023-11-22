@@ -56,8 +56,8 @@ export const Sidebar = ({
     setTemperature,
 }) => {
     const limitTooltipText = `
-    This will change the amount of documents pulled from 
-    a vector database. Pulling too many documents can potentially cause your engines
+    This will change the amount of chunks pulled from 
+    a vector database. Pulling too many chunks can potentially cause your engines
     token limit to be exceeded!
     `;
 
