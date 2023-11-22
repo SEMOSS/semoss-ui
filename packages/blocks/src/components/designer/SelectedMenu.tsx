@@ -138,7 +138,13 @@ export const SelectedMenu = observer(() => {
 
     // ignore if there is no menu
     if (!block) {
-        return <>Select a Block</>;
+        return (
+            <StyledMenuHeader>
+                <Typography variant="body1">
+                    <em>Select a component to configure styling</em>
+                </Typography>
+            </StyledMenuHeader>
+        );
     }
 
     return (

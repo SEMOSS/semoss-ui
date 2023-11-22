@@ -3,11 +3,11 @@ import { observer } from 'mobx-react-lite';
 
 import { DefaultBlocks } from '../block-defaults';
 import { BLOCK_TYPES } from '../block-defaults/block-defaults.constants';
-import { styled, Stack, TextField } from '@semoss/ui';
+import { styled, Stack, TextField, Typography } from '@semoss/ui';
 import { Search } from '@mui/icons-material';
 import { BlocksMenuBlockTypeSection } from './BlocksMenuBlockTypeSection';
 
-const StyledTextFieldContainer = styled('div')(({ theme }) => ({
+const StyledContainer = styled('div')(({ theme }) => ({
     margin: theme.spacing(2),
     padding: `0 ${theme.spacing(2)}`
 }));
@@ -43,7 +43,10 @@ export const BlocksMenu = observer(() => {
 
     return (
         <Stack height="100%">
-            <StyledTextFieldContainer>
+            <StyledContainer>
+                <Typography variant="h6">Components</Typography>
+            </StyledContainer>
+            <StyledContainer>
                 <TextField 
                     fullWidth
                     label="Search"
@@ -55,7 +58,7 @@ export const BlocksMenu = observer(() => {
                     }}
                     onChange={(e) => setSearch(e.target.value)}
                 />
-            </StyledTextFieldContainer>
+            </StyledContainer>
             <StyledBlockSectionContainer>
                 {
                     !!search ? 
