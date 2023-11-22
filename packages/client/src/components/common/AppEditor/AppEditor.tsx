@@ -1049,7 +1049,9 @@ export const AppEditor = (props: AppEditorProps) => {
                                 </Typography>
                                 {hoverSet.has(node.id) && (
                                     <IconButton
-                                        onClick={() => fileDeleteHandler(node)}
+                                        onClick={() =>
+                                            fileDeleteHandler(nodes, node)
+                                        }
                                         size="small"
                                     >
                                         <DeleteOutline
@@ -1072,9 +1074,10 @@ export const AppEditor = (props: AppEditorProps) => {
         });
     };
 
-    const fileDeleteHandler = (node) => {
-        alert(`delete ${node.name}`);
-        console.log({ node });
+    const fileDeleteHandler = (nodes, targetNode) => {
+        // remove the node from the ui -- working
+        removeNodeById(nodes, targetNode.id);
+        // run the reactor to delete the node -- needed
     };
 
     return (
