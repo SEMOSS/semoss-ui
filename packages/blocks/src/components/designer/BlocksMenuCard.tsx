@@ -6,10 +6,14 @@ import { ActionMessages, BlockConfig, BlockJSON } from '@/stores';
 import { useDesigner } from '@/hooks';
 import { BlocksMenuCardContent } from './BlocksMenuCardContent';
 
-const StyledCard = styled(Card)(() => ({
+const StyledCard = styled(Card, {
+    shouldForwardProp: (prop) => prop !== 'isDragging'
+})<{
+    isDragging: boolean
+}>(({ isDragging }) => ({
     borderRadius: '8px',
     boxShadow: '0px 5px 22px 0px rgba(0, 0, 0, 0.06)',
-    cursor: 'grab'
+    cursor: isDragging ? 'grabbing' : 'grab'
 }));
 
 export const BlocksMenuCard = observer((props: {
@@ -126,7 +130,10 @@ export const BlocksMenuCard = observer((props: {
     }, [designer.drag.active, local, handleDocumentMouseUp]);
 
     return (
-        <StyledCard onMouseDown={handleMouseDown}>
+        <StyledCard 
+            isDragging={!!designer.drag.ghostWidget}
+            onMouseDown={handleMouseDown}
+        >
             <BlocksMenuCardContent
                 widget={props.block.widget}
                 icon={props.block.icon}

@@ -1,6 +1,7 @@
+import { observer } from 'mobx-react-lite';
 import { styled, Stack, Icon, Divider, Paper, Modal } from '@semoss/ui';
 import { DataObject, Layers, Visibility, Widgets } from '@mui/icons-material';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 
 import { DesignerContext } from '@/contexts';
 import { DesignerStore } from '@/stores';
@@ -116,7 +117,7 @@ interface DesignerProps {
     designer: DesignerStore;
 }
 
-export const Designer = (props: DesignerProps) => {
+export const Designer = observer((props: DesignerProps): JSX.Element => {
     const { children, designer } = props;
 
     // view
@@ -222,4 +223,4 @@ export const Designer = (props: DesignerProps) => {
             </StyledDesignerContainer>
         </DesignerContext.Provider>
     );
-};
+});
