@@ -908,6 +908,10 @@ export const AppEditor = (props: AppEditorProps) => {
     const renderTreeNodes = (nodes) => {
         return nodes.map((node, i) => {
             // 1. New nodes that need a name
+
+            // stop blank space from rendering in empty folders
+            if (node.name.length < 1 && !node.id.includes('<>')) return;
+
             if (node.name === '' && node.id.includes('<>')) {
                 if (!node.id) return <></>; // empty directory
 
