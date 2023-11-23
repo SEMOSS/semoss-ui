@@ -23,7 +23,6 @@ export const config: BlockConfig<FileUploadBlockDef> = {
     data: {
         style: {
             width: '100%',
-            height: '100%',
             fontSize: '1rem',
             border: '3px solid black',
             borderRadius: '8px',
@@ -47,13 +46,23 @@ export const config: BlockConfig<FileUploadBlockDef> = {
                 {
                     description: 'The name of the File uploaded',
                     render: ({ id }) => (
-                        <InputSettings id={id} label="Name" path="name.path" />
+                        <InputSettings
+                            id={id}
+                            label="Name"
+                            path="name.path"
+                            disabled={true}
+                        />
                     ),
                 },
                 {
                     description: 'The type of the File uploaded',
                     render: ({ id }) => (
-                        <InputSettings id={id} label="Type" path="name.type" />
+                        <InputSettings
+                            id={id}
+                            label="Type"
+                            path="name.type"
+                            disabled={true}
+                        />
                     ),
                 },
             ],

@@ -30,6 +30,11 @@ interface InputSettingsProps<D extends BlockDef = BlockDef> {
      * Path to update
      */
     path: Paths<Block<D>['data'], 4>;
+
+    /**
+     //? Optional: A disabled prop to disable the input
+     */
+    disabled?: boolean;
 }
 
 const StyledLabel = styled(Typography)(({ theme }) => ({
@@ -41,6 +46,7 @@ export const InputSettings = observer(
         id,
         label = '',
         path,
+        disabled,
     }: InputSettingsProps<D>) => {
         const { data, setData } = useBlockSettings(id);
 
@@ -123,6 +129,7 @@ export const InputSettings = observer(
                         variant="outlined"
                         fullWidth={true}
                         autoComplete="off"
+                        disabled={disabled}
                     />
                 </Stack>
             </Stack>
