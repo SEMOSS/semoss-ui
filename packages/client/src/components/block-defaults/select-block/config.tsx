@@ -20,9 +20,9 @@ export const config: BlockConfig<SelectBlockDef> = {
     data: {
         style: {},
         type: [],
+        label: '',
+        options: [{ label: '', value: '' }],
         value: '',
-        label: [''],
-        options: [],
     },
     listeners: {
         onChange: [],

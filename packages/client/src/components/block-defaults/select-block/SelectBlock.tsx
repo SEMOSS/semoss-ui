@@ -12,7 +12,7 @@ export interface SelectBlockDef extends BlockDef<'select'> {
     data: {
         style: CSSProperties;
         type: string[];
-        label: string[];
+        label: string;
         options: { label: string; value: string }[];
         value: string;
     };
@@ -30,7 +30,6 @@ export const SelectBlock: BlockComponent = observer(({ id }) => {
     );
     useEffect(() => {
         if (enginesStatus === 'SUCCESS' && Array.isArray(enginesData)) {
-            //* checking to verify enginesData is an array of engine names
             const newOptions = enginesData.map((engine) => {
                 return {
                     label: engine,
@@ -39,24 +38,49 @@ export const SelectBlock: BlockComponent = observer(({ id }) => {
             });
             setData('options', newOptions);
 
-            // Log the first model and vector if available
-            if (newOptions.length > 0) {
+            /* if (newOptions.length > 0) {
                 console.log('First Model:', newOptions[0].label);
+                console.log('Model Type:', newOptions[0].label.app_type);
+                console.log('Model Engine:', newOptions[0].label.app_name);
                 if (newOptions.length > 1) {
                     console.log('First Vector:', newOptions[1].label);
+                    console.log('Vector Type:', newOptions[1].label.app_type);
+                    console.log(
+                        'Vector Engine:',
+                        newOptions[1].label.app_subtype,
+                    );
                 }
-            }
+            } */
         }
     }, [enginesData, enginesStatus, setData]);
+
+    // console.log('Users Models & Engines:', data);
+    // console.log('Options JSON Object:', data.options);
+    // console.log('Vector DB Labels:', data.options[1].label.app_type);
+    // console.log('Vector DB Labels:', data.options[1].label.app_subtype);
+    // console.log('Options - Model Type:', data.options[0].options.app_type);
+    // console.log('Options - Model Engine:', data.options[0].options.app_name);
+    // console.log('Options - Vector Type:', data.options[1].options.app_type);
+    // console.log('Options - Vector Engine:', data.options[1].options.app_subtype,);
 
     const selectedOption =
         data.options.find((option) => option.value === data.value) || null;
 
+    const modelType = data.options[0].label.app_type;
+    const modelName = data.options[0].label.app_name;
+
+    //  console.log(
+    //      'Models Labels:',
+    //      data.options[0],
+    //      data.options[0].label.app_type,
+    //      data.options[0].label.app_name,
+    //  );
+
     return (
         <Autocomplete
             disableClearable
-            options={data.options || []}
-            value={selectedOption}
+            options={modelType || []}
+            value={selectedOption || null}
             isOptionEqualToValue={(option, value) =>
                 option.value === value.value
             }
@@ -64,7 +88,7 @@ export const SelectBlock: BlockComponent = observer(({ id }) => {
                 setData('value', newValue ? newValue.value : '')
             }
             renderInput={(params) => (
-                <TextField {...params} label={data.label} variant="outlined" />
+                <TextField {...params} label={modelName} variant="outlined" />
             )}
             {...attrs}
         />
