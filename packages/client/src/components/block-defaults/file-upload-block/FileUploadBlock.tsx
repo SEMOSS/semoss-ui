@@ -1,7 +1,11 @@
+//! FILE IMPORTS
+//* State Management & Helpers
+import { BlockDef, BlockComponent } from '@/stores';
 import { CSSProperties } from 'react';
 import { observer } from 'mobx-react-lite';
+
+//* Hooks
 import { useBlock } from '@/hooks';
-import { BlockDef, BlockComponent } from '@/stores';
 
 export interface FileUploadBlockDef extends BlockDef<'file-upload'> {
     widget: 'file-upload';
@@ -9,19 +13,25 @@ export interface FileUploadBlockDef extends BlockDef<'file-upload'> {
         style: CSSProperties;
         name: {
             path: string | null;
+            type: string | null;
         };
     };
     slots: never;
 }
 
 export const FileUploadBlock: BlockComponent = observer(({ id }) => {
+    //* Get the block data
     const { attrs, data, setData } = useBlock<FileUploadBlockDef>(id);
 
     const handleFileChange = (e) => {
-        if (e.target.files?.length) {
-            const file = e.target.files[0];
+        //* Get the name of uploaded file
+        const file = e.target.files[0];
+
+        //* Check if there is an uploaded file
+        if (e.target.files?.length > 0 && file) {
+            //* Set the data to the block
             setData('name.path', file.name);
-            console.log('Uploaded File Name: ', file.name);
+            setData('name.type', file.type);
         }
     };
 

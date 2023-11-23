@@ -1,11 +1,13 @@
-//* Defining new block configurations
-
+//! FILE IMPORTS
+//* State Management & Helpers
 import { BlockConfig } from '@/stores';
 
-import { FileUploadBlockDef, FileUploadBlock } from './FileUploadBlock';
-
+//* Material UI Components
 import { CloudUpload as CloudUploadIcon } from '@mui/icons-material';
 
+//* UI Blocks & Settings
+import { BLOCK_TYPE_UPLOAD } from '../block-defaults.constants';
+import { FileUploadBlockDef, FileUploadBlock } from './FileUploadBlock';
 import { InputSettings } from '@/components/block-settings';
 import {
     buildLayoutSection,
@@ -17,10 +19,19 @@ import {
 
 export const config: BlockConfig<FileUploadBlockDef> = {
     widget: 'file-upload',
+    type: BLOCK_TYPE_UPLOAD,
     data: {
-        style: {},
+        style: {
+            width: '100%',
+            height: '100%',
+            fontSize: '1rem',
+            border: '3px solid black',
+            borderRadius: '8px',
+            padding: '10px',
+        },
         name: {
-            path: '' || null,
+            path: 'File Name' || null,
+            type: 'File Type' || null,
         },
     },
     listeners: {},
@@ -34,9 +45,15 @@ export const config: BlockConfig<FileUploadBlockDef> = {
             name: 'View File Settings',
             children: [
                 {
-                    description: 'Doc Path',
+                    description: 'The name of the File uploaded',
                     render: ({ id }) => (
                         <InputSettings id={id} label="Name" path="name.path" />
+                    ),
+                },
+                {
+                    description: 'The type of the File uploaded',
+                    render: ({ id }) => (
+                        <InputSettings id={id} label="Type" path="name.type" />
                     ),
                 },
             ],
@@ -47,5 +64,4 @@ export const config: BlockConfig<FileUploadBlockDef> = {
         buildStyleSection(),
         buildTypographySection(),
     ],
-    type: '',
 };
