@@ -14,27 +14,25 @@ import {
 } from '../block-defaults.shared';
 import { BLOCK_TYPE_INPUT } from '../block-defaults.constants';
 
-// export the config for the block
 export const config: BlockConfig<SelectBlockDef> = {
     widget: 'select',
     type: BLOCK_TYPE_INPUT,
     data: {
         style: {},
+        type: [],
         value: '',
-        label: 'Example Select Input',
+        label: [''],
         options: [],
     },
     listeners: {
         onChange: [],
     },
-    slots: {
-        content: [],
-    },
+    slots: {},
     render: SelectBlock,
     icon: ViewList,
     menu: [
         {
-            name: 'Select',
+            name: 'View LLM & Vector DB Settings',
             children: [
                 {
                     description: 'Value',
