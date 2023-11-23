@@ -17,6 +17,10 @@ import {
     MarkdownBlockDef,
 } from './markdown-block';
 import { config as SelectBlockConfig, SelectBlockDef } from './select-block';
+import {
+    config as FileUploadBlockConfig,
+    FileUploadBlockDef,
+} from './file-upload-block';
 
 export type DefaultBlockDefinitions =
     | ButtonBlockDef
@@ -26,7 +30,8 @@ export type DefaultBlockDefinitions =
     | TextBlockDef
     | TextFieldBlockDef
     | MarkdownBlockDef
-    | SelectBlockDef;
+    | SelectBlockDef
+    | FileUploadBlockDef;
 
 export const DefaultBlocks: Registry<DefaultBlockDefinitions> = {
     [PageBlockConfig.widget]: PageBlockConfig,
@@ -37,4 +42,5 @@ export const DefaultBlocks: Registry<DefaultBlockDefinitions> = {
     [SelectBlockConfig.widget]: SelectBlockConfig,
     [InputBlockConfig.widget]: InputBlockConfig,
     [ButtonBlockConfig.widget]: ButtonBlockConfig,
+    [FileUploadBlockConfig.widget]: FileUploadBlockConfig,
 };

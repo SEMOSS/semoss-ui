@@ -1,5 +1,5 @@
 import { ActionMessages, Query, StateStore } from '@/stores';
-import { BlocksBuilder as DesignerPage } from '@semoss/blocks';
+import { BlocksBuilder as DesignerPage } from '@semoss/blocks/src/BlocksBuilder';
 import { styled } from '@semoss/ui';
 import { runPixel } from '@/api';
 
@@ -28,6 +28,7 @@ export const DesignPage = () => {
                     queries={StateStore.queries}
                     run={(pixel: string) => runPixel('', pixel)}
                     editMode={true}
+                    customBlocks={undefined}
                 />
             </StyledContent>
         </StyledViewport>
