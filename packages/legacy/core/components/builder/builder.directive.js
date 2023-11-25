@@ -147,13 +147,13 @@ function builderDirective(
                         value: output[i].app_id,
                         type: output[i].app_type,
                         disable:
-                            !CONNECTORS[output[i].app_type] ||
-                            CONNECTORS[output[i].app_type].type !== 'RDBMS',
+                            !CONNECTORS[output[i].app_subtype] ||
+                            CONNECTORS[output[i].app_subtype].type !== 'RDBMS',
                         image: semossCoreService.app.generateDatabaseImageURL(
                             output[i].app_id
                         ),
-                        secondaryImage: CONNECTORS[output[i].app_type]
-                            ? CONNECTORS[output[i].app_type].image
+                        secondaryImage: CONNECTORS[output[i].app_subtype]
+                            ? CONNECTORS[output[i].app_subtype].image
                             : '',
                     });
 
