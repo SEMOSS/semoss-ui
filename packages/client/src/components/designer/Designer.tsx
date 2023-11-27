@@ -6,7 +6,7 @@ import { DesignerContext } from '@/contexts';
 import { DesignerStore } from '@/stores';
 
 import { Overlay } from './Overlay';
-import { AddMenu } from './AddMenu';
+import { BlocksMenu } from './BlocksMenu';
 import { SelectedMenu } from './SelectedMenu';
 import { OutlineMenu } from './OutlineMenu';
 import { QueryMenu } from './QueryMenu';
@@ -160,7 +160,7 @@ export const Designer = (props: DesignerProps) => {
                             <StyledSidebarContentInner>
                                 {view === 'outline' ? <OutlineMenu /> : null}
                                 {view === 'query' ? <QueryMenu /> : null}
-                                {view === 'add' ? <AddMenu /> : null}
+                                {view === 'add' ? <BlocksMenu /> : null}
                             </StyledSidebarContentInner>
                         </StyledSidebarContent>
                     ) : null}
