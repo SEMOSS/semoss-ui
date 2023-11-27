@@ -4,6 +4,7 @@ import {
     JsonSettings,
     ListenerSettings,
 } from '@/components/block-settings';
+import { TextAlignSettings } from '../block-settings/TextAlignSettings';
 
 /**
  * Build the Editor Section
