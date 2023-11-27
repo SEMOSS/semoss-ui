@@ -1,13 +1,13 @@
 import { createContext } from 'react';
 
-import { Role } from '@/types';
+import { Role, ENGINE_TYPES } from '@/types';
 
 /**
  * Value
  */
 export type EngineContextType = {
-    /** Engine Type */
-    type: 'database' | 'model' | 'storage';
+    /** Type of the engine */
+    type: ENGINE_TYPES;
 
     /** ID of the engine to load */
     id: string;
@@ -18,8 +18,11 @@ export type EngineContextType = {
     /** refreshes meta vals for engine */
     refresh: () => void;
 
+    /** Name of the engine */
+    name: string;
+
     /** metavals to show on detail pages */
-    metaVals: any;
+    metaVals: Record<string, unknown>;
 };
 
 /**

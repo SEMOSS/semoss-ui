@@ -6,9 +6,7 @@ import { runPixel } from '@/api';
 interface ConfigStoreInterface {
     /** Status of the application */
     status: 'INITIALIZING' | 'MISSING AUTHENTICATION' | 'SUCCESS' | 'ERROR';
-    /** Mark if security is on */
-    security: boolean;
-    /** Mark if the store is authenticated (security on and user is logged in or anonymous) */
+    /** Mark if the store is authenticated (user is logged in) */
     authenticated: boolean;
     /** InsightID to run actions against */
     insightID: string;
@@ -51,6 +49,10 @@ interface ConfigStoreInterface {
             metakey: string;
         }[];
         providers: string[];
+        version: {
+            datetime: string;
+            version: string;
+        };
         [key: string]: unknown;
     };
 }
@@ -62,7 +64,6 @@ export class ConfigStore {
     private _root: RootStore;
     private _store: ConfigStoreInterface = {
         status: 'INITIALIZING',
-        security: false,
         authenticated: false,
         insightID: '',
         user: {
@@ -76,6 +77,10 @@ export class ConfigStore {
             databaseMetaKeys: [],
             projectMetaKeys: [],
             providers: [],
+            version: {
+                version: '',
+                datetime: '',
+            },
         },
     };
 
@@ -85,9 +90,6 @@ export class ConfigStore {
 
         // make it observable
         makeAutoObservable(this);
-
-        // initialize the store
-        this.initialize();
     }
 
     // *********************************************************
@@ -106,7 +108,7 @@ export class ConfigStore {
     /**
      * Initialize the data
      */
-    private async initialize(): Promise<void> {
+    async initialize(): Promise<void> {
         // set the config
         await this.setConfig();
 
@@ -133,9 +135,6 @@ export class ConfigStore {
             const data = await monolithStore.config();
 
             runInAction(() => {
-                // set the security
-                this._store.security = data.security;
-
                 // set the user information
                 if (Object.keys(data.logins).length > 0) {
                     this._store.user.loggedIn = true;
@@ -167,7 +166,7 @@ export class ConfigStore {
                     );
                 }
 
-                if (this._store.security && !this._store.user.loggedIn) {
+                if (!this._store.user.loggedIn) {
                     this._store.status = 'MISSING AUTHENTICATION';
                     return;
                 }

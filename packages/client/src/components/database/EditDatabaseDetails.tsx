@@ -12,7 +12,7 @@ import {
 import { useForm, Controller } from 'react-hook-form';
 import { observer } from 'mobx-react-lite';
 
-import { usePixel, useRootStore, useDatabase } from '@/hooks';
+import { usePixel, useRootStore, useEngine } from '@/hooks';
 import { MarkdownEditor } from '@/components/common';
 
 const StyledEditorContainer = styled('div')(({ theme }) => ({
@@ -73,8 +73,8 @@ export const EditDatabaseDetails = observer(
                 return Object.prototype.hasOwnProperty.call(values, k.metakey);
             });
 
-        // get the database information
-        const { id } = useDatabase();
+        // get the engine information
+        const { id } = useEngine();
 
         // track the options
         const [filterOptions, setFilterOptions] = useState<

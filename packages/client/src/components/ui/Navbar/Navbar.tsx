@@ -1,33 +1,21 @@
 import { ReactNode, useState } from 'react';
 import { Link } from 'react-router-dom';
-
+import { AccountCircle, Logout } from '@mui/icons-material';
 import {
+    Avatar,
     Button,
     styled,
     Stack,
-    Icon,
-    Divider,
     List,
     Popover,
-    Menu,
     Typography,
+    IconButton,
 } from '@semoss/ui';
 
 import { useRootStore } from '@/hooks';
-import {
-    AccountCircle,
-    Settings,
-    Inventory2Outlined,
-    LibraryBooksOutlined,
-    Logout,
-    SmartToyOutlined,
-} from '@mui/icons-material';
-
 import { THEME } from '@/constants';
-import { Database } from '@/assets/img/Database';
 
 const NAV_HEIGHT = '48px';
-const SIDEBAR_WIDTH = '56px';
 
 const StyledHeader = styled('div')(({ theme }) => ({
     position: 'absolute',
@@ -61,111 +49,102 @@ const StyledHeaderLogo = styled(Link)(({ theme }) => ({
     },
 }));
 
-const StyledHeaderLogout = styled('div')(({ theme }) => ({
-    display: 'flex',
-    flexDirection: 'column',
-    alignItems: 'center',
-    justifyContent: 'center',
-    color: 'inherit',
-    textDecoration: 'none',
-    height: NAV_HEIGHT,
-    width: SIDEBAR_WIDTH,
-    cursor: 'pointer',
-    backgroundColor: theme.palette.common.black,
-    '&:hover': {
-        backgroundColor: `rgba(255, 255, 255, ${theme.palette.action.hoverOpacity})`,
-    },
+const StyledHeaderLogoImg = styled('img')(({ theme }) => ({
+    width: theme.spacing(3),
+    filter: 'brightness(0) invert(1)', // convert to white
 }));
 
-const StyledLogoutContainer = styled('div')(({ theme }) => ({
-    display: 'flex',
-    flexDirection: 'row',
-    gap: theme.spacing(2),
-}));
-
-const StyledIDContainer = styled('div')(({ theme }) => ({
+const StyledTypography = styled(Typography)(({ theme }) => ({
     maxWidth: theme.spacing(15),
-    display: 'flex',
-    alignItems: 'center',
 }));
 
 export interface NavbarProps {
+    /** Content to add to the Navbar */
     children?: ReactNode;
 }
 
 export const Navbar = (props: NavbarProps) => {
     const { children } = props;
 
-    const { configStore, monolithStore } = useRootStore();
-    const [anchorEl, setAnchorEl] = useState<HTMLElement | null>(null);
+    const { configStore } = useRootStore();
+    const [popoverAnchorEle, setPopoverAnchorEl] = useState<HTMLElement | null>(
+        null,
+    );
 
-    const handlePopoverOpen = (event: React.MouseEvent<HTMLElement>) => {
-        if (anchorEl) {
-            setAnchorEl(null);
-        } else {
-            setAnchorEl(event.currentTarget);
-        }
-    };
+    // track if the popover is open
+    const isPopoverOpen = Boolean(popoverAnchorEle);
 
-    const logout = async () => {
-        configStore.logout();
-    };
     return (
         <StyledHeader>
             <StyledHeaderLogo to={'/'}>
-                {THEME.logo ? <img src={THEME.logo} /> : null}
+                {THEME.logo ? <StyledHeaderLogoImg src={THEME.logo} /> : null}
                 {THEME.name}
             </StyledHeaderLogo>
             <Stack flex={1}>{children}</Stack>
-            <StyledHeaderLogout
-                onClick={(event) => {
-                    handlePopoverOpen(event);
+            <IconButton
+                size="large"
+                color="inherit"
+                onClick={(e) => {
+                    setPopoverAnchorEl(e.currentTarget);
                 }}
             >
-                <Icon>
-                    <AccountCircle />
-                </Icon>
+                <AccountCircle />
+            </IconButton>
 
-                <Popover
-                    id="logout-popover"
-                    sx={{ mt: '45px' }}
-                    open={Boolean(anchorEl)}
-                    anchorEl={anchorEl}
-                    anchorOrigin={{
-                        vertical: 'top',
-                        horizontal: 'right',
-                    }}
-                >
-                    <List>
-                        <List.Item>
-                            <StyledLogoutContainer>
-                                <StyledIDContainer>
-                                    <Typography
-                                        variant={'body1'}
-                                        sx={{
-                                            overflow: 'hidden',
-                                            whiteSpace: 'nowrap',
-                                            textOverflow: 'ellipsis',
-                                        }}
-                                    >
-                                        {configStore.store.user.id}
-                                    </Typography>
-                                </StyledIDContainer>
-                                <Button
-                                    variant={'contained'}
-                                    onClick={() => {
-                                        logout();
-                                    }}
-                                    sx={{ display: 'flex', gap: '8px' }}
-                                >
-                                    Logout
-                                    <Logout />
-                                </Button>
-                            </StyledLogoutContainer>
-                        </List.Item>
-                    </List>
-                </Popover>
-            </StyledHeaderLogout>
+            <Popover
+                id="logout-popover"
+                anchorEl={popoverAnchorEle}
+                anchorOrigin={{
+                    vertical: 'bottom',
+                    horizontal: 'right',
+                }}
+                open={isPopoverOpen}
+                onClose={() => setPopoverAnchorEl(null)}
+            >
+                <List>
+                    <List.Item>
+                        <Stack
+                            direction="row"
+                            alignItems={'center'}
+                            spacing={1}
+                        >
+                            {configStore.store.user.name ? (
+                                <Avatar>
+                                    {configStore.store.user.name[0]}
+                                </Avatar>
+                            ) : null}
+
+                            <StyledTypography variant={'body1'} noWrap={true}>
+                                {configStore.store.user.name}
+                            </StyledTypography>
+                        </Stack>
+                    </List.Item>
+                    <List.Item>
+                        <Stack alignItems={'center'} width={'100%'}>
+                            <Button
+                                variant={'contained'}
+                                onClick={() => {
+                                    configStore.logout();
+                                }}
+                                endIcon={<Logout />}
+                            >
+                                Logout
+                            </Button>
+                        </Stack>
+                    </List.Item>
+                    <List.Item>
+                        <Stack alignItems={'center'} width={'100%'}>
+                            <Typography variant={'caption'} noWrap={true}>
+                                {configStore.store.config.version.version}
+                            </Typography>
+
+                            <Typography variant={'caption'} noWrap={true}>
+                                {configStore.store.config.version.datetime}
+                            </Typography>
+                        </Stack>
+                    </List.Item>
+                </List>
+            </Popover>
         </StyledHeader>
     );
 };

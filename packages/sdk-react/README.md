@@ -1,11 +1,10 @@
-# @semoss\sdk
+# @semoss\sdk-react
 
 @semoss\sdk-react is a small react package that accelerates the process of building an deploying an app.
 
 ## Getting Started:
 
-First, install the sdk using a package manager:
-
+First, install the sdk using a package manager (or your favorite cdn):
 ```sh
 npm install @semoss/sdk-react
 ```
@@ -39,7 +38,8 @@ const Child = (props) => {
     const {
         /** Track if it is initialized **/
         isInitialized,
-        /** Track if the user is authorized **/ isAuthorized,
+        /** Track if the user is authorized **/
+        isAuthorized,
         /** Any Insight Errors **/
         error,
         /** System information **/
@@ -48,7 +48,7 @@ const Child = (props) => {
         actions,
     } = useInsight();
 
-    return <InsightProvider>{children}</InsightProvider>;
+    return <div>{children}</div>;
 };
 ```
 
@@ -58,7 +58,7 @@ Now you are ready to go. You can do things like
 
 ```js
 const login = (username, password) => {
-    const success = await insight.actions.login({
+    const success = await actions.login({
         type: 'native',
         username: username,
         password: password,
@@ -68,7 +68,7 @@ const login = (username, password) => {
 };
 
 const logout = (username, password) => {
-    const success = await insight.actions.logout();
+    const success = await actions.logout();
 
     console.log(success);
 };
@@ -78,13 +78,10 @@ const logout = (username, password) => {
 
 ```js
 const ask = (question) => {
-    const { pixelReturn } = await insight.actions.run(
-        `LLM(engine=["${ENGINE}"], command=["<encode>${question}</encode>"]);`,
-    );
+    const { output } = await actions.askModel(MODEL_ID, question);
 
-    // get the message
-    const message = pixelReturn[0].output.response;
-    console.log(message);
+    // log the output
+    console.log(output);
 };
 ```
 
@@ -92,14 +89,13 @@ const ask = (question) => {
 
 ```js
 const getMovies = () => {
-    const { pixelReturn } = await insight.actions.query(
-        `Database(engine=["${ENGINE}"]) | Query("select * from movie") | Collect(10)`,
+    const { output } = await actions.queryDatabase(
+        DATABASE_ID,
+        'select * from movie',
     );
 
-    // get the data
-    const data = pixelReturn[0].output;
-
-    console.log(data);
+    // log the output
+    console.log(output);
 };
 ```
 
@@ -107,43 +103,38 @@ const getMovies = () => {
 
 ```js
 const sum = (num1, num2) => {
-    const { pixelReturn } = await insight.actions.runPy(`${num1} + ${num2}`);
+    const { output } = await actions.runPy(`${num1} + ${num2}`);
 
-    // get the data
-    const data = pixelReturn[0].output;
+    // log the output
+    console.log(output);
+};
+```
 
-    console.log(data);
+-   Upload a File
+
+```js
+const upload = (file, path) => {
+    const { output } = await actions.upload(file, path);
+
+    // log the output
+    console.log(output);
+};
+```
+
+-   Download a File
+
+```js
+const download = (path) => {
+    const { output } = await actions.download(path);
+
+    // log the output
+    console.log(output);
 };
 ```
 
 ## Tips and Tricks
 
 Here are a few tips and tricks that can help streamline the development process.
-
-### Development Environment
-
-> Note: We recommend manually setting the environment only in `development` mode.
-
-You can setup a development environment and use access keys to authenticate with the app server. Generate the keys on the server and then update the `Env` module. See:
-
-```js
-// import the module
-import { Env } from '@semoss/sdk';
-
-// update the environment
-if (process.env.NODE_ENV !== 'production') {
-    Env.update({
-        // url pointing to the app server
-        MODULE: '',
-        // access key generated on the app server
-        ACCESS_KEY: '',
-        // secret key generated on the app server
-        SECRET_KEY: '',
-    });
-}
-```
-
-> Note: Please **do not** commit your keys. Instead externalize your keys to a `.env` and load them in as environment variables during development
 
 ### Development Environment
 
@@ -195,11 +186,8 @@ def sayHello(name):
 Set the option on initialize:
 
 ```js
-// import the module
-import { Env } from '@semoss/sdk';
-
 // update the environment
-insight.initialize({
+initialize({
     python: {
         /**
          *  Load the python via an external file
@@ -219,19 +207,9 @@ insight.initialize({
 
 2. Loading via `js`
 
-The sdk will load `python` via an external file.
-
-```py
-# ./hello.py
-
-```
-
 Set the option on initialize:
 
 ```js
-// import the module
-import { Env } from '@semoss/sdk';
-
 // define it int he js
 const py = `
 def sayHello(name):
@@ -239,7 +217,7 @@ def sayHello(name):
 `;
 
 // update the environment
-insight.initialize({
+initialize({
     python: {
         /**
          *  Load the python via js
@@ -261,13 +239,11 @@ Next you can the preloaded `python` methods by calling the `runPy` action. See
 
 ```js
 const hello = (name) => {
-    const { pixelReturn } = await insight.actions.runPy(
+    const { output } = await actions.runPy(
         `smss.sayHello(${name})`,
     );
 
-    // get the data
-    const data = pixelReturn[0].output;
-
-    console.log(data);
+    // log the output
+    console.log(output);
 };
 ```

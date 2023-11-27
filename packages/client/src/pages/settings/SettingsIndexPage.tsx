@@ -27,6 +27,9 @@ import { ModelBrain } from '@/assets/img/ModelBrain';
 import { PaintRounded } from '@/assets/img/PaintRounded';
 import { PersonRounded } from '@/assets/img/PersonRounded';
 import { SEMOSS } from '@/assets/img/SEMOSS';
+import { Function } from '@/assets/img/Function';
+import { Vector } from '@/assets/img/Vector';
+
 import { useSettings } from '@/hooks';
 
 import { SETTINGS_ROUTES } from './settings.constants';
@@ -88,6 +91,8 @@ const IconMapper = {
     ),
     'Storage Settings': <ArchiveBox />,
     'App Settings': <Folder />,
+    'Vector Settings': <Vector />,
+    'Function Settings': <Function />,
     'Insight Settings': <SEMOSS />,
     'Member Settings': <Group />,
     Configuration: <Construction />,

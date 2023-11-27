@@ -1,0 +1,25 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "type": "node",
+            "request": "launch",
+            "name": "Init",
+            "skipFiles": ["<node_internals>/**"],
+            "cwd": "${workspaceFolder}/test/",
+            "program": "${workspaceFolder}/bin/run.js",
+            "args": ["init", "-n=test", "-e=.env.local"],
+            "outputCapture": "std"
+        },
+        {
+            "type": "node",
+            "request": "launch",
+            "name": "Deploy",
+            "skipFiles": ["<node_internals>/**"],
+            "cwd": "${workspaceFolder}/test/",
+            "program": "${workspaceFolder}/bin/run.js",
+            "args": ["deploy", "-e=.env.local"],
+            "outputCapture": "std"
+        }
+    ]
+}

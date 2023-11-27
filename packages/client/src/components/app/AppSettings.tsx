@@ -18,6 +18,7 @@ import {
     Cached,
     PublishedWithChanges,
     InsertLink,
+    Publish,
 } from '@mui/icons-material';
 
 import { usePixel, useRootStore } from '@/hooks';
@@ -110,7 +111,13 @@ const StyledSubRow = styled('div')({
     alignItems: 'center',
     alignContent: 'center',
     width: '100%',
-    margin: '10px 0',
+    margin: '4px 0 8px 0',
+    '.MuiTypography-body2': {
+        marginLeft: '32px',
+    },
+    '.MuiFormControl-root': {
+        marginLeft: '32px',
+    },
 });
 
 const StyledSubHeaderContainer = styled('div')(({ theme }) => ({
@@ -135,6 +142,10 @@ const StyledLeftActionDiv = styled('div')({
     justifyContent: 'center',
 });
 
+const StyledTypography = styled(Typography)({
+    fontWeight: '500',
+});
+
 const StyledActionDivLeft = styled('div')(({ theme }) => ({
     display: 'flex',
     paddingRight: theme.spacing(3),
@@ -157,11 +168,18 @@ const StyledSwitchIcon = styled(ToggleOff)(({ theme }) => ({
     alignItems: 'flex-start',
     marginRight: theme.spacing(1),
 }));
+const StyledPublishIcon = styled(Publish)(({ theme }) => ({
+    display: 'flex',
+    alignItems: 'flex-start',
+    marginRight: theme.spacing(1),
+    color: 'rgba(0, 0, 0, .5)',
+}));
 
 const StyledRefreshIcon = styled(Cached)(({ theme }) => ({
     display: 'flex',
     alignItems: 'flex-start',
     marginRight: theme.spacing(1),
+    color: 'rgba(0, 0, 0, .5)',
 }));
 
 const StyledCardRight = styled('div')(() => ({
@@ -178,7 +196,7 @@ const StyledTable = styled(Table)(({ theme }) => ({
 
 const StyledPaper = styled(Paper)(({ theme }) => ({
     backgroundColor: theme.palette.background.paper,
-    padding: theme.spacing(1),
+    padding: theme.spacing(2),
 }));
 
 // User Table
@@ -202,17 +220,6 @@ export const AppSettings = (props: AppSettingsProps) => {
 
     const admin = configStore.store.user.admin;
 
-    //states on initial load
-    const [portalLink, setPortalLink] = useState<string>('');
-    const [reactors, setReactors] = useState([]);
-    const [user, setUser] = useState<User>({
-        id: '',
-        name: '',
-        date: '',
-        time: '',
-    });
-    const [enablePublish, setEnablePublish] = useState(false);
-
     const [portalReactors, setPortalReactors] = useState<{
         reactors: string[];
         lastCompiled?: string;
@@ -224,23 +231,29 @@ export const AppSettings = (props: AppSettingsProps) => {
     });
 
     const [portalDetails, setPortalDetails] = useState<{
-        url: string;
-        isPublished: boolean;
+        url?: string;
         hasPortal?: boolean;
+        // isPublished: boolean;
+        project_has_portal: boolean;
+        project_portal_url?: string;
         lastCompiled?: string;
         compiledBy?: string;
     }>({
         url: '',
-        isPublished: false,
         hasPortal: false,
+        // isPublished: false,
+        project_has_portal: false,
+        project_portal_url: '',
         lastCompiled: '12/25/2022',
         compiledBy: 'J.Smith',
     });
 
     const getPortalDetails = usePixel<{
-        url: string;
-        isPublished: boolean;
+        url?: string;
         hasPortal?: boolean;
+        // isPublished: boolean;
+        project_has_portal: boolean;
+        project_portal_url?: string;
         lastCompiled?: string;
         compiledBy?: string;
     }>(`
@@ -255,13 +268,12 @@ export const AppSettings = (props: AppSettingsProps) => {
         // Set Details for Portal
         setPortalDetails({
             ...getPortalDetails.data,
-            // hasPortal: true
         });
 
         // Get the portal reactors if we have a portal
-        // if (getPortalDetails.data.isPublished) {
-        getPortalReactors();
-        // }
+        if (getPortalDetails.data.project_has_portal) {
+            getPortalReactors();
+        }
     }, [getPortalDetails.status, getPortalDetails.data]);
 
     /** LOADING */
@@ -372,7 +384,7 @@ export const AppSettings = (props: AppSettingsProps) => {
 
                 setPortalDetails({
                     ...portalDetails,
-                    url: output,
+                    project_portal_url: output,
                 });
 
                 notification.add({
@@ -393,18 +405,29 @@ export const AppSettings = (props: AppSettingsProps) => {
      */
     const enablePublishing = () => {
         monolithStore
-            .setProjectPortal(admin, id, !portalDetails.hasPortal)
+            .setProjectPortal(admin, id, !portalDetails.project_has_portal)
             .then((resp) => {
                 if (resp.data) {
                     setPortalDetails({
                         ...portalDetails,
-                        hasPortal: !portalDetails.hasPortal,
+                        project_has_portal: !portalDetails.project_has_portal,
+                    });
+
+                    notification.add({
+                        color: 'success',
+                        message: `Successfully ${
+                            !portalDetails.project_has_portal
+                                ? 'enabled'
+                                : 'disabled'
+                        } portal`,
                     });
                 } else {
                     notification.add({
                         color: 'error',
                         message: `Unsuccessfully ${
-                            !portalDetails.hasPortal ? 'disabled' : 'enabled'
+                            !portalDetails.project_has_portal
+                                ? 'disabled'
+                                : 'enabled'
                         } portal`,
                     });
                 }
@@ -429,14 +452,15 @@ export const AppSettings = (props: AppSettingsProps) => {
                                     alignItems: 'center',
                                 }}
                             >
-                                <StyledSwitchIcon />
-                                <Typography variant="subtitle1">
+                                {/* <StyledSwitchIcon /> */}
+                                <StyledPublishIcon />
+                                <StyledTypography variant="body1">
                                     Enable Publishing
-                                </Typography>
+                                </StyledTypography>
                             </div>
                             <StyledRightSwitch
-                                checked={portalDetails.hasPortal}
-                                value={portalDetails.hasPortal}
+                                checked={portalDetails.project_has_portal}
+                                value={portalDetails.project_has_portal}
                                 onChange={() => {
                                     enablePublishing();
                                 }}
@@ -462,20 +486,19 @@ export const AppSettings = (props: AppSettingsProps) => {
                                     }}
                                 >
                                     <StyledRefreshIcon />
-                                    <Typography variant="subtitle1">
+                                    <StyledTypography variant="body1">
                                         Publish Portal
-                                    </Typography>
+                                    </StyledTypography>
                                 </div>
 
                                 <StyledRightButton
-                                    disabled={!portalDetails.hasPortal}
+                                    disabled={!portalDetails.project_has_portal}
                                     variant="outlined"
                                     onClick={() => {
                                         publish();
                                     }}
                                 >
-                                    <StyledPublishedIcon />
-                                    Publish
+                                    {/* <StyledPublishedIcon /> */}Publish
                                 </StyledRightButton>
                             </StyledSubRow>
 
@@ -492,8 +515,8 @@ export const AppSettings = (props: AppSettingsProps) => {
                                     label={'Link'}
                                     variant={'outlined'}
                                     value={
-                                        portalDetails.hasPortal
-                                            ? portalDetails.url
+                                        portalDetails.project_has_portal
+                                            ? portalDetails.project_portal_url
                                             : ''
                                     }
                                     sx={{ width: '100%' }}
@@ -501,8 +524,8 @@ export const AppSettings = (props: AppSettingsProps) => {
                                         startAdornment: <InsertLink />,
                                     }}
                                 >
-                                    {portalDetails.hasPortal
-                                        ? portalDetails.url
+                                    {portalDetails.project_has_portal
+                                        ? portalDetails.project_portal_url
                                         : ''}
                                 </TextField>
                             </StyledSubRow>
@@ -561,8 +584,10 @@ export const AppSettings = (props: AppSettingsProps) => {
                                     </Typography>
 
                                     <StyledRightSwitch
-                                        checked={portalDetails.hasPortal}
-                                        value={portalDetails.hasPortal}
+                                        checked={
+                                            portalDetails.project_has_portal
+                                        }
+                                        value={portalDetails.project_has_portal}
                                         onChange={() => {
                                             enablePublishing();
                                         }}
@@ -588,7 +613,9 @@ export const AppSettings = (props: AppSettingsProps) => {
                                         </Typography>
 
                                         <StyledRightButton
-                                            disabled={!portalDetails.hasPortal}
+                                            disabled={
+                                                !portalDetails.project_has_portal
+                                            }
                                             variant="outlined"
                                             onClick={() => {
                                                 publish();
@@ -605,8 +632,8 @@ export const AppSettings = (props: AppSettingsProps) => {
                                             label={'Link'}
                                             variant={'outlined'}
                                             value={
-                                                portalDetails.hasPortal
-                                                    ? portalDetails.url
+                                                portalDetails.project_has_portal
+                                                    ? portalDetails.project_portal_url
                                                     : ''
                                             }
                                             sx={{ width: '100%' }}
@@ -614,8 +641,8 @@ export const AppSettings = (props: AppSettingsProps) => {
                                                 startAdornment: <InsertLink />,
                                             }}
                                         >
-                                            {portalDetails.hasPortal
-                                                ? portalDetails.url
+                                            {portalDetails.project_has_portal
+                                                ? portalDetails.project_portal_url
                                                 : ''}
                                         </TextField>
                                     </StyledSubRow>

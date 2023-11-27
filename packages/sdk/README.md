@@ -1,10 +1,10 @@
 # @semoss\sdk
 
-@semoss\sdk is a small utility package that accelerates the process of building an deploying an app.
+@semoss\sdk is a small utility package that accelerates the process of building an app.
 
 ## Getting Started:
 
-First, install the sdk using a package manager:
+First, install the sdk using a package manager (or your favorite cdn):
 
 ```sh
 npm install @semoss/sdk
@@ -50,13 +50,10 @@ const logout = (username, password) => {
 
 ```js
 const ask = (question) => {
-    const { pixelReturn } = await insight.actions.run(
-        `LLM(engine=["${ENGINE}"], command=["<encode>${question}</encode>"]);`,
-    );
+    const { output } = await insight.actions.askModel(MODEL_ID, question);
 
-    // get the message
-    const message = pixelReturn[0].output.response;
-    console.log(message);
+    // log the output
+    console.log(output);
 };
 ```
 
@@ -64,14 +61,13 @@ const ask = (question) => {
 
 ```js
 const getMovies = () => {
-    const { pixelReturn } = await insight.actions.query(
-        `Database(engine=["${ENGINE}"]) | Query("select * from movie") | Collect(10)`,
+    const { output } = await insight.actions.queryDatabase(
+        DATABASE_ID,
+        'select * from movie',
     );
 
-    // get the data
-    const data = pixelReturn[0].output;
-
-    console.log(data);
+    // log the output
+    console.log(output);
 };
 ```
 
@@ -79,41 +75,38 @@ const getMovies = () => {
 
 ```js
 const sum = (num1, num2) => {
-    const { pixelReturn } = await insight.actions.runPy(`${num1} + ${num2}`);
+    const { output } = await insight.actions.runPy(`${num1} + ${num2}`);
 
-    // get the data
-    const data = pixelReturn[0].output;
+    // log the output
+    console.log(output);
+};
+```
 
-    console.log(data);
+-   Upload a File
+
+```js
+const upload = (file, path) => {
+    const { output } = await insight.actions.upload(file, path);
+
+    // log the output
+    console.log(output);
+};
+```
+
+-   Download a File
+
+```js
+const download = (path) => {
+    const { output } = await insight.actions.download(path);
+
+    // log the output
+    console.log(output);
 };
 ```
 
 ## Tips and Tricks
 
 Here are a few tips and tricks that can help streamline the development process.
-
-### Development Environment
-
-> Note: We recommend manually setting the environment only in `development` mode.
-
-You can setup a development environment and use access keys to authenticate with the app server. Generate the keys on the server and then update the `Env` module. See:
-
-```js
-// import the module
-import { Env } from '@semoss/sdk';
-
-// update the environment
-Env.update({
-    // url pointing to the app server
-    MODULE: '',
-    // access key generated on the app server
-    ACCESS_KEY: '',
-    // secret key generated on the app server
-    SECRET_KEY: '',
-});
-```
-
-> Note: Please **do not** commit your keys. Instead externalize your keys to a `.env` and load them in as environment variables during development
 
 ### Development Environment
 
@@ -166,9 +159,6 @@ def sayHello(name):
 Set the option on initialize:
 
 ```js
-// import the module
-import { Env } from '@semoss/sdk';
-
 // update the environment
 insight.initialize({
     python: {
@@ -193,9 +183,6 @@ def sayHello(name):
 Set the option on initialize:
 
 ```js
-// import the module
-import { Env } from '@semoss/sdk';
-
 // update the environment
 insight.initialize({
     python: {
@@ -217,19 +204,9 @@ insight.initialize({
 
 3. Loading via `js`
 
-The sdk will load `python` via an external file.
-
-```py
-# ./hello.py
-
-```
-
 Set the option on initialize:
 
 ```js
-// import the module
-import { Env } from '@semoss/sdk';
-
 // define it int he js
 const py = `
 def sayHello(name):
@@ -259,13 +236,9 @@ Next you can the preloaded `python` methods by calling the `runPy` action. See
 
 ```js
 const hello = (name) => {
-    const { pixelReturn } = await insight.actions.runPy(
-        `smss.sayHello(${name})`,
-    );
+    const { output } = await insight.actions.runPy(`smss.sayHello(${name})`);
 
-    // get the data
-    const data = pixelReturn[0].output;
-
-    console.log(data);
+    // log the output
+    console.log(output);
 };
 ```

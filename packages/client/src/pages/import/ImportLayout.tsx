@@ -1,17 +1,17 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Outlet } from 'react-router-dom';
 import { LoadingScreen } from '@/components/ui';
 
-import { ImportContext, ImportContextType } from '@/contexts';
+import { StepperContext, StepperContextType } from '@/contexts';
 
-export const ImportLayout = () => {
+export const ImportLayout = (props) => {
     const [isLoading, setIsLoading] =
-        useState<ImportContextType['isLoading']>(false);
+        useState<StepperContextType['isLoading']>(false);
     const [internalSteps, setInternalSteps] = useState<
-        ImportContextType['steps']
+        StepperContextType['steps']
     >([]);
     const [internalActiveStepIdx, setInternalActiveStepIdx] =
-        useState<ImportContextType['activeStepIdx']>(-1);
+        useState<StepperContextType['activeStepIdx']>(-1);
 
     /**
      * Get the active step
@@ -33,7 +33,7 @@ export const ImportLayout = () => {
      * step - step to add
      * activeStepIdx - new step idx
      */
-    const setSteps: ImportContextType['setSteps'] = (
+    const setSteps: StepperContextType['setSteps'] = (
         updatedSteps,
         updatedActiveStepIdx,
     ) => {
@@ -51,14 +51,14 @@ export const ImportLayout = () => {
      *
      * activeStepIdx - new step idx
      */
-    const setActiveStep: ImportContextType['setActiveStep'] = (
+    const setActiveStep: StepperContextType['setActiveStep'] = (
         updatedActiveStepIdx,
     ) => {
         setInternalActiveStepIdx(updatedActiveStepIdx);
     };
 
     return (
-        <ImportContext.Provider
+        <StepperContext.Provider
             value={{
                 isLoading: isLoading,
                 steps: internalSteps,
@@ -71,6 +71,6 @@ export const ImportLayout = () => {
         >
             {isLoading && <LoadingScreen.Trigger />}
             <Outlet />
-        </ImportContext.Provider>
+        </StepperContext.Provider>
     );
 };

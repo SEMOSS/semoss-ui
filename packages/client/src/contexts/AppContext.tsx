@@ -10,6 +10,11 @@ export type AppContextType = {
     appId: string;
 
     /**
+     * Type of the app
+     */
+    type: 'blocks' | 'custom';
+
+    /**
      * Users Permission with App
      */
     permission: string;
@@ -23,11 +28,6 @@ export type AppContextType = {
      * Editor View (code-editor, settings, permissions)
      */
     editorView: 'code-editor' | 'settings' | 'permissions' | '';
-
-    /**
-     * Is Console Open or not
-     */
-    openConsole: boolean;
 
     /**
      * Show Loading or not
@@ -47,15 +47,14 @@ export type AppContextType = {
     ) => void;
 
     /**
-     * Open and close console
-     */
-    setOpenConsole: () => void;
-
-    /**
      * Sets Loading screen
      */
     setIsLoading: (val: boolean) => void;
 
+    /**
+     * Key to refresh the app
+     */
+    refreshKey: number;
     /**
      * Callback to refresh Application View
      */

@@ -72,7 +72,12 @@ export const Page = (props: PageProps): JSX.Element => {
                     <Container maxWidth={'xl'}>{header}</Container>
                 </StyledPageHeader>
             )}
-            <Container maxWidth={'xl'}>{children}</Container>
+            <Container
+                maxWidth={'xl'}
+                sx={{ display: 'flex', flexDirection: 'column', gap: '16px' }}
+            >
+                {children}
+            </Container>
         </StyledPage>
     );
 };

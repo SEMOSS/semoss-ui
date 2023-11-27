@@ -1,7 +1,7 @@
 import axios from 'axios';
 import { makeAutoObservable } from 'mobx';
 
-import { MODULE } from '@/constants';
+import { Env } from '@/env';
 import { Role } from '@/types';
 import { RootStore } from '@/stores';
 
@@ -29,11 +29,10 @@ export class MonolithStore {
         // get the response
         const response = await axios
             .get<{
-                security: boolean;
                 logins: { [key: string]: unknown };
                 loginsAllowed: { [key: string]: boolean };
                 [key: string]: unknown;
-            }>(`${MODULE}/api/config`)
+            }>(`${Env.MODULE}/api/config`)
             .catch((error) => {
                 throw Error(error);
             });
@@ -73,7 +72,7 @@ export class MonolithStore {
                     pixelExpression: string;
                     pixelId: string;
                 }[];
-            }>(`${MODULE}/api/engine/runPixel`, postData, {
+            }>(`${Env.MODULE}/api/engine/runPixel`, postData, {
                 headers: {
                     'content-type': 'application/x-www-form-urlencoded',
                 },
@@ -110,7 +109,9 @@ export class MonolithStore {
     async download(insightID: string, fileKey: string) {
         return new Promise<void>((resolve) => {
             // create the download url
-            const url = `${MODULE}/api/engine/downloadFile?insightId=${insightID}&fileKey=${encodeURIComponent(
+            const url = `${
+                Env.MODULE
+            }/api/engine/downloadFile?insightId=${insightID}&fileKey=${encodeURIComponent(
                 fileKey,
             )}`;
 
@@ -153,7 +154,7 @@ export class MonolithStore {
         )}&password=${encodeURIComponent(password)}&disableRedirect=true`;
 
         await axios
-            .post(`${MODULE}/api/auth/login`, postData, {
+            .post(`${Env.MODULE}/api/auth/login`, postData, {
                 headers: {
                     'content-type': 'application/x-www-form-urlencoded',
                 },
@@ -184,7 +185,7 @@ export class MonolithStore {
         let status: 'success' | 'change-password' = 'success';
 
         await axios
-            .post(`${MODULE}/api/auth/loginLinOTP`, postData, {
+            .post(`${Env.MODULE}/api/auth/loginLinOTP`, postData, {
                 headers: {
                     'content-type': 'application/x-www-form-urlencoded',
                 },
@@ -217,7 +218,7 @@ export class MonolithStore {
         const postData = `otp=${encodeURIComponent(otp)}&disableRedirect=true`;
 
         await axios
-            .post(`${MODULE}/api/auth/loginLinOTP`, postData, {
+            .post(`${Env.MODULE}/api/auth/loginLinOTP`, postData, {
                 headers: {
                     'content-type': 'application/x-www-form-urlencoded',
                 },
@@ -249,7 +250,7 @@ export class MonolithStore {
         let status: 'success' | 'change-password' = 'success';
 
         await axios
-            .post(`${MODULE}/api/auth/loginLDAP`, postData, {
+            .post(`${Env.MODULE}/api/auth/loginLDAP`, postData, {
                 headers: {
                     'content-type': 'application/x-www-form-urlencoded',
                 },
@@ -309,7 +310,7 @@ export class MonolithStore {
             '&countrycode=' +
             encodeURIComponent(countrycode);
         return await axios
-            .post(`${MODULE}/api/auth/createUser`, create, {
+            .post(`${Env.MODULE}/api/auth/createUser`, create, {
                 headers: {
                     'content-type': 'application/x-www-form-urlencoded',
                 },
@@ -334,7 +335,7 @@ export class MonolithStore {
      */
     async logout(): Promise<boolean> {
         await axios
-            .get(`${MODULE}/api/auth/logout/all`, {
+            .get(`${Env.MODULE}/api/auth/logout/all`, {
                 validateStatus: function (status) {
                     return true;
                 },
@@ -355,7 +356,9 @@ export class MonolithStore {
     async oauth(provider: string): Promise<boolean> {
         // check if the user is logged in
         const response = await axios
-            .get<{ name: string }>(`${MODULE}/api/auth/userinfo/${provider}`)
+            .get<{ name: string }>(
+                `${Env.MODULE}/api/auth/userinfo/${provider}`,
+            )
             .catch((error) => {
                 throw Error(error);
             });
@@ -366,7 +369,7 @@ export class MonolithStore {
         }
 
         return new Promise((resolve) => {
-            const url = `${MODULE}/api/auth/login/${provider}`;
+            const url = `${Env.MODULE}/api/auth/login/${provider}`;
             const popUpWindow = window.top.open(
                 url,
                 '_blank',
@@ -411,7 +414,7 @@ export class MonolithStore {
      * @returns
      */
     async getLoginProperties() {
-        const url = `${MODULE}/api/auth/loginProperties`;
+        const url = `${Env.MODULE}/api/auth/loginProperties`;
 
         const response = await axios.get(url).catch((error) => {
             throw Error(error);
@@ -421,7 +424,7 @@ export class MonolithStore {
     }
 
     async modifyLoginProperties(provider, properties) {
-        const url = `${MODULE}/api/auth/modifyLoginProperties/` + provider;
+        const url = `${Env.MODULE}/api/auth/modifyLoginProperties/` + provider;
         let postData = '';
 
         postData += 'modifications=' + JSON.stringify(properties);
@@ -441,7 +444,7 @@ export class MonolithStore {
      * @returns boolean
      */
     async isAdminUser() {
-        const url = `${MODULE}/api/auth/admin/user/isAdminUser`;
+        const url = `${Env.MODULE}/api/auth/admin/user/isAdminUser`;
 
         const response = await axios.get(url).catch((error) => {
             throw Error(error);
@@ -469,7 +472,7 @@ export class MonolithStore {
         offset?: number,
         limit?: number,
     ) {
-        let url = `${MODULE}/api/auth/`;
+        let url = `${Env.MODULE}/api/auth/`;
 
         if (admin) {
             url += 'admin/';
@@ -511,7 +514,7 @@ export class MonolithStore {
     async getUserEnginePermission(id: string) {
         const response = await axios
             .get<{ permission: Role }>(
-                `${MODULE}/api/auth/engine/getUserEnginePermission`,
+                `${Env.MODULE}/api/auth/engine/getUserEnginePermission`,
                 {
                     params: { engineId: id },
                 },
@@ -543,7 +546,7 @@ export class MonolithStore {
         limit?: number,
         projectId?,
     ) {
-        let url = `${MODULE}/api/auth/`;
+        let url = `${Env.MODULE}/api/auth/`;
 
         if (admin) {
             url += 'admin/';
@@ -593,7 +596,7 @@ export class MonolithStore {
      * @returns
      */
     async getEngineUsersNoCredentials(admin: boolean, appId: string) {
-        let url = `${MODULE}/api/auth/`;
+        let url = `${Env.MODULE}/api/auth/`;
 
         // Currently no admin ENDPOINT;
         if (admin) {
@@ -631,7 +634,7 @@ export class MonolithStore {
         appId: string,
         users: any[],
     ) {
-        let url = `${MODULE}/api/auth/`,
+        let url = `${Env.MODULE}/api/auth/`,
             postData = '';
 
         // No Admin endpoint currently
@@ -668,7 +671,7 @@ export class MonolithStore {
         appId: string,
         users: any[],
     ) {
-        let url = `${MODULE}/api/auth/`,
+        let url = `${Env.MODULE}/api/auth/`,
             postData = '';
 
         if (admin) {
@@ -704,7 +707,7 @@ export class MonolithStore {
         appId: string,
         users: any[],
     ) {
-        let url = `${MODULE}/api/auth/`,
+        let url = `${Env.MODULE}/api/auth/`,
             postData = '';
 
         if (admin) {
@@ -732,7 +735,7 @@ export class MonolithStore {
      * @param global
      */
     async setEngineGlobal(admin: boolean, engineId: string, global: boolean) {
-        let url = `${MODULE}/api/auth/`,
+        let url = `${Env.MODULE}/api/auth/`,
             postData = '';
 
         if (admin) {
@@ -769,7 +772,7 @@ export class MonolithStore {
         engineId: string,
         visible: boolean,
     ) {
-        let url = `${MODULE}/api/auth/`,
+        let url = `${Env.MODULE}/api/auth/`,
             postData = '';
 
         if (admin) {
@@ -791,7 +794,7 @@ export class MonolithStore {
     }
 
     async setEngineFavorite(engineId: string, favorite: boolean) {
-        let url = `${MODULE}/api/auth/`,
+        let url = `${Env.MODULE}/api/auth/`,
             postData = '';
 
         url += 'engine/setEngineFavorite';
@@ -819,7 +822,7 @@ export class MonolithStore {
         engineId: string,
         requests: any[],
     ) {
-        let url = `${MODULE}/api/auth/`,
+        let url = `${Env.MODULE}/api/auth/`,
             postData = '';
 
         if (admin) {
@@ -851,7 +854,7 @@ export class MonolithStore {
         engineId: string,
         userIds: string[],
     ) {
-        let url = `${MODULE}/api/auth/`,
+        let url = `${Env.MODULE}/api/auth/`,
             postData = '';
 
         if (admin) {
@@ -880,7 +883,7 @@ export class MonolithStore {
      * @returns AppInterface[]
      */
     async getDatabases(admin: boolean) {
-        let url = `${MODULE}/api/auth/`;
+        let url = `${Env.MODULE}/api/auth/`;
 
         if (admin) {
             url += 'admin/';
@@ -922,7 +925,7 @@ export class MonolithStore {
      * @returns
      */
     async updateDatabaseSmssProperties(databaseId: string, smssProps: string) {
-        const url = `${MODULE}/api/e-${databaseId}/updateSmssFile`;
+        const url = `${Env.MODULE}/api/e-${databaseId}/updateSmssFile`;
 
         let postData = '';
         postData += 'engineId=' + encodeURIComponent(databaseId);
@@ -952,7 +955,7 @@ export class MonolithStore {
         appId: string,
         discoverable: boolean,
     ) {
-        let url = `${MODULE}/api/auth/`,
+        let url = `${Env.MODULE}/api/auth/`,
             postData = '';
 
         if (admin) {
@@ -994,7 +997,7 @@ export class MonolithStore {
         offset?: number,
         limit?: number,
     ) {
-        let url = `${MODULE}/api/auth/`;
+        let url = `${Env.MODULE}/api/auth/`;
 
         if (admin) {
             url += 'admin/';
@@ -1039,8 +1042,10 @@ export class MonolithStore {
      * @param admin - is admin user
      * @returns Projects retrieved from Promise
      */
-    async getUserProjectPermission(projectId: string) {
-        let url = `${MODULE}/api/auth/`;
+    async getUserProjectPermission(
+        projectId: string,
+    ): Promise<{ permission: Role }> {
+        let url = `${Env.MODULE}/api/auth/`;
 
         url += 'project/getUserProjectPermission';
 
@@ -1075,7 +1080,7 @@ export class MonolithStore {
         limit?: number,
         id?: string,
     ) {
-        let url = `${MODULE}/api/auth/`;
+        let url = `${Env.MODULE}/api/auth/`;
 
         if (admin) {
             url += 'admin/';
@@ -1119,7 +1124,7 @@ export class MonolithStore {
      * @desc get the existing users and their permissions for this app
      */
     async getProjectUsersNoCredentials(admin: boolean, projectId: string) {
-        let url = `${MODULE}/api/auth/`;
+        let url = `${Env.MODULE}/api/auth/`;
 
         if (admin) {
             url += 'admin/';
@@ -1156,7 +1161,7 @@ export class MonolithStore {
         appId: string,
         requests: any[],
     ) {
-        let url = `${MODULE}/api/auth/`,
+        let url = `${Env.MODULE}/api/auth/`,
             postData = '';
 
         if (admin) {
@@ -1190,7 +1195,7 @@ export class MonolithStore {
         projectId: string,
         userIds: string[],
     ) {
-        let url = `${MODULE}/api/auth/`,
+        let url = `${Env.MODULE}/api/auth/`,
             postData = '';
 
         if (admin) {
@@ -1224,7 +1229,7 @@ export class MonolithStore {
         appId: string,
         users: any[],
     ) {
-        let url = `${MODULE}/api/auth/`,
+        let url = `${Env.MODULE}/api/auth/`,
             postData = '';
 
         if (admin) {
@@ -1259,7 +1264,7 @@ export class MonolithStore {
         appId: string,
         users: any[],
     ) {
-        let url = `${MODULE}/api/auth/`,
+        let url = `${Env.MODULE}/api/auth/`,
             postData = '';
 
         if (admin) {
@@ -1294,7 +1299,7 @@ export class MonolithStore {
         appId: string,
         users: any[],
     ) {
-        let url = `${MODULE}/api/auth/`,
+        let url = `${Env.MODULE}/api/auth/`,
             postData = '';
 
         if (admin) {
@@ -1325,7 +1330,7 @@ export class MonolithStore {
      * @param global
      */
     async setProjectGlobal(admin, appId, global: boolean) {
-        let url = `${MODULE}/api/auth/`,
+        let url = `${Env.MODULE}/api/auth/`,
             postData = '';
 
         if (admin) {
@@ -1353,7 +1358,7 @@ export class MonolithStore {
      * @param visible
      */
     async setProjectVisiblity(admin, appId, visible) {
-        let url = `${MODULE}/api/auth/`,
+        let url = `${Env.MODULE}/api/auth/`,
             postData = '';
 
         if (admin) {
@@ -1389,7 +1394,7 @@ export class MonolithStore {
         hasPortal: boolean,
         portalName?: string,
     ) {
-        let url = `${MODULE}/api/auth/`,
+        let url = `${Env.MODULE}/api/auth/`,
             postData = '';
 
         // if (admin) {
@@ -1436,7 +1441,7 @@ export class MonolithStore {
         // /api/auth/insight/getInsightUsers?
         // insightId=feb4c485-0aa8-4ff6-b355-e894dc74589a&projectId=2e2534db-fffa-4054-b9e9-dbf44183ab3b
 
-        let url = `${MODULE}/api/auth/`;
+        let url = `${Env.MODULE}/api/auth/`;
 
         if (admin) {
             url += 'admin/';
@@ -1490,7 +1495,7 @@ export class MonolithStore {
         insightId: string,
         projectId: string,
     ) {
-        let url = `${MODULE}/api/auth/`;
+        let url = `${Env.MODULE}/api/auth/`;
 
         if (admin) {
             url += 'admin/';
@@ -1530,7 +1535,7 @@ export class MonolithStore {
         users: any[],
         projectId: string,
     ) {
-        let url = `${MODULE}/api/auth/`,
+        let url = `${Env.MODULE}/api/auth/`,
             postData = '';
 
         if (admin) {
@@ -1567,7 +1572,7 @@ export class MonolithStore {
         users: any[],
         projectId,
     ) {
-        let url = `${MODULE}/api/auth/`,
+        let url = `${Env.MODULE}/api/auth/`,
             postData = '';
 
         if (admin) {
@@ -1603,7 +1608,7 @@ export class MonolithStore {
         users: any[],
         projectId: string,
     ) {
-        let url = `${MODULE}/api/auth/`,
+        let url = `${Env.MODULE}/api/auth/`,
             postData = '';
 
         if (admin) {
@@ -1642,7 +1647,7 @@ export class MonolithStore {
         id: string,
         permission: string,
     ) {
-        let url = `${MODULE}/api/auth/`,
+        let url = `${Env.MODULE}/api/auth/`,
             postData = '';
 
         if (admin) {
@@ -1678,7 +1683,7 @@ export class MonolithStore {
         id: string,
         permission: string,
     ) {
-        let url = `${MODULE}/api/auth/`,
+        let url = `${Env.MODULE}/api/auth/`,
             postData = '';
 
         if (admin) {
@@ -1732,7 +1737,7 @@ export class MonolithStore {
             param = `?${param}`;
         }
 
-        const url = `${MODULE}/api/uploadFile/baseUpload${param}`,
+        const url = `${Env.MODULE}/api/uploadFile/baseUpload${param}`,
             fd: FormData = new FormData();
 
         if (Array.isArray(files)) {
@@ -1759,7 +1764,7 @@ export class MonolithStore {
     }
 
     async getApps(databaseId: string) {
-        const url = `${MODULE}/api/auth/admin/app/getApps?databaseId=${databaseId}`;
+        const url = `${Env.MODULE}/api/auth/admin/app/getApps?databaseId=${databaseId}`;
         const response = await axios.get(url).catch((error) => {
             throw Error(error);
         });
@@ -1775,7 +1780,7 @@ export class MonolithStore {
      * @returns $http promise
      */
     async getDBUsers(admin: boolean, appId: string) {
-        let url = `${MODULE}/api/auth/`;
+        let url = `${Env.MODULE}/api/auth/`;
         if (admin) url += 'admin/';
 
         url += 'app/getAppUsers';
@@ -1802,7 +1807,7 @@ export class MonolithStore {
      * @returns $http promise
      */
     async removeAppUserPermissions(admin: boolean, appId: string, id: string) {
-        let url = `${MODULE}/api/auth/`,
+        let url = `${Env.MODULE}/api/auth/`,
             postData = '';
 
         if (admin) {
@@ -1836,8 +1841,8 @@ export class MonolithStore {
      * @param admin - is admin user
      * @returns MemberInterface[]
      */
-    async getAllUsers(admin) {
-        let url = `${MODULE}/api/auth/`;
+    async getAllUsers(admin: boolean) {
+        let url = `${Env.MODULE}/api/auth/`;
 
         if (admin) {
             url += 'admin/';
@@ -1847,9 +1852,21 @@ export class MonolithStore {
 
         url += 'user/getAllUsers';
         // get the response
-        const response = await axios.get(url).catch((error) => {
-            throw Error(error);
-        });
+        const response = await axios
+            .get<
+                {
+                    id: string;
+                    type: string;
+                    name?: string;
+                    admin?: boolean;
+                    publisher?: boolean;
+                    exporter?: boolean;
+                    email?: string;
+                }[]
+            >(url)
+            .catch((error) => {
+                throw Error(error);
+            });
 
         // there was no response, that is an error
         if (!response) {
@@ -1866,7 +1883,7 @@ export class MonolithStore {
      * @returns
      */
     async editMemberInfo(admin: boolean, user: any) {
-        let url = `${MODULE}/api/auth/`,
+        let url = `${Env.MODULE}/api/auth/`,
             postData = '';
 
         if (admin) {
@@ -1876,11 +1893,15 @@ export class MonolithStore {
 
         postData += 'user=' + encodeURIComponent(JSON.stringify(user));
 
-        const response = await axios.post<{ success: boolean }>(url, postData, {
-            headers: {
-                'content-type': 'application/x-www-form-urlencoded',
-            },
-        });
+        const response = await axios
+            .post<{ success: boolean }>(url, postData, {
+                headers: {
+                    'content-type': 'application/x-www-form-urlencoded',
+                },
+            })
+            .catch((e) => {
+                throw Error(e);
+            });
 
         return response;
     }
@@ -1893,7 +1914,7 @@ export class MonolithStore {
      * @returns
      */
     async deleteMember(admin: boolean, userId: string, userType: string) {
-        let url = `${MODULE}/api/auth/`,
+        let url = `${Env.MODULE}/api/auth/`,
             postData = '';
 
         if (admin) {
@@ -1920,7 +1941,7 @@ export class MonolithStore {
      * @returns
      */
     async createUser(admin: boolean, user: any) {
-        let url = `${MODULE}/api/auth/`;
+        let url = `${Env.MODULE}/api/auth/`;
 
         if (admin) {
             url += 'admin/';
@@ -1968,7 +1989,7 @@ export class MonolithStore {
      * Get access keys related to a user
      */
     async getUserAccessKeys() {
-        const url = `${MODULE}/api/auth/user/getUserAccessKeys`;
+        const url = `${Env.MODULE}/api/auth/user/getUserAccessKeys`;
 
         const response = await axios
             .get<
@@ -1991,8 +2012,8 @@ export class MonolithStore {
      * Get access keys related to a user
      */
     async createUserAccessKey(tokenName: string, tokenDescription = '') {
-        const url = `${MODULE}/api/auth/user/createUserAccessKey`;
-
+        const url = `${Env.MODULE}/api/auth/user/createUserAccessKey`;
+        // debugger;
         let body = 'tokenName=' + encodeURIComponent(tokenName);
         if (tokenDescription) {
             body += '&tokenDescription=' + encodeURIComponent(tokenDescription);
@@ -2026,7 +2047,7 @@ export class MonolithStore {
      * Get access keys related to a user
      */
     async deleteUserAccessKeys(accessKey: string) {
-        const url = `${MODULE}/api/auth/user/deleteUserAccessKey`;
+        const url = `${Env.MODULE}/api/auth/user/deleteUserAccessKey`;
 
         const body = 'accessKey=' + encodeURIComponent(accessKey);
 

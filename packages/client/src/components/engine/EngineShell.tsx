@@ -4,19 +4,32 @@ import {
     Breadcrumbs,
     Button,
     Chip,
+    IconButton,
     Stack,
     Typography,
+    Tooltip,
+    useNotification,
+    CircularProgress,
 } from '@semoss/ui';
 
-import { MODULE } from '@/constants';
-import { useRootStore, useDatabase, usePixel } from '@/hooks';
+import { Env } from '@/env';
+import { useRootStore, useEngine, usePixel } from '@/hooks';
 
 import { EditDatabaseDetails } from '@/components/database';
 import { Page, LoadingScreen } from '@/components/ui';
-import { RequestAccess } from './';
-import { Add, EditRounded, SimCardDownload } from '@mui/icons-material';
+import { EngineAccessButton } from './';
+import {
+    EditRounded,
+    SimCardDownload,
+    ContentCopyOutlined,
+} from '@mui/icons-material';
 import { formatName } from '@/utils';
 import { Link } from 'react-router-dom';
+
+const StyledIconButton = styled(IconButton)(({ theme }) => ({
+    marginTop: '-3px',
+    marginLeft: '2px',
+}));
 
 const StyledInfo = styled('div')(({ theme }) => ({
     display: 'flex',
@@ -80,10 +93,13 @@ export const EngineShell = (props: EngineShellProps) => {
     const { children } = props;
 
     // get the database information
-    const { type, id, role, metaVals, refresh } = useDatabase();
+    const { id, type, name, role, metaVals, refresh } = useEngine();
 
     // Service for Axios calls
-    const { monolithStore, configStore } = useRootStore();
+    const { monolithStore } = useRootStore();
+
+    // notification
+    const notification = useNotification();
 
     // set if it can edit
     const canEdit = role === 'OWNER' || role === 'EDITOR';
@@ -91,7 +107,8 @@ export const EngineShell = (props: EngineShellProps) => {
     // track the edit state
     const [edit, setEdit] = useState(false);
 
-    const [requestAccess, setRequestAccess] = useState(false);
+    // export loading state
+    const [exportLoading, setExportLoading] = useState(false);
 
     // get the engine info
     const { status, data } = usePixel<{
@@ -108,6 +125,7 @@ export const EngineShell = (props: EngineShellProps) => {
      * @desc export DB pixel
      */
     const exportDB = () => {
+        setExportLoading(true);
         const pixel = `META | ExportEngine(engine=["${id}"] );`;
 
         monolithStore.runQuery(pixel).then((response) => {
@@ -116,6 +134,7 @@ export const EngineShell = (props: EngineShellProps) => {
 
             monolithStore.download(insightID, output);
         });
+        setExportLoading(false);
     };
 
     // show a loading screen when it is pending
@@ -128,49 +147,28 @@ export const EngineShell = (props: EngineShellProps) => {
             header={
                 <Stack>
                     <Breadcrumbs>
-                        <StyledLink to={`/catalog?type=${type}`}>
-                            {type === 'database'
-                                ? 'Data'
-                                : type.charAt(0).toUpperCase() +
-                                  type.slice(1)}{' '}
-                            Catalog
-                        </StyledLink>
-                        <StyledLink to={`/${type}/${id}`}>
+                        <StyledLink to={`..`}>{name} Catalog</StyledLink>
+                        <StyledLink to={`.`}>
                             {formatName(data.database_name)}
                         </StyledLink>
                     </Breadcrumbs>
-                    <Stack
-                        direction="row"
-                        justifyContent={'space-between'}
-                        width={'100%'}
-                    >
+                    <Stack direction="row" alignItems={'center'} width={'100%'}>
                         <Typography variant="h4">
                             {formatName(data.database_name)}
                         </Typography>
+                        <Stack flex={1}> &nbsp;</Stack>
                         <Stack direction="row">
-                            {configStore.store.security && role !== 'OWNER' && (
-                                <>
-                                    {requestAccess && (
-                                        <RequestAccess
-                                            id={id}
-                                            open={requestAccess}
-                                            onClose={() => {
-                                                setRequestAccess(false);
-                                            }}
-                                        />
-                                    )}
-                                    <Button
-                                        startIcon={<Add />}
-                                        variant="outlined"
-                                        onClick={() => setRequestAccess(true)}
-                                    >
-                                        Request Access
-                                    </Button>
-                                </>
-                            )}
+                            <EngineAccessButton />
                             {role === 'OWNER' && (
                                 <Button
-                                    startIcon={<SimCardDownload />}
+                                    disabled={exportLoading}
+                                    startIcon={
+                                        exportLoading ? (
+                                            <CircularProgress size="1em" />
+                                        ) : (
+                                            <SimCardDownload />
+                                        )
+                                    }
                                     variant="outlined"
                                     onClick={() => exportDB()}
                                 >
@@ -209,6 +207,40 @@ export const EngineShell = (props: EngineShellProps) => {
                             )}
                         </Stack>
                     </Stack>
+                    <Stack>
+                        <span>
+                            {id}
+                            <StyledIconButton
+                                aria-label={`copy ${name} ID`}
+                                size="small"
+                                onClick={(e) => {
+                                    // prevent the default action
+                                    e.preventDefault();
+
+                                    // copy
+                                    try {
+                                        navigator.clipboard.writeText(id);
+
+                                        notification.add({
+                                            color: 'success',
+                                            message: 'Successfully copied id',
+                                        });
+                                    } catch (e) {
+                                        console.error(e);
+
+                                        notification.add({
+                                            color: 'error',
+                                            message: 'Error copyng id',
+                                        });
+                                    }
+                                }}
+                            >
+                                <Tooltip title={`Copy ${name} ID`}>
+                                    <ContentCopyOutlined fontSize="inherit" />
+                                </Tooltip>
+                            </StyledIconButton>
+                        </span>
+                    </Stack>
                 </Stack>
             }
         >
@@ -218,13 +250,13 @@ export const EngineShell = (props: EngineShellProps) => {
                         {metaVals.description
                             ? metaVals.description
                             : canEdit
-                            ? `Please use the Edit button to provide a description for this ${type}. A description will help other's find the ${type} and understand how to use it. To include a more details associated to the ${type}, edit the markdown located in the Overview section.`
-                            : `This ${type} is currently awaiting a detailed description, which will be provided by the engine editor in the near future. As of now, the ${type} contains valuable and relevant information that pertains to its designated subject matter. Kindly check back later for a comprehensive overview of the contents and scope of this engine, as the editor will be updating it shortly`}
+                            ? `Please use the Edit button to provide a description for this ${name}. A description will help other's find the ${name} and understand how to use it. To include a more details associated to the ${type}, edit the markdown located in the Overview section.`
+                            : `This ${name} is currently awaiting a detailed description, which will be provided by the engine editor in the near future. As of now, the ${name} contains valuable and relevant information that pertains to its designated subject matter. Kindly check back later for a comprehensive overview of the contents and scope of this engine, as the editor will be updating it shortly`}
                     </StyledInfoDescription>
 
                     <StyledChipContainer>
                         {metaVals.tag &&
-                            metaVals.tag.map((tag, i) => {
+                            (metaVals.tag as string[]).map((tag, i) => {
                                 return (
                                     <Chip
                                         key={i}
@@ -237,7 +269,7 @@ export const EngineShell = (props: EngineShellProps) => {
                 </StyledInfoLeft>
                 <StyledInfoRight>
                     <StyledDatabaseImage
-                        src={`${MODULE}/api/e-${id}/image/download`}
+                        src={`${Env.MODULE}/api/e-${id}/image/download`}
                     />
                     <Stack
                         alignItems={'flex-end'}

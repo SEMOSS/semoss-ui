@@ -4,7 +4,7 @@ import { AppContext, AppContextType } from '@/contexts';
 
 /**
  * Access the App Context
- * @returns the App COntext
+ * @returns the App Context
  */
 export function useApp(): AppContextType {
     const context = useContext(AppContext);

@@ -338,8 +338,8 @@ function writeToDatabase(semossCoreService) {
 
                 for (i = 0, len = output.length; i < len; i++) {
                     if (
-                        !CONNECTORS[output[i].app_type] ||
-                        CONNECTORS[output[i].app_type].type !== 'RDBMS'
+                        !CONNECTORS[output[i].app_subtype] || 
+                        !CONNECTORS[output[i].app_subtype].type === 'RDBMS'
                     ) {
                         continue;
                     }

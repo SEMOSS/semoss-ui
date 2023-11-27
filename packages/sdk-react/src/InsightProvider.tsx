@@ -10,9 +10,11 @@ export const InsightContext = createContext<
     | {
           isInitialized: Insight['isInitialized'];
           isAuthorized: Insight['isAuthorized'];
+          isReady: Insight['isReady'];
           error: Insight['error'];
           system: Insight['system'];
           actions: Insight['actions'];
+          insightId: Insight['insightId'];
       }
     | undefined
 >(undefined);
@@ -41,8 +43,10 @@ export const InsightProvider = (props: InsightProviderProps) => {
         useState<Insight['isInitialized']>(false);
     const [isAuthorized, setIsAuthorized] =
         useState<Insight['isAuthorized']>(false);
+    const [isReady, setIsReady] = useState<Insight['isReady']>(false);
     const [error, setError] = useState<Insight['error']>(null);
     const [system, setSystem] = useState<Insight['system']>(null);
+    const [insightId, setInsightId] = useState<Insight['insightId']>('');
 
     /**
      * Sync the insight with react
@@ -53,6 +57,8 @@ export const InsightProvider = (props: InsightProviderProps) => {
             setSystem(insight.system);
             setIsAuthorized(insight.isAuthorized);
             setIsInitialized(insight.isInitialized);
+            setIsReady(insight.isReady);
+            setInsightId(insight.insightId);
         });
     };
 
@@ -99,9 +105,11 @@ export const InsightProvider = (props: InsightProviderProps) => {
             value={{
                 isInitialized: isInitialized,
                 isAuthorized: isAuthorized,
+                isReady: isReady,
                 error: error,
                 system: system,
                 actions: wrappedActions,
+                insightId: insightId
             }}
         >
             {children}
