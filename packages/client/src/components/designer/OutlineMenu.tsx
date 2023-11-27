@@ -1,7 +1,27 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { observer } from 'mobx-react-lite';
-import { styled, List, Typography, Divider } from '@semoss/ui';
+import {
+    Avatar,
+    styled,
+    List,
+    Typography,
+    Divider,
+    Icon,
+    TreeView,
+} from '@semoss/ui';
 import { useBlocks, useDesigner } from '@/hooks';
+import {
+    AutoAwesome,
+    ContentCopyOutlined,
+    ExpandMore,
+    ChevronRight,
+    KeyboardDoubleArrowLeft,
+    KeyboardDoubleArrowRight,
+    CreateNewFolderOutlined,
+    NoteAddOutlined,
+} from '@mui/icons-material/';
+
+import { getIconForBlock } from '../block-defaults';
 
 const StyledMenu = styled('div')(({ theme }) => ({
     display: 'flex',
@@ -49,6 +69,10 @@ const StyledListIndent = styled('div')(({ theme }) => ({
     paddingLeft: theme.spacing(2),
 }));
 
+const StyledIcon = styled(Icon)(({ theme }) => ({
+    color: 'rgba(0, 0, 0, .3)',
+}));
+
 /**
  * Render the OutlineMenu
  */
@@ -56,6 +80,9 @@ export const OutlineMenu = observer((): JSX.Element => {
     // get the store
     const { state } = useBlocks();
     const { designer } = useDesigner();
+
+    const [expanded, setExpanded] = useState<string[]>([]);
+    const [selected, setSelected] = useState<string[]>([]);
 
     /**
      * Render the block and it's children
@@ -68,8 +95,10 @@ export const OutlineMenu = observer((): JSX.Element => {
 
         // render each of hte c
         if (!block) {
-            return <></>;
+            return null;
         }
+
+        const WidgetIcon = getIconForBlock(block.widget);
 
         const children = [];
         for (const s in block.slots) {
@@ -77,46 +106,57 @@ export const OutlineMenu = observer((): JSX.Element => {
         }
 
         return (
-            <React.Fragment key={id}>
-                <StyledListItemButton
-                    dense={true}
-                    selected={block.id === designer.selected}
-                    hovered={block.id === designer.hovered}
-                    onClick={(event) => {
-                        event.stopPropagation();
-                        designer.setSelected(block.id);
-                    }}
-                    onMouseOver={() => {
-                        designer.setHovered(block.id);
-                    }}
-                    onMouseLeave={() => {
-                        designer.setHovered('');
-                    }}
-                >
-                    <List.ItemText
-                        primary={block.widget}
-                        secondary={block.id}
-                    />
-                </StyledListItemButton>
-                <StyledListIndent>
-                    <List>
-                        {children.map((c) => {
-                            return renderBlock(c);
-                        })}
-                    </List>
-                </StyledListIndent>
-            </React.Fragment>
+            <TreeView.Item
+                key={block.id}
+                nodeId={block.id}
+                endIcon={<WidgetIcon />}
+                label={
+                    block.widget.charAt(0).toUpperCase() + block.widget.slice(1)
+                }
+            >
+                {children.map((c) => {
+                    return renderBlock(c);
+                })}
+            </TreeView.Item>
         );
     };
 
     return (
         <StyledMenu>
             <StyledMenuHeader>
-                <Typography variant="body1">Structure</Typography>
+                <Typography variant="body1">Layers</Typography>
             </StyledMenuHeader>
             <Divider />
             <StyledMenuScroll>
-                <List>{renderBlock(designer.rendered)}</List>
+                <TreeView
+                    multiSelect
+                    expanded={expanded}
+                    selected={selected}
+                    onNodeToggle={(
+                        e: React.SyntheticEvent,
+                        nodeIds: string[],
+                    ) => {
+                        setExpanded(nodeIds);
+                    }}
+                    onNodeSelect={(
+                        e: React.SyntheticEvent,
+                        nodeIds: string[],
+                    ) => {
+                        setSelected(nodeIds);
+                    }}
+                    defaultCollapseIcon={
+                        <StyledIcon>
+                            <ExpandMore />
+                        </StyledIcon>
+                    }
+                    defaultExpandIcon={
+                        <StyledIcon>
+                            <ChevronRight />
+                        </StyledIcon>
+                    }
+                >
+                    {renderBlock(designer.rendered)}
+                </TreeView>
             </StyledMenuScroll>
         </StyledMenu>
     );
