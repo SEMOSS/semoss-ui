@@ -46,7 +46,7 @@ export const BlocksMenu = observer(() => {
     };
 
     return (
-        <Stack height="100%">
+        <Stack height="100%" pt={2}>
             <StyledTextFieldContainer>
                 <TextField
                     fullWidth

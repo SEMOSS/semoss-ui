@@ -5,19 +5,25 @@ import {
     Accordion,
     Button,
     Stack,
-    Icon,
     Typography,
     IconButton,
     Divider,
+    TextField,
+    Collapse,
 } from '@semoss/ui';
-
 import { useBlock, useBlocks, useDesigner } from '@/hooks';
-import {
-    BarChartOutlined,
-    SearchOutlined,
-    ExpandMore,
-    DeleteOutline,
-} from '@mui/icons-material';
+import { SearchOutlined, ExpandMore, DeleteOutline } from '@mui/icons-material';
+import { getIconForBlock } from '../block-defaults';
+import { BlockAvatar } from './BlockAvatar';
+
+const StyledTypography = styled(Typography)(() => ({
+    textTransform: 'capitalize',
+    fontWeight: 'bold',
+}));
+
+const Spacer = styled('div')(() => ({
+    flex: 1,
+}));
 
 const StyledMenu = styled('div')(({ theme }) => ({
     display: 'flex',
@@ -111,6 +117,8 @@ export const SelectedMenu = observer(() => {
     const { state, registry } = useBlocks();
 
     const [accordion, setAccordion] = useState<Record<string, boolean>>({});
+    const [showSearch, setShowSearch] = useState<boolean>(false);
+    const [search, setSearch] = useState<string>('');
 
     // get the selected block
     const block = designer.selected ? state.getBlock(designer.selected) : null;
@@ -132,32 +140,65 @@ export const SelectedMenu = observer(() => {
         }
         setAccordion(acc);
 
-        // set the menu
+        // set the menu with search filter
+        if (!!search) {
+            return m.filter((menuItem) => {
+                if (menuItem.name.toLowerCase().includes(search)) {
+                    return true;
+                } else {
+                    menuItem.children.forEach((child) => {
+                        if (child.description.toLowerCase().includes(search)) {
+                            return true;
+                        }
+                    });
+                }
+            });
+        }
         return m;
-    }, [registry, block ? block.widget : '']);
+    }, [registry, block ? block.widget : '', search]);
 
     // ignore if there is no menu
     if (!block) {
-        return <>Select a Block</>;
+        return (
+            <StyledMenuHeader>
+                <Typography variant="body1">
+                    <em>Select a component to configure styling</em>
+                </Typography>
+            </StyledMenuHeader>
+        );
     }
 
     return (
         <StyledMenu>
             <StyledMenuHeader>
-                <Icon fontSize="medium">
-                    <BarChartOutlined />
-                </Icon>
-                <Stack flex={'1'} direction="row" alignItems={'center'}>
-                    <Typography
-                        variant="body1"
-                        fontWeight="regular"
-                        sx={{
-                            flex: '1',
+                <Stack
+                    flex={1}
+                    spacing={2}
+                    direction="row"
+                    alignItems={'center'}
+                >
+                    <BlockAvatar icon={getIconForBlock(block.widget)} />
+                    <StyledTypography variant="h6">
+                        {block.widget}
+                    </StyledTypography>
+                    <Spacer />
+                    <Collapse orientation="horizontal" in={showSearch}>
+                        <TextField
+                            placeholder="Search"
+                            size="small"
+                            value={search}
+                            variant="outlined"
+                            onChange={(e) => setSearch(e.target.value)}
+                        />
+                    </Collapse>
+                    <IconButton
+                        color="default"
+                        size="small"
+                        onClick={() => {
+                            setShowSearch(!showSearch);
+                            setSearch('');
                         }}
                     >
-                        {block.widget}
-                    </Typography>
-                    <IconButton size="small" color="default">
                         <SearchOutlined fontSize="medium" />
                     </IconButton>
                 </Stack>

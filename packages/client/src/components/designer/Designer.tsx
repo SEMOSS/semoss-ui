@@ -76,8 +76,6 @@ const StyledSidebarContent = styled(Paper)(({ theme }) => ({
 
 const StyledSidebarContentInner = styled('div')(({ theme }) => ({
     flex: '1',
-    paddingTop: theme.spacing(2),
-    paddingBottom: theme.spacing(2),
     height: '100%',
     width: '100%',
 }));
@@ -85,7 +83,7 @@ const StyledSidebarContentInner = styled('div')(({ theme }) => ({
 const StyledRightMenu = styled(Paper)(({ theme }) => ({
     display: 'flex',
     height: '100%',
-    width: theme.spacing(43),
+    width: theme.spacing(50),
     flexDirection: 'row',
     borderRadius: '0',
 }));

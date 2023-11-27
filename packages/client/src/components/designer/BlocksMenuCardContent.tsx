@@ -1,11 +1,6 @@
 import { observer } from 'mobx-react-lite';
-import { styled, Avatar, Stack, Typography } from '@semoss/ui';
-
-const StyledAvatar = styled(Avatar)(({ theme }) => ({
-    backgroundColor: `${theme.palette.primary.light}33`,
-    border: `1px solid ${theme.palette.primary.main}`,
-    color: theme.palette.primary.main,
-}));
+import { styled, Stack, Typography } from '@semoss/ui';
+import { BlockAvatar } from './BlockAvatar';
 
 const StyledStack = styled(Stack)(() => ({
     alignItems: 'center',
@@ -22,9 +17,7 @@ export const BlocksMenuCardContent = observer(
 
         return (
             <StyledStack direction="column" padding={1} spacing={1}>
-                <StyledAvatar variant="rounded">
-                    <props.icon />
-                </StyledAvatar>
+                <BlockAvatar icon={props.icon} />
                 <StyledTypography variant="subtitle2">
                     {blockDisplay}
                 </StyledTypography>
