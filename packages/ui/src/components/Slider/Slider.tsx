@@ -51,12 +51,14 @@ export interface SliderProps {
      * @default false
      */
     marks?: boolean;
-    onChange?: () => void;
+    onChange?: (event, newValue) => void;
     /**
      * The size of the slider.
      * @default 'medium'
      */
     size?: "medium" | "small";
+    value?: number;
+    valueLabelDisplay: "auto" | "on" | "off";
 }
 
 export const Slider = (props: SliderProps) => {

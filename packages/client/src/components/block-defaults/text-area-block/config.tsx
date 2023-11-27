@@ -1,17 +1,13 @@
 import { BlockConfig } from '@/stores';
-import { InputTypeSettings, InputSettings } from '@/components/block-settings';
+import { InputSettings } from '@/components/block-settings';
 
-import { TextFieldBlockDef, TextFieldBlock } from './TextFieldBlock';
+import { TextAreaBlockDef, TextAreaBlock } from './TextAreaBlock';
 import { FormatShapes } from '@mui/icons-material';
-import {
-    buildDimensionsSection,
-    buildSpacingSection,
-} from '../block-defaults.shared';
 import { BLOCK_TYPE_INPUT } from '../block-defaults.constants';
 
 // export the config for the block
-export const config: BlockConfig<TextFieldBlockDef> = {
-    widget: 'text-field',
+export const config: BlockConfig<TextAreaBlockDef> = {
+    widget: 'text-area',
     type: BLOCK_TYPE_INPUT,
     data: {
         style: {
@@ -20,7 +16,9 @@ export const config: BlockConfig<TextFieldBlockDef> = {
         },
         value: '',
         label: 'Example Input',
-        type: 'text',
+        multiline: false,
+        rows: 4,
+        type: '',
     },
     listeners: {
         onChange: [],
@@ -28,11 +26,11 @@ export const config: BlockConfig<TextFieldBlockDef> = {
     slots: {
         content: [],
     },
-    render: TextFieldBlock,
+    render: TextAreaBlock,
     icon: FormatShapes,
     menu: [
         {
-            name: 'Text Field',
+            name: 'Textarea',
             children: [
                 {
                     description: 'Value',
@@ -47,20 +45,22 @@ export const config: BlockConfig<TextFieldBlockDef> = {
                     ),
                 },
                 {
-                    description: 'Input Type',
-                    render: ({ id }) => {
-                        return (
-                            <InputTypeSettings
-                                id={id}
-                                label="Type"
-                                path="type"
-                            />
-                        );
-                    },
+                    description: 'Rows',
+                    render: ({ id }) => (
+                        <InputSettings id={id} label="Rows" path="rows" />
+                    ),
+                },
+                {
+                    description: 'Multiline',
+                    render: ({ id }) => (
+                        <InputSettings
+                            id={id}
+                            label="Multiline"
+                            path="multiline"
+                        />
+                    ),
                 },
             ],
         },
-        buildSpacingSection(),
-        buildDimensionsSection(),
     ],
 };

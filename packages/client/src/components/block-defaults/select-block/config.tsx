@@ -8,10 +8,7 @@ import {
 import { SelectBlockDef, SelectBlock } from './SelectBlock';
 import { ViewList } from '@mui/icons-material';
 
-import {
-    buildDimensionsSection,
-    buildSpacingSection,
-} from '../block-defaults.shared';
+import { buildSpacingSection } from '../block-defaults.shared';
 import { BLOCK_TYPE_INPUT } from '../block-defaults.constants';
 
 // export the config for the block
@@ -19,7 +16,10 @@ export const config: BlockConfig<SelectBlockDef> = {
     widget: 'select',
     type: BLOCK_TYPE_INPUT,
     data: {
-        style: {},
+        style: {
+            width: '100%',
+            padding: '8px',
+        },
         value: '',
         label: 'Example Select Input',
         options: [],
@@ -67,6 +67,5 @@ export const config: BlockConfig<SelectBlockDef> = {
             ],
         },
         buildSpacingSection(),
-        buildDimensionsSection(),
     ],
 };

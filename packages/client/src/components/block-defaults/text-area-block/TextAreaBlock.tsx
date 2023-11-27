@@ -4,33 +4,32 @@ import { observer } from 'mobx-react-lite';
 import { useBlock } from '@/hooks';
 import { BlockComponent, BlockDef } from '@/stores';
 
-import { TextField } from '@semoss/ui';
+import { TextArea } from '@semoss/ui';
 
-export interface TextFieldBlockDef extends BlockDef<'text-field'> {
-    widget: 'text-field';
+export interface TextAreaBlockDef extends BlockDef<'text-area'> {
+    widget: 'text-area';
     data: {
         style: CSSProperties;
         label: string;
         value: string;
         type: string;
+        rows: number;
+        multiline: boolean;
     };
 }
 
-export const TextFieldBlock: BlockComponent = observer(({ id }) => {
-    const { attrs, data, setData } = useBlock<TextFieldBlockDef>(id);
+export const TextAreaBlock: BlockComponent = observer(({ id }) => {
+    const { attrs, data, setData } = useBlock<TextAreaBlockDef>(id);
 
     return (
-        <TextField
+        <TextArea
+            rows={data.rows}
+            multiline={data.multiline}
             value={data.value}
             label={data.label}
-            size="small"
-            style={{
+            sx={{
                 ...data.style,
             }}
-            InputLabelProps={{
-                shrink: true,
-            }}
-            type={data.type}
             onChange={(e) => {
                 const value = e.target.value;
 

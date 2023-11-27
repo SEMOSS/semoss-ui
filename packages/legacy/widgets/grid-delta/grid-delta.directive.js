@@ -1459,8 +1459,8 @@ function gridDelta($timeout, semossCoreService) {
                     selectedAppId = '';
                 scope.apps = res.pixelReturn[0].output.filter(function (app) {
                     return (
-                        CONNECTORS[app.app_type] &&
-                        CONNECTORS[app.app_type].type === 'RDBMS'
+                        CONNECTORS[app.app_subtype] && 
+                        CONNECTORS[app.app_subtype].type === 'RDBMS'
                     );
                 });
 
