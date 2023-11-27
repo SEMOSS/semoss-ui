@@ -1,5 +1,6 @@
+import { observer } from 'mobx-react-lite';
 import { styled, Stack, Icon, Divider, Paper, Modal } from '@semoss/ui';
-import { DataObject, Layers, Widgets } from '@mui/icons-material';
+import { DataObject, Layers, Visibility, Widgets } from '@mui/icons-material';
 import { useState } from 'react';
 
 import { DesignerContext } from '@/contexts';
@@ -39,20 +40,28 @@ const StyledSidebarItem = styled('div', {
 })<{
     /** Track if item is selected */
     selected: boolean;
-}>(({ theme, selected }) => ({
+    /** Track if item is disabled because of app view mode - temporary for demos */
+    disabled: boolean;
+}>(({ theme, selected, disabled }) => ({
     display: 'flex',
     flexDirection: 'column',
     alignItems: 'center',
     justifyContent: 'center',
-    color: selected ? theme.palette.primary.light : 'inherit',
+    color: selected
+        ? theme.palette.primary.light
+        : disabled
+        ? theme.palette.grey[800]
+        : 'inherit',
     textDecoration: 'none',
     height: theme.spacing(6),
     width: '100%',
-    cursor: 'pointer',
+    cursor: disabled ? 'default' : 'pointer',
     backgroundColor: selected ? '#2A3A4C' : theme.palette.common.black,
     transition: 'backgroundColor 2s ease',
     '&:hover': {
-        backgroundColor: selected
+        backgroundColor: disabled
+            ? theme.palette.common.black
+            : selected
             ? theme.palette.primary.main
             : `${theme.palette.primary.dark}`,
         transition: 'backgroundColor 2s ease',
@@ -80,6 +89,16 @@ const StyledSidebarContentInner = styled('div')(({ theme }) => ({
     width: '100%',
 }));
 
+const StyledDesignerContainer = styled(Stack, {
+    shouldForwardProp: (prop) => prop !== 'isDragging',
+})<{
+    isDragging: boolean;
+}>(({ isDragging }) => ({
+    height: '100%',
+    width: '100%',
+    cursor: isDragging ? 'grabbing!important' : 'unset',
+}));
+
 const StyledRightMenu = styled(Paper)(({ theme }) => ({
     display: 'flex',
     height: '100%',
@@ -96,11 +115,13 @@ interface DesignerProps {
     designer: DesignerStore;
 }
 
-export const Designer = (props: DesignerProps) => {
+export const Designer = observer((props: DesignerProps): JSX.Element => {
     const { children, designer } = props;
 
     // view
-    const [view, setView] = useState<'outline' | 'query' | 'add' | ''>('');
+    const [view, setView] = useState<'outline' | 'query' | 'add' | 'app' | ''>(
+        'app',
+    );
 
     /**
      * Set the view. If it is the same, close it
@@ -124,20 +145,33 @@ export const Designer = (props: DesignerProps) => {
             }}
         >
             <Overlay />
-            <Stack height="100%" width={'100%'} direction="row" spacing={0}>
+            <StyledDesignerContainer
+                direction="row"
+                isDragging={!!designer.drag.ghostWidget}
+            >
                 <StyledLeftMenu>
                     <StyledSidebar>
                         <StyledSidebarItem
+                            disabled={view === 'app'}
                             selected={view === 'outline'}
-                            onClick={() => updateView('outline')}
+                            onClick={
+                                view === 'app'
+                                    ? undefined
+                                    : () => updateView('outline')
+                            }
                         >
                             <Icon>
                                 <Layers />
                             </Icon>
                         </StyledSidebarItem>
                         <StyledSidebarItem
+                            disabled={view === 'app'}
                             selected={view === 'query'}
-                            onClick={() => updateView('query')}
+                            onClick={
+                                view === 'app'
+                                    ? undefined
+                                    : () => updateView('query')
+                            }
                         >
                             <Icon>
                                 <DataObject />
@@ -145,15 +179,29 @@ export const Designer = (props: DesignerProps) => {
                         </StyledSidebarItem>
                         <StyledSidebarDivider />
                         <StyledSidebarItem
+                            disabled={view === 'app'}
                             selected={view === 'add'}
-                            onClick={() => updateView('add')}
+                            onClick={
+                                view === 'app'
+                                    ? undefined
+                                    : () => updateView('add')
+                            }
                         >
                             <Icon>
                                 <Widgets />
                             </Icon>
                         </StyledSidebarItem>
+                        <StyledSidebarItem
+                            disabled={false}
+                            selected={view === 'app'}
+                            onClick={() => updateView('app')}
+                        >
+                            <Icon>
+                                <Visibility />
+                            </Icon>
+                        </StyledSidebarItem>
                     </StyledSidebar>
-                    {view ? (
+                    {view && view !== 'app' ? (
                         <StyledSidebarContent elevation={7}>
                             <StyledSidebarContentInner>
                                 {view === 'outline' ? <OutlineMenu /> : null}
@@ -164,12 +212,20 @@ export const Designer = (props: DesignerProps) => {
                     ) : null}
                 </StyledLeftMenu>
                 <Stack flex="1">
-                    <Screen>{children}</Screen>
+                    {view !== 'app' ? (
+                        <Screen>{children}</Screen>
+                    ) : (
+                        <>{children}</>
+                    )}
                 </Stack>
-                <StyledRightMenu elevation={7}>
-                    <SelectedMenu />
-                </StyledRightMenu>
-            </Stack>
+                {view !== 'app' ? (
+                    <StyledRightMenu elevation={7}>
+                        <SelectedMenu />
+                    </StyledRightMenu>
+                ) : (
+                    <></>
+                )}
+            </StyledDesignerContainer>
         </DesignerContext.Provider>
     );
-};
+});
