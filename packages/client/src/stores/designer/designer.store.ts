@@ -17,8 +17,8 @@ export interface DesignerStoreInterface {
         active: boolean;
         /** Method that is triggered when the item is dropped */
         canDrop: (parent: string, slot: string) => boolean;
-        /** Title of the dragged item */
-        ghostTitle: string;
+        /** Name of the dragged widget */
+        ghostWidget: string;
         /** Position of the dragged item */
         ghostPosition: {
             x: number;
@@ -67,7 +67,7 @@ export class DesignerStore {
         drag: {
             active: false,
             canDrop: () => false,
-            ghostTitle: '',
+            ghostWidget: '',
             ghostPosition: null,
             placeholderSize: null,
             placeholderAction: null,
@@ -182,7 +182,7 @@ export class DesignerStore {
      * @param canDrop - check if the block can be dropped onto the parent and slot
      */
     activateDrag(
-        title: DesignerStoreInterface['drag']['ghostTitle'],
+        widget: DesignerStoreInterface['drag']['ghostWidget'],
         canDrop: DesignerStoreInterface['drag']['canDrop'],
     ) {
         // activate the drag
@@ -192,7 +192,7 @@ export class DesignerStore {
         this._store.drag.canDrop = canDrop;
 
         // initialize the ghost
-        this._store.drag.ghostTitle = title;
+        this._store.drag.ghostWidget = widget;
         this._store.drag.ghostPosition = null;
 
         // reset the placeholder
@@ -207,7 +207,7 @@ export class DesignerStore {
         this.resetPlaceholder();
 
         // reset the ghost
-        this._store.drag.ghostTitle = '';
+        this._store.drag.ghostWidget = '';
         this._store.drag.ghostPosition = null;
 
         // reset the validation

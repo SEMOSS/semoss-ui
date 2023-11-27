@@ -1,45 +1,24 @@
 import { useState, useEffect, useCallback } from 'react';
 import { observer } from 'mobx-react-lite';
-import { Icon, Stack, styled, Typography } from '@semoss/ui';
+import { styled, Card } from '@semoss/ui';
 
-import { ActionMessages, BlockJSON } from '@/stores';
+import { ActionMessages, BlockConfig, BlockJSON } from '@/stores';
 import { useDesigner } from '@/hooks';
-import { BarChartOutlined } from '@mui/icons-material';
+import { BlocksMenuCardContent } from './BlocksMenuCardContent';
 
-const StyledMenuItem = styled('div')(({ theme }) => ({
-    ...theme.typography.subtitle2,
-    display: 'flex',
-    // alignItems: 'center',
-    // justifyContent: 'center',
-    height: theme.spacing(8),
-    width: '100%',
-    cursor: 'move',
-    borderWidth: '1px',
-    borderColor: theme.palette.grey['700'],
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'flex-end',
-    paddingTop: theme.spacing(1.5),
-    paddingRight: theme.spacing(1),
-    paddingBottom: theme.spacing(1.5),
-    paddingLeft: theme.spacing(2),
-    gap: theme.spacing(1),
-    '&:hover': {
-        backgroundColor: theme.palette.primary.light,
-    },
+const StyledCard = styled(Card)(() => ({
+    borderRadius: '8px',
+    boxShadow: '0px 5px 22px 0px rgba(0, 0, 0, 0.06)',
+    cursor: 'grab',
 }));
 
-interface AddMenuItemProps {
-    /** Name of the Widget */
-    name: string;
-
-    /** Data of the Widget */
-    json: BlockJSON;
-    icon: any;
-}
-
-export const AddMenuItem = observer((props: AddMenuItemProps) => {
-    const { name, json, icon: BlockIcon } = props;
+export const BlocksMenuCard = observer((props: { block: BlockConfig }) => {
+    const json: BlockJSON = {
+        widget: props.block.widget,
+        data: props.block.data,
+        slots: (props.block.slots || {}) as BlockJSON['slots'],
+        listeners: props.block.listeners || {},
+    };
 
     const { designer } = useDesigner();
 
@@ -51,7 +30,7 @@ export const AddMenuItem = observer((props: AddMenuItemProps) => {
      */
     const handleMouseDown = () => {
         // set the dragged
-        designer.activateDrag(name, () => {
+        designer.activateDrag(props.block.widget, () => {
             return true;
         });
 
@@ -84,7 +63,7 @@ export const AddMenuItem = observer((props: AddMenuItemProps) => {
                     placeholderAction.id,
                 );
 
-                if (siblingWidget.parent) {
+                if (siblingWidget?.parent) {
                     designer.blocks.dispatch({
                         message: ActionMessages.ADD_BLOCK,
                         payload: {
@@ -145,19 +124,11 @@ export const AddMenuItem = observer((props: AddMenuItemProps) => {
     }, [designer.drag.active, local, handleDocumentMouseUp]);
 
     return (
-        <StyledMenuItem onMouseDown={handleMouseDown}>
-            <Icon fontSize="medium">{<BlockIcon />}</Icon>
-            <Stack flex={'1'} direction="row" alignItems={'center'}>
-                <Typography
-                    variant="body1"
-                    fontWeight="regular"
-                    sx={{
-                        flex: '1',
-                    }}
-                >
-                    {name}
-                </Typography>
-            </Stack>
-        </StyledMenuItem>
+        <StyledCard onMouseDown={handleMouseDown}>
+            <BlocksMenuCardContent
+                widget={props.block.widget}
+                icon={props.block.icon}
+            />
+        </StyledCard>
     );
 });

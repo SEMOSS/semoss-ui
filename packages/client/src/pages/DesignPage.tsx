@@ -1,7 +1,10 @@
-import { ActionMessages, Query, StateStore } from '@/stores';
-import { BlocksBuilder as DesignerPage } from '@semoss/blocks';
+import { useMemo } from 'react';
+import { StateStore, DesignerStore } from '@/stores';
+import { Designer } from '@/components/designer';
+import { Blocks, Renderer } from '@/components/blocks';
+import { DefaultBlocks } from '@/components/block-defaults';
 import { styled } from '@semoss/ui';
-import { runPixel } from '@/api';
+import { observer } from 'mobx-react-lite';
 
 const NAV_HEIGHT = '48px';
 
@@ -19,17 +22,31 @@ const StyledContent = styled('div')(() => ({
     overflow: 'hidden',
 }));
 
-export const DesignPage = () => {
+const ACTIVE = 'page-1';
+
+export const DesignPage = observer(() => {
+    /**
+     * Have the designer control the blocks
+     */
+    const designer = useMemo(() => {
+        const d = new DesignerStore(StateStore);
+
+        // set the rendered one
+        d.setRendered(ACTIVE);
+
+        // return the store
+        return d;
+    }, [StateStore]);
+
     return (
         <StyledViewport>
             <StyledContent>
-                <DesignerPage
-                    blocks={StateStore.blocks}
-                    queries={StateStore.queries}
-                    run={(pixel: string) => runPixel('', pixel)}
-                    editMode={true}
-                />
+                <Blocks state={StateStore} registry={DefaultBlocks}>
+                    <Designer designer={designer}>
+                        <Renderer id={ACTIVE} />
+                    </Designer>
+                </Blocks>
             </StyledContent>
         </StyledViewport>
     );
-};
+});

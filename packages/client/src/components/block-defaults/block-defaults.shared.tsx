@@ -50,7 +50,12 @@ export const buildSpacingSection = () => ({
         {
             description: 'Padding',
             render: ({ id }) => (
-                <InputSettings id={id} label="Padding" path="style.padding" />
+                <InputSettings
+                    id={id}
+                    label="Padding"
+                    path="style.padding"
+                    defaultValue={'24px'}
+                />
             ),
         },
     ],
