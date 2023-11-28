@@ -2,8 +2,13 @@ import { useLayoutEffect, useState } from 'react';
 import { observer } from 'mobx-react-lite';
 import { styled, ButtonGroup, Button } from '@semoss/ui';
 
-import { getRelativeSize, getRootElement, getBlockElement } from '@/stores';
-import { useBlock, useDesigner } from '@/hooks';
+import {
+    getRelativeSize,
+    getRootElement,
+    getBlockElement,
+    BlockJSON,
+} from '@/stores';
+import { useBlock, useBlocks, useDesigner } from '@/hooks';
 import { ContentCopy, Delete } from '@mui/icons-material';
 import { ACTIVE } from '@/pages/DesignPage';
 
@@ -36,6 +41,7 @@ export const DeleteDuplicateMask = observer(() => {
     const { clearBlock, deleteBlock, duplicateBlock } = useBlock(
         designer.selected,
     );
+    const { state } = useBlocks();
 
     // get the root, watch changes, and reposition the mask
     useLayoutEffect(() => {

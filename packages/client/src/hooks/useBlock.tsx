@@ -146,6 +146,32 @@ export const useBlock = <D extends BlockDef = BlockDef>(
     }, []);
 
     const duplicateBlock = useCallback((): void => {
+        // get the json for the block to add
+        const getJsonForBlock = (id: string) => {
+            const block = state.blocks[id];
+
+            const blockJson = {
+                widget: block.widget,
+                data: block.data,
+                listeners: block.listeners,
+                slots: {},
+            };
+
+            // generate the slots
+            for (const slot in block.slots) {
+                if (block.slots[slot]) {
+                    blockJson.slots[slot] = block.slots[slot].children.map(
+                        (childId) => {
+                            return getJsonForBlock(childId);
+                        },
+                    );
+                }
+            }
+
+            // return it
+            return blockJson;
+        };
+
         const position = block?.parent?.id
             ? {
                   parent: block.parent.id,
@@ -155,9 +181,9 @@ export const useBlock = <D extends BlockDef = BlockDef>(
               }
             : undefined;
         state.dispatch({
-            message: ActionMessages.DUPLICATE_BLOCK,
+            message: ActionMessages.ADD_BLOCK,
             payload: {
-                id: block.id,
+                json: getJsonForBlock(block.id) as BlockJSON,
                 position: position,
             },
         });
