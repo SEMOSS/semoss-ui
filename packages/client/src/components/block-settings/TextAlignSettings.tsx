@@ -103,11 +103,16 @@ export const TextAlignSettings = observer(
         return (
             <Stack direction="row" alignItems={'center'}>
                 <Typography variant="body2">{label}</Typography>
-                <Stack flex={'1'} justifyContent="end" spacing={2}>
+                <Stack
+                    direction="row"
+                    flex={'1'}
+                    justifyContent="end"
+                    spacing={2}
+                >
                     <ButtonGroup>
                         <IconButton
                             color={
-                                value == 'left' || !!value
+                                value == 'left' || !value
                                     ? 'primary'
                                     : undefined
                             }
