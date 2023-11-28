@@ -44,11 +44,7 @@ export const config: BlockConfig<TextBlockDef> = {
                 {
                     description: 'Text Align',
                     render: ({ id }) => (
-                        <TextAlignSettings
-                            id={id}
-                            label="Text Align"
-                            path="style.textAlign"
-                        />
+                        <TextAlignSettings id={id} path="style.textAlign" />
                     ),
                 },
             ],

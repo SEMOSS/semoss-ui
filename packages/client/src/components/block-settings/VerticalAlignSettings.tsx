@@ -7,10 +7,9 @@ import { useBlockSettings } from '@/hooks';
 import { Block, BlockDef } from '@/stores';
 import { getValueByPath } from '@/utility';
 import {
-    FormatAlignCenter,
-    FormatAlignJustify,
-    FormatAlignLeft,
-    FormatAlignRight,
+    VerticalAlignBottom,
+    VerticalAlignCenter,
+    VerticalAlignTop,
 } from '@mui/icons-material';
 
 interface InputSettingsProps<D extends BlockDef = BlockDef> {
@@ -25,7 +24,7 @@ interface InputSettingsProps<D extends BlockDef = BlockDef> {
     path: Paths<Block<D>['data'], 4>;
 }
 
-export const TextAlignSettings = observer(
+export const VerticalAlignSettings = observer(
     <D extends BlockDef = BlockDef>({ id, path }: InputSettingsProps<D>) => {
         const { data, setData } = useBlockSettings(id);
 
@@ -83,7 +82,7 @@ export const TextAlignSettings = observer(
 
         return (
             <Stack direction="row" alignItems={'center'}>
-                <Typography variant="body2">Text Align</Typography>
+                <Typography variant="body2">Vertical Align</Typography>
                 <Stack
                     direction="row"
                     flex={'1'}
@@ -93,23 +92,15 @@ export const TextAlignSettings = observer(
                     <ButtonGroup>
                         <IconButton
                             color={
-                                value == 'left' || !value
+                                value == 'start' || !value
                                     ? 'primary'
                                     : undefined
                             }
                             size="small"
-                            onClick={() => onChange('left')}
-                            title="Left"
+                            onClick={() => onChange('start')}
+                            title="Top"
                         >
-                            <FormatAlignLeft />
-                        </IconButton>
-                        <IconButton
-                            color={value == 'right' ? 'primary' : undefined}
-                            size="small"
-                            onClick={() => onChange('right')}
-                            title="Right"
-                        >
-                            <FormatAlignRight />
+                            <VerticalAlignTop />
                         </IconButton>
                         <IconButton
                             color={value == 'center' ? 'primary' : undefined}
@@ -117,15 +108,15 @@ export const TextAlignSettings = observer(
                             onClick={() => onChange('center')}
                             title="Center"
                         >
-                            <FormatAlignCenter />
+                            <VerticalAlignCenter />
                         </IconButton>
                         <IconButton
-                            color={value == 'justify' ? 'primary' : undefined}
+                            color={value == 'end' ? 'primary' : undefined}
                             size="small"
-                            onClick={() => onChange('justify')}
-                            title="Justified"
+                            onClick={() => onChange('end')}
+                            title="Bottom"
                         >
-                            <FormatAlignJustify />
+                            <VerticalAlignBottom />
                         </IconButton>
                     </ButtonGroup>
                 </Stack>

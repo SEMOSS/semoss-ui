@@ -5,6 +5,9 @@ import {
     ListenerSettings,
 } from '@/components/block-settings';
 import { TextAlignSettings } from '../block-settings/TextAlignSettings';
+import { VerticalAlignSettings } from '../block-settings/VerticalAlignSettings';
+import { HorizontalAlignSettings } from '../block-settings/HorizontalAlignSettings';
+import { SpacingSettings } from '../block-settings/SpacingSettings';
 
 /**
  * Build the Editor Section
@@ -24,12 +27,24 @@ export const buildEditorSection = () => ({
  * Build the Layout Section
  */
 export const buildLayoutSection = () => ({
-    name: 'Display',
+    name: 'Layout',
     children: [
         {
-            description: 'Display',
+            description: 'Vertical Align',
             render: ({ id }) => (
-                <InputSettings id={id} label="Display" path="style.display" />
+                <VerticalAlignSettings id={id} path="style.alignItems" />
+            ),
+        },
+        {
+            description: 'Horitzontal Align',
+            render: ({ id }) => (
+                <HorizontalAlignSettings id={id} path="style.justifyContent" />
+            ),
+        },
+        {
+            description: 'Gap',
+            render: ({ id }) => (
+                <SpacingSettings id={id} label="Gap" path="style.gap" />
             ),
         },
     ],
@@ -45,18 +60,13 @@ export const buildSpacingSection = () => ({
         {
             description: 'Margin',
             render: ({ id }) => (
-                <InputSettings id={id} label="Margin" path="style.margin" />
+                <SpacingSettings id={id} label="Margin" path="style.margin" />
             ),
         },
         {
             description: 'Padding',
             render: ({ id }) => (
-                <InputSettings
-                    id={id}
-                    label="Padding"
-                    path="style.padding"
-                    defaultValue={'24px'}
-                />
+                <SpacingSettings id={id} label="Padding" path="style.padding" />
             ),
         },
     ],

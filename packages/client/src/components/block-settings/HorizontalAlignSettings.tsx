@@ -7,10 +7,9 @@ import { useBlockSettings } from '@/hooks';
 import { Block, BlockDef } from '@/stores';
 import { getValueByPath } from '@/utility';
 import {
-    FormatAlignCenter,
-    FormatAlignJustify,
-    FormatAlignLeft,
-    FormatAlignRight,
+    AlignHorizontalCenter,
+    AlignHorizontalLeft,
+    AlignHorizontalRight,
 } from '@mui/icons-material';
 
 interface InputSettingsProps<D extends BlockDef = BlockDef> {
@@ -25,7 +24,7 @@ interface InputSettingsProps<D extends BlockDef = BlockDef> {
     path: Paths<Block<D>['data'], 4>;
 }
 
-export const TextAlignSettings = observer(
+export const HorizontalAlignSettings = observer(
     <D extends BlockDef = BlockDef>({ id, path }: InputSettingsProps<D>) => {
         const { data, setData } = useBlockSettings(id);
 
@@ -83,7 +82,7 @@ export const TextAlignSettings = observer(
 
         return (
             <Stack direction="row" alignItems={'center'}>
-                <Typography variant="body2">Text Align</Typography>
+                <Typography variant="body2">Horizontal Align</Typography>
                 <Stack
                     direction="row"
                     flex={'1'}
@@ -101,15 +100,7 @@ export const TextAlignSettings = observer(
                             onClick={() => onChange('left')}
                             title="Left"
                         >
-                            <FormatAlignLeft />
-                        </IconButton>
-                        <IconButton
-                            color={value == 'right' ? 'primary' : undefined}
-                            size="small"
-                            onClick={() => onChange('right')}
-                            title="Right"
-                        >
-                            <FormatAlignRight />
+                            <AlignHorizontalLeft />
                         </IconButton>
                         <IconButton
                             color={value == 'center' ? 'primary' : undefined}
@@ -117,15 +108,15 @@ export const TextAlignSettings = observer(
                             onClick={() => onChange('center')}
                             title="Center"
                         >
-                            <FormatAlignCenter />
+                            <AlignHorizontalCenter />
                         </IconButton>
                         <IconButton
-                            color={value == 'justify' ? 'primary' : undefined}
+                            color={value == 'right' ? 'primary' : undefined}
                             size="small"
-                            onClick={() => onChange('justify')}
-                            title="Justified"
+                            onClick={() => onChange('right')}
+                            title="Right"
                         >
-                            <FormatAlignJustify />
+                            <AlignHorizontalRight />
                         </IconButton>
                     </ButtonGroup>
                 </Stack>
