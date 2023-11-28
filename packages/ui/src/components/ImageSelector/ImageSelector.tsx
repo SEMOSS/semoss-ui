@@ -1,31 +1,17 @@
 import { useState, useEffect } from "react";
-import { styled } from "@mui/material";
-
-import { Box } from "../../";
-import { Checkbox } from "../../";
-import { FileDropzone } from "../../";
+import { styled, useMediaQuery } from "@mui/material";
+import { Checkbox, FileDropzone, Typography, Grid } from "../../";
 import { ImageList } from "./ImageList";
 import { ImageListItem } from "./ImageListItem";
 import { ImageListItemBar } from "./ImageListItemBar";
-import { Typography } from "../../";
 
-const StyledBox = styled(Box)({
-    width: "600px",
-    height: "300px",
-    margin: "8px",
-});
-
-const StyledImageList = styled(ImageList)({
-    width: "600px",
-    height: "300px",
-    // Promote the list into its own layer in Chrome. This costs memory, but helps keeping high FPS.
-    transform: "translateZ(0)",
-    padding: "16px, 0px, 16px, 0px",
+const StyledContainer = styled(Grid)({
+    width: "900px",
 });
 
 const StyledImageListItem = styled(ImageListItem)({
     width: "120px",
-    height: "120px",
+    // height: "120px",
     zIndex: 998,
     borderRadius: "8px",
     backgroundSize: "cover",
@@ -69,7 +55,6 @@ const StyledImageListItemBar = styled(ImageListItemBar)({
     height: "20px",
     top: "8px",
     borderRadius: "2px",
-    color: "pink",
 });
 
 export interface ImageSelectorProps {
@@ -85,6 +70,9 @@ export interface ImageSelectorProps {
 
 export const ImageSelector = (props: ImageSelectorProps): JSX.Element => {
     const { value, options, onChange, ...otherProps } = props;
+
+    //for number of columns
+    const matchMedia = useMediaQuery("(min-width:900px)");
 
     // set checked image to the default value
     const [checked, setCheckbox] = useState(value);
@@ -139,47 +127,52 @@ export const ImageSelector = (props: ImageSelectorProps): JSX.Element => {
     };
 
     return (
-        <StyledBox {...otherProps}>
-            <Typography variant="subtitle1">Select Image</Typography>
-            <Typography variant="caption">
-                Select a default image or upload your own
-            </Typography>
-            <StyledImageList
-                rowHeight={117}
-                gap={16}
-                cols={4}
-                variant="standard"
-            >
-                <StyledDragAndDrop key={0}>
-                    <StyledFileDropzone
-                        description="Browse"
-                        onChange={(value) => handleAddNewImage(value)}
-                    />
-                </StyledDragAndDrop>
-                {controlledImages.map((image, id) => {
-                    return (
-                        <StyledImageListItem
-                            key={id}
-                            value={image.src}
-                            className={`${
-                                checked === image.src ? "isChecked" : ""
-                            }`}
-                            sx={{ backgroundImage: `url(${image.src})` }}
-                        >
-                            <StyledImageListItemBar
-                                position={"top"}
-                                actionIcon={
-                                    <Checkbox
-                                        checked={checked === image.src}
-                                        onChange={() => checkImage(image)}
-                                    />
-                                }
-                                actionPosition={"left"}
-                            />
-                        </StyledImageListItem>
-                    );
-                })}
-            </StyledImageList>
-        </StyledBox>
+        <StyledContainer container direction="column" {...otherProps}>
+            <Grid item xs>
+                <Typography variant="subtitle1">Select Image</Typography>
+                <Typography variant="caption">
+                    Select a default image or upload your own
+                </Typography>
+            </Grid>
+
+            <Grid item xs>
+                <ImageList
+                    rowHeight={117}
+                    cols={matchMedia ? 5 : 4}
+                    variant="standard"
+                    sx={{ gap: "16px 0 !important" }}
+                >
+                    <StyledDragAndDrop key={0}>
+                        <StyledFileDropzone
+                            description="Browse"
+                            onChange={(value) => handleAddNewImage(value)}
+                        />
+                    </StyledDragAndDrop>
+                    {controlledImages.map((image, id) => {
+                        return (
+                            <StyledImageListItem
+                                key={id}
+                                value={image.src}
+                                className={`${
+                                    checked === image.src ? "isChecked" : ""
+                                }`}
+                                sx={{ backgroundImage: `url(${image.src})` }}
+                            >
+                                <StyledImageListItemBar
+                                    position={"top"}
+                                    actionIcon={
+                                        <Checkbox
+                                            checked={checked === image.src}
+                                            onChange={() => checkImage(image)}
+                                        />
+                                    }
+                                    actionPosition={"left"}
+                                />
+                            </StyledImageListItem>
+                        );
+                    })}
+                </ImageList>
+            </Grid>
+        </StyledContainer>
     );
 };

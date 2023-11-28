@@ -26,7 +26,7 @@ import {
 import { formatName } from '@/utils';
 import { Link } from 'react-router-dom';
 
-const StyledIconButton = styled(IconButton)(({ theme }) => ({
+const StyledIconButton = styled(IconButton)(() => ({
     marginTop: '-3px',
     marginLeft: '2px',
 }));
@@ -181,7 +181,7 @@ export const EngineShell = (props: EngineShellProps) => {
                                         <EditDatabaseDetails
                                             values={metaVals}
                                             open={edit}
-                                            currentImageSrc={`${MODULE}/api/app-${id}/appImage/download`}
+                                            currentImageSrc={`${Env.MODULE}/api/app-${id}/appImage/download`}
                                             type={
                                                 type.charAt(0).toUpperCase() +
                                                 type.slice(1)
