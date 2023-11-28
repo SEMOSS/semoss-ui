@@ -13,6 +13,8 @@ import { Database } from '@/assets/img/Database';
 import { EngineIndexPage } from './EngineIndexPage';
 import { EngineMetadataPage } from './EngineMetadataPage';
 import { EngineSettingsPage } from './EngineSettingsPage';
+import { EngineFilePage } from './EngineFilePage';
+import { EngineQAPage } from './EngineQAPage';
 // import { EngineQueryDataPage } from './EngineQueryDataPage';
 // import { EngineReplaceDataPage } from './EngineReplaceDataPage';
 import { EngineUsagePage } from './EngineUsagePage';
@@ -167,6 +169,19 @@ export const ENGINE_ROUTES: {
                 path: 'settings',
                 component: EngineSettingsPage,
                 restrict: ['EDIT', 'OWNER'],
+            },
+            ,
+            {
+                name: 'Files',
+                path: 'files',
+                component: EngineFilePage,
+                restrict: ['OWNER'],
+            },
+            {
+                name: 'Q&A',
+                path: 'qa',
+                component: EngineQAPage,
+                restrict: ['OWNER'],
             },
         ],
     },

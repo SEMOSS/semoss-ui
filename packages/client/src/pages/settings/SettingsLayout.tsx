@@ -23,6 +23,15 @@ import { SETTINGS_ROUTES } from './settings.constants';
 import { observer } from 'mobx-react-lite';
 import { AdminPanelSettingsOutlined } from '@mui/icons-material';
 
+const StyledId = styled(Typography)(({ theme }) => ({
+    color: theme.palette.secondary.dark,
+}));
+
+const IdContainer = styled('span')(({ theme }) => ({
+    display: 'flex',
+    alignItems: 'center',
+}));
+
 const StyledAdminContainer = styled(Paper)(({ theme }) => ({
     position: 'absolute',
     top: theme.spacing(1),
@@ -166,6 +175,21 @@ export const SettingsLayout = observer(() => {
                                 ? state.name
                                 : matchedRoute.title}
                         </Typography>
+                        {id ? (
+                            <IdContainer>
+                                <StyledId variant={'subtitle2'}>{id}</StyledId>
+                                <IconButton
+                                    size="small"
+                                    onClick={() => {
+                                        copy(id);
+                                    }}
+                                >
+                                    <Tooltip title={`Copy ID`}>
+                                        <ContentCopyOutlined fontSize="inherit" />
+                                    </Tooltip>
+                                </IconButton>
+                            </IdContainer>
+                        ) : null}
                         <Typography variant="body1">
                             {!adminMode || matchedRoute.path !== ''
                                 ? matchedRoute.description

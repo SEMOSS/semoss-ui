@@ -19,7 +19,9 @@ export type AccordionSummaryProps = {
 };
 
 export const AccordionSummary = (props: AccordionSummaryProps) => {
+    const { children, ...otherProps } = props;
+
     return (
-        <MuiAccordionSummary {...props}>{props.children}</MuiAccordionSummary>
+        <MuiAccordionSummary {...otherProps}>{children}</MuiAccordionSummary>
     );
 };

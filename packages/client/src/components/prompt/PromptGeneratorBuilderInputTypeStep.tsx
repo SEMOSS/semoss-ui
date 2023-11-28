@@ -4,13 +4,10 @@ import { StyledStepPaper } from './prompt.styled';
 import { Autocomplete, Box, Grid, TextField, Typography } from '@mui/material';
 import {
     TOKEN_TYPE_INPUT,
-    INPUT_TYPE_TEXT,
-    INPUT_TYPE_VECTOR,
+    INPUT_TYPES,
     INPUT_TYPE_DISPLAY,
 } from './prompt.constants';
 import { PromptGeneratorReadonlyInputToken } from './PromptGeneratorToken';
-
-const inputTypes = [INPUT_TYPE_TEXT, INPUT_TYPE_VECTOR];
 
 function InputSelection(props: {
     inputToken: Token;
@@ -32,7 +29,7 @@ function InputSelection(props: {
                 <Autocomplete
                     disableClearable
                     id="input-token-autocomplete"
-                    options={inputTypes}
+                    options={INPUT_TYPES}
                     value={props.inputType}
                     getOptionLabel={(option) => INPUT_TYPE_DISPLAY[option]}
                     onChange={(_, newInputType) => {

@@ -19,7 +19,7 @@
         "@mui/icons-material": "^5.11.16",
         "@mui/material": "^5.13.5",
         "@semoss/ui": "workspace:*",
-        "axios": "^0.24.0",
+        "axios": "^1.5.0",
         "dayjs": "^1.11.4",
         "dompurify": "^2.3.10",
         "marked": "^4.0.18",
@@ -29,6 +29,7 @@
         "react-dom": "^17.0.2",
         "react-flow-renderer": "^10.3.16",
         "react-hook-form": "^7.34.2",
+        "react-markdown": "8.0.7",
         "react-router-dom": "^6.3.0"
     },
     "devDependencies": {

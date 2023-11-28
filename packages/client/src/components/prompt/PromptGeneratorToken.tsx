@@ -17,7 +17,12 @@ import {
 } from '@mui/material';
 import { SaveAlt } from '@mui/icons-material';
 
-const StyledTextButton = styled('button')(() => ({
+interface HoverButtonRootProps {
+    disableHover: boolean;
+}
+const StyledTextButton = styled('button', {
+    shouldForwardProp: (prop) => prop !== 'disableHover',
+})<HoverButtonRootProps>(({ disableHover }) => ({
     background: 'none',
     color: 'inherit',
     border: 'none',
@@ -28,21 +33,21 @@ const StyledTextButton = styled('button')(() => ({
     marginLeft: '-2px',
     marginRight: '-2px',
     font: 'inherit',
-    cursor: 'pointer',
+    cursor: disableHover ? 'default' : 'pointer',
     outline: 'inherit',
     '&:hover': {
-        backgroundColor: blue[50],
+        backgroundColor: disableHover ? 'unset' : blue[50],
     },
 }));
 
-interface RootProps {
+interface ChipRootProps {
     isChipSelected: boolean;
     disableHover: boolean;
 }
 const StyledChip = styled(Chip, {
     shouldForwardProp: (prop) =>
         prop !== 'isChipSelected' && prop !== 'disableHover',
-})<RootProps>(({ isChipSelected, disableHover, theme }) => ({
+})<ChipRootProps>(({ isChipSelected, disableHover, theme }) => ({
     backgroundColor: isChipSelected ? theme.palette.primary.main : blue[50],
     color: isChipSelected ? blue[50] : theme.palette.primary.main,
     cursor: disableHover ? 'default' : 'pointer',
@@ -88,6 +93,10 @@ export function PromptGeneratorHoverToken(props: {
         <>
             {props.token.isHiddenPhraseInputToken ? (
                 <></>
+            ) : props.token.type === TOKEN_TYPE_TEXT ? (
+                <StyledTextButton key={props.token.index} disableHover>
+                    {props.token.display}
+                </StyledTextButton>
             ) : (
                 <StyledTooltip
                     PopperProps={{
@@ -108,19 +117,13 @@ export function PromptGeneratorHoverToken(props: {
                         </React.Fragment>
                     }
                 >
-                    {props.token.type === TOKEN_TYPE_TEXT ? (
-                        <StyledTextButton key={props.token.index}>
-                            {props.token.display}
-                        </StyledTextButton>
-                    ) : (
-                        <StyledChip
-                            isChipSelected={false}
-                            key={props.token.index}
-                            label={`{ } ${props.token.display}`}
-                            size="small"
-                            disableHover
-                        />
-                    )}
+                    <StyledChip
+                        isChipSelected={false}
+                        key={props.token.index}
+                        label={`{ } ${props.token.display}`}
+                        size="small"
+                        disableHover
+                    />
                 </StyledTooltip>
             )}
         </>
@@ -191,6 +194,7 @@ export function PromptGeneratorSetToken(props: {
                             onClick={() =>
                                 props.addSelectedInputToken(props.token.index)
                             }
+                            disableHover={false}
                         >
                             {props.token.display}
                         </StyledTextButton>

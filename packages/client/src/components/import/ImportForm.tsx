@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState, useRef, useMemo, useReducer } from 'react';
 import {
     Button,
     Checkbox,
@@ -11,8 +11,10 @@ import {
     Select,
     styled,
     useNotification,
+    CircularProgress,
+    Tooltip,
 } from '@semoss/ui';
-import { ExpandLess, ExpandMore } from '@mui/icons-material';
+import { ExpandLess, ExpandMore, Help } from '@mui/icons-material';
 
 import { useStepper, useRootStore } from '@/hooks';
 import { useNavigate } from 'react-router-dom';
@@ -33,9 +35,40 @@ const StyledProperty = styled('div')(({ theme }) => ({
 
 const StyledKeyValue = styled('div')(({ theme }) => ({
     display: 'flex',
+    flexDirection: 'column',
     gap: theme.spacing(2),
     marginBottom: theme.spacing(2),
 }));
+
+const StyledDropzoneField = styled('div')(({ theme }) => ({
+    display: 'flex',
+    flexDirection: 'column',
+    gap: theme.spacing(2),
+    width: '100%',
+    height: '100%',
+}));
+
+const StyledSubmitButton = styled(Button)(() => ({
+    textTransform: 'capitalize',
+    minWidth: '128px',
+}));
+
+const initialState = {
+    defaultFields: [],
+    advancedFields: [],
+};
+
+const reducer = (state, action) => {
+    switch (action.type) {
+        case 'field': {
+            return {
+                ...state,
+                [action.field]: action.value,
+            };
+        }
+    }
+    return state;
+};
 
 export const ImportForm = (props) => {
     const { submitFunc, fields } = props;
@@ -45,47 +78,291 @@ export const ImportForm = (props) => {
     const { monolithStore, configStore } = useRootStore();
     const navigate = useNavigate();
 
-    const [defaultFields, setDefaultFields] = useState([]);
-    const [advancedFields, setAdvancedFields] = useState([]);
+    const [state, dispatch] = useReducer(reducer, initialState);
+    const { defaultFields, advancedFields } = state;
     const [openAdvanced, setOpenAdvanced] = useState(false);
+    const [formLoading, setFormLoading] = useState(false);
 
-    const { control, handleSubmit, reset } = useForm({
-        defaultValues: {
-            MODEL: '',
-            // SMSS_PROPERTIES: [],
-        } || { VECTOR: '' },
-    });
+    const watchedFieldRef = useRef({});
+
+    const { control, handleSubmit, reset, watch, setValue } = useForm();
+
+    /** Used to Trigger useEffect anytime these vals change */
+    const fieldsToWatch = useMemo(() => {
+        const f2w = [];
+        for (const f of fields) {
+            if (f.pixel) {
+                const pixelParams = f.pixel.match(/<([^>]+)>/g);
+                if (pixelParams) {
+                    pixelParams.forEach((p) => {
+                        const strippedVal = p.replace(/[<>]/g, '');
+                        f2w.push(strippedVal);
+                    });
+                }
+            }
+            if (f.options.pixel) {
+                const pixelParams = f.options.pixel.match(/<([^>]+)>/g);
+                if (pixelParams) {
+                    pixelParams.forEach((p) => {
+                        const strippedVal = p.replace(/[<>]/g, '');
+                        f2w.push(strippedVal);
+                    });
+                }
+            }
+        }
+        return f2w;
+    }, []);
 
     /**
-     * 1. Sets default values for all fields
-     * 2. Set Default and Advanced Fields to loop
+     * Set Form Fields State
+     * 1. Set Default values with react hook form
+     * 2. Splits out Advanced and Default fields
      */
     useEffect(() => {
+        setInitialFieldState();
+    }, [steps.length]);
+
+    /**
+     * Anytime a watched field changes trigger this
+     * to call the reactor that dependsOn that field
+     */
+    useEffect(() => {
+        console.warn('WATCHED FIELD CHANGED');
+        const destructuredFieldRefs = Object.entries(watchedFieldRef.current);
+
+        if (!destructuredFieldRefs.length) {
+            setNewWatchedFieldReferences();
+            return;
+        } else {
+            // 1. Loop through default fields
+            defaultFields.forEach((f) => {
+                checkFieldParamsAndExecutePixel(f);
+            });
+
+            // 2. Loop through advanced fields
+            advancedFields.forEach((f) => {
+                checkFieldParamsAndExecutePixel(f);
+            });
+
+            // 3. Set Reference of fields for next useEffect so we only call pixels that are affected
+            setNewWatchedFieldReferences();
+        }
+    }, [...fieldsToWatch.map((field) => watch(field))]);
+
+    /**
+     * 1. Set Default values for all fields, if default value is present
+     * 2. Field uses a pixel to populate default value,
+     * - a. call that pixel if no dependent param vals are present in pixel
+     * 3. Set options for fields that use pixel to show dropdown options
+     */
+    const setInitialFieldState = async () => {
         const defaultVals = {};
         const defFields = [];
         const advFields = [];
 
-        fields.forEach((f) => {
-            defaultVals[f.fieldName] = f.defaultValue;
-            if (f.advanced) {
-                advFields.push(f);
-            } else {
-                defFields.push(f);
+        for (const f of fields) {
+            const finalFieldState = f;
+
+            // 1. Set default vals for field
+            defaultVals[finalFieldState.fieldName] =
+                finalFieldState.defaultValue;
+
+            if (finalFieldState.pixel || finalFieldState.options.pixel) {
+                let pixelToExecute = '';
+
+                // 2. Add to Pixel string for default value
+                if (finalFieldState.pixel) {
+                    const pixelParams =
+                        finalFieldState.pixel.match(/<([^>]+)>/g);
+
+                    // 2a. No dependent param vals for pixel
+                    if (!pixelParams) {
+                        pixelToExecute += finalFieldState.pixel;
+                    } else {
+                        if (finalFieldState.advanced) {
+                            advFields.push(finalFieldState);
+                        } else {
+                            defFields.push(finalFieldState);
+                        }
+                        continue;
+                    }
+                }
+
+                // 3. Add to Pixel String to get options for field dropdown
+                if (finalFieldState.options.pixel) {
+                    const pixelParams =
+                        finalFieldState.options.pixel.match(/<([^>]+)>/g);
+                    if (!pixelParams) {
+                        pixelToExecute += finalFieldState.options.pixel;
+                    } else {
+                        if (finalFieldState.advanced) {
+                            advFields.push(finalFieldState);
+                        } else {
+                            defFields.push(finalFieldState);
+                        }
+                        continue;
+                    }
+                }
+
+                // If no pixel to execute
+                if (!pixelToExecute) {
+                    continue;
+                }
+
+                const result = await monolithStore.runQuery(pixelToExecute);
+
+                let output = result.pixelReturn[0].output,
+                    operationType = result.pixelReturn[0].operationType;
+
+                if (operationType.indexOf('ERROR') > -1) {
+                    notification.add({
+                        color: 'error',
+                        message: output,
+                    });
+                }
+
+                if (finalFieldState.pixel && !finalFieldState.options.pixel) {
+                    console.log(
+                        `Populating default value for ${finalFieldState.fieldName}`,
+                    );
+                    defaultVals[finalFieldState.fieldName] = output;
+                } else if (
+                    !finalFieldState.pixel &&
+                    finalFieldState.options.pixel
+                ) {
+                    console.log(
+                        `Populating options for ${finalFieldState.fieldName}`,
+                    );
+                    const opts = [];
+
+                    output.forEach((opt) => {
+                        opts.push({
+                            display: opt.database_name,
+                            value: opt.database_id,
+                        });
+                    });
+
+                    finalFieldState.options = {
+                        ...f.options,
+                        options: opts,
+                    };
+                } else {
+                    console.log(
+                        `Populating default value and options for ${finalFieldState.fieldName}`,
+                    );
+                    defaultVals[finalFieldState.fieldName] = output;
+
+                    output = result.pixelReturn[1].output;
+                    operationType = result.pixelReturn[1].operationType;
+                    const opts = [];
+
+                    output.forEach((opt) => {
+                        opts.push({
+                            display: opt.database_name,
+                            value: opt.database_id,
+                        });
+                    });
+
+                    finalFieldState.options = {
+                        ...f.options,
+                        options: opts,
+                    };
+                }
             }
+
+            if (finalFieldState.advanced) {
+                advFields.push(finalFieldState);
+            } else {
+                defFields.push(finalFieldState);
+            }
+        }
+
+        dispatch({
+            type: 'field',
+            field: 'defaultFields',
+            value: defFields,
         });
 
-        setDefaultFields(defFields);
-        setAdvancedFields(advFields);
+        dispatch({
+            type: 'field',
+            field: 'advancedFields',
+            value: advFields,
+        });
 
         reset(defaultVals);
-    }, [steps.length]);
+    };
+
+    const executeWatchedFieldPixel = async (
+        fieldName,
+        pixel: string,
+        type: 'value' | 'options',
+    ) => {
+        const response = await monolithStore.runQuery(pixel);
+        const output = response.pixelReturn[0].output,
+            operationType = response.pixelReturn[0].operationType;
+
+        if (operationType.indexOf('ERROR') > -1) {
+            notification.add({
+                color: 'error',
+                message: output,
+            });
+            return;
+        }
+
+        if (type === 'value') {
+            setValue(fieldName, output);
+        } else {
+            const output = [
+                { display: 'ERROR: FORMAT OUTPUT VALUES', value: 'ERROR' },
+            ];
+            let defaultFieldIndex = -1;
+            defaultFields.forEach((f, i) => {
+                if (f.fieldName === fieldName) {
+                    defaultFieldIndex = i;
+                }
+            });
+
+            if (defaultFieldIndex > -1) {
+                const copy = defaultFields;
+                copy[defaultFieldIndex].options.options = output;
+
+                dispatch({
+                    type: 'field',
+                    field: 'defaultFields',
+                    value: copy,
+                });
+            }
+
+            let advancedFieldIndex = -1;
+            advancedFields.forEach((f, i) => {
+                if (f.fieldName === fieldName) {
+                    advancedFieldIndex = i;
+                }
+            });
+
+            if (advancedFieldIndex > -1) {
+                const copy = advancedFields;
+                copy[advancedFieldIndex].options.options = output;
+
+                dispatch({
+                    type: 'field',
+                    field: 'advancedFields',
+                    value: copy,
+                });
+            }
+        }
+    };
 
     /**
      * @desc Takes details from submission form and
      * constucts values to parent for submission
-     * @param data // TO DO: Type this out and handle all of this in the parent
+     * @param data
+     * Refactor:  This should only handle the distribution of data
+     * OnSubmit Function will handle Adding of Step or Pixel Call
+     * Also: type this out
      */
     const onSubmit = async (data) => {
+        setFormLoading(true);
         // If it's a File Upload
         if (steps[1].id.includes('File Uploads')) {
             if (steps[1].title === 'ZIP') {
@@ -108,12 +385,14 @@ export const ImportForm = (props) => {
                         color: 'error',
                         message: output,
                     });
+                    setFormLoading(false);
                     return;
                 }
 
                 navigate(`/engine/${(steps[0].data as string).toUpperCase()}`);
                 return;
             }
+            setFormLoading(false);
             return;
         }
 
@@ -135,29 +414,132 @@ export const ImportForm = (props) => {
             );
         } else {
             const connectionDetails = {};
+            const secondaryFields = {};
 
-            // Construct details for submission account for new properties
-            Object.entries(data).forEach((obj) => {
-                if (obj[0] !== 'SMSS_PROPERTIES') {
-                    connectionDetails[obj[0]] = obj[1];
+            fields.forEach((f) => {
+                let fieldValue = data[f.fieldName];
+
+                if (f.options.component === 'number') {
+                    fieldValue = parseInt(fieldValue);
+                }
+
+                if (f.secondary) {
+                    secondaryFields[f.fieldName] = fieldValue;
+                } else {
+                    connectionDetails[f.fieldName] = fieldValue;
                 }
             });
-            /** For custom properties */
-            // data.SMSS_PROPERTIES.forEach((obj) => {
-            //     if (!connectionDetails[obj.KEY]) {
-            //         connectionDetails[obj.KEY] = obj.VALUE;
-            //     }
-            // });
 
             const formVals = {
-                type: steps[0].data, // 'MODEL' | "VECTOR" | "FUNCTION" | "STORAGE" | "DATABASE"
-                name: data.NAME, // Name of engine
+                // 'MODEL' | "VECTOR" | "FUNCTION" | "STORAGE" | "DATABASE"
+                type: steps[0].data,
+                // Name of engine
+                name: data.NAME,
                 fields: connectionDetails,
+                secondaryFields: secondaryFields,
             };
 
             submitFunc(formVals);
         }
+        setFormLoading(false);
     };
+
+    /**
+     * ---------------------------
+     * Helpers -------------------
+     * ---------------------------
+     */
+
+    /**
+     * 1. if f.pixel or fields.options.pixel hold respective pixel as constant to execute where we replace param vals
+     * 2. Loop through fieldsToWatch
+     * -- 2a. if f.pixel.match(<'VALUE'>) replace it with form val
+     * 3. if either of those pixels held as constant has no param blockers this means pixel can be executed
+     * @param f
+     */
+    const checkFieldParamsAndExecutePixel = (f) => {
+        let pixel = f.pixel;
+        let optionsPixel = f.options.pixel;
+
+        if (pixel) {
+            if (hasParameterizedValue(pixel)) {
+                let pixelParamChanged = false;
+                fieldsToWatch.forEach((fieldName) => {
+                    const val = watch(fieldName);
+                    if (
+                        watchedFieldRef.current[fieldName] !== undefined &&
+                        val
+                    ) {
+                        // A watched value changed from what it was before
+                        if (val !== watchedFieldRef.current[fieldName]) {
+                            pixelParamChanged = true;
+                        }
+                        pixel = pixel.replaceAll(`<${fieldName}>`, val);
+                    }
+                });
+
+                // Execute pixel if dependency changed and there aren't any params in string
+                if (!hasParameterizedValue(pixel) && pixelParamChanged) {
+                    executeWatchedFieldPixel(f.fieldName, pixel, 'value');
+                }
+            }
+        }
+
+        if (optionsPixel) {
+            if (hasParameterizedValue(optionsPixel)) {
+                let pixelParamChanged = false;
+                fieldsToWatch.forEach((fieldName) => {
+                    const val = watch(fieldName);
+                    if (
+                        watchedFieldRef.current[fieldName] !== undefined &&
+                        val
+                    ) {
+                        // A watched value changed from what it was before
+                        if (val !== watchedFieldRef.current[fieldName]) {
+                            pixelParamChanged = true;
+                        }
+                        optionsPixel = optionsPixel.replaceAll(
+                            `<${fieldName}>`,
+                            val,
+                        );
+                    }
+                });
+
+                // Execute pixel if dependency changed and there aren't any params in string
+                if (!hasParameterizedValue(optionsPixel) && pixelParamChanged) {
+                    executeWatchedFieldPixel(
+                        f.fieldName,
+                        optionsPixel,
+                        'options',
+                    );
+                }
+            }
+        }
+    };
+
+    /**
+     * Sets new Reference Value of field
+     */
+    const setNewWatchedFieldReferences = () => {
+        fieldsToWatch.forEach((fieldName) => {
+            const val = watch(fieldName);
+
+            watchedFieldRef.current[fieldName] = val;
+        });
+    };
+
+    /**
+     *
+     * @param inputString
+     * @returns
+     */
+    function hasParameterizedValue(inputString) {
+        // Define a regular expression to match any value within "<>"
+        const regex = /<([^>]+)>/;
+
+        // Test if the input string matches the pattern
+        return regex.test(inputString);
+    }
 
     return (
         <form onSubmit={handleSubmit(onSubmit)}>
@@ -192,6 +574,25 @@ export const ImportForm = (props) => {
                                                     onChange={(value) =>
                                                         field.onChange(value)
                                                     }
+                                                    // InputProps={{
+                                                    //     startAdornment:
+                                                    //         val.helperText ? (
+                                                    //             <Tooltip
+                                                    //                 title={
+                                                    //                     val.helperText
+                                                    //                 }
+                                                    //             >
+                                                    //                 <IconButton
+                                                    //                     size={
+                                                    //                         'small'
+                                                    //                     }
+                                                    //                 >
+                                                    //                     <Help />
+                                                    //                 </IconButton>
+                                                    //             </Tooltip>
+                                                    //         ) : null,
+                                                    // }}
+                                                    helperText={val.helperText}
                                                 ></TextField>
                                             );
                                         } else if (
@@ -214,6 +615,7 @@ export const ImportForm = (props) => {
                                                     onChange={(value) =>
                                                         field.onChange(value)
                                                     }
+                                                    helperText={val.helperText}
                                                 ></TextField>
                                             );
                                         } else if (
@@ -235,6 +637,7 @@ export const ImportForm = (props) => {
                                                     onChange={(value) =>
                                                         field.onChange(value)
                                                     }
+                                                    helperText={val.helperText}
                                                 >
                                                     {val.options.options.map(
                                                         (opt, i) => {
@@ -255,20 +658,52 @@ export const ImportForm = (props) => {
                                                 </Select>
                                             );
                                         } else if (
-                                            val.options.component ===
-                                            'zip-upload'
+                                            val.options.component === 'number'
                                         ) {
                                             return (
-                                                <FileDropzone
-                                                    multiple={false}
-                                                    value={field.value}
-                                                    disabled={false}
-                                                    onChange={(newValues) => {
-                                                        field.onChange(
+                                                <TextField
+                                                    type="number"
+                                                    fullWidth
+                                                    required={
+                                                        val.rules.required
+                                                    }
+                                                    label={val.label}
+                                                    disabled={val.disabled}
+                                                    value={
+                                                        field.value
+                                                            ? field.value
+                                                            : ''
+                                                    }
+                                                    onChange={(value) =>
+                                                        field.onChange(value)
+                                                    }
+                                                    helperText={val.helperText}
+                                                ></TextField>
+                                            );
+                                        } else if (
+                                            val.options.component ===
+                                            'file-upload'
+                                        ) {
+                                            return (
+                                                <StyledDropzoneField>
+                                                    <Typography
+                                                        variant={'body1'}
+                                                    >
+                                                        {val.label}
+                                                    </Typography>
+                                                    <FileDropzone
+                                                        multiple={false}
+                                                        value={field.value}
+                                                        disabled={false}
+                                                        onChange={(
                                                             newValues,
-                                                        );
-                                                    }}
-                                                />
+                                                        ) => {
+                                                            field.onChange(
+                                                                newValues,
+                                                            );
+                                                        }}
+                                                    />
+                                                </StyledDropzoneField>
                                             );
                                         }
                                     }}
@@ -342,6 +777,9 @@ export const ImportForm = (props) => {
                                                                         value,
                                                                     )
                                                                 }
+                                                                helperText={
+                                                                    val.helperText
+                                                                }
                                                             ></TextField>
                                                         );
                                                     } else if (
@@ -375,6 +813,9 @@ export const ImportForm = (props) => {
                                                                         value,
                                                                     )
                                                                 }
+                                                                helperText={
+                                                                    val.helperText
+                                                                }
                                                             ></TextField>
                                                         );
                                                     } else if (
@@ -407,6 +848,9 @@ export const ImportForm = (props) => {
                                                                     field.onChange(
                                                                         value,
                                                                     )
+                                                                }
+                                                                helperText={
+                                                                    val.helperText
                                                                 }
                                                             ></TextField>
                                                         );
@@ -471,6 +915,9 @@ export const ImportForm = (props) => {
                                                                         value,
                                                                     )
                                                                 }
+                                                                helperText={
+                                                                    val.helperText
+                                                                }
                                                             >
                                                                 {val.options.options.map(
                                                                     (
@@ -525,84 +972,18 @@ export const ImportForm = (props) => {
                             })}
                     </>
                 ) : null}
-                {/* {fields.map((property, i) => {
-                    return (
-                        <StyledProperty key={i}>
-                            <StyledFlexEnd>
-                                <IconButton
-                                    onClick={() => {
-                                        remove(i);
-                                    }}
-                                >
-                                    <Delete />
-                                </IconButton>
-                            </StyledFlexEnd>
-                            <StyledKeyValue>
-                                <Controller
-                                    name={`SMSS_PROPERTIES.${i}.KEY`}
-                                    control={control}
-                                    rules={{ required: true }}
-                                    render={({ field, fieldState }) => {
-                                        const hasError = fieldState.error;
-                                        return (
-                                            <TextField
-                                                fullWidth
-                                                required
-                                                label="Key"
-                                                value={
-                                                    field.value
-                                                        ? field.value
-                                                        : ''
-                                                }
-                                                onChange={(value) =>
-                                                    field.onChange(value)
-                                                }
-                                            ></TextField>
-                                        );
-                                    }}
-                                />
-                                <Controller
-                                    name={`SMSS_PROPERTIES.${i}.VALUE`}
-                                    control={control}
-                                    rules={{ required: true }}
-                                    render={({ field, fieldState }) => {
-                                        const hasError = fieldState.error;
-                                        return (
-                                            <TextField
-                                                fullWidth
-                                                required
-                                                label="Value"
-                                                value={
-                                                    field.value
-                                                        ? field.value
-                                                        : ''
-                                                }
-                                                onChange={(value) =>
-                                                    field.onChange(value)
-                                                }
-                                            ></TextField>
-                                        );
-                                    }}
-                                />
-                            </StyledKeyValue>
-                        </StyledProperty>
-                    );
-                })} */}
                 <StyledFlexEnd>
-                    {/* <Button
-                        variant={'contained'}
-                        onClick={() => {
-                            append({
-                                KEY: '',
-                                VALUE: '',
-                            });
-                        }}
+                    <StyledSubmitButton
+                        disabled={formLoading}
+                        type="submit"
+                        variant="contained"
                     >
-                        Add Property
-                    </Button> */}
-                    <Button type="submit" variant={'contained'}>
-                        Add {steps[0].data.toLowerCase()}
-                    </Button>
+                        {formLoading ? (
+                            <CircularProgress size="1.5em" />
+                        ) : (
+                            `Create ${steps[0].data.toLowerCase()}`
+                        )}
+                    </StyledSubmitButton>
                 </StyledFlexEnd>
             </Stack>
         </form>

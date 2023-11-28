@@ -9,6 +9,7 @@ import {
     Typography,
     Tooltip,
     useNotification,
+    CircularProgress,
 } from '@semoss/ui';
 
 import { Env } from '@/env';
@@ -18,12 +19,17 @@ import { EditDatabaseDetails } from '@/components/database';
 import { Page, LoadingScreen } from '@/components/ui';
 import { EngineAccessButton } from './';
 import {
-    ContentPasteOutlined,
     EditRounded,
     SimCardDownload,
+    ContentCopyOutlined,
 } from '@mui/icons-material';
 import { formatName } from '@/utils';
 import { Link } from 'react-router-dom';
+
+const StyledIconButton = styled(IconButton)(({ theme }) => ({
+    marginTop: '-3px',
+    marginLeft: '2px',
+}));
 
 const StyledInfo = styled('div')(({ theme }) => ({
     display: 'flex',
@@ -101,6 +107,9 @@ export const EngineShell = (props: EngineShellProps) => {
     // track the edit state
     const [edit, setEdit] = useState(false);
 
+    // export loading state
+    const [exportLoading, setExportLoading] = useState(false);
+
     // get the engine info
     const { status, data } = usePixel<{
         database_name: string;
@@ -116,6 +125,7 @@ export const EngineShell = (props: EngineShellProps) => {
      * @desc export DB pixel
      */
     const exportDB = () => {
+        setExportLoading(true);
         const pixel = `META | ExportEngine(engine=["${id}"] );`;
 
         monolithStore.runQuery(pixel).then((response) => {
@@ -124,6 +134,7 @@ export const EngineShell = (props: EngineShellProps) => {
 
             monolithStore.download(insightID, output);
         });
+        setExportLoading(false);
     };
 
     // show a loading screen when it is pending
@@ -145,44 +156,19 @@ export const EngineShell = (props: EngineShellProps) => {
                         <Typography variant="h4">
                             {formatName(data.database_name)}
                         </Typography>
-                        <Tooltip title={`Copy ${name} ID`}>
-                            <span>
-                                <IconButton
-                                    aria-label={`copy ${name} ID`}
-                                    size="small"
-                                    onClick={(e) => {
-                                        // prevent the default action
-                                        e.preventDefault();
-
-                                        // copy
-                                        try {
-                                            navigator.clipboard.writeText(id);
-
-                                            notification.add({
-                                                color: 'success',
-                                                message:
-                                                    'Successfully copied id',
-                                            });
-                                        } catch (e) {
-                                            console.error(e);
-
-                                            notification.add({
-                                                color: 'error',
-                                                message: 'Error copyng id',
-                                            });
-                                        }
-                                    }}
-                                >
-                                    <ContentPasteOutlined fontSize="inherit" />
-                                </IconButton>
-                            </span>
-                        </Tooltip>
                         <Stack flex={1}> &nbsp;</Stack>
                         <Stack direction="row">
                             <EngineAccessButton />
                             {role === 'OWNER' && (
                                 <Button
-                                    startIcon={<SimCardDownload />}
+                                    disabled={exportLoading}
+                                    startIcon={
+                                        exportLoading ? (
+                                            <CircularProgress size="1em" />
+                                        ) : (
+                                            <SimCardDownload />
+                                        )
+                                    }
                                     variant="outlined"
                                     onClick={() => exportDB()}
                                 >
@@ -215,6 +201,40 @@ export const EngineShell = (props: EngineShellProps) => {
                                 </>
                             )}
                         </Stack>
+                    </Stack>
+                    <Stack>
+                        <span>
+                            {id}
+                            <StyledIconButton
+                                aria-label={`copy ${name} ID`}
+                                size="small"
+                                onClick={(e) => {
+                                    // prevent the default action
+                                    e.preventDefault();
+
+                                    // copy
+                                    try {
+                                        navigator.clipboard.writeText(id);
+
+                                        notification.add({
+                                            color: 'success',
+                                            message: 'Successfully copied id',
+                                        });
+                                    } catch (e) {
+                                        console.error(e);
+
+                                        notification.add({
+                                            color: 'error',
+                                            message: 'Error copyng id',
+                                        });
+                                    }
+                                }}
+                            >
+                                <Tooltip title={`Copy ${name} ID`}>
+                                    <ContentCopyOutlined fontSize="inherit" />
+                                </Tooltip>
+                            </StyledIconButton>
+                        </span>
                     </Stack>
                 </Stack>
             }

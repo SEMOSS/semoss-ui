@@ -124,8 +124,8 @@ function mdmConnectDirective(ENDPOINT, $filter, semossCoreService) {
 
                 for (i = 0, len = output.length; i < len; i++) {
                     if (
-                        CONNECTORS[output[i].app_type] &&
-                        CONNECTORS[output[i].app_type].type === 'RDBMS'
+                        CONNECTORS[output[i].app_subtype] &&
+                        CONNECTORS[output[i].app_subtype].type === 'RDBMS'
                     ) {
                         scope.mdmConnect.existing.raw.push({
                             name: String(output[i].app_name).replace(/_/g, ' '),

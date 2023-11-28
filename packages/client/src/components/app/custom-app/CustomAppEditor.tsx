@@ -1,38 +1,20 @@
-/**
- * ---------------------------*------------------------------------
- * This will be your app page, what this component
- * really does is handle the layout and switching between the
- * different { editor mode } nav items.
- *
- * - We have a Resizable Bottom Panel for the console. (Removed)
- *      - AppConsole
- * - Resizable Left Right Panel
- *      - AppEditorPanel (also resizable),
- * - The Bigger Components that get consumed here are:
- *      - AppEditorPanel, AppConsole, AppRenderer
- *
- * Update: 9/28/2023 -
- * Bottom Debug Console commented out so no horizontal bottom panel resize
- * ---------------------------*------------------------------------
- *
- */
-import { useState, useCallback } from 'react';
-import { useParams } from 'react-router-dom';
+import { useState } from 'react';
 import { observer } from 'mobx-react-lite';
 import { Refresh } from '@mui/icons-material';
 import { styled, ThemeProvider, IconButton } from '@semoss/ui';
 
 import { useApp } from '@/hooks';
-import { Renderer, AppEditorPanel } from '@/components/app';
+
+import { CustomAppRenderer } from './CustomAppRenderer';
+import { CustomAppEditorPanel } from './CustomAppEditorPanel';
 
 // Styles --------------------------------------*
-const NAV_HEIGHT = '48px';
 
 const StyledTopPanel = styled('div')(() => ({
     display: 'flex',
     flexDirection: 'row',
+    height: '100%',
     width: '100%',
-    paddingTop: NAV_HEIGHT,
 }));
 
 const StyledLeftPanel = styled('div')(() => ({
@@ -76,10 +58,8 @@ const StyledIconButton = styled(IconButton)(() => ({
     fontSize: 'inherit',
 }));
 
-export const CodeDevMode = observer(() => {
+export const CustomAppEditor = observer(() => {
     // App ID Needed for pixel calls
-    const { appId } = useParams();
-
     const { editorView, refreshKey, refreshApp } = useApp();
 
     const [transparentOverlay, setTransparentOverlay] = useState(false);
@@ -112,15 +92,11 @@ export const CodeDevMode = observer(() => {
     };
 
     return (
-        <StyledTopPanel
-            sx={{
-                height: '100%',
-            }}
-        >
+        <StyledTopPanel>
             <StyledLeftPanel sx={{ width: leftPanelWidth }}>
                 {/* Left Panel for Editor Mode, should be Dark Mode */}
                 <ThemeProvider reset={true} type={'light'}>
-                    <AppEditorPanel width={leftPanelWidth} />
+                    <CustomAppEditorPanel width={leftPanelWidth} />
                     <StyledVertDivider
                         onMouseDown={(e) => {
                             e.preventDefault();
@@ -168,7 +144,7 @@ export const CodeDevMode = observer(() => {
                             <Refresh />
                         </StyledIconButton>
                     </StyledRendererActions>
-                    <Renderer key={refreshKey} appId={appId}></Renderer>
+                    <CustomAppRenderer key={refreshKey} />
                 </StyledRendererContainer>
             </StyledRightPanel>
         </StyledTopPanel>

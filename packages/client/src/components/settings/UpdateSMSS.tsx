@@ -24,13 +24,13 @@ const StyledContainer = styled('div')(({ theme }) => ({
     gap: theme.spacing(3),
 }));
 
-const StyledTopDiv = styled('div')(({ theme }) => ({
+const StyledTopDiv = styled('div')(() => ({
     width: '100%',
     display: 'flex',
     justifyContent: 'space-between',
 }));
 
-const StyledPaper = styled(Paper)(({ theme }) => ({
+const StyledPaper = styled(Paper)(() => ({
     height: '360px',
     paddingTop: '1rem',
 }));
@@ -121,7 +121,7 @@ export const UpdateSMSS = (props: UpdateSMSSProps) => {
                     options={{ readOnly: readOnly }}
                     value={value}
                     language={'plaintext'}
-                    onChange={(newValue, e) => {
+                    onChange={(newValue) => {
                         // Handle changes in the editor's content.
                         setValue(newValue);
                     }}
