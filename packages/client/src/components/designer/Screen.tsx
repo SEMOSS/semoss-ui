@@ -15,6 +15,7 @@ import { SelectedMask } from './SelectedMask';
 import { HoveredMask } from './HoveredMask';
 import { Placeholder } from './Placeholder';
 import { Ghost } from './Ghost';
+import { DeleteDuplicateMask } from './DeleteDuplicateMask';
 
 const StyledContainer = styled('div')(({ theme }) => ({
     position: 'relative',
@@ -241,6 +242,9 @@ export const Screen = observer((props: ScreenProps) => {
         <StyledContainer data-block="root" ref={rootRef}>
             {designer.selected && <SelectedMask />}
             {designer.hovered && <HoveredMask />}
+            {designer.selected && !designer.drag.active && (
+                <DeleteDuplicateMask />
+            )}
             {designer.drag.active && <Placeholder />}
             {designer.drag.active && <Ghost />}
 

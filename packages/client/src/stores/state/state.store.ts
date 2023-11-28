@@ -217,6 +217,10 @@ export class StateStoreImplementation {
                 const { json, position } = action.payload;
 
                 this.addBlock(json, position);
+            } else if (ActionMessages.DUPLICATE_BLOCK === action.message) {
+                const { id, position } = action.payload;
+
+                this.duplicateBlock(id, position);
             } else if (ActionMessages.MOVE_BLOCK === action.message) {
                 const { id, position } = action.payload;
 
@@ -500,6 +504,70 @@ export class StateStoreImplementation {
         // add the blocks and queries
         this._store.blocks = blocks || {};
         this._store.queries = queries || {};
+    };
+
+    private duplicateBlock = (
+        id: string,
+        position?: AddBlockAction['payload']['position'],
+    ): Block => {
+        // get the block
+        const block = this._store.blocks[id];
+
+        // generate a new id
+        const idCopy = `${block.widget}--${Math.floor(Math.random() * 10000)}`;
+
+        // create the block
+        const blockCopy = {
+            id: idCopy,
+            widget: block.widget,
+            parent: block.parent,
+            data: block.data,
+            listeners: block.listeners,
+            slots: {},
+        } as Block;
+
+        // generate the slots
+        for (const slot in block.slots) {
+            if (block.slots[slot]) {
+                blockCopy.slots[slot] = {
+                    name: slot,
+                    children: block.slots[slot].children.map((childId) => {
+                        // build the children, but only store the ids
+                        const b = this.duplicateBlock(childId);
+
+                        return b.id;
+                    }),
+                };
+            }
+        }
+
+        // register the copy
+        this._store.blocks[idCopy] = blockCopy;
+
+        if (!position) {
+        }
+
+        const { parent, slot } = position;
+
+        // get the parent
+        const parentBlock = this._store.blocks[parent];
+
+        // get the position to inject the new block
+        let childIndex = parentBlock.slots[slot].children.length;
+        if ('sibling' in position) {
+            const { sibling, type } = position;
+
+            const siblingIdx =
+                parentBlock.slots[slot].children.indexOf(sibling);
+
+            childIndex = type === 'before' ? siblingIdx : siblingIdx + 1;
+        }
+
+        // attach the block
+        this.attachBlock(parent, slot, childIndex, blockCopy.id);
+
+        // return it
+        return blockCopy;
     };
 
     /**

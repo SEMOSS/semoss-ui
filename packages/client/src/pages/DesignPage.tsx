@@ -22,7 +22,7 @@ const StyledContent = styled('div')(() => ({
     overflow: 'hidden',
 }));
 
-const ACTIVE = 'page-1';
+export const ACTIVE = 'page-1';
 
 export const DesignPage = observer(() => {
     /**
