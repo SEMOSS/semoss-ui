@@ -47,6 +47,7 @@ const colors = [
 const UserInfoTableCell = styled(Table.Cell)({
     display: 'flex',
     alignItems: 'center',
+    height: '84px',
 });
 
 const AvatarWrapper = styled('div')({
@@ -77,7 +78,6 @@ const StyledMemberInnerContent = styled('div')({
 
 const StyledTableContainer = styled(Table.Container)({
     borderRadius: '12px',
-    // background: #FFF;
     /* Devias Drop Shadow */
     boxShadow: '0px 5px 22px 0px rgba(0, 0, 0, 0.06)',
 });
@@ -134,7 +134,6 @@ const StyledTableTitleMemberCount = styled('div')({
 
 const StyledSearchButtonContainer = styled('div')({
     display: 'flex',
-    // padding: '5px 8px',
     alignItems: 'center',
     // gap: '10px',
 });
@@ -194,6 +193,7 @@ const permissionMapper = {
 interface Member {
     id: string;
     name: string;
+    type: string;
     EMAIL: string;
     SELECTED: boolean;
     permission: string;
@@ -689,7 +689,6 @@ export const MembersTable = (props: MembersTableProps) => {
                                     {Avatars.length > 0 ? (
                                         <StyledAvatarGroupContainer>
                                             <AvatarGroup
-                                                // sx={{ border: 'solid green' }}
                                                 spacing={'small'}
                                                 variant={'circular'}
                                                 max={4}
@@ -858,8 +857,9 @@ export const MembersTable = (props: MembersTableProps) => {
                                                                 {user.name}
                                                             </Stack>
                                                             <Stack>
-                                                                {/* dont seem to have access to ID types currently */}
-                                                                ID: {user.id}
+                                                                ID:{' '}
+                                                                {user.type ||
+                                                                    'No ID Type'}
                                                             </Stack>
                                                         </NameIDWrapper>
                                                     </UserInfoTableCell>
