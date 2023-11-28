@@ -26,7 +26,6 @@ export enum ActionMessages {
 export type Actions =
     | SetStateAction
     | AddBlockAction
-    | DuplicateBlockAction
     | MoveBlockAction
     | RemoveBlockAction
     | SetBlockDataAction
