@@ -13,11 +13,11 @@ import {
     styled,
     keyframes,
     Link,
+    Container,
 } from '@semoss/ui';
 import { File, ControlledFile } from '../';
 import { Clear, SaveOutlined } from '@mui/icons-material';
 import { Button } from '@semoss/ui';
-import { Container } from '../../../../../ui/dist';
 import { DOCUMENTATION_URL } from '@/constants';
 
 // Weird thing with Monaco Editor and does not get loaded in correctly from install

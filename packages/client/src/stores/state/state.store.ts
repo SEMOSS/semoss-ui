@@ -10,14 +10,31 @@ import {
     MoveBlockAction,
     RemoveBlockAction,
 } from './state.actions';
-import { Query, Block, BlockJSON, ListenerActions } from './state.types';
+import { Block, BlockJSON, CellRegistry, ListenerActions } from './state.types';
+import { QueryState, QueryStateConfig } from './query.state';
+import { StepState, StepStateConfig } from './step.state';
+import { DefaultCells } from '@/components/cell-defaults';
 
 interface StateStoreInterface {
     /** Queries rendered in the insight */
-    queries: Record<string, Query>;
+    queries: Record<string, QueryState>;
 
     /** Blocks rendered in the insight */
     blocks: Record<string, Block>;
+
+    /** Cells registered to the insight */
+    cellRegistry: CellRegistry;
+}
+
+export class StateStoreImplementationConfig {
+    /** Queries that will be loaed into the view */
+    queries?: Record<string, unknown>;
+
+    /** Blocks that will be loaded into the view */
+    blocks?: Record<string, Block>;
+
+    /** Cells registered to the insight */
+    cellRegistry: CellRegistry;
 }
 
 /**
@@ -27,6 +44,7 @@ export class StateStoreImplementation {
     private _store: StateStoreInterface = {
         queries: {},
         blocks: {},
+        cellRegistry: {},
     };
 
     /**
@@ -62,13 +80,7 @@ export class StateStoreImplementation {
     };
 
     constructor(
-        config: {
-            /** Queries that will be loaed into the view */
-            queries?: Record<string, Query>;
-
-            /** Blocks that will be loaded into the view */
-            blocks?: Record<string, Block>;
-        },
+        config: StateStoreImplementationConfig,
         callbacks: {
             onQuery: (event: { query: string }) => Promise<{
                 data: unknown;
@@ -90,7 +102,9 @@ export class StateStoreImplementation {
                     const q = this._store.queries[val];
 
                     // map id -> actual
-                    acc[q.id] = `${this.flattenParameter(q.query)}--${q.mode}`;
+                    acc[q.id] = `${this.flattenParameter(q._toPixel())}--${
+                        q.mode
+                    }`;
 
                     return acc;
                 }, {});
@@ -119,7 +133,8 @@ export class StateStoreImplementation {
         // set the initial state after reactive to invoke it
         runInAction(() => {
             this._store.blocks = config.blocks || {};
-            this._store.queries = config.queries || {};
+            this._store.queries = {};
+            this._store.cellRegistry = config.cellRegistry || {};
         });
     }
 
@@ -143,6 +158,14 @@ export class StateStoreImplementation {
     }
 
     /**
+     * Get the cell registry
+     * @returns the cell registry
+     */
+    get cellRegistry() {
+        return this._store.cellRegistry;
+    }
+
+    /**
      * Get the specific block information
      * @param id - id of the block to get
      * @returns the specific block information
@@ -160,7 +183,7 @@ export class StateStoreImplementation {
      * @param id - id of the queries to get
      * @returns the specific block information
      */
-    getQuery(id: string): Query | null {
+    getQuery(id: string): QueryState | null {
         if (this._store.queries[id]) {
             return this._store.queries[id];
         }
@@ -214,18 +237,39 @@ export class StateStoreImplementation {
                 const { id, listener, actions } = action.payload;
 
                 this.setListener(id, listener, actions);
-            } else if (ActionMessages.SET_QUERY === action.message) {
-                const { id, query } = action.payload;
+            } else if (ActionMessages.NEW_QUERY === action.message) {
+                const { queryId, config } = action.payload;
 
-                this.setQuery(id, query);
+                this.newQuery(queryId, config);
             } else if (ActionMessages.DELETE_QUERY === action.message) {
-                const { id } = action.payload;
+                const { queryId } = action.payload;
 
-                this.deleteQuery(id);
+                this.deleteQuery(queryId);
+            } else if (ActionMessages.UPDATE_QUERY === action.message) {
+                const { queryId, path, value } = action.payload;
+
+                this.updateQuery(queryId, path, value);
             } else if (ActionMessages.RUN_QUERY === action.message) {
-                const { id } = action.payload;
+                const { queryId } = action.payload;
 
-                this.runQuery(id);
+                this.runQuery(queryId);
+            } else if (ActionMessages.NEW_STEP === action.message) {
+                const { queryId, stepId, config, previousStepId } =
+                    action.payload;
+
+                this.newStep(queryId, stepId, config, previousStepId);
+            } else if (ActionMessages.DELETE_STEP === action.message) {
+                const { queryId, stepId } = action.payload;
+
+                this.deleteStep(queryId, stepId);
+            } else if (ActionMessages.UPDATE_STEP === action.message) {
+                const { queryId, stepId, path, value } = action.payload;
+
+                this.updateStep(queryId, stepId, path, value);
+            } else if (ActionMessages.RUN_STEP === action.message) {
+                const { queryId, stepId } = action.payload;
+
+                this.runStep(queryId, stepId);
             } else if (ActionMessages.DISPATCH_EVENT === action.message) {
                 const { name, detail } = action.payload;
 
@@ -257,12 +301,12 @@ export class StateStoreImplementation {
         const id = split.shift();
         const path = split.join('.');
 
-        // check if it is a block
+        // check if it is in the block's data
         if (id && this._store.blocks[id]) {
             return getValueByPath(this._store.blocks[id].data, path);
         }
 
-        // check if it is a query
+        // check if it is in a query
         if (id && this._store.queries[id]) {
             return getValueByPath(this._store.queries[id], path);
         }
@@ -689,86 +733,176 @@ export class StateStoreImplementation {
     };
 
     /**
-     * Set a query
-     * @param id - name of the query that we are setting
-     * @param query - query that we are setting
+     * Create a new query
+     * @param queryId - name of the query that we are setting
      */
-    private setQuery = (id: string, query: string): void => {
-        this._store.queries[id] = {
-            id: id,
-            isInitialized: false,
-            isLoading: false,
-            error: null,
-            query: query,
-            data: undefined,
-            mode: 'manual',
-        };
+    private newQuery = (
+        queryId: string,
+        config: Omit<QueryStateConfig, 'id'>,
+    ): void => {
+        this._store.queries[queryId] = new QueryState(
+            {
+                ...config,
+                id: queryId,
+            },
+            this,
+        );
     };
 
     /**
      * Delete a query
-     * @param id - name of the query that we are deleting
+     * @param queryId - name of the query that we are deleting
      */
-    private deleteQuery = (id: string): void => {
-        delete this._store.queries[id];
+    private deleteQuery = (queryId: string): void => {
+        delete this._store.queries[queryId];
+    };
+
+    /**
+     * Update the store in the query
+     * @param queryId - id of the updated query
+     * @param path - path of the data to set
+     * @param value - value of the data
+     */
+    private updateQuery = (
+        queryId: string,
+        path: string | null,
+        value: unknown,
+    ): void => {
+        const q = this._store.queries[queryId];
+
+        // set the value
+        q._processUpdate(path, value);
     };
 
     /**
      * Run a query
-     * @param id - name of the query that we are running
+     * @param queryId - name of the query that we are running
      */
-    private runQuery = (id: string): void => {
-        const q = this._store.queries[id];
+    private runQuery = (queryId: string): void => {
+        const q = this._store.queries[queryId];
 
-        // set the state to show it is initialized and loading
-        q.isInitialized = false;
-        q.isLoading = true;
-        q.error = null;
-
-        // reset
-        q.data = undefined;
+        const key = `query--${queryId};`;
 
         // cancel a previous command
-        this._utils.queryPromises[id]?.cancel();
+        this._utils.queryPromises[key]?.cancel();
 
         // setup the promise
-        const p = cancellablePromise(() => {
-            // fill the query
-            const filled = this.flattenParameter(q.query);
+        const p = cancellablePromise(async () => {
+            // run the query
+            await q._processRun();
 
-            // call the callback
-            return this._utils.callbacks.onQuery({
-                query: filled,
-            });
+            // turn it off
+            return true;
         });
 
         p.promise
-            .then(({ data }) => {
-                runInAction(() => {
-                    // set the data
-                    q.data = data;
-                });
+            .then(() => {
+                // noop
             })
             .catch((e) => {
-                runInAction(() => {
-                    // set in the error state
-                    q.error = e;
-
-                    console.error('ERROR:', e);
-                });
-            })
-            .finally(() => {
-                runInAction(() => {
-                    // set it is initialized
-                    q.isInitialized = true;
-
-                    // turn off the loading screen
-                    q.isLoading = false;
-                });
+                console.error('ERROR:', e);
             });
 
         // save the promise
-        this._utils.queryPromises[id] = p;
+        this._utils.queryPromises[key] = p;
+    };
+
+    /**
+     * Create a new step
+     * @param queryId - id of the updated query
+     * @param stepId - id of the new step
+     * @param config - config of the
+     * @param previousStepId: id of the previous step,
+     */
+    private newStep = (
+        queryId: string,
+        stepId: string,
+        config: Omit<StepStateConfig, 'id'>,
+        previousStepId: string,
+    ): void => {
+        // get the query
+        const q = this._store.queries[queryId];
+
+        // create the new step
+        const step = new StepState(
+            {
+                ...config,
+                id: stepId,
+            },
+            q,
+            this,
+        );
+
+        // add the step
+        q._processNewStep(step, previousStepId);
+    };
+
+    /**
+     * Delete a step
+     * @param queryId - id of the updated query
+     * @param stepId - id of the deleted step
+     */
+    private deleteStep = (queryId: string, stepId: string): void => {
+        // get the query
+        const q = this._store.queries[queryId];
+
+        // add the step
+        q._processDeleteStep(stepId);
+    };
+
+    /**
+     * Update the store in the step
+     * @param queryId - id of the updated query
+     * @param stepId - id of the updated step
+     * @param path - path of the data to set
+     * @param value - value of the data
+     */
+    private updateStep = (
+        queryId: string,
+        stepId: string,
+        path: string | null,
+        value: unknown,
+    ): void => {
+        const q = this._store.queries[queryId];
+        const s = q.getStep(stepId);
+
+        // set the value
+        s._processUpdate(path, value);
+    };
+
+    /**
+     * Run the step
+     * @param queryId - id of the updated query
+     * @param stepId - id of the deleted step
+     */
+    private runStep = (queryId: string, stepId: string): void => {
+        const q = this._store.queries[queryId];
+        const s = q.getStep(stepId);
+
+        const key = `step--${stepId} (query--${queryId});`;
+
+        // cancel a previous command
+        this._utils.queryPromises[key]?.cancel();
+
+        // setup the promise
+        const p = cancellablePromise(async () => {
+            // run the step
+            await s._processRun();
+
+            // turn it off
+            return true;
+        });
+
+        p.promise
+            .then(() => {
+                // noop
+            })
+            .catch((e) => {
+                console.error('ERROR:', e);
+            });
+
+        // save the promise
+        this._utils.queryPromises[key] = p;
     };
 
     /**
@@ -813,6 +947,7 @@ export const StateStore = new StateStoreImplementation(
             },
         },
         queries: {},
+        cellRegistry: DefaultCells,
     },
     {
         onQuery: async ({ query }) => {

@@ -6,6 +6,7 @@ import { SettingsContextType, SettingsContext } from './SettingsContext';
 import { RootStoreContextType, RootStoreContext } from './RootStoreContext';
 import { StepperContext, StepperContextType } from './StepperContext';
 import { WorkspaceContextType, WorkspaceContext } from './WorkspaceContext';
+import { NotebookContextType, NotebookContext } from './NotebookContext';
 
 export type {
     DesignerContextType,
@@ -15,6 +16,7 @@ export type {
     SettingsContextType,
     StepperContextType,
     WorkspaceContextType,
+    NotebookContextType,
 };
 
 export {
@@ -26,4 +28,5 @@ export {
     SettingsContext,
     StepperContext,
     WorkspaceContext,
+    NotebookContext,
 };

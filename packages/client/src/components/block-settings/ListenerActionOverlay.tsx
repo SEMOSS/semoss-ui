@@ -63,7 +63,7 @@ export const ListenerActionOverlay = observer(
                 defaultValues: {
                     message: ActionMessages.RUN_QUERY,
                     payload: {
-                        id: '',
+                        queryId: '',
                     },
                 },
             });
@@ -99,7 +99,7 @@ export const ListenerActionOverlay = observer(
             let form: ListenerActionForm = {
                 message: ActionMessages.RUN_QUERY,
                 payload: {
-                    id: '',
+                    queryId: '',
                 },
             };
 
@@ -114,7 +114,7 @@ export const ListenerActionOverlay = observer(
         useEffect(() => {
             if (message === ActionMessages.RUN_QUERY) {
                 setValue('payload', {
-                    id: '',
+                    queryId: '',
                 });
             } else if (message === ActionMessages.DISPATCH_EVENT) {
                 setValue('payload', {
@@ -160,7 +160,7 @@ export const ListenerActionOverlay = observer(
                         {message === ActionMessages.RUN_QUERY ? (
                             <>
                                 <Controller
-                                    name={'payload.id'}
+                                    name={'payload.queryId'}
                                     control={control}
                                     render={({ field }) => {
                                         return (
@@ -180,7 +180,7 @@ export const ListenerActionOverlay = observer(
                                                         key={q.id}
                                                         value={q.id}
                                                     >
-                                                        {q.id} - {q.query}
+                                                        {q.name}
                                                     </Select.Item>
                                                 ))}
                                             </Select>

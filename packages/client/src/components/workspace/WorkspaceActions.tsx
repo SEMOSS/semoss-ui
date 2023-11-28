@@ -11,7 +11,13 @@ import {
     Typography,
     Stack,
 } from '@semoss/ui';
-import { Code, Download, Share, Settings } from '@mui/icons-material';
+import {
+    Code,
+    Download,
+    Share,
+    Settings,
+    FolderOutlined,
+} from '@mui/icons-material';
 
 import { useWorkspace, useRootStore } from '@/hooks';
 import { Env } from '@/env';
@@ -166,15 +172,15 @@ export const WorkspaceActions = observer(() => {
                     >
                         <Code />
                     </StyledNavItem>
-                    {/* <StyledNavItem
+                    <StyledNavItem
                         title={'Data'}
                         selected={view === 'data'}
                         onClick={() => {
                             setView('data');
                         }}
                     >
-                        <Code />
-                    </StyledNavItem> */}
+                        <FolderOutlined />
+                    </StyledNavItem>
                     <StyledNavItem
                         title={'Settings'}
                         selected={view === 'settings'}

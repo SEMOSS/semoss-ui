@@ -138,7 +138,7 @@ export const PROMPT_BASE_BLOCKS: Record<string, Block> = {
                 {
                     message: ActionMessages.RUN_QUERY,
                     payload: {
-                        id: PROMPT_QUERY_ID,
+                        queryId: PROMPT_QUERY_ID,
                     },
                 },
             ],

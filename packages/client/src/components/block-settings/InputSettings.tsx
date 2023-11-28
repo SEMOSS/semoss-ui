@@ -42,7 +42,7 @@ export const InputSettings = observer(
         label = '',
         path,
     }: InputSettingsProps<D>) => {
-        const { data, setData } = useBlockSettings(id);
+        const { data, setData } = useBlockSettings<D>(id);
 
         // track the value
         const [value, setValue] = useState('');

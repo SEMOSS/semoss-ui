@@ -13,7 +13,7 @@ import {
 import { useBlocks, useDesigner } from '@/hooks';
 import { Add, Search } from '@mui/icons-material';
 
-import { QueryOverlay } from './QueryOverlay';
+import { QueryOverlay } from '@/components/notebook';
 
 const StyledMenu = styled('div')(({ theme }) => ({
     display: 'flex',
@@ -121,7 +121,9 @@ export const QueryMenu = observer((): JSX.Element => {
      */
     const openQueryOverlay = (id = '') => {
         designer.openOverlay(() => {
-            return <QueryOverlay id={id} />;
+            return (
+                <QueryOverlay id={id} onClose={() => designer.closeOverlay()} />
+            );
         });
     };
 

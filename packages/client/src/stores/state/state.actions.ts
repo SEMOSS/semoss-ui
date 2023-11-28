@@ -1,5 +1,7 @@
 import { BlockJSON, ListenerActions } from './state.types';
 import { StateStoreImplementation } from './state.store';
+import { StepStateConfig } from './step.state';
+import { QueryStateConfig } from './query.state';
 
 export enum ActionMessages {
     SET_STATE = 'SET_STATE',
@@ -10,8 +12,14 @@ export enum ActionMessages {
     DELETE_BLOCK_DATA = 'DELETE_BLOCK_DATA',
     SET_LISTENER = 'SET_LISTENER',
     SET_QUERY = 'SET_QUERY',
+    NEW_QUERY = 'NEW_QUERY',
     DELETE_QUERY = 'DELETE_QUERY',
+    UPDATE_QUERY = 'UPDATE_QUERY',
     RUN_QUERY = 'RUN_QUERY',
+    NEW_STEP = 'NEW_STEP',
+    DELETE_STEP = 'DELETE_STEP',
+    UPDATE_STEP = 'UPDATE_STEP',
+    RUN_STEP = 'RUN_STEP',
     DISPATCH_EVENT = 'DISPATCH_EVENT',
 }
 
@@ -23,9 +31,14 @@ export type Actions =
     | SetBlockDataAction
     | DeleteBlockDataAction
     | SetListenerAction
-    | SetQueryAction
+    | NewQueryAction
     | DeleteQueryAction
+    | UpdateQueryAction
     | RunQueryAction
+    | NewStepAction
+    | DeleteStepAction
+    | UpdateStepAction
+    | RunStepAction
     | DispatchEventAction;
 
 export interface Action {
@@ -119,25 +132,70 @@ export interface SetListenerAction extends Action {
     };
 }
 
-export interface SetQueryAction extends Action {
-    message: ActionMessages.SET_QUERY;
+export interface NewQueryAction extends Action {
+    message: ActionMessages.NEW_QUERY;
     payload: {
-        id: string;
-        query: string;
+        queryId: string;
+        config: Omit<QueryStateConfig, 'id'>;
     };
 }
 
 export interface DeleteQueryAction extends Action {
     message: ActionMessages.DELETE_QUERY;
     payload: {
-        id: string;
+        queryId: string;
+    };
+}
+
+export interface UpdateQueryAction extends Action {
+    message: ActionMessages.UPDATE_QUERY;
+    payload: {
+        queryId: string;
+        path: string | null;
+        value: unknown;
     };
 }
 
 export interface RunQueryAction extends Action {
     message: ActionMessages.RUN_QUERY;
     payload: {
-        id: string;
+        queryId: string;
+    };
+}
+
+export interface NewStepAction extends Action {
+    message: ActionMessages.NEW_STEP;
+    payload: {
+        queryId: string;
+        stepId: string;
+        previousStepId: string;
+        config: Omit<StepStateConfig, 'id'>;
+    };
+}
+
+export interface DeleteStepAction extends Action {
+    message: ActionMessages.DELETE_STEP;
+    payload: {
+        queryId: string;
+        stepId: string;
+    };
+}
+
+export interface UpdateStepAction extends Action {
+    message: ActionMessages.UPDATE_STEP;
+    payload: {
+        queryId: string;
+        stepId: string;
+        path: string | null;
+        value: unknown;
+    };
+}
+
+export interface RunStepAction extends Action {
+    message: ActionMessages.RUN_STEP;
+    payload: {
+        queryId: string;
+        stepId: string;
     };
 }
 
