@@ -2,7 +2,13 @@ import { useCallback, useMemo } from 'react';
 import { computed } from 'mobx';
 
 import { Paths, PathValue } from '@/types';
-import { ActionMessages, Block, BlockDef, ListenerActions } from '@/stores';
+import {
+    ActionMessages,
+    Block,
+    BlockDef,
+    BlockJSON,
+    ListenerActions,
+} from '@/stores';
 import { copy } from '@/utility';
 
 import { useBlocks } from './useBlocks';
@@ -51,6 +57,16 @@ interface useBlockReturn<D extends BlockDef = BlockDef> {
      * Dispatch a message to delete the block
      */
     deleteBlock: () => void;
+
+    /**
+     * Dispatch a message to clear the block
+     */
+    clearBlock: () => void;
+
+    /**
+     * Dispatch a message to duplicate the block
+     */
+    duplicateBlock: () => void;
 }
 
 /**
@@ -119,6 +135,34 @@ export const useBlock = <D extends BlockDef = BlockDef>(
         });
     }, []);
 
+    const clearBlock = useCallback((): void => {
+        state.dispatch({
+            message: ActionMessages.REMOVE_BLOCK,
+            payload: {
+                id: id,
+                keep: true,
+            },
+        });
+    }, []);
+
+    const duplicateBlock = useCallback((): void => {
+        const position = block?.parent?.id
+            ? {
+                  parent: block.parent.id,
+                  slot: block.parent.slot,
+                  sibling: block.id,
+                  type: 'after',
+              }
+            : undefined;
+        state.dispatch({
+            message: ActionMessages.DUPLICATE_BLOCK,
+            payload: {
+                id: block.id,
+                position: position,
+            },
+        });
+    }, []);
+
     // construct the listeners to add to the widget
     const listeners = useMemo(() => {
         /**
@@ -180,5 +224,7 @@ export const useBlock = <D extends BlockDef = BlockDef>(
         setData: setData,
         deleteData: deleteData,
         deleteBlock: deleteBlock,
+        clearBlock: clearBlock,
+        duplicateBlock: duplicateBlock,
     };
 };

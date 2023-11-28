@@ -4,6 +4,7 @@ import { StateStoreImplementation } from './state.store';
 export enum ActionMessages {
     SET_STATE = 'SET_STATE',
     ADD_BLOCK = 'ADD_BLOCK',
+    DUPLICATE_BLOCK = 'DUPLICATE_BLOCK',
     MOVE_BLOCK = 'MOVE_BLOCK',
     REMOVE_BLOCK = 'REMOVE_BLOCK',
     SET_BLOCK_DATA = 'SET_BLOCK_DATA',
@@ -18,6 +19,7 @@ export enum ActionMessages {
 export type Actions =
     | SetStateAction
     | AddBlockAction
+    | DuplicateBlockAction
     | MoveBlockAction
     | RemoveBlockAction
     | SetBlockDataAction
@@ -45,6 +47,28 @@ export interface AddBlockAction extends Action {
     message: ActionMessages.ADD_BLOCK;
     payload: {
         json: BlockJSON;
+        position?:
+            | null
+            | { parent: string; slot: string }
+            | {
+                  parent: string;
+                  slot: string;
+                  type: 'before';
+                  sibling: string;
+              }
+            | {
+                  parent: string;
+                  slot: string;
+                  type: 'after';
+                  sibling: string;
+              };
+    };
+}
+
+export interface DuplicateBlockAction extends Action {
+    message: ActionMessages.DUPLICATE_BLOCK;
+    payload: {
+        id: string;
         position?:
             | null
             | { parent: string; slot: string }
