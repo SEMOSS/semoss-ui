@@ -6,7 +6,7 @@ import { ImageListItem } from "./ImageListItem";
 import { ImageListItemBar } from "./ImageListItemBar";
 
 const StyledContainer = styled(Grid)({
-    width: "900px",
+    width: "800px",
 });
 
 const StyledImageListItem = styled(ImageListItem)({
@@ -72,7 +72,7 @@ export const ImageSelector = (props: ImageSelectorProps): JSX.Element => {
     const { value, options, onChange, ...otherProps } = props;
 
     //for number of columns
-    const matchMedia = useMediaQuery("(min-width:900px)");
+    const matchMedia = useMediaQuery("(min-width: 800px)");
 
     // set checked image to the default value
     const [checked, setCheckbox] = useState(value);
