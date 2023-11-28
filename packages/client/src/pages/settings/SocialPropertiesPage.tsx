@@ -19,6 +19,7 @@ import {
     ToggleTabsGroup,
     Typography,
     useNotification,
+    Box,
 } from '@semoss/ui';
 import Editor from '@monaco-editor/react';
 import google from '../../assets/img/google.png';
@@ -28,6 +29,7 @@ import github from '../../assets/img/github.png';
 import other from '../../assets/img/other.png';
 
 import { useNavigate } from 'react-router-dom';
+import { KeyboardArrowDown, SearchOutlined } from '@mui/icons-material';
 
 const SOCIAL = {
     google: {
@@ -60,30 +62,30 @@ const StyledImage = styled('img')({
     padding: '4px',
 });
 
-const StyledContainer = styled('div')(({ theme }) => ({
-    margin: '0 auto',
-    paddingBottom: theme.spacing(8),
-    '@sm': {
-        maxWidth: '640px',
-    },
-    '@md': {
-        maxWidth: '768px',
-    },
-    '@lg': {
-        maxWidth: '1024px',
-    },
-    '@xl': {
-        maxWidth: '1280px',
-    },
-    '@xxl': {
-        maxWidth: '1536px',
-    },
-}));
+// const StyledContainer = styled('div')(({ theme }) => ({
+//     margin: '0 auto',
+//     paddingBottom: theme.spacing(8),
+//     '@sm': {
+//         maxWidth: '640px',
+//     },
+//     '@md': {
+//         maxWidth: '768px',
+//     },
+//     '@lg': {
+//         maxWidth: '1024px',
+//     },
+//     '@xl': {
+//         maxWidth: '1280px',
+//     },
+//     '@xxl': {
+//         maxWidth: '1536px',
+//     },
+// }));
 
-const StyledAccordionContent = styled(Accordion.Content)(({ theme }) => ({
-    height: 'auto',
-    margin: theme.spacing(2),
-}));
+// const StyledAccordionContent = styled(Accordion.Content)(({ theme }) => ({
+//     height: 'auto',
+//     margin: theme.spacing(2),
+// }));
 
 const StyledTitle = styled('div')(({ theme }) => ({
     marginBottom: theme.spacing(2),
@@ -91,7 +93,7 @@ const StyledTitle = styled('div')(({ theme }) => ({
     justifyContent: 'space-between',
 }));
 
-const StyledActionButtonsDiv = styled('div')(({ theme }) => ({
+const StyledActionButtonsDiv = styled('div')(() => ({
     display: 'flex',
     justifyContent: 'center',
     gap: '.5rem',
@@ -158,7 +160,7 @@ export const SocialPropertiesPage = () => {
         Object.keys(socialProps),
     );
     const [authExpanded, setAuthExpanded] = useState(true);
-    const [emailExpanded, setEmailExpanded] = useState(false);
+    // const [emailExpanded, setEmailExpanded] = useState(false);
 
     const [tabValue, setTabValue] = useState(0);
 
@@ -249,27 +251,67 @@ export const SocialPropertiesPage = () => {
                     <Accordion
                         expanded={authExpanded}
                         onChange={() => setAuthExpanded(!authExpanded)}
+                        sx={{ width: '291px' }}
                     >
                         <Accordion.Trigger
-                            sx={{ padding: '8px', fontSize: '16px' }}
-                        >
-                            <strong>Authentication</strong>
-                        </Accordion.Trigger>
-                        <Search
-                            value={authSearch}
-                            onChange={(e) => {
-                                setAuthSearch(e.target.value);
+                            sx={{
+                                padding: ' 0px 12px 4px 16px',
+                                fontSize: '16px',
                             }}
-                            placeholder="Search . . ."
-                        />
+                            expandIcon={<KeyboardArrowDown />}
+                        >
+                            <Typography
+                                variant="body1"
+                                sx={{
+                                    color: '#000000de',
+                                    fontSize: '16px',
+                                    fontWeight: 500,
+                                    lineHeight: '24px',
+                                    padding: '0px 12px 0px 12px',
+                                }}
+                            >
+                                Authentication
+                            </Typography>
+                        </Accordion.Trigger>
+                        <Box
+                            sx={{
+                                padding: '0px 12px 12px 12px',
+                            }}
+                        >
+                            <Search
+                                InputProps={{
+                                    startAdornment: (
+                                        <SearchOutlined
+                                            sx={{ color: '#5c5c5c' }}
+                                        />
+                                    ),
+                                    style: {
+                                        height: '40px',
+                                    },
+                                }}
+                                value={authSearch}
+                                onChange={(e) => {
+                                    setAuthSearch(e.target.value);
+                                }}
+                                placeholder="Search . . ."
+                            />
+                        </Box>
                         {authentication.map((value, i) => {
                             return (
                                 <Accordion.Content
                                     key={i}
-                                    sx={{ fontSize: '14px' }}
+                                    sx={{
+                                        fontSize: '14px',
+                                        margin: 0,
+                                        padding: '12px 16px 16px 16px',
+                                    }}
                                 >
                                     <Button
-                                        sx={{ textTransform: 'none' }}
+                                        sx={{
+                                            textTransform: 'none',
+                                            width: '100%',
+                                            justifyContent: 'left',
+                                        }}
                                         color="inherit"
                                         onClick={() => {
                                             setAccordionValue(value);
@@ -365,24 +407,24 @@ export const SocialPropertiesPage = () => {
 
     return (
         <>
-            <StyledContainer>
+            <Box>
                 <ToggleTabsGroup
                     sx={{ marginBottom: '16px' }}
                     value={tabValue}
                     onChange={onTabChange}
                 >
                     <ToggleTabsGroup.Item label="Settings" />
-                    <ToggleTabsGroup.Item label="File Contents" />
+                    <ToggleTabsGroup.Item disabled label="File Contents" />
                 </ToggleTabsGroup>
                 {customTogglePanel(settingsPage(), 0, tabValue)}
                 {customTogglePanel(fileContentsPage(), 1, tabValue)}
-            </StyledContainer>
+            </Box>
         </>
     );
 };
 
 const mapDefaultValues = (vals) => {
-    const value: any = {};
+    const value: unknown = {};
 
     vals.map((f: FieldProps) => {
         if (!value[f.label]) {
@@ -397,11 +439,11 @@ interface FieldProps {
     value: string;
 }
 
-interface PropertyProps {
-    fieldName: string;
-    fields: FieldProps[];
-    onChange: (string, FieldProps) => void;
-}
+// interface PropertyProps {
+//     fieldName: string;
+//     fields: FieldProps[];
+//     onChange: (string, FieldProps) => void;
+// }
 
 const SocialProperty = (props) => {
     const { fieldName, fields, onChange } = props;
@@ -412,7 +454,7 @@ const SocialProperty = (props) => {
     // used for reset
     const [defaultValues, setDefaultValues] = useState<FieldProps[]>();
 
-    const { control, handleSubmit, reset } = useForm({
+    const { handleSubmit, reset } = useForm({
         defaultValues: mapDefaultValues(fields),
     });
 
@@ -422,30 +464,28 @@ const SocialProperty = (props) => {
      * @param data - form data
      */
     const onSubmit = handleSubmit((data) => {
-        monolithStore
-            .modifyLoginProperties(fieldName, data)
-            .then((response) => {
-                notification.add({
-                    color: 'success',
-                    message: `Succesfully modified ${fieldName} properties`,
-                });
-
-                const valueCopy = [];
-                // structure values to pass to parent and defaultValues
-                Object.entries(data).map((k, v) => {
-                    const objCopy = {
-                        label: k[0],
-                        value: k[1],
-                    };
-                    valueCopy.push(objCopy);
-                });
-
-                // pass to the parent that holds state of all properties
-                onChange(fieldName, valueCopy);
-
-                // set new default values for reset
-                setDefaultValues(valueCopy);
+        monolithStore.modifyLoginProperties(fieldName, data).then(() => {
+            notification.add({
+                color: 'success',
+                message: `Succesfully modified ${fieldName} properties`,
             });
+
+            const valueCopy = [];
+            // structure values to pass to parent and defaultValues
+            Object.entries(data).map((k) => {
+                const objCopy = {
+                    label: k[0],
+                    value: k[1],
+                };
+                valueCopy.push(objCopy);
+            });
+
+            // pass to the parent that holds state of all properties
+            onChange(fieldName, valueCopy);
+
+            // set new default values for reset
+            setDefaultValues(valueCopy);
+        });
     });
 
     return (
