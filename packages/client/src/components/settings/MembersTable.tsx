@@ -857,9 +857,7 @@ export const MembersTable = (props: MembersTableProps) => {
                                                                 {user.name}
                                                             </Stack>
                                                             <Stack>
-                                                                ID:{' '}
-                                                                {user.type ||
-                                                                    'No ID Type'}
+                                                                {`${user.type} ID: ${user.id}`}
                                                             </Stack>
                                                         </NameIDWrapper>
                                                     </UserInfoTableCell>
@@ -1054,8 +1052,7 @@ export const MembersTable = (props: MembersTableProps) => {
                                                 <NameIDWrapper>
                                                     <Stack>{user.name}</Stack>
                                                     <Stack>
-                                                        {/* dont seem to have access to login type currently */}
-                                                        ID: {user.id}
+                                                        {`${user.type} ID: ${user.id}`}
                                                     </Stack>
                                                 </NameIDWrapper>
                                             </UserInfoTableCell>

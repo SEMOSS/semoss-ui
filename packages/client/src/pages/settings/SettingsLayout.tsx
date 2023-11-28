@@ -14,6 +14,7 @@ import {
     ToggleButton,
     Tooltip,
     Paper,
+    IconButton,
 } from '@semoss/ui';
 
 import { useRootStore } from '@/hooks';
@@ -21,7 +22,10 @@ import { SettingsContext } from '@/contexts';
 import { Page } from '@/components/ui/';
 import { SETTINGS_ROUTES } from './settings.constants';
 import { observer } from 'mobx-react-lite';
-import { AdminPanelSettingsOutlined } from '@mui/icons-material';
+import {
+    AdminPanelSettingsOutlined,
+    ContentCopyOutlined,
+} from '@mui/icons-material';
 
 const StyledId = styled(Typography)(({ theme }) => ({
     color: theme.palette.secondary.dark,
@@ -71,6 +75,14 @@ export const SettingsLayout = observer(() => {
     if (!matchedRoute) {
         return null;
     }
+
+    /**
+     * Copy text and add it to the clipboard
+     * @param text - text to copy
+     */
+    const copy = (text: string) => {
+        navigator.clipboard.writeText(text);
+    };
 
     return (
         <SettingsContext.Provider
