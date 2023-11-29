@@ -99,7 +99,7 @@ export class CacheStore {
         };
 
         // load the app
-        const setContext = await runPixel<[true]>(
+        const setContext = await this._root.monolithStore.run<[true]>(
             'new',
             `SetContext(app=["${appId}"]);`,
         );
