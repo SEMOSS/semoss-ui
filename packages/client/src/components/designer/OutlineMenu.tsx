@@ -212,7 +212,8 @@ export const OutlineMenu = observer((): JSX.Element => {
                                     hovered={true}
                                 >
                                     {/* TO-DO: Display link of active page */}
-                                    <List.ItemText primary={p[1].id} />
+                                    {/* p[1].id */}
+                                    <List.ItemText primary={'/'} />
                                     <StyledIcon>
                                         <Home />
                                     </StyledIcon>
