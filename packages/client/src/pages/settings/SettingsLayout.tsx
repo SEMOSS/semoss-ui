@@ -27,6 +27,17 @@ import {
     ContentCopyOutlined,
 } from '@mui/icons-material';
 
+const StyledHeader = styled('div')(({ theme }) => ({
+    display: 'flex',
+    justifyContent: 'space-between',
+}));
+
+const StyledAdminHeader = styled('div')(({ theme }) => ({
+    height: '24px',
+    display: 'flex',
+    justifyContent: 'flex-end',
+}));
+
 const StyledId = styled(Typography)(({ theme }) => ({
     color: theme.palette.secondary.dark,
 }));
@@ -43,10 +54,11 @@ const StyledAdminContainer = styled(Paper)(({ theme }) => ({
     zIndex: 1,
 }));
 
-const StyledLink = {
+const StyledLink = styled(Link)(({ theme }) => ({
     textDecoration: 'none',
     color: 'inherit',
-};
+}));
+
 export const SettingsLayout = observer(() => {
     const { configStore } = useRootStore();
     const { id } = useParams();
@@ -94,20 +106,12 @@ export const SettingsLayout = observer(() => {
                 header={
                     <Stack>
                         {matchedRoute.path ? (
-                            <div
-                                style={{
-                                    display: 'flex',
-                                    justifyContent: 'space-between',
-                                }}
-                            >
+                            <StyledHeader>
                                 <Breadcrumbs separator="/">
-                                    <Link to={'.'} style={StyledLink}>
-                                        Settings
-                                    </Link>
+                                    <StyledLink to={'.'}>Settings</StyledLink>
                                     {matchedRoute.history.map((link, i) => {
                                         return (
-                                            <Link
-                                                style={StyledLink}
+                                            <StyledLink
                                                 to={link.replace('<id>', id)}
                                                 key={i + link}
                                                 state={...state}
@@ -115,7 +119,7 @@ export const SettingsLayout = observer(() => {
                                                 {link.includes('<id>')
                                                     ? id
                                                     : matchedRoute.title}
-                                            </Link>
+                                            </StyledLink>
                                         );
                                     })}
                                 </Breadcrumbs>
@@ -144,15 +148,9 @@ export const SettingsLayout = observer(() => {
                                         </Tooltip>
                                     </StyledAdminContainer>
                                 ) : null}
-                            </div>
+                            </StyledHeader>
                         ) : (
-                            <div
-                                style={{
-                                    height: '24px',
-                                    display: 'flex',
-                                    justifyContent: 'flex-end',
-                                }}
-                            >
+                            <StyledAdminHeader>
                                 {configStore.store.user.admin ? (
                                     <StyledAdminContainer>
                                         <Tooltip
@@ -178,7 +176,7 @@ export const SettingsLayout = observer(() => {
                                         </Tooltip>
                                     </StyledAdminContainer>
                                 ) : null}
-                            </div>
+                            </StyledAdminHeader>
                         )}
                         <Typography variant="h4">
                             {matchedRoute.history.length < 2
