@@ -1,7 +1,7 @@
 import { observer } from 'mobx-react-lite';
 import { styled, Stack } from '@semoss/ui';
 
-import { useNotebook } from '@/hooks';
+import { useBlocks } from '@/hooks';
 import { NotebookStep } from './NotebookStep';
 import { NotebookNewStep } from './NotebookNewStep';
 
@@ -29,7 +29,7 @@ const StyledStepSpaccer = styled('div')(({ theme }) => ({
  * Render a sheet in the notebook (contains the individual steps)
  */
 export const NotebookSheet = observer((): JSX.Element => {
-    const { notebook } = useNotebook();
+    const { notebook } = useBlocks();
 
     // need a query to render the sheet
     if (!notebook.selectedQuery) {

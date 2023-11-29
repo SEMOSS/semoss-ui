@@ -1,2 +1,4 @@
-export { WorkspaceActions } from './WorkspaceActions';
-export { WorkspaceRenderer } from './WorkspaceRenderer';
+export * from './WorkspaceActions';
+
+export * from './WorkspaceCode';
+export * from './WorkspaceBlocks';

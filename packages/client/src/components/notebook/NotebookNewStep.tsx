@@ -1,8 +1,8 @@
 import { observer } from 'mobx-react-lite';
 import { styled, ButtonGroup } from '@semoss/ui';
 
-import { useNotebook } from '@/hooks';
-import { StepStateConfig, StepState } from '@/stores';
+import { useBlocks } from '@/hooks';
+import { StepState, ActionMessages, NewStepAction } from '@/stores';
 import { DefaultCells } from '@/components/cell-defaults';
 
 const StyledNewStep = styled('div')(({ theme }) => ({
@@ -25,21 +25,26 @@ interface NotebookNewStepProps {
 export const NotebookNewStep = observer(
     (props: NotebookNewStepProps): JSX.Element => {
         const { step = null } = props;
-        const { notebook } = useNotebook();
+        const { state, notebook } = useBlocks();
 
         /**
          * Append a new step after the current step
          * @param config - config to add
          */
-        const appendStep = (config: Omit<StepStateConfig, 'id'>) => {
+        const appendStep = (config: NewStepAction['payload']['config']) => {
             try {
-                // copy and add after the current step
-                notebook.newStep(
-                    step ? step.query.id : notebook.selectedQuery.id,
-                    `${Math.floor(Math.random() * 1000000000000)}`,
-                    config,
-                    step ? step.id : '',
-                );
+                // copy and add the step to the end
+                state.dispatch({
+                    message: ActionMessages.NEW_STEP,
+                    payload: {
+                        queryId: step
+                            ? step.query.id
+                            : notebook.selectedQuery.id,
+                        stepId: `${Math.floor(Math.random() * 1000000000000)}`,
+                        previousStepId: step ? step.id : '',
+                        config: config,
+                    },
+                });
             } catch (e) {
                 console.error(e);
             }

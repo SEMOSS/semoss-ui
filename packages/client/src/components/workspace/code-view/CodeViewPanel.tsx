@@ -73,7 +73,7 @@ export const CodeViewPanel = (props: CodeViewPanelProps) => {
     const notification = useNotification();
     const navigate = useNavigate();
 
-    const { appId, setLoading, isLoading } = useWorkspace();
+    const { workspace } = useWorkspace();
 
     const { handleSubmit, control } = useForm<EditAppForm>({
         defaultValues: {
@@ -86,38 +86,47 @@ export const CodeViewPanel = (props: CodeViewPanelProps) => {
      */
     const editApp = handleSubmit(async (data: EditAppForm) => {
         // turn on loading
-        setLoading(true);
+        workspace.setLoading(true);
 
         try {
             const path = 'version/assets/';
 
             // upnzip the file in the new app
             await monolithStore.runQuery(
-                `DeleteAsset(filePath=["${path}"], space=["${appId}"]);`,
+                `DeleteAsset(filePath=["${path}"], space=["${workspace.appId}"]);`,
             );
 
             // upload the file
             const upload = await monolithStore.uploadFile(
                 [data.PROJECT_UPLOAD],
                 configStore.store.insightID,
-                appId,
+                workspace.appId,
                 path,
             );
 
             // upnzip the file in the new app
             await monolithStore.runQuery(
-                `UnzipFile(filePath=["${`${path}${upload[0].fileName}`}"], space=["${appId}"]);`,
+                `UnzipFile(filePath=["${`${path}${upload[0].fileName}`}"], space=["${
+                    workspace.appId
+                }"]);`,
             );
 
             // Load the insight classes
-            await monolithStore.runQuery(`ReloadInsightClasses('${appId}');`);
+            await monolithStore.runQuery(
+                `ReloadInsightClasses('${workspace.appId}');`,
+            );
 
             // set the app portal
-            await monolithStore.setProjectPortal(false, appId, true, 'public');
+            await monolithStore.setProjectPortal(
+                false,
+                workspace.appId,
+                true,
+                'public',
+            );
 
             // Publish the app the insight classes
             await monolithStore.runQuery(
-                `PublishProject('${appId}', release=true);`,
+                `PublishProject('${workspace.appId}', release=true);`,
             );
 
             // close it
@@ -131,7 +140,7 @@ export const CodeViewPanel = (props: CodeViewPanelProps) => {
             });
         } finally {
             // turn of loading
-            setLoading(false);
+            workspace.setLoading(false);
         }
     });
 
@@ -141,18 +150,25 @@ export const CodeViewPanel = (props: CodeViewPanelProps) => {
      */
     const reloadAndPublish = async () => {
         // turn on loading
-        setLoading(true);
+        workspace.setLoading(true);
 
         try {
             // Load the insight classes
-            await monolithStore.runQuery(`ReloadInsightClasses('${appId}');`);
+            await monolithStore.runQuery(
+                `ReloadInsightClasses('${workspace.appId}');`,
+            );
 
             // set the app portal
-            await monolithStore.setProjectPortal(false, appId, true, 'public');
+            await monolithStore.setProjectPortal(
+                false,
+                workspace.appId,
+                true,
+                'public',
+            );
 
             // Publish the app the insight classes
             await monolithStore.runQuery(
-                `PublishProject('${appId}', release=true);`,
+                `PublishProject('${workspace.appId}', release=true);`,
             );
 
             // close it
@@ -166,14 +182,14 @@ export const CodeViewPanel = (props: CodeViewPanelProps) => {
             });
         } finally {
             // turn of loading
-            setLoading(false);
+            workspace.setLoading(false);
         }
     };
 
     return (
         <StyledContainer>
             <AppEditor
-                appId={appId}
+                appId={workspace.appId}
                 width={width}
                 onSave={(success: boolean) => {
                     // Succesfully Saved Asset, refresh portal

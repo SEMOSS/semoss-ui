@@ -7,9 +7,13 @@ import { WorkspaceContext } from '@/contexts';
 import { useRootStore } from '@/hooks';
 import { Navbar, LoadingScreen } from '@/components/ui';
 
-import { WorkspaceActions, WorkspaceRenderer } from '@/components/workspace';
-
+import {
+    WorkspaceActions,
+    WorkspaceCode,
+    WorkspaceBlocks,
+} from '@/components/workspace';
 import { WorkspaceStore } from '@/stores';
+import { AppRenderer } from '@/components/app';
 
 const NAV_HEIGHT = '48px';
 
@@ -47,8 +51,22 @@ export const AppPage = observer(() => {
 
             return;
         }
+
         // clear out the old app
         setWorkspace(undefined);
+
+        if (appId === 'blocks') {
+            cache
+                .loadBlocksWorkspace(appId)
+                .then((loadedApp) => {
+                    setWorkspace(loadedApp);
+                })
+                .catch((e) => {
+                    console.log(e);
+                });
+
+            return;
+        }
 
         // load the app
         cache
@@ -72,13 +90,25 @@ export const AppPage = observer(() => {
     }
 
     return (
-        <WorkspaceContext.Provider value={workspace}>
+        <WorkspaceContext.Provider
+            value={{
+                workspace: workspace,
+            }}
+        >
             <StyledViewport>
                 <Navbar>
                     <WorkspaceActions />
                 </Navbar>
                 <StyledContent>
-                    <WorkspaceRenderer />
+                    {!workspace.isEditMode ? (
+                        <AppRenderer appId={workspace.appId} />
+                    ) : null}
+                    {workspace.isEditMode && workspace.type === 'code' ? (
+                        <WorkspaceCode />
+                    ) : null}
+                    {workspace.isEditMode && workspace.type === 'blocks' ? (
+                        <WorkspaceBlocks />
+                    ) : null}
                 </StyledContent>
             </StyledViewport>
         </WorkspaceContext.Provider>

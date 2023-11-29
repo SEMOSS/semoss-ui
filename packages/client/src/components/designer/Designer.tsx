@@ -6,7 +6,6 @@ import { useState } from 'react';
 import { DesignerContext } from '@/contexts';
 import { DesignerStore } from '@/stores';
 
-import { Overlay } from './Overlay';
 import { BlocksMenu } from './BlocksMenu';
 import { SelectedMenu } from './SelectedMenu';
 import { OutlineMenu } from './OutlineMenu';
@@ -144,7 +143,6 @@ export const Designer = observer((props: DesignerProps): JSX.Element => {
                 designer: designer,
             }}
         >
-            <Overlay />
             <StyledDesignerContainer
                 direction="row"
                 isDragging={!!designer.drag.ghostWidget}
