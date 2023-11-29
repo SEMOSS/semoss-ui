@@ -1,35 +1,58 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { computed } from 'mobx';
 import { observer } from 'mobx-react-lite';
-import { MenuItem, Select, Stack, Typography } from '@semoss/ui';
+import { IconButton } from '@semoss/ui';
 import { Paths, PathValue } from '@/types';
 import { useBlockSettings } from '@/hooks';
 import { Block, BlockDef } from '@/stores';
 import { getValueByPath } from '@/utility';
+import {
+    FormatBold,
+    FormatItalic,
+    FormatUnderlined,
+} from '@mui/icons-material';
 
-interface SpaceSettingsProps<D extends BlockDef = BlockDef> {
+interface TextStyleSettingButtonProps<D extends BlockDef = BlockDef> {
     /**
      * Id of the block that is being worked with
      */
     id: string;
 
     /**
-     * Label to pass into the input
-     */
-    label: string;
-
-    /**
      * Path to update
      */
     path: Paths<Block<D>['data'], 4>;
+
+    /**
+     * Style type
+     */
+    type: 'bold' | 'underlined' | 'italic';
 }
 
-export const SpacingSettings = observer(
+const STYLE_TYPES = {
+    bold: {
+        label: 'Bold',
+        value: 'bold',
+        icon: <FormatBold />,
+    },
+    underlined: {
+        label: 'Underlined',
+        value: 'underline',
+        icon: <FormatUnderlined />,
+    },
+    italic: {
+        label: 'Italic',
+        value: 'italic',
+        icon: <FormatItalic />,
+    },
+};
+
+export const TextStyleSettingButton = observer(
     <D extends BlockDef = BlockDef>({
         id,
-        label,
         path,
-    }: SpaceSettingsProps<D>) => {
+        type,
+    }: TextStyleSettingButtonProps<D>) => {
         const { data, setData } = useBlockSettings(id);
 
         // track the value
@@ -64,9 +87,12 @@ export const SpacingSettings = observer(
         /**
          * Sync the data on change
          */
-        const onChange = (value: string) => {
-            // set the value
-            setValue(value);
+        const onClick = () => {
+            const newValue =
+                value !== STYLE_TYPES[type].value
+                    ? STYLE_TYPES[type].value
+                    : 'inherit';
+            setValue(newValue);
 
             // clear out he old timeout
             if (timeoutRef.current) {
@@ -77,7 +103,10 @@ export const SpacingSettings = observer(
             timeoutRef.current = setTimeout(() => {
                 try {
                     // set the value
-                    setData(path, value as PathValue<D['data'], typeof path>);
+                    setData(
+                        path,
+                        newValue as PathValue<D['data'], typeof path>,
+                    );
                 } catch (e) {
                     console.log(e);
                 }
@@ -85,32 +114,14 @@ export const SpacingSettings = observer(
         };
 
         return (
-            <Stack
-                direction="row"
-                alignItems="center"
-                justifyContent="space-between"
+            <IconButton
+                color={value == STYLE_TYPES[type].value ? 'primary' : undefined}
+                size="small"
+                onClick={onClick}
+                title={STYLE_TYPES[type].label}
             >
-                <Typography variant="body2">{label}</Typography>
-                <Stack direction="row" justifyContent="end" width="50%">
-                    <Select
-                        fullWidth
-                        size="small"
-                        value={value}
-                        onChange={(e) => {
-                            // sync the data on change
-                            onChange(e.target.value);
-                        }}
-                    >
-                        <MenuItem value={''}>
-                            <em>None</em>
-                        </MenuItem>
-                        <MenuItem value={'1em'}>Small</MenuItem>
-                        <MenuItem value={'2em'}>Medium</MenuItem>
-                        <MenuItem value={'3em'}>Large</MenuItem>
-                        <MenuItem value={'4em'}>X-Large</MenuItem>
-                    </Select>
-                </Stack>
-            </Stack>
+                {STYLE_TYPES[type].icon}
+            </IconButton>
         );
     },
 );

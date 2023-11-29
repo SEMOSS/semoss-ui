@@ -38,6 +38,7 @@ export const config: BlockConfig<TextBlockDef> = {
                 },
             ],
         },
+        buildTypographySection(),
         {
             name: 'Layout',
             children: [
@@ -52,6 +53,5 @@ export const config: BlockConfig<TextBlockDef> = {
         buildSpacingSection(),
         buildDimensionsSection(),
         buildStyleSection(),
-        buildTypographySection(),
     ],
 };

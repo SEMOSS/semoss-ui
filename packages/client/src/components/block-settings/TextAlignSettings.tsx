@@ -13,7 +13,7 @@ import {
     FormatAlignRight,
 } from '@mui/icons-material';
 
-interface InputSettingsProps<D extends BlockDef = BlockDef> {
+interface TextAlignSettingsProps<D extends BlockDef = BlockDef> {
     /**
      * Id of the block that is being worked with
      */
@@ -26,7 +26,10 @@ interface InputSettingsProps<D extends BlockDef = BlockDef> {
 }
 
 export const TextAlignSettings = observer(
-    <D extends BlockDef = BlockDef>({ id, path }: InputSettingsProps<D>) => {
+    <D extends BlockDef = BlockDef>({
+        id,
+        path,
+    }: TextAlignSettingsProps<D>) => {
         const { data, setData } = useBlockSettings(id);
 
         // track the value
@@ -82,7 +85,11 @@ export const TextAlignSettings = observer(
         };
 
         return (
-            <Stack direction="row" alignItems={'center'}>
+            <Stack
+                direction="row"
+                alignItems="center"
+                justifyContent="space-between"
+            >
                 <Typography variant="body2">Text Align</Typography>
                 <Stack
                     direction="row"

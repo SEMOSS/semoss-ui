@@ -12,7 +12,7 @@ import {
     AlignHorizontalRight,
 } from '@mui/icons-material';
 
-interface InputSettingsProps<D extends BlockDef = BlockDef> {
+interface HorizontalAlignSettingsProps<D extends BlockDef = BlockDef> {
     /**
      * Id of the block that is being worked with
      */
@@ -25,7 +25,10 @@ interface InputSettingsProps<D extends BlockDef = BlockDef> {
 }
 
 export const HorizontalAlignSettings = observer(
-    <D extends BlockDef = BlockDef>({ id, path }: InputSettingsProps<D>) => {
+    <D extends BlockDef = BlockDef>({
+        id,
+        path,
+    }: HorizontalAlignSettingsProps<D>) => {
         const { data, setData } = useBlockSettings(id);
 
         // track the value
@@ -81,7 +84,11 @@ export const HorizontalAlignSettings = observer(
         };
 
         return (
-            <Stack direction="row" alignItems={'center'}>
+            <Stack
+                direction="row"
+                alignItems="center"
+                justifyContent="space-between"
+            >
                 <Typography variant="body2">Horizontal Align</Typography>
                 <Stack
                     direction="row"

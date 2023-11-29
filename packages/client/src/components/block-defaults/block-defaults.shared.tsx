@@ -8,6 +8,10 @@ import { TextAlignSettings } from '../block-settings/TextAlignSettings';
 import { VerticalAlignSettings } from '../block-settings/VerticalAlignSettings';
 import { HorizontalAlignSettings } from '../block-settings/HorizontalAlignSettings';
 import { SpacingSettings } from '../block-settings/SpacingSettings';
+import { TextStyleSettings } from '../block-settings/TextStyleSettings';
+import { FontFamilySettings } from '../block-settings/FontFamilySettings';
+import { FontSizeSettings } from '../block-settings/FontSizeSettings';
+import { SizeSettings } from '../block-settings/SizeSettings';
 
 /**
  * Build the Editor Section
@@ -82,29 +86,25 @@ export const buildDimensionsSection = () => ({
         {
             description: 'Width',
             render: ({ id }) => (
-                <InputSettings id={id} label="Width" path="style.width" />
+                <SizeSettings id={id} label="Width" path="style.width" />
             ),
         },
         {
-            description: 'MaxWidth',
+            description: 'Max Width',
             render: ({ id }) => (
-                <InputSettings
-                    id={id}
-                    label="Max Width"
-                    path="style.maxWidth"
-                />
+                <SizeSettings id={id} label="Max Width" path="style.maxWidth" />
             ),
         },
         {
             description: 'Height',
             render: ({ id }) => (
-                <InputSettings id={id} label="Height" path="style.height" />
+                <SizeSettings id={id} label="Height" path="style.height" />
             ),
         },
         {
-            description: 'MaxHeight',
+            description: 'Max Height',
             render: ({ id }) => (
-                <InputSettings
+                <SizeSettings
                     id={id}
                     label="Max Height"
                     path="style.maxHeight"
@@ -167,41 +167,25 @@ export const buildStyleSection = () => ({
  * @returns a typography section
  */
 export const buildTypographySection = () => ({
-    name: 'Typography',
+    name: 'Text',
     children: [
         {
-            description: 'Font Family',
+            description: 'Style',
+            render: ({ id }) => <TextStyleSettings id={id} />,
+        },
+        {
+            description: 'Font',
             render: ({ id }) => (
-                <InputSettings id={id} label="Font" path="style.fontFamily" />
+                <FontFamilySettings id={id} path="style.fontFamily" />
             ),
         },
         {
-            description: 'Font Size',
+            description: 'Type',
             render: ({ id }) => (
-                <InputSettings
+                <FontSizeSettings
                     id={id}
-                    label="Font Size"
-                    path="style.fontSize"
-                />
-            ),
-        },
-        {
-            description: 'Font Weight',
-            render: ({ id }) => (
-                <InputSettings
-                    id={id}
-                    label="Font Weight"
-                    path="style.fontWeight"
-                />
-            ),
-        },
-        {
-            description: 'Font Style',
-            render: ({ id }) => (
-                <InputSettings
-                    id={id}
-                    label="Font Style"
-                    path="style.fontStyle"
+                    sizePath="style.fontSize"
+                    weightPath="style.fontWeight"
                 />
             ),
         },

@@ -99,14 +99,14 @@ export const InputSettings = observer(
         return (
             <Stack
                 direction="row"
-                alignItems={'center'}
+                alignItems="center"
+                justifyContent="space-between"
                 title={`Edit ${label}`}
             >
-                <StyledLabel variant="body2" noWrap={true}>
-                    {label}
-                </StyledLabel>
-                <Stack flex={'1'}>
+                <StyledLabel variant="body2">{label}</StyledLabel>
+                <Stack direction="row" width="70%">
                     <TextField
+                        fullWidth
                         value={value}
                         onChange={(e) => {
                             // sync the data on change
@@ -121,7 +121,6 @@ export const InputSettings = observer(
                         }
                         size="small"
                         variant="outlined"
-                        fullWidth={true}
                         autoComplete="off"
                     />
                 </Stack>

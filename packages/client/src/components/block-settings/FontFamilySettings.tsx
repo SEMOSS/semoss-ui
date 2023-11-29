@@ -7,16 +7,11 @@ import { useBlockSettings } from '@/hooks';
 import { Block, BlockDef } from '@/stores';
 import { getValueByPath } from '@/utility';
 
-interface SpaceSettingsProps<D extends BlockDef = BlockDef> {
+interface FontFamilySettingsProps<D extends BlockDef = BlockDef> {
     /**
      * Id of the block that is being worked with
      */
     id: string;
-
-    /**
-     * Label to pass into the input
-     */
-    label: string;
 
     /**
      * Path to update
@@ -24,12 +19,11 @@ interface SpaceSettingsProps<D extends BlockDef = BlockDef> {
     path: Paths<Block<D>['data'], 4>;
 }
 
-export const SpacingSettings = observer(
+export const FontFamilySettings = observer(
     <D extends BlockDef = BlockDef>({
         id,
-        label,
         path,
-    }: SpaceSettingsProps<D>) => {
+    }: FontFamilySettingsProps<D>) => {
         const { data, setData } = useBlockSettings(id);
 
         // track the value
@@ -90,8 +84,8 @@ export const SpacingSettings = observer(
                 alignItems="center"
                 justifyContent="space-between"
             >
-                <Typography variant="body2">{label}</Typography>
-                <Stack direction="row" justifyContent="end" width="50%">
+                <Typography variant="body2">Font</Typography>
+                <Stack direction="row" justifyContent="end" width="70%">
                     <Select
                         fullWidth
                         size="small"
@@ -104,10 +98,13 @@ export const SpacingSettings = observer(
                         <MenuItem value={''}>
                             <em>None</em>
                         </MenuItem>
-                        <MenuItem value={'1em'}>Small</MenuItem>
-                        <MenuItem value={'2em'}>Medium</MenuItem>
-                        <MenuItem value={'3em'}>Large</MenuItem>
-                        <MenuItem value={'4em'}>X-Large</MenuItem>
+                        <MenuItem value={'Roboto'}>Roboto</MenuItem>
+                        <MenuItem value={'Helvetica'}>Helvetica</MenuItem>
+                        <MenuItem value={'Arial'}>Arial</MenuItem>
+                        <MenuItem value={'Times New Roman'}>
+                            Times New Roman
+                        </MenuItem>
+                        <MenuItem value={'Georgia'}>Georgia</MenuItem>
                     </Select>
                 </Stack>
             </Stack>

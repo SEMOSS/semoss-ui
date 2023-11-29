@@ -12,7 +12,7 @@ import {
     VerticalAlignTop,
 } from '@mui/icons-material';
 
-interface InputSettingsProps<D extends BlockDef = BlockDef> {
+interface VerticalAlignSettingsProps<D extends BlockDef = BlockDef> {
     /**
      * Id of the block that is being worked with
      */
@@ -25,7 +25,10 @@ interface InputSettingsProps<D extends BlockDef = BlockDef> {
 }
 
 export const VerticalAlignSettings = observer(
-    <D extends BlockDef = BlockDef>({ id, path }: InputSettingsProps<D>) => {
+    <D extends BlockDef = BlockDef>({
+        id,
+        path,
+    }: VerticalAlignSettingsProps<D>) => {
         const { data, setData } = useBlockSettings(id);
 
         // track the value
@@ -81,7 +84,11 @@ export const VerticalAlignSettings = observer(
         };
 
         return (
-            <Stack direction="row" alignItems={'center'}>
+            <Stack
+                direction="row"
+                alignItems="center"
+                justifyContent="space-between"
+            >
                 <Typography variant="body2">Vertical Align</Typography>
                 <Stack
                     direction="row"

@@ -1,13 +1,23 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { computed } from 'mobx';
 import { observer } from 'mobx-react-lite';
-import { MenuItem, Select, Stack, Typography } from '@semoss/ui';
+import {
+    styled,
+    MenuItem,
+    Select,
+    Stack,
+    Typography,
+    TextField,
+    ToggleButton,
+    ToggleButtonGroup,
+} from '@semoss/ui';
+import { Autocomplete } from '@mui/material';
 import { Paths, PathValue } from '@/types';
 import { useBlockSettings } from '@/hooks';
 import { Block, BlockDef } from '@/stores';
 import { getValueByPath } from '@/utility';
 
-interface SpaceSettingsProps<D extends BlockDef = BlockDef> {
+interface SizeSettingsProps<D extends BlockDef = BlockDef> {
     /**
      * Id of the block that is being worked with
      */
@@ -24,16 +34,19 @@ interface SpaceSettingsProps<D extends BlockDef = BlockDef> {
     path: Paths<Block<D>['data'], 4>;
 }
 
-export const SpacingSettings = observer(
+export const SizeSettings = observer(
     <D extends BlockDef = BlockDef>({
         id,
-        label,
+        label = '',
         path,
-    }: SpaceSettingsProps<D>) => {
-        const { data, setData } = useBlockSettings(id);
+    }: SizeSettingsProps<D>) => {
+        const { data, setData } = useBlockSettings<D>(id);
 
         // track the value
         const [value, setValue] = useState('');
+
+        // track the value type
+        const [valueType, setValueType] = useState(null);
 
         // track the ref to debounce the input
         const timeoutRef = useRef<ReturnType<typeof setTimeout>>(null);
@@ -61,12 +74,32 @@ export const SpacingSettings = observer(
             setValue(computedValue);
         }, [computedValue]);
 
+        // numeric value for the text field
+        const numericValue = useMemo(() => {
+            return value.replace(/\D+/g, '');
+        }, [value]);
+
+        useEffect(() => {
+            if (numericValue && !valueType) {
+                setValueType('%');
+            } else if (!numericValue) {
+                setValueType('');
+            }
+        }, [numericValue]);
+
+        useEffect(() => {
+            if (numericValue) {
+                onChange(value);
+            }
+        }, [valueType]);
+
         /**
          * Sync the data on change
          */
         const onChange = (value: string) => {
+            const valueWithUnit = value ? value + valueType : value;
             // set the value
-            setValue(value);
+            setValue(valueWithUnit);
 
             // clear out he old timeout
             if (timeoutRef.current) {
@@ -77,7 +110,10 @@ export const SpacingSettings = observer(
             timeoutRef.current = setTimeout(() => {
                 try {
                     // set the value
-                    setData(path, value as PathValue<D['data'], typeof path>);
+                    setData(
+                        path,
+                        valueWithUnit as PathValue<D['data'], typeof path>,
+                    );
                 } catch (e) {
                     console.log(e);
                 }
@@ -89,26 +125,37 @@ export const SpacingSettings = observer(
                 direction="row"
                 alignItems="center"
                 justifyContent="space-between"
+                title={`Edit ${label}`}
             >
                 <Typography variant="body2">{label}</Typography>
-                <Stack direction="row" justifyContent="end" width="50%">
-                    <Select
+                <Stack direction="row" width="50%">
+                    <TextField
                         fullWidth
-                        size="small"
-                        value={value}
+                        value={numericValue}
                         onChange={(e) => {
                             // sync the data on change
                             onChange(e.target.value);
                         }}
-                    >
-                        <MenuItem value={''}>
-                            <em>None</em>
-                        </MenuItem>
-                        <MenuItem value={'1em'}>Small</MenuItem>
-                        <MenuItem value={'2em'}>Medium</MenuItem>
-                        <MenuItem value={'3em'}>Large</MenuItem>
-                        <MenuItem value={'4em'}>X-Large</MenuItem>
-                    </Select>
+                        size="small"
+                        variant="outlined"
+                        autoComplete="off"
+                    />
+                    <ToggleButtonGroup value={valueType} exclusive size="small">
+                        <ToggleButton
+                            value="%"
+                            color={valueType === '%' ? 'primary' : undefined}
+                            onClick={() => setValueType('%')}
+                        >
+                            %
+                        </ToggleButton>
+                        <ToggleButton
+                            value="px"
+                            color={valueType === 'px' ? 'primary' : undefined}
+                            onClick={() => setValueType('px')}
+                        >
+                            px
+                        </ToggleButton>
+                    </ToggleButtonGroup>
                 </Stack>
             </Stack>
         );
