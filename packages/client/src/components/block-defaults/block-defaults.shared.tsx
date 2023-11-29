@@ -12,6 +12,7 @@ import { TextStyleSettings } from '../block-settings/TextStyleSettings';
 import { FontFamilySettings } from '../block-settings/FontFamilySettings';
 import { FontSizeSettings } from '../block-settings/FontSizeSettings';
 import { SizeSettings } from '../block-settings/SizeSettings';
+import { ColorSettings } from '../block-settings/ColorSettings';
 
 /**
  * Build the Editor Section
@@ -119,24 +120,12 @@ export const buildDimensionsSection = () => ({
  * @returns a style section
  */
 export const buildStyleSection = () => ({
-    name: 'Style',
+    name: 'Color',
     children: [
-        {
-            description: 'Border',
-            render: ({ id }) => (
-                <InputSettings id={id} label="Border" path="style.border" />
-            ),
-        },
-        {
-            description: 'Outline',
-            render: ({ id }) => (
-                <InputSettings id={id} label="Outline" path="style.outline" />
-            ),
-        },
         {
             description: 'Background Color',
             render: ({ id }) => (
-                <InputSettings
+                <ColorSettings
                     id={id}
                     label="Background Color"
                     path="style.backgroundColor"
@@ -146,17 +135,7 @@ export const buildStyleSection = () => ({
         {
             description: 'Color',
             render: ({ id }) => (
-                <InputSettings id={id} label="Color" path="style.color" />
-            ),
-        },
-        {
-            description: 'Box Shadow',
-            render: ({ id }) => (
-                <InputSettings
-                    id={id}
-                    label="Box Shadow"
-                    path="style.boxShadow"
-                />
+                <ColorSettings id={id} label="Color" path="style.color" />
             ),
         },
     ],
