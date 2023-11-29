@@ -1,12 +1,15 @@
 import { createContext } from 'react';
-import { StateStoreImplementation, Registry } from '@/stores';
+import { StateStoreImplementation, Registry, NotebookStore } from '@/stores';
 
 export interface BlocksContextProps {
     /** Widgets available to all of the blocks */
     registry: Registry;
 
-    /** Store to provide */
+    /** State to provide */
     state: StateStoreImplementation;
+
+    /** notebook helpers */
+    notebook: NotebookStore;
 }
 
 /**

@@ -1,8 +1,8 @@
 import Editor from '@monaco-editor/react';
 import { styled } from '@semoss/ui';
 
-import { CellComponent } from '@/stores';
-import { useNotebook } from '@/hooks';
+import { ActionMessages, CellComponent } from '@/stores';
+import { useBlocks } from '@/hooks';
 import { CodeCellDef } from './config';
 
 const StyledContent = styled('div')(() => ({
@@ -13,7 +13,7 @@ const StyledContent = styled('div')(() => ({
 
 export const CodeCellInput: CellComponent<CodeCellDef> = (props) => {
     const { step } = props;
-    const { notebook } = useNotebook();
+    const { state } = useBlocks();
 
     return (
         <StyledContent>
@@ -32,12 +32,15 @@ export const CodeCellInput: CellComponent<CodeCellDef> = (props) => {
                         return;
                     }
 
-                    notebook.updateStep(
-                        step.query.id,
-                        step.id,
-                        'parameters.code',
-                        newValue,
-                    );
+                    state.dispatch({
+                        message: ActionMessages.UPDATE_STEP,
+                        payload: {
+                            queryId: step.query.id,
+                            stepId: step.id,
+                            path: 'parameters.code',
+                            value: newValue,
+                        },
+                    });
                 }}
                 onMount={(editor, monaco) => {
                     // update the action
@@ -51,15 +54,23 @@ export const CodeCellInput: CellComponent<CodeCellDef> = (props) => {
                             const newValue = editor.getValue();
 
                             // update with the new code
-                            notebook.updateStep(
-                                step.query.id,
-                                step.id,
-                                'parameters.code',
-                                newValue,
-                            );
+                            state.dispatch({
+                                message: ActionMessages.UPDATE_STEP,
+                                payload: {
+                                    queryId: step.query.id,
+                                    stepId: step.id,
+                                    path: 'parameters.code',
+                                    value: newValue,
+                                },
+                            });
 
-                            // run it
-                            notebook.runStep(step.query.id, step.id);
+                            state.dispatch({
+                                message: ActionMessages.RUN_STEP,
+                                payload: {
+                                    queryId: step.query.id,
+                                    stepId: step.id,
+                                },
+                            });
                         },
                     });
                 }}

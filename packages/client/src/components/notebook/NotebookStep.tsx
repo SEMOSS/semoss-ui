@@ -13,8 +13,8 @@ import {
     DeleteOutlined,
     PlayArrowRounded,
 } from '@mui/icons-material';
-import { StepState } from '@/stores';
-import { useNotebook } from '@/hooks';
+import { ActionMessages, StepState } from '@/stores';
+import { useBlocks } from '@/hooks';
 
 const StyledDivider = styled(Divider)(() => ({
     flex: 1,
@@ -50,7 +50,7 @@ export const NotebookStep = observer(
     (props: NotebookStepProps): JSX.Element => {
         const { step } = props;
 
-        const { notebook } = useNotebook();
+        const { state, notebook } = useBlocks();
 
         // get the view
         const cell = step.cell;
@@ -113,12 +113,18 @@ export const NotebookStep = observer(
                             {renderedTitle}
                             <ButtonGroup size="small">
                                 <ButtonGroup.Item
-                                    title="Run the cell"
+                                    title="Run the step"
                                     variant="outlined"
                                     startIcon={<PlayArrowRounded />}
                                     disabled={step.isLoading}
                                     onClick={() =>
-                                        notebook.runStep(step.query.id, step.id)
+                                        state.dispatch({
+                                            message: ActionMessages.RUN_STEP,
+                                            payload: {
+                                                queryId: step.query.id,
+                                                stepId: step.id,
+                                            },
+                                        })
                                     }
                                 >
                                     Run
@@ -128,21 +134,27 @@ export const NotebookStep = observer(
                                     variant="outlined"
                                     onClick={() => {
                                         // copy and add the step to the end
-                                        notebook.newStep(
-                                            step.query.id,
-                                            `${Math.floor(
-                                                Math.random() * 1000000000000,
-                                            )}`,
-                                            {
-                                                widget: step.widget,
-                                                parameters: {
-                                                    ...step.parameters,
+                                        state.dispatch({
+                                            message: ActionMessages.NEW_STEP,
+                                            payload: {
+                                                queryId: step.query.id,
+                                                stepId: `${Math.floor(
+                                                    Math.random() *
+                                                        1000000000000,
+                                                )}`,
+                                                previousStepId: step
+                                                    ? step.id
+                                                    : '',
+                                                config: {
+                                                    widget: step.widget,
+                                                    parameters: {
+                                                        ...step.parameters,
+                                                    },
+                                                    output: undefined,
+                                                    operation: [],
                                                 },
-                                                output: undefined,
-                                                operation: [],
                                             },
-                                            step.id,
-                                        );
+                                        });
                                     }}
                                 >
                                     <ContentCopyOutlined fontSize="small" />
@@ -152,10 +164,16 @@ export const NotebookStep = observer(
                                     variant="outlined"
                                     onClick={() => {
                                         // copy and add the step to the end
-                                        notebook.deleteStep(
-                                            notebook.selectedQuery.id,
-                                            step.id,
-                                        );
+                                        state.dispatch({
+                                            message: ActionMessages.DELETE_STEP,
+                                            payload: {
+                                                queryId: step.query.id,
+                                                stepId: `${Math.floor(
+                                                    Math.random() *
+                                                        1000000000000,
+                                                )}`,
+                                            },
+                                        });
                                     }}
                                 >
                                     <DeleteOutlined fontSize="small" />

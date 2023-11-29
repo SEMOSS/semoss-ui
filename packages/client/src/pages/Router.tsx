@@ -15,7 +15,6 @@ import { SettingsRouter } from './settings';
 import { AppRouter } from './app';
 import { ImportRouter } from './import';
 import { DesignPage } from './DesignPage';
-import { NotebookPage } from './NotebookPage';
 
 export const Router = observer(() => {
     const { configStore } = useRootStore();
@@ -38,7 +37,6 @@ export const Router = observer(() => {
                 <Route path="*" element={<Navigate to="/" replace />} />
             </Route>
             <Route path="/design" element={<DesignPage />}></Route>
-            <Route path="/notebook" element={<NotebookPage />} />
             <Route path="/login" element={<LoginPage />}></Route>
         </Routes>
     );

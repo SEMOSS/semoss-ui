@@ -5,8 +5,7 @@ import { MetamodelContextType, MetamodelContext } from './MetamodelContext';
 import { SettingsContextType, SettingsContext } from './SettingsContext';
 import { RootStoreContextType, RootStoreContext } from './RootStoreContext';
 import { StepperContext, StepperContextType } from './StepperContext';
-import { WorkspaceContextType, WorkspaceContext } from './WorkspaceContext';
-import { NotebookContextType, NotebookContext } from './NotebookContext';
+import { WorkspaceContextProps, WorkspaceContext } from './WorkspaceContext';
 
 export type {
     DesignerContextType,
@@ -15,8 +14,7 @@ export type {
     RootStoreContextType,
     SettingsContextType,
     StepperContextType,
-    WorkspaceContextType,
-    NotebookContextType,
+    WorkspaceContextProps,
 };
 
 export {
@@ -28,5 +26,4 @@ export {
     SettingsContext,
     StepperContext,
     WorkspaceContext,
-    NotebookContext,
 };

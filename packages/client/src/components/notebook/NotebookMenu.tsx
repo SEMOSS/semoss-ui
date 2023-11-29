@@ -9,7 +9,7 @@ import {
     Typography,
     IconButton,
 } from '@semoss/ui';
-import { useNotebook } from '@/hooks';
+import { useBlocks, useWorkspace } from '@/hooks';
 import { Add, Edit, Search } from '@mui/icons-material';
 import { QueryOverlay } from './QueryOverlay';
 
@@ -47,7 +47,8 @@ const StyledMenuScroll = styled('div')(({ theme }) => ({
  * Render the side menu of the nodebook
  */
 export const NotebookMenu = observer((): JSX.Element => {
-    const { notebook } = useNotebook();
+    const { notebook } = useBlocks();
+    const { workspace } = useWorkspace();
 
     const [search, setSearch] = useState<string>('');
 
@@ -64,8 +65,8 @@ export const NotebookMenu = observer((): JSX.Element => {
      * @param id - id to open in the overlay. If not defined, it will create a new one.
      */
     const openQueryOverlay = (id = '') => {
-        notebook.openOverlay(() => (
-            <QueryOverlay id={id} onClose={() => notebook.closeOverlay()} />
+        workspace.openOverlay(() => (
+            <QueryOverlay id={id} onClose={() => workspace.closeOverlay()} />
         ));
     };
 

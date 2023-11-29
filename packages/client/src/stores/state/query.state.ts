@@ -1,7 +1,5 @@
 import { makeAutoObservable, runInAction } from 'mobx';
 
-import { runPixel } from '@/api';
-
 import { StepState } from './step.state';
 import { StateStoreImplementation } from './state.store';
 import { setValueByPath } from '@/utility';
@@ -241,7 +239,7 @@ export class QueryState {
             const filled = this._state.flattenParameter(raw);
 
             // run as a single pixel block;
-            const { pixelReturn } = await runPixel('', filled);
+            const { pixelReturn } = await this._state._runPixel(filled);
 
             const stepLen = this._store.steps.length;
             if (pixelReturn.length !== stepLen) {

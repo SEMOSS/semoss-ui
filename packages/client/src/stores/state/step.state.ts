@@ -1,6 +1,5 @@
 import { makeAutoObservable, runInAction } from 'mobx';
 
-import { runPixel } from '@/api';
 import { setValueByPath } from '@/utility';
 
 import { Cell, CellDef } from './state.types';
@@ -259,8 +258,9 @@ export class StepState<D extends CellDef = CellDef> {
             // fill the braces {{ }} to create the final pixel
             const filled = this._state.flattenParameter(raw);
 
-            // run this pixel
-            const { pixelReturn } = await runPixel('', filled);
+            // run the pixel
+            const { pixelReturn } = await this._state._runPixel(filled);
+
             if (pixelReturn.length !== 1) {
                 throw new Error('Unexpected number of pixel statements');
             }

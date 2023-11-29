@@ -44,15 +44,6 @@ export interface DesignerStoreInterface {
             width: number;
         } | null;
     };
-
-    /** overlay information */
-    overlay: {
-        /** track if the overlay is open or closed */
-        open: boolean;
-
-        /** content to display in the overlay */
-        render: () => JSX.Element;
-    };
 }
 
 /**
@@ -71,10 +62,6 @@ export class DesignerStore {
             ghostPosition: null,
             placeholderSize: null,
             placeholderAction: null,
-        },
-        overlay: {
-            open: false,
-            render: null,
         },
     };
 
@@ -127,14 +114,6 @@ export class DesignerStore {
      */
     get drag() {
         return this._store.drag;
-    }
-
-    /**
-     * Get the overlay information
-     * @returns the overlay information
-     */
-    get overlay() {
-        return this._store.overlay;
     }
 
     /**
@@ -266,27 +245,5 @@ export class DesignerStore {
 
         // update the size for the placeholder
         this._store.drag.placeholderSize = size;
-    }
-
-    /**
-     * Open the overlay
-     */
-    openOverlay(content: DesignerStoreInterface['overlay']['render']) {
-        // open the overlay
-        this._store.overlay.open = true;
-
-        // set the content
-        this._store.overlay.render = content;
-    }
-
-    /**
-     * Close the overlay
-     */
-    closeOverlay() {
-        // close the overlay
-        this._store.overlay.open = false;
-
-        // clear the content
-        this._store.overlay.render = null;
     }
 }

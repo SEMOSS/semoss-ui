@@ -60,7 +60,7 @@ const StyledIconButton = styled(IconButton)(() => ({
 
 export const CodeView = observer(() => {
     // App ID Needed for pixel calls
-    const { appId } = useWorkspace();
+    const { workspace } = useWorkspace();
 
     const [transparentOverlay, setTransparentOverlay] = useState(false);
 
@@ -150,7 +150,7 @@ export const CodeView = observer(() => {
                             <Refresh />
                         </StyledIconButton>
                     </StyledRendererActions>
-                    <AppRenderer appId={appId} />
+                    <AppRenderer appId={workspace.appId} />
                 </StyledRendererContainer>
             </StyledRightPanel>
         </StyledTopPanel>

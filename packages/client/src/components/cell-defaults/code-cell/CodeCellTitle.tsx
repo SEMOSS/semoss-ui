@@ -1,23 +1,26 @@
 import { Select } from '@semoss/ui';
 
-import { CellComponent } from '@/stores';
-import { useNotebook } from '@/hooks';
+import { ActionMessages, CellComponent } from '@/stores';
+import { useBlocks } from '@/hooks';
 import { CodeCellDef } from './config';
 
 export const CodeCellTitle: CellComponent<CodeCellDef> = (props) => {
     const { step } = props;
-    const { notebook } = useNotebook();
+    const { state } = useBlocks();
     return (
         <Select
             size="small"
             value={step.parameters.type}
             onChange={(e) =>
-                notebook.updateStep(
-                    step.query.id,
-                    step.id,
-                    'parameters.type',
-                    e.target.value,
-                )
+                state.dispatch({
+                    message: ActionMessages.UPDATE_STEP,
+                    payload: {
+                        queryId: step.query.id,
+                        stepId: step.id,
+                        path: 'parameters.type',
+                        value: e.target.value,
+                    },
+                })
             }
         >
             <Select.Item value="r"> R</Select.Item>

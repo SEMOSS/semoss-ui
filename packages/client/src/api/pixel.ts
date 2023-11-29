@@ -5,12 +5,12 @@ import { Env } from '@/env';
 /**
  * Run a pixel string
  *
- * @param insightID - insightID to execute the pixel against
- * @param pixel - pixel to execute
+ * @param pixel - pixel
+ * @param insightId - id of the insight to run
  */
 export const runPixel = async <O extends unknown[] | []>(
-    insightID: string,
     pixel: string,
+    insightID?: string,
 ) => {
     if (!pixel) {
         throw Error('No Pixel To Execute');
@@ -61,7 +61,8 @@ export const runPixel = async <O extends unknown[] | []>(
     }
 
     return {
-        ...response.data,
         errors: errors,
+        insightId: response.data.insightID,
+        pixelReturn: response.data.pixelReturn,
     };
 };

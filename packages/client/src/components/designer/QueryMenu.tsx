@@ -10,8 +10,8 @@ import {
     InputAdornment,
     Typography,
 } from '@semoss/ui';
-import { useBlocks, useDesigner } from '@/hooks';
-import { Add, Search } from '@mui/icons-material';
+import { useBlocks, useWorkspace } from '@/hooks';
+import { Add, Edit, Search } from '@mui/icons-material';
 
 import { QueryOverlay } from '@/components/notebook';
 
@@ -54,8 +54,8 @@ const StyledJson = styled('pre')(({ theme }) => ({
  */
 export const QueryMenu = observer((): JSX.Element => {
     // get the store
-    const { state } = useBlocks();
-    const { designer } = useDesigner();
+    const { state, notebook } = useBlocks();
+    const { workspace } = useWorkspace();
 
     // store the search
     const [querySearch, setQuerySearch] = useState('');
@@ -120,9 +120,12 @@ export const QueryMenu = observer((): JSX.Element => {
      * @param id - id to open in the overlay. If not defined, it will create a new one.
      */
     const openQueryOverlay = (id = '') => {
-        designer.openOverlay(() => {
+        workspace.openOverlay(() => {
             return (
-                <QueryOverlay id={id} onClose={() => designer.closeOverlay()} />
+                <QueryOverlay
+                    id={id}
+                    onClose={() => workspace.closeOverlay()}
+                />
             );
         });
     };
@@ -162,14 +165,26 @@ export const QueryMenu = observer((): JSX.Element => {
                 <List>
                     {renderedQueries.map((q) => {
                         return (
-                            <List.ItemButton
+                            <List.Item
                                 key={q.id}
                                 dense={true}
-                                onClick={() => {
-                                    openQueryOverlay(q.id);
-                                }}
+                                secondaryAction={
+                                    <List.ItemButton
+                                        onClick={() => openQueryOverlay(q.id)}
+                                    >
+                                        <Edit />
+                                    </List.ItemButton>
+                                }
                             >
-                                <div>
+                                <List.ItemButton
+                                    onClick={() => {
+                                        // switch the view
+                                        workspace.setView('data');
+
+                                        // select the query
+                                        notebook.selectQuery(q.id);
+                                    }}
+                                >
                                     <List.ItemText
                                         primary={
                                             <Typography
@@ -180,11 +195,8 @@ export const QueryMenu = observer((): JSX.Element => {
                                             </Typography>
                                         }
                                     />
-                                    <StyledJson>
-                                        {JSON.stringify(q, null, 2)}
-                                    </StyledJson>
-                                </div>
-                            </List.ItemButton>
+                                </List.ItemButton>
+                            </List.Item>
                         );
                     })}
                 </List>

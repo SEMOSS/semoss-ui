@@ -4,7 +4,6 @@ import { useBlocks } from './useBlocks';
 import { useBlockSettings } from './useBlockSettings';
 import { useEngine } from './useEngine';
 import { useMetamodel } from './useMetamodel';
-import { useNotebook } from './useNotebook';
 import { useRootStore } from './useRootStore';
 import { useSettings } from './useSettings';
 import { usePixel } from './usePixel';
@@ -19,7 +18,6 @@ export {
     useBlockSettings,
     useEngine,
     useMetamodel,
-    useNotebook,
     useRootStore,
     useSettings,
     usePixel,
