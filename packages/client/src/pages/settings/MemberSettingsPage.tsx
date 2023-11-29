@@ -71,6 +71,26 @@ const StyledModalContent = styled(Modal.Content)({
     paddingTop: '4px',
 });
 
+const StyledStack = styled(Stack)({ marginTop: '4px' });
+
+const StyledAddMemberButton = styled(Button)({ textAlign: 'right' });
+
+const StyledCountryCodeExt = styled(TextField)({ width: '168px' });
+
+const StyledPhoneNumber = styled(TextField)({ width: '550px' });
+
+const StyledCredentials = styled(Typography)({ padding: '8px 0px' });
+
+const StyledPermissions = styled(Typography)({ padding: '25px 0' });
+
+const StyledPaddingTopStack = styled(Stack)({ paddingTop: '4px' });
+
+const StyledMembers = styled(Typography)({ marginRight: '16px' });
+
+const StyledAvatarGroup = styled(AvatarGroup)({ marginRight: '8px' });
+
+const StyledAvatar = styled(Avatar)({ height: 32, width: 32 });
+
 interface Member {
     admin: boolean;
     email: string;
@@ -146,7 +166,6 @@ export const MemberSettingsPage = () => {
 
     if (!adminMode) {
         navigate('/settings');
-        // return;
     }
 
     const [members, setMembers] = useState([]);
@@ -193,11 +212,7 @@ export const MemberSettingsPage = () => {
         },
     });
 
-    // const countrycode = watch('countrycode');
-    // const phone = watch('phone');
     const type = watch('type', '');
-    // const withPhone = `Phone Number:
-    // \n ${countrycode}-${phone} \n`;
 
     const { dirtyFields } = useFormState({
         control,
@@ -335,7 +350,7 @@ export const MemberSettingsPage = () => {
                         </StyledModalTitle>
                         <StyledModalContent>
                             <form>
-                                <Stack gap={2} sx={{ marginTop: '4px' }}>
+                                <StyledStack gap={2}>
                                     <Controller
                                         name={'name'}
                                         control={control}
@@ -395,7 +410,7 @@ export const MemberSettingsPage = () => {
                                             }}
                                             render={({ field }) => {
                                                 return (
-                                                    <TextField
+                                                    <StyledCountryCodeExt
                                                         label="Country Code"
                                                         value={
                                                             field.value
@@ -407,10 +422,7 @@ export const MemberSettingsPage = () => {
                                                                 e.target.value,
                                                             )
                                                         }
-                                                        sx={{
-                                                            width: '168px',
-                                                        }}
-                                                    ></TextField>
+                                                    ></StyledCountryCodeExt>
                                                 );
                                             }}
                                         />
@@ -425,7 +437,7 @@ export const MemberSettingsPage = () => {
                                             render={({ field }) => {
                                                 return (
                                                     <Stack>
-                                                        <TextField
+                                                        <StyledPhoneNumber
                                                             label="Phone Number"
                                                             fullWidth
                                                             value={
@@ -439,10 +451,7 @@ export const MemberSettingsPage = () => {
                                                                         .value,
                                                                 )
                                                             }
-                                                            sx={{
-                                                                width: '550px',
-                                                            }}
-                                                        ></TextField>
+                                                        ></StyledPhoneNumber>
                                                         {errors.phone && (
                                                             <Typography
                                                                 variant={
@@ -469,7 +478,7 @@ export const MemberSettingsPage = () => {
                                             }}
                                             render={({ field }) => {
                                                 return (
-                                                    <TextField
+                                                    <StyledCountryCodeExt
                                                         label="Ext"
                                                         value={
                                                             field.value
@@ -481,21 +490,15 @@ export const MemberSettingsPage = () => {
                                                                 e.target.value,
                                                             )
                                                         }
-                                                        sx={{
-                                                            width: '168px',
-                                                        }}
-                                                    ></TextField>
+                                                    ></StyledCountryCodeExt>
                                                 );
                                             }}
                                         />
                                     </Stack>
 
-                                    <Typography
-                                        sx={{ padding: '25px 0' }}
-                                        variant="subtitle1"
-                                    >
+                                    <StyledCredentials variant="subtitle1">
                                         <strong>Credentials</strong>
-                                    </Typography>
+                                    </StyledCredentials>
 
                                     <Controller
                                         name="type"
@@ -552,9 +555,6 @@ export const MemberSettingsPage = () => {
                                                         field.onChange(
                                                             e.target.value,
                                                         );
-
-                                                        // activeMember['id'] =
-                                                        //     e.target.value;
                                                     }}
                                                 ></TextField>
                                             );
@@ -629,12 +629,9 @@ export const MemberSettingsPage = () => {
                                         </>
                                     )}
 
-                                    <Typography
-                                        sx={{ padding: '25px 0' }}
-                                        variant="subtitle1"
-                                    >
+                                    <StyledPermissions variant="subtitle1">
                                         <strong>Permissions</strong>
-                                    </Typography>
+                                    </StyledPermissions>
 
                                     <StyledList>
                                         <StyledListItem
@@ -734,7 +731,7 @@ export const MemberSettingsPage = () => {
                                             />
                                         </StyledListItem>
                                     </StyledList>
-                                </Stack>
+                                </StyledStack>
                             </form>
                         </StyledModalContent>
                         <Modal.Actions>
@@ -786,7 +783,7 @@ export const MemberSettingsPage = () => {
                     </StyledModalTitle>
                     <StyledModalContent>
                         <form>
-                            <Stack gap={2} sx={{ paddingTop: '4px' }}>
+                            <StyledPaddingTopStack gap={2}>
                                 <Controller
                                     name={'name'}
                                     control={control}
@@ -846,7 +843,7 @@ export const MemberSettingsPage = () => {
                                         }}
                                         render={({ field }) => {
                                             return (
-                                                <TextField
+                                                <StyledCountryCodeExt
                                                     label="Country Code"
                                                     value={
                                                         field.value
@@ -858,10 +855,7 @@ export const MemberSettingsPage = () => {
                                                             e.target.value,
                                                         )
                                                     }
-                                                    sx={{
-                                                        width: '168px',
-                                                    }}
-                                                ></TextField>
+                                                ></StyledCountryCodeExt>
                                             );
                                         }}
                                     />
@@ -876,7 +870,7 @@ export const MemberSettingsPage = () => {
                                         render={({ field }) => {
                                             return (
                                                 <Stack>
-                                                    <TextField
+                                                    <StyledPhoneNumber
                                                         label="Phone Number"
                                                         fullWidth
                                                         value={
@@ -889,10 +883,7 @@ export const MemberSettingsPage = () => {
                                                                 e.target.value,
                                                             )
                                                         }
-                                                        sx={{
-                                                            width: '550px',
-                                                        }}
-                                                    ></TextField>
+                                                    ></StyledPhoneNumber>
                                                     {errors.phone && (
                                                         <Typography
                                                             variant={'caption'}
@@ -915,7 +906,7 @@ export const MemberSettingsPage = () => {
                                         }}
                                         render={({ field }) => {
                                             return (
-                                                <TextField
+                                                <StyledCountryCodeExt
                                                     label="Ext"
                                                     value={
                                                         field.value
@@ -927,21 +918,15 @@ export const MemberSettingsPage = () => {
                                                             e.target.value,
                                                         )
                                                     }
-                                                    sx={{
-                                                        width: '168px',
-                                                    }}
-                                                ></TextField>
+                                                ></StyledCountryCodeExt>
                                             );
                                         }}
                                     />
                                 </Stack>
 
-                                <Typography
-                                    sx={{ padding: '8px 0' }}
-                                    variant="subtitle1"
-                                >
+                                <StyledCredentials variant="subtitle1">
                                     <strong>Credentials</strong>
-                                </Typography>
+                                </StyledCredentials>
                                 <Controller
                                     name="type"
                                     control={control}
@@ -993,9 +978,6 @@ export const MemberSettingsPage = () => {
                                                     field.onChange(
                                                         e.target.value,
                                                     );
-
-                                                    // activeMember['id'] =
-                                                    //     e.target.value;
                                                 }}
                                             ></TextField>
                                         );
@@ -1065,12 +1047,9 @@ export const MemberSettingsPage = () => {
                                         )}
                                     </>
                                 )}
-                                <Typography
-                                    sx={{ padding: '8px 0' }}
-                                    variant="subtitle1"
-                                >
+                                <StyledPermissions variant="subtitle1">
                                     <strong>Permissions</strong>
-                                </Typography>
+                                </StyledPermissions>
 
                                 <StyledList>
                                     <StyledListItem
@@ -1163,7 +1142,7 @@ export const MemberSettingsPage = () => {
                                         />
                                     </StyledListItem>
                                 </StyledList>
-                            </Stack>
+                            </StyledPaddingTopStack>
                         </form>
                     </StyledModalContent>
                     <Modal.Actions>
@@ -1196,36 +1175,26 @@ export const MemberSettingsPage = () => {
             <StyledContainer>
                 <StyledEnd>
                     <StyledTitle>
-                        <Typography variant="h6" sx={{ marginRight: '16px' }}>
+                        <StyledMembers variant="h6">
                             <strong>Members</strong>
-                        </Typography>
+                        </StyledMembers>
                         {members && (
                             <>
-                                <AvatarGroup
-                                    variant="circular"
-                                    max={3}
-                                    sx={{ marginRight: '8px' }}
-                                >
+                                <StyledAvatarGroup variant="circular" max={3}>
                                     {members.map((mem, i) => {
                                         return (
-                                            <Avatar
-                                                key={i}
-                                                sx={{ height: 32, width: 32 }}
-                                            >
+                                            <StyledAvatar key={i}>
                                                 {mem.name[0]}
-                                            </Avatar>
+                                            </StyledAvatar>
                                         );
                                     })}
-                                </AvatarGroup>
+                                </StyledAvatarGroup>
                                 {members.length > 1 ? (
                                     <StyledMemberTypography variant="body1">
                                         {members.length} members
                                     </StyledMemberTypography>
                                 ) : (
-                                    <StyledMemberTypography
-                                        variant="body1"
-                                        sx={{ paddingTop: '6px' }}
-                                    >
+                                    <StyledMemberTypography variant="body1">
                                         {members.length} member
                                     </StyledMemberTypography>
                                 )}
@@ -1233,16 +1202,15 @@ export const MemberSettingsPage = () => {
                         )}
                     </StyledTitle>
 
-                    <Button
+                    <StyledAddMemberButton
                         variant="contained"
                         startIcon={<Add />}
-                        sx={{ textAlign: 'right' }}
                         onClick={() => {
                             setAddMemberModal(true);
                         }}
                     >
                         Add New
-                    </Button>
+                    </StyledAddMemberButton>
                 </StyledEnd>
 
                 {members && (
