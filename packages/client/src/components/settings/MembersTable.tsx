@@ -757,7 +757,10 @@ export const MembersTable = (props: MembersTableProps) => {
                             <StyledMemberTable>
                                 <Table.Head>
                                     <Table.Row>
-                                        <Table.Cell size="small">
+                                        <Table.Cell
+                                            size="small"
+                                            padding="checkbox"
+                                        >
                                             <Checkbox
                                                 checked={
                                                     selectedMembers.length ===
@@ -808,7 +811,10 @@ export const MembersTable = (props: MembersTableProps) => {
                                         if (user) {
                                             return (
                                                 <Table.Row key={user.name + i}>
-                                                    <Table.Cell size="medium">
+                                                    <Table.Cell
+                                                        size="medium"
+                                                        padding="checkbox"
+                                                    >
                                                         <Checkbox
                                                             checked={isSelected}
                                                             onChange={() => {
