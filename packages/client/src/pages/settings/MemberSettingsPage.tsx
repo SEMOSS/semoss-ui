@@ -71,25 +71,46 @@ const StyledModalContent = styled(Modal.Content)({
     paddingTop: '4px',
 });
 
-const StyledStack = styled(Stack)({ marginTop: '4px' });
+const StyledStack = styled(Stack)({
+    marginTop: '4px',
+});
 
-const StyledAddMemberButton = styled(Button)({ textAlign: 'right' });
+const StyledAddMemberButton = styled(Button)({
+    textAlign: 'right',
+});
 
-const StyledCountryCodeExt = styled(TextField)({ width: '168px' });
+const StyledCountryCodeExt = styled(TextField)({
+    width: '168px',
+});
 
-const StyledPhoneNumber = styled(TextField)({ width: '550px' });
+const StyledPhoneNumber = styled(TextField)({
+    width: '550px',
+});
 
-const StyledCredentials = styled(Typography)({ padding: '8px 0px' });
+const StyledCredentials = styled(Typography)({
+    padding: '8px 0px',
+});
 
-const StyledPermissions = styled(Typography)({ padding: '25px 0' });
+const StyledPermissions = styled(Typography)({
+    padding: '25px 0',
+});
 
-const StyledPaddingTopStack = styled(Stack)({ paddingTop: '4px' });
+const StyledPaddingTopStack = styled(Stack)({
+    paddingTop: '4px',
+});
 
-const StyledMembers = styled(Typography)({ marginRight: '16px' });
+const StyledMembers = styled(Typography)({
+    marginRight: '16px',
+});
 
-const StyledAvatarGroup = styled(AvatarGroup)({ marginRight: '8px' });
+const StyledAvatarGroup = styled(AvatarGroup)({
+    marginRight: '8px',
+});
 
-const StyledAvatar = styled(Avatar)({ height: 32, width: 32 });
+const StyledAvatar = styled(Avatar)({
+    height: 32,
+    width: 32,
+});
 
 interface Member {
     admin: boolean;
