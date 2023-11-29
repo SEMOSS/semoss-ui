@@ -54,6 +54,38 @@ const SOCIAL = {
     },
 };
 
+const StyledConfigurationsOptionsAccordion = styled('div')(({ theme }) => ({
+    display: 'flex',
+}));
+
+const StyledAccordion = styled(Accordion)(({ theme }) => ({
+    width: '291px',
+}));
+
+const StyledBox = styled(Box)(({ theme }) => ({
+    padding: '0px 12px 12px 12px',
+}));
+
+const StyledSearchIcon = styled(SearchOutlined)(({ theme }) => ({
+    color: '#5c5c5c',
+}));
+
+const StyledAccordionContent = styled(Accordion.Content)(({ theme }) => ({
+    fontSize: '14px',
+    margin: 0,
+    padding: '12px 16px 16px 16px',
+}));
+
+const StyledListButton = styled(Button)(({ theme }) => ({
+    textTransform: 'none',
+    width: '100%',
+    justifyContent: 'left',
+}));
+
+const StyledDivider = styled(Divider)(({ theme }) => ({
+    marginBottom: '8px',
+}));
+
 const StyledImage = styled('img')({
     objectFit: 'cover',
     maxHeight: '28px',
@@ -61,31 +93,6 @@ const StyledImage = styled('img')({
     verticalAlign: 'middle',
     padding: '4px',
 });
-
-// const StyledContainer = styled('div')(({ theme }) => ({
-//     margin: '0 auto',
-//     paddingBottom: theme.spacing(8),
-//     '@sm': {
-//         maxWidth: '640px',
-//     },
-//     '@md': {
-//         maxWidth: '768px',
-//     },
-//     '@lg': {
-//         maxWidth: '1024px',
-//     },
-//     '@xl': {
-//         maxWidth: '1280px',
-//     },
-//     '@xxl': {
-//         maxWidth: '1536px',
-//     },
-// }));
-
-// const StyledAccordionContent = styled(Accordion.Content)(({ theme }) => ({
-//     height: 'auto',
-//     margin: theme.spacing(2),
-// }));
 
 const StyledTitle = styled('div')(({ theme }) => ({
     marginBottom: theme.spacing(2),
@@ -124,6 +131,14 @@ const StyledPropContainer = styled('div')(({ theme }) => ({
     boxShadow: '0px 5px 22px 0px rgba(0, 0, 0, 0.06)',
 }));
 
+const StyledToggleTabsGroup = styled(ToggleTabsGroup)(({ theme }) => ({
+    marginBottom: '16px',
+}));
+
+const StyledTextField = styled(TextField)(({ theme }) => ({
+    marginRight: '12px',
+}));
+
 const initialState = {
     socialProps: {},
 };
@@ -140,9 +155,7 @@ const reducer = (state, action) => {
     return state;
 };
 
-export const SocialPropertiesPage = () => {
-    // useStateChange doesn't play well with Accordion
-    // const [socialProps, setSocialProps] = useState({});
+export const ConfigurationsPage = () => {
     const { adminMode } = useSettings();
 
     const navigate = useNavigate();
@@ -160,7 +173,6 @@ export const SocialPropertiesPage = () => {
         Object.keys(socialProps),
     );
     const [authExpanded, setAuthExpanded] = useState(true);
-    // const [emailExpanded, setEmailExpanded] = useState(false);
 
     const [tabValue, setTabValue] = useState(0);
 
@@ -246,72 +258,31 @@ export const SocialPropertiesPage = () => {
 
     const settingsPage = () => {
         return Object.keys(socialProps) ? (
-            <div style={{ display: 'flex' }}>
+            <StyledConfigurationsOptionsAccordion>
                 <div>
-                    <Accordion
-                        expanded={authExpanded}
-                        onChange={() => setAuthExpanded(!authExpanded)}
-                        sx={{ width: '291px' }}
-                    >
-                        <Accordion.Trigger
-                            sx={{
-                                padding: ' 0px 12px 4px 16px',
-                                fontSize: '16px',
-                            }}
-                            expandIcon={<KeyboardArrowDown />}
-                        >
-                            <Typography
-                                variant="body1"
-                                sx={{
-                                    color: '#000000de',
-                                    fontSize: '16px',
-                                    fontWeight: 500,
-                                    lineHeight: '24px',
-                                    padding: '0px 12px 0px 12px',
-                                }}
-                            >
+                    <StyledAccordion>
+                        <Accordion.Trigger expandIcon={<KeyboardArrowDown />}>
+                            <Typography variant="body1">
                                 Authentication
                             </Typography>
                         </Accordion.Trigger>
-                        <Box
-                            sx={{
-                                padding: '0px 12px 12px 12px',
-                            }}
-                        >
+                        <StyledBox>
                             <Search
                                 InputProps={{
-                                    startAdornment: (
-                                        <SearchOutlined
-                                            sx={{ color: '#5c5c5c' }}
-                                        />
-                                    ),
-                                    style: {
-                                        height: '40px',
-                                    },
+                                    startAdornment: <StyledSearchIcon />,
                                 }}
+                                size="small"
                                 value={authSearch}
                                 onChange={(e) => {
                                     setAuthSearch(e.target.value);
                                 }}
                                 placeholder="Search . . ."
                             />
-                        </Box>
+                        </StyledBox>
                         {authentication.map((value, i) => {
                             return (
-                                <Accordion.Content
-                                    key={i}
-                                    sx={{
-                                        fontSize: '14px',
-                                        margin: 0,
-                                        padding: '12px 16px 16px 16px',
-                                    }}
-                                >
-                                    <Button
-                                        sx={{
-                                            textTransform: 'none',
-                                            width: '100%',
-                                            justifyContent: 'left',
-                                        }}
+                                <StyledAccordionContent key={i}>
+                                    <StyledListButton
                                         color="inherit"
                                         onClick={() => {
                                             setAccordionValue(value);
@@ -326,36 +297,11 @@ export const SocialPropertiesPage = () => {
                                         {SOCIAL[value]?.name ||
                                             value[0].toUpperCase() +
                                                 value.slice(1)}
-                                    </Button>
-                                </Accordion.Content>
+                                    </StyledListButton>
+                                </StyledAccordionContent>
                             );
                         })}
-                    </Accordion>
-                    {/* <Accordion
-                        expanded={emailExpanded}
-                        onChange={() => setEmailExpanded(!emailExpanded)}
-                    >
-                        <Accordion.Trigger
-                            sx={{ padding: '8px', fontSize: '16px' }}
-                        >
-                            <strong>Email</strong>
-                        </Accordion.Trigger>
-
-                        {authentication.map((value) => {
-                            return (
-                                <Accordion.Content sx={{ fontSize: '14px' }}>
-                                    <StyledImage
-                                        src={
-                                            SOCIAL[value]?.image ||
-                                            SOCIAL['native'].image
-                                        }
-                                    />
-                                    {SOCIAL[value]?.name ||
-                                        value[0].toUpperCase() + value.slice(1)}
-                                </Accordion.Content>
-                            );
-                        })}
-                    </Accordion> */}
+                    </StyledAccordion>
                 </div>
                 {accordionValue && (
                     <SocialProperty
@@ -365,7 +311,7 @@ export const SocialPropertiesPage = () => {
                         onChange={changeSocialProps}
                     ></SocialProperty>
                 )}
-            </div>
+            </StyledConfigurationsOptionsAccordion>
         ) : (
             <div> No socials props</div>
         );
@@ -383,7 +329,7 @@ export const SocialPropertiesPage = () => {
                         <StyledButton variant="contained">Save</StyledButton>
                     </StyledActionButtonsDiv>
                 </StyledTitle>
-                <Divider sx={{ marginBottom: '8px' }} />
+                <StyledDivider />
                 <Editor
                     height="60vh"
                     defaultLanguage="javascript"
@@ -408,14 +354,10 @@ export const SocialPropertiesPage = () => {
     return (
         <>
             <Box>
-                <ToggleTabsGroup
-                    sx={{ marginBottom: '16px' }}
-                    value={tabValue}
-                    onChange={onTabChange}
-                >
+                <StyledToggleTabsGroup value={tabValue} onChange={onTabChange}>
                     <ToggleTabsGroup.Item label="Settings" />
                     <ToggleTabsGroup.Item disabled label="File Contents" />
-                </ToggleTabsGroup>
+                </StyledToggleTabsGroup>
                 {customTogglePanel(settingsPage(), 0, tabValue)}
                 {customTogglePanel(fileContentsPage(), 1, tabValue)}
             </Box>
@@ -521,11 +463,10 @@ const SocialProperty = (props) => {
                 return (
                     <StyledPropContainer key={i}>
                         <StyledKeyValue>
-                            <TextField
+                            <StyledTextField
                                 label="key"
                                 defaultValue={f.label}
                                 variant="outlined"
-                                sx={{ marginRight: '12px' }}
                                 fullWidth
                             />
                             <TextField
