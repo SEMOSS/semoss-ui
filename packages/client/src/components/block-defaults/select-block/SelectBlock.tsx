@@ -45,13 +45,10 @@ export const SelectBlock: BlockComponent = observer(({ id }) => {
     //* Effect to handle the fetched data
     useEffect(() => {
         if (enginesStatus === 'SUCCESS' && Array.isArray(enginesData)) {
-            //* Make the value the app_id for proper querying later
+            // TODO Make the value the app_id for proper querying later
             const options = enginesData.map((engine) => ({
                 label: engine.app_name,
-                value:
-                    engine.database_type === 'MODEL'
-                        ? engine.app_name
-                        : engine.app_type,
+                value: engine.app_id,
             }));
             setData('options', options);
 
