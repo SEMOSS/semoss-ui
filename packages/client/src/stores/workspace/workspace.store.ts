@@ -14,11 +14,6 @@ export interface WorkspaceStoreInterface<
     id: string;
 
     /**
-     * ID of the insight
-     */
-    insightId: string;
-
-    /**
      * Show Loading or not
      */
     isLoading: boolean;
@@ -72,11 +67,6 @@ export interface WorkspaceConfigInterface<
     id: string;
 
     /**
-     * ID of the insight
-     */
-    insightId: string;
-
-    /**
      * User's role relative to the app
      */
     role: Role;
@@ -104,7 +94,6 @@ export class WorkspaceStore<D extends WorkspaceDef = WorkspaceDef> {
     private _root: RootStore;
     private _store: WorkspaceStoreInterface<D> = {
         id: '',
-        insightId: '',
         isLoading: false,
         isEditMode: false,
         view: 'design',
@@ -134,7 +123,6 @@ export class WorkspaceStore<D extends WorkspaceDef = WorkspaceDef> {
 
         // set the appId
         this._store.id = config.id;
-        this._store.insightId = config.insightId;
         this._store.type = config.type;
         this._store.options = config.options;
 

@@ -98,21 +98,9 @@ export class CacheStore {
             ...getAppInfo.pixelReturn[0].output,
         };
 
-        // load the app
-        const setContext = await this._root.monolithStore.run<[true]>(
-            'new',
-            `SetContext(app=["${appId}"]);`,
-        );
-
-        // throw the errors if there are any
-        if (setContext.errors.length > 0) {
-            throw new Error(getAppInfo.errors.join(''));
-        }
-
         // create the newly loaded workspace
         this._store.workspaces[appId] = new WorkspaceStore(this._root, {
             id: appId,
-            insightId: setContext.insightId,
             type: 'code',
             options: {},
             role: role,
@@ -132,28 +120,33 @@ export class CacheStore {
         // sleep for 3 seconds
         await new Promise((resolve) => setTimeout(resolve, 3000));
 
+        // load the app
+        // const setContext = await this._root.monolithStore.run<[true]>(
+        //     'new',
+        //     `SetContext(app=["${appId}"]);`,
+        // );
+        const setContext = await this._root.monolithStore.run<[true]>(
+            'new',
+            `1+1`,
+        );
+
+        // throw the errors if there are any
+        if (setContext.errors.length > 0) {
+            throw new Error(setContext.errors.join(''));
+        }
+
         // create the newly loaded workspace
         this._store.workspaces[appId] = new WorkspaceStore(this._root, {
             id: appId,
-            insightId: '',
             role: 'OWNER',
             type: 'blocks',
             options: {
-                state: new StateStoreImplementation(
-                    {
-                        blocks: {},
-                        queries: {},
-                        cellRegistry: DefaultCells,
-                    },
-                    {
-                        onQuery: async (pixel) => {
-                            console.log(pixel);
-                            return {
-                                data: true,
-                            };
-                        },
-                    },
-                ),
+                state: new StateStoreImplementation({
+                    insightId: setContext.insightId,
+                    blocks: {},
+                    queries: {},
+                    cellRegistry: DefaultCells,
+                }),
             },
             metadata: {
                 project_id: '',

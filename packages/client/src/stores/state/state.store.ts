@@ -16,6 +16,9 @@ import { StepState, StepStateConfig } from './step.state';
 import { DefaultCells } from '@/components/cell-defaults';
 
 interface StateStoreInterface {
+    /** insightID to load */
+    insightId: string;
+
     /** Queries rendered in the insight */
     queries: Record<string, QueryState>;
 
@@ -27,6 +30,9 @@ interface StateStoreInterface {
 }
 
 export class StateStoreImplementationConfig {
+    /** insightID to load */
+    insightId: string;
+
     /** Queries that will be loaed into the view */
     queries?: Record<string, unknown>;
 
@@ -42,6 +48,7 @@ export class StateStoreImplementationConfig {
  */
 export class StateStoreImplementation {
     private _store: StateStoreInterface = {
+        insightId: '',
         queries: {},
         blocks: {},
         cellRegistry: {},
@@ -58,38 +65,11 @@ export class StateStoreImplementation {
             string,
             ReturnType<typeof cancellablePromise> | null
         >;
-
-        /**
-         * Track callbacks
-         */
-        callbacks: {
-            /**
-             * onQuery callback that is triggered after a query has been ran
-             */
-            onQuery: (event: { query: string }) => Promise<{
-                data: unknown;
-            }>;
-        };
     } = {
         queryPromises: {},
-        callbacks: {
-            onQuery: async () => ({
-                data: undefined,
-            }),
-        },
     };
 
-    constructor(
-        config: StateStoreImplementationConfig,
-        callbacks: {
-            onQuery: (event: { query: string }) => Promise<{
-                data: unknown;
-            }>;
-        },
-    ) {
-        // set the callbacks
-        this._utils.callbacks = callbacks;
-
+    constructor(config: StateStoreImplementationConfig) {
         // make it observable
         makeAutoObservable(this);
 
@@ -141,6 +121,14 @@ export class StateStoreImplementation {
     /**
      * Getters
      */
+    /**
+     * Get the Insight ID
+     * @returns the Insight ID
+     */
+    get insightId() {
+        return this._store.insightId;
+    }
+
     /**
      * Get the blocks
      * @returns the blocks
@@ -921,43 +909,40 @@ export class StateStoreImplementation {
         // dispatch the event to the window
         window.dispatchEvent(event);
     };
+
+    /**
+     * Run a pixel string
+     *
+     * @param pixel - pixel to execute
+     */
+    async _runPixel<O extends unknown[] | []>(pixel: string) {
+        return await runPixel<O>(this._store.insightId, pixel);
+    }
 }
 
 // initialize state with blank page and basic onQuery function
 // if we want a more complex default page, we can set that up here
-export const StateStore = new StateStoreImplementation(
-    {
-        blocks: {
-            'page-1': {
-                id: 'page-1',
-                widget: 'page',
-                parent: null,
-                data: {
-                    style: {
-                        fontFamily: 'roboto',
-                    },
+export const StateStore = new StateStoreImplementation({
+    insightId: '',
+    blocks: {
+        'page-1': {
+            id: 'page-1',
+            widget: 'page',
+            parent: null,
+            data: {
+                style: {
+                    fontFamily: 'roboto',
                 },
-                listeners: {},
-                slots: {
-                    content: {
-                        name: 'content',
-                        children: [],
-                    },
+            },
+            listeners: {},
+            slots: {
+                content: {
+                    name: 'content',
+                    children: [],
                 },
             },
         },
-        queries: {},
-        cellRegistry: DefaultCells,
     },
-    {
-        onQuery: async ({ query }) => {
-            const response = await runPixel('', query);
-            if (response.errors.length) {
-                throw new Error(response.errors.join(''));
-            }
-            return {
-                data: response.pixelReturn[0].output,
-            };
-        },
-    },
-);
+    queries: {},
+    cellRegistry: DefaultCells,
+});
