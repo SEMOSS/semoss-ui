@@ -19,9 +19,8 @@ export const config: BlockConfig<SelectBlockDef> = {
     type: BLOCK_TYPE_INPUT,
     data: {
         style: {},
-        type: [],
-        label: '',
-        options: [{ label: '', value: '' }],
+        label: 'Engine',
+        options: [],
         value: '',
     },
     listeners: {
