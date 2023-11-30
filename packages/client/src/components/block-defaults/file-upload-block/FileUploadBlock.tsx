@@ -20,19 +20,22 @@ export interface FileUploadBlockDef extends BlockDef<'file-upload'> {
 }
 
 export const FileUploadBlock: BlockComponent = observer(({ id }) => {
-    //* Get the block data
     const { attrs, data, setData } = useBlock<FileUploadBlockDef>(id);
 
     const handleFileChange = (e) => {
-        //* Get the name of uploaded file
+        //? Get Uploaded File Info
         const file = e.target.files[0];
+        console.log('File: ', file);
 
         //* Check if there is an uploaded file
         if (e.target.files?.length > 0 && file) {
-            //* Set the data to the block
+            //? Set data for the file name and type
             setData('name.path', file.name);
             setData('name.type', file.type);
+            console.log('Uploaded File Name: ', file.name);
+            console.log('Uploaded File Type: ', file.type);
         }
+        console.log(e.target.files[0].value);
     };
 
     return (

@@ -4,18 +4,60 @@ import { useBlock, usePixel } from '@/hooks';
 import { BlockComponent, BlockDef } from '@/stores';
 import { Autocomplete, TextField } from '@mui/material';
 
-//? UI Builder Queries
+//* UI Builder Queries
 //? =================
-//* MyEngines(engineTypes=["MODEL", "VECTOR"])
+// Fetch & List ALL User Engines
+//* (database_id || app_id && app_name)
+//* MyEngines(engineTypes=["MODEL", "VECTOR"]);
 //? =================
-//* Find the engine id as the value as:
-//! (database_id || app_id)
-//* VectorDatabaseQuery(engine=["{{SelectBlock.value}}"], command=["{{TextFieldBlock.value}}"], limit=[1])
+//  Query LLM Engines
+//* LLM(engine = "2c6de0ff-62e0-4dd0-8380-782ac4d40245", command = "Sample Question", paramValues = [ {} ] );
 //? =================
-//* Update MarkdownBlock.markdown with {{"queryResult[0].content"}}
+// TODO Store the File Upload URL in the Vector DB -- needs to be dynamic (LATER)
+//* CreateEmbeddingsFromDocuments (engine = "377e2321-90b7-4856-b3e2-9f6c28663049", filePaths = ["fileName1.pdf", "fileName2.pdf"]);
+//? =================
+// TODO Dynamic Query (LATER)
+//* VectorDatabaseQuery(engine=["{{SelectBlock.value.selectedVectorDB}}"], command=["{{TextFieldBlock.value}}"], limit=[1]);
+//? =================
+// Static Query (now)
+//* VectorDatabaseQuery(engine=["377e2321-90b7-4856-b3e2-9f6c28663049"],command=["What is AI? How to use LLMs?"],limit=[1]);
+//? =================
+// List All Current Docs in Vector DB -- (if needed later on)
+//* ListDocumentsInVectorDatabase (engine = "377e2321-90b7-4856-b3e2-9f6c28663049");
+//? =================
+// TODO Update MarkdownBlock w/ Response/Content/Output
+//* {{VectorDatabaseQuery.pixelReturn[0]}}
 //? =================
 
-//* Define the structure of data fetched from the pixel
+//* MyEngines(engineTypes=["MODEL", "VECTOR"]);
+//? =================
+//* CreateEmbeddingsFromDocuments(engine="377e2321-90b7-4856-b3e2-9f6c28663049",filePaths=["fileName1.pdf","fileName2.pdf"]);
+//? =================
+//* VectorDatabaseQuery(engine=["{{SelectBlock.value.selectedVectorDB}}"],command=["{{TextFieldBlock.value}}"],limit=[1]);
+//? =================
+//* {{VectorDatabaseQuery.pixelReturn[0]}}
+//? =================
+// if you have to use
+//* ListDocumentsInVectorDatabase (engine = "377e2321-90b7-4856-b3e2-9f6c28663049");
+//* {{ListDocumentsInVectorDatabase.pixelReturn[0].output[0].fileName}};
+
+/* 
+? =================
+//* VectorDatabaseQuery(engine=["377e2321-90b7-4856-b3e2-9f6c28663049"],command=["What is AI? How to use LLMs?"],limit=[1]);
+? JSON Response/Content/Output from the VectorDatabaseQuery pixel:
+* [
+*   {
+*       "Score": 0.8900909423828125, 
+*       "doc_index": "1420-deloitte-independence_208_text", 
+*       "content": "", 
+*       "tokens": , 
+*       "url": "",
+*    }
+* ]
+? =================
+*/
+
+//* Structure the data fetched from pixel script
 export interface EngineData {
     database_type: string;
     app_name: string;
@@ -37,15 +79,14 @@ export interface SelectBlockDef extends BlockDef<'select'> {
 export const SelectBlock: BlockComponent = observer(({ id }) => {
     const { attrs, data, setData } = useBlock<SelectBlockDef>(id);
 
-    //* Fetch engines data using the pixel
+    //* Fetch users engines (LLM & Vector DBs)
     const { data: enginesData, status: enginesStatus } = usePixel<EngineData[]>(
         `MyEngines(engineTypes=["MODEL", "VECTOR"]);`,
     );
 
-    //* Effect to handle the fetched data
+    //? Fetch users engines (LLM & Vector DBs)
     useEffect(() => {
         if (enginesStatus === 'SUCCESS' && Array.isArray(enginesData)) {
-            // TODO Make the value the app_id for proper querying later
             const options = enginesData.map((engine) => ({
                 label: engine.app_name,
                 value: engine.app_id,
@@ -68,7 +109,7 @@ export const SelectBlock: BlockComponent = observer(({ id }) => {
     const isOptionEqualToValue = (option, value) =>
         option.value === value.value;
 
-    //* Get selected option based on current value
+    //* Get selected value from the options array
     const selectedOption =
         data.options.find((option) => option.value === data.value) || null;
 

@@ -12,7 +12,7 @@ export const config: BlockConfig<TextAreaBlockDef> = {
     data: {
         style: {
             width: '100%',
-            padding: '8px'
+            padding: '8px',
         },
         value: '',
         label: 'Example Input',
