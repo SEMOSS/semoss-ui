@@ -91,6 +91,10 @@ const StyledTreeItemLabel = styled('div')(({ theme }) => ({
     gap: theme.spacing(1),
 }));
 
+const StyledNoLayersContainer = styled('div')(({ theme }) => ({
+    padding: theme.spacing(2),
+}));
+
 /**
  * Render the OutlineMenu
  */
@@ -277,10 +281,15 @@ export const OutlineMenu = observer((): JSX.Element => {
                         </StyledIcon>
                     }
                 >
-                    {pageBlocks.length &&
+                    {pageBlocks.length ? (
                         pageBlocks.map((b: string) => {
                             return renderBlock(b);
-                        })}
+                        })
+                    ) : (
+                        <StyledNoLayersContainer>
+                            No layers to display...
+                        </StyledNoLayersContainer>
+                    )}
                 </TreeView>
             </StyledMenuScroll>
         </StyledMenu>
