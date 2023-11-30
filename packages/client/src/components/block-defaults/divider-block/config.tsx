@@ -1,15 +1,10 @@
 import { BlockConfig } from '@/stores';
-import {
-    ButtonGroupSettings,
-    InputSettings,
-} from '@/components/block-settings';
+import { ButtonGroupSettings } from '@/components/block-settings';
 
 import {
-    buildLayoutSection,
     buildSpacingSection,
     buildDimensionsSection,
     buildColorSection,
-    buildTypographySection,
 } from '../block-defaults.shared';
 
 import { DividerBlockDef, DividerBlock } from './DividerBlock';
@@ -24,7 +19,7 @@ export const config: BlockConfig<DividerBlockDef> = {
     data: {
         style: {
             display: 'flex',
-            gap: '16px',
+            gap: '2rem',
         },
     },
     listeners: {},

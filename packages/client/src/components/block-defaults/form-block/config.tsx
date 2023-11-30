@@ -20,7 +20,7 @@ export const config: BlockConfig<FormBlockDef> = {
     data: {
         style: {
             display: 'flex',
-            gap: '16px',
+            gap: '2rem',
         },
         label: 'Example Form',
     },
