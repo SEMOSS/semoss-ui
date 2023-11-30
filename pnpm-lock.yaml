@@ -4282,7 +4282,11 @@ packages:
       '@types/react':
         optional: true
     dependencies:
+<<<<<<< HEAD
+      '@babel/runtime': 7.22.10
+=======
       '@babel/runtime': 7.22.15
+>>>>>>> origin/127-feature-ui-builder
       '@mui/material': 5.13.5_0915c20a846dc1f1e157b09ce585fa44
       '@types/react': 17.0.63
       react: 17.0.2
@@ -4339,14 +4343,22 @@ packages:
       '@types/react':
         optional: true
     dependencies:
+<<<<<<< HEAD
+      '@babel/runtime': 7.22.10
+=======
       '@babel/runtime': 7.22.15
+>>>>>>> origin/127-feature-ui-builder
       '@emotion/react': 11.11.1_7a30a420946de3203f357fe957d1f856
       '@emotion/styled': 11.11.0_ab77819c780d5d5e77cb6a885f8796b8
       '@mui/base': 5.0.0-beta.4_b6e2c57c033afe37f74bef0073cdb566
       '@mui/core-downloads-tracker': 5.14.4
       '@mui/system': 5.14.4_52a9156233029091832778c422c36654
       '@mui/types': 7.2.4_@types+react@17.0.63
+<<<<<<< HEAD
+      '@mui/utils': 5.14.4_react@17.0.2
+=======
       '@mui/utils': 5.14.8_react@17.0.2
+>>>>>>> origin/127-feature-ui-builder
       '@types/react': 17.0.63
       '@types/react-transition-group': 4.4.6
       clsx: 1.2.1
