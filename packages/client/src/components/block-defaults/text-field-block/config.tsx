@@ -9,6 +9,7 @@ import {
 } from '../block-defaults.shared';
 import { BLOCK_TYPE_INPUT } from '../block-defaults.constants';
 import { SelectInputSettings } from '@/components/block-settings/shared/SelectInputSettings';
+import { InputModalSettings } from '@/components/block-settings/shared/InputModalSettings';
 
 // export the config for the block
 export const config: BlockConfig<TextFieldBlockDef> = {
@@ -38,7 +39,11 @@ export const config: BlockConfig<TextFieldBlockDef> = {
                 {
                     description: 'Value',
                     render: ({ id }) => (
-                        <InputSettings id={id} label="Value" path="value" />
+                        <InputModalSettings
+                            id={id}
+                            label="Value"
+                            path="value"
+                        />
                     ),
                 },
                 {

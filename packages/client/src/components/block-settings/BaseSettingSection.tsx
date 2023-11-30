@@ -16,7 +16,7 @@ export const BaseSettingSection = (props: {
             justifyContent="space-between"
         >
             <Typography variant="body2">{props.label}</Typography>
-            <Stack direction="row" justifyContent="end" spacing={2} width="50%">
+            <Stack direction="row" justifyContent="end" spacing={1} width="50%">
                 {props.children}
             </Stack>
         </Stack>

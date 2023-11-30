@@ -1,17 +1,21 @@
 import { BlockConfig } from '@/stores';
-import { InputSettings } from '@/components/block-settings';
+import {
+    ButtonGroupSettings,
+    InputSettings,
+} from '@/components/block-settings';
 
 import {
     buildLayoutSection,
     buildSpacingSection,
     buildDimensionsSection,
-    buildStyleSection,
+    buildColorSection,
     buildTypographySection,
 } from '../block-defaults.shared';
 
 import { DividerBlockDef, DividerBlock } from './DividerBlock';
 import { HorizontalRule } from '@mui/icons-material';
 import { BLOCK_TYPE_LAYOUT } from '../block-defaults.constants';
+import { VerticalDividerIcon } from './VerticalDividerIcon';
 
 // export the config for the block
 export const config: BlockConfig<DividerBlockDef> = {
@@ -34,22 +38,34 @@ export const config: BlockConfig<DividerBlockDef> = {
         {
             name: 'Layout',
             children: [
-                ...buildLayoutSection().children,
                 {
                     description: 'Direction',
                     render: ({ id }) => (
-                        <InputSettings
+                        <ButtonGroupSettings
                             id={id}
                             label="Direction"
                             path="style.flexDirection"
+                            options={[
+                                {
+                                    value: 'row',
+                                    icon: HorizontalRule,
+                                    title: 'Horizontal',
+                                    isDefault: true,
+                                },
+                                {
+                                    value: 'column',
+                                    icon: VerticalDividerIcon,
+                                    title: 'Vertical',
+                                    isDefault: false,
+                                },
+                            ]}
                         />
                     ),
                 },
             ],
         },
+        buildColorSection(),
         buildSpacingSection(),
         buildDimensionsSection(),
-        buildStyleSection(),
-        buildTypographySection(),
     ],
 };

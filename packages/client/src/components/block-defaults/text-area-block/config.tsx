@@ -9,8 +9,9 @@ import {
     buildTextAlignSection,
     buildSpacingSection,
     buildDimensionsSection,
-    buildStyleSection,
+    buildColorSection,
 } from '../block-defaults.shared';
+import { InputModalSettings } from '@/components/block-settings/shared/InputModalSettings';
 
 // export the config for the block
 export const config: BlockConfig<TextAreaBlockDef> = {
@@ -42,7 +43,11 @@ export const config: BlockConfig<TextAreaBlockDef> = {
                 {
                     description: 'Value',
                     render: ({ id }) => (
-                        <InputSettings id={id} label="Value" path="value" />
+                        <InputModalSettings
+                            id={id}
+                            label="Value"
+                            path="value"
+                        />
                     ),
                 },
                 {
@@ -73,8 +78,8 @@ export const config: BlockConfig<TextAreaBlockDef> = {
     styleMenu: [
         buildTypographySection(),
         buildTextAlignSection(),
+        buildColorSection(),
         buildSpacingSection(),
         buildDimensionsSection(),
-        buildStyleSection(),
     ],
 };

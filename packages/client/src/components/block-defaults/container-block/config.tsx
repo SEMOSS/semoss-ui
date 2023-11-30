@@ -5,7 +5,7 @@ import {
     buildLayoutSection,
     buildSpacingSection,
     buildDimensionsSection,
-    buildStyleSection,
+    buildColorSection,
     buildTypographySection,
 } from '../block-defaults.shared';
 
@@ -34,7 +34,7 @@ export const config: BlockConfig<ContainerBlockDef> = {
         buildLayoutSection(),
         buildSpacingSection(),
         buildDimensionsSection(),
-        buildStyleSection(),
+        buildColorSection(),
         buildTypographySection(),
     ],
 };

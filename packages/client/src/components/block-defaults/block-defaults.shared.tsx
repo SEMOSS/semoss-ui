@@ -273,7 +273,7 @@ export const buildDimensionsSection = () => ({
  * Build the Style Section
  * @returns a style section
  */
-export const buildStyleSection = () => ({
+export const buildColorSection = () => ({
     name: 'Color',
     children: [
         {

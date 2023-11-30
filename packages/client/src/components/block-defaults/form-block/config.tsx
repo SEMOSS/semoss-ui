@@ -5,7 +5,7 @@ import {
     buildLayoutSection,
     buildSpacingSection,
     buildDimensionsSection,
-    buildStyleSection,
+    buildColorSection,
     buildTypographySection,
 } from '../block-defaults.shared';
 
@@ -22,6 +22,7 @@ export const config: BlockConfig<FormBlockDef> = {
             display: 'flex',
             gap: '16px',
         },
+        label: 'Example Form',
     },
     listeners: {},
     slots: {
@@ -49,7 +50,7 @@ export const config: BlockConfig<FormBlockDef> = {
         },
         buildSpacingSection(),
         buildDimensionsSection(),
-        buildStyleSection(),
+        buildColorSection(),
         buildTypographySection(),
     ],
 };

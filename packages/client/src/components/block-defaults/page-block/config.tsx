@@ -4,7 +4,7 @@ import { FileCopyOutlined } from '@mui/icons-material';
 import {
     buildLayoutSection,
     buildDimensionsSection,
-    buildStyleSection,
+    buildColorSection,
     buildTypographySection,
 } from '../block-defaults.shared';
 
@@ -68,7 +68,7 @@ export const config: BlockConfig<PageBlockDef> = {
             ],
         },
         buildDimensionsSection(),
-        buildStyleSection(),
+        buildColorSection(),
         buildTypographySection(),
     ],
 };
