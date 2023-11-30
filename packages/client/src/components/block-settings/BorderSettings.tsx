@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { computed } from 'mobx';
 import { observer } from 'mobx-react-lite';
-import { MenuItem, Select, Stack, Typography } from '@semoss/ui';
+import { MenuItem, Select, Stack, TextField, Typography } from '@semoss/ui';
 import { Paths, PathValue } from '@/types';
 import { useBlockSettings } from '@/hooks';
 import { Block, BlockDef } from '@/stores';
@@ -14,20 +14,17 @@ interface BorderSettingsProps<D extends BlockDef = BlockDef> {
     /**
      * Path to update
      */
-    borderPath: Paths<Block<D>['data'], 4>;
-    borderStylePath: Paths<Block<D>['data'], 4>;
-    borderColorPath: Paths<Block<D>['data'], 4>;
+    path: Paths<Block<D>['data'], 4>;
 }
 export const BorderSettings = observer(
-    <D extends BlockDef = BlockDef>({
-        id,
-        borderPath,
-        borderStylePath,
-        borderColorPath,
-    }: BorderSettingsProps<D>) => {
+    <D extends BlockDef = BlockDef>({ id, path }: BorderSettingsProps<D>) => {
         const { data, setData } = useBlockSettings(id);
+
         // track the value
-        const [value, setValue] = useState('');
+        const [borderSizeValue, setBorderSizeValue] = useState('');
+        const [borderStyleValue, setBorderStyleValue] = useState('');
+        const [borderColorValue, setBorderColorValue] = useState('#FFFFFF');
+
         // track the ref to debounce the input
         const timeoutRef = useRef<ReturnType<typeof setTimeout>>(null);
         // get the value of the input (wrapped in usememo because of path prop)
@@ -36,7 +33,7 @@ export const BorderSettings = observer(
                 if (!data) {
                     return '';
                 }
-                const v = getValueByPath(data, borderPath);
+                const v = getValueByPath(data, path);
                 if (typeof v === 'undefined') {
                     return '';
                 } else if (typeof v === 'string') {
@@ -44,51 +41,34 @@ export const BorderSettings = observer(
                 }
                 return JSON.stringify(v);
             });
-        }, [data, borderPath]).get();
+        }, [data, path]).get();
+
         // update the value whenever the computed one changes
         useEffect(() => {
-            setValue(computedValue);
-        }, [computedValue]);
-        useEffect(() => {
-            if (value) {
-                // set other border related values
-                if (!getValueByPath(data, borderStylePath)) {
-                    setData(
-                        borderStylePath,
-                        'solid' as PathValue<D['data'], typeof borderStylePath>,
-                    );
-                }
-                if (!getValueByPath(data, borderColorPath)) {
-                    setData(
-                        borderColorPath,
-                        '#000000' as PathValue<
-                            D['data'],
-                            typeof borderColorPath
-                        >,
-                    );
-                }
+            const borderValues = computedValue.split(' ');
+            if (borderValues.length === 3) {
+                setBorderSizeValue(borderValues[0]);
+                setBorderStyleValue(borderValues[1]);
+                setBorderColorValue(borderValues[2]);
             } else {
-                // clear other border related values
-                if (!getValueByPath(data, borderStylePath)) {
-                    setData(
-                        borderStylePath,
-                        '' as PathValue<D['data'], typeof borderStylePath>,
-                    );
-                }
-                if (!getValueByPath(data, borderColorPath)) {
-                    setData(
-                        borderColorPath,
-                        '' as PathValue<D['data'], typeof borderColorPath>,
-                    );
-                }
+                setBorderSizeValue('');
+                setBorderStyleValue('');
+                setBorderColorValue('#FFFFFF');
             }
-        }, [value]);
+        }, [computedValue]);
+
         /**
          * Sync the data on change
          */
-        const onChange = (value: string) => {
-            // set the value
-            setValue(value);
+        const onChange = (
+            borderSize: string,
+            borderStyle: string,
+            borderColor: string,
+        ) => {
+            // set the values
+            setBorderSizeValue(borderSize);
+            setBorderStyleValue(borderStyle);
+            setBorderColorValue(borderColor ?? '#FFFFFF');
             // clear out the old timeout
             if (timeoutRef.current) {
                 clearTimeout(timeoutRef.current);
@@ -98,8 +78,11 @@ export const BorderSettings = observer(
                 try {
                     // set the value
                     setData(
-                        borderPath,
-                        value as PathValue<D['data'], typeof borderPath>,
+                        path,
+                        `${borderSize} ${borderStyle} ${borderColor}` as PathValue<
+                            D['data'],
+                            typeof path
+                        >,
                     );
                 } catch (e) {
                     console.log(e);
@@ -107,31 +90,100 @@ export const BorderSettings = observer(
             }, 300);
         };
         return (
-            <Stack
-                direction="row"
-                alignItems="center"
-                justifyContent="space-between"
-            >
-                <Typography variant="body2">Border Size</Typography>
-                <Stack direction="row" justifyContent="end" width="50%">
-                    <Select
-                        fullWidth
-                        size="small"
-                        value={value}
-                        onChange={(e) => {
-                            // sync the data on change
-                            onChange(e.target.value);
-                        }}
-                    >
-                        <MenuItem value={''}>
-                            <em>None</em>
-                        </MenuItem>
-                        <MenuItem value={'0.125rem'}>Small</MenuItem>
-                        <MenuItem value={'0.25rem'}>Medium</MenuItem>
-                        <MenuItem value={'0.5rem'}>Large</MenuItem>
-                    </Select>
+            <>
+                <Stack
+                    direction="row"
+                    alignItems="center"
+                    justifyContent="space-between"
+                >
+                    <Typography variant="body2">Border Size</Typography>
+                    <Stack direction="row" justifyContent="end" width="50%">
+                        <Select
+                            fullWidth
+                            size="small"
+                            value={borderSizeValue}
+                            onChange={(e) => {
+                                if (e.target.value) {
+                                    onChange(
+                                        e.target.value,
+                                        borderStyleValue ?? 'solid',
+                                        borderColorValue ?? '#000000',
+                                    );
+                                } else {
+                                    onChange('', '', '');
+                                }
+                            }}
+                        >
+                            <MenuItem value={''}>
+                                <em>None</em>
+                            </MenuItem>
+                            <MenuItem value={'0.125rem'}>Small</MenuItem>
+                            <MenuItem value={'0.25rem'}>Medium</MenuItem>
+                            <MenuItem value={'0.5rem'}>Large</MenuItem>
+                        </Select>
+                    </Stack>
                 </Stack>
-            </Stack>
+                <Stack
+                    direction="row"
+                    alignItems="center"
+                    justifyContent="space-between"
+                >
+                    <Typography variant="body2">Border Style</Typography>
+                    <Stack direction="row" justifyContent="end" width="50%">
+                        <Select
+                            fullWidth
+                            size="small"
+                            value={borderStyleValue}
+                            onChange={(e) => {
+                                if (e.target.value) {
+                                    onChange(
+                                        borderSizeValue ?? '0.125rem',
+                                        e.target.value,
+                                        borderColorValue ?? '#000000',
+                                    );
+                                } else {
+                                    onChange('', '', '');
+                                }
+                            }}
+                        >
+                            <MenuItem value={''}>
+                                <em>None</em>
+                            </MenuItem>
+                            <MenuItem value={'solid'}>Solid</MenuItem>
+                            <MenuItem value={'dashed'}>Dashed</MenuItem>
+                            <MenuItem value={'dotted'}>Dotted</MenuItem>
+                        </Select>
+                    </Stack>
+                </Stack>
+                <Stack
+                    direction="row"
+                    alignItems="center"
+                    justifyContent="space-between"
+                >
+                    <Typography variant="body2">Border Color</Typography>
+                    <Stack direction="row" width="50%">
+                        <TextField
+                            fullWidth
+                            type="color"
+                            value={borderColorValue}
+                            onChange={(e) => {
+                                if (e.target.value) {
+                                    onChange(
+                                        borderSizeValue ?? '0.125rem',
+                                        borderStyleValue ?? 'solid',
+                                        e.target.value,
+                                    );
+                                } else {
+                                    onChange('', '', '');
+                                }
+                            }}
+                            size="small"
+                            variant="outlined"
+                            autoComplete="off"
+                        />
+                    </Stack>
+                </Stack>
+            </>
         );
     },
 );

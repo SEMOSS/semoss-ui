@@ -13,6 +13,7 @@ import { FontFamilySettings } from '../block-settings/FontFamilySettings';
 import { FontSizeSettings } from '../block-settings/FontSizeSettings';
 import { SizeSettings } from '../block-settings/SizeSettings';
 import { ColorSettings } from '../block-settings/ColorSettings';
+import { BorderSettings } from '../block-settings/BorderSettings';
 
 /**
  * Build the Editor Section
@@ -137,6 +138,10 @@ export const buildStyleSection = () => ({
             render: ({ id }) => (
                 <ColorSettings id={id} label="Color" path="style.color" />
             ),
+        },
+        {
+            description: 'Border',
+            render: ({ id }) => <BorderSettings id={id} path="style.border" />,
         },
     ],
 });
