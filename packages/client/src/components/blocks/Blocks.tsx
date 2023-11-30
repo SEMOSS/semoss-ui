@@ -1,4 +1,5 @@
-import { StateStoreImplementation, Registry } from '@/stores';
+import { useMemo } from 'react';
+import { StateStoreImplementation, Registry, NotebookStore } from '@/stores';
 import { BlocksContext } from '@/contexts';
 
 export interface BlocksProps<R extends Registry> {
@@ -17,7 +18,16 @@ export const Blocks = <R extends Registry = Registry>(
 ) => {
     const { children, registry, state } = props;
 
-    if (!state) {
+    // create a new notebook store
+    const notebook = useMemo(() => {
+        if (!state) {
+            return null;
+        }
+
+        return new NotebookStore(state);
+    }, []);
+
+    if (!state || !notebook) {
         return null;
     }
 
@@ -26,6 +36,7 @@ export const Blocks = <R extends Registry = Registry>(
             value={{
                 registry: registry,
                 state: state,
+                notebook: notebook,
             }}
         >
             {children}

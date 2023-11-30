@@ -1,15 +1,17 @@
 import { makeAutoObservable } from 'mobx';
 
-import { Role, WorkspaceView } from '@/types';
+import { Role, WorkspaceDef, WorkspaceView } from '@/types';
 import { RootStore } from '@/stores';
 
 import { AppMetadata } from '@/components/app';
 
-interface WorkspaceStoreInterface {
+export interface WorkspaceStoreInterface<
+    D extends WorkspaceDef = WorkspaceDef,
+> {
     /**
      * ID of App
      */
-    appId: string;
+    id: string;
 
     /**
      * Show Loading or not
@@ -35,19 +37,69 @@ interface WorkspaceStoreInterface {
      * Metadata associated with the loaded app
      */
     metadata: AppMetadata;
+
+    /**
+     * Type of the app
+     */
+    type: D['type'];
+
+    /**
+     * Options associated with the app
+     */
+    options: D['options'];
+
+    /** overlay information */
+    overlay: {
+        /** track if the overlay is open or closed */
+        open: boolean;
+
+        /** content to display in the overlay */
+        content: () => JSX.Element;
+    };
+}
+
+export interface WorkspaceConfigInterface<
+    D extends WorkspaceDef = WorkspaceDef,
+> {
+    /**
+     * ID of App
+     */
+    id: string;
+
+    /**
+     * User's role relative to the app
+     */
+    role: Role;
+
+    /**
+     * Type of the app
+     */
+    type: D['type'];
+
+    /**
+     * Options associated with the app
+     */
+    options: D['options'];
+
+    /**
+     * Metadata associated with the loaded app
+     */
+    metadata: AppMetadata;
 }
 
 /**
  * Store that manages instances of the insights and handles applicaiton level querying
  */
-export class WorkspaceStore {
+export class WorkspaceStore<D extends WorkspaceDef = WorkspaceDef> {
     private _root: RootStore;
-    private _store: WorkspaceStoreInterface = {
-        appId: '',
+    private _store: WorkspaceStoreInterface<D> = {
+        id: '',
         isLoading: false,
         isEditMode: false,
         view: 'design',
         role: 'READ_ONLY',
+        type: 'code',
+        options: {},
         metadata: {
             project_id: '',
             project_name: '',
@@ -59,21 +111,20 @@ export class WorkspaceStore {
             project_created_by_type: '',
             project_date_created: '',
         },
+        overlay: {
+            open: false,
+            content: () => null,
+        },
     };
 
-    constructor(
-        root: RootStore,
-        appId: string,
-        config: Partial<{
-            role: Role;
-            metadata: AppMetadata;
-        }>,
-    ) {
+    constructor(root: RootStore, config: WorkspaceConfigInterface) {
         // register the root
         this._root = root;
 
         // set the appId
-        this._store.appId = appId;
+        this._store.id = config.id;
+        this._store.type = config.type;
+        this._store.options = config.options;
 
         // update the data
         if (config.role) {
@@ -95,7 +146,7 @@ export class WorkspaceStore {
      * Get the ID of the app
      */
     get appId() {
-        return this._store.appId;
+        return this._store.id;
     }
 
     /**
@@ -116,10 +167,6 @@ export class WorkspaceStore {
      * Get the view of the app when it is in edit mode
      */
     get view() {
-        // if (!this._store.isEditMode) {
-        //     throw new Error('Not in Edit Mode');
-        // }
-
         return this._store.view;
     }
 
@@ -129,12 +176,32 @@ export class WorkspaceStore {
     get role() {
         return this._store.role;
     }
+    /**
+     * Type of the app
+     */
+    get type() {
+        return this._store.type;
+    }
+
+    /**
+     * Options associated with the app
+     */
+    get options() {
+        return this._store.options;
+    }
 
     /**
      * Get metadata associated with the app
      */
     get metadata() {
         return this._store.metadata;
+    }
+
+    /**
+     * Get overlay information associated with the workspace
+     */
+    get overlay() {
+        return this._store.overlay;
     }
 
     /**
@@ -166,5 +233,27 @@ export class WorkspaceStore {
         }
 
         this._store.view = view;
+    };
+
+    /**
+     * Open the overlay
+     */
+    openOverlay = (content: WorkspaceStoreInterface['overlay']['content']) => {
+        // open the overlay
+        this._store.overlay.open = true;
+
+        // set the content
+        this._store.overlay.content = content;
+    };
+
+    /**
+     * Close the overlay
+     */
+    closeOverlay = () => {
+        // close the overlay
+        this._store.overlay.open = false;
+
+        // clear the content
+        this._store.overlay.content = null;
     };
 }

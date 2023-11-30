@@ -26,17 +26,19 @@ interface ActionOverlayProps<D extends BlockDef = BlockDef> {
      * Index of the action to update
      */
     actionIdx: number;
+
+    /** Method called to close overlay  */
+    onClose: () => void;
 }
 
 type ListenerActionForm = ListenerActions;
 
 export const ListenerActionOverlay = observer(
     <D extends BlockDef = BlockDef>(props: ActionOverlayProps<D>) => {
-        const { id, listener, actionIdx = -1 } = props;
+        const { id, listener, actionIdx = -1, onClose = () => null } = props;
 
         const { state } = useBlocks();
         const { listeners, setListener } = useBlockSettings(id);
-        const { designer } = useDesigner();
 
         // get the queries as an array
         const queries = computed(() => {
@@ -63,7 +65,7 @@ export const ListenerActionOverlay = observer(
                 defaultValues: {
                     message: ActionMessages.RUN_QUERY,
                     payload: {
-                        id: '',
+                        queryId: '',
                     },
                 },
             });
@@ -91,7 +93,7 @@ export const ListenerActionOverlay = observer(
                 setListener(listener, updated);
             }
 
-            designer.closeOverlay();
+            onClose();
         });
 
         // reset the form qhen the query changes
@@ -99,7 +101,7 @@ export const ListenerActionOverlay = observer(
             let form: ListenerActionForm = {
                 message: ActionMessages.RUN_QUERY,
                 payload: {
-                    id: '',
+                    queryId: '',
                 },
             };
 
@@ -114,7 +116,7 @@ export const ListenerActionOverlay = observer(
         useEffect(() => {
             if (message === ActionMessages.RUN_QUERY) {
                 setValue('payload', {
-                    id: '',
+                    queryId: '',
                 });
             } else if (message === ActionMessages.DISPATCH_EVENT) {
                 setValue('payload', {
@@ -160,7 +162,7 @@ export const ListenerActionOverlay = observer(
                         {message === ActionMessages.RUN_QUERY ? (
                             <>
                                 <Controller
-                                    name={'payload.id'}
+                                    name={'payload.queryId'}
                                     control={control}
                                     render={({ field }) => {
                                         return (
@@ -180,7 +182,7 @@ export const ListenerActionOverlay = observer(
                                                         key={q.id}
                                                         value={q.id}
                                                     >
-                                                        {q.id} - {q.query}
+                                                        {q.id}
                                                     </Select.Item>
                                                 ))}
                                             </Select>
@@ -221,7 +223,7 @@ export const ListenerActionOverlay = observer(
                         type="button"
                         variant="text"
                         onClick={() => {
-                            designer.closeOverlay();
+                            onClose();
                         }}
                     >
                         Cancel

@@ -7,7 +7,7 @@ import {
     buildStyleSection,
     buildTypographySection,
 } from '../block-defaults.shared';
-
+import { TextAlignSettings } from '@/components/block-settings/TextAlignSettings';
 import { TextBlockDef, TextBlock } from './TextBlock';
 import { TextFields } from '@mui/icons-material';
 import { BLOCK_TYPE_DISPLAY } from '../block-defaults.constants';
@@ -38,10 +38,20 @@ export const config: BlockConfig<TextBlockDef> = {
                 },
             ],
         },
-        buildLayoutSection(),
+        buildTypographySection(),
+        {
+            name: 'Layout',
+            children: [
+                {
+                    description: 'Text Align',
+                    render: ({ id }) => (
+                        <TextAlignSettings id={id} path="style.textAlign" />
+                    ),
+                },
+            ],
+        },
         buildSpacingSection(),
         buildDimensionsSection(),
         buildStyleSection(),
-        buildTypographySection(),
     ],
 };

@@ -20,7 +20,7 @@ export const config: BlockConfig<ContainerBlockDef> = {
     data: {
         style: {
             display: 'flex',
-            gap: '16px',
+            gap: '2em',
         },
     },
     listeners: {},
@@ -30,48 +30,7 @@ export const config: BlockConfig<ContainerBlockDef> = {
     render: ContainerBlock,
     icon: HighlightAlt,
     menu: [
-        {
-            name: 'Layout',
-            children: [
-                ...buildLayoutSection().children,
-                {
-                    description: 'Direction',
-                    render: ({ id }) => (
-                        <InputSettings
-                            id={id}
-                            label="Direction"
-                            path="style.flexDirection"
-                        />
-                    ),
-                },
-                {
-                    description: 'Align',
-                    render: ({ id }) => (
-                        <InputSettings
-                            id={id}
-                            label="Align"
-                            path="style.alignItems"
-                        />
-                    ),
-                },
-                {
-                    description: 'Justify',
-                    render: ({ id }) => (
-                        <InputSettings
-                            id={id}
-                            label="Justify"
-                            path="style.justifyContent"
-                        />
-                    ),
-                },
-                {
-                    description: 'Gap',
-                    render: ({ id }) => (
-                        <InputSettings id={id} label="Gap" path="style.gap" />
-                    ),
-                },
-            ],
-        },
+        buildLayoutSection(),
         buildSpacingSection(),
         buildDimensionsSection(),
         buildStyleSection(),

@@ -33,7 +33,7 @@ const StyledContent = styled('div')(({ theme }) => ({
 type VIEW = 'CURRENT' | 'PENDING' | 'APP';
 
 export const SettingsView = () => {
-    const { appId, role } = useWorkspace();
+    const { workspace } = useWorkspace();
     const navigate = useNavigate();
 
     const [view, setView] = useState<VIEW>('CURRENT');
@@ -49,11 +49,11 @@ export const SettingsView = () => {
                 sx={{ display: 'flex', flexDirection: 'column', gap: '16px' }}
             >
                 <StyledContainer>
-                    {role === 'OWNER' ? (
+                    {workspace.role === 'OWNER' ? (
                         <SettingsTiles
                             mode={'app'}
                             name={'app'}
-                            id={appId}
+                            id={workspace.appId}
                             onDelete={() => {
                                 navigate('/settings/app');
                             }}
@@ -71,27 +71,30 @@ export const SettingsView = () => {
                             />
                             <ToggleTabsGroup.Item
                                 label="Pending Requests"
-                                disabled={role === 'READ_ONLY'}
+                                disabled={workspace.role === 'READ_ONLY'}
                                 value={'PENDING'}
                             />
                             <ToggleTabsGroup.Item
                                 label="Data Apps"
-                                disabled={role === 'READ_ONLY'}
+                                disabled={workspace.role === 'READ_ONLY'}
                                 value={'APP'}
                             />
                         </ToggleTabsGroup>
                         {view === 'CURRENT' && (
                             <MembersTable
-                                id={appId}
+                                id={workspace.appId}
                                 mode={'app'}
                                 name={'app'}
                                 refreshPermission={() => console.log('TODO')}
                             />
                         )}
                         {view === 'PENDING' && (
-                            <PendingMembersTable mode={'app'} id={appId} />
+                            <PendingMembersTable
+                                mode={'app'}
+                                id={workspace.appId}
+                            />
                         )}
-                        {view === 'APP' && <AppSettings id={appId} />}
+                        {view === 'APP' && <AppSettings id={workspace.appId} />}
                     </StyledContent>
                 </StyledContainer>
             </Container>

@@ -1,30 +1,37 @@
 import { useMemo } from 'react';
-import { DesignerStore, StateStore } from '@/stores';
+import { DesignerStore } from '@/stores';
 import { Designer } from '@/components/designer';
-import { Blocks, Renderer } from '@/components/blocks';
-import { DefaultBlocks } from '@/components/block-defaults';
+import { Renderer } from '@/components/blocks';
+import { useWorkspace } from '@/hooks';
+
+import { WorkspaceBlocksDef } from '../WorkspaceBlocks';
 
 const ACTIVE = 'page-1';
 
 export const BlocksView = () => {
+    const { workspace } = useWorkspace<WorkspaceBlocksDef>();
+
     /**
      * Have the designer control the blocks
      */
     const designer = useMemo(() => {
-        const d = new DesignerStore(StateStore);
+        // set the state
+        const d = new DesignerStore(workspace.options.state);
 
         // set the rendered one
         d.setRendered(ACTIVE);
 
         // return the store
         return d;
-    }, [StateStore]);
+    }, [workspace.options.state]);
+
+    if (!designer) {
+        return null;
+    }
 
     return (
-        <Blocks state={StateStore} registry={DefaultBlocks}>
-            <Designer designer={designer}>
-                <Renderer id={ACTIVE} />
-            </Designer>
-        </Blocks>
+        <Designer designer={designer}>
+            <Renderer id={ACTIVE} />
+        </Designer>
     );
 };

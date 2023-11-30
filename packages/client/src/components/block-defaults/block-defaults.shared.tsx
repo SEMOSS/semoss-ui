@@ -4,6 +4,16 @@ import {
     JsonSettings,
     ListenerSettings,
 } from '@/components/block-settings';
+import { TextAlignSettings } from '../block-settings/TextAlignSettings';
+import { VerticalAlignSettings } from '../block-settings/VerticalAlignSettings';
+import { HorizontalAlignSettings } from '../block-settings/HorizontalAlignSettings';
+import { SpacingSettings } from '../block-settings/SpacingSettings';
+import { TextStyleSettings } from '../block-settings/TextStyleSettings';
+import { FontFamilySettings } from '../block-settings/FontFamilySettings';
+import { FontSizeSettings } from '../block-settings/FontSizeSettings';
+import { SizeSettings } from '../block-settings/SizeSettings';
+import { ColorSettings } from '../block-settings/ColorSettings';
+import { BorderSettings } from '../block-settings/BorderSettings';
 
 /**
  * Build the Editor Section
@@ -23,12 +33,24 @@ export const buildEditorSection = () => ({
  * Build the Layout Section
  */
 export const buildLayoutSection = () => ({
-    name: 'Display',
+    name: 'Layout',
     children: [
         {
-            description: 'Display',
+            description: 'Vertical Align',
             render: ({ id }) => (
-                <InputSettings id={id} label="Display" path="style.display" />
+                <VerticalAlignSettings id={id} path="style.alignItems" />
+            ),
+        },
+        {
+            description: 'Horitzontal Align',
+            render: ({ id }) => (
+                <HorizontalAlignSettings id={id} path="style.justifyContent" />
+            ),
+        },
+        {
+            description: 'Gap',
+            render: ({ id }) => (
+                <SpacingSettings id={id} label="Gap" path="style.gap" />
             ),
         },
     ],
@@ -44,18 +66,13 @@ export const buildSpacingSection = () => ({
         {
             description: 'Margin',
             render: ({ id }) => (
-                <InputSettings id={id} label="Margin" path="style.margin" />
+                <SpacingSettings id={id} label="Margin" path="style.margin" />
             ),
         },
         {
             description: 'Padding',
             render: ({ id }) => (
-                <InputSettings
-                    id={id}
-                    label="Padding"
-                    path="style.padding"
-                    defaultValue={'24px'}
-                />
+                <SpacingSettings id={id} label="Padding" path="style.padding" />
             ),
         },
     ],
@@ -71,29 +88,25 @@ export const buildDimensionsSection = () => ({
         {
             description: 'Width',
             render: ({ id }) => (
-                <InputSettings id={id} label="Width" path="style.width" />
+                <SizeSettings id={id} label="Width" path="style.width" />
             ),
         },
         {
-            description: 'MaxWidth',
+            description: 'Max Width',
             render: ({ id }) => (
-                <InputSettings
-                    id={id}
-                    label="Max Width"
-                    path="style.maxWidth"
-                />
+                <SizeSettings id={id} label="Max Width" path="style.maxWidth" />
             ),
         },
         {
             description: 'Height',
             render: ({ id }) => (
-                <InputSettings id={id} label="Height" path="style.height" />
+                <SizeSettings id={id} label="Height" path="style.height" />
             ),
         },
         {
-            description: 'MaxHeight',
+            description: 'Max Height',
             render: ({ id }) => (
-                <InputSettings
+                <SizeSettings
                     id={id}
                     label="Max Height"
                     path="style.maxHeight"
@@ -108,24 +121,12 @@ export const buildDimensionsSection = () => ({
  * @returns a style section
  */
 export const buildStyleSection = () => ({
-    name: 'Style',
+    name: 'Color',
     children: [
-        {
-            description: 'Border',
-            render: ({ id }) => (
-                <InputSettings id={id} label="Border" path="style.border" />
-            ),
-        },
-        {
-            description: 'Outline',
-            render: ({ id }) => (
-                <InputSettings id={id} label="Outline" path="style.outline" />
-            ),
-        },
         {
             description: 'Background Color',
             render: ({ id }) => (
-                <InputSettings
+                <ColorSettings
                     id={id}
                     label="Background Color"
                     path="style.backgroundColor"
@@ -135,18 +136,12 @@ export const buildStyleSection = () => ({
         {
             description: 'Color',
             render: ({ id }) => (
-                <InputSettings id={id} label="Color" path="style.color" />
+                <ColorSettings id={id} label="Color" path="style.color" />
             ),
         },
         {
-            description: 'Box Shadow',
-            render: ({ id }) => (
-                <InputSettings
-                    id={id}
-                    label="Box Shadow"
-                    path="style.boxShadow"
-                />
-            ),
+            description: 'Border',
+            render: ({ id }) => <BorderSettings id={id} path="style.border" />,
         },
     ],
 });
@@ -156,41 +151,25 @@ export const buildStyleSection = () => ({
  * @returns a typography section
  */
 export const buildTypographySection = () => ({
-    name: 'Typography',
+    name: 'Text',
     children: [
         {
-            description: 'Font Family',
+            description: 'Style',
+            render: ({ id }) => <TextStyleSettings id={id} />,
+        },
+        {
+            description: 'Font',
             render: ({ id }) => (
-                <InputSettings id={id} label="Font" path="style.fontFamily" />
+                <FontFamilySettings id={id} path="style.fontFamily" />
             ),
         },
         {
-            description: 'Font Size',
+            description: 'Type',
             render: ({ id }) => (
-                <InputSettings
+                <FontSizeSettings
                     id={id}
-                    label="Font Size"
-                    path="style.fontSize"
-                />
-            ),
-        },
-        {
-            description: 'Font Weight',
-            render: ({ id }) => (
-                <InputSettings
-                    id={id}
-                    label="Font Weight"
-                    path="style.fontWeight"
-                />
-            ),
-        },
-        {
-            description: 'Font Style',
-            render: ({ id }) => (
-                <InputSettings
-                    id={id}
-                    label="Font Style"
-                    path="style.fontStyle"
+                    sizePath="style.fontSize"
+                    weightPath="style.fontWeight"
                 />
             ),
         },

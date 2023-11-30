@@ -11,7 +11,13 @@ import {
     Typography,
     Stack,
 } from '@semoss/ui';
-import { Code, Download, Share, Settings } from '@mui/icons-material';
+import {
+    Code,
+    Download,
+    Share,
+    Settings,
+    FolderOutlined,
+} from '@mui/icons-material';
 
 import { useWorkspace, useRootStore } from '@/hooks';
 import { Env } from '@/env';
@@ -112,8 +118,7 @@ const StyledModalContent = styled(Modal.Content)(({ theme }) => ({
 export const WorkspaceActions = observer(() => {
     const { monolithStore, configStore } = useRootStore();
     const notification = useNotification();
-    const { appId, role, view, setView, isEditMode, setEditMode, setLoading } =
-        useWorkspace();
+    const { workspace } = useWorkspace();
 
     const [shareModal, setShareModal] = useState(false);
     const [shareModalTab, setShareModalTab] = useState(0);
@@ -123,14 +128,14 @@ export const WorkspaceActions = observer(() => {
      */
     const downloadApp = async () => {
         // turn on loading
-        setLoading(true);
+        workspace.setLoading(true);
 
         try {
             const path = 'version/assets/';
 
             // upnzip the file in the new app
             const response = await monolithStore.runQuery<[string]>(
-                `DownloadAsset(filePath=["${path}"], space=["${appId}"]);`,
+                `DownloadAsset(filePath=["${path}"], space=["${workspace.appId}"]);`,
             );
             const key = response.pixelReturn[0].output;
             if (!key) {
@@ -147,39 +152,40 @@ export const WorkspaceActions = observer(() => {
             });
         } finally {
             // turn of loading
-            setLoading(false);
+            workspace.setLoading(false);
         }
     };
 
-    console.log(role, view);
-
     return (
         <Stack direction="row" alignItems={'center'} spacing={2}>
-            {(role === 'OWNER' || role === 'EDIT') && isEditMode ? (
+            {(workspace.role === 'OWNER' || workspace.role === 'EDIT') &&
+            workspace.isEditMode ? (
                 <Stack direction="row" alignItems={'center'} spacing={0}>
                     <StyledNavItem
                         title={'Design'}
-                        selected={view === 'design'}
+                        selected={workspace.view === 'design'}
                         onClick={() => {
-                            setView('design');
+                            workspace.setView('design');
                         }}
                     >
                         <Code />
                     </StyledNavItem>
-                    {/* <StyledNavItem
-                        title={'Data'}
-                        selected={view === 'data'}
-                        onClick={() => {
-                            setView('data');
-                        }}
-                    >
-                        <Code />
-                    </StyledNavItem> */}
+                    {workspace.type === 'blocks' && (
+                        <StyledNavItem
+                            title={'Data'}
+                            selected={workspace.view === 'data'}
+                            onClick={() => {
+                                workspace.setView('data');
+                            }}
+                        >
+                            <FolderOutlined />
+                        </StyledNavItem>
+                    )}
                     <StyledNavItem
                         title={'Settings'}
-                        selected={view === 'settings'}
+                        selected={workspace.view === 'settings'}
                         onClick={() => {
-                            setView('settings');
+                            workspace.setView('settings');
                         }}
                     >
                         <Settings />
@@ -189,15 +195,15 @@ export const WorkspaceActions = observer(() => {
                 <></>
             )}
             <Stack flex={1}>&nbsp;</Stack>
-            {role === 'OWNER' || role === 'EDIT' ? (
+            {workspace.role === 'OWNER' || workspace.role === 'EDIT' ? (
                 <>
                     <StyledTrack
-                        active={isEditMode}
+                        active={workspace.isEditMode}
                         onClick={() => {
-                            setEditMode(!isEditMode);
+                            workspace.setEditMode(!workspace.isEditMode);
                         }}
                     >
-                        <StyledHandle active={isEditMode}>
+                        <StyledHandle active={workspace.isEditMode}>
                             <Code />
                         </StyledHandle>
                     </StyledTrack>
@@ -275,7 +281,7 @@ export const WorkspaceActions = observer(() => {
                             <Stack direction="column" spacing={1}>
                                 <TextField
                                     size="small"
-                                    value={`${Env.MODULE}/public_home/${appId}/portals/`}
+                                    value={`${Env.MODULE}/public_home/${workspace.appId}/portals/`}
                                     fullWidth={true}
                                     InputProps={{
                                         readOnly: true,
@@ -288,7 +294,7 @@ export const WorkspaceActions = observer(() => {
                                     variant={'outlined'}
                                     onClick={() => {
                                         navigator.clipboard.writeText(
-                                            `${Env.MODULE}/public_home/${appId}/portals/`,
+                                            `${Env.MODULE}/public_home/${workspace.appId}/portals/`,
                                         );
                                         notification.add({
                                             color: 'success',

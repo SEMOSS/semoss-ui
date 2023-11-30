@@ -1,4 +1,6 @@
+import React from 'react';
 import { RunQueryAction, DispatchEventAction } from './state.actions';
+import { StepState } from './step.state';
 /**
  * Block
  */
@@ -142,32 +144,58 @@ export type RegistryUnwrap<R extends Registry<BlockDef>> = R extends Registry<
     : never;
 
 /**
- * Query
- */
-export type Query = {
-    /** ID of the Query */
-    id: string;
-
-    /** Track if the query has initialized */
-    isInitialized: boolean;
-
-    /** Track if the query is loading */
-    isLoading: boolean;
-
-    /** Track if the query has errored */
-    error: Error | null;
-
-    /** Query that will execute */
-    query: string;
-
-    /** Current data of the Query */
-    data: unknown;
-
-    /** Is the query automatically run or manully */
-    mode: 'automatic' | 'manual';
-};
-
-/**
  * Listener Actions
  */
 export type ListenerActions = RunQueryAction | DispatchEventAction;
+
+/**
+ * Cell Definition
+ */
+export interface CellDef<W extends string = string> {
+    /** Unique widget name */
+    widget: W;
+
+    /** Parameters associated with the widget */
+    parameters: Record<string, unknown>;
+}
+
+/**
+ * Cell configuration
+ */
+export interface Cell<D extends CellDef = CellDef> {
+    /** Unique widget name */
+    widget: D['widget'];
+
+    /** Parameters associated with the cell */
+    parameters: D['parameters'];
+
+    /** View associated with the cell */
+    view: {
+        /** Title view of the cell */
+        title: string | CellComponent<D>;
+
+        /** Input view of the cell */
+        input: CellComponent<D>;
+    };
+
+    /** Method that to convert the cell into pixel */
+    toPixel: (
+        /** Parameters associated with the cell */
+        parameters: D['parameters'],
+    ) => string;
+}
+
+/**
+ * Cell Registry
+ */
+export type CellRegistry<D extends CellDef = CellDef> = D extends CellDef
+    ? Record<D['widget'], Cell<D>>
+    : never;
+/**
+ * Component Information
+ */
+export type CellComponent<D extends CellDef = CellDef> =
+    React.FunctionComponent<{
+        /** Step that is controlling the cell */
+        step: StepState<D>;
+    }>;

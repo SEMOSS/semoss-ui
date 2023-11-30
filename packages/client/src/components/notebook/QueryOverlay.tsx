@@ -1,24 +1,10 @@
 import { useEffect } from 'react';
 import { observer } from 'mobx-react-lite';
-import {
-    styled,
-    Stack,
-    TextField,
-    Modal,
-    Button,
-    Typography,
-} from '@semoss/ui';
+import { styled, Stack, TextField, Modal, Button } from '@semoss/ui';
 import { Controller, useForm } from 'react-hook-form';
-import Editor from '@monaco-editor/react';
 
-import { useBlocks, useDesigner } from '@/hooks';
+import { useBlocks } from '@/hooks';
 import { ActionMessages } from '@/stores';
-
-const StyledEditor = styled(Editor)(({ theme }) => ({
-    borderWidth: '1px',
-    borderColor: theme.palette.divider,
-    borderRadius: theme.shape.borderRadius,
-}));
 
 const StyledSpacer = styled('div')(() => ({
     flex: 1,
@@ -26,12 +12,14 @@ const StyledSpacer = styled('div')(() => ({
 
 type EditQueryForm = {
     ID: string;
-    QUERY: string;
 };
 
 interface QueryOverlayProps {
     /** id to open in the overlay. If not defined, it will create a new one. */
     id?: string;
+
+    /** Method called to close overlay  */
+    onClose: () => void;
 }
 
 /**
@@ -39,10 +27,9 @@ interface QueryOverlayProps {
  */
 export const QueryOverlay = observer(
     (props: QueryOverlayProps): JSX.Element => {
-        const { id = '' } = props;
+        const { id = '', onClose = () => null } = props;
 
         const { state } = useBlocks();
-        const { designer } = useDesigner();
 
         // track if it is a new query
         const isNew = !id;
@@ -58,7 +45,6 @@ export const QueryOverlay = observer(
         } = useForm<EditQueryForm>({
             defaultValues: {
                 ID: '',
-                QUERY: '',
             },
         });
 
@@ -66,7 +52,6 @@ export const QueryOverlay = observer(
         useEffect(() => {
             const values = {
                 ID: '',
-                QUERY: '',
             };
 
             // only get the query if the id is present
@@ -74,7 +59,6 @@ export const QueryOverlay = observer(
                 const q = state.getQuery(id);
 
                 values.ID = q.id;
-                values.QUERY = q.query;
             }
 
             reset(values);
@@ -85,10 +69,10 @@ export const QueryOverlay = observer(
          */
         const onSubmit = handleSubmit((data: EditQueryForm) => {
             clearErrors();
-            if (!data.ID || !data.QUERY) {
-                setError(`${!data.ID ? 'ID' : 'QUERY'}`, {
+            if (!data.ID) {
+                setError('ID', {
                     type: 'manual',
-                    message: `Query${!data.ID ? ' ID' : ''} is required`,
+                    message: `Query ID is required`,
                 });
                 return;
             }
@@ -97,22 +81,28 @@ export const QueryOverlay = observer(
             if (isNew && (state.queries[data.ID] || state.blocks[data.ID])) {
                 setError('ID', {
                     type: 'manual',
-                    message: `Query with ID ${data.ID} already exists`,
+                    message: `Query ID ${data.ID} already exists`,
                 });
                 return;
             }
 
             // dispatch a query
-            state.dispatch({
-                message: ActionMessages.SET_QUERY,
-                payload: {
-                    id: data.ID,
-                    query: data.QUERY,
-                },
-            });
+            if (isNew) {
+                state.dispatch({
+                    message: ActionMessages.NEW_QUERY,
+                    payload: {
+                        queryId: data.ID,
+                        config: {
+                            mode: 'manual',
+                        },
+                    },
+                });
+            } else {
+                // TODO
+            }
 
             // close the overlay
-            designer.closeOverlay();
+            onClose();
         });
 
         /**
@@ -123,12 +113,12 @@ export const QueryOverlay = observer(
             state.dispatch({
                 message: ActionMessages.DELETE_QUERY,
                 payload: {
-                    id: id,
+                    queryId: id,
                 },
             });
 
             // close the overlay
-            designer.closeOverlay();
+            onClose();
         };
 
         return (
@@ -154,37 +144,6 @@ export const QueryOverlay = observer(
                                 );
                             }}
                         />
-                        <Controller
-                            name={'QUERY'}
-                            control={control}
-                            render={({ field }) => {
-                                return (
-                                    <>
-                                        <StyledEditor
-                                            height="300px"
-                                            defaultLanguage="plaintext"
-                                            value={
-                                                field.value ? field.value : ''
-                                            }
-                                            onChange={(value) => {
-                                                clearErrors();
-                                                field.onChange(value);
-                                            }}
-                                        />
-                                        {errors?.QUERY?.message ? (
-                                            <Typography
-                                                color="error"
-                                                variant="caption"
-                                            >
-                                                {errors.QUERY.message}
-                                            </Typography>
-                                        ) : (
-                                            <></>
-                                        )}
-                                    </>
-                                );
-                            }}
-                        />
                     </Stack>
                 </Modal.Content>
                 <Modal.Actions>
@@ -200,16 +159,11 @@ export const QueryOverlay = observer(
                         </Button>
                     )}
                     <StyledSpacer />
-                    <Button
-                        variant="text"
-                        onClick={() => designer.closeOverlay()}
-                    >
+                    <Button variant="text" onClick={() => onClose()}>
                         Cancel
                     </Button>
                     <Button
-                        disabled={
-                            !!errors?.ID?.message || !!errors?.QUERY?.message
-                        }
+                        disabled={!!errors?.ID?.message}
                         onClick={() => onSubmit()}
                     >
                         Submit

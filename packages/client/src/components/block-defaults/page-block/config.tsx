@@ -11,13 +11,18 @@ import {
 
 import { PageBlockDef, PageBlock } from './PageBlock';
 import { BLOCK_TYPE_LAYOUT } from '../block-defaults.constants';
+import { SpacingSettings } from '@/components/block-settings/SpacingSettings';
 
 // export the config for the block
 export const config: BlockConfig<PageBlockDef> = {
     widget: 'page',
     type: BLOCK_TYPE_LAYOUT,
     data: {
-        style: {},
+        style: {
+            display: 'flex',
+            gap: '2em',
+            alignItems: 'start',
+        },
     },
     listeners: {},
     slots: {
@@ -27,7 +32,22 @@ export const config: BlockConfig<PageBlockDef> = {
     icon: FileCopyOutlined,
     menu: [
         buildLayoutSection(),
-        buildSpacingSection(),
+        // root pages don't get margin for spacing
+        {
+            name: 'Spacing',
+            children: [
+                {
+                    description: 'Padding',
+                    render: ({ id }) => (
+                        <SpacingSettings
+                            id={id}
+                            label="Padding"
+                            path="style.padding"
+                        />
+                    ),
+                },
+            ],
+        },
         buildDimensionsSection(),
         buildStyleSection(),
         buildTypographySection(),
