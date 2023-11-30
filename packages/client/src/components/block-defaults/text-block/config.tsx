@@ -6,6 +6,7 @@ import {
     buildDimensionsSection,
     buildStyleSection,
     buildTypographySection,
+    buildTextAlignSection,
 } from '../block-defaults.shared';
 import { TextBlockDef, TextBlock } from './TextBlock';
 import {
@@ -32,9 +33,9 @@ export const config: BlockConfig<TextBlockDef> = {
     },
     render: TextBlock,
     icon: TextFields,
-    menu: [
+    contentMenu: [
         {
-            name: 'Content',
+            name: 'General',
             children: [
                 {
                     description: 'Text',
@@ -44,48 +45,10 @@ export const config: BlockConfig<TextBlockDef> = {
                 },
             ],
         },
+    ],
+    styleMenu: [
         buildTypographySection(),
-        {
-            name: 'Layout',
-            children: [
-                {
-                    description: 'Text Align',
-                    render: ({ id }) => (
-                        <ButtonGroupSettings
-                            id={id}
-                            path="style.textAlign"
-                            label="Text Align"
-                            options={[
-                                {
-                                    value: 'left',
-                                    icon: FormatAlignLeft,
-                                    title: 'Left',
-                                    isDefault: true,
-                                },
-                                {
-                                    value: 'right',
-                                    icon: FormatAlignRight,
-                                    title: 'Right',
-                                    isDefault: false,
-                                },
-                                {
-                                    value: 'center',
-                                    icon: FormatAlignCenter,
-                                    title: 'Center',
-                                    isDefault: false,
-                                },
-                                {
-                                    value: 'justify',
-                                    icon: FormatAlignJustify,
-                                    title: 'Justify',
-                                    isDefault: false,
-                                },
-                            ]}
-                        />
-                    ),
-                },
-            ],
-        },
+        buildTextAlignSection(),
         buildSpacingSection(),
         buildDimensionsSection(),
         buildStyleSection(),

@@ -31,9 +31,9 @@ export const config: BlockConfig<InputBlockDef> = {
     },
     render: InputBlock,
     icon: SettingsInputComponent,
-    menu: [
+    contentMenu: [
         {
-            name: 'Input',
+            name: 'General',
             children: [
                 {
                     description: 'Value',
@@ -59,6 +59,8 @@ export const config: BlockConfig<InputBlockDef> = {
                 },
             ],
         },
+    ],
+    styleMenu: [
         buildLayoutSection(),
         buildSpacingSection(),
         buildDimensionsSection(),

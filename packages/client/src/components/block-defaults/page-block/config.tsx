@@ -29,7 +29,8 @@ export const config: BlockConfig<PageBlockDef> = {
     },
     render: PageBlock,
     icon: FileCopyOutlined,
-    menu: [
+    contentMenu: [],
+    styleMenu: [
         buildLayoutSection(),
         // root pages don't get margin for spacing
         {

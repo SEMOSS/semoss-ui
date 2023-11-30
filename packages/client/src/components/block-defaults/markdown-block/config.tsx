@@ -26,9 +26,9 @@ export const config: BlockConfig<MarkdownBlockDef> = {
     },
     render: MarkdownBlock,
     icon: FormatListBulleted,
-    menu: [
+    contentMenu: [
         {
-            name: 'Content',
+            name: 'General',
             children: [
                 {
                     description: 'Markdown',
@@ -42,6 +42,8 @@ export const config: BlockConfig<MarkdownBlockDef> = {
                 },
             ],
         },
+    ],
+    styleMenu: [
         buildLayoutSection(),
         buildSpacingSection(),
         buildDimensionsSection(),

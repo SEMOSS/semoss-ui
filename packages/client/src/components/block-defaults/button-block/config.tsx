@@ -6,7 +6,7 @@ import {
     buildSpacingSection,
     buildDimensionsSection,
     buildStyleSection,
-    buildListenersSection,
+    buildListeners,
 } from '../block-defaults.shared';
 
 import { ButtonBlockDef, ButtonBlock } from './ButtonBlock';
@@ -27,9 +27,9 @@ export const config: BlockConfig<ButtonBlockDef> = {
     slots: {},
     render: ButtonBlock,
     icon: SmartButton,
-    menu: [
+    contentMenu: [
         {
-            name: 'Button',
+            name: 'General',
             children: [
                 {
                     description: 'Label',
@@ -37,12 +37,14 @@ export const config: BlockConfig<ButtonBlockDef> = {
                         <InputSettings id={id} label="Label" path="label" />
                     ),
                 },
+                ...buildListeners(['onClick']),
             ],
         },
+    ],
+    styleMenu: [
         buildLayoutSection(),
         buildSpacingSection(),
         buildDimensionsSection(),
         buildStyleSection(),
-        buildListenersSection(['onClick']),
     ],
 };

@@ -4,6 +4,13 @@ import { InputSettings } from '@/components/block-settings';
 import { TextAreaBlockDef, TextAreaBlock } from './TextAreaBlock';
 import { FormatShapes } from '@mui/icons-material';
 import { BLOCK_TYPE_INPUT } from '../block-defaults.constants';
+import {
+    buildTypographySection,
+    buildTextAlignSection,
+    buildSpacingSection,
+    buildDimensionsSection,
+    buildStyleSection,
+} from '../block-defaults.shared';
 
 // export the config for the block
 export const config: BlockConfig<TextAreaBlockDef> = {
@@ -28,9 +35,9 @@ export const config: BlockConfig<TextAreaBlockDef> = {
     },
     render: TextAreaBlock,
     icon: FormatShapes,
-    menu: [
+    contentMenu: [
         {
-            name: 'Textarea',
+            name: 'General',
             children: [
                 {
                     description: 'Value',
@@ -62,5 +69,12 @@ export const config: BlockConfig<TextAreaBlockDef> = {
                 },
             ],
         },
+    ],
+    styleMenu: [
+        buildTypographySection(),
+        buildTextAlignSection(),
+        buildSpacingSection(),
+        buildDimensionsSection(),
+        buildStyleSection(),
     ],
 };

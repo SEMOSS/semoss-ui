@@ -30,9 +30,9 @@ export const config: BlockConfig<TextFieldBlockDef> = {
     },
     render: TextFieldBlock,
     icon: FormatShapes,
-    menu: [
+    contentMenu: [
         {
-            name: 'Text Field',
+            name: 'General',
             children: [
                 {
                     description: 'Value',
@@ -60,7 +60,6 @@ export const config: BlockConfig<TextFieldBlockDef> = {
                 },
             ],
         },
-        buildSpacingSection(),
-        buildDimensionsSection(),
     ],
+    styleMenu: [buildSpacingSection(), buildDimensionsSection()],
 };

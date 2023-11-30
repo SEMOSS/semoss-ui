@@ -9,6 +9,10 @@ import {
     AlignHorizontalCenter,
     AlignHorizontalLeft,
     AlignHorizontalRight,
+    FormatAlignCenter,
+    FormatAlignJustify,
+    FormatAlignLeft,
+    FormatAlignRight,
     FormatBold,
     FormatItalic,
     FormatUnderlined,
@@ -125,6 +129,48 @@ export const buildLayoutSection = () => ({
                         },
                     ]}
                     allowUnset
+                />
+            ),
+        },
+    ],
+});
+
+export const buildTextAlignSection = () => ({
+    name: 'Layout',
+    children: [
+        {
+            description: 'Text Align',
+            render: ({ id }) => (
+                <ButtonGroupSettings
+                    id={id}
+                    path="style.textAlign"
+                    label="Text Align"
+                    options={[
+                        {
+                            value: 'left',
+                            icon: FormatAlignLeft,
+                            title: 'Left',
+                            isDefault: true,
+                        },
+                        {
+                            value: 'right',
+                            icon: FormatAlignRight,
+                            title: 'Right',
+                            isDefault: false,
+                        },
+                        {
+                            value: 'center',
+                            icon: FormatAlignCenter,
+                            title: 'Center',
+                            isDefault: false,
+                        },
+                        {
+                            value: 'justify',
+                            icon: FormatAlignJustify,
+                            title: 'Justify',
+                            isDefault: false,
+                        },
+                    ]}
                 />
             ),
         },
@@ -356,14 +402,11 @@ export const buildTypographySection = () => ({
  * Build the Listeners Section
  * @returns the Listener Section
  */
-export const buildListenersSection = <D extends BlockDef = BlockDef>(
+export const buildListeners = <D extends BlockDef = BlockDef>(
     triggers: Extract<keyof D['listeners'], string>[] = [],
-) => ({
-    name: 'Listeners',
-    children: [
-        ...triggers.map((t) => ({
-            description: t,
-            render: ({ id }) => <ListenerSettings id={id} listener={t} />,
-        })),
-    ],
-});
+) => [
+    ...triggers.map((t) => ({
+        description: t,
+        render: ({ id }) => <ListenerSettings id={id} listener={t} />,
+    })),
+];

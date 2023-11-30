@@ -82,8 +82,22 @@ export interface BlockConfig<D extends BlockDef = BlockDef> {
     /** Icon to render in the builder sidebar */
     icon: React.FunctionComponent;
 
-    /** Settings Menu */
-    menu: {
+    /** Content Menu */
+    contentMenu: {
+        name: string;
+        children: {
+            /** Description for the setting */
+            description: string;
+            /** Render the setting */
+            render: (props: {
+                /** Id of the block */
+                id: string;
+            }) => JSX.Element;
+        }[];
+    }[];
+
+    /** Style Menu */
+    styleMenu: {
         name: string;
         children: {
             /** Description for the setting */

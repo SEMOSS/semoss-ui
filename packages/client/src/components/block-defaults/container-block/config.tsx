@@ -29,7 +29,8 @@ export const config: BlockConfig<ContainerBlockDef> = {
     },
     render: ContainerBlock,
     icon: HighlightAlt,
-    menu: [
+    contentMenu: [],
+    styleMenu: [
         buildLayoutSection(),
         buildSpacingSection(),
         buildDimensionsSection(),

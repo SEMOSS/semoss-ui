@@ -29,7 +29,8 @@ export const config: BlockConfig<DividerBlockDef> = {
     },
     render: DividerBlock,
     icon: HorizontalRule,
-    menu: [
+    contentMenu: [],
+    styleMenu: [
         {
             name: 'Layout',
             children: [
@@ -42,32 +43,6 @@ export const config: BlockConfig<DividerBlockDef> = {
                             label="Direction"
                             path="style.flexDirection"
                         />
-                    ),
-                },
-                {
-                    description: 'Align',
-                    render: ({ id }) => (
-                        <InputSettings
-                            id={id}
-                            label="Align"
-                            path="style.alignItems"
-                        />
-                    ),
-                },
-                {
-                    description: 'Justify',
-                    render: ({ id }) => (
-                        <InputSettings
-                            id={id}
-                            label="Justify"
-                            path="style.justifyContent"
-                        />
-                    ),
-                },
-                {
-                    description: 'Gap',
-                    render: ({ id }) => (
-                        <InputSettings id={id} label="Gap" path="style.gap" />
                     ),
                 },
             ],

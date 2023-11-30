@@ -32,9 +32,9 @@ export const config: BlockConfig<SelectBlockDef> = {
     },
     render: SelectBlock,
     icon: ViewList,
-    menu: [
+    contentMenu: [
         {
-            name: 'Select',
+            name: 'General',
             children: [
                 {
                     description: 'Value',
@@ -66,6 +66,6 @@ export const config: BlockConfig<SelectBlockDef> = {
                 },
             ],
         },
-        buildSpacingSection(),
     ],
+    styleMenu: [buildSpacingSection()],
 };

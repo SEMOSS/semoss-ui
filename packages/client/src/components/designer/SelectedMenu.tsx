@@ -15,6 +15,7 @@ import { useBlock, useBlocks, useDesigner } from '@/hooks';
 import { SearchOutlined, ExpandMore, DeleteOutline } from '@mui/icons-material';
 import { getIconForBlock } from '../block-defaults';
 import { BlockAvatar } from './BlockAvatar';
+import { SelectedMenuSection } from './SelectedMenuSection';
 
 const StyledTypography = styled(Typography)(() => ({
     textTransform: 'capitalize',
@@ -37,7 +38,6 @@ const StyledMenuHeader = styled('div')(({ theme }) => ({
     display: 'flex',
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'flex-end',
     paddingTop: theme.spacing(1.5),
     paddingRight: theme.spacing(1),
     paddingBottom: theme.spacing(1.5),
@@ -54,82 +54,29 @@ const StyledMenuScroll = styled('div')(({ theme }) => ({
     overflowY: 'auto',
 }));
 
-const StyledMenuSection = styled(Accordion)(({ theme }) => ({
-    boxShadow: 'none',
-    borderRadius: '0 !important',
-    border: '0px',
-    borderBottom: `1px solid ${theme.palette.divider}`,
-    '&:before': {
-        display: 'none',
-    },
-    '&.Mui-expanded': {
-        margin: '0',
-        '&:last-child': {
-            borderBottom: '0px',
-        },
-    },
-}));
-
-const StyledMenuSectionTitle = styled(Accordion.Trigger)(({ theme }) => ({
-    minHeight: 'auto !important',
-    height: theme.spacing(6),
-}));
-
-interface DeleteBlockMenuItemProps {
-    /**
-     * Id of the block that is being worked with
-     */
-    id: string;
-}
-
-const DeleteBlockMenuItem = observer(({ id }: DeleteBlockMenuItemProps) => {
-    const { deleteBlock } = useBlock(id);
-    const { designer } = useDesigner();
-    return (
-        <>
-            {
-                // don't allow deletion of the base rendered element (page)
-                designer.rendered === id ? (
-                    <></>
-                ) : (
-                    <Stack direction="row" padding={2}>
-                        <Button
-                            color="error"
-                            fullWidth
-                            startIcon={<DeleteOutline />}
-                            variant="outlined"
-                            onClick={() => {
-                                deleteBlock();
-                                designer.setSelected('');
-                            }}
-                        >
-                            Delete Block
-                        </Button>
-                    </Stack>
-                )
-            }
-        </>
-    );
-});
-
 export const SelectedMenu = observer(() => {
     const { designer } = useDesigner();
     const { state, registry } = useBlocks();
 
-    const [accordion, setAccordion] = useState<Record<string, boolean>>({});
+    const [contentAccordion, setContentAccordion] = useState<
+        Record<string, boolean>
+    >({});
+    const [styleAccordion, setStyleAccordion] = useState<
+        Record<string, boolean>
+    >({});
     const [showSearch, setShowSearch] = useState<boolean>(false);
     const [search, setSearch] = useState<string>('');
 
     // get the selected block
     const block = designer.selected ? state.getBlock(designer.selected) : null;
 
-    // get the menu
-    const menu = useMemo(() => {
+    // get the content menu
+    const contentMenu = useMemo(() => {
         if (!registry || !block || !registry[block.widget]) {
             return [];
         }
 
-        const m = registry[block.widget].menu;
+        const m = registry[block.widget].contentMenu;
 
         // clear out the accordion
         const acc = {};
@@ -138,20 +85,68 @@ export const SelectedMenu = observer(() => {
 
             acc[key] = true;
         }
-        setAccordion(acc);
+        setContentAccordion(acc);
 
         // set the menu with search filter
         if (!!search) {
-            return m.filter((menuItem) => {
+            // filter section headers that match search
+            const filteredSectionMenu = m.filter((menuItem) => {
                 if (menuItem.name.toLowerCase().includes(search)) {
                     return true;
-                } else {
-                    menuItem.children.forEach((child) => {
-                        if (child.description.toLowerCase().includes(search)) {
-                            return true;
-                        }
-                    });
                 }
+                return menuItem.children.some((child) => {
+                    return child.description.toLowerCase().includes(search);
+                });
+            });
+            // filter section children that match search
+            return filteredSectionMenu.map((menuItem) => {
+                return {
+                    ...menuItem,
+                    children: menuItem.children.filter((child) =>
+                        child.description.toLowerCase().includes(search),
+                    ),
+                };
+            });
+        }
+        return m;
+    }, [registry, block ? block.widget : '', search]);
+
+    // get the style menu
+    const styleMenu = useMemo(() => {
+        if (!registry || !block || !registry[block.widget]) {
+            return [];
+        }
+
+        const m = registry[block.widget].styleMenu;
+
+        // clear out the accordion
+        const acc = {};
+        for (let sIdx = 0, sLen = m.length; sIdx < sLen; sIdx++) {
+            const key = `section--${sIdx}`;
+
+            acc[key] = true;
+        }
+        setStyleAccordion(acc);
+
+        // set the menu with search filter
+        if (!!search) {
+            // filter section headers that match search
+            const filteredSectionMenu = m.filter((menuItem) => {
+                if (menuItem.name.toLowerCase().includes(search)) {
+                    return true;
+                }
+                return menuItem.children.some((child) => {
+                    return child.description.toLowerCase().includes(search);
+                });
+            });
+            // filter section children that match search
+            return filteredSectionMenu.map((menuItem) => {
+                return {
+                    ...menuItem,
+                    children: menuItem.children.filter((child) =>
+                        child.description.toLowerCase().includes(search),
+                    ),
+                };
             });
         }
         return m;
@@ -205,7 +200,37 @@ export const SelectedMenu = observer(() => {
             </StyledMenuHeader>
             <Divider />
             <StyledMenuScroll>
-                {menu.map((s, sIdx) => {
+                {contentMenu.length ? (
+                    <SelectedMenuSection
+                        id={block.id}
+                        sectionTitle="Content"
+                        menu={contentMenu}
+                        accordion={contentAccordion}
+                        setAccordion={setContentAccordion}
+                    />
+                ) : (
+                    <></>
+                )}
+                <SelectedMenuSection
+                    id={block.id}
+                    sectionTitle="Appearance"
+                    menu={styleMenu}
+                    accordion={styleAccordion}
+                    setAccordion={setStyleAccordion}
+                />
+            </StyledMenuScroll>
+            {/* <StyledMenuHeader>
+                <Typography variant="subtitle1">Appearance</Typography>
+            </StyledMenuHeader>
+            <StyledMenuScroll>
+                {styleMenu.map((s: {name: string;
+                    children: {
+                        description: string;
+                        render: (props: {
+                            id: string;
+                        }) => JSX.Element;
+                    }[];
+                }, sIdx: number) => {
                     const key = `section--${sIdx}`;
 
                     return (
@@ -222,9 +247,9 @@ export const SelectedMenu = observer(() => {
                                 <StyledMenuSectionTitle
                                     expandIcon={<ExpandMore />}
                                 >
-                                    <Typography variant="subtitle2">
+                                    <StyledMenuSectionTitleTypography variant="body2">
                                         {s.name}
-                                    </Typography>
+                                    </StyledMenuSectionTitleTypography>
                                 </StyledMenuSectionTitle>
                                 <Accordion.Content>
                                     {s.children.length > 0 ? (
@@ -242,8 +267,7 @@ export const SelectedMenu = observer(() => {
                         </React.Fragment>
                     );
                 })}
-                <DeleteBlockMenuItem id={block?.id} />
-            </StyledMenuScroll>
+            </StyledMenuScroll> */}
         </StyledMenu>
     );
 });

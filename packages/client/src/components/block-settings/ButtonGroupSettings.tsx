@@ -9,7 +9,7 @@ import { getValueByPath } from '@/utility';
 
 /**
  * Used when buttons are thematically be grouped together and point to the same
- * underlying style path
+ * underlying style path, ex text align
  */
 
 interface ButtonGroupSettingsProps<D extends BlockDef = BlockDef> {
