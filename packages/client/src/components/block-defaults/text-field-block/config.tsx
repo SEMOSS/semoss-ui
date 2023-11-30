@@ -1,5 +1,5 @@
 import { BlockConfig } from '@/stores';
-import { InputTypeSettings, InputSettings } from '@/components/block-settings';
+import { InputSettings } from '@/components/block-settings';
 
 import { TextFieldBlockDef, TextFieldBlock } from './TextFieldBlock';
 import { FormatShapes } from '@mui/icons-material';
@@ -8,6 +8,7 @@ import {
     buildSpacingSection,
 } from '../block-defaults.shared';
 import { BLOCK_TYPE_INPUT } from '../block-defaults.constants';
+import { SelectInputSettings } from '@/components/block-settings/shared/SelectInputSettings';
 
 // export the config for the block
 export const config: BlockConfig<TextFieldBlockDef> = {
@@ -50,10 +51,24 @@ export const config: BlockConfig<TextFieldBlockDef> = {
                     description: 'Input Type',
                     render: ({ id }) => {
                         return (
-                            <InputTypeSettings
+                            <SelectInputSettings
                                 id={id}
-                                label="Type"
                                 path="type"
+                                label="Type"
+                                options={[
+                                    {
+                                        value: 'text',
+                                        display: 'Text',
+                                    },
+                                    {
+                                        value: 'number',
+                                        display: 'Number',
+                                    },
+                                    {
+                                        value: 'date',
+                                        display: 'Date',
+                                    },
+                                ]}
                             />
                         );
                     },

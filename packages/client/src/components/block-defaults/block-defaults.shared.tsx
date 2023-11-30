@@ -1,10 +1,10 @@
 import { BlockDef } from '@/stores';
-import { JsonSettings, ListenerSettings } from '@/components/block-settings';
-import { FontSizeSettings } from '../block-settings/FontSizeSettings';
-import { SizeSettings } from '../block-settings/SizeSettings';
-import { ColorSettings } from '../block-settings/ColorSettings';
-import { BorderSettings } from '../block-settings/BorderSettings';
-import { ButtonGroupSettings } from '../block-settings/ButtonGroupSettings';
+import { ListenerSettings } from '@/components/block-settings';
+import { FontSizeSettings } from '../block-settings/custom/FontSizeSettings';
+import { SizeSettings } from '../block-settings/shared/SizeSettings';
+import { ColorSettings } from '../block-settings/shared/ColorSettings';
+import { BorderSettings } from '../block-settings/custom/BorderSettings';
+import { ButtonGroupSettings } from '../block-settings/shared/ButtonGroupSettings';
 import {
     AlignHorizontalCenter,
     AlignHorizontalLeft,
@@ -20,22 +20,8 @@ import {
     VerticalAlignCenter,
     VerticalAlignTop,
 } from '@mui/icons-material';
-import { DistinctPathButtonGroupSettings } from '../block-settings/DistinctPathButtonGroupSettings';
-import { SelectInputSettings } from '../block-settings/SelectInputSettings';
-
-/**
- * Build the Editor Section
- * @returns an editor section
- */
-export const buildEditorSection = () => ({
-    name: 'Dimensions',
-    children: [
-        {
-            description: 'Edit the underlying block data',
-            render: ({ id }) => <JsonSettings id={id} />,
-        },
-    ],
-});
+import { DistinctPathButtonGroupSettings } from '../block-settings/shared/DistinctPathButtonGroupSettings';
+import { SelectInputSettings } from '../block-settings/shared/SelectInputSettings';
 
 /**
  * Build the Layout Section

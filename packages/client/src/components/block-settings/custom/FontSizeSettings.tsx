@@ -6,6 +6,7 @@ import { Paths, PathValue } from '@/types';
 import { useBlockSettings } from '@/hooks';
 import { Block, BlockDef } from '@/stores';
 import { getValueByPath } from '@/utility';
+import { BaseSettingSection } from '../BaseSettingSection';
 
 /**
  * FontSizeSettings is its own component even though it is a simple select
@@ -103,68 +104,57 @@ export const FontSizeSettings = observer(
         };
 
         return (
-            <Stack
-                direction="row"
-                alignItems="center"
-                justifyContent="space-between"
-            >
-                <Typography variant="body2">Font Size</Typography>
-                <Stack direction="row" justifyContent="end" width="50%">
-                    <Select
-                        fullWidth
-                        size="small"
-                        value={value}
-                        onChange={(e) => {
-                            // sync the data on change
-                            onChange(e.target.value);
-                        }}
-                    >
-                        <MenuItem value={'1rem'}>Body</MenuItem>
-                        <MenuItem value={'1.125rem'}>
-                            <span style={{ fontSize: '1.125rem' }}>
-                                Subtitle 2
-                            </span>
-                        </MenuItem>
-                        <MenuItem value={'1.25rem'}>
-                            <span style={{ fontSize: '1.25rem' }}>
-                                Subtitle 1
-                            </span>
-                        </MenuItem>
-                        <MenuItem value={'1.5rem'}>
-                            <span
-                                style={{
-                                    fontSize: '1.5rem',
-                                    fontWeight: 'bold',
-                                }}
-                            >
-                                Header 3
-                            </span>
-                        </MenuItem>
-                        <MenuItem value={'1.875rem'}>
-                            <span
-                                style={{
-                                    fontSize: '1.875rem',
-                                    fontWeight: 'bold',
-                                    padding: '2px 0',
-                                }}
-                            >
-                                Header 2
-                            </span>
-                        </MenuItem>
-                        <MenuItem value={'2.125rem'}>
-                            <span
-                                style={{
-                                    fontSize: '2.125rem',
-                                    fontWeight: 'bold',
-                                    padding: '2px 0',
-                                }}
-                            >
-                                Header 1
-                            </span>
-                        </MenuItem>
-                    </Select>
-                </Stack>
-            </Stack>
+            <BaseSettingSection label="Font Size">
+                <Select
+                    fullWidth
+                    size="small"
+                    value={value}
+                    onChange={(e) => {
+                        // sync the data on change
+                        onChange(e.target.value);
+                    }}
+                >
+                    <MenuItem value={'1rem'}>Body</MenuItem>
+                    <MenuItem value={'1.125rem'}>
+                        <span style={{ fontSize: '1.125rem' }}>Subtitle 2</span>
+                    </MenuItem>
+                    <MenuItem value={'1.25rem'}>
+                        <span style={{ fontSize: '1.25rem' }}>Subtitle 1</span>
+                    </MenuItem>
+                    <MenuItem value={'1.5rem'}>
+                        <span
+                            style={{
+                                fontSize: '1.5rem',
+                                fontWeight: 'bold',
+                            }}
+                        >
+                            Header 3
+                        </span>
+                    </MenuItem>
+                    <MenuItem value={'1.875rem'}>
+                        <span
+                            style={{
+                                fontSize: '1.875rem',
+                                fontWeight: 'bold',
+                                padding: '2px 0',
+                            }}
+                        >
+                            Header 2
+                        </span>
+                    </MenuItem>
+                    <MenuItem value={'2.125rem'}>
+                        <span
+                            style={{
+                                fontSize: '2.125rem',
+                                fontWeight: 'bold',
+                                padding: '2px 0',
+                            }}
+                        >
+                            Header 1
+                        </span>
+                    </MenuItem>
+                </Select>
+            </BaseSettingSection>
         );
     },
 );

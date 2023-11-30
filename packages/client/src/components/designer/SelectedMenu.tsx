@@ -1,9 +1,7 @@
-import React, { createElement, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { observer } from 'mobx-react-lite';
 import {
     styled,
-    Accordion,
-    Button,
     Stack,
     Typography,
     IconButton,
@@ -11,8 +9,8 @@ import {
     TextField,
     Collapse,
 } from '@semoss/ui';
-import { useBlock, useBlocks, useDesigner } from '@/hooks';
-import { SearchOutlined, ExpandMore, DeleteOutline } from '@mui/icons-material';
+import { useBlocks, useDesigner } from '@/hooks';
+import { SearchOutlined } from '@mui/icons-material';
 import { getIconForBlock } from '../block-defaults';
 import { BlockAvatar } from './BlockAvatar';
 import { SelectedMenuSection } from './SelectedMenuSection';

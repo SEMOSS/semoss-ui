@@ -933,9 +933,9 @@ export const StateStore = new StateStoreImplementation(
                 data: {
                     style: {
                         display: 'flex',
-                        gap: '2em',
+                        gap: '2rem',
                         alignItems: 'start',
-                        fontFamily: 'roboto',
+                        fontFamily: 'Roboto',
                     },
                 },
                 listeners: {},

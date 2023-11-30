@@ -1,25 +1,21 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { computed } from 'mobx';
 import { observer } from 'mobx-react-lite';
-import { Stack, Typography, ButtonGroup, IconButton } from '@semoss/ui';
+import { TextField } from '@semoss/ui';
 import { Paths, PathValue } from '@/types';
 import { useBlockSettings } from '@/hooks';
 import { Block, BlockDef } from '@/stores';
 import { getValueByPath } from '@/utility';
+import { BaseSettingSection } from '../BaseSettingSection';
 
-/**
- * Used when buttons are thematically be grouped together and point to the same
- * underlying style path, ex text align
- */
-
-interface ButtonGroupSettingsProps<D extends BlockDef = BlockDef> {
+interface InputSettingsProps<D extends BlockDef = BlockDef> {
     /**
      * Id of the block that is being worked with
      */
     id: string;
 
     /**
-     * Label for setting
+     * Label to pass into the input
      */
     label: string;
 
@@ -27,26 +23,15 @@ interface ButtonGroupSettingsProps<D extends BlockDef = BlockDef> {
      * Path to update
      */
     path: Paths<Block<D>['data'], 4>;
-
-    /**
-     * Button options
-     */
-    options: Array<{
-        value: string;
-        icon: any;
-        title: string;
-        isDefault: boolean;
-    }>;
 }
 
-export const ButtonGroupSettings = observer(
+export const InputSettings = observer(
     <D extends BlockDef = BlockDef>({
         id,
+        label = '',
         path,
-        label,
-        options,
-    }: ButtonGroupSettingsProps<D>) => {
-        const { data, setData } = useBlockSettings(id);
+    }: InputSettingsProps<D>) => {
+        const { data, setData } = useBlockSettings<D>(id);
 
         // track the value
         const [value, setValue] = useState('');
@@ -101,40 +86,26 @@ export const ButtonGroupSettings = observer(
         };
 
         return (
-            <Stack
-                direction="row"
-                alignItems="center"
-                justifyContent="space-between"
-            >
-                <Typography variant="body2">{label}</Typography>
-                <Stack
-                    direction="row"
-                    flex={'1'}
-                    justifyContent="end"
-                    spacing={2}
-                >
-                    <ButtonGroup>
-                        {Array.from(options, (option, i) => {
-                            return (
-                                <IconButton
-                                    key={i}
-                                    color={
-                                        value == option.value ||
-                                        (option.isDefault ? !value : false)
-                                            ? 'primary'
-                                            : undefined
-                                    }
-                                    size="small"
-                                    onClick={() => onChange(option.value)}
-                                    title={option.title}
-                                >
-                                    <option.icon />
-                                </IconButton>
-                            );
-                        })}
-                    </ButtonGroup>
-                </Stack>
-            </Stack>
+            <BaseSettingSection label={label}>
+                <TextField
+                    fullWidth
+                    value={value}
+                    onChange={(e) => {
+                        // sync the data on change
+                        onChange(e.target.value);
+                    }}
+                    placeholder={
+                        data.hasOwnProperty('type') &&
+                        data.type === 'date' &&
+                        path === 'value'
+                            ? 'YYYY-MM-DD'
+                            : null
+                    }
+                    size="small"
+                    variant="outlined"
+                    autoComplete="off"
+                />
+            </BaseSettingSection>
         );
     },
 );

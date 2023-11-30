@@ -1,11 +1,12 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { computed } from 'mobx';
 import { observer } from 'mobx-react-lite';
-import { Stack, Typography, TextField } from '@semoss/ui';
+import { TextField } from '@semoss/ui';
 import { Paths, PathValue } from '@/types';
 import { useBlockSettings } from '@/hooks';
 import { Block, BlockDef } from '@/stores';
 import { getValueByPath } from '@/utility';
+import { BaseSettingSection } from '../BaseSettingSection';
 
 /**
  * Use for color inputs
@@ -97,28 +98,20 @@ export const ColorSettings = observer(
         };
 
         return (
-            <Stack
-                direction="row"
-                alignItems="center"
-                justifyContent="space-between"
-                title={`Edit ${label}`}
-            >
-                <Typography variant="body2">{label}</Typography>
-                <Stack direction="row" width="50%">
-                    <TextField
-                        fullWidth
-                        type="color"
-                        value={value}
-                        onChange={(e) => {
-                            // sync the data on change
-                            onChange(e.target.value);
-                        }}
-                        size="small"
-                        variant="outlined"
-                        autoComplete="off"
-                    />
-                </Stack>
-            </Stack>
+            <BaseSettingSection label={label}>
+                <TextField
+                    fullWidth
+                    type="color"
+                    value={value}
+                    onChange={(e) => {
+                        // sync the data on change
+                        onChange(e.target.value);
+                    }}
+                    size="small"
+                    variant="outlined"
+                    autoComplete="off"
+                />
+            </BaseSettingSection>
         );
     },
 );

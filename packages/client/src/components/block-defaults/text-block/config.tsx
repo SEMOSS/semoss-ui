@@ -17,7 +17,7 @@ import {
     TextFields,
 } from '@mui/icons-material';
 import { BLOCK_TYPE_DISPLAY } from '../block-defaults.constants';
-import { ButtonGroupSettings } from '@/components/block-settings/ButtonGroupSettings';
+import { ButtonGroupSettings } from '@/components/block-settings/shared/ButtonGroupSettings';
 
 // export the config for the block
 export const config: BlockConfig<TextBlockDef> = {

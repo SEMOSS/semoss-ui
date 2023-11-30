@@ -7,6 +7,10 @@ import { Add, Delete, Edit } from '@mui/icons-material';
 
 import { ListenerActionOverlay } from './ListenerActionOverlay';
 
+/**
+ * TODO: reorganize and update the styling once app/blocks is up and working
+ */
+
 interface ListenerSettingsProps<D extends BlockDef = BlockDef> {
     /**
      * Id of the block that is being worked with

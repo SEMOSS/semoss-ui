@@ -5,6 +5,10 @@ import { styled, Stack, Button } from '@semoss/ui';
 
 import { useBlockSettings } from '@/hooks';
 
+/**
+ * TODO: this is not actually used anywhere
+ */
+
 const StyledEditor = styled('div')(({ theme }) => ({
     height: '400px',
     width: '100%',

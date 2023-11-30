@@ -1,17 +1,20 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { computed } from 'mobx';
 import { observer } from 'mobx-react-lite';
-import { MenuItem, Select, Stack, Typography } from '@semoss/ui';
+import { TextField } from '@semoss/ui';
+import { Autocomplete } from '@mui/material';
 import { Paths, PathValue } from '@/types';
 import { useBlockSettings } from '@/hooks';
 import { Block, BlockDef } from '@/stores';
 import { getValueByPath } from '@/utility';
+import { BaseSettingSection } from '../BaseSettingSection';
 
 /**
- * Used for discrete selection options tied to values, ex S/M/L
+ * Used to set the values setting on a select block
+ * Binds to the block's data.options for the select options
  */
 
-interface SelectInputSettingsProps<D extends BlockDef = BlockDef> {
+interface SelectInputValueSettingsProps<D extends BlockDef = BlockDef> {
     /**
      * Id of the block that is being worked with
      */
@@ -21,35 +24,17 @@ interface SelectInputSettingsProps<D extends BlockDef = BlockDef> {
      * Path to update
      */
     path: Paths<Block<D>['data'], 4>;
-
-    /**
-     * Settings label
-     */
-    label: string;
-
-    /**
-     * Options for select
-     */
-    options: Array<{ value: string; display: string }>;
-
-    /**
-     * Whether an empty 'None' option should be in the select
-     */
-    allowUnset: boolean;
 }
 
-export const SelectInputSettings = observer(
+export const SelectInputValueSettings = observer(
     <D extends BlockDef = BlockDef>({
         id,
         path,
-        label,
-        options,
-        allowUnset,
-    }: SelectInputSettingsProps<D>) => {
+    }: SelectInputValueSettingsProps<D>) => {
         const { data, setData } = useBlockSettings(id);
 
         // track the value
-        const [value, setValue] = useState('');
+        const [value, setValue] = useState(null);
 
         // track the ref to debounce the input
         const timeoutRef = useRef<ReturnType<typeof setTimeout>>(null);
@@ -101,39 +86,24 @@ export const SelectInputSettings = observer(
         };
 
         return (
-            <Stack
-                direction="row"
-                alignItems="center"
-                justifyContent="space-between"
-            >
-                <Typography variant="body2">{label}</Typography>
-                <Stack direction="row" justifyContent="end" width="50%">
-                    <Select
-                        fullWidth
-                        size="small"
-                        value={value}
-                        onChange={(e) => {
-                            // sync the data on change
-                            onChange(e.target.value);
-                        }}
-                    >
-                        {allowUnset ? (
-                            <MenuItem value={''}>
-                                <em>None</em>
-                            </MenuItem>
-                        ) : (
-                            <></>
-                        )}
-                        {Array.from(options, (option, i) => {
-                            return (
-                                <MenuItem key={i} value={option.value}>
-                                    {option.display}
-                                </MenuItem>
-                            );
-                        })}
-                    </Select>
-                </Stack>
-            </Stack>
+            <BaseSettingSection label="Value">
+                <Autocomplete
+                    options={data.options as string[]}
+                    value={value}
+                    onChange={(_, newValue: string) => {
+                        // sync the data on change
+                        onChange(newValue);
+                    }}
+                    renderInput={(params) => (
+                        <TextField
+                            {...params}
+                            size="small"
+                            variant="outlined"
+                            fullWidth={true}
+                        />
+                    )}
+                />
+            </BaseSettingSection>
         );
     },
 );

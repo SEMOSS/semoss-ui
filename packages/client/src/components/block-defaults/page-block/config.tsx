@@ -10,7 +10,7 @@ import {
 
 import { PageBlockDef, PageBlock } from './PageBlock';
 import { BLOCK_TYPE_LAYOUT } from '../block-defaults.constants';
-import { SelectInputSettings } from '@/components/block-settings/SelectInputSettings';
+import { SelectInputSettings } from '@/components/block-settings/shared/SelectInputSettings';
 
 // export the config for the block
 export const config: BlockConfig<PageBlockDef> = {
@@ -19,7 +19,7 @@ export const config: BlockConfig<PageBlockDef> = {
     data: {
         style: {
             display: 'flex',
-            gap: '2em',
+            gap: '2rem',
             alignItems: 'start',
         },
     },

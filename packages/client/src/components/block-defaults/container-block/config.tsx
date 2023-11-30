@@ -20,7 +20,7 @@ export const config: BlockConfig<ContainerBlockDef> = {
     data: {
         style: {
             display: 'flex',
-            gap: '2em',
+            gap: '2rem',
         },
     },
     listeners: {},

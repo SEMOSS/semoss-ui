@@ -1,17 +1,12 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { computed } from 'mobx';
 import { observer } from 'mobx-react-lite';
-import {
-    Stack,
-    Typography,
-    TextField,
-    ToggleButton,
-    ToggleButtonGroup,
-} from '@semoss/ui';
+import { TextField, ToggleButton, ToggleButtonGroup } from '@semoss/ui';
 import { Paths, PathValue } from '@/types';
 import { useBlockSettings } from '@/hooks';
 import { Block, BlockDef } from '@/stores';
 import { getValueByPath } from '@/utility';
+import { BaseSettingSection } from '../BaseSettingSection';
 
 /**
  * Used for any style settings that utilize a size number, ex width and height
@@ -122,43 +117,35 @@ export const SizeSettings = observer(
         };
 
         return (
-            <Stack
-                direction="row"
-                alignItems="center"
-                justifyContent="space-between"
-                title={`Edit ${label}`}
-            >
-                <Typography variant="body2">{label}</Typography>
-                <Stack direction="row" width="50%">
-                    <TextField
-                        fullWidth
-                        value={numericValue}
-                        onChange={(e) => {
-                            // sync the data on change
-                            onChange(e.target.value);
-                        }}
-                        size="small"
-                        variant="outlined"
-                        autoComplete="off"
-                    />
-                    <ToggleButtonGroup value={valueType} exclusive size="small">
-                        <ToggleButton
-                            value="%"
-                            color={valueType === '%' ? 'primary' : undefined}
-                            onClick={() => setValueType('%')}
-                        >
-                            %
-                        </ToggleButton>
-                        <ToggleButton
-                            value="px"
-                            color={valueType === 'px' ? 'primary' : undefined}
-                            onClick={() => setValueType('px')}
-                        >
-                            px
-                        </ToggleButton>
-                    </ToggleButtonGroup>
-                </Stack>
-            </Stack>
+            <BaseSettingSection label={label}>
+                <TextField
+                    fullWidth
+                    value={numericValue}
+                    onChange={(e) => {
+                        // sync the data on change
+                        onChange(e.target.value);
+                    }}
+                    size="small"
+                    variant="outlined"
+                    autoComplete="off"
+                />
+                <ToggleButtonGroup value={valueType} exclusive size="small">
+                    <ToggleButton
+                        value="%"
+                        color={valueType === '%' ? 'primary' : undefined}
+                        onClick={() => setValueType('%')}
+                    >
+                        %
+                    </ToggleButton>
+                    <ToggleButton
+                        value="px"
+                        color={valueType === 'px' ? 'primary' : undefined}
+                        onClick={() => setValueType('px')}
+                    >
+                        px
+                    </ToggleButton>
+                </ToggleButtonGroup>
+            </BaseSettingSection>
         );
     },
 );
