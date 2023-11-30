@@ -1,19 +1,23 @@
 import { BlockDef } from '@/stores';
-import {
-    InputSettings,
-    JsonSettings,
-    ListenerSettings,
-} from '@/components/block-settings';
-import { TextAlignSettings } from '../block-settings/TextAlignSettings';
-import { VerticalAlignSettings } from '../block-settings/VerticalAlignSettings';
-import { HorizontalAlignSettings } from '../block-settings/HorizontalAlignSettings';
-import { SpacingSettings } from '../block-settings/SpacingSettings';
-import { TextStyleSettings } from '../block-settings/TextStyleSettings';
-import { FontFamilySettings } from '../block-settings/FontFamilySettings';
+import { JsonSettings, ListenerSettings } from '@/components/block-settings';
 import { FontSizeSettings } from '../block-settings/FontSizeSettings';
 import { SizeSettings } from '../block-settings/SizeSettings';
 import { ColorSettings } from '../block-settings/ColorSettings';
 import { BorderSettings } from '../block-settings/BorderSettings';
+import { ButtonGroupSettings } from '../block-settings/ButtonGroupSettings';
+import {
+    AlignHorizontalCenter,
+    AlignHorizontalLeft,
+    AlignHorizontalRight,
+    FormatBold,
+    FormatItalic,
+    FormatUnderlined,
+    VerticalAlignBottom,
+    VerticalAlignCenter,
+    VerticalAlignTop,
+} from '@mui/icons-material';
+import { DistinctPathButtonGroupSettings } from '../block-settings/DistinctPathButtonGroupSettings';
+import { SelectInputSettings } from '../block-settings/SelectInputSettings';
 
 /**
  * Build the Editor Section
@@ -38,19 +42,90 @@ export const buildLayoutSection = () => ({
         {
             description: 'Vertical Align',
             render: ({ id }) => (
-                <VerticalAlignSettings id={id} path="style.alignItems" />
+                <ButtonGroupSettings
+                    id={id}
+                    path="style.alignItems"
+                    label="Vertical Align"
+                    options={[
+                        {
+                            value: 'start',
+                            icon: VerticalAlignTop,
+                            title: 'Top',
+                            isDefault: true,
+                        },
+                        {
+                            value: 'center',
+                            icon: VerticalAlignCenter,
+                            title: 'Center',
+                            isDefault: false,
+                        },
+                        {
+                            value: 'end',
+                            icon: VerticalAlignBottom,
+                            title: 'Bottom',
+                            isDefault: false,
+                        },
+                    ]}
+                />
             ),
         },
         {
             description: 'Horitzontal Align',
             render: ({ id }) => (
-                <HorizontalAlignSettings id={id} path="style.justifyContent" />
+                <ButtonGroupSettings
+                    id={id}
+                    path="style.justifyContent"
+                    label="Horizontal Align"
+                    options={[
+                        {
+                            value: 'left',
+                            icon: AlignHorizontalLeft,
+                            title: 'Top',
+                            isDefault: true,
+                        },
+                        {
+                            value: 'center',
+                            icon: AlignHorizontalCenter,
+                            title: 'Center',
+                            isDefault: false,
+                        },
+                        {
+                            value: 'right',
+                            icon: AlignHorizontalRight,
+                            title: 'Right',
+                            isDefault: false,
+                        },
+                    ]}
+                />
             ),
         },
         {
             description: 'Gap',
             render: ({ id }) => (
-                <SpacingSettings id={id} label="Gap" path="style.gap" />
+                <SelectInputSettings
+                    id={id}
+                    path="style.gap"
+                    label="Gap"
+                    options={[
+                        {
+                            value: '1rem',
+                            display: 'Small',
+                        },
+                        {
+                            value: '2rem',
+                            display: 'Medium',
+                        },
+                        {
+                            value: '3rem',
+                            display: 'Large',
+                        },
+                        {
+                            value: '4rem',
+                            display: 'X-Large',
+                        },
+                    ]}
+                    allowUnset
+                />
             ),
         },
     ],
@@ -66,13 +141,59 @@ export const buildSpacingSection = () => ({
         {
             description: 'Margin',
             render: ({ id }) => (
-                <SpacingSettings id={id} label="Margin" path="style.margin" />
+                <SelectInputSettings
+                    id={id}
+                    path="style.margin"
+                    label="Margin"
+                    options={[
+                        {
+                            value: '1rem',
+                            display: 'Small',
+                        },
+                        {
+                            value: '2rem',
+                            display: 'Medium',
+                        },
+                        {
+                            value: '3rem',
+                            display: 'Large',
+                        },
+                        {
+                            value: '4rem',
+                            display: 'X-Large',
+                        },
+                    ]}
+                    allowUnset
+                />
             ),
         },
         {
             description: 'Padding',
             render: ({ id }) => (
-                <SpacingSettings id={id} label="Padding" path="style.padding" />
+                <SelectInputSettings
+                    id={id}
+                    path="style.padding"
+                    label="Padding"
+                    options={[
+                        {
+                            value: '1rem',
+                            display: 'Small',
+                        },
+                        {
+                            value: '2rem',
+                            display: 'Medium',
+                        },
+                        {
+                            value: '3rem',
+                            display: 'Large',
+                        },
+                        {
+                            value: '4rem',
+                            display: 'X-Large',
+                        },
+                    ]}
+                    allowUnset
+                />
             ),
         },
     ],
@@ -155,12 +276,67 @@ export const buildTypographySection = () => ({
     children: [
         {
             description: 'Style',
-            render: ({ id }) => <TextStyleSettings id={id} />,
+            render: ({ id }) => (
+                <DistinctPathButtonGroupSettings
+                    id={id}
+                    label="Style"
+                    options={[
+                        {
+                            value: 'bold',
+                            icon: FormatBold,
+                            path: 'style.fontWeight',
+                            title: 'Bold',
+                            isDefault: false,
+                        },
+                        {
+                            value: 'italic',
+                            icon: FormatItalic,
+                            path: 'style.fontStyle',
+                            title: 'Italic',
+                            isDefault: false,
+                        },
+                        {
+                            value: 'underline',
+                            icon: FormatUnderlined,
+                            path: 'style.textDecoration',
+                            title: 'Underlined',
+                            isDefault: false,
+                        },
+                    ]}
+                />
+            ),
         },
         {
             description: 'Font',
             render: ({ id }) => (
-                <FontFamilySettings id={id} path="style.fontFamily" />
+                <SelectInputSettings
+                    id={id}
+                    path="style.fontFamily"
+                    label="Font"
+                    options={[
+                        {
+                            value: 'Roboto',
+                            display: 'Roboto',
+                        },
+                        {
+                            value: 'Helvetica',
+                            display: 'Helvetica',
+                        },
+                        {
+                            value: 'Arial',
+                            display: 'Arial',
+                        },
+                        {
+                            value: 'Times New Roman',
+                            display: 'Times New Roman',
+                        },
+                        {
+                            value: 'Georgia',
+                            display: 'Georgia',
+                        },
+                    ]}
+                    allowUnset
+                />
             ),
         },
         {

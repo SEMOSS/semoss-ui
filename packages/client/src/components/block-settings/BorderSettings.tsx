@@ -6,6 +6,12 @@ import { Paths, PathValue } from '@/types';
 import { useBlockSettings } from '@/hooks';
 import { Block, BlockDef } from '@/stores';
 import { getValueByPath } from '@/utility';
+
+/**
+ * BorderSettings is its own component because multiple inputs point to the same style path
+ * This is done to easily turn on/off all the border properties at once for better UX
+ */
+
 interface BorderSettingsProps<D extends BlockDef = BlockDef> {
     /**
      * Id of the block that is being worked with

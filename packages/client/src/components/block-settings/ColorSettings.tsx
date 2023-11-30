@@ -7,6 +7,12 @@ import { useBlockSettings } from '@/hooks';
 import { Block, BlockDef } from '@/stores';
 import { getValueByPath } from '@/utility';
 
+/**
+ * Use for color inputs
+ * Default value for color input is non-nullable and black (#000000),
+ * so should be customized with a value as necessary
+ */
+
 interface ColorSettingsProps<D extends BlockDef = BlockDef> {
     /**
      * Id of the block that is being worked with
@@ -22,6 +28,11 @@ interface ColorSettingsProps<D extends BlockDef = BlockDef> {
      * Path to update
      */
     path: Paths<Block<D>['data'], 4>;
+
+    /**
+     * Default color for picker
+     */
+    defaultColor?: string;
 }
 
 export const ColorSettings = observer(
@@ -29,11 +40,12 @@ export const ColorSettings = observer(
         id,
         label = '',
         path,
+        defaultColor = '#FFFFFF',
     }: ColorSettingsProps<D>) => {
         const { data, setData } = useBlockSettings<D>(id);
 
         // track the value
-        const [value, setValue] = useState('#FFFFFF');
+        const [value, setValue] = useState(defaultColor);
 
         // track the ref to debounce the input
         const timeoutRef = useRef<ReturnType<typeof setTimeout>>(null);
@@ -42,12 +54,12 @@ export const ColorSettings = observer(
         const computedValue = useMemo(() => {
             return computed(() => {
                 if (!data) {
-                    return '#FFFFFF';
+                    return defaultColor;
                 }
 
                 const v = getValueByPath(data, path);
                 if (typeof v === 'undefined') {
-                    return '#FFFFFF';
+                    return defaultColor;
                 } else if (typeof v === 'string') {
                     return v;
                 }

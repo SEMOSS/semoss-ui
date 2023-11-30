@@ -2,20 +2,21 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { computed } from 'mobx';
 import { observer } from 'mobx-react-lite';
 import {
-    styled,
-    MenuItem,
-    Select,
     Stack,
     Typography,
     TextField,
     ToggleButton,
     ToggleButtonGroup,
 } from '@semoss/ui';
-import { Autocomplete } from '@mui/material';
 import { Paths, PathValue } from '@/types';
 import { useBlockSettings } from '@/hooks';
 import { Block, BlockDef } from '@/stores';
 import { getValueByPath } from '@/utility';
+
+/**
+ * Used for any style settings that utilize a size number, ex width and height
+ * Supports % and px units for size
+ */
 
 interface SizeSettingsProps<D extends BlockDef = BlockDef> {
     /**

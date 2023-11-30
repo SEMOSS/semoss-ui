@@ -1,20 +1,25 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { computed } from 'mobx';
 import { observer } from 'mobx-react-lite';
-import { MenuItem, Select, Stack, Typography } from '@semoss/ui';
+import { Stack, Typography, ButtonGroup, IconButton } from '@semoss/ui';
 import { Paths, PathValue } from '@/types';
 import { useBlockSettings } from '@/hooks';
 import { Block, BlockDef } from '@/stores';
 import { getValueByPath } from '@/utility';
 
-interface SpaceSettingsProps<D extends BlockDef = BlockDef> {
+/**
+ * Used when buttons are thematically be grouped together and point to the same
+ * underlying style path
+ */
+
+interface ButtonGroupSettingsProps<D extends BlockDef = BlockDef> {
     /**
      * Id of the block that is being worked with
      */
     id: string;
 
     /**
-     * Label to pass into the input
+     * Label for setting
      */
     label: string;
 
@@ -22,14 +27,25 @@ interface SpaceSettingsProps<D extends BlockDef = BlockDef> {
      * Path to update
      */
     path: Paths<Block<D>['data'], 4>;
+
+    /**
+     * Button options
+     */
+    options: Array<{
+        value: string;
+        icon: any;
+        title: string;
+        isDefault: boolean;
+    }>;
 }
 
-export const SpacingSettings = observer(
+export const ButtonGroupSettings = observer(
     <D extends BlockDef = BlockDef>({
         id,
-        label,
         path,
-    }: SpaceSettingsProps<D>) => {
+        label,
+        options,
+    }: ButtonGroupSettingsProps<D>) => {
         const { data, setData } = useBlockSettings(id);
 
         // track the value
@@ -91,24 +107,32 @@ export const SpacingSettings = observer(
                 justifyContent="space-between"
             >
                 <Typography variant="body2">{label}</Typography>
-                <Stack direction="row" justifyContent="end" width="50%">
-                    <Select
-                        fullWidth
-                        size="small"
-                        value={value}
-                        onChange={(e) => {
-                            // sync the data on change
-                            onChange(e.target.value);
-                        }}
-                    >
-                        <MenuItem value={''}>
-                            <em>None</em>
-                        </MenuItem>
-                        <MenuItem value={'1em'}>Small</MenuItem>
-                        <MenuItem value={'2em'}>Medium</MenuItem>
-                        <MenuItem value={'3em'}>Large</MenuItem>
-                        <MenuItem value={'4em'}>X-Large</MenuItem>
-                    </Select>
+                <Stack
+                    direction="row"
+                    flex={'1'}
+                    justifyContent="end"
+                    spacing={2}
+                >
+                    <ButtonGroup>
+                        {Array.from(options, (option, i) => {
+                            return (
+                                <IconButton
+                                    key={i}
+                                    color={
+                                        value == option.value ||
+                                        (option.isDefault ? !value : false)
+                                            ? 'primary'
+                                            : undefined
+                                    }
+                                    size="small"
+                                    onClick={() => onChange(option.value)}
+                                    title={option.title}
+                                >
+                                    <option.icon />
+                                </IconButton>
+                            );
+                        })}
+                    </ButtonGroup>
                 </Stack>
             </Stack>
         );

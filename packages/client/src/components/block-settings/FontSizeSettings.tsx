@@ -7,6 +7,11 @@ import { useBlockSettings } from '@/hooks';
 import { Block, BlockDef } from '@/stores';
 import { getValueByPath } from '@/utility';
 
+/**
+ * FontSizeSettings is its own component even though it is a simple select
+ * Because we want to control both size and weight for certain typography types, ex headers
+ */
+
 interface FontSizeSettingsProps<D extends BlockDef = BlockDef> {
     /**
      * Id of the block that is being worked with
@@ -104,7 +109,7 @@ export const FontSizeSettings = observer(
                 justifyContent="space-between"
             >
                 <Typography variant="body2">Font Size</Typography>
-                <Stack direction="row" justifyContent="end" width="70%">
+                <Stack direction="row" justifyContent="end" width="50%">
                     <Select
                         fullWidth
                         size="small"

@@ -7,10 +7,16 @@ import {
     buildStyleSection,
     buildTypographySection,
 } from '../block-defaults.shared';
-import { TextAlignSettings } from '@/components/block-settings/TextAlignSettings';
 import { TextBlockDef, TextBlock } from './TextBlock';
-import { TextFields } from '@mui/icons-material';
+import {
+    FormatAlignCenter,
+    FormatAlignJustify,
+    FormatAlignLeft,
+    FormatAlignRight,
+    TextFields,
+} from '@mui/icons-material';
 import { BLOCK_TYPE_DISPLAY } from '../block-defaults.constants';
+import { ButtonGroupSettings } from '@/components/block-settings/ButtonGroupSettings';
 
 // export the config for the block
 export const config: BlockConfig<TextBlockDef> = {
@@ -45,7 +51,37 @@ export const config: BlockConfig<TextBlockDef> = {
                 {
                     description: 'Text Align',
                     render: ({ id }) => (
-                        <TextAlignSettings id={id} path="style.textAlign" />
+                        <ButtonGroupSettings
+                            id={id}
+                            path="style.textAlign"
+                            label="Text Align"
+                            options={[
+                                {
+                                    value: 'left',
+                                    icon: FormatAlignLeft,
+                                    title: 'Left',
+                                    isDefault: true,
+                                },
+                                {
+                                    value: 'right',
+                                    icon: FormatAlignRight,
+                                    title: 'Right',
+                                    isDefault: false,
+                                },
+                                {
+                                    value: 'center',
+                                    icon: FormatAlignCenter,
+                                    title: 'Center',
+                                    isDefault: false,
+                                },
+                                {
+                                    value: 'justify',
+                                    icon: FormatAlignJustify,
+                                    title: 'Justify',
+                                    isDefault: false,
+                                },
+                            ]}
+                        />
                     ),
                 },
             ],

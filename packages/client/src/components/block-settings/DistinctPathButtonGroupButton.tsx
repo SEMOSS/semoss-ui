@@ -1,13 +1,17 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { computed } from 'mobx';
 import { observer } from 'mobx-react-lite';
-import { MenuItem, Select, Stack, Typography } from '@semoss/ui';
+import { IconButton } from '@semoss/ui';
 import { Paths, PathValue } from '@/types';
 import { useBlockSettings } from '@/hooks';
 import { Block, BlockDef } from '@/stores';
 import { getValueByPath } from '@/utility';
 
-interface FontFamilySettingsProps<D extends BlockDef = BlockDef> {
+/**
+ * Used in the DistinctPathButtonGroupSettings
+ */
+
+interface DistinctPathButtonGroupButtonProps<D extends BlockDef = BlockDef> {
     /**
      * Id of the block that is being worked with
      */
@@ -17,13 +21,37 @@ interface FontFamilySettingsProps<D extends BlockDef = BlockDef> {
      * Path to update
      */
     path: Paths<Block<D>['data'], 4>;
+
+    /**
+     * Style value
+     */
+    styleValue: string;
+
+    /**
+     * Icon for button display
+     */
+    ButtonIcon: any;
+
+    /**
+     * Hover title on button
+     */
+    title: string;
+
+    /**
+     * Whether should display selected by default
+     */
+    isDefault: boolean;
 }
 
-export const FontFamilySettings = observer(
+export const DistinctPathButtonGroupButton = observer(
     <D extends BlockDef = BlockDef>({
         id,
         path,
-    }: FontFamilySettingsProps<D>) => {
+        styleValue,
+        ButtonIcon,
+        title,
+        isDefault,
+    }: DistinctPathButtonGroupButtonProps<D>) => {
         const { data, setData } = useBlockSettings(id);
 
         // track the value
@@ -58,9 +86,9 @@ export const FontFamilySettings = observer(
         /**
          * Sync the data on change
          */
-        const onChange = (value: string) => {
-            // set the value
-            setValue(value);
+        const onClick = () => {
+            const newValue = value !== styleValue ? styleValue : '';
+            setValue(newValue);
 
             // clear out he old timeout
             if (timeoutRef.current) {
@@ -71,7 +99,10 @@ export const FontFamilySettings = observer(
             timeoutRef.current = setTimeout(() => {
                 try {
                     // set the value
-                    setData(path, value as PathValue<D['data'], typeof path>);
+                    setData(
+                        path,
+                        newValue as PathValue<D['data'], typeof path>,
+                    );
                 } catch (e) {
                     console.log(e);
                 }
@@ -79,35 +110,18 @@ export const FontFamilySettings = observer(
         };
 
         return (
-            <Stack
-                direction="row"
-                alignItems="center"
-                justifyContent="space-between"
+            <IconButton
+                color={
+                    value == styleValue || (isDefault ? !value : false)
+                        ? 'primary'
+                        : undefined
+                }
+                size="small"
+                onClick={onClick}
+                title={title}
             >
-                <Typography variant="body2">Font</Typography>
-                <Stack direction="row" justifyContent="end" width="70%">
-                    <Select
-                        fullWidth
-                        size="small"
-                        value={value}
-                        onChange={(e) => {
-                            // sync the data on change
-                            onChange(e.target.value);
-                        }}
-                    >
-                        <MenuItem value={''}>
-                            <em>None</em>
-                        </MenuItem>
-                        <MenuItem value={'Roboto'}>Roboto</MenuItem>
-                        <MenuItem value={'Helvetica'}>Helvetica</MenuItem>
-                        <MenuItem value={'Arial'}>Arial</MenuItem>
-                        <MenuItem value={'Times New Roman'}>
-                            Times New Roman
-                        </MenuItem>
-                        <MenuItem value={'Georgia'}>Georgia</MenuItem>
-                    </Select>
-                </Stack>
-            </Stack>
+                <ButtonIcon />
+            </IconButton>
         );
     },
 );

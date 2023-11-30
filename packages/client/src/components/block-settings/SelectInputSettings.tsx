@@ -1,18 +1,17 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { computed } from 'mobx';
 import { observer } from 'mobx-react-lite';
-import { IconButton } from '@semoss/ui';
+import { MenuItem, Select, Stack, Typography } from '@semoss/ui';
 import { Paths, PathValue } from '@/types';
 import { useBlockSettings } from '@/hooks';
 import { Block, BlockDef } from '@/stores';
 import { getValueByPath } from '@/utility';
-import {
-    FormatBold,
-    FormatItalic,
-    FormatUnderlined,
-} from '@mui/icons-material';
 
-interface TextStyleSettingButtonProps<D extends BlockDef = BlockDef> {
+/**
+ * Used for discrete selection options tied to values, ex S/M/L
+ */
+
+interface SelectInputSettingsProps<D extends BlockDef = BlockDef> {
     /**
      * Id of the block that is being worked with
      */
@@ -24,35 +23,29 @@ interface TextStyleSettingButtonProps<D extends BlockDef = BlockDef> {
     path: Paths<Block<D>['data'], 4>;
 
     /**
-     * Style type
+     * Settings label
      */
-    type: 'bold' | 'underlined' | 'italic';
+    label: string;
+
+    /**
+     * Options for select
+     */
+    options: Array<{ value: string; display: string }>;
+
+    /**
+     * Whether an empty 'None' option should be in the select
+     */
+    allowUnset: boolean;
 }
 
-const STYLE_TYPES = {
-    bold: {
-        label: 'Bold',
-        value: 'bold',
-        icon: <FormatBold />,
-    },
-    underlined: {
-        label: 'Underlined',
-        value: 'underline',
-        icon: <FormatUnderlined />,
-    },
-    italic: {
-        label: 'Italic',
-        value: 'italic',
-        icon: <FormatItalic />,
-    },
-};
-
-export const TextStyleSettingButton = observer(
+export const SelectInputSettings = observer(
     <D extends BlockDef = BlockDef>({
         id,
         path,
-        type,
-    }: TextStyleSettingButtonProps<D>) => {
+        label,
+        options,
+        allowUnset,
+    }: SelectInputSettingsProps<D>) => {
         const { data, setData } = useBlockSettings(id);
 
         // track the value
@@ -87,12 +80,9 @@ export const TextStyleSettingButton = observer(
         /**
          * Sync the data on change
          */
-        const onClick = () => {
-            const newValue =
-                value !== STYLE_TYPES[type].value
-                    ? STYLE_TYPES[type].value
-                    : 'inherit';
-            setValue(newValue);
+        const onChange = (value: string) => {
+            // set the value
+            setValue(value);
 
             // clear out he old timeout
             if (timeoutRef.current) {
@@ -103,10 +93,7 @@ export const TextStyleSettingButton = observer(
             timeoutRef.current = setTimeout(() => {
                 try {
                     // set the value
-                    setData(
-                        path,
-                        newValue as PathValue<D['data'], typeof path>,
-                    );
+                    setData(path, value as PathValue<D['data'], typeof path>);
                 } catch (e) {
                     console.log(e);
                 }
@@ -114,14 +101,39 @@ export const TextStyleSettingButton = observer(
         };
 
         return (
-            <IconButton
-                color={value == STYLE_TYPES[type].value ? 'primary' : undefined}
-                size="small"
-                onClick={onClick}
-                title={STYLE_TYPES[type].label}
+            <Stack
+                direction="row"
+                alignItems="center"
+                justifyContent="space-between"
             >
-                {STYLE_TYPES[type].icon}
-            </IconButton>
+                <Typography variant="body2">{label}</Typography>
+                <Stack direction="row" justifyContent="end" width="50%">
+                    <Select
+                        fullWidth
+                        size="small"
+                        value={value}
+                        onChange={(e) => {
+                            // sync the data on change
+                            onChange(e.target.value);
+                        }}
+                    >
+                        {allowUnset ? (
+                            <MenuItem value={''}>
+                                <em>None</em>
+                            </MenuItem>
+                        ) : (
+                            <></>
+                        )}
+                        {Array.from(options, (option, i) => {
+                            return (
+                                <MenuItem key={i} value={option.value}>
+                                    {option.display}
+                                </MenuItem>
+                            );
+                        })}
+                    </Select>
+                </Stack>
+            </Stack>
         );
     },
 );
