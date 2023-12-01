@@ -922,43 +922,30 @@ export class StateStoreImplementation {
 
 // initialize state with blank page and basic onQuery function
 // if we want a more complex default page, we can set that up here
-export const StateStore = new StateStoreImplementation(
-    {
-        insightId: '',
-        blocks: {
-            'page-1': {
-                id: 'page-1',
-                widget: 'page',
-                parent: null,
-                data: {
-                    style: {
-                        display: 'flex',
-                        gap: '2rem',
-                        alignItems: 'start',
-                        fontFamily: 'Roboto',
-                    },
+export const StateStore = new StateStoreImplementation({
+    insightId: '',
+    blocks: {
+        'page-1': {
+            id: 'page-1',
+            widget: 'page',
+            parent: null,
+            data: {
+                style: {
+                    display: 'flex',
+                    gap: '2rem',
+                    alignItems: 'start',
+                    fontFamily: 'Roboto',
                 },
-                listeners: {},
-                slots: {
-                    content: {
-                        name: 'content',
-                        children: [],
-                    },
+            },
+            listeners: {},
+            slots: {
+                content: {
+                    name: 'content',
+                    children: [],
                 },
             },
         },
-        queries: {},
-        cellRegistry: DefaultCells,
     },
-    {
-        onQuery: async ({ query }) => {
-            const response = await runPixel('', query);
-            if (response.errors.length) {
-                throw new Error(response.errors.join(''));
-            }
-            return {
-                data: response.pixelReturn[0].output,
-            };
-        },
-    },
-);
+    queries: {},
+    cellRegistry: DefaultCells,
+});
