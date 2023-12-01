@@ -137,6 +137,13 @@ export const Designer = observer((props: DesignerProps): JSX.Element => {
         setView(v);
     };
 
+    /**
+     * Clear any selections when interacting with the left menu
+     */
+    const handleMouseDown = () => {
+        designer.setSelected('');
+    };
+
     return (
         <DesignerContext.Provider
             value={{
@@ -147,7 +154,7 @@ export const Designer = observer((props: DesignerProps): JSX.Element => {
                 direction="row"
                 isDragging={!!designer.drag.ghostWidget}
             >
-                <StyledLeftMenu>
+                <StyledLeftMenu onMouseDown={handleMouseDown}>
                     <StyledSidebar>
                         <StyledSidebarItem
                             disabled={view === 'app'}

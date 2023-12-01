@@ -8,6 +8,7 @@ import { ContentCopy, Delete } from '@mui/icons-material';
 import { ACTIVE } from '@/pages/DesignPage';
 
 const STYLED_BUTTON_GROUP_BUTTON_WIDTH = 116;
+const STYLED_BUTTON_GROUP_BUTTON_HEIGHT = 32;
 
 const StyledContainer = styled('div')(() => ({
     position: 'absolute',
@@ -16,6 +17,8 @@ const StyledContainer = styled('div')(() => ({
     bottom: '0',
     left: '0',
     zIndex: '30',
+    width: `${STYLED_BUTTON_GROUP_BUTTON_WIDTH}px`,
+    height: `${STYLED_BUTTON_GROUP_BUTTON_HEIGHT}px`,
 }));
 
 const StyledButtonGroupButton = styled(Button)(() => ({
@@ -138,7 +141,7 @@ export const DeleteDuplicateMask = observer(() => {
     };
 
     return (
-        <StyledContainer style={getStyle()}>
+        <StyledContainer className="delete-duplicate-mask" style={getStyle()}>
             <ButtonGroup>
                 <StyledButtonGroupButton
                     color="inherit"
