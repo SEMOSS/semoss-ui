@@ -1,5 +1,8 @@
 import { BlockConfig } from '@/stores';
-import { InputSettings } from '@/components/block-settings';
+import {
+    InputSettings,
+    SelectInputSettings,
+} from '@/components/block-settings';
 
 import {
     buildLayoutSection,
@@ -35,6 +38,17 @@ export const config: BlockConfig<InputBlockDef> = {
         {
             name: 'General',
             children: [
+                // {
+                //     description: 'Queries',
+                //     render: ({ id }) => (
+                //         <SelectInputSettings
+                //             id={id}
+                //             label="Query"
+                //             path="query"
+                //             options={[]}
+                //         />
+                //     ),
+                // },
                 {
                     description: 'Value',
                     render: ({ id }) => (
