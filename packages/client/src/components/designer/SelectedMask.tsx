@@ -168,20 +168,12 @@ export const SelectedMask = observer(() => {
     // update the mask when the screen is resized
     useEffect(() => {
         window.addEventListener('resize', repositionMask);
-
-        return () => {
-            window.addEventListener('resize', repositionMask);
-        };
     }, []);
 
     // block resized is a custom event emitted by SizeSettings
     // so we know to updated the mask when width/height changes
     useEffect(() => {
         window.addEventListener('blockResized', repositionMask);
-
-        return () => {
-            window.addEventListener('blockResized', repositionMask);
-        };
     }, []);
 
     // get the root, watch changes, and reposition the mask
