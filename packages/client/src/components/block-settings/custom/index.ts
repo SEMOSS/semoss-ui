@@ -7,4 +7,4 @@ export { BorderSettings } from './BorderSettings';
 export { FontSizeSettings } from './FontSizeSettings';
 export { SelectInputOptionsSettings } from './SelectInputOptionsSettings';
 export { SelectInputValueSettings } from './SelectInputValueSettings';
-export { GridSettings } from './GridSettings';
+export { GridSettings } from './grid/GridSettings';

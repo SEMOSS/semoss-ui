@@ -8,7 +8,7 @@ import {
 } from '../block-defaults.shared';
 
 import { SectionBlockDef, SectionBlock } from './SectionBlock';
-import { HighlightAlt } from '@mui/icons-material';
+import { GridView } from '@mui/icons-material';
 import { BLOCK_TYPE_LAYOUT } from '../block-defaults.constants';
 import { GridSettings } from '@/components/block-settings';
 
@@ -24,8 +24,7 @@ export const config: BlockConfig<SectionBlockDef> = {
             margin: '8px',
         },
         grid: {
-            value: '',
-            label: '',
+            value: 'layout-0',
             config: {
                 cols: 2,
                 rows: 1,
@@ -37,23 +36,19 @@ export const config: BlockConfig<SectionBlockDef> = {
         children: [],
     },
     render: SectionBlock,
-    icon: HighlightAlt,
-    contentMenu: [
+    icon: GridView,
+    contentMenu: [],
+    styleMenu: [
         {
-            name: 'Grid',
+            name: 'Layout',
             children: [
-                ...buildLayoutSection().children,
                 {
-                    description: 'Layout',
-                    render: ({ id }) => (
-                        <GridSettings id={id} label="Layout" path="grid" />
-                    ),
+                    description: 'Grid',
+                    render: ({ id }) => <GridSettings id={id} path="grid" />,
                 },
+                ...buildLayoutSection().children,
             ],
         },
-    ],
-    styleMenu: [
-        buildLayoutSection(),
         buildSpacingSection(),
         buildDimensionsSection(),
         buildTypographySection(),

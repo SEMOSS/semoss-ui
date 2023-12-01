@@ -11,7 +11,6 @@ export interface SectionBlockDef extends BlockDef<'section'> {
         style: CSSProperties;
         grid: {
             value: string;
-            label: string;
             config: { rows: number; cols: number };
         };
     };

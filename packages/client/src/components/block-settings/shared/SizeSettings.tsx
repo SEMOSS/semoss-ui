@@ -41,7 +41,7 @@ export const SizeSettings = observer(
         // track the value
         const [value, setValue] = useState('');
 
-        // track the value type
+        // track the unit of the value, ex % or px
         const [valueType, setValueType] = useState(null);
 
         // track the ref to debounce the input
@@ -67,6 +67,11 @@ export const SizeSettings = observer(
 
         // update the value whenever the computed one changes
         useEffect(() => {
+            if (computedValue.includes('%')) {
+                setValueType('%');
+            } else if (computedValue.includes('px')) {
+                setValueType('px');
+            }
             setValue(computedValue);
         }, [computedValue]);
 
@@ -75,7 +80,9 @@ export const SizeSettings = observer(
             return value.replace(/\D+/g, '');
         }, [value]);
 
-        useEffect(() => {
+        // default value type % if one is not set when the value is set
+        // remove type when value is unset
+        useMemo(() => {
             if (numericValue && !valueType) {
                 setValueType('%');
             } else if (!numericValue) {
@@ -83,21 +90,17 @@ export const SizeSettings = observer(
             }
         }, [numericValue]);
 
-        useEffect(() => {
-            if (numericValue) {
-                onChange(value);
-            }
-        }, [valueType]);
-
         /**
          * Sync the data on change
          */
         const onChange = (value: string) => {
-            const valueWithUnit = value ? value + valueType : value;
-            // set the value
-            setValue(valueWithUnit);
+            // set the value - this is a number string
+            setValue(value);
 
-            // clear out he old timeout
+            // get value with unit for setting data
+            const valueWithUnit = value ? value + valueType : value;
+
+            // clear the old timeout
             if (timeoutRef.current) {
                 clearTimeout(timeoutRef.current);
                 timeoutRef.current = null;
@@ -115,6 +118,13 @@ export const SizeSettings = observer(
                 }
             }, 300);
         };
+
+        // update data when unit changes
+        useMemo(() => {
+            if (numericValue) {
+                onChange(numericValue);
+            }
+        }, [valueType]);
 
         return (
             <BaseSettingSection label={label}>

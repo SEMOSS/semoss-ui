@@ -141,7 +141,7 @@ export const DeleteDuplicateMask = observer(() => {
     };
 
     return (
-        <StyledContainer className="delete-duplicate-mask" style={getStyle()}>
+        <StyledContainer id="delete-duplicate-mask" style={getStyle()}>
             <ButtonGroup>
                 <StyledButtonGroupButton
                     color="inherit"

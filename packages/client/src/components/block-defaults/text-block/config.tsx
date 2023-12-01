@@ -41,8 +41,8 @@ export const config: BlockConfig<TextBlockDef> = {
     styleMenu: [
         buildTypographySection(),
         buildTextAlignSection(),
+        buildColorSection(),
         buildSpacingSection(),
         buildDimensionsSection(),
-        buildColorSection(),
     ],
 };
