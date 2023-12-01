@@ -23,6 +23,7 @@ import {
     config as TextFieldBlockConfig,
     TextFieldBlockDef,
 } from './text-field-block';
+import { config as SectionBlockConfig, SectionBlockDef } from './section-block';
 
 export type DefaultBlockDefinitions =
     | ButtonBlockDef
@@ -35,7 +36,8 @@ export type DefaultBlockDefinitions =
     | SelectBlockDef
     | TextAreaBlockDef
     | TextBlockDef
-    | TextFieldBlockDef;
+    | TextFieldBlockDef
+    | SectionBlockDef;
 
 export const DefaultBlocks: Registry<DefaultBlockDefinitions> = {
     [ButtonBlockConfig.widget]: ButtonBlockConfig,
@@ -49,6 +51,7 @@ export const DefaultBlocks: Registry<DefaultBlockDefinitions> = {
     [TextAreaBlockConfig.widget]: TextAreaBlockConfig,
     [TextBlockConfig.widget]: TextBlockConfig,
     [TextFieldBlockConfig.widget]: TextFieldBlockConfig,
+    [SectionBlockConfig.widget]: SectionBlockConfig,
 };
 
 export function getIconForBlock(widget: string) {
