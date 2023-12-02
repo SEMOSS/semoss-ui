@@ -6,19 +6,14 @@ import React, {
     SyntheticEvent,
 } from 'react';
 import Editor, { loader } from '@monaco-editor/react';
-import {
-    IconButton,
-    Typography,
-    Tabs,
-    styled,
-    keyframes,
-    Link,
-} from '@semoss/ui';
+import { IconButton, Typography, Tabs, styled, keyframes } from '@semoss/ui';
 import { File, ControlledFile } from '../';
 import { Clear, SaveOutlined } from '@mui/icons-material';
 import { Button } from '@semoss/ui';
 import { Container } from '../../../../../ui/dist';
-import { DOCUMENTATION_URL } from '@/constants';
+
+import { Icon as FiletypeIcon } from '@mdi/react';
+import { FILE_ICON_MAP } from './text-editor.constants';
 
 // Weird thing with Monaco Editor and does not get loaded in correctly from install
 // loader.config({
@@ -26,6 +21,13 @@ import { DOCUMENTATION_URL } from '@/constants';
 //         vs: '/monaco-editor/min/vs',
 //     },
 // });
+
+const StyledFiletypeIcon = styled(FiletypeIcon)(({ theme }) => ({
+    color: 'rgba(0, 0, 0, 0.6)',
+    height: '24px',
+    width: '24px',
+    marginRight: '8px',
+}));
 
 const StyledContainer = styled('div')(({ theme }) => ({
     width: '100%',
@@ -59,8 +61,8 @@ const StyledFileTabs = styled('div')(({ theme }) => ({
 const StyledActiveFilePath = styled('div')(({ theme }) => ({
     display: 'flex',
     backgroundColor: theme.palette.background.paper,
-    // border: 'solid green',
     padding: theme.spacing(1),
+    alignItems: 'center',
 }));
 
 const StyledTabsItem = styled(Tabs.Item, {
@@ -95,7 +97,43 @@ const StyledTypography = styled(Typography)(({ theme }) => ({
     display: 'block',
 }));
 
+const StyledClear = styled(Clear)(({ theme }) => ({
+    width: theme.spacing(2),
+    height: theme.spacing(2),
+}));
+
+const StyledCloseTab = styled(IconButton)(({ theme }) => ({
+    fontSize: '16px',
+}));
+
+const StyledActiveFilePathContainer = styled('div')(({ theme }) => ({
+    marginLeft: '0px',
+    paddingLeft: '0px',
+}));
+
+const StyledNonGrayPath = styled(Typography)(({ theme }) => ({
+    marginLeft: '0px',
+    paddingLeft: '0px',
+    marginRight: '5px',
+    display: 'inline-block',
+}));
+
+const StyledGrayFileName = styled(Typography)(({ theme }) => ({
+    display: 'inline-block',
+    opacity: 0.6,
+    marginLeft: '0px',
+    paddingLeft: '0px',
+}));
+
 interface TextEditorProps {
+    /**
+     * Params factored out to AppEditor parent component to make closing tabs possible on file deletion
+     */
+    controlledFiles: ControlledFile[];
+    setControlledFiles: (controlledFiles: ControlledFile[]) => void;
+    counter: number;
+    setCounter: (index: number) => void;
+
     /**
      * All Files
      */
@@ -118,16 +156,73 @@ interface TextEditorProps {
     onClose?: (index) => void;
 }
 
-export const TextEditor = (props: TextEditorProps) => {
-    const { files, activeIndex, setActiveIndex, onSave, onClose } = props;
+const formatFilePath = (activeFileid) => {
+    if (activeFileid[activeFileid.length - 1] == '/') {
+        activeFileid = activeFileid.slice(0, -1);
+    }
 
-    const documentation = DOCUMENTATION_URL;
+    activeFileid = activeFileid.replace('version/assets/', '');
+    activeFileid = activeFileid.replace('version/assets', '');
+
+    if (activeFileid[0] == '/') {
+        activeFileid = activeFileid.slice(1);
+    }
+
+    const splitId = activeFileid.split('/');
+
+    let nonGrayPath = splitId.slice(0, splitId.length - 1).join('/');
+    nonGrayPath = nonGrayPath.replaceAll('/', ' / ');
+
+    if (nonGrayPath.length > 0) {
+        nonGrayPath = nonGrayPath + ' / ';
+    }
+
+    const grayFilename = splitId.slice(-1)[0];
+
+    console.log({ activeFileid, nonGrayPath, grayFilename });
+
+    return (
+        <>
+            <StyledFiletypeIcon
+                path={
+                    FILE_ICON_MAP[activeFileid?.split('.').slice(-1)[0]] ||
+                    FILE_ICON_MAP.document
+                }
+                size={1}
+            ></StyledFiletypeIcon>
+            <StyledActiveFilePathContainer>
+                {nonGrayPath.length > 0 && (
+                    <StyledNonGrayPath variant="body2">
+                        {nonGrayPath}
+                    </StyledNonGrayPath>
+                )}
+
+                <StyledGrayFileName variant="body2">
+                    {grayFilename}
+                </StyledGrayFileName>
+            </StyledActiveFilePathContainer>
+        </>
+    );
+};
+
+export const TextEditor = (props: TextEditorProps) => {
+    const {
+        files,
+        activeIndex,
+        setActiveIndex,
+        onSave,
+        onClose,
+        controlledFiles,
+        setControlledFiles,
+        counter,
+        setCounter,
+    } = props;
 
     // Refresh Controlled Values
-    const [controlledFiles, setControlledFiles] = useState<ControlledFile[]>(
-        [],
-    );
-    const [counter, setCounter] = useState(0);
+    // const [controlledFiles, setControlledFiles] = useState<ControlledFile[]>(
+    //     [],
+    // );
+    // const [counter, setCounter] = useState(0);
 
     /**
      * Listen for Keyboard Shortcuts, save and --> etc down the road
@@ -213,6 +308,21 @@ export const TextEditor = (props: TextEditorProps) => {
         }
     };
 
+    const closeTabByIndex = async (i) => {
+        console.warn(' closing tab', controlledFiles);
+
+        const newControlledFiles = controlledFiles;
+        newControlledFiles.splice(i, 1);
+
+        setControlledFiles(newControlledFiles);
+
+        // close this index, set state of files in parent
+        await onClose(i);
+
+        // Refresh Active File Memoized value
+        setCounter(counter + 1);
+    };
+
     /** ------------------
      * Memoized Values
      *  ------------------
@@ -281,11 +391,9 @@ export const TextEditor = (props: TextEditorProps) => {
                             Github Documentation
                         </Typography>
                         <ul>
-                            <li>
-                                <Link href={`${documentation}`} target="_blank">
-                                    Documentation
-                                </Link>
-                            </li>
+                            <li>Link</li>
+                            <li>Link</li>
+                            <li>Link</li>
                         </ul>
                     </Container>
                 </StyledEmptyFiles>
@@ -345,13 +453,8 @@ export const TextEditor = (props: TextEditorProps) => {
                                                         )}
                                                     </StyledSaveChangesIndicator>
                                                 </StyledTabLabel>
-                                                <IconButton
+                                                <StyledCloseTab
                                                     size={'small'}
-                                                    sx={{
-                                                        // width: '24px',
-                                                        // height: '50px',
-                                                        fontSize: '16px',
-                                                    }}
                                                     onClick={async (e) => {
                                                         e.stopPropagation();
                                                         console.warn(
@@ -377,13 +480,8 @@ export const TextEditor = (props: TextEditorProps) => {
                                                         setCounter(counter + 1);
                                                     }}
                                                 >
-                                                    <Clear
-                                                        style={{
-                                                            width: '16px',
-                                                            height: '16px',
-                                                        }}
-                                                    />
-                                                </IconButton>
+                                                    <StyledClear />
+                                                </StyledCloseTab>
                                             </StyledTabLabelContainer>
                                         }
                                     ></StyledTabsItem>
@@ -402,11 +500,7 @@ export const TextEditor = (props: TextEditorProps) => {
                         </StyledIconButton>
                     </StyledFileTabs>
                     <StyledActiveFilePath>
-                        <Typography variant={'body2'}>
-                            {activeFile.id
-                                .replace('version/assets/', '')
-                                .replace('/', ' / ')}
-                        </Typography>
+                        {formatFilePath(activeFile.id)}
                     </StyledActiveFilePath>
                     <Editor
                         // theme={'vs-dark'}
