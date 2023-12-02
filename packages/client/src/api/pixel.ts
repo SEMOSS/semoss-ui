@@ -10,7 +10,7 @@ import { Env } from '@/env';
  */
 export const runPixel = async <O extends unknown[] | []>(
     pixel: string,
-    insightID?: string,
+    insightId?: string,
 ) => {
     if (!pixel) {
         throw Error('No Pixel To Execute');
@@ -20,8 +20,8 @@ export const runPixel = async <O extends unknown[] | []>(
     let postData = '';
 
     postData += 'expression=' + encodeURIComponent(pixel);
-    if (insightID) {
-        postData += '&insightId=' + encodeURIComponent(insightID);
+    if (insightId) {
+        postData += '&insightId=' + encodeURIComponent(insightId);
     }
 
     const response = await axios

@@ -5,7 +5,6 @@ import { styled, ButtonGroup, Button } from '@semoss/ui';
 import { getRelativeSize, getRootElement, getBlockElement } from '@/stores';
 import { useBlock, useDesigner } from '@/hooks';
 import { ContentCopy, Delete } from '@mui/icons-material';
-import { ACTIVE } from '@/pages/DesignPage';
 
 const STYLED_BUTTON_GROUP_BUTTON_WIDTH = 116;
 const STYLED_BUTTON_GROUP_BUTTON_HEIGHT = 32;
@@ -36,9 +35,7 @@ export const DeleteDuplicateMask = observer(() => {
 
     // get the store
     const { designer } = useDesigner();
-    const { clearBlock, deleteBlock, duplicateBlock } = useBlock(
-        designer.selected,
-    );
+    const { deleteBlock, duplicateBlock } = useBlock(designer.selected);
 
     // get the root, watch changes, and reposition the mask
     useLayoutEffect(() => {
@@ -79,8 +76,9 @@ export const DeleteDuplicateMask = observer(() => {
     }
 
     const getStyle = () => {
+        console.warn('TODO: Validate');
         // get position of page root block element
-        const rootElement = getBlockElement(ACTIVE);
+        const rootElement = getRootElement();
         const rootElementSize = rootElement.getBoundingClientRect();
         // get position of selected block element
         const selectedElement = getBlockElement(designer.selected);
@@ -130,9 +128,8 @@ export const DeleteDuplicateMask = observer(() => {
     };
 
     const onDelete = () => {
-        const rootIsSelected = designer.selected === ACTIVE;
         designer.setSelected('');
-        rootIsSelected ? clearBlock() : deleteBlock();
+        deleteBlock();
     };
 
     const onDuplicate = () => {

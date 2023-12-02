@@ -1,4 +1,4 @@
-import { makeAutoObservable, reaction, runInAction } from 'mobx';
+import { makeAutoObservable, reaction, toJS } from 'mobx';
 
 import { runPixel } from '@/api';
 import { cancellablePromise, getValueByPath } from '@/utility';
@@ -10,10 +10,15 @@ import {
     MoveBlockAction,
     RemoveBlockAction,
 } from './state.actions';
-import { Block, BlockJSON, CellRegistry, ListenerActions } from './state.types';
+import {
+    Block,
+    BlockJSON,
+    CellRegistry,
+    ListenerActions,
+    SerializedState,
+} from './state.types';
 import { QueryState, QueryStateConfig } from './query.state';
 import { StepState, StepStateConfig } from './step.state';
-import { DefaultCells } from '@/components/cell-defaults';
 
 interface StateStoreInterface {
     /** insightID to load */
@@ -29,24 +34,21 @@ interface StateStoreInterface {
     cellRegistry: CellRegistry;
 }
 
-export class StateStoreImplementationConfig {
+export class StateStoreConfig {
     /** insightID to load */
     insightId: string;
 
-    /** Queries that will be loaed into the view */
-    queries?: Record<string, unknown>;
-
-    /** Blocks that will be loaded into the view */
-    blocks?: Record<string, Block>;
+    /** State to load into the store */
+    state: SerializedState;
 
     /** Cells registered to the insight */
     cellRegistry: CellRegistry;
 }
 
 /**
- * Block store that helps users build a view
+ * Hold the state information for the insight
  */
-export class StateStoreImplementation {
+export class StateStore {
     private _store: StateStoreInterface = {
         insightId: '',
         queries: {},
@@ -69,7 +71,13 @@ export class StateStoreImplementation {
         queryPromises: {},
     };
 
-    constructor(config: StateStoreImplementationConfig) {
+    constructor(config: StateStoreConfig) {
+        // save the connected insight
+        this._store.insightId = config.insightId;
+
+        // register the cells
+        this._store.cellRegistry = config.cellRegistry || {};
+
         // make it observable
         makeAutoObservable(this);
 
@@ -111,11 +119,7 @@ export class StateStoreImplementation {
         );
 
         // set the initial state after reactive to invoke it
-        runInAction(() => {
-            this._store.blocks = config.blocks || {};
-            this._store.queries = {};
-            this._store.cellRegistry = config.cellRegistry || {};
-        });
+        this.loadState(config.state);
     }
 
     /**
@@ -320,11 +324,40 @@ export class StateStoreImplementation {
     };
 
     /**
+     * Serialize to JSON
+     */
+    toJSON(): SerializedState {
+        return {
+            queries: Object.keys(this._store.queries).reduce((acc, val) => {
+                acc[val] = this._store.queries[val].toJSON();
+                return acc;
+            }, {} as SerializedState['queries']),
+            blocks: toJS(this._store.blocks),
+        };
+    }
+
+    /**
      * Internal
      */
     /**
      * Helpers
      */
+
+    /**
+     * Load the state
+     * @param state - state to load into the store
+     */
+    private loadState = (state: SerializedState) => {
+        // store the block information
+        this._store.blocks = state.blocks;
+
+        // load the queries
+        this._store.queries = Object.keys(state.queries).reduce((acc, val) => {
+            acc[val] = new QueryState(state.queries[val], this);
+            return acc;
+        }, {});
+    };
+
     /**
      * Generate a new block from the json
      * @param json - json of the block that we are generating
@@ -916,36 +949,6 @@ export class StateStoreImplementation {
      * @param pixel - pixel to execute
      */
     async _runPixel<O extends unknown[] | []>(pixel: string) {
-        return await runPixel<O>(this._store.insightId, pixel);
+        return await runPixel<O>(pixel, this._store.insightId);
     }
 }
-
-// initialize state with blank page and basic onQuery function
-// if we want a more complex default page, we can set that up here
-export const StateStore = new StateStoreImplementation({
-    insightId: '',
-    blocks: {
-        'page-1': {
-            id: 'page-1',
-            widget: 'page',
-            parent: null,
-            data: {
-                style: {
-                    display: 'flex',
-                    gap: '2rem',
-                    alignItems: 'start',
-                    fontFamily: 'Roboto',
-                },
-            },
-            listeners: {},
-            slots: {
-                content: {
-                    name: 'content',
-                    children: [],
-                },
-            },
-        },
-    },
-    queries: {},
-    cellRegistry: DefaultCells,
-});

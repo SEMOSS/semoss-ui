@@ -4,7 +4,7 @@
 export interface AppMetadata {
     project_id: string;
     project_name: string;
-    project_type: string;
+    project_type: 'BLOCKS' | 'CODE' | 'INSIGHT' | '';
     project_cost: string;
     project_global: string;
     project_catalog_name: string;

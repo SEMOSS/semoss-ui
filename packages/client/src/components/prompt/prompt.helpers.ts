@@ -6,15 +6,18 @@ import {
     INPUT_TYPE_SELECT,
     TOKEN_TYPE_TEXT,
 } from './prompt.constants';
-import { ActionMessages, Block, Query, StateStore } from '@/stores';
+import { ActionMessages, Block } from '@/stores';
 
-export const DESCRIPTION_CONTAINER: string = 'description-container';
-export const PROMPT_CONTAINER_BLOCK_ID: string = 'prompt-container';
-export const APP_TITLE_BLOCK_ID: string = 'title';
-export const HELP_TEXT_BLOCK_ID: string = 'help-text';
-export const PROMPT_SUBMIT_BLOCK_ID: string = 'prompt-submit';
-export const PROMPT_RESPONSE_BLOCK_ID: string = 'prompt-response';
-export const PROMPT_QUERY_ID: string = 'prompt-query';
+//TODO: Fix this
+type QueryFixMe = Record<string, unknown>;
+
+export const DESCRIPTION_CONTAINER = 'description-container';
+export const PROMPT_CONTAINER_BLOCK_ID = 'prompt-container';
+export const APP_TITLE_BLOCK_ID = 'title';
+export const HELP_TEXT_BLOCK_ID = 'help-text';
+export const PROMPT_SUBMIT_BLOCK_ID = 'prompt-submit';
+export const PROMPT_RESPONSE_BLOCK_ID = 'prompt-response';
+export const PROMPT_QUERY_ID = 'prompt-query';
 export const PROMPT_BASE_BLOCKS: Record<string, Block> = {
     'page-1': {
         id: 'page-1',
@@ -244,8 +247,8 @@ export function getQueryForPrompt(
     model: string,
     tokens: Token[],
     inputTypes: object,
-): Record<string, Query> {
-    let tokenStrings: string[] = [];
+): Record<string, QueryFixMe> {
+    const tokenStrings: string[] = [];
     // compose tokens into a command
     tokens.forEach((token: Token) => {
         if (token.type === TOKEN_TYPE_TEXT) {
@@ -255,7 +258,7 @@ export function getQueryForPrompt(
             const inputTokenParts = token.display.split(
                 new RegExp(`(${token.key})`),
             );
-            let keyIndex = inputTokenParts.indexOf(token.key);
+            const keyIndex = inputTokenParts.indexOf(token.key);
             inputTokenParts[keyIndex] = `{{${getIdForInput(
                 token.linkedInputToken !== undefined
                     ? inputTypes[token.linkedInputToken]
@@ -298,7 +301,7 @@ export function setBlocksAndOpenUIBuilder(
     )) {
         const token = builder.inputs.value[tokenIndex] as Token;
         const inputBlock = getBlockForInput(token, inputType);
-        if (!!inputBlock) {
+        if (inputBlock) {
             childInputIds = [...childInputIds, inputBlock.id];
             blocks = { ...blocks, [inputBlock.id]: inputBlock };
         }
@@ -315,13 +318,13 @@ export function setBlocksAndOpenUIBuilder(
         builder.inputTypes.value as object,
     );
 
-    StateStore.dispatch({
-        message: ActionMessages.SET_STATE,
-        payload: {
-            blocks: blocks,
-            queries: query,
-        },
-    });
+    // OldStateStore.dispatch({
+    //     message: ActionMessages.SET_STATE,
+    //     payload: {
+    //         blocks: blocks,
+    //         queries: query,
+    //     },
+    // });
     // TODO make app here instead
     // alert('App API call here');
     navigate('/design');

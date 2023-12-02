@@ -23,7 +23,7 @@ import { SettingsContext } from '@/contexts';
 import { AppEditor } from '@/components/common';
 import { MembersTable, SettingsTiles } from '@/components/settings';
 
-import { AppSettings } from '../../app/AppSettings';
+import { AppSettings } from '../app/AppSettings';
 import { Card } from '@mui/material';
 
 const StyledContainer = styled('div')(({ theme }) => ({

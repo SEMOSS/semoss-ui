@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { StateStoreImplementation, Registry, NotebookStore } from '@/stores';
+import { StateStore, Registry, NotebookStore } from '@/stores';
 import { BlocksContext } from '@/contexts';
 
 export interface BlocksProps<R extends Registry> {
@@ -7,7 +7,7 @@ export interface BlocksProps<R extends Registry> {
     children: React.ReactNode;
 
     /** Store to connect to */
-    state: StateStoreImplementation;
+    state: StateStore;
 
     /** Widgets available to all of the blocks */
     registry: R;

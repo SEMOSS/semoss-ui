@@ -1,4 +1,4 @@
-export * from './WorkspaceActions';
+export * from './Workspace';
 
-export * from './WorkspaceCode';
-export * from './WorkspaceBlocks';
+export * from './SettingsView';
+export * from './ShareOverlay';

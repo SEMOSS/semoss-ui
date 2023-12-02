@@ -17,6 +17,8 @@ import {
 
 import { Controller, useForm } from 'react-hook-form';
 import { useRootStore } from '@/hooks';
+import { HelloWorldApp, SerializedState } from '@/stores';
+
 import { AppMetadata } from './app.types';
 
 const StyledBox = styled(Box)(({ theme }) => ({
@@ -281,10 +283,19 @@ export const ImportAppForm = (props: CreateAppProps) => {
         setIsLoading(true);
 
         if (APP_TYPE === 'UI_BUILDER' || APP_TYPE === 'PROMPT_BUILDER') {
-            // Hit Reactor to add property in smss file for APP_TYPE = 'ui-builder' | 'prompt-builder'
-            const pixel = `CreateBuilderApp(type=[${APP_TYPE}]);`;
+            // TODO: allow creation from other jsons
+            const pixel = `CreateAppFromBlocks ( project = [ "${
+                formVals.APP_NAME
+            }" ] , json =[${JSON.stringify(HelloWorldApp)}]  ) ;`;
 
-            onCreate('dummy id: 17833789124');
+            // create the app
+            const { pixelReturn } = await monolithStore.runQuery<[AppMetadata]>(
+                pixel,
+            );
+
+            const app = pixelReturn[0].output;
+
+            onCreate(app.project_id);
         } else if (APP_TYPE === 'TEMPLATE_APP') {
             let pixel = `CreateAppFromTemplate(meta=["${formVals}"])`;
 

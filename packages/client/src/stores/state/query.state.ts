@@ -1,7 +1,7 @@
 import { makeAutoObservable, runInAction } from 'mobx';
 
-import { StepState } from './step.state';
-import { StateStoreImplementation } from './state.store';
+import { StepState, StepStateConfig } from './step.state';
+import { StateStore } from './state.store';
 import { setValueByPath } from '@/utility';
 
 export interface QueryStateStoreInterface {
@@ -30,13 +30,16 @@ export interface QueryStateConfig {
 
     /** Is the query automatically run or manully */
     mode: 'automatic' | 'manual';
+
+    /** Steps in the query */
+    steps: StepStateConfig[];
 }
 
 /**
  * Store that manages instances of the insights and handles applicaiton level querying
  */
 export class QueryState {
-    private _state: StateStoreImplementation;
+    private _state: StateStore;
     private _store: QueryStateStoreInterface = {
         id: '',
         isInitialized: false,
@@ -46,7 +49,7 @@ export class QueryState {
         steps: [],
     };
 
-    constructor(config: QueryStateConfig, state: StateStoreImplementation) {
+    constructor(config: QueryStateConfig, state: StateStore) {
         // register the state
         this._state = state;
 
@@ -207,6 +210,20 @@ export class QueryState {
     };
 
     /**
+     * Actions
+     */
+    /**
+     * Serialize to JSON
+     */
+    toJSON = (): QueryStateConfig => {
+        return {
+            id: this._store.id,
+            mode: this._store.mode,
+            steps: this._store.steps.map((s) => s.toJSON()),
+        };
+    };
+
+    /**
      * Helpers
      */
     /**
@@ -313,7 +330,7 @@ export class QueryState {
         const addStepIdx = this.getStepIdx(previousStepId);
 
         // add it
-        this._store.steps.splice(addStepIdx, 0, step);
+        this._store.steps.splice(addStepIdx + 1, 0, step);
     };
 
     /**

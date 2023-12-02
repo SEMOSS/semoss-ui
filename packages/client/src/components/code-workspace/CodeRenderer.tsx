@@ -8,7 +8,7 @@ const StyledIframe = styled('iframe')(() => ({
     border: 'none',
 }));
 
-interface AppRendererProps {
+interface CodeRendererProps {
     /** Id of the app to render */
     appId: string;
 }
@@ -16,7 +16,7 @@ interface AppRendererProps {
 /**
  * Render an app based on an id
  */
-export const AppRenderer = (props: AppRendererProps) => {
+export const CodeRenderer = (props: CodeRendererProps) => {
     const { appId } = props;
 
     // return the app

@@ -31,9 +31,10 @@ export const CodeCell: Cell<CodeCellDef> = {
             return `Py(<encode>${code}</encode>);`;
         } else if (type === 'pixel') {
             return code;
-        } else
+        } else {
             throw new Error(
                 `Error converting toString ::: ${type} is not valid`,
             );
+        }
     },
 };

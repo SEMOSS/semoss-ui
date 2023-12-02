@@ -94,6 +94,7 @@ export const QueryOverlay = observer(
                         queryId: data.ID,
                         config: {
                             mode: 'manual',
+                            steps: [],
                         },
                     },
                 });

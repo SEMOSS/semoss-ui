@@ -1,9 +1,9 @@
-import { makeAutoObservable, runInAction } from 'mobx';
+import { makeAutoObservable, runInAction, toJS } from 'mobx';
 
 import { setValueByPath } from '@/utility';
 
 import { Cell, CellDef } from './state.types';
-import { StateStoreImplementation } from './state.store';
+import { StateStore } from './state.store';
 import { QueryState } from './query.state';
 
 export interface StepStateStoreInterface<D extends CellDef = CellDef> {
@@ -47,7 +47,7 @@ export interface StepStateConfig<D extends CellDef = CellDef> {
  * Store that manages each step in a query
  */
 export class StepState<D extends CellDef = CellDef> {
-    private _state: StateStoreImplementation;
+    private _state: StateStore;
     private _query: QueryState;
     private _store: StepStateStoreInterface<D> = {
         id: '',
@@ -58,11 +58,7 @@ export class StepState<D extends CellDef = CellDef> {
         parameters: {},
     };
 
-    constructor(
-        config: StepStateConfig,
-        query: QueryState,
-        state: StateStoreImplementation,
-    ) {
+    constructor(config: StepStateConfig, query: QueryState, state: StateStore) {
         // register the query + state
         this._query = query;
         this._state = state;
@@ -187,6 +183,22 @@ export class StepState<D extends CellDef = CellDef> {
     get parameters() {
         return this._store.parameters;
     }
+
+    /**
+     * Actions
+     */
+    /**
+     * Serialize to JSON
+     */
+    toJSON = (): StepStateConfig => {
+        return {
+            id: this._store.id,
+            operation: toJS(this._store.operation),
+            output: toJS(this._store.output),
+            widget: this._store.widget,
+            parameters: toJS(this._store.parameters),
+        };
+    };
 
     /**
      * Helpers
