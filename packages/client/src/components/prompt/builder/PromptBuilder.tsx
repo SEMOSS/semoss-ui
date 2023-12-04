@@ -11,18 +11,15 @@ import {
     PROMPT_BUILDER_CONTEXT_STEP,
     PROMPT_BUILDER_INPUTS_STEP,
     PROMPT_BUILDER_INPUT_TYPES_STEP,
-    PROMPT_BUILDER_CONSTRAINTS_STEP,
+    // PROMPT_BUILDER_CONSTRAINTS_STEP,
     PROMPT_BUILDER_PREVIEW_STEP,
     TOKEN_TYPE_INPUT,
 } from '../prompt.constants';
 import { styled, Box, Button, Grid, Paper } from '@semoss/ui';
-// import { PromptBuilderBuilderConstraintsStep } from './PromptBuilderBuilderConstraintsStep';
-import { PromptBuilderBuilderInputStep } from './PromptBuilderInputStep';
-import { PromptBuilderBuilderInputTypeStep } from './PromptBuilderInputTypeStep';
-import { PromptBuilderBuilderPreviewStep } from './PromptBuilderPreviewStep';
-import { PromptBuilderBuilderContextStep } from './PromptBuilderContextStep';
-import { PromptBuilderBuilderSummary } from './PromptBuilderSummary';
+// import { PromptBuilderConstraintsStep } from './PromptBuilderConstraintsStep';
+import { PromptBuilderSummary } from './summary';
 import { useRootStore } from '@/hooks';
+import { PromptBuilderStep } from './step';
 
 const StyledPaper = styled(Paper)(({ theme }) => ({
     padding: theme.spacing(4),
@@ -81,31 +78,7 @@ const initialBuilder: Builder = {
     // },
 };
 
-function BuilderStep(props: {
-    builder: Builder;
-    currentBuilderStep: number;
-    setBuilderValue: (
-        builderStepKey: string,
-        value: string | Token[] | ConstraintSettings | object,
-    ) => void;
-}) {
-    switch (props.currentBuilderStep) {
-        case PROMPT_BUILDER_CONTEXT_STEP:
-            return <PromptBuilderBuilderContextStep {...props} />;
-        case PROMPT_BUILDER_INPUTS_STEP:
-            return <PromptBuilderBuilderInputStep {...props} />;
-        case PROMPT_BUILDER_INPUT_TYPES_STEP:
-            return <PromptBuilderBuilderInputTypeStep {...props} />;
-        // case PROMPT_BUILDER_CONSTRAINTS_STEP:
-        //     return <PromptBuilderBuilderConstraintsStep {...props} />;
-        case PROMPT_BUILDER_PREVIEW_STEP:
-            return <PromptBuilderBuilderPreviewStep {...props} />;
-        default:
-            return <StyledPaper elevation={2} square />;
-    }
-}
-
-export function PromptBuilder() {
+export const PromptBuilder = () => {
     const { monolithStore } = useRootStore();
     const [builder, setBuilder] = useState(initialBuilder);
     const [currentBuilderStep, changeBuilderStep] = useState(1);
@@ -194,7 +167,7 @@ export function PromptBuilder() {
             <Grid container>
                 <Grid item xs={3}>
                     <StyledPaper elevation={2}>
-                        <PromptBuilderBuilderSummary
+                        <PromptBuilderSummary
                             builder={builder}
                             currentBuilderStep={currentBuilderStep}
                             isBuilderStepComplete={isBuilderStepComplete}
@@ -202,7 +175,7 @@ export function PromptBuilder() {
                     </StyledPaper>
                 </Grid>
                 <Grid item xs={9}>
-                    <BuilderStep
+                    <PromptBuilderStep
                         builder={builder}
                         currentBuilderStep={currentBuilderStep}
                         setBuilderValue={setBuilderValue}
@@ -233,4 +206,4 @@ export function PromptBuilder() {
             </StyledBox>
         </>
     );
-}
+};

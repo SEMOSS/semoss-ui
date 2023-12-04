@@ -1,2 +1,2 @@
 export * from './PromptPreview';
-export * from './PromptToken';
+export * from './token';

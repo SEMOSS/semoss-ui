@@ -1,21 +1,14 @@
 import {
     PROMPT_BUILDER_INPUT_TYPES_STEP,
     SUMMARY_STEPS,
-} from '../prompt.constants';
-import { Builder, BuilderStepItem } from '../prompt.types';
+} from '../../prompt.constants';
+import { Builder, BuilderStepItem } from '../../prompt.types';
 import { grey } from '@mui/material/colors';
-import {
-    styled,
-    Avatar,
-    Box,
-    Collapse,
-    LinearProgress,
-    LinearProgressProps,
-    Typography,
-} from '@semoss/ui';
+import { styled, Avatar, Collapse, Typography } from '@semoss/ui';
 import { List, ListItem, ListItemAvatar, ListItemText } from '@mui/material';
 import { PendingOutlined, CheckCircleOutlined } from '@mui/icons-material';
-import { PromptBuilderBuilderSummaryStepItem } from './PromptBuilderSummaryStepItem';
+import { PromptBuilderSummaryStepItem } from './PromptBuilderSummaryStepItem';
+import { PromptBuilderSummaryProgress } from './PromptBuilderSummaryProgress';
 
 const StyledListItem = styled(ListItem)(({ theme }) => ({
     backgroundColor: grey[100],
@@ -24,33 +17,11 @@ const StyledListItem = styled(ListItem)(({ theme }) => ({
     marginBottom: theme.spacing(1),
 }));
 
-const FlexBox = styled(Box)(() => ({
-    display: 'flex',
-    alignItems: 'center',
-}));
-
-function PromptBuilderBuilderSummaryProgress(
-    props: LinearProgressProps & { progress: number },
-) {
-    return (
-        <FlexBox>
-            <Box sx={{ width: '100%', mr: 1 }}>
-                <LinearProgress variant="determinate" value={props.progress} />
-            </Box>
-            <Box>
-                <Typography variant="body2">{`${Math.round(
-                    props.progress,
-                )}%`}</Typography>
-            </Box>
-        </FlexBox>
-    );
-}
-
-export function PromptBuilderBuilderSummary(props: {
+export const PromptBuilderSummary = (props: {
     builder: Builder;
     currentBuilderStep: number;
     isBuilderStepComplete: (step: number) => boolean;
-}) {
+}) => {
     const markBuilderStepComplete = (
         summaryStep: number,
         currentBuilderStep: number,
@@ -105,7 +76,7 @@ export function PromptBuilderBuilderSummary(props: {
                         </Typography>
                     }
                     secondary={
-                        <PromptBuilderBuilderSummaryProgress
+                        <PromptBuilderSummaryProgress
                             progress={builderProgress()}
                         />
                     }
@@ -158,7 +129,7 @@ export function PromptBuilderBuilderSummary(props: {
                         />
                     </StyledListItem>
                     <Collapse in={props.currentBuilderStep === i + 1}>
-                        <PromptBuilderBuilderSummaryStepItem
+                        <PromptBuilderSummaryStepItem
                             builder={props.builder}
                             currentBuilderStep={i + 1}
                         />
@@ -167,4 +138,4 @@ export function PromptBuilderBuilderSummary(props: {
             ))}
         </List>
     );
-}
+};

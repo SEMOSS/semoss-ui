@@ -1,9 +1,9 @@
 import { useMemo, useState } from 'react';
-import { Builder } from '../prompt.types';
-import { StyledStepPaper } from '../prompt.styled';
+import { Builder } from '../../prompt.types';
+import { StyledStepPaper } from '../../prompt.styled';
 import { createFilterOptions, Autocomplete } from '@mui/material';
 import { Box, Grid, Stack, TextField, Typography } from '@semoss/ui';
-import { PromptLibraryDialogButton } from '../library/PromptLibraryDialogButton';
+import { PromptLibraryDialogButton } from '../../library/PromptLibraryDialogButton';
 import { usePixel } from '@/hooks';
 
 type CfgLibraryModelsState = {
@@ -17,10 +17,10 @@ const InitialCfgLibraryModelsState: CfgLibraryModelsState = {
     modelDisplay: {},
 };
 
-export function PromptBuilderBuilderContextStep(props: {
+export const PromptBuilderContextStep = (props: {
     builder: Builder;
     setBuilderValue: (builderStepKey: string, value: string | string[]) => void;
-}) {
+}) => {
     const [cfgLibraryModels, setCfgLibraryModels] = useState(
         InitialCfgLibraryModelsState,
     );
@@ -156,4 +156,4 @@ export function PromptBuilderBuilderContextStep(props: {
             </Stack>
         </StyledStepPaper>
     );
-}
+};

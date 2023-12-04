@@ -1,59 +1,12 @@
 import { useState, useEffect } from 'react';
-import {
-    TOKEN_TYPE_TEXT,
-    TOKEN_TYPE_INPUT,
-    INPUT_TYPE_DISPLAY,
-} from '../prompt.constants';
-import { Token } from '../prompt.types';
-import { StyledTooltip } from '../prompt.styled';
-import { blue } from '@mui/material/colors';
-import { Button, List, Typography } from '@semoss/ui';
-import { styled, Chip } from '@mui/material';
+import { TOKEN_TYPE_TEXT, TOKEN_TYPE_INPUT } from '../../prompt.constants';
+import { Token } from '../../prompt.types';
+import { StyledTooltip } from '../../prompt.styled';
+import { Button, List } from '@semoss/ui';
+import { styled } from '@mui/material';
 import { SaveAlt, Sync } from '@mui/icons-material';
-
-interface HoverButtonRootProps {
-    disableHover: boolean;
-}
-const StyledTextButton = styled('button', {
-    shouldForwardProp: (prop) => prop !== 'disableHover',
-})<HoverButtonRootProps>(({ disableHover }) => ({
-    background: 'none',
-    color: 'inherit',
-    border: 'none',
-    paddingTop: 0,
-    paddingBottom: 0,
-    paddingLeft: '4px',
-    paddingRight: '4px',
-    marginLeft: '-2px',
-    marginRight: '-2px',
-    font: 'inherit',
-    cursor: disableHover ? 'default' : 'pointer',
-    outline: 'inherit',
-    '&:hover': {
-        backgroundColor: disableHover ? 'unset' : blue[50],
-    },
-}));
-
-interface ChipRootProps {
-    isChipSelected: boolean;
-    disableHover: boolean;
-}
-const StyledChip = styled(Chip, {
-    shouldForwardProp: (prop) =>
-        prop !== 'isChipSelected' && prop !== 'disableHover',
-})<ChipRootProps>(({ isChipSelected, disableHover, theme }) => ({
-    backgroundColor: isChipSelected ? theme.palette.primary.main : blue[50],
-    color: isChipSelected ? blue[50] : theme.palette.primary.main,
-    cursor: disableHover ? 'default' : 'pointer',
-    fontWeight: '600',
-    marginLeft: '1px',
-    marginRight: '1px',
-    marginBottom: '2px',
-    '&:hover': {
-        backgroundColor: disableHover ? blue[50] : theme.palette.primary.main,
-        color: disableHover ? theme.palette.primary.main : blue[50],
-    },
-}));
+import { PromptTokenChip } from './PromptTokenChip';
+import { PromptTokenTextButton } from './PromptTokenTextButton';
 
 const StyledListItem = styled(List.Item)(({ theme }) => ({
     padding: 0,
@@ -68,52 +21,7 @@ const StyledTooltipContentButton = styled(Button)(({ theme }) => ({
     borderRadius: 0,
 }));
 
-export function PromptReadonlyInputToken(props: { token: Token }) {
-    return (
-        <StyledChip
-            isChipSelected={false}
-            key={props.token.index}
-            label={`{ } ${props.token.key}`}
-            size="small"
-            disableHover
-        />
-    );
-}
-
-export function PromptHoverToken(props: {
-    token: Token;
-    tokenInputType: string | undefined;
-}) {
-    return (
-        <>
-            {props.token.isHiddenPhraseInputToken ? (
-                <></>
-            ) : props.token.type === TOKEN_TYPE_TEXT ? (
-                <StyledTextButton key={props.token.index} disableHover>
-                    {props.token.display}
-                </StyledTextButton>
-            ) : (
-                <StyledTooltip
-                    title={
-                        <Typography variant="body1" sx={{ marginX: 1 }}>
-                            {INPUT_TYPE_DISPLAY[props.tokenInputType]}
-                        </Typography>
-                    }
-                >
-                    <StyledChip
-                        isChipSelected={false}
-                        key={props.token.index}
-                        label={`{ } ${props.token.display}`}
-                        size="small"
-                        disableHover
-                    />
-                </StyledTooltip>
-            )}
-        </>
-    );
-}
-
-export function PromptSetToken(props: {
+export const PromptSetToken = (props: {
     token: Token;
     selectedInputTokens: number[];
     isSelectedLinkable: number | false;
@@ -121,7 +29,7 @@ export function PromptSetToken(props: {
     removeSelectedInputToken: (tokenIndex: number) => void;
     resetInputToken: (tokenIndex: number) => void;
     setSelectedTokensAsInputs: (setAsLinked?: boolean) => void;
-}) {
+}) => {
     const [isTooltipOpen, setTooltipIsOpen] = useState(false);
     useEffect(() => {
         setTooltipIsOpen(
@@ -192,7 +100,7 @@ export function PromptSetToken(props: {
                 >
                     {props.token.type === TOKEN_TYPE_TEXT &&
                     !isTokenSelected ? (
-                        <StyledTextButton
+                        <PromptTokenTextButton
                             key={props.token.index}
                             onClick={() =>
                                 props.addSelectedInputToken(props.token.index)
@@ -200,9 +108,9 @@ export function PromptSetToken(props: {
                             disableHover={false}
                         >
                             {props.token.display}
-                        </StyledTextButton>
+                        </PromptTokenTextButton>
                     ) : (
-                        <StyledChip
+                        <PromptTokenChip
                             disableHover={false}
                             isChipSelected={isTokenSelected}
                             key={props.token.index}
@@ -221,4 +129,4 @@ export function PromptSetToken(props: {
             )}
         </>
     );
-}
+};

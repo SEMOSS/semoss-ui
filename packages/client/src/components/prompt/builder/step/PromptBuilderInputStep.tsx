@@ -1,14 +1,14 @@
 import React, { useEffect, useState } from 'react';
-import { TOKEN_TYPE_TEXT, TOKEN_TYPE_INPUT } from '../prompt.constants';
-import { Builder, Token } from '../prompt.types';
-import { StyledStepPaper, StyledTextPaper } from '../prompt.styled';
+import { TOKEN_TYPE_TEXT, TOKEN_TYPE_INPUT } from '../../prompt.constants';
+import { Builder, Token } from '../../prompt.types';
+import { StyledStepPaper, StyledTextPaper } from '../../prompt.styled';
 import { Box, Typography } from '@semoss/ui';
-import { PromptSetToken } from '../shared/PromptToken';
+import { PromptSetToken } from '../../shared';
 
-export function PromptBuilderBuilderInputStep(props: {
+export const PromptBuilderInputStep = (props: {
     builder: Builder;
     setBuilderValue: (builderStepKey: string, value: Token[]) => void;
-}) {
+}) => {
     const [tokens, setTokens] = useState<Token[]>([]);
     // Tokens in input, necessary to accomodate multiple word inputs
     const [selectedInputTokens, setSelectedInputTokens] = useState([]);
@@ -335,4 +335,4 @@ export function PromptBuilderBuilderInputStep(props: {
             </StyledTextPaper>
         </StyledStepPaper>
     );
-}
+};

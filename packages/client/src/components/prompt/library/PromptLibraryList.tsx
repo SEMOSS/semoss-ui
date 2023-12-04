@@ -26,10 +26,10 @@ const StyledListItemText = styled(List.ItemText)(() => ({
     textTransform: 'capitalize',
 }));
 
-export function PromptLibraryList(props: {
+export const PromptLibraryList = (props: {
     filter: string;
     setFilter: (filter: string) => void;
-}) {
+}) => {
     return (
         <Paper>
             <List disablePadding>
@@ -50,4 +50,4 @@ export function PromptLibraryList(props: {
             </List>
         </Paper>
     );
-}
+};

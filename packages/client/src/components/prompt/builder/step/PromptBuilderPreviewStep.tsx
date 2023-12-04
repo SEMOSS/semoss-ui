@@ -1,12 +1,12 @@
-import { Builder, Token } from '../prompt.types';
-import { StyledStepPaper, StyledTextPaper } from '../prompt.styled';
+import { Builder, Token } from '../../prompt.types';
+import { StyledStepPaper, StyledTextPaper } from '../../prompt.styled';
 import { Box, Typography } from '@mui/material';
-import { PromptPreview } from '../shared';
+import { PromptPreview } from '../../shared';
 
-export function PromptBuilderBuilderPreviewStep(props: {
+export const PromptBuilderPreviewStep = (props: {
     builder: Builder;
     setBuilderValue: (builderStepKey: string, value: Token[]) => void;
-}) {
+}) => {
     const getBuilderTokens = (builder: Builder) => {
         return Array.isArray(builder.inputs.value) ? builder.inputs.value : [];
     };
@@ -31,4 +31,4 @@ export function PromptBuilderBuilderPreviewStep(props: {
             </StyledTextPaper>
         </StyledStepPaper>
     );
-}
+};

@@ -9,11 +9,11 @@ import { useNavigate } from 'react-router-dom';
 import { Close } from '@mui/icons-material';
 import { useRootStore } from '@/hooks';
 
-export function PromptLibraryDialog(props: {
+export const PromptLibraryDialog = (props: {
     builder: Builder;
     promptLibraryOpen: boolean;
     closePromptLibrary: () => void;
-}) {
+}) => {
     const { monolithStore } = useRootStore();
     const navigate = useNavigate();
     const [filter, setFilter] = useState('all');
@@ -96,4 +96,4 @@ export function PromptLibraryDialog(props: {
             </Modal.Content>
         </Modal>
     );
-}
+};

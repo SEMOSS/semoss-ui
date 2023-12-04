@@ -1,63 +1,14 @@
 import { useEffect, useState } from 'react';
-import { Builder, Token } from '../prompt.types';
-import { StyledStepPaper } from '../prompt.styled';
-import { Autocomplete } from '@mui/material';
-import { Box, Grid, TextField, Typography } from '@semoss/ui';
-import {
-    TOKEN_TYPE_INPUT,
-    INPUT_TYPES,
-    INPUT_TYPE_DISPLAY,
-} from '../prompt.constants';
-import { PromptReadonlyInputToken } from '../shared/PromptToken';
+import { Builder, Token } from '../../prompt.types';
+import { StyledStepPaper } from '../../prompt.styled';
+import { Box, Typography } from '@semoss/ui';
+import { TOKEN_TYPE_INPUT } from '../../prompt.constants';
+import { PromptBuilderInputTypeSelection } from './PromptBuilderInputTypeSelection';
 
-function InputSelection(props: {
-    inputToken: Token;
-    inputType: string | null;
-    setInputType: (inputTokenIndex: number, inputType: string) => void;
-}) {
-    return (
-        <Grid
-            sx={{
-                justifyContent: 'space-between',
-                alignItem: 'center',
-                marginY: 2,
-            }}
-            container
-            direction="row"
-        >
-            <Grid item>
-                <PromptReadonlyInputToken token={props.inputToken} />
-            </Grid>
-            <Grid item xs={8} md={4}>
-                <Autocomplete
-                    disableClearable
-                    id="input-token-autocomplete"
-                    options={INPUT_TYPES}
-                    value={props.inputType}
-                    getOptionLabel={(option) => INPUT_TYPE_DISPLAY[option]}
-                    onChange={(_, newInputType: string) => {
-                        props.setInputType(
-                            props.inputToken.index,
-                            newInputType,
-                        );
-                    }}
-                    renderInput={(params) => (
-                        <TextField
-                            {...params}
-                            label="Input Type"
-                            variant="standard"
-                        />
-                    )}
-                />
-            </Grid>
-        </Grid>
-    );
-}
-
-export function PromptBuilderBuilderInputTypeStep(props: {
+export const PromptBuilderInputTypeStep = (props: {
     builder: Builder;
     setBuilderValue: (builderStepKey: string, value: object) => void;
-}) {
+}) => {
     const [inputTokens, setInputTokens] = useState([]);
     const [inputTypes, setInputTypes] = useState({});
     const setInputType = (inputTokenIndex: number, inputType: string) => {
@@ -100,7 +51,7 @@ export function PromptBuilderBuilderInputTypeStep(props: {
                 </Typography>
             </Box>
             {Array.from(inputTokens, (inputToken: Token) => (
-                <InputSelection
+                <PromptBuilderInputTypeSelection
                     inputToken={inputToken}
                     inputType={inputTypes[inputToken.index]}
                     key={inputToken.index}
@@ -109,4 +60,4 @@ export function PromptBuilderBuilderInputTypeStep(props: {
             ))}
         </StyledStepPaper>
     );
-}
+};

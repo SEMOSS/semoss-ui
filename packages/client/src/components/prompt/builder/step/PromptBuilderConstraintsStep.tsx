@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
-import { Builder, ConstraintSettings } from '../prompt.types';
-import { StyledStepPaper } from '../prompt.styled';
+import { Builder, ConstraintSettings } from '../../prompt.types';
+import { StyledStepPaper } from '../../prompt.styled';
 import { styled, Box, Stack, Typography } from '@semoss/ui';
 import { Switch, SwitchProps } from '@mui/material';
 
@@ -124,7 +124,7 @@ const StyledSwitch = styled((props: SwitchProps) => (
     },
 }));
 
-function PromptBuilderConstraint(props: {
+export const PromptBuilderConstraint = (props: {
     constraint: Constraint;
     constraintSettings: ConstraintSettings;
     setBuilderValue: (
@@ -132,7 +132,7 @@ function PromptBuilderConstraint(props: {
         value: ConstraintSettings,
     ) => void;
     toggleConstraintSetting: (constraintKey: string) => void;
-}) {
+}) => {
     return (
         <StyledBox>
             <StyledSwitch
@@ -156,9 +156,9 @@ function PromptBuilderConstraint(props: {
             </Stack>
         </StyledBox>
     );
-}
+};
 
-export function PromptBuilderBuilderConstraintsStep(props: {
+export function PromptBuilderConstraintsStep(props: {
     builder: Builder;
     setBuilderValue: (
         builderStepKey: string,

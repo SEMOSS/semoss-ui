@@ -1,4 +1,4 @@
-import { Builder, BuilderStepItem } from '../prompt.types';
+import { Builder, BuilderStepItem } from '../../prompt.types';
 import { List } from '@semoss/ui';
 
 interface BuilderStepItemProps {
@@ -6,9 +6,7 @@ interface BuilderStepItemProps {
     currentBuilderStep: number;
 }
 
-export function PromptBuilderBuilderSummaryStepItem(
-    props: BuilderStepItemProps,
-) {
+export const PromptBuilderSummaryStepItem = (props: BuilderStepItemProps) => {
     const stepItemsForSummaryStep = Object.values(props.builder).filter(
         (builderStepItem: BuilderStepItem) => {
             return builderStepItem.step === props.currentBuilderStep;
@@ -51,4 +49,4 @@ export function PromptBuilderBuilderSummaryStepItem(
             ))}
         </List>
     );
-}
+};
