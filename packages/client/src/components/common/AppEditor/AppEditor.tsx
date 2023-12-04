@@ -578,7 +578,7 @@ export const AppEditor = (props: AppEditorProps) => {
         // success notification
         notification.add({
             color: 'success',
-            message: `"Your file has been saved!"`,
+            message: `Your file has been saved!`,
         });
 
         // Refreshes App Renderer
@@ -801,19 +801,19 @@ export const AppEditor = (props: AppEditorProps) => {
             console.log('Handles nodes that have a parent');
             const indexOfSelectedDirectory = expanded.indexOf(selected[0]);
 
+            let foundNode;
             if (indexOfSelectedDirectory < 0) {
-                notification.add({
-                    color: 'error',
-                    message: "Can't find Node on FE",
-                });
-                console.error('Error finding node');
-                return;
+                const selectedFilesParent = selected[0].substring(
+                    0,
+                    selected[0].lastIndexOf('/') + 1,
+                );
+                foundNode = findNodeById(appDirectory, selectedFilesParent);
+            } else {
+                foundNode = findNodeById(
+                    appDirectory,
+                    !expanded.length ? '' : expanded[indexOfSelectedDirectory],
+                );
             }
-
-            const foundNode = findNodeById(
-                appDirectory,
-                !expanded.length ? '' : expanded[indexOfSelectedDirectory],
-            );
 
             // 2. Add new NodeInterface to the chidren of that directory
             const nodeChildrenCopy = foundNode.children;
@@ -1265,7 +1265,7 @@ export const AppEditor = (props: AppEditorProps) => {
                                     <CustomAccordionTriggerContent>
                                         <CustomAccordionTriggerLabel>
                                             <Typography variant="body1">
-                                                App Directory
+                                                Files
                                             </Typography>
                                         </CustomAccordionTriggerLabel>
                                         {openAccordion.indexOf('file') > -1 ? (
