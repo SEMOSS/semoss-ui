@@ -18,7 +18,7 @@ import {
     SerializedState,
 } from './state.types';
 import { QueryState, QueryStateConfig } from './query.state';
-import { StepState, StepStateConfig } from './step.state';
+import { StepStateConfig } from './step.state';
 
 interface StateStoreInterface {
     /** insightID to load */
@@ -844,18 +844,8 @@ export class StateStore {
         // get the query
         const q = this._store.queries[queryId];
 
-        // create the new step
-        const step = new StepState(
-            {
-                ...config,
-                id: stepId,
-            },
-            q,
-            this,
-        );
-
         // add the step
-        q._processNewStep(step, previousStepId);
+        q._processNewStep(stepId, config, previousStepId);
     };
 
     /**
