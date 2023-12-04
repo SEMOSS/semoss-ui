@@ -134,8 +134,6 @@ export function getQueryForPrompt(
             steps: [
                 {
                     id: 'pixel-1',
-                    operation: [],
-                    output: undefined,
                     widget: 'code',
                     parameters: {
                         type: 'pixel',
