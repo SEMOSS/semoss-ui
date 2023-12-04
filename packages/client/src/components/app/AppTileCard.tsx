@@ -10,9 +10,8 @@ import {
     IconButton,
     Link,
 } from '@semoss/ui';
-
-import { App } from './app.types';
 import { BookmarkBorderOutlined, OpenInNewOutlined } from '@mui/icons-material';
+import { AppMetadata } from './app.types';
 
 const StyledCard = styled(Card)(() => ({
     borderRadius: '12px',
@@ -78,7 +77,7 @@ interface AppTileCardProps {
     /**
      * App
      */
-    app: App;
+    app: AppMetadata;
 
     /**
      * Background
@@ -89,7 +88,7 @@ interface AppTileCardProps {
      * Action that is triggered when clicked
      * aop - current selected app
      */
-    onAction?: (app: App) => void;
+    onAction?: (app: AppMetadata) => void;
 
     /**
      * Link to navigate to

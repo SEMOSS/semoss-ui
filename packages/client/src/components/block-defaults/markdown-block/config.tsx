@@ -1,19 +1,21 @@
 import { BlockConfig } from '@/stores';
-import { InputSettings } from '@/components/block-settings';
 import {
-    buildLayoutSection,
     buildSpacingSection,
     buildDimensionsSection,
-    buildStyleSection,
+    buildColorSection,
     buildTypographySection,
+    buildTextAlignSection,
 } from '../block-defaults.shared';
 
 import { MarkdownBlockDef, MarkdownBlock } from './Markdown';
 import { FormatListBulleted } from '@mui/icons-material';
+import { BLOCK_TYPE_DISPLAY } from '../block-defaults.constants';
+import { InputModalSettings } from '@/components/block-settings/shared/InputModalSettings';
 
 // export the config for the block
 export const config: BlockConfig<MarkdownBlockDef> = {
     widget: 'markdown',
+    type: BLOCK_TYPE_DISPLAY,
     data: {
         style: {},
         markdown: '**Hello world**',
@@ -24,14 +26,14 @@ export const config: BlockConfig<MarkdownBlockDef> = {
     },
     render: MarkdownBlock,
     icon: FormatListBulleted,
-    menu: [
+    contentMenu: [
         {
-            name: 'Content',
+            name: 'General',
             children: [
                 {
                     description: 'Markdown',
                     render: ({ id }) => (
-                        <InputSettings
+                        <InputModalSettings
                             id={id}
                             label="Markdown"
                             path="markdown"
@@ -40,10 +42,12 @@ export const config: BlockConfig<MarkdownBlockDef> = {
                 },
             ],
         },
-        buildLayoutSection(),
+    ],
+    styleMenu: [
+        buildTypographySection(),
+        buildTextAlignSection(),
+        buildColorSection(),
         buildSpacingSection(),
         buildDimensionsSection(),
-        buildStyleSection(),
-        buildTypographySection(),
     ],
 };

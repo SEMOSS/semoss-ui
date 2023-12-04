@@ -12,12 +12,14 @@ import {
     TextField,
     Typography,
     styled,
+    RadioGroup,
 } from '@semoss/ui';
 
 import { Controller, useForm } from 'react-hook-form';
 import { useRootStore } from '@/hooks';
-import { RadioGroup } from '@semoss/ui';
-import { App } from './';
+import { HelloWorldApp, SerializedState } from '@/stores';
+
+import { AppMetadata } from './app.types';
 
 const StyledBox = styled(Box)(({ theme }) => ({
     boxShadow: '0px 5px 22px 0px rgba(0, 0, 0, 0.06)',
@@ -135,7 +137,7 @@ interface CreateAppProps {
      */
     data?: {
         type: string; // | 'Blank Template'| 'Build App' | 'Template App' | 'Import App' | 'Prompt Builder' | 'UI Builder';
-        options?: App;
+        options?: AppMetadata;
     };
 }
 
@@ -281,10 +283,19 @@ export const ImportAppForm = (props: CreateAppProps) => {
         setIsLoading(true);
 
         if (APP_TYPE === 'UI_BUILDER' || APP_TYPE === 'PROMPT_BUILDER') {
-            // Hit Reactor to add property in smss file for APP_TYPE = 'ui-builder' | 'prompt-builder'
-            const pixel = `CreateBuilderApp(type=[${APP_TYPE}]);`;
+            // TODO: allow creation from other jsons
+            const pixel = `CreateAppFromBlocks ( project = [ "${
+                formVals.APP_NAME
+            }" ] , json =[${JSON.stringify(HelloWorldApp)}]  ) ;`;
 
-            onCreate('dummy id: 17833789124');
+            // create the app
+            const { pixelReturn } = await monolithStore.runQuery<[AppMetadata]>(
+                pixel,
+            );
+
+            const app = pixelReturn[0].output;
+
+            onCreate(app.project_id);
         } else if (APP_TYPE === 'TEMPLATE_APP') {
             let pixel = `CreateAppFromTemplate(meta=["${formVals}"])`;
 

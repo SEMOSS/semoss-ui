@@ -1,19 +1,20 @@
 import { BlockConfig } from '@/stores';
-import { InputSettings } from '@/components/block-settings';
 import {
-    buildLayoutSection,
     buildSpacingSection,
     buildDimensionsSection,
-    buildStyleSection,
+    buildColorSection,
     buildTypographySection,
+    buildTextAlignSection,
 } from '../block-defaults.shared';
-
 import { TextBlockDef, TextBlock } from './TextBlock';
 import { TextFields } from '@mui/icons-material';
+import { BLOCK_TYPE_DISPLAY } from '../block-defaults.constants';
+import { InputModalSettings } from '@/components/block-settings/shared/InputModalSettings';
 
 // export the config for the block
 export const config: BlockConfig<TextBlockDef> = {
     widget: 'text',
+    type: BLOCK_TYPE_DISPLAY,
     data: {
         style: {},
         text: 'Hello world',
@@ -24,22 +25,24 @@ export const config: BlockConfig<TextBlockDef> = {
     },
     render: TextBlock,
     icon: TextFields,
-    menu: [
+    contentMenu: [
         {
-            name: 'Content',
+            name: 'General',
             children: [
                 {
                     description: 'Text',
                     render: ({ id }) => (
-                        <InputSettings id={id} label="Text" path="text" />
+                        <InputModalSettings id={id} label="Text" path="text" />
                     ),
                 },
             ],
         },
-        buildLayoutSection(),
+    ],
+    styleMenu: [
+        buildTypographySection(),
+        buildTextAlignSection(),
+        buildColorSection(),
         buildSpacingSection(),
         buildDimensionsSection(),
-        buildStyleSection(),
-        buildTypographySection(),
     ],
 };

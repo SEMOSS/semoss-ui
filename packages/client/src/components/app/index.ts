@@ -9,6 +9,3 @@ export * from './ConnectEngines';
 export * from './ImportAppForm';
 export * from './ImportAppAccess';
 export * from './AppFilter';
-
-export { AppActions } from './AppActions';
-export { AppView } from './AppView';

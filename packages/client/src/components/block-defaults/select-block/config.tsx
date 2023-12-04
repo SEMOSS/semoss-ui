@@ -1,20 +1,23 @@
 import { BlockConfig } from '@/stores';
-import {
-    InputSettings,
-    InputFromValuesSettings,
-    InputValuesSettings,
-} from '@/components/block-settings';
+import { InputSettings } from '@/components/block-settings';
 
 import { SelectBlockDef, SelectBlock } from './SelectBlock';
 import { ViewList } from '@mui/icons-material';
 
 import { buildSpacingSection } from '../block-defaults.shared';
+import { BLOCK_TYPE_INPUT } from '../block-defaults.constants';
+import { SelectInputValueSettings } from '@/components/block-settings/custom/SelectInputValueSettings';
+import { SelectInputOptionsSettings } from '@/components/block-settings/custom/SelectInputOptionsSettings';
 
 // export the config for the block
 export const config: BlockConfig<SelectBlockDef> = {
     widget: 'select',
+    type: BLOCK_TYPE_INPUT,
     data: {
-        style: {},
+        style: {
+            width: '100%',
+            padding: '8px',
+        },
         value: '',
         label: 'Example Select Input',
         options: [],
@@ -27,18 +30,14 @@ export const config: BlockConfig<SelectBlockDef> = {
     },
     render: SelectBlock,
     icon: ViewList,
-    menu: [
+    contentMenu: [
         {
-            name: 'Select',
+            name: 'General',
             children: [
                 {
                     description: 'Value',
                     render: ({ id }) => (
-                        <InputFromValuesSettings
-                            id={id}
-                            label="Value"
-                            path="value"
-                        />
+                        <SelectInputValueSettings id={id} path="value" />
                     ),
                 },
                 {
@@ -51,9 +50,8 @@ export const config: BlockConfig<SelectBlockDef> = {
                     description: 'Options',
                     render: ({ id }) => {
                         return (
-                            <InputValuesSettings
+                            <SelectInputOptionsSettings
                                 id={id}
-                                label="Options"
                                 path="options"
                             />
                         );
@@ -61,6 +59,6 @@ export const config: BlockConfig<SelectBlockDef> = {
                 },
             ],
         },
-        buildSpacingSection(),
     ],
+    styleMenu: [buildSpacingSection()],
 };

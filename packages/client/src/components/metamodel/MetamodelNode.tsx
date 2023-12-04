@@ -22,7 +22,7 @@ import {
 
 import { useMetamodel } from '@/hooks';
 
-import { EditColumnModal } from '@/components/physicalDatabase';
+import { EditColumnModal } from '@/components/physical-database';
 
 // one-off custom icon from figma
 const TableIcon = () => {

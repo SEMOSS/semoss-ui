@@ -1,4 +1,15 @@
-import { Block, Create, DisplaySettings, Input } from '@mui/icons-material';
+import { Create, DisplaySettings, Input, Preview } from '@mui/icons-material';
+
+// use contants for steps so it's easy to reorder/add new ones
+export const PROMPT_BUILDER_CONTEXT_STEP = 1;
+export const PROMPT_BUILDER_INPUTS_STEP = 2;
+export const PROMPT_BUILDER_INPUT_TYPES_STEP = 3;
+export const PROMPT_BUILDER_CONSTRAINTS_STEP = 4;
+export const PROMPT_BUILDER_PREVIEW_STEP = 4;
+
+export const LIBRARY_PROMPT_TAG_TRAVEL = 'travel';
+export const LIBRARY_PROMPT_TAG_COMMUNICATIONS = 'communications';
+export const LIBRARY_PROMPT_TAG_BUSINESS = 'business';
 
 export const TOKEN_TYPE_TEXT = 'text';
 export const TOKEN_TYPE_INPUT = 'input';
@@ -48,4 +59,8 @@ export const SUMMARY_STEPS = [
     //     title: 'Set Constraints',
     //     icon: Block,
     // },
+    {
+        title: 'Preview Prompt',
+        icon: Preview,
+    },
 ];

@@ -130,9 +130,9 @@ export const EngineShell = (props: EngineShellProps) => {
 
         monolithStore.runQuery(pixel).then((response) => {
             const output = response.pixelReturn[0].output,
-                insightID = response.insightID;
+                insightId = response.insightId;
 
-            monolithStore.download(insightID, output);
+            monolithStore.download(insightId, output);
         });
         setExportLoading(false);
     };

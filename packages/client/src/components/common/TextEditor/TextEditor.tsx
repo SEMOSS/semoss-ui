@@ -1,16 +1,9 @@
-import React, {
-    useMemo,
-    useEffect,
-    useRef,
-    useState,
-    SyntheticEvent,
-} from 'react';
-import Editor, { loader } from '@monaco-editor/react';
-import { IconButton, Typography, Tabs, styled, keyframes } from '@semoss/ui';
+import { useMemo, useEffect, SyntheticEvent } from 'react';
+import Editor from '@monaco-editor/react';
+import { IconButton, Typography, Tabs, styled, Container } from '@semoss/ui';
 import { File, ControlledFile } from '../';
 import { Clear, FormatAlignJustify, SaveOutlined } from '@mui/icons-material';
 import { Button } from '@semoss/ui';
-import { Container } from '../../../../../ui/dist';
 
 import { Icon as FiletypeIcon } from '@mdi/react';
 import { FILE_ICON_MAP } from './text-editor.constants';

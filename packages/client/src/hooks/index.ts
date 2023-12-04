@@ -1,5 +1,4 @@
 import { useAPI } from './useAPI';
-import { useApp } from './useApp';
 import { useBlock } from './useBlock';
 import { useBlocks } from './useBlocks';
 import { useBlockSettings } from './useBlockSettings';
@@ -10,10 +9,10 @@ import { useSettings } from './useSettings';
 import { usePixel } from './usePixel';
 import { useDesigner } from './useDesigner';
 import { useStepper } from './useStepper';
+import { useWorkspace } from './useWorkspace';
 
 export {
     useAPI,
-    useApp,
     useBlock,
     useBlocks,
     useBlockSettings,
@@ -24,4 +23,5 @@ export {
     usePixel,
     useDesigner,
     useStepper,
+    useWorkspace,
 };

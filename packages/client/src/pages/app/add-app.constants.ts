@@ -9,7 +9,7 @@ export type APP_STEP_INTERFACE = {
     disabled: boolean;
 };
 
-export const ADD_APP_STEPS = {
+export const ADD_APP_STEPS: Record<string, APP_STEP_INTERFACE> = {
     IMPORT_APP: {
         title: 'Import App',
         description:
@@ -24,6 +24,7 @@ export const ADD_APP_STEPS = {
                 title: 'Access',
             },
         ],
+        disabled: false,
     },
     TEMPLATE_APP: {
         title: 'Build from scratch',
@@ -66,12 +67,12 @@ export const ADD_APP_STEPS = {
         description:
             'Empower your web design journey with our innovative UI Builder, responding to the prompt to create visually stunning websites effortlessly.  This intuitive platform allows you to design pixel-perfect layouts, customize interactions, and bring ideas to life seamlessly, all while freeing you from code constraints',
         steps: [],
+        disabled: false,
     },
     UI_BUILDER: {
         title: 'UI Builder',
         description:
             'Craft visually stunning websites effortlessly with our UI Builder. Design pixel-perfect layouts, customize interactions, and bring ideas to life seamlessly, empowering you to create without code constraints.',
-        disabled: true,
         steps: [
             {
                 name: 'metavals',
@@ -82,5 +83,6 @@ export const ADD_APP_STEPS = {
                 title: 'Access',
             },
         ],
+        disabled: false,
     },
 };

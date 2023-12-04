@@ -52,7 +52,7 @@ export class MonolithStore {
      * @param insightID - insightID to execute the pixel against
      * @param pixel - pixel to execute
      */
-    async run(insightID: string, pixel: string) {
+    async run<O extends unknown[] | []>(insightID: string, pixel: string) {
         // build the expression
         let postData = '';
 
@@ -68,7 +68,7 @@ export class MonolithStore {
                     isMeta: boolean;
                     operationType: string[];
                     additionalOutput: { output: string }[];
-                    output: any;
+                    output: O[number];
                     pixelExpression: string;
                     pixelId: string;
                 }[];
@@ -86,7 +86,21 @@ export class MonolithStore {
             throw Error('No Pixel Response');
         }
 
-        return response.data;
+        // collect the errors
+        const errors: string[] = [];
+        for (const p of response.data.pixelReturn) {
+            const { output, operationType } = p;
+
+            if (operationType.indexOf('ERROR') > -1) {
+                errors.push(output as string);
+            }
+        }
+
+        return {
+            errors: errors,
+            insightId: response.data.insightID,
+            pixelReturn: response.data.pixelReturn,
+        };
     }
 
     /**
@@ -94,10 +108,11 @@ export class MonolithStore {
      *
      * @param pixel - pixel to execute
      */
-    async runQuery(pixel: string) {
+    //TODO: switch to extend unknown
+    async runQuery<O extends any[] | []>(pixel: string) {
         const { configStore } = this._root;
 
-        return this.run(configStore.store.insightID, pixel);
+        return this.run<O>(configStore.store.insightID, pixel);
     }
 
     /**

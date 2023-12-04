@@ -1,10 +1,10 @@
 import { makeAutoObservable } from 'mobx';
 
-import { StateStoreImplementation } from '../state';
+import { StateStore } from '../state';
 
 export interface DesignerStoreInterface {
     /** Blocks state information */
-    state: StateStoreImplementation;
+    state: StateStore;
     /** Current rendered block */
     rendered: string;
     /** Current selected block */
@@ -17,8 +17,8 @@ export interface DesignerStoreInterface {
         active: boolean;
         /** Method that is triggered when the item is dropped */
         canDrop: (parent: string, slot: string) => boolean;
-        /** Title of the dragged item */
-        ghostTitle: string;
+        /** Name of the dragged widget */
+        ghostWidget: string;
         /** Position of the dragged item */
         ghostPosition: {
             x: number;
@@ -44,15 +44,6 @@ export interface DesignerStoreInterface {
             width: number;
         } | null;
     };
-
-    /** overlay information */
-    overlay: {
-        /** track if the overlay is open or closed */
-        open: boolean;
-
-        /** content to display in the overlay */
-        render: () => JSX.Element;
-    };
 }
 
 /**
@@ -67,18 +58,14 @@ export class DesignerStore {
         drag: {
             active: false,
             canDrop: () => false,
-            ghostTitle: '',
+            ghostWidget: '',
             ghostPosition: null,
             placeholderSize: null,
             placeholderAction: null,
         },
-        overlay: {
-            open: false,
-            render: null,
-        },
     };
 
-    constructor(state: StateStoreImplementation) {
+    constructor(state: StateStore) {
         // register the blocks
         this._store.state = state;
 
@@ -130,14 +117,6 @@ export class DesignerStore {
     }
 
     /**
-     * Get the overlay information
-     * @returns the overlay information
-     */
-    get overlay() {
-        return this._store.overlay;
-    }
-
-    /**
      * Actions
      */
     /**
@@ -182,7 +161,7 @@ export class DesignerStore {
      * @param canDrop - check if the block can be dropped onto the parent and slot
      */
     activateDrag(
-        title: DesignerStoreInterface['drag']['ghostTitle'],
+        widget: DesignerStoreInterface['drag']['ghostWidget'],
         canDrop: DesignerStoreInterface['drag']['canDrop'],
     ) {
         // activate the drag
@@ -192,7 +171,7 @@ export class DesignerStore {
         this._store.drag.canDrop = canDrop;
 
         // initialize the ghost
-        this._store.drag.ghostTitle = title;
+        this._store.drag.ghostWidget = widget;
         this._store.drag.ghostPosition = null;
 
         // reset the placeholder
@@ -207,7 +186,7 @@ export class DesignerStore {
         this.resetPlaceholder();
 
         // reset the ghost
-        this._store.drag.ghostTitle = '';
+        this._store.drag.ghostWidget = '';
         this._store.drag.ghostPosition = null;
 
         // reset the validation
@@ -266,27 +245,5 @@ export class DesignerStore {
 
         // update the size for the placeholder
         this._store.drag.placeholderSize = size;
-    }
-
-    /**
-     * Open the overlay
-     */
-    openOverlay(content: DesignerStoreInterface['overlay']['render']) {
-        // open the overlay
-        this._store.overlay.open = true;
-
-        // set the content
-        this._store.overlay.render = content;
-    }
-
-    /**
-     * Close the overlay
-     */
-    closeOverlay() {
-        // close the overlay
-        this._store.overlay.open = false;
-
-        // clear the content
-        this._store.overlay.render = null;
     }
 }

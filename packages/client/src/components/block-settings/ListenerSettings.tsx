@@ -1,11 +1,15 @@
 import { observer } from 'mobx-react-lite';
 import { styled, Stack, Typography, IconButton, Button } from '@semoss/ui';
 
-import { useDesigner, useBlockSettings } from '@/hooks';
+import { useBlockSettings, useWorkspace } from '@/hooks';
 import { BlockDef } from '@/stores';
 import { Add, Delete, Edit } from '@mui/icons-material';
 
 import { ListenerActionOverlay } from './ListenerActionOverlay';
+
+/**
+ * TODO: reorganize and update the styling once app/blocks is up and working
+ */
 
 interface ListenerSettingsProps<D extends BlockDef = BlockDef> {
     /**
@@ -29,7 +33,7 @@ export const ListenerSettings = observer(
         listener,
     }: ListenerSettingsProps<D>) => {
         const { listeners, setListener } = useBlockSettings(id);
-        const { designer } = useDesigner();
+        const { workspace } = useWorkspace();
 
         /**
          * Open the overlay to create a edit action
@@ -37,12 +41,13 @@ export const ListenerSettings = observer(
          * @param actionIdx - index of the action to edit. Will create a new one if -1
          */
         const openActionOverlay = (actionIdx = -1) => {
-            designer.openOverlay(() => {
+            workspace.openOverlay(() => {
                 return (
                     <ListenerActionOverlay
                         id={id}
                         listener={listener}
                         actionIdx={actionIdx}
+                        onClose={() => workspace.closeOverlay()}
                     />
                 );
             });
