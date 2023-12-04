@@ -8,12 +8,15 @@ import React, {
 import Editor, { loader } from '@monaco-editor/react';
 import { IconButton, Typography, Tabs, styled, keyframes } from '@semoss/ui';
 import { File, ControlledFile } from '../';
-import { Clear, SaveOutlined } from '@mui/icons-material';
+import { Clear, FormatAlignJustify, SaveOutlined } from '@mui/icons-material';
 import { Button } from '@semoss/ui';
 import { Container } from '../../../../../ui/dist';
 
 import { Icon as FiletypeIcon } from '@mdi/react';
 import { FILE_ICON_MAP } from './text-editor.constants';
+
+import prettier from 'prettier';
+import parserBabel from 'prettier/parser-babel'; // Choose the appropriate parser
 
 // Weird thing with Monaco Editor and does not get loaded in correctly from install
 // loader.config({
@@ -261,6 +264,16 @@ export const TextEditor = (props: TextEditorProps) => {
         setControlledFiles(newControlledFiles);
     }, [files.length, activeIndex, controlledFiles.length]);
 
+    const prettifyFile = () => {
+        const formatted = prettier.format(activeFile.content, {
+            parser: 'babel', // Use 'babel' for JSX
+            plugins: [parserBabel], // Use the appropriate parser plugin
+            semi: false, // Example option: Remove semicolons
+            singleQuote: true, // Example option: Use single quotes
+        });
+
+        editFile(formatted);
+    };
     /**
      * Handles change with editor
      * @param newContent
@@ -287,9 +300,12 @@ export const TextEditor = (props: TextEditorProps) => {
      *
      */
     const saveFile = async () => {
-        // 1. Save Asset with reactor
-        // 2. Save the controlled files new original to content
-        // 3. Trigger Memoized Val: Set New Counter to refresh active file based on new controlled files
+        // 1. Format File
+        // 2. Save Asset with reactor
+        // 3. Save the controlled files new original to content
+        // 4. Trigger Memoized Val: Set New Counter to refresh active file based on new controlled files
+
+        await prettifyFile();
 
         const saveSuccessful: boolean = await onSave(
             controlledFiles[activeIndex],
@@ -306,21 +322,6 @@ export const TextEditor = (props: TextEditorProps) => {
             let newCounter = counter;
             setCounter((newCounter += 1));
         }
-    };
-
-    const closeTabByIndex = async (i) => {
-        console.warn(' closing tab', controlledFiles);
-
-        const newControlledFiles = controlledFiles;
-        newControlledFiles.splice(i, 1);
-
-        setControlledFiles(newControlledFiles);
-
-        // close this index, set state of files in parent
-        await onClose(i);
-
-        // Refresh Active File Memoized value
-        setCounter(counter + 1);
     };
 
     /** ------------------
@@ -409,16 +410,10 @@ export const TextEditor = (props: TextEditorProps) => {
                             value={activeIndex}
                             variant="scrollable"
                             scrollButtons={false}
-                            // indicatorColor={'transparent'}
                             onChange={(
                                 event: SyntheticEvent,
                                 newValue: number,
                             ) => {
-                                // tabRefs[newValue].current.scrollIntoView({
-                                //     behavior: 'smooth',
-                                //     block: 'center',
-                                // });
-
                                 setActiveIndex(newValue);
                             }}
                         >
@@ -488,6 +483,16 @@ export const TextEditor = (props: TextEditorProps) => {
                                 );
                             })}
                         </Tabs>
+                        {/* <StyledIconButton
+                            size={'small'}
+                            color={'secondary'}
+                            title={'Prettify'}
+                            onClick={() => {
+                                prettifyFile();
+                            }}
+                        >
+                            <FormatAlignJustify />
+                        </StyledIconButton> */}
                         <StyledIconButton
                             size={'small'}
                             color={'secondary'}
@@ -502,6 +507,7 @@ export const TextEditor = (props: TextEditorProps) => {
                     <StyledActiveFilePath>
                         {formatFilePath(activeFile.id)}
                     </StyledActiveFilePath>
+
                     <Editor
                         // theme={'vs-dark'}
                         width={'100%'}
