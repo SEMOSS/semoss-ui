@@ -7,6 +7,7 @@ import {
 } from './container-block';
 import { config as DividerBlockConfig, DividerBlockDef } from './divider-block';
 import { config as FormBlockConfig, FormBlockDef } from './form-block';
+import { config as IframeBlockConfig, IframeBlockDef } from './iframe-block';
 import { config as InputBlockConfig, InputBlockDef } from './input-block';
 import {
     config as MarkdownBlockConfig,
@@ -30,6 +31,7 @@ export type DefaultBlockDefinitions =
     | ContainerBlockDef
     | DividerBlockDef
     | FormBlockDef
+    | IframeBlockDef
     | InputBlockDef
     | MarkdownBlockDef
     | PageBlockDef
@@ -44,6 +46,7 @@ export const DefaultBlocks: Registry<DefaultBlockDefinitions> = {
     [ContainerBlockConfig.widget]: ContainerBlockConfig,
     [DividerBlockConfig.widget]: DividerBlockConfig,
     [FormBlockConfig.widget]: FormBlockConfig,
+    [IframeBlockConfig.widget]: IframeBlockConfig,
     [InputBlockConfig.widget]: InputBlockConfig,
     [MarkdownBlockConfig.widget]: MarkdownBlockConfig,
     [PageBlockConfig.widget]: PageBlockConfig,

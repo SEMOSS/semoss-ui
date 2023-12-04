@@ -32,6 +32,11 @@ interface InputModalSettingsProps<D extends BlockDef = BlockDef> {
      * Path to update
      */
     path: Paths<Block<D>['data'], 4>;
+
+    /**
+     * Placeholder for text field
+     */
+    placeholder?: string;
 }
 
 const StyledModalHeader = styled(Stack)(({ theme }) => ({
@@ -46,6 +51,7 @@ export const InputModalSettings = observer(
         id,
         label = '',
         path,
+        placeholder = '',
     }: InputModalSettingsProps<D>) => {
         const { data, setData } = useBlockSettings<D>(id);
 
@@ -108,6 +114,7 @@ export const InputModalSettings = observer(
                 <BaseSettingSection label={label}>
                     <TextField
                         fullWidth
+                        placeholder={placeholder}
                         value={value}
                         onChange={(e) => {
                             // sync the data on change
@@ -148,6 +155,7 @@ export const InputModalSettings = observer(
                     <Modal.Content>
                         <TextField
                             fullWidth
+                            placeholder={placeholder}
                             multiline
                             rows={
                                 data.hasOwnProperty('type') &&
