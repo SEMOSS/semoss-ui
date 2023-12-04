@@ -23,6 +23,7 @@ export const MarkdownBlock: BlockComponent = observer(({ id }) => {
             }}
             {...attrs}
         >
+            <pre>{JSON.stringify(data, null, 2)}</pre>
             <ReactMarkdown>{data.markdown}</ReactMarkdown>
         </span>
     );

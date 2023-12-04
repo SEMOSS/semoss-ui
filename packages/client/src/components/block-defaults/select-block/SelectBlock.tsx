@@ -12,6 +12,7 @@ import { Autocomplete, TextField } from '@mui/material';
 //? =================
 //  Query LLM Engines
 //* LLM(engine = "2c6de0ff-62e0-4dd0-8380-782ac4d40245", command = "Sample Question", paramValues = [ {} ] );
+//* LLM(engine = "e4449559-bcff-4941-ae72-0e3f18e06660", command = "Sample Question", paramValues = [ {} ] );
 //? =================
 // TODO Store the File Upload URL in the Vector DB -- needs to be dynamic (LATER)
 //* CreateEmbeddingsFromDocuments (engine = "377e2321-90b7-4856-b3e2-9f6c28663049", filePaths = ["fileName1.pdf", "fileName2.pdf"]);
@@ -26,16 +27,17 @@ import { Autocomplete, TextField } from '@mui/material';
 //* ListDocumentsInVectorDatabase (engine = "377e2321-90b7-4856-b3e2-9f6c28663049");
 //? =================
 // TODO Update MarkdownBlock w/ Response/Content/Output
-//* {{VectorDatabaseQuery.pixelReturn[0]}}
+//* {{VectorDatabaseQuery.pixelReturn[0].output[0].content}}
 //? =================
 
 //* MyEngines(engineTypes=["MODEL", "VECTOR"]);
 //? =================
 //* CreateEmbeddingsFromDocuments(engine="377e2321-90b7-4856-b3e2-9f6c28663049",filePaths=["fileName1.pdf","fileName2.pdf"]);
 //? =================
+//* VectorDatabaseQuery ( engine = [ "377e2321-90b7-4856-b3e2-9f6c28663049" ] , command = [ "What is AI? How to use LLMs?" ] , limit = [ 1 ] ) ;
 //* VectorDatabaseQuery(engine=["{{SelectBlock.value.selectedVectorDB}}"],command=["{{TextFieldBlock.value}}"],limit=[1]);
 //? =================
-//* {{VectorDatabaseQuery.pixelReturn[0]}}
+//* {{vectorDBOutput.data.0.content}}
 //? =================
 // if you have to use
 //* ListDocumentsInVectorDatabase (engine = "377e2321-90b7-4856-b3e2-9f6c28663049");

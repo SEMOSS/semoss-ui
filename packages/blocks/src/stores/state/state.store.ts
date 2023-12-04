@@ -755,6 +755,7 @@ export class StateStoreImplementation {
                 runInAction(() => {
                     // set the data
                     q.data = data;
+                    console.log('UI Builder Query:', q.data);
                 });
             })
             .catch((e) => {

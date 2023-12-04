@@ -24,7 +24,7 @@ export const config: BlockConfig<FileUploadBlockDef> = {
         style: {
             width: '100%',
             fontSize: '1rem',
-            border: '3px solid black',
+            border: '4px solid darkslategray',
             borderRadius: '8px',
             padding: '10px',
         },
