@@ -137,16 +137,13 @@ export const InsightSettingsPage = () => {
     return (
         <StyledContainer>
             <StyledSearchbarContainer>
-                <Search
+                <StyledSearchbar
                     value={search}
                     onChange={(e) => {
                         setSearch(e.target.value);
                     }}
                     label="Insights"
                     size="small"
-                    sx={{ width: '80%' }}
-                    // enableEndAdornment={true}
-                    // ref={searchbarRef}
                 />
 
                 <StyledSort

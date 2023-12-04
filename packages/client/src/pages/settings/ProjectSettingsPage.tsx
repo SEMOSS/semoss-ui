@@ -1,6 +1,6 @@
 import { useEffect, useState, useRef, useReducer } from 'react';
 
-import { useRootStore, usePixel, useSettings, useAPI } from '../../hooks';
+import { useSettings, useAPI } from '../../hooks';
 import { useNavigate } from 'react-router-dom';
 import { ProjectTileCard } from '@/components/app';
 
@@ -31,6 +31,10 @@ const StyledContainer = styled('div')(({ theme }) => ({
     gap: theme.spacing(3),
 }));
 
+const StyledSearch = styled(Search)({
+    width: '80%',
+});
+
 const StyledSearchbarContainer = styled('div')(({ theme }) => ({
     display: 'flex',
     width: '100%',
@@ -40,6 +44,11 @@ const StyledSearchbarContainer = styled('div')(({ theme }) => ({
 
 const StyledSort = styled(Select)({
     width: '20%',
+});
+
+const StyledBackdrop = styled(Backdrop)({
+    backgroundColor: 'rgba(255, 255, 255, 0.5)',
+    zIndex: 1501,
 });
 
 const initialState = {
@@ -66,7 +75,6 @@ export interface ProjectInterface {
 }
 
 export const ProjectSettingsPage = () => {
-    const { configStore, monolithStore } = useRootStore();
     const { adminMode } = useSettings();
     const navigate = useNavigate();
     const [state, dispatch] = useReducer(reducer, initialState);
@@ -77,34 +85,12 @@ export const ProjectSettingsPage = () => {
     const [sort, setSort] = useState('Name');
     const [canCollect, setCanCollect] = useState(true);
     const [offset, setOffset] = useState(0);
-    const [selectedProject, setSelectedProject] =
-        useState<ProjectInterface>(null);
 
     //** amount of items to be loaded */
     const limit = 15;
 
     // To focus when getting new results
     const searchbarRef = useRef(null);
-
-    // get a list of the keys
-    const projectMetaKeys = configStore.store.config.projectMetaKeys.filter(
-        (k) => {
-            return (
-                k.display_options === 'single-checklist' ||
-                k.display_options === 'multi-checklist' ||
-                k.display_options === 'single-select' ||
-                k.display_options === 'multi-select' ||
-                k.display_options === 'single-typeahead' ||
-                k.display_options === 'multi-typeahead' ||
-                k.display_options === 'textarea'
-            );
-        },
-    );
-
-    // get metakeys to the ones we want
-    const metaKeys = projectMetaKeys.map((k) => {
-        return k.metakey;
-    });
 
     const getProjects = useAPI([
         'getProjects',
@@ -133,13 +119,6 @@ export const ProjectSettingsPage = () => {
         });
     }, [adminMode, search]);
 
-    // // show a loading screen when getProjects is pending
-    // if (getProjects.status !== 'SUCCESS') {
-    //     return (
-    //         <LoadingScreen.Trigger description="Retrieving app folders" />
-    //     );
-    // }
-
     //** append data through infinite scroll */
     useEffect(() => {
         if (getProjects.status !== 'SUCCESS') {
@@ -156,7 +135,7 @@ export const ProjectSettingsPage = () => {
 
         const mutateListWithVotes = projects;
 
-        getProjects.data.forEach((proj, i) => {
+        getProjects.data.forEach((proj) => {
             mutateListWithVotes.push({
                 ...proj,
                 project_global: proj.project_global,
@@ -219,13 +198,7 @@ export const ProjectSettingsPage = () => {
 
     return (
         <>
-            <Backdrop
-                open={getProjects.status !== 'SUCCESS'}
-                sx={{
-                    backgroundColor: 'rgba(255, 255, 255, 0.5)',
-                    zIndex: 1501,
-                }}
-            >
+            <StyledBackdrop open={getProjects.status !== 'SUCCESS'}>
                 <Stack
                     direction={'column'}
                     alignItems={'center'}
@@ -236,10 +209,10 @@ export const ProjectSettingsPage = () => {
                     <Typography variant="body2">Loading</Typography>
                     <Typography variant="caption">Projects</Typography>
                 </Stack>
-            </Backdrop>
+            </StyledBackdrop>
             <StyledContainer>
                 <StyledSearchbarContainer>
-                    <Search
+                    <StyledSearch
                         value={search}
                         onChange={(e) => {
                             setSearch(e.target.value);
@@ -248,7 +221,6 @@ export const ProjectSettingsPage = () => {
                         size="small"
                         enableEndAdornment={true}
                         ref={searchbarRef}
-                        sx={{ width: '80%' }}
                     />
                     <StyledSort
                         size={'small'}
@@ -296,7 +268,7 @@ export const ProjectSettingsPage = () => {
                                               )}
                                               id={project.project_id}
                                               description={project.description}
-                                              onClick={(id) => {
+                                              onClick={() => {
                                                   navigate(
                                                       `${project.project_id}`,
                                                       {
@@ -318,7 +290,7 @@ export const ProjectSettingsPage = () => {
                                               )}
                                               id={project.project_id}
                                               description={project.description}
-                                              onClick={(id) => {
+                                              onClick={() => {
                                                   navigate(
                                                       `${project.project_id}`,
                                                       {

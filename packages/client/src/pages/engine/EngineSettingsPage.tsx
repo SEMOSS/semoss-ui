@@ -23,7 +23,6 @@ export const EngineSettingsPage = () => {
     const { id, name, type } = useEngine();
     const navigate = useNavigate();
 
-    console.log(type);
     return (
         <SettingsContext.Provider
             value={{

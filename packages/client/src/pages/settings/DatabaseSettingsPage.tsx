@@ -74,10 +74,9 @@ const StyledSort = styled(Select)({
     width: '20%',
 });
 
-const StyledMenuItem = styled(Select.Item)({
-    width: '100%',
-    gap: '3px',
-    flexShrink: '0',
+const StyledBackdrop = styled(Backdrop)({
+    backgroundColor: 'rgba(255, 255, 255, 0.5)',
+    zIndex: 1501,
 });
 
 const initialState = {
@@ -110,8 +109,6 @@ export const DatabaseSettingsPage = () => {
     const [sort, setSort] = useState('Name');
     const [canCollect, setCanCollect] = useState(true);
     const [offset, setOffset] = useState(0);
-
-    const [selectedApp, setSelectedApp] = useState<Database>(null);
 
     //** amount of items to be loaded */
     const limit = 15;
@@ -196,11 +193,10 @@ export const DatabaseSettingsPage = () => {
 
         const mutateListWithVotes = databases;
 
-        getEngines.data.forEach((db, i) => {
+        getEngines.data.forEach((db) => {
             mutateListWithVotes.push({
                 ...db,
                 upvotes: db.upvotes ? db.upvotes : 0,
-                // hasUpvoted: false,
                 views: 'N/A',
                 trending: 'N/A',
             });
@@ -212,7 +208,6 @@ export const DatabaseSettingsPage = () => {
             value: mutateListWithVotes,
         });
 
-        setSelectedApp(null);
         searchbarRef.current?.focus();
     }, [getEngines.status, getEngines.data]);
 
@@ -224,7 +219,7 @@ export const DatabaseSettingsPage = () => {
         const favorite = !isFavorited(db.database_id);
         monolithStore
             .setEngineFavorite(db.database_id, favorite)
-            .then((response) => {
+            .then(() => {
                 if (!favorite) {
                     const newFavorites = favoritedDbs;
                     for (let i = newFavorites.length - 1; i >= 0; i--) {
@@ -278,7 +273,6 @@ export const DatabaseSettingsPage = () => {
 
         monolithStore.runQuery(pixelString).then((response) => {
             const type = response.pixelReturn[0].operationType;
-            const pixelResponse = response.pixelReturn[0].output;
 
             if (type.indexOf('ERROR') === -1) {
                 const newDatabases = [];
@@ -383,13 +377,7 @@ export const DatabaseSettingsPage = () => {
 
     return (
         <>
-            <Backdrop
-                open={getEngines.status !== 'SUCCESS'}
-                sx={{
-                    backgroundColor: 'rgba(255, 255, 255, 0.5)',
-                    zIndex: 1501,
-                }}
-            >
+            <StyledBackdrop open={getEngines.status !== 'SUCCESS'}>
                 <Stack
                     direction={'column'}
                     alignItems={'center'}
@@ -400,7 +388,7 @@ export const DatabaseSettingsPage = () => {
                     <Typography variant="body2">Loading</Typography>
                     <Typography variant="caption">Databases</Typography>
                 </Stack>
-            </Backdrop>
+            </StyledBackdrop>
             <StyledContainer>
                 <StyledSearchbarContainer>
                     <StyledSearchbar
@@ -467,10 +455,10 @@ export const DatabaseSettingsPage = () => {
                                               isFavorite={isFavorited(
                                                   db.database_id,
                                               )}
-                                              favorite={(val) => {
+                                              favorite={() => {
                                                   favoriteDb(db);
                                               }}
-                                              onClick={(id) => {
+                                              onClick={() => {
                                                   navigate(
                                                       `${db.database_id}`,
                                                       {
@@ -485,10 +473,10 @@ export const DatabaseSettingsPage = () => {
                                                       },
                                                   );
                                               }}
-                                              upvote={(val) => {
+                                              upvote={() => {
                                                   upvoteDb(db);
                                               }}
-                                              global={(val) => {
+                                              global={() => {
                                                   setDbGlobal(db);
                                               }}
                                           />
