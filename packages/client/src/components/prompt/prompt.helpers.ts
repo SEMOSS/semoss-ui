@@ -6,10 +6,14 @@ import {
     INPUT_TYPE_SELECT,
     TOKEN_TYPE_TEXT,
 } from './prompt.constants';
-import { ActionMessages, Block } from '@/stores';
-
-//TODO: Fix this
-type QueryFixMe = Record<string, unknown>;
+import {
+    ActionMessages,
+    Block,
+    MonolithStore,
+    QueryStateConfig,
+    SerializedState,
+} from '@/stores';
+import { AppMetadata } from '../app';
 
 export const DESCRIPTION_CONTAINER = 'description-container';
 export const PROMPT_CONTAINER_BLOCK_ID = 'prompt-container';
@@ -18,151 +22,6 @@ export const HELP_TEXT_BLOCK_ID = 'help-text';
 export const PROMPT_SUBMIT_BLOCK_ID = 'prompt-submit';
 export const PROMPT_RESPONSE_BLOCK_ID = 'prompt-response';
 export const PROMPT_QUERY_ID = 'prompt-query';
-export const PROMPT_BASE_BLOCKS: Record<string, Block> = {
-    'page-1': {
-        id: 'page-1',
-        widget: 'page',
-        parent: null,
-        data: {
-            style: {
-                fontFamily: 'roboto',
-            },
-        },
-        listeners: {},
-        slots: {
-            content: {
-                name: 'content',
-                children: [DESCRIPTION_CONTAINER, PROMPT_CONTAINER_BLOCK_ID],
-            },
-        },
-    },
-    [DESCRIPTION_CONTAINER]: {
-        id: DESCRIPTION_CONTAINER,
-        widget: 'container',
-        parent: {
-            id: 'page-1',
-            slot: 'content',
-        },
-        data: {
-            style: {
-                background: 'white',
-                flexDirection: 'column',
-                gap: '16px',
-                padding: '32px',
-                width: '100%',
-                maxWidth: '900px',
-                margin: '0 auto',
-            },
-        },
-        listeners: {},
-        slots: {
-            children: {
-                name: 'children',
-                children: [APP_TITLE_BLOCK_ID, HELP_TEXT_BLOCK_ID],
-            },
-        },
-    },
-    [APP_TITLE_BLOCK_ID]: {
-        id: APP_TITLE_BLOCK_ID,
-        widget: 'text',
-        parent: {
-            id: DESCRIPTION_CONTAINER,
-            slot: 'children',
-        },
-        data: {
-            style: {
-                fontSize: '2.5rem',
-                textAlign: 'center',
-            },
-            text: 'My App',
-        },
-        listeners: {},
-        slots: {},
-    },
-    [HELP_TEXT_BLOCK_ID]: {
-        id: HELP_TEXT_BLOCK_ID,
-        widget: 'text',
-        parent: {
-            id: DESCRIPTION_CONTAINER,
-            slot: 'children',
-        },
-        data: {
-            style: {
-                textAlign: 'center',
-            },
-            text: 'Welcome to the UI Builder! Below are pre-configured blocks for your prompt inputs to use in your app.',
-        },
-        listeners: {},
-        slots: {},
-    },
-    [PROMPT_CONTAINER_BLOCK_ID]: {
-        id: PROMPT_CONTAINER_BLOCK_ID,
-        widget: 'container',
-        parent: {
-            id: 'page-1',
-            slot: 'content',
-        },
-        data: {
-            style: {
-                background: 'white',
-                flexDirection: 'column',
-                gap: '16px',
-                padding: '32px',
-                width: '100%',
-                maxWidth: '900px',
-                margin: '0 auto',
-            },
-        },
-        listeners: {},
-        slots: {
-            children: {
-                name: 'children',
-                children: [PROMPT_SUBMIT_BLOCK_ID, PROMPT_RESPONSE_BLOCK_ID],
-            },
-        },
-    },
-    [PROMPT_SUBMIT_BLOCK_ID]: {
-        id: PROMPT_SUBMIT_BLOCK_ID,
-        widget: 'button',
-        parent: {
-            id: PROMPT_CONTAINER_BLOCK_ID,
-            slot: 'children',
-        },
-        data: {
-            style: {
-                color: 'white',
-                backgroundColor: 'blue',
-                width: '125px',
-            },
-            label: 'Submit',
-        },
-        listeners: {
-            onClick: [
-                {
-                    message: ActionMessages.RUN_QUERY,
-                    payload: {
-                        queryId: PROMPT_QUERY_ID,
-                    },
-                },
-            ],
-        },
-        slots: {},
-    },
-    [PROMPT_RESPONSE_BLOCK_ID]: {
-        id: PROMPT_RESPONSE_BLOCK_ID,
-        widget: 'markdown',
-        parent: {
-            id: PROMPT_CONTAINER_BLOCK_ID,
-            slot: 'children',
-        },
-        data: {
-            style: {},
-            markdown: `{{${PROMPT_QUERY_ID}.data.response}}`,
-        },
-        listeners: {},
-        slots: {},
-    },
-};
 
 function capitalizeLabel(label: string): string {
     const words = label.split(' ');
@@ -247,7 +106,7 @@ export function getQueryForPrompt(
     model: string,
     tokens: Token[],
     inputTypes: object,
-): Record<string, QueryFixMe> {
+): Record<string, QueryStateConfig> {
     const tokenStrings: string[] = [];
     // compose tokens into a command
     tokens.forEach((token: Token) => {
@@ -271,29 +130,189 @@ export function getQueryForPrompt(
     return {
         [PROMPT_QUERY_ID]: {
             id: PROMPT_QUERY_ID,
-            isInitialized: false,
-            isLoading: false,
-            error: null,
-            query: `LLM(engine=["${model}"], command=["<encode>${tokenStrings.join(
-                ' ',
-            )} Generate the response as markdown.</encode>"]);`,
-            data: {
-                response: 'Fill out the inputs to generate a response.',
-            },
             mode: 'manual',
+            steps: [
+                {
+                    id: 'pixel-1',
+                    operation: [],
+                    output: undefined,
+                    widget: 'code',
+                    parameters: {
+                        type: 'pixel',
+                        code: `LLM(engine=["${model}"], command=["<encode>${tokenStrings.join(
+                            ' ',
+                        )}</encode>"]);`,
+                    },
+                },
+            ],
         },
     };
 }
 
-export function setBlocksAndOpenUIBuilder(
+export async function setBlocksAndOpenUIBuilder(
     builder: Builder,
+    monolithStore: MonolithStore,
     navigate: (route: string) => void,
 ) {
-    // base page
-    let blocks: Record<string, Block> = JSON.parse(
-        JSON.stringify(PROMPT_BASE_BLOCKS),
-    );
-    blocks[APP_TITLE_BLOCK_ID].data.text = builder.title.value;
+    // create the state
+    const state: SerializedState = {
+        queries: {},
+        blocks: {
+            'page-1': {
+                id: 'page-1',
+                widget: 'page',
+                parent: null,
+                data: {
+                    style: {
+                        fontFamily: 'roboto',
+                    },
+                },
+                listeners: {},
+                slots: {
+                    content: {
+                        name: 'content',
+                        children: [
+                            DESCRIPTION_CONTAINER,
+                            PROMPT_CONTAINER_BLOCK_ID,
+                        ],
+                    },
+                },
+            },
+            [DESCRIPTION_CONTAINER]: {
+                id: DESCRIPTION_CONTAINER,
+                widget: 'container',
+                parent: {
+                    id: 'page-1',
+                    slot: 'content',
+                },
+                data: {
+                    style: {
+                        background: 'white',
+                        flexDirection: 'column',
+                        gap: '16px',
+                        padding: '32px',
+                        width: '100%',
+                        maxWidth: '900px',
+                        margin: '0 auto',
+                    },
+                },
+                listeners: {},
+                slots: {
+                    children: {
+                        name: 'children',
+                        children: [APP_TITLE_BLOCK_ID, HELP_TEXT_BLOCK_ID],
+                    },
+                },
+            },
+            [APP_TITLE_BLOCK_ID]: {
+                id: APP_TITLE_BLOCK_ID,
+                widget: 'text',
+                parent: {
+                    id: DESCRIPTION_CONTAINER,
+                    slot: 'children',
+                },
+                data: {
+                    style: {
+                        fontSize: '2.5rem',
+                        textAlign: 'center',
+                    },
+                    text: 'My App',
+                },
+                listeners: {},
+                slots: {},
+            },
+            [HELP_TEXT_BLOCK_ID]: {
+                id: HELP_TEXT_BLOCK_ID,
+                widget: 'text',
+                parent: {
+                    id: DESCRIPTION_CONTAINER,
+                    slot: 'children',
+                },
+                data: {
+                    style: {
+                        textAlign: 'center',
+                    },
+                    text: 'Welcome to the UI Builder! Below are pre-configured blocks for your prompt inputs to use in your app.',
+                },
+                listeners: {},
+                slots: {},
+            },
+            [PROMPT_CONTAINER_BLOCK_ID]: {
+                id: PROMPT_CONTAINER_BLOCK_ID,
+                widget: 'container',
+                parent: {
+                    id: 'page-1',
+                    slot: 'content',
+                },
+                data: {
+                    style: {
+                        background: 'white',
+                        flexDirection: 'column',
+                        gap: '16px',
+                        padding: '32px',
+                        width: '100%',
+                        maxWidth: '900px',
+                        margin: '0 auto',
+                    },
+                },
+                listeners: {},
+                slots: {
+                    children: {
+                        name: 'children',
+                        children: [
+                            PROMPT_SUBMIT_BLOCK_ID,
+                            PROMPT_RESPONSE_BLOCK_ID,
+                        ],
+                    },
+                },
+            },
+            [PROMPT_SUBMIT_BLOCK_ID]: {
+                id: PROMPT_SUBMIT_BLOCK_ID,
+                widget: 'button',
+                parent: {
+                    id: PROMPT_CONTAINER_BLOCK_ID,
+                    slot: 'children',
+                },
+                data: {
+                    style: {
+                        color: 'white',
+                        backgroundColor: 'blue',
+                        width: '125px',
+                    },
+                    label: 'Submit',
+                },
+                listeners: {
+                    onClick: [
+                        {
+                            message: ActionMessages.RUN_QUERY,
+                            payload: {
+                                queryId: PROMPT_QUERY_ID,
+                            },
+                        },
+                    ],
+                },
+                slots: {},
+            },
+            [PROMPT_RESPONSE_BLOCK_ID]: {
+                id: PROMPT_RESPONSE_BLOCK_ID,
+                widget: 'markdown',
+                parent: {
+                    id: PROMPT_CONTAINER_BLOCK_ID,
+                    slot: 'children',
+                },
+                data: {
+                    style: {},
+                    markdown: `{{${PROMPT_QUERY_ID}.data.response}}`,
+                },
+                listeners: {},
+                slots: {},
+            },
+        },
+    };
+
+    // updat the title
+    state.blocks[APP_TITLE_BLOCK_ID].data.text = builder.title.value;
+
     // inputs
     let childInputIds = [];
     for (const [tokenIndex, inputType] of Object.entries(
@@ -303,16 +322,17 @@ export function setBlocksAndOpenUIBuilder(
         const inputBlock = getBlockForInput(token, inputType);
         if (inputBlock) {
             childInputIds = [...childInputIds, inputBlock.id];
-            blocks = { ...blocks, [inputBlock.id]: inputBlock };
+            state.blocks = { ...state.blocks, [inputBlock.id]: inputBlock };
         }
     }
+
     // submit
-    blocks[PROMPT_CONTAINER_BLOCK_ID].slots.children.children = [
+    state.blocks[PROMPT_CONTAINER_BLOCK_ID].slots.children.children = [
         ...childInputIds,
-        ...blocks[PROMPT_CONTAINER_BLOCK_ID].slots.children.children,
+        ...state.blocks[PROMPT_CONTAINER_BLOCK_ID].slots.children.children,
     ];
 
-    const query = getQueryForPrompt(
+    state.queries = getQueryForPrompt(
         builder.model.value as string,
         builder.inputs.value as Token[],
         builder.inputTypes.value as object,
@@ -327,5 +347,16 @@ export function setBlocksAndOpenUIBuilder(
     // });
     // TODO make app here instead
     // alert('App API call here');
-    navigate('/design');
+
+    const pixel = `CreateAppFromBlocks ( project = [ "${
+        builder.title.value
+    }" ] , json =[${JSON.stringify(state)}]  ) ;`;
+
+    // create the app
+    const { pixelReturn } = await monolithStore.runQuery<[AppMetadata]>(pixel);
+
+    const app = pixelReturn[0].output;
+
+    // navigate to the app
+    navigate(`../${app.project_id}`);
 }

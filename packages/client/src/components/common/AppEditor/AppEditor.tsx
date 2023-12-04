@@ -6,10 +6,10 @@
 // Handles the View of or Text Editor alongside the App Explorer (Dir struct, Dependencies)
 // This needs to handle Adding of Folders and Files to projects, and editting contents of existing
 // --------------------
+
 import React, { useEffect, useState, useRef } from 'react';
 import { useRootStore } from '@/hooks';
 import { TextEditor, ControlledFile, TextEditorCodeGeneration } from '../';
-
 import {
     Accordion,
     Button,
@@ -19,37 +19,101 @@ import {
     IconButton,
     TreeView,
     TextField,
-    Skeleton,
     useNotification,
     styled,
     Typography,
 } from '@semoss/ui';
 
+import { Icon as FiletypeIcon } from '@mdi/react';
+import { FILE_ICON_MAP } from '../TextEditor/text-editor.constants';
+
 import {
-    AutoAwesome,
-    ContentCopyOutlined,
     ExpandMore,
     ChevronRight,
     KeyboardDoubleArrowLeft,
     KeyboardDoubleArrowRight,
     CreateNewFolderOutlined,
     NoteAddOutlined,
+    DeleteOutline,
 } from '@mui/icons-material/';
+
+const StyledTypography = styled(Typography)(({ theme }) => ({
+    display: 'flex',
+    alignItems: 'center',
+}));
+
+const StyledModalContent = styled(Modal.Content)(({ theme }) => ({
+    minWidth: '350px',
+}));
+
+const StyledTextEditorDiv = styled('div')(({ theme }) => ({
+    backgroundColor: '#fff',
+}));
+
+// const _StyledTextEditorDiv = ({openAppAssetsPanel, children}) => {
+//     // possible work-around to only remaining legacy inline style
+//     // causing error in children / not rendering open files
+//     // working on other component with children
+
+//     const ReturnElement = styled('div')(({ theme }) => ({
+//         width: openAppAssetsPanel ? 'calc(100% - 50px - 250px)' : 'calc(100% - 50px)',
+//         backgroundColor: '#fff',
+//     }));
+//     return (<ReturnElement>{children}</ReturnElement>);
+// }
+
+const StyledDeleteOutlineIcon = styled(DeleteOutline)(({ theme }) => ({
+    color: 'rgba(0, 0, 0, 0.3)',
+}));
+
+const StyledTreeViewItem = styled(TreeView.Item)(({ theme }) => ({
+    overflow: 'hidden',
+    '.MuiCollapse-wrapperInner': {
+        height: 'auto',
+        overflow: 'none',
+    },
+}));
+
+const DeleteIconWrapper = styled('div')(({ theme }) => ({
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    height: '30px',
+    width: '100%',
+}));
+
+const StyledFiletypeIcon = styled(FiletypeIcon)(({ theme }) => ({
+    color: 'rgba(0, 0, 0, 0.6)',
+    marginRight: '4px',
+}));
+
+const TextEditorCodeGenerationWrapper = styled('div')(({ theme }) => ({
+    maxWidth: '85%',
+}));
 
 const StyledEditorPanel = styled('div')(({ theme }) => ({
     display: 'flex',
     flexDirection: 'row',
     width: '100%',
     height: '100%',
-    backgroundColor: theme.palette.secondary.light,
+    backgroundColor: '#fff',
 }));
 
-const StyledCollapseTrigger = styled('div')(({ theme }) => ({
-    height: '100%',
-    width: '50px',
-    backgroundColor: theme.palette.secondary.light,
-    padding: theme.spacing(1),
-}));
+const StyledCollapseTrigger = ({ openAppAssetsPanel, children }) => {
+    const ReturnElement = styled('div')(({ theme }) => ({
+        boxShadow: !openAppAssetsPanel
+            ? '5px 0 5px -2px rgba(0, 0, 0, 0.04)'
+            : 'none',
+        marginLeft: openAppAssetsPanel ? '-90px' : '0px',
+        height: '100%',
+        width: '50px',
+        backgroundColor: theme.palette.secondary.light,
+        padding: theme.spacing(1),
+        display: 'absolute',
+        transition: 'margin-left 0.3s ease',
+    }));
+    return <ReturnElement>{children}</ReturnElement>;
+};
 
 const StyledOpenAssetsContainer = styled('div')(({ theme }) => ({
     height: '5%',
@@ -58,12 +122,13 @@ const StyledOpenAssetsContainer = styled('div')(({ theme }) => ({
 const StyledCollapse = styled(Collapse)(({ theme }) => ({
     paddingTop: theme.spacing(1),
     paddingBottom: theme.spacing(1),
+    backgroundColor: theme.palette.secondary.light,
 }));
 
 const StyledCollapseContainer = styled('div')(({ theme }) => ({
     display: 'flex',
     flexDirection: 'column',
-    width: '250px',
+    width: '350px',
     height: '100%',
     paddingTop: theme.spacing(1),
     paddingBottom: theme.spacing(2),
@@ -78,14 +143,13 @@ const StyleAppExplorerHeader = styled('div')(({ theme }) => ({
     overflow: 'hidden',
     textOverflow: 'ellipsis',
     whiteSpace: 'nowrap',
-    // height: '5%',
-    // paddingTop: '2px',
     alignItems: 'center',
 }));
 
 const StyledAppExplorerContainer = styled('div')(({ theme }) => ({
     height: '95%',
-    overflow: 'hidden',
+    width: '295px',
+    overflow: 'visible',
 }));
 
 const StyledAppExplorerSection = styled('div')(({ theme }) => ({
@@ -113,17 +177,17 @@ const StyledIcon = styled(Icon)(({ theme }) => ({
 }));
 
 const CustomAccordion = styled(Accordion)(({ theme }) => ({
+    maxHeight: 'calc(95vh - 120px)',
+    width: '95%',
+    overflow: 'scroll',
     background: 'inherit',
     boxShadow: 'none',
     padding: '0',
     borderRadius: '0px',
-    borderBottom: `1px solid ${theme.palette.divider}`,
+    marginBottom: '-15px',
     '&:before': {
         display: 'none',
     },
-    // '&:not(:last-child)': {
-    //     borderBottom: 0,
-    // },
 }));
 
 const CustomAccordionTrigger = styled(Accordion.Trigger)(({ theme }) => ({
@@ -151,7 +215,6 @@ const CustomAccordionTriggerContent = styled('div')(({ theme }) => ({
     display: 'flex',
     flexDirection: 'row',
     gap: theme.spacing(4),
-    // Icon Button Size
     height: `calc(1rem + 0px)`,
     '.MuiButtonBase-root': {
         padding: '0px',
@@ -160,6 +223,8 @@ const CustomAccordionTriggerContent = styled('div')(({ theme }) => ({
         width: '20px',
         height: '20px',
     },
+    justifyContent: 'space-between',
+    width: '93%',
 }));
 
 const CustomAccordionTriggerLabel = styled('div')(({ theme }) => ({
@@ -171,13 +236,9 @@ const CustomAccordionTriggerLabel = styled('div')(({ theme }) => ({
 }));
 
 const CustomAccordionContent = styled(Accordion.Content)(({ theme }) => ({
-    maxHeight: '300px',
     display: 'flex',
     overflow: 'scroll',
     padding: '0px',
-    // paddingTop: '8px',
-    // paddingTop: '0px',
-    // alignItems: 'center',
 }));
 
 interface AppEditorProps {
@@ -203,13 +264,26 @@ interface NodeInterface {
     type: string;
     children?: unknown;
 }
+
 export const AppEditor = (props: AppEditorProps) => {
     const { appId, width, onSave } = props;
     const { monolithStore, configStore } = useRootStore();
     const notification = useNotification();
-
     const [openAppAssetsPanel, setOpenAppAssetsPanel] = useState(true);
+    const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
 
+    // state vars for file deletion
+    interface FileData {
+        name: string;
+        path: string;
+        id: string;
+    }
+    const [fileToBeDeleted, setFileToBeDeleted] = useState<FileData>({
+        name: '',
+        path: '',
+        id: '',
+    });
+    const [UINodes, setUINodes] = useState(null);
     const [openAccordion, setOpenAccordion] = useState([]);
 
     /**
@@ -229,6 +303,17 @@ export const AppEditor = (props: AppEditorProps) => {
     const [filesToView, setFilesToView] = useState([]);
     const [activeFileIndex, setActiveFileIndex] = useState(null);
 
+    // Props for hovering over trash icons, opening folders and deleted folders that shouldn't be rendered
+    const [hoverSet, setHoverSet] = useState(new Set());
+    const [openFolderSet, setOpenFolderSet] = useState(new Set());
+    const [deletedNodesSet, setDeletedNodesSet] = useState(new Set());
+
+    // attempting to factor these out of TextEditor for closing tabs
+    const [controlledFiles, setControlledFiles] = useState<ControlledFile[]>(
+        [],
+    );
+    const [counterTextEditor, setCounterTextEditor] = useState(0);
+
     useEffect(() => {
         getInitialAppStructure();
     }, []);
@@ -245,9 +330,7 @@ export const AppEditor = (props: AppEditorProps) => {
         }
     }, [newDirectoryRefs.current]);
 
-    /**
-     * Anytime Panel resizes we want to close/open explorer
-     */
+    // Anytime Panel resizes we want to close/open explorer
     useEffect(() => {
         const w = parseInt(width.replaceAll('%', ''));
         if (w < 35) {
@@ -492,6 +575,12 @@ export const AppEditor = (props: AppEditorProps) => {
             });
         }
 
+        // success notification
+        notification.add({
+            color: 'success',
+            message: `"Your file has been saved!"`,
+        });
+
         // Refreshes App Renderer
         onSave(true);
 
@@ -500,7 +589,6 @@ export const AppEditor = (props: AppEditorProps) => {
     };
 
     /**
-     *
      * @desc This adds the placeholder node to your app directory
      */
     const addAssetToApp = async (
@@ -568,6 +656,11 @@ export const AppEditor = (props: AppEditorProps) => {
             );
         }
 
+        // if id matches recently deleted file or directory needs to be removed from the deleted files set so it renders
+        const newDeletedNodesSet = new Set(deletedNodesSet);
+        newDeletedNodesSet.delete(node.id);
+        setDeletedNodesSet(newDeletedNodesSet);
+
         // set this file as the active file in the editor
 
         // setSelected([nodeReplacement.id]);
@@ -622,6 +715,7 @@ export const AppEditor = (props: AppEditorProps) => {
      * @param nodeIds
      */
     const handleToggle = (event: React.SyntheticEvent, nodeIds: string[]) => {
+        setOpenFolderSet(new Set(nodeIds));
         setExpanded(nodeIds);
     };
 
@@ -807,6 +901,7 @@ export const AppEditor = (props: AppEditorProps) => {
     /**
      * Tree View add Asset
      * finds parent and node
+     * need a version of this to recursively find child nodes / directories to collapse child dirs on parent dir collapse
      */
     const findNodeAndParentById = (nodes, targetId, parent = null) => {
         for (const node of nodes) {
@@ -885,6 +980,10 @@ export const AppEditor = (props: AppEditorProps) => {
     const renderTreeNodes = (nodes) => {
         return nodes.map((node, i) => {
             // 1. New nodes that need a name
+
+            // stop blank space from rendering in empty folders
+            if (node.name.length < 1 && !node.id.includes('<>')) return;
+
             if (node.name === '' && node.id.includes('<>')) {
                 if (!node.id) return <></>; // empty directory
 
@@ -892,14 +991,7 @@ export const AppEditor = (props: AppEditorProps) => {
 
                 // 1a. While we are rendering tree nodes we need to set a ref for the placeholders
                 return (
-                    <TreeView.Item
-                        sx={{
-                            overflow: 'hidden',
-                            '.MuiCollapse-wrapperInner': {
-                                height: 'auto',
-                                overflow: 'none',
-                            },
-                        }}
+                    <StyledTreeViewItem
                         ref={newDirectoryRefs.current}
                         key={node.id}
                         nodeId={node.id}
@@ -994,81 +1086,158 @@ export const AppEditor = (props: AppEditorProps) => {
                         {node.children && node.children.length > 0
                             ? renderTreeNodes(node.children)
                             : null}
-                    </TreeView.Item>
+                    </StyledTreeViewItem>
                 );
-            } else {
+                // backup check to make sure node has not been deleted
+            } else if (!deletedNodesSet.has(node.id)) {
                 // 2. Node that is defined in tree
                 return (
-                    <TreeView.Item
-                        sx={{
-                            overflow: 'hidden',
-                            '.MuiCollapse-wrapperInner': {
-                                height: 'auto',
-                                overflow: 'none',
-                            },
-                        }}
+                    <StyledTreeViewItem
                         key={node.id}
                         nodeId={node.id}
                         title={node.id}
                         label={
-                            // File svg pack? (Js, html, etc)
-                            node.name
+                            <DeleteIconWrapper
+                                onMouseEnter={() =>
+                                    setHoverSet(new Set([node.id]))
+                                }
+                                onMouseLeave={() => setHoverSet(new Set())}
+                            >
+                                {/* {!node.children ? (
+                                    <StyledFiletypeIcon
+                                        path={FILE_ICON_MAP.document}
+                                        size={1}
+                                    ></StyledFiletypeIcon>
+                                ) : null} */}
+                                <StyledTypography variant="body1">
+                                    <StyledFiletypeIcon
+                                        path={
+                                            node.type === 'directory'
+                                                ? openFolderSet.has(node.id)
+                                                    ? FILE_ICON_MAP.open
+                                                    : FILE_ICON_MAP.directory
+                                                : FILE_ICON_MAP[node.type] ||
+                                                  FILE_ICON_MAP.file
+                                        }
+                                        size={0.85}
+                                    ></StyledFiletypeIcon>
+                                    {node.name}
+                                </StyledTypography>
+                                {hoverSet.has(node.id) && (
+                                    <IconButton
+                                        onClick={() => {
+                                            fileDeleteHandler(nodes, node);
+                                        }}
+                                        size="small"
+                                    >
+                                        <StyledDeleteOutlineIcon fontSize="small" />
+                                    </IconButton>
+                                )}
+                            </DeleteIconWrapper>
                         }
                     >
                         {node.children && node.children.length > 0
                             ? renderTreeNodes(node.children)
                             : null}
-                    </TreeView.Item>
+                    </StyledTreeViewItem>
                 );
             }
         });
     };
 
+    const removeFileFromFilesToViewById = (targetFile) => {
+        const newFilesToView = [];
+        for (let i = 0; i < filesToView.length; i++) {
+            const currFile = filesToView[i];
+            if (currFile.id !== targetFile.id) {
+                newFilesToView.push(currFile);
+            }
+        }
+        console.log({ filesToView });
+        console.log({ newFilesToView });
+
+        setActiveFileIndex(0);
+        setFilesToView(newFilesToView);
+        // works to remove from files to view but doesn't close tab
+        // might not be possible outside of TextEditor without edits to component / props
+        // right now crashes without manual setActiveFileIndex change
+        // causes buggy repeated creation of new repeat tabs for file on hover in explorer
+        // seems to need to be addressed in the TextEditor possibly with controlledFiles
+        // only props currently passed in to TextEditor {
+        // files <-- activeFiles,
+        // activeIndex <-- activeFileIndex,
+        // setActiveIndex,
+        // onSave,
+        // onClose
+        // }
+        // unclear if controlledFiles is just meant to mirror activeFiles
+    };
+
+    const confirmFileDeleteHandler = async () => {
+        // removeFileFromFilesToViewById(fileToBeDeleted);
+        // above line causing buggy behavior, needs work inside TextEditor component possibly
+
+        try {
+            await monolithStore.runQuery(
+                `DeleteAsset(filePath=["${fileToBeDeleted.path}"], space=["${appId}"]);`,
+            );
+
+            await removeNodeById(UINodes, fileToBeDeleted.id);
+
+            notification.add({
+                color: 'success',
+                message: `${fileToBeDeleted.name} successfully deleted.`,
+            });
+
+            // Current fix for folders not being removed from explorer on delete
+            const newDeletedNodesSet = new Set(deletedNodesSet);
+            newDeletedNodesSet.add(fileToBeDeleted.id);
+            setDeletedNodesSet(newDeletedNodesSet);
+
+            // working using props factored out from TextEditor, testing no bugs found yet
+            closeCurrentTab();
+
+            setIsDeleteConfirmOpen(false);
+        } catch {
+            notification.add({
+                color: 'error',
+                message: `Error: ${fileToBeDeleted.name} was not deleted.`,
+            });
+
+            setIsDeleteConfirmOpen(false);
+        }
+    };
+
+    const fileDeleteHandler = async (nodes, targetNode) => {
+        setFileToBeDeleted(targetNode);
+        setUINodes(nodes);
+        setIsDeleteConfirmOpen(true);
+    };
+
+    const closeCurrentTab = () => {
+        console.warn(' closing tab', controlledFiles);
+
+        const newControlledFiles = controlledFiles;
+        newControlledFiles.splice(activeFileIndex, 1);
+
+        setControlledFiles(newControlledFiles);
+
+        // close this index, set state of files in parent
+        // await onClose(i);
+        removeFileToView(activeFileIndex);
+
+        // Refresh Active File Memoized value
+        setCounterTextEditor(counterTextEditor + 1);
+    };
+
     return (
         <StyledEditorPanel>
-            {/* Collapse Trigger Container */}
-            <StyledCollapseTrigger
-                sx={{
-                    boxShadow: !openAppAssetsPanel
-                        ? '5px 0 5px -2px rgba(0, 0, 0, 0.04)'
-                        : 'none',
-                }}
-            >
-                <StyledOpenAssetsContainer>
-                    {openAppAssetsPanel ? (
-                        <IconButton
-                            size="small"
-                            onClick={() => {
-                                setOpenAppAssetsPanel(false);
-                            }}
-                        >
-                            <KeyboardDoubleArrowLeft />
-                        </IconButton>
-                    ) : (
-                        <IconButton
-                            size="small"
-                            onClick={() => {
-                                setOpenAppAssetsPanel(true);
-                            }}
-                        >
-                            <KeyboardDoubleArrowRight />
-                        </IconButton>
-                    )}
-                </StyledOpenAssetsContainer>
-            </StyledCollapseTrigger>
-
             {/* If Open: Displays App Explorer */}
             <StyledCollapse
                 in={openAppAssetsPanel}
                 timeout="auto"
                 orientation={'horizontal'}
             >
-                {/* <AppExplorer
-                    directory={appDirectory}
-                    packages={[]}
-                    onSelect={handleSelect}
-                /> */}
-
                 {/* Move into smaller component */}
                 <StyledCollapseContainer>
                     <StyleAppExplorerHeader>
@@ -1135,7 +1304,6 @@ export const AppEditor = (props: AppEditorProps) => {
                                     </CustomAccordionTriggerContent>
                                 </CustomAccordionTrigger>
                                 <CustomAccordionContent>
-                                    {/* <StyledScrollableTreeView> */}
                                     <StyledTreeView
                                         multiSelect
                                         expanded={expanded}
@@ -1154,21 +1322,15 @@ export const AppEditor = (props: AppEditorProps) => {
                                                 <ChevronRight />
                                             </StyledIcon>
                                         }
-                                        // defaultEndIcon ={
-                                        //     <StyledIcon>
-                                        //         <Download />
-                                        //     </StyledIcon>
-                                        // }
                                     >
                                         {renderTreeNodes(appDirectory)}
                                     </StyledTreeView>
-                                    {/* </StyledScrollableTreeView> */}
                                 </CustomAccordionContent>
                             </CustomAccordion>
                         </StyledAppExplorerSection>
 
                         {/* Dependencies */}
-                        <StyledAppExplorerSection>
+                        {/* <StyledAppExplorerSection>
                             <CustomAccordion
                                 disableGutters
                                 square={true}
@@ -1186,9 +1348,13 @@ export const AppEditor = (props: AppEditorProps) => {
                                 <CustomAccordionTrigger
                                     expandIcon={<ChevronRight />}
                                 >
-                                    <Typography variant="body1">
-                                        Dependencies
-                                    </Typography>
+                                    <CustomAccordionTriggerContent>
+                                        <CustomAccordionTriggerLabel>
+                                            <Typography variant="body1">
+                                                Dependencies
+                                            </Typography>
+                                        </CustomAccordionTriggerLabel>
+                                    </CustomAccordionTriggerContent>
                                 </CustomAccordionTrigger>
 
                                 <CustomAccordionContent>
@@ -1197,24 +1363,58 @@ export const AppEditor = (props: AppEditorProps) => {
                                     </Typography>
                                 </CustomAccordionContent>
                             </CustomAccordion>
-                        </StyledAppExplorerSection>
+                        </StyledAppExplorerSection> */}
                     </StyledAppExplorerContainer>
                     {process.env.NODE_ENV == 'development' && (
-                        <TextEditorCodeGeneration />
+                        <TextEditorCodeGenerationWrapper>
+                            <TextEditorCodeGeneration />
+                        </TextEditorCodeGenerationWrapper>
                     )}
                 </StyledCollapseContainer>
             </StyledCollapse>
 
+            {/* Collapse Trigger Container */}
+            <StyledCollapseTrigger openAppAssetsPanel={openAppAssetsPanel}>
+                <StyledOpenAssetsContainer>
+                    {openAppAssetsPanel ? (
+                        <IconButton
+                            size="small"
+                            onClick={() => {
+                                setOpenAppAssetsPanel(false);
+                            }}
+                        >
+                            <KeyboardDoubleArrowLeft />
+                        </IconButton>
+                    ) : (
+                        <IconButton
+                            size="small"
+                            onClick={() => {
+                                setOpenAppAssetsPanel(true);
+                            }}
+                        >
+                            <KeyboardDoubleArrowRight />
+                        </IconButton>
+                    )}
+                </StyledOpenAssetsContainer>
+            </StyledCollapseTrigger>
+
             {/* Text Editor */}
-            <div
+            <StyledTextEditorDiv
+                // openAppAssetsPanel={openAppAssetsPanel}
+
+                // only remaining inline style, mui styled workaround commented out above breaking TextEditor
                 style={{
-                    // 100% - collapseCont - appEditorCont
                     width: openAppAssetsPanel
                         ? 'calc(100% - 50px - 250px)'
                         : 'calc(100% - 50px)',
                 }}
             >
                 <TextEditor
+                    // attempting to pass these in from parent for tab close
+                    controlledFiles={controlledFiles}
+                    setControlledFiles={setControlledFiles}
+                    counter={counterTextEditor}
+                    setCounter={setCounterTextEditor}
                     files={filesToView}
                     activeIndex={activeFileIndex}
                     setActiveIndex={(val: number) => {
@@ -1233,7 +1433,35 @@ export const AppEditor = (props: AppEditorProps) => {
                         removeFileToView(index);
                     }}
                 />
-            </div>
+            </StyledTextEditorDiv>
+
+            {/* Delete Confirmation Modal */}
+            <Modal open={isDeleteConfirmOpen}>
+                {/* used same basic text / styling from MembersTable delete member modal except for minimum width in Modal.Content */}
+                <Modal.Title>Are you sure?</Modal.Title>
+                <StyledModalContent>
+                    This will delete <b>{fileToBeDeleted.name}</b>
+                </StyledModalContent>
+                <Modal.Actions>
+                    <Button
+                        variant={'outlined'}
+                        onClick={() => {
+                            setIsDeleteConfirmOpen(false);
+                        }}
+                    >
+                        Close
+                    </Button>
+                    <Button
+                        color={'error'}
+                        variant={'contained'}
+                        onClick={() => {
+                            confirmFileDeleteHandler();
+                        }}
+                    >
+                        Confirm
+                    </Button>
+                </Modal.Actions>
+            </Modal>
         </StyledEditorPanel>
     );
 };

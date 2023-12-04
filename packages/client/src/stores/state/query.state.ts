@@ -57,6 +57,11 @@ export class QueryState {
         this._store.id = config.id;
         this._store.mode = config.mode;
 
+        // create the steps
+        this._store.steps = config.steps.map((s) => {
+            return new StepState(s, this, this._state);
+        }, {});
+
         // make it observable
         makeAutoObservable(this);
     }
@@ -234,7 +239,7 @@ export class QueryState {
     };
 
     /**
-     * Process State
+     * Process running of a pixel
      */
     /**
      * Process running of the query
@@ -320,7 +325,21 @@ export class QueryState {
      * @param step - new step being added
      * @param previousStepId - id of the previous step
      */
-    _processNewStep = (step: StepState, previousStepId: string) => {
+    _processNewStep = (
+        stepId: string,
+        config: Omit<StepStateConfig, 'id'>,
+        previousStepId: string,
+    ) => {
+        // create the new step
+        const step = new StepState(
+            {
+                ...config,
+                id: stepId,
+            },
+            this,
+            this._state,
+        );
+
         if (!previousStepId) {
             this._store.steps.push(step);
             return;

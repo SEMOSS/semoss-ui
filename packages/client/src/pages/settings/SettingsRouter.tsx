@@ -15,7 +15,7 @@ import { InsightSettingsPage } from './InsightSettingsPage';
 import { InsightSettingsDetailPage } from './InsightSettingsDetailPage';
 
 import { MemberSettingsPage } from './MemberSettingsPage';
-import { SocialPropertiesPage } from './SocialPropertiesPage';
+import { ConfigurationsPage } from './ConfigurationsPage';
 import { AdminQueryPage } from './AdminQueryPage';
 import { MyProfilePage } from './MyProfilePage';
 import { JobsPage } from '../jobs/JobsPage';
@@ -28,7 +28,7 @@ const SETTINGS_COMPONETS = {
     insight: InsightSettingsPage,
     'insight/:id/:projectId': InsightSettingsDetailPage,
     members: MemberSettingsPage,
-    'social-properties': SocialPropertiesPage,
+    'social-properties': ConfigurationsPage,
     'admin-query': AdminQueryPage,
     'my-profile': MyProfilePage,
     jobs: JobsPage,

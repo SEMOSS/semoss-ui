@@ -22,6 +22,7 @@ import { PromptBuilderBuilderInputTypeStep } from './PromptBuilderInputTypeStep'
 import { PromptBuilderBuilderPreviewStep } from './PromptBuilderPreviewStep';
 import { PromptBuilderBuilderContextStep } from './PromptBuilderContextStep';
 import { PromptBuilderBuilderSummary } from './PromptBuilderSummary';
+import { useRootStore } from '@/hooks';
 
 const StyledPaper = styled(Paper)(({ theme }) => ({
     padding: theme.spacing(4),
@@ -105,6 +106,7 @@ function BuilderStep(props: {
 }
 
 export function PromptBuilder() {
+    const { monolithStore } = useRootStore();
     const [builder, setBuilder] = useState(initialBuilder);
     const [currentBuilderStep, changeBuilderStep] = useState(1);
     const navigate = useNavigate();
@@ -124,12 +126,12 @@ export function PromptBuilder() {
             ? 'Next'
             : currentBuilderStep === PROMPT_BUILDER_INPUT_TYPES_STEP
             ? 'Preview'
-            : 'Open in Builder';
+            : 'Create App';
 
     const nextButtonAction = () => {
         if (currentBuilderStep === PROMPT_BUILDER_PREVIEW_STEP) {
             // prompt flow finished, move on
-            setBlocksAndOpenUIBuilder(builder, navigate);
+            setBlocksAndOpenUIBuilder(builder, monolithStore, navigate);
         } else if (currentBuilderStep === 2) {
             // skip input types step if not inputs configured
             const hasInputs = (builder.inputs.value as Token[]).some(

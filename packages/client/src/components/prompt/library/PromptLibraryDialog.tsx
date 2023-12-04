@@ -7,12 +7,14 @@ import { Builder, Token } from '../prompt.types';
 import { setBlocksAndOpenUIBuilder } from '../prompt.helpers';
 import { useNavigate } from 'react-router-dom';
 import { Close } from '@mui/icons-material';
+import { useRootStore } from '@/hooks';
 
 export function PromptLibraryDialog(props: {
     builder: Builder;
     promptLibraryOpen: boolean;
     closePromptLibrary: () => void;
 }) {
+    const { monolithStore } = useRootStore();
     const navigate = useNavigate();
     const [filter, setFilter] = useState('all');
 
@@ -47,7 +49,7 @@ export function PromptLibraryDialog(props: {
         templateBuilder.title.value = templateBuilder.title.value ?? title;
         templateBuilder.inputs.value = inputs;
         templateBuilder.inputTypes.value = inputTypes;
-        setBlocksAndOpenUIBuilder(templateBuilder, navigate);
+        setBlocksAndOpenUIBuilder(templateBuilder, monolithStore, navigate);
     }
 
     return (
