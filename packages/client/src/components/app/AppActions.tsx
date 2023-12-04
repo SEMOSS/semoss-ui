@@ -8,6 +8,7 @@ import {
     useNotification,
     styled,
     Typography,
+    Search,
 } from '@semoss/ui';
 import {
     Code,
@@ -158,6 +159,7 @@ export const AppActions = () => {
         setEditorView,
         setIsLoading,
         isLoading,
+        appEditorFiles,
     } = useApp();
 
     const [shareModal, setShareModal] = useState(false);
@@ -228,6 +230,26 @@ export const AppActions = () => {
                     </>
                 ) : null}
             </StyledNavbarLeft>
+            <Search
+                // ref={fileSearchRef}
+                placeholder={'Search Files'}
+                size="small"
+                sx={{ backgroundColor: 'white' }}
+                // sx={{ marginRight: '20px' }}
+                // value={searchFilter}
+                // onChange={(e) => {
+                //     setValue('SEARCH_FILTER', e.target.value);
+                // }}
+            />
+            <div
+                style={{
+                    display: 'absolute',
+                    backgroundColor: 'white',
+                    border: '2px solid red',
+                }}
+            >
+                {appEditorFiles.map((ele) => 'ele')}
+            </div>
             <StyledNavbarRight>
                 <StyledTrack
                     active={editorMode}

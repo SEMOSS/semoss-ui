@@ -59,6 +59,9 @@ export type AppContextType = {
      * Callback to refresh Application View
      */
     refreshApp: () => void;
+
+    appEditorFiles: string[];
+    setAppEditorFiles: (val: string[]) => void;
 };
 
 /**

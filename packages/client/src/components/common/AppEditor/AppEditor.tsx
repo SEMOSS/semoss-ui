@@ -8,7 +8,7 @@
 // --------------------
 
 import React, { useEffect, useState, useRef } from 'react';
-import { useRootStore } from '@/hooks';
+import { useRootStore, useApp } from '@/hooks';
 import { TextEditor, ControlledFile, TextEditorCodeGeneration } from '../';
 import {
     Accordion,
@@ -272,6 +272,8 @@ export const AppEditor = (props: AppEditorProps) => {
     const [openAppAssetsPanel, setOpenAppAssetsPanel] = useState(true);
     const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
 
+    const { appEditorFiles, setAppEditorFiles } = useApp();
+
     // state vars for file deletion
     interface FileData {
         name: string;
@@ -317,6 +319,10 @@ export const AppEditor = (props: AppEditorProps) => {
     useEffect(() => {
         getInitialAppStructure();
     }, []);
+
+    useEffect(() => {
+        setAppEditorFiles(filesToView);
+    }, [filesToView]);
 
     useEffect(() => {
         if (newDirectoryRefs.current) {

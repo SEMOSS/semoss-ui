@@ -10,6 +10,7 @@ import { useParams } from 'react-router-dom';
 import { AppContext } from '@/contexts';
 import { DesignerEditorActions } from '@/components/designer/DesignerEditorActions';
 import { useRootStore } from '@/hooks';
+import { appendErrors } from 'react-hook-form';
 
 // const NAV_HEIGHT = '48px';
 const NAV_HEIGHT = '0px';
@@ -36,6 +37,8 @@ export const DesignPage = () => {
 
     // App ID Needed for pixel calls
     const { appId } = useParams();
+
+    const [appEditorFiles, setAppEditorFiles] = useState([]);
 
     const [appPermission, setAppPermission] = useState('READ_ONLY');
     const [editMode, setEditMode] = useState<boolean>(true);
@@ -136,6 +139,8 @@ export const DesignPage = () => {
                 refreshKey: counter,
                 /** Refreshes App */
                 refreshApp: refreshOutlet,
+                appEditorFiles: appEditorFiles,
+                setAppEditorFiles: setAppEditorFiles,
             }}
         >
             <StyledViewport>

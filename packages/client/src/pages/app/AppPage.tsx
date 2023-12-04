@@ -31,6 +31,8 @@ export const AppPage = observer(() => {
     const { appId } = useParams();
     const notification = useNotification();
 
+    const [appEditorFiles, setAppEditorFiles] = useState([]);
+
     const [editMode, setEditMode] = useState<boolean>(false);
     const [isLoading, setIsLoading] = useState(false);
     const [counter, setCounter] = useState(0);
@@ -137,6 +139,8 @@ export const AppPage = observer(() => {
                 refreshKey: counter,
                 /** Refreshes App */
                 refreshApp: refreshOutlet,
+                appEditorFiles,
+                setAppEditorFiles,
             }}
         >
             <StyledViewport>
