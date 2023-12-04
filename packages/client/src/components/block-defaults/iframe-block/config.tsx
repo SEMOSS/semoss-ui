@@ -8,6 +8,7 @@ import { AspectRatio } from '@mui/icons-material';
 import { BLOCK_TYPE_DISPLAY } from '../block-defaults.constants';
 import { InputModalSettings } from '@/components/block-settings/shared/InputModalSettings';
 import { BorderSettings, InputSettings } from '@/components/block-settings';
+import { SwitchSettings } from '@/components/block-settings/shared/SwitchSettings';
 
 // export the config for the block
 export const config: BlockConfig<IframeBlockDef> = {
@@ -17,6 +18,7 @@ export const config: BlockConfig<IframeBlockDef> = {
         style: {},
         src: '',
         title: '',
+        disabled: false,
     },
     listeners: {},
     slots: {
@@ -43,6 +45,16 @@ export const config: BlockConfig<IframeBlockDef> = {
                     description: 'Title',
                     render: ({ id }) => (
                         <InputSettings id={id} label="Title" path="title" />
+                    ),
+                },
+                {
+                    description: 'Disable Frame Interaction',
+                    render: ({ id }) => (
+                        <SwitchSettings
+                            id={id}
+                            label="Disable Frame Interaction"
+                            path="disabled"
+                        />
                     ),
                 },
             ],
