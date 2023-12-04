@@ -284,7 +284,7 @@ export const AppEditor = (props: AppEditorProps) => {
         id: '',
     });
     const [UINodes, setUINodes] = useState(null);
-    const [openAccordion, setOpenAccordion] = useState([]);
+    const [openAccordion, setOpenAccordion] = useState(['file']);
 
     /**
      * FILE EXPLORER START OF CODE
@@ -313,6 +313,35 @@ export const AppEditor = (props: AppEditorProps) => {
         [],
     );
     const [counterTextEditor, setCounterTextEditor] = useState(0);
+
+    // remove later, tracking open directories
+    // useEffect(() => {
+    //     console.log({
+    //         appDirectory,
+    //         expanded,
+    //         selected,
+    //         counter,
+    //         filesToView,
+    //         activeFileIndex,
+    //         hoverSet,
+    //         openFolderSet,
+    //         deletedNodesSet,
+    //         controlledFiles,
+    //         counterTextEditor,
+    //     });
+    // }, [
+    //     appDirectory,
+    //     expanded,
+    //     selected,
+    //     counter,
+    //     filesToView,
+    //     activeFileIndex,
+    //     hoverSet,
+    //     openFolderSet,
+    //     deletedNodesSet,
+    //     controlledFiles,
+    //     counterTextEditor,
+    // ])
 
     useEffect(() => {
         getInitialAppStructure();
@@ -380,6 +409,15 @@ export const AppEditor = (props: AppEditorProps) => {
                         },
                     ],
                 });
+
+                // this should at least be able to open the first layer of folders
+                // currently showing toggle icon correctly but no files / children
+
+                // setOpenAccordion([...openAccordion, node.path])
+                // handleToggle(null, [node.path])
+
+                // setExpanded([...expanded, node.path])
+                // setOpenFolderSet(new Set([...openFolderSet, node.path]))
             } else {
                 formattedNodes.push(nodeWithID);
             }
