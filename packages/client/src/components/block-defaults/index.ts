@@ -60,3 +60,35 @@ export const DefaultBlocks: Registry<DefaultBlockDefinitions> = {
 export function getIconForBlock(widget: string) {
     return DefaultBlocks[widget]?.icon;
 }
+
+export {
+    ButtonBlockConfig,
+    ContainerBlockConfig,
+    DividerBlockConfig,
+    FormBlockConfig,
+    IframeBlockConfig,
+    InputBlockConfig,
+    MarkdownBlockConfig,
+    PageBlockConfig,
+    SelectBlockConfig,
+    TextAreaBlockConfig,
+    TextBlockConfig,
+    TextFieldBlockConfig,
+    SectionBlockConfig,
+};
+
+export type {
+    ButtonBlockDef,
+    ContainerBlockDef,
+    DividerBlockDef,
+    FormBlockDef,
+    IframeBlockDef,
+    InputBlockDef,
+    MarkdownBlockDef,
+    PageBlockDef,
+    SelectBlockDef,
+    TextAreaBlockDef,
+    TextBlockDef,
+    TextFieldBlockDef,
+    SectionBlockDef,
+};

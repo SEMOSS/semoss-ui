@@ -16,6 +16,7 @@ export const config: BlockConfig<PageBlockDef> = {
     widget: 'page',
     type: BLOCK_TYPE_LAYOUT,
     data: {
+        route: '',
         style: {
             display: 'flex',
             gap: '2rem',

@@ -161,6 +161,7 @@ export async function setBlocksAndOpenUIBuilder(
                 widget: 'page',
                 parent: null,
                 data: {
+                    route: '',
                     style: {
                         fontFamily: 'roboto',
                     },

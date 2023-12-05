@@ -8,6 +8,7 @@ import { Slot } from '@/components/blocks';
 export interface PageBlockDef extends BlockDef<'page'> {
     widget: 'page';
     data: {
+        route: string;
         style: CSSProperties;
     };
     slots: 'content';

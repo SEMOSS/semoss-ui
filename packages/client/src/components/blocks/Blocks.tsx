@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { StateStore, Registry, NotebookStore } from '@/stores';
+import { StateStore, Registry, NotebookStore, DesignerStore } from '@/stores';
 import { BlocksContext } from '@/contexts';
 
 export interface BlocksProps<R extends Registry> {

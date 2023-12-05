@@ -5,7 +5,7 @@ import { useState } from 'react';
 
 import { DesignerContext } from '@/contexts';
 import { DesignerStore } from '@/stores';
-
+import { Router } from '@/components/blocks';
 import { BlocksMenu } from './BlocksMenu';
 import { SelectedMenu } from './SelectedMenu';
 import { OutlineMenu } from './OutlineMenu';
@@ -95,7 +95,7 @@ const StyledDesignerContainer = styled(Stack, {
 }>(({ isDragging }) => ({
     height: '100%',
     width: '100%',
-    cursor: isDragging ? 'grabbing!important' : 'unset',
+    cursor: isDragging ? 'grabbing !important' : 'unset',
 }));
 
 const StyledRightMenu = styled(Paper)(({ theme }) => ({
@@ -107,15 +107,12 @@ const StyledRightMenu = styled(Paper)(({ theme }) => ({
 }));
 
 interface DesignerProps {
-    /** Content to render in the designer */
-    children: React.ReactNode;
-
     /** Connect the designer to a store */
     designer: DesignerStore;
 }
 
 export const Designer = observer((props: DesignerProps): JSX.Element => {
-    const { children, designer } = props;
+    const { designer } = props;
 
     // view
     const [view, setView] = useState<'outline' | 'query' | 'add' | ''>('');
@@ -194,7 +191,9 @@ export const Designer = observer((props: DesignerProps): JSX.Element => {
                     ) : null}
                 </StyledLeftMenu>
                 <Stack flex="1">
-                    <Screen>{children}</Screen>
+                    <Screen>
+                        <Router />
+                    </Screen>
                 </Stack>
                 <StyledRightMenu elevation={7}>
                     <SelectedMenu />

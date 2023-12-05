@@ -1,3 +1,5 @@
+import { computed } from 'mobx';
+import { useNavigate } from 'react-router-dom';
 import React, { useState, useMemo } from 'react';
 import { observer } from 'mobx-react-lite';
 import {
@@ -11,16 +13,22 @@ import {
     Typography,
     styled,
 } from '@semoss/ui';
-import { useBlocks, useDesigner } from '@/hooks';
 import {
+    Add,
     ChevronRight,
     ExpandMore,
-    Home,
     SearchOutlined,
 } from '@mui/icons-material/';
 
-import { getIconForBlock } from '../block-defaults';
-import { Block } from '@/stores/state/state.types';
+import { useBlocks, useDesigner, useWorkspace } from '@/hooks';
+import {
+    PageBlockConfig,
+    PageBlockDef,
+    getIconForBlock,
+} from '@/components/block-defaults';
+import { Block } from '@/stores';
+
+import { NewPageOverlay } from './NewPageOverlay';
 
 const StyledMenu = styled('div')(({ theme }) => ({
     display: 'flex',
@@ -67,19 +75,6 @@ const StyledSearchedLabel = styled('span', {
     color: search ? theme.palette.primary.main : '',
 }));
 
-const StyledListItemButton = styled(List.ItemButton, {
-    shouldForwardProp: (prop) => prop !== 'hovered',
-})<{
-    /** Track if the drag is on */
-    hovered: boolean;
-}>(({ hovered, theme }) => ({
-    // outline: hovered ? '1px solid red' : '',
-    background: hovered ? theme.palette.action.selected : '',
-    '&:hover *[data-hover]': {
-        visibility: 'visible',
-    },
-}));
-
 const StyledIcon = styled(Icon)(({ theme }) => ({
     color: 'rgba(0, 0, 0, .3)',
 }));
@@ -102,6 +97,9 @@ export const OutlineMenu = observer((): JSX.Element => {
     // get the store
     const { state } = useBlocks();
     const { designer } = useDesigner();
+    const { workspace } = useWorkspace();
+
+    const navigate = useNavigate();
 
     const [expanded, setExpanded] = useState<string[]>([]);
     const [selected, setSelected] = useState<string[]>([]);
@@ -174,20 +172,47 @@ export const OutlineMenu = observer((): JSX.Element => {
     };
 
     /**
-     * @returns List of pages
-     * TO-DO: Go from active page from wherever we decide to hold this in state
+     * Open an overlay to create a new page
      */
-    const pages = useMemo(() => {
-        const blocks = Object.entries(state.blocks);
-        // Filters out pages that are not children of a page
-        return blocks.filter((v) => v[1].widget === 'page' && !v[1].parent);
-    }, [designer.rendered]);
+    const newPage = () => {
+        workspace.openOverlay(() => {
+            return <NewPageOverlay onClose={() => workspace.closeOverlay()} />;
+        });
+    };
+
+    // get the pages as an array
+    const pages = computed(() => {
+        const pages: Block<PageBlockDef>[] = [];
+        for (const b in state.blocks) {
+            const block = state.blocks[b];
+
+            // check if it is a page widget
+            if (block.widget === PageBlockConfig.widget) {
+                // store the pages
+                pages.push(block as Block<PageBlockDef>);
+            }
+        }
+
+        // sort by the path
+        return pages.sort((a, b) => {
+            const aRoute = a.data.route.toLowerCase(),
+                bRoute = b.data.route.toLowerCase();
+
+            if (aRoute < bRoute) {
+                return -1;
+            }
+            if (aRoute > bRoute) {
+                return 1;
+            }
+            return 0;
+        });
+    }).get();
 
     /**
      * @returns Children of the Active Page
      * TO-DO: Go off of Active_Page in depenedency array
      */
-    const pageBlocks = useMemo(() => {
+    const layerBlocks = useMemo(() => {
         const renderedPage = state.blocks[designer.rendered];
         const children = [];
         if (renderedPage) {
@@ -203,25 +228,39 @@ export const OutlineMenu = observer((): JSX.Element => {
         <StyledMenu>
             <StyledMenuHeader>
                 <Typography variant="body1">Pages</Typography>
+                <IconButton size={'small'} onClick={() => newPage()}>
+                    <Add />
+                </IconButton>
             </StyledMenuHeader>
             <div>
                 {pages.length && (
                     <List>
-                        {pages.map((p: [string, Block]) => {
+                        {pages.map((p) => {
                             return (
-                                <StyledListItemButton
-                                    key={p[0]}
-                                    dense={true}
-                                    selected={false}
-                                    hovered={true}
-                                >
-                                    {/* TO-DO: Display link of active page */}
-                                    {/* p[1].id */}
-                                    <List.ItemText primary={'/'} />
-                                    <StyledIcon>
-                                        <Home />
-                                    </StyledIcon>
-                                </StyledListItemButton>
+                                <List.Item key={p.id} dense={true}>
+                                    <List.ItemButton
+                                        selected={true}
+                                        onClick={() =>
+                                            navigate(`${p.data.route}`)
+                                        }
+                                    >
+                                        <List.ItemText
+                                            primary={
+                                                <Typography variant="subtitle2">
+                                                    {p.id}
+                                                </Typography>
+                                            }
+                                            secondary={
+                                                <Typography
+                                                    variant="caption"
+                                                    noWrap={true}
+                                                >
+                                                    {p.data.route}
+                                                </Typography>
+                                            }
+                                        />
+                                    </List.ItemButton>
+                                </List.Item>
                             );
                         })}
                     </List>
@@ -281,8 +320,8 @@ export const OutlineMenu = observer((): JSX.Element => {
                         </StyledIcon>
                     }
                 >
-                    {pageBlocks.length ? (
-                        pageBlocks.map((b: string) => {
+                    {layerBlocks.length ? (
+                        layerBlocks.map((b: string) => {
                             return renderBlock(b);
                         })
                     ) : (

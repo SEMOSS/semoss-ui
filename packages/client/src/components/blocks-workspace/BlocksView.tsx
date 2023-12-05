@@ -4,8 +4,6 @@ import { Designer } from '@/components/designer';
 import { Renderer } from '@/components/blocks';
 import { useBlocks } from '@/hooks';
 
-const ACTIVE = 'page-1';
-
 export const BlocksView = () => {
     const { state } = useBlocks();
 
@@ -16,9 +14,6 @@ export const BlocksView = () => {
         // set the state
         const d = new DesignerStore(state);
 
-        // set the rendered one
-        d.setRendered(ACTIVE);
-
         // return the store
         return d;
     }, [state]);
@@ -27,9 +22,5 @@ export const BlocksView = () => {
         return null;
     }
 
-    return (
-        <Designer designer={designer}>
-            <Renderer id={ACTIVE} />
-        </Designer>
-    );
+    return <Designer designer={designer} />;
 };
