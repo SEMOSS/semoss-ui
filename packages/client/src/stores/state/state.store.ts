@@ -88,6 +88,7 @@ export class StateStore {
                     Record<string, string>
                 >((acc, val) => {
                     const q = this._store.queries[val];
+                    console.log('in here: ' + q.id);
 
                     // map id -> actual
                     acc[q.id] = `${this.flattenParameter(q._toPixel())}--${
@@ -104,12 +105,12 @@ export class StateStore {
 
                     // if they are the same ignore
                     if (!q || curr[id] === prev[id]) {
-                        return;
+                        continue;
                     }
 
                     // ignore if not automatic
                     if (q.mode !== 'automatic') {
-                        return;
+                        continue;
                     }
 
                     // run the query

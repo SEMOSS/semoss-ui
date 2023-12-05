@@ -116,9 +116,7 @@ export const SelectInputSettings = observer(
                         <MenuItem value={''}>
                             <em>None</em>
                         </MenuItem>
-                    ) : (
-                        <></>
-                    )}
+                    ) : null}
                     {Array.from(options, (option, i) => {
                         return (
                             <MenuItem key={i} value={option.value}>

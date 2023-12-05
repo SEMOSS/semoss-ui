@@ -22,6 +22,7 @@ export const HELP_TEXT_BLOCK_ID = 'help-text';
 export const PROMPT_SUBMIT_BLOCK_ID = 'prompt-submit';
 export const PROMPT_RESPONSE_BLOCK_ID = 'prompt-response';
 export const PROMPT_QUERY_ID = 'prompt-query';
+export const PROMPT_FUNCTION_QUERY_ID = 'prompt-query-function';
 
 function capitalizeLabel(label: string): string {
     const words = label.split(' ');
@@ -104,6 +105,7 @@ export function getBlockForInput(
 
 export function getQueryForPrompt(
     model: string,
+    vector: string | undefined,
     tokens: Token[],
     inputTypes: object,
 ): Record<string, QueryStateConfig> {
@@ -127,19 +129,60 @@ export function getQueryForPrompt(
             tokenStrings.push(inputTokenParts.join(''));
         }
     });
+
+    const prompt = tokenStrings.join(' ');
+
+    const functionQuery =
+        `def jointVectorModelQuery(search_statement:str, limit = 5) -> str: \
+        import json; \
+        from gaas_gpt_model import ModelEngine; \
+        from gaas_gpt_vector import VectorEngine; \
+        model = ModelEngine(engine_id = ${model}, insight_id = '\${i}'); \
+        ${
+            vector
+                ? `vector = VectorEngine(engine_id = ${vector}, insight_id = '\${i}', insight_folder = '\${if}');`
+                : ''
+        } \
+        ${
+            vector
+                ? `matches = vector.nearestNeighbor(search_statement = search_statement, limit = limit);`
+                : ''
+        } \
+        prompt = search_statement ${
+            vector
+                ? `+ "Ask based on" + ' '.join([matchItem['Content'] for matchItem in matches])`
+                : ''
+        }; \
+        response = model.ask(question = prompt); \
+        return json.dumps(response);`.replaceAll('\t', '');
+
+    const query = `jointVectorModelQuery("${prompt}")`;
+
     return {
+        [PROMPT_FUNCTION_QUERY_ID]: {
+            id: PROMPT_FUNCTION_QUERY_ID,
+            mode: 'automatic',
+            steps: [
+                {
+                    id: 'py-query-function',
+                    widget: 'code',
+                    parameters: {
+                        type: 'py',
+                        code: functionQuery,
+                    },
+                },
+            ],
+        },
         [PROMPT_QUERY_ID]: {
             id: PROMPT_QUERY_ID,
             mode: 'manual',
             steps: [
                 {
-                    id: 'pixel-1',
+                    id: 'py-query',
                     widget: 'code',
                     parameters: {
-                        type: 'pixel',
-                        code: `LLM(engine=["${model}"], command=["<encode>${tokenStrings.join(
-                            ' ',
-                        )}</encode>"]);`,
+                        type: 'py',
+                        code: query,
                     },
                 },
             ],
@@ -332,6 +375,7 @@ export async function setBlocksAndOpenUIBuilder(
 
     state.queries = getQueryForPrompt(
         builder.model.value as string,
+        builder.vector.value as string | undefined,
         builder.inputs.value as Token[],
         builder.inputTypes.value as object,
     );
