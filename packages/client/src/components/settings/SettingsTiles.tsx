@@ -351,6 +351,11 @@ export const SettingsTiles = (props: SettingsTilesProps) => {
                         <Button
                             variant="contained"
                             color="error"
+                            disabled={
+                                configStore.store.config[
+                                    'adminOnlyProjectDelete'
+                                ] && !configStore.store.user.admin
+                            }
                             onClick={() => setDeleteModal(true)}
                         >
                             Delete
