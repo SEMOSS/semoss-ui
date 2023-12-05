@@ -271,6 +271,7 @@ export const AppEditor = (props: AppEditorProps) => {
     const notification = useNotification();
     const [openAppAssetsPanel, setOpenAppAssetsPanel] = useState(true);
     const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
+    const [allFolders, setAllFolders] = useState([]);
 
     // state vars for file deletion
     interface FileData {
@@ -315,39 +316,54 @@ export const AppEditor = (props: AppEditorProps) => {
     const [counterTextEditor, setCounterTextEditor] = useState(0);
 
     // remove later, tracking open directories
-    // useEffect(() => {
-    //     console.log({
-    //         appDirectory,
-    //         expanded,
-    //         selected,
-    //         counter,
-    //         filesToView,
-    //         activeFileIndex,
-    //         hoverSet,
-    //         openFolderSet,
-    //         deletedNodesSet,
-    //         controlledFiles,
-    //         counterTextEditor,
-    //     });
-    // }, [
-    //     appDirectory,
-    //     expanded,
-    //     selected,
-    //     counter,
-    //     filesToView,
-    //     activeFileIndex,
-    //     hoverSet,
-    //     openFolderSet,
-    //     deletedNodesSet,
-    //     controlledFiles,
-    //     counterTextEditor,
-    // ])
+    useEffect(() => {
+        console.log({
+            appDirectory,
+            expanded,
+            selected,
+            counter,
+            filesToView,
+            activeFileIndex,
+            hoverSet,
+            openFolderSet,
+            deletedNodesSet,
+            controlledFiles,
+            counterTextEditor,
+        });
+    }, [
+        appDirectory,
+        expanded,
+        selected,
+        counter,
+        filesToView,
+        activeFileIndex,
+        hoverSet,
+        openFolderSet,
+        deletedNodesSet,
+        controlledFiles,
+        counterTextEditor,
+    ]);
 
     useEffect(() => {
         getInitialAppStructure();
     }, []);
 
     useEffect(() => {
+        // console.log({allFolders})
+        console.log('@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@');
+        allFolders.forEach((folderId) => {
+            console.log('forEach', {
+                folderId,
+                appDirectory,
+            });
+            // openFolderById(folderId);
+        });
+        console.log('@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@');
+        // }, [appDirectory]);
+    }, [allFolders]);
+
+    useEffect(() => {
+        // alert("useEffect(() => {}, [newDirectoryRefs.current])")
         if (newDirectoryRefs.current) {
             if (newDirectoryRefs.current.current) {
                 newDirectoryRefs.current.current.scrollIntoView({
@@ -374,6 +390,7 @@ export const AppEditor = (props: AppEditorProps) => {
      * TODO*** Decide when i went to call this and how often (reusability)
      */
     const getInitialAppStructure = async () => {
+        // alert("getInitialAppStructure()")
         const pixel = `BrowseAsset(filePath=["version/assets"], space=["${appId}"]);`;
 
         const response = await monolithStore.runQuery(pixel);
@@ -418,6 +435,11 @@ export const AppEditor = (props: AppEditorProps) => {
 
                 // setExpanded([...expanded, node.path])
                 // setOpenFolderSet(new Set([...openFolderSet, node.path]))
+
+                // openFolderById(node.path)
+                // alert(node.path)
+                console.log({ allFolders: [...allFolders, node.path] });
+                setAllFolders([...allFolders, node.path]);
             } else {
                 formattedNodes.push(nodeWithID);
             }
@@ -442,6 +464,12 @@ export const AppEditor = (props: AppEditorProps) => {
         nodeIds: string[],
         event?: React.SyntheticEvent,
     ) => {
+        // alert("viewAsset()")
+        console.log('+++++++++++++++++++++++++++++++++');
+        console.log({
+            nodeIds,
+        });
+        console.log('+++++++++++++++++++++++++++++++++');
         if (nodeIds[0].indexOf('<>') > -1) {
             return;
         }
@@ -586,6 +614,7 @@ export const AppEditor = (props: AppEditorProps) => {
     const saveApplicationAsset = async (
         file: ControlledFile,
     ): Promise<boolean> => {
+        // alert("saveApplicationAsset()")
         console.warn('Saving App Asset with Pixel');
         const pixel = `
             SaveAsset(fileName=["${file.id}"], content=["<encode>${file.content}</encode>"], space=["${appId}"]); 
@@ -634,6 +663,7 @@ export const AppEditor = (props: AppEditorProps) => {
         newNodeName: string,
         assetType: 'directory' | 'file',
     ) => {
+        // alert("addAssetToApp()")
         let pixel = '';
 
         // We may not have to do below --
@@ -736,6 +766,7 @@ export const AppEditor = (props: AppEditorProps) => {
      * Accordion for Dependencies and Files
      */
     const handleAccordionChange = (type: 'dependency' | 'file') => {
+        // alert("handleAccordionChange()")
         const newOpenAccords = openAccordion;
         if (openAccordion.indexOf(type) > -1) {
             newOpenAccords.splice(openAccordion.indexOf(type), 1);
@@ -765,6 +796,7 @@ export const AppEditor = (props: AppEditorProps) => {
      * @returns
      */
     const sortArrayOfObjects = (arr, propertyName) => {
+        // alert("sortArrayOfObjects()")
         const sortedArr = arr.sort((a, b) => {
             if (
                 a[propertyName] === 'directory' &&
@@ -798,6 +830,7 @@ export const AppEditor = (props: AppEditorProps) => {
      * To help us gather input for new file/folder name or contents
      */
     const addPlaceholderNode = (type: 'directory' | 'file') => {
+        // alert("addPlaceholderNode()")
         const newNode = {
             id: '',
             lastModified: '',
@@ -896,6 +929,7 @@ export const AppEditor = (props: AppEditorProps) => {
      * Should trigger the useEffect in TextEditor
      */
     const removeFileToView = (index: number) => {
+        // alert("removeFileToView()")
         const newFilesToView = filesToView;
         newFilesToView.splice(index, 1);
 
@@ -916,6 +950,7 @@ export const AppEditor = (props: AppEditorProps) => {
      * removes a node by its id
      */
     const removeNodeById = async (nodes, targetId) => {
+        // alert("removeNodeById()")
         for (let i = 0; i < nodes.length; i++) {
             const node = nodes[i];
             if (node.id === targetId) {
@@ -942,6 +977,7 @@ export const AppEditor = (props: AppEditorProps) => {
      * need a version of this to recursively find child nodes / directories to collapse child dirs on parent dir collapse
      */
     const findNodeAndParentById = (nodes, targetId, parent = null) => {
+        // alert("findNodeAndParentById()")
         for (const node of nodes) {
             if (node.id === targetId) {
                 return { node, parent }; // Found the node with the specified ID and its parent
@@ -965,6 +1001,10 @@ export const AppEditor = (props: AppEditorProps) => {
      * Recursive function to find a node by its ID
      */
     const findNodeById = (nodes, targetId) => {
+        // alert("findNodeById()");
+        console.log('----------------------------------------------------');
+        console.log('findNodeById', { nodes, targetId });
+        console.log({ expanded });
         for (const node of nodes) {
             if (node.id === targetId) {
                 return node; // Found the node with the specified ID
@@ -987,6 +1027,7 @@ export const AppEditor = (props: AppEditorProps) => {
      * @returns
      */
     const updateNodeRecursively = (nodes, targetId, updatedData) => {
+        // alert("updateNodeRecursively()")
         return nodes.map((node) => {
             if (node.id === targetId) {
                 // Update the properties of the target node
@@ -1016,6 +1057,7 @@ export const AppEditor = (props: AppEditorProps) => {
      * - New file/dir added input Node
      */
     const renderTreeNodes = (nodes) => {
+        console.log('renderTreeNodes(nodes)', { nodes });
         return nodes.map((node, i) => {
             // 1. New nodes that need a name
 
@@ -1212,6 +1254,7 @@ export const AppEditor = (props: AppEditorProps) => {
     };
 
     const confirmFileDeleteHandler = async () => {
+        // alert("confirmFileDeleteHandler()")
         // removeFileFromFilesToViewById(fileToBeDeleted);
         // above line causing buggy behavior, needs work inside TextEditor component possibly
 
@@ -1247,12 +1290,14 @@ export const AppEditor = (props: AppEditorProps) => {
     };
 
     const fileDeleteHandler = async (nodes, targetNode) => {
+        // alert("fileDeleteHandler()");
         setFileToBeDeleted(targetNode);
         setUINodes(nodes);
         setIsDeleteConfirmOpen(true);
     };
 
     const closeCurrentTab = () => {
+        // alert("closeCurrentTab()");
         console.warn(' closing tab', controlledFiles);
 
         const newControlledFiles = controlledFiles;
@@ -1268,6 +1313,40 @@ export const AppEditor = (props: AppEditorProps) => {
         setCounterTextEditor(counterTextEditor + 1);
     };
 
+    const openFolderById = (nodeId) => {
+        // ### testing
+        // viewAsset ----- select file to open in editor
+        // findNodeById
+        // sortArrayOfObjects
+        // updateNodeRecursively
+        // const nodeId = 'version/assets/portals/';
+        const foundNode = findNodeById(appDirectory, nodeId);
+
+        setExpanded([...expanded, nodeId]); // rotates folder carret
+        // need to open folder
+        // need to render children
+
+        const formattedChildren = sortArrayOfObjects(
+            foundNode.children,
+            'type',
+        );
+
+        const updatedTreeData = updateNodeRecursively(appDirectory, nodeId, {
+            ...foundNode,
+            children: formattedChildren,
+        });
+
+        viewAsset([nodeId]);
+
+        console.log('~~~~~~~~~~~~~~~~~~~~~~~~~');
+        console.log({ foundNode });
+        console.log({ formattedChildren });
+        console.log({ updatedTreeData });
+        console.log('~~~~~~~~~~~~~~~~~~~~~~~~~');
+
+        setAppDirectory(updatedTreeData);
+    };
+
     return (
         <StyledEditorPanel>
             {/* If Open: Displays App Explorer */}
@@ -1281,11 +1360,22 @@ export const AppEditor = (props: AppEditorProps) => {
                     <StyleAppExplorerHeader>
                         <Typography variant="h6">Explorer</Typography>
                     </StyleAppExplorerHeader>
+
+                    <button
+                        onClick={() => {
+                            openFolderById('version/assets/portals/');
+                        }}
+                        style={{ width: 'fit-content' }}
+                    >
+                        open portals
+                    </button>
+
                     <StyledAppExplorerContainer>
                         <StyledAppExplorerSection>
                             <CustomAccordion
                                 disableGutters
                                 square={true}
+                                // ### expanded
                                 expanded={
                                     openAccordion.indexOf('file') > -1
                                         ? true
@@ -1344,10 +1434,12 @@ export const AppEditor = (props: AppEditorProps) => {
                                 <CustomAccordionContent>
                                     <StyledTreeView
                                         multiSelect
+                                        // ### explanded
                                         expanded={expanded}
                                         selected={selected}
                                         onNodeToggle={handleToggle}
                                         onNodeSelect={(e, v) => {
+                                            // alert("onNodeSelect")
                                             viewAsset(v, e);
                                         }}
                                         defaultCollapseIcon={
