@@ -338,16 +338,6 @@ export async function setBlocksAndOpenUIBuilder(
         builder.inputTypes.value as object,
     );
 
-    // OldStateStore.dispatch({
-    //     message: ActionMessages.SET_STATE,
-    //     payload: {
-    //         blocks: blocks,
-    //         queries: query,
-    //     },
-    // });
-    // TODO make app here instead
-    // alert('App API call here');
-
     const pixel = `CreateAppFromBlocks ( project = [ "${
         builder.title.value
     }" ] , json =[${JSON.stringify(state)}]  ) ;`;

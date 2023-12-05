@@ -6,15 +6,15 @@ import { Box, Grid, Stack, TextField, Typography } from '@semoss/ui';
 import { PromptLibraryDialogButton } from '../../library/PromptLibraryDialogButton';
 import { usePixel } from '@/hooks';
 
-type CfgLibraryModelsState = {
+type CfgLibraryEngineState = {
     loading: boolean;
-    modelIds: string[];
-    modelDisplay: object;
+    ids: string[];
+    display: object;
 };
-const InitialCfgLibraryModelsState: CfgLibraryModelsState = {
+const InitialCfgLibraryEngineState: CfgLibraryEngineState = {
     loading: true,
-    modelIds: [],
-    modelDisplay: {},
+    ids: [],
+    display: {},
 };
 
 export const PromptBuilderContextStep = (props: {
@@ -22,7 +22,10 @@ export const PromptBuilderContextStep = (props: {
     setBuilderValue: (builderStepKey: string, value: string | string[]) => void;
 }) => {
     const [cfgLibraryModels, setCfgLibraryModels] = useState(
-        InitialCfgLibraryModelsState,
+        InitialCfgLibraryEngineState,
+    );
+    const [cfgLibraryVectorDbs, setCfgLibraryVectorDbs] = useState(
+        InitialCfgLibraryEngineState,
     );
     const filter = createFilterOptions<string>();
     // LLM is required before selecting a template
@@ -44,10 +47,31 @@ export const PromptBuilderContextStep = (props: {
         });
         setCfgLibraryModels({
             loading: false,
-            modelIds: modelIds,
-            modelDisplay: modelDisplay,
+            ids: modelIds,
+            display: modelDisplay,
         });
     }, [myModels.status, myModels.data]);
+
+    const myVectorDbs = usePixel<{ app_id: string; app_name: string }[]>(
+        `MyEngines(engineTypes=['VECTOR']);`,
+    );
+    useMemo(() => {
+        if (myVectorDbs.status !== 'SUCCESS') {
+            return;
+        }
+
+        let vectorDbIds: string[] = [];
+        let vectorDbDisplay = {};
+        myVectorDbs.data.forEach((model) => {
+            vectorDbIds.push(model.app_id);
+            vectorDbDisplay[model.app_id] = model.app_name;
+        });
+        setCfgLibraryVectorDbs({
+            loading: false,
+            ids: vectorDbIds,
+            display: vectorDbDisplay,
+        });
+    }, [myVectorDbs.status, myVectorDbs.data]);
 
     return (
         <StyledStepPaper elevation={2} square>
@@ -112,10 +136,10 @@ export const PromptBuilderContextStep = (props: {
                             fullWidth
                             id="model-autocomplete"
                             loading={cfgLibraryModels.loading}
-                            options={cfgLibraryModels.modelIds}
+                            options={cfgLibraryModels.ids}
                             value={props.builder.model.value ?? null}
                             getOptionLabel={(modelId: string) =>
-                                cfgLibraryModels.modelDisplay[modelId] ?? ''
+                                cfgLibraryModels.display[modelId] ?? ''
                             }
                             onChange={(_, newModelId) => {
                                 props.setBuilderValue(
@@ -127,6 +151,30 @@ export const PromptBuilderContextStep = (props: {
                                 <TextField
                                     {...params}
                                     label="Large Language Model"
+                                    variant="outlined"
+                                />
+                            )}
+                        />
+                        <Autocomplete
+                            disableClearable
+                            fullWidth
+                            id="vector-autocomplete"
+                            loading={cfgLibraryVectorDbs.loading}
+                            options={cfgLibraryVectorDbs.ids}
+                            value={props.builder.vector.value ?? null}
+                            getOptionLabel={(vectorId: string) =>
+                                cfgLibraryVectorDbs.display[vectorId] ?? ''
+                            }
+                            onChange={(_, newVectorId) => {
+                                props.setBuilderValue(
+                                    'vector',
+                                    newVectorId as string,
+                                );
+                            }}
+                            renderInput={(params) => (
+                                <TextField
+                                    {...params}
+                                    label="Knowledge Repository"
                                     variant="outlined"
                                 />
                             )}

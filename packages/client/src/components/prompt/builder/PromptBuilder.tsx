@@ -52,6 +52,12 @@ const initialBuilder: Builder = {
         required: true,
         display: 'LLM',
     },
+    vector: {
+        step: PROMPT_BUILDER_CONTEXT_STEP,
+        value: undefined,
+        required: false,
+        display: 'Knowledge Repository',
+    },
     context: {
         step: PROMPT_BUILDER_CONTEXT_STEP,
         value: undefined,
