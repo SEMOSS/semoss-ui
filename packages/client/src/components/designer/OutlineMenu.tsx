@@ -100,7 +100,7 @@ const StyledNoLayersContainer = styled('div')(({ theme }) => ({
  */
 export const OutlineMenu = observer((): JSX.Element => {
     // get the store
-    const { state } = useBlocks();
+    const { registry, state } = useBlocks();
     const { designer } = useDesigner();
 
     const [expanded, setExpanded] = useState<string[]>([]);
@@ -121,7 +121,7 @@ export const OutlineMenu = observer((): JSX.Element => {
             return null;
         }
 
-        const WidgetIcon = getIconForBlock(block.widget);
+        const WidgetIcon = registry[block.widget].icon;
 
         const children = [];
         for (const s in block.slots) {
