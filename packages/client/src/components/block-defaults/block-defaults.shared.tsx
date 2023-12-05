@@ -372,7 +372,7 @@ export const buildTypographySection = () => ({
             ),
         },
         {
-            description: 'Type',
+            description: 'Font Size',
             render: ({ id }) => (
                 <FontSizeSettings
                     id={id}

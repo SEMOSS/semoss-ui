@@ -20,8 +20,15 @@ const StyledContainer = styled('div')(() => ({
     height: `${STYLED_BUTTON_GROUP_BUTTON_HEIGHT}px`,
 }));
 
+const StyledButtonGroup = styled(ButtonGroup)(() => ({
+    boxShadow:
+        '0px 5px 22px 0px rgba(0, 0, 0, 0.10), 0px 4px 4px 0.5px rgba(0, 0, 0, 0.03)', // custom from design team
+}));
 const StyledButtonGroupButton = styled(Button)(() => ({
     width: `${STYLED_BUTTON_GROUP_BUTTON_WIDTH}px`,
+    backgroundColor: 'white',
+    boxShadow:
+        '0 0 0 0 rgba(0,0,0,0), 0 0 0 0 rgba(0,0,0,0), 0px 1px 5px 0px rgba(0,0,0,0.12)',
 }));
 
 export const DeleteDuplicateMask = observer(() => {
@@ -44,7 +51,7 @@ export const DeleteDuplicateMask = observer(() => {
 
         // reposition the mask
         const repositionMask = () => {
-            // get the block elemenent
+            // get the block element
             const blockEle = getBlockElement(designer.selected);
 
             if (!blockEle) {
@@ -76,7 +83,6 @@ export const DeleteDuplicateMask = observer(() => {
     }
 
     const getStyle = () => {
-        console.warn('TODO: Validate');
         // get position of page root block element
         const rootElement = getRootElement();
         const rootElementSize = rootElement.getBoundingClientRect();
@@ -139,7 +145,7 @@ export const DeleteDuplicateMask = observer(() => {
 
     return (
         <StyledContainer id="delete-duplicate-mask" style={getStyle()}>
-            <ButtonGroup>
+            <StyledButtonGroup>
                 <StyledButtonGroupButton
                     color="inherit"
                     size="small"
@@ -158,7 +164,7 @@ export const DeleteDuplicateMask = observer(() => {
                 >
                     Delete
                 </StyledButtonGroupButton>
-            </ButtonGroup>
+            </StyledButtonGroup>
         </StyledContainer>
     );
 });
