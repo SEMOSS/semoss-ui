@@ -104,6 +104,7 @@ export function getBlockForInput(
 
 export function getQueryForPrompt(
     model: string,
+    vector: string | undefined,
     tokens: Token[],
     inputTypes: object,
 ): Record<string, QueryStateConfig> {
@@ -127,6 +128,32 @@ export function getQueryForPrompt(
             tokenStrings.push(inputTokenParts.join(''));
         }
     });
+
+    const prompt = tokenStrings.join(' ');
+
+    // todo only import once
+    let query = `from gaas_gpt_model import ModelEngine; \
+        from gaas_gpt_vector import VectorEngine; \
+        model = ModelEngine(engine_id = "${model}", insight_id = '\${i}'); \
+        ${
+            vector
+                ? `vector = VectorEngine(engine_id = "${vector}", insight_id = '\${i}', insight_folder = '\${if}');`
+                : ''
+        } \
+        ${
+            vector
+                ? `matches = vector.nearestNeighbor(search_statement = "${prompt}", limit = 5);`
+                : ''
+        } \
+        prompt = "${prompt}"${
+        vector
+            ? ` + "Ask based on " + ' '.join([matchItem for matchItem in matches])`
+            : ''
+    }; \
+        response = model.ask(question = prompt)`;
+
+    console.log(query);
+
     return {
         [PROMPT_QUERY_ID]: {
             id: PROMPT_QUERY_ID,
@@ -138,10 +165,8 @@ export function getQueryForPrompt(
                     output: undefined,
                     widget: 'code',
                     parameters: {
-                        type: 'pixel',
-                        code: `LLM(engine=["${model}"], command=["<encode>${tokenStrings.join(
-                            ' ',
-                        )}</encode>"]);`,
+                        type: 'py',
+                        code: query,
                     },
                 },
             ],
@@ -334,6 +359,7 @@ export async function setBlocksAndOpenUIBuilder(
 
     state.queries = getQueryForPrompt(
         builder.model.value as string,
+        builder.vector.value as string | undefined,
         builder.inputs.value as Token[],
         builder.inputTypes.value as object,
     );
