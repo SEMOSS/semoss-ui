@@ -75,7 +75,7 @@ interface SettingsTilesProps {
 export const SettingsTiles = (props: SettingsTilesProps) => {
     const { id, mode, name, condensed, onDelete } = props;
 
-    const { monolithStore } = useRootStore();
+    const { monolithStore, configStore } = useRootStore();
     const notification = useNotification();
     const { adminMode } = useSettings();
 
@@ -293,6 +293,11 @@ export const SettingsTiles = (props: SettingsTilesProps) => {
                                     : `Make ${name} public`
                             }
                             checked={global}
+                            disabled={
+                                configStore.store.config[
+                                    'adminOnlyProjectSetPublic'
+                                ] && !configStore.store.user.admin
+                            }
                             onChange={() => {
                                 changeGlobal();
                             }}
@@ -394,6 +399,11 @@ export const SettingsTiles = (props: SettingsTilesProps) => {
                                         : `Make ${name} public`
                                 }
                                 checked={global}
+                                disabled={
+                                    configStore.store.config[
+                                        'adminOnlyProjectSetPublic'
+                                    ] && !configStore.store.user.admin
+                                }
                                 onChange={() => {
                                     changeGlobal();
                                 }}
