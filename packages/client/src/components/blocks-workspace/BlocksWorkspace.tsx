@@ -51,27 +51,12 @@ export const BlocksWorkspace = observer((props: BlocksWorkspaceProps) => {
                 // get the output (SerializedState)
                 const { output } = pixelReturn[0];
 
-                // inject the insight id into the queries where applicable
-                // Object.keys(output.queries).forEach((key) => {
-                //     let newSteps = [];
-                //     output.queries[key].steps.forEach((step) => {
-                //         let newStep = {...step};
-                //         newStep.parameters.code = (newStep.parameters.code as string).replaceAll('insightId', insightId);
-                //         newSteps.push(newStep);
-                //     });
-                //     output.queries[key].steps = newSteps;
-                // });
-
                 // create a new state store
                 const s = new StateStore({
                     insightId: insightId,
                     state: output,
                     cellRegistry: DefaultCells,
                 });
-
-                console.log(
-                    output.queries['prompt-query'].steps[0].parameters.code,
-                );
 
                 // set it
                 setState(s);

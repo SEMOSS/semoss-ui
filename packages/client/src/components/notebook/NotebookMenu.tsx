@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { observer } from 'mobx-react-lite';
 import {
     styled,
@@ -10,8 +10,8 @@ import {
     IconButton,
 } from '@semoss/ui';
 import { useBlocks, useWorkspace } from '@/hooks';
-import { Add, Edit, Search } from '@mui/icons-material';
-import { QueryOverlay } from './QueryOverlay';
+import { Add, Search } from '@mui/icons-material';
+import { NewQueryOverlay } from './NewQueryOverlay';
 
 const StyledMenu = styled('div')(({ theme }) => ({
     display: 'flex',
@@ -60,13 +60,24 @@ export const NotebookMenu = observer((): JSX.Element => {
         );
     }, [search, notebook.queriesList]);
 
+    // select the query on load
+    useEffect(() => {
+        // if there are no queries do not select one
+        if (renderedQueries.length === 0) {
+            return;
+        }
+
+        // select the first query
+        const q = renderedQueries[0];
+        notebook.selectQuery(q.id);
+    }, []);
+
     /**
      * Edit or create a query
-     * @param id - id to open in the overlay. If not defined, it will create a new one.
      */
-    const openQueryOverlay = (id = '') => {
+    const openQueryOverlay = () => {
         workspace.openOverlay(() => (
-            <QueryOverlay id={id} onClose={() => workspace.closeOverlay()} />
+            <NewQueryOverlay onClose={() => workspace.closeOverlay()} />
         ));
     };
 
@@ -103,30 +114,27 @@ export const NotebookMenu = observer((): JSX.Element => {
                 <List>
                     {renderedQueries.map((q) => {
                         return (
-                            <List.Item
-                                key={q.id}
-                                dense={true}
-                                secondaryAction={
-                                    <List.ItemButton
-                                        onClick={() => openQueryOverlay(q.id)}
-                                    >
-                                        <Edit />
-                                    </List.ItemButton>
-                                }
-                            >
+                            <List.Item key={q.id} dense={true}>
                                 <List.ItemButton
+                                    selected={
+                                        q.id === notebook.selectedQuery?.id
+                                    }
                                     onClick={() => {
-                                        console.log(q.id);
                                         notebook.selectQuery(q.id);
                                     }}
                                 >
                                     <List.ItemText
                                         primary={
-                                            <Typography
-                                                variant="body1"
-                                                fontWeight="bold"
-                                            >
+                                            <Typography variant="subtitle2">
                                                 {q.id}
+                                            </Typography>
+                                        }
+                                        secondary={
+                                            <Typography
+                                                variant="caption"
+                                                noWrap={true}
+                                            >
+                                                {JSON.stringify(q.data)}
                                             </Typography>
                                         }
                                     />

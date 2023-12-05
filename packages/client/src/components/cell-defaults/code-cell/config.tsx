@@ -26,7 +26,7 @@ export const CodeCell: Cell<CodeCellDef> = {
     },
     toPixel: ({ type, code }) => {
         if (type === 'r') {
-            return `R(<encode>${code}</encode>);`;
+            return `R("<encode>${code}</encode>");`;
         } else if (type === 'py') {
             return `Py("<encode>${code}</encode>");`;
         } else if (type === 'pixel') {
