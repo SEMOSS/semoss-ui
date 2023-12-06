@@ -88,7 +88,6 @@ export class StateStore {
                     Record<string, string>
                 >((acc, val) => {
                     const q = this._store.queries[val];
-                    console.log('in here: ' + q.id);
 
                     // map id -> actual
                     acc[q.id] = `${this.flattenParameter(q._toPixel())}--${
@@ -275,7 +274,7 @@ export class StateStore {
 
     /**
      * Calculate the value of a parameter
-     * @param id - id of the block to get
+     * @param parameter - string with mustach syntax for inputs
      * @returns the specific block information
      */
     calculateParameter(parameter: string): unknown {

@@ -172,7 +172,9 @@ export class QueryState {
     get data() {
         const stepLen = this._store.steps.length;
         if (stepLen > 0) {
-            return this._store.steps[stepLen - 1].output;
+            return Array.isArray(this._store.steps[stepLen - 1].output)
+                ? this._store.steps[stepLen - 1].output[0]
+                : this._store.steps[stepLen - 1].output;
         }
 
         return undefined;

@@ -132,8 +132,7 @@ export function getQueryForPrompt(
 
     const prompt = tokenStrings.join(' ');
 
-    const functionQuery =
-        `def jointVectorModelQuery(search_statement:str, limit = 5) -> str: \
+    const functionQuery = `def jointVectorModelQuery(search_statement:str, limit = 5) -> str: \
         import json; \
         from gaas_gpt_model import ModelEngine; \
         from gaas_gpt_vector import VectorEngine; \
@@ -154,7 +153,7 @@ export function getQueryForPrompt(
                 : ''
         }; \
         response = model.ask(question = prompt); \
-        return json.dumps(response[0]['response']);`.replaceAll('\t', '');
+        return json.dumps(response[0]['response']);`;
 
     const query = `jointVectorModelQuery("${prompt}")`;
 
@@ -343,7 +342,7 @@ export async function setBlocksAndOpenUIBuilder(
                 },
                 data: {
                     style: {},
-                    markdown: `{{${PROMPT_QUERY_ID}.data.response}}`,
+                    markdown: `{{${PROMPT_QUERY_ID}.data.output}}`,
                 },
                 listeners: {},
                 slots: {},
