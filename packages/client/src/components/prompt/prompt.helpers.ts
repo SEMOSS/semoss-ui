@@ -154,7 +154,7 @@ export function getQueryForPrompt(
                 : ''
         }; \
         response = model.ask(question = prompt); \
-        return json.dumps(response);`.replaceAll('\t', '');
+        return json.dumps(response[0].response);`.replaceAll('\t', '');
 
     const query = `jointVectorModelQuery("${prompt}")`;
 
