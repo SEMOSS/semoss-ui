@@ -314,7 +314,7 @@ export async function setBlocksAndOpenUIBuilder(
     // inputs
     let childInputIds = [];
     for (const [tokenIndex, inputType] of Object.entries(
-        builder.inputTypes.value as object,
+        (builder.inputTypes.value as object) ?? {},
     )) {
         const token = builder.inputs.value[tokenIndex] as Token;
         const inputBlock = getBlockForInput(token, inputType);
@@ -335,16 +335,6 @@ export async function setBlocksAndOpenUIBuilder(
         builder.inputs.value as Token[],
         builder.inputTypes.value as object,
     );
-
-    // OldStateStore.dispatch({
-    //     message: ActionMessages.SET_STATE,
-    //     payload: {
-    //         blocks: blocks,
-    //         queries: query,
-    //     },
-    // });
-    // TODO make app here instead
-    // alert('App API call here');
 
     const pixel = `CreateAppFromBlocks ( project = [ "${
         builder.title.value
