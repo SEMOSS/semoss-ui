@@ -31,9 +31,9 @@ export const PromptBuilderContextStep = (props: {
     // LLM is required before selecting a template
     const isPromptLibraryDisabled = !props.builder.model.value;
 
-    const myModels = usePixel<{ app_id: string; app_name: string }[]>(
-        `MyEngines(engineTypes=['MODEL']);`,
-    );
+    const myModels = usePixel<
+        { app_id: string; app_name: string; tag: string }[]
+    >(`MyEngines(engineTypes=['MODEL']);`);
     useMemo(() => {
         if (myModels.status !== 'SUCCESS') {
             return;
@@ -42,8 +42,11 @@ export const PromptBuilderContextStep = (props: {
         let modelIds: string[] = [];
         let modelDisplay = {};
         myModels.data.forEach((model) => {
-            modelIds.push(model.app_id);
-            modelDisplay[model.app_id] = model.app_name;
+            // embeddings models are not set up for response generation
+            if (model.tag !== 'embeddings') {
+                modelIds.push(model.app_id);
+                modelDisplay[model.app_id] = model.app_name;
+            }
         });
         setCfgLibraryModels({
             loading: false,
