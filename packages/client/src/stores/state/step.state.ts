@@ -30,12 +30,6 @@ export interface StepStateConfig<D extends CellDef = CellDef> {
     /** Id of the step */
     id: string;
 
-    /** operation type associated with the step */
-    operation: string[];
-
-    /** Output associated with the step */
-    output: unknown | undefined;
-
     /** Widget to bind the step to */
     widget: D['widget'];
 
@@ -67,8 +61,6 @@ export class StepState<D extends CellDef = CellDef> {
         this._store.id = config.id;
         this._store.widget = config.widget;
         this._store.parameters = config.parameters;
-        this._store.operation = config.operation;
-        this._store.output = config.output;
 
         // make it observable
         makeAutoObservable(this);
@@ -193,8 +185,6 @@ export class StepState<D extends CellDef = CellDef> {
     toJSON = (): StepStateConfig => {
         return {
             id: this._store.id,
-            operation: toJS(this._store.operation),
-            output: toJS(this._store.output),
             widget: this._store.widget,
             parameters: toJS(this._store.parameters),
         };

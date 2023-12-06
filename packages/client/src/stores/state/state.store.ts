@@ -104,12 +104,12 @@ export class StateStore {
 
                     // if they are the same ignore
                     if (!q || curr[id] === prev[id]) {
-                        return;
+                        continue;
                     }
 
                     // ignore if not automatic
                     if (q.mode !== 'automatic') {
-                        return;
+                        continue;
                     }
 
                     // run the query
@@ -274,7 +274,7 @@ export class StateStore {
 
     /**
      * Calculate the value of a parameter
-     * @param id - id of the block to get
+     * @param parameter - string with mustach syntax for inputs
      * @returns the specific block information
      */
     calculateParameter(parameter: string): unknown {

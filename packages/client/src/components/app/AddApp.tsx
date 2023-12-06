@@ -7,15 +7,26 @@ import {
     Modal,
     FileDropzone,
     LinearProgress,
+    Switch,
+    Typography,
+    styled,
 } from '@semoss/ui';
 import { Controller, useForm } from 'react-hook-form';
 import { useRootStore } from '@/hooks';
+
+const StyledRow = styled('div')(({ theme }) => ({
+    display: 'flex',
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+}));
 
 type AddAppForm = {
     APP_NAME: string;
     APP_DESCRIPTION: string;
     TAGS: string[];
     PROJECT_UPLOAD: File;
+    GLOBAL: boolean;
 };
 
 interface AddAppProps {
@@ -39,6 +50,7 @@ export const AddApp = (props: AddAppProps) => {
             APP_DESCRIPTION: '',
             TAGS: [],
             PROJECT_UPLOAD: null,
+            GLOBAL: false,
         },
     });
 
@@ -54,9 +66,11 @@ export const AddApp = (props: AddAppProps) => {
 
             // create the project
             const response = await monolithStore.runQuery(
-                `META | projectVar = CreateProject("${
+                `META | projectVar = CreateProject(project=["${
                     data.APP_NAME
-                }"); SetProjectMetadata(project=[projectVar], meta=[${JSON.stringify(
+                }"], portal=[true], global=[${
+                    data.GLOBAL
+                }]); SetProjectMetadata(project=[projectVar], meta=[${JSON.stringify(
                     {
                         description: data.APP_DESCRIPTION,
                         tag: data.TAGS,
@@ -79,19 +93,16 @@ export const AddApp = (props: AddAppProps) => {
 
             // upnzip the file in the new project
             await monolithStore.runQuery(
-                `UnzipFile(filePath=["${`${path}${upload[0].fileName}`}"], space=["${appId}"])`,
+                `UnzipFile(filePath=["${`${path}${upload[0].fileName}`}"], space=["${appId}"]); ReloadInsightClasses('${appId}'); PublishProject('${appId}', release=true);`,
             );
 
             // Load the insight classes
-            await monolithStore.runQuery(`ReloadInsightClasses('${appId}');`);
-
-            // set the project portal
-            await monolithStore.setProjectPortal(false, appId, true, 'public');
+            // await monolithStore.runQuery(`ReloadInsightClasses('${appId}');`);
 
             // Publish the project the insight classes
-            await monolithStore.runQuery(
-                `PublishProject('${appId}', release=true);`,
-            );
+            // await monolithStore.runQuery(
+            //     `PublishProject('${appId}', release=true);`,
+            // );
 
             // close it
             onClose(appId);
@@ -173,7 +184,7 @@ export const AddApp = (props: AddAppProps) => {
                     <Controller
                         name={'PROJECT_UPLOAD'}
                         control={control}
-                        rules={{}}
+                        rules={{ required: true }}
                         render={({ field }) => {
                             console.log(field.value);
                             return (
@@ -185,6 +196,40 @@ export const AddApp = (props: AddAppProps) => {
                                         field.onChange(newValues);
                                     }}
                                 />
+                            );
+                        }}
+                    />
+
+                    <Controller
+                        name={'GLOBAL'}
+                        control={control}
+                        rules={{}}
+                        render={({ field }) => {
+                            console.log(field.value);
+                            return (
+                                <StyledRow>
+                                    <div>
+                                        <Typography variant="body1">
+                                            Access
+                                        </Typography>
+                                        <Typography variant="caption">
+                                            {!field.value
+                                                ? 'All members can access'
+                                                : 'No one outside of the specified member group can access'}
+                                        </Typography>
+                                    </div>
+                                    <Switch
+                                        checked={field.value}
+                                        disabled={
+                                            configStore.store.config[
+                                                'adminOnlyProjectSetPublic'
+                                            ] && !configStore.store.user.admin
+                                        }
+                                        onChange={(newValues) => {
+                                            field.onChange(newValues);
+                                        }}
+                                    />
+                                </StyledRow>
                             );
                         }}
                     />
