@@ -1,7 +1,7 @@
 import { CSSProperties } from 'react';
 import { observer } from 'mobx-react-lite';
 
-import { useBlock, useWorkspace } from '@/hooks';
+import { useBlock, useDesigner } from '@/hooks';
 import { BlockDef, BlockComponent } from '@/stores';
 
 export interface IframeBlockDef extends BlockDef<'iframe'> {
@@ -10,13 +10,23 @@ export interface IframeBlockDef extends BlockDef<'iframe'> {
         style: CSSProperties;
         src: string;
         title: string;
+        disabled: boolean;
     };
     slots: never;
 }
 
 export const IframeBlock: BlockComponent = observer(({ id }) => {
     const { attrs, data } = useBlock<IframeBlockDef>(id);
-    const { workspace } = useWorkspace();
+    const { designer } = useDesigner();
+
+    const pointerEvents = () => {
+        // if disabled, always none
+        if (data.disabled) {
+            return 'none';
+        }
+        // otherwise disable is not selected
+        return designer.selected === id ? 'auto' : 'none';
+    };
 
     return (
         <span
@@ -32,7 +42,7 @@ export const IframeBlock: BlockComponent = observer(({ id }) => {
                 style={{
                     width: '100%',
                     height: '100%',
-                    pointerEvents: workspace.isEditMode ? 'none' : 'auto',
+                    pointerEvents: pointerEvents(),
                 }}
                 src={data.src}
                 title={data.title}

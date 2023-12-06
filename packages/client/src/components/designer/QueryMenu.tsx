@@ -49,6 +49,11 @@ const StyledJson = styled('pre')(({ theme }) => ({
     textWrap: 'wrap',
 }));
 
+const StyledListItemText = styled(List.ItemText)(() => ({
+    overflow: 'hidden',
+    textOverflow: 'ellipsis',
+}));
+
 /**
  * Render the QueryMenu
  */
@@ -183,7 +188,7 @@ export const QueryMenu = observer((): JSX.Element => {
                                         notebook.selectQuery(q.id);
                                     }}
                                 >
-                                    <List.ItemText
+                                    <StyledListItemText
                                         primary={
                                             <Typography variant="subtitle2">
                                                 {q.id}
@@ -194,7 +199,13 @@ export const QueryMenu = observer((): JSX.Element => {
                                                 variant="caption"
                                                 noWrap={true}
                                             >
-                                                {JSON.stringify(q.data)}
+                                                {q.data ? (
+                                                    JSON.stringify(q.data)
+                                                ) : (
+                                                    <em>
+                                                        Query not yet executed
+                                                    </em>
+                                                )}
                                             </Typography>
                                         }
                                     />

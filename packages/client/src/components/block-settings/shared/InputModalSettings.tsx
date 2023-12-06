@@ -144,10 +144,7 @@ export const InputModalSettings = observer(
                 >
                     <StyledModalHeader>
                         <Typography variant="h5">{`Edit ${label}`}</Typography>
-                        <IconButton
-                            sx={{ margin: 0, paddingRight: 0 }}
-                            onClick={() => setOpen(false)}
-                        >
+                        <IconButton onClick={() => setOpen(false)}>
                             <Close />
                         </IconButton>
                     </StyledModalHeader>

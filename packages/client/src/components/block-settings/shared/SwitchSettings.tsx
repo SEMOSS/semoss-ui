@@ -1,56 +1,40 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { computed } from 'mobx';
 import { observer } from 'mobx-react-lite';
-import { MenuItem, Select } from '@semoss/ui';
+import { Switch } from '@semoss/ui';
 import { Paths, PathValue } from '@/types';
 import { useBlockSettings } from '@/hooks';
 import { Block, BlockDef } from '@/stores';
 import { getValueByPath } from '@/utility';
 import { BaseSettingSection } from '../BaseSettingSection';
 
-/**
- * Used for discrete selection options tied to values, ex S/M/L
- */
-
-interface SelectInputSettingsProps<D extends BlockDef = BlockDef> {
+interface SwitchSettingsProps<D extends BlockDef = BlockDef> {
     /**
      * Id of the block that is being worked with
      */
     id: string;
 
     /**
-     * Path to update
-     */
-    path: Paths<Block<D>['data'], 4>;
-
-    /**
-     * Settings label
+     * Label to pass into the input
      */
     label: string;
 
     /**
-     * Options for select
+     * Path to update
      */
-    options: Array<{ value: string; display: string }>;
-
-    /**
-     * Whether an empty 'None' option should be in the select
-     */
-    allowUnset?: boolean;
+    path: Paths<Block<D>['data'], 4>;
 }
 
-export const SelectInputSettings = observer(
+export const SwitchSettings = observer(
     <D extends BlockDef = BlockDef>({
         id,
+        label = '',
         path,
-        label,
-        options,
-        allowUnset = false,
-    }: SelectInputSettingsProps<D>) => {
-        const { data, setData } = useBlockSettings(id);
+    }: SwitchSettingsProps<D>) => {
+        const { data, setData } = useBlockSettings<D>(id);
 
         // track the value
-        const [value, setValue] = useState('');
+        const [value, setValue] = useState<boolean>(false);
 
         // track the ref to debounce the input
         const timeoutRef = useRef<ReturnType<typeof setTimeout>>(null);
@@ -59,17 +43,17 @@ export const SelectInputSettings = observer(
         const computedValue = useMemo(() => {
             return computed(() => {
                 if (!data) {
-                    return '';
+                    return false;
                 }
 
                 const v = getValueByPath(data, path);
                 if (typeof v === 'undefined') {
-                    return '';
+                    return false;
                 } else if (typeof v === 'string') {
-                    return v;
+                    return v === 'true';
                 }
 
-                return JSON.stringify(v);
+                return JSON.stringify(v) === 'true';
             });
         }, [data, path]).get();
 
@@ -81,7 +65,7 @@ export const SelectInputSettings = observer(
         /**
          * Sync the data on change
          */
-        const onChange = (value: string) => {
+        const onChange = (value: boolean) => {
             // set the value
             setValue(value);
 
@@ -103,28 +87,13 @@ export const SelectInputSettings = observer(
 
         return (
             <BaseSettingSection label={label}>
-                <Select
-                    fullWidth
-                    size="small"
+                <Switch
                     value={value}
                     onChange={(e) => {
                         // sync the data on change
-                        onChange(e.target.value);
+                        onChange(!value);
                     }}
-                >
-                    {allowUnset ? (
-                        <MenuItem value={''}>
-                            <em>None</em>
-                        </MenuItem>
-                    ) : null}
-                    {Array.from(options, (option, i) => {
-                        return (
-                            <MenuItem key={i} value={option.value}>
-                                {option.display}
-                            </MenuItem>
-                        );
-                    })}
-                </Select>
+                />
             </BaseSettingSection>
         );
     },

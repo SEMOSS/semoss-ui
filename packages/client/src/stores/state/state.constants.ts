@@ -1,3 +1,4 @@
+import { ActionMessages } from './state.actions';
 import { SerializedState } from './state.types';
 
 export const HelloWorldApp: SerializedState = {
@@ -57,4 +58,9 @@ export const HelloWorldApp: SerializedState = {
             slots: {},
         },
     },
+};
+
+export const ACTIONS_DISPLAY = {
+    [ActionMessages.RUN_QUERY]: 'Run Query',
+    [ActionMessages.DISPATCH_EVENT]: 'Dispatch Event',
 };

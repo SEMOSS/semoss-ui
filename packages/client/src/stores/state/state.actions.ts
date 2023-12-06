@@ -23,6 +23,11 @@ export enum ActionMessages {
     DISPATCH_EVENT = 'DISPATCH_EVENT',
 }
 
+const ACTIONS_DISPLAY = {
+    [ActionMessages.RUN_QUERY]: 'Run Query',
+    [ActionMessages.DISPATCH_EVENT]: 'Dispatch Event',
+};
+
 export type Actions =
     | SetStateAction
     | AddBlockAction

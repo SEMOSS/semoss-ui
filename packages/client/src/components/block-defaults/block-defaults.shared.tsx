@@ -372,7 +372,7 @@ export const buildTypographySection = () => ({
             ),
         },
         {
-            description: 'Type',
+            description: 'Font Size',
             render: ({ id }) => (
                 <FontSizeSettings
                     id={id}
@@ -385,14 +385,14 @@ export const buildTypographySection = () => ({
 });
 
 /**
- * Build the Listeners Section
+ * Build the Listener Section
  * @returns the Listener Section
  */
-export const buildListeners = <D extends BlockDef = BlockDef>(
-    triggers: Extract<keyof D['listeners'], string>[] = [],
+export const buildListener = <D extends BlockDef = BlockDef>(
+    trigger: Extract<keyof D['listeners'], string>,
 ) => [
-    ...triggers.map((t) => ({
-        description: t,
-        render: ({ id }) => <ListenerSettings id={id} listener={t} />,
-    })),
+    {
+        description: trigger,
+        render: ({ id }) => <ListenerSettings id={id} listener={trigger} />,
+    },
 ];
