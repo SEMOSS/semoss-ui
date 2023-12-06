@@ -4,8 +4,13 @@ import { observer } from 'mobx-react-lite';
 import { styled, Stack, TextField, Modal, Button, Select } from '@semoss/ui';
 import { Controller, useForm } from 'react-hook-form';
 
-import { useBlockSettings, useBlocks, useDesigner } from '@/hooks';
-import { ActionMessages, BlockDef, ListenerActions } from '@/stores';
+import { useBlockSettings, useBlocks } from '@/hooks';
+import {
+    ACTIONS_DISPLAY,
+    ActionMessages,
+    BlockDef,
+    ListenerActions,
+} from '@/stores';
 
 const StyledSpacer = styled('div')(() => ({
     flex: 1,
@@ -129,12 +134,10 @@ export const ListenerActionOverlay = observer(
         return (
             <>
                 <Modal.Title>
-                    {isNew
-                        ? `Add Action to ${listener}`
-                        : `Edit Action on ${listener}`}
+                    {`${isNew ? 'Add' : 'Edit'} ${listener}`}
                 </Modal.Title>
                 <Modal.Content>
-                    <Stack>
+                    <Stack padding={2}>
                         <Controller
                             name={'message'}
                             control={control}
@@ -152,7 +155,7 @@ export const ListenerActionOverlay = observer(
                                             ActionMessages.DISPATCH_EVENT,
                                         ].map((a, aIdx) => (
                                             <Select.Item key={aIdx} value={a}>
-                                                {a}
+                                                {ACTIONS_DISPLAY[a]}
                                             </Select.Item>
                                         ))}
                                     </Select>

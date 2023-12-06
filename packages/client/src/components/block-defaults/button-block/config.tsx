@@ -6,7 +6,7 @@ import {
     buildSpacingSection,
     buildDimensionsSection,
     buildColorSection,
-    buildListeners,
+    buildListener,
 } from '../block-defaults.shared';
 
 import { ButtonBlockDef, ButtonBlock } from './ButtonBlock';
@@ -37,8 +37,11 @@ export const config: BlockConfig<ButtonBlockDef> = {
                         <InputSettings id={id} label="Label" path="label" />
                     ),
                 },
-                ...buildListeners(['onClick']),
             ],
+        },
+        {
+            name: 'onClick',
+            children: [...buildListener('onClick')],
         },
     ],
     styleMenu: [

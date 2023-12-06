@@ -234,10 +234,7 @@ export const useBlock = <D extends BlockDef = BlockDef>(
     const data = computed(() => {
         return copy(block.data, (instance) => {
             if (typeof instance === 'string') {
-                return state.calculateParameter(
-                    instance,
-                    block.id === 'prompt-response',
-                );
+                return state.calculateParameter(instance);
             }
 
             return instance;

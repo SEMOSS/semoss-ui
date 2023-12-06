@@ -132,28 +132,29 @@ export function getQueryForPrompt(
 
     const prompt = tokenStrings.join(' ');
 
-    const functionQuery = `def jointVectorModelQuery(search_statement:str, limit = 5) -> str: \
-        import json; \
-        from gaas_gpt_model import ModelEngine; \
-        from gaas_gpt_vector import VectorEngine; \
-        model = ModelEngine(engine_id = "${model}", insight_id = '\${i}'); \
-        ${
+    const functionQuery =
+        `def jointVectorModelQuery(search_statement:str, limit = 5) -> str:` +
+        `import json;` +
+        `from gaas_gpt_model import ModelEngine;` +
+        `from gaas_gpt_vector import VectorEngine;` +
+        `model = ModelEngine(engine_id = "${model}", insight_id = '\${i}');` +
+        `${
             vector
                 ? `vector = VectorEngine(engine_id = "${vector}", insight_id = '\${i}', insight_folder = '\${if}');`
                 : ''
-        } \
-        ${
+        }` +
+        `${
             vector
                 ? `matches = vector.nearestNeighbor(search_statement = search_statement, limit = limit);`
                 : ''
-        } \
-        prompt = search_statement ${
+        }` +
+        `prompt = search_statement ${
             vector
                 ? `+ "Ask based on" + ' '.join([matchItem['Content'] for matchItem in matches])`
                 : ''
-        }; \
-        response = model.ask(question = prompt); \
-        return json.dumps(response[0]['response']);`;
+        };` +
+        `response = model.ask(question = prompt);` +
+        `return json.dumps(response[0]['response']);`;
 
     const query = `jointVectorModelQuery("${prompt}")`;
 
