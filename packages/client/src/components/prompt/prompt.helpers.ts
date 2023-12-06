@@ -137,10 +137,10 @@ export function getQueryForPrompt(
         import json; \
         from gaas_gpt_model import ModelEngine; \
         from gaas_gpt_vector import VectorEngine; \
-        model = ModelEngine(engine_id = ${model}, insight_id = '\${i}'); \
+        model = ModelEngine(engine_id = "${model}", insight_id = '\${i}'); \
         ${
             vector
-                ? `vector = VectorEngine(engine_id = ${vector}, insight_id = '\${i}', insight_folder = '\${if}');`
+                ? `vector = VectorEngine(engine_id = "${vector}", insight_id = '\${i}', insight_folder = '\${if}');`
                 : ''
         } \
         ${
