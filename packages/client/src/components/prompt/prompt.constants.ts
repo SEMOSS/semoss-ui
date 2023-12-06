@@ -1,4 +1,10 @@
-import { Create, DisplaySettings, Input, Preview } from '@mui/icons-material';
+import {
+    Block,
+    Create,
+    DisplaySettings,
+    Input,
+    Preview,
+} from '@mui/icons-material';
 
 // use contants for steps so it's easy to reorder/add new ones
 export const PROMPT_BUILDER_CONTEXT_STEP = 1;
@@ -55,10 +61,10 @@ export const SUMMARY_STEPS = [
         title: 'Define Input Types',
         icon: DisplaySettings,
     },
-    // {
-    //     title: 'Set Constraints',
-    //     icon: Block,
-    // },
+    {
+        title: 'Set Constraints',
+        icon: Block,
+    },
     {
         title: 'Preview Prompt',
         icon: Preview,
