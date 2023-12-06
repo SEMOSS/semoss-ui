@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react';
 import { Builder, ConstraintSettings } from '../../prompt.types';
 import { StyledStepPaper } from '../../prompt.styled';
-import { styled, Box, Stack, Typography } from '@semoss/ui';
-import { Switch, SwitchProps } from '@mui/material';
+import { Box, Stack, Typography } from '@semoss/ui';
+import { styled, Switch, SwitchProps } from '@mui/material';
 
 interface Constraint {
     title: string;
@@ -49,7 +49,7 @@ const outputConstraints: Constraints = [
 const initialConstraintSettings: ConstraintSettings = {
     restrictInput: false,
     filterHateSpeech: true,
-    limitResponseWords: true,
+    limitResponseWords: false,
     limitResponseCharacters: false,
     setTone: false,
     bulletpoints: false,
