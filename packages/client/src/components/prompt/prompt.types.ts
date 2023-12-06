@@ -34,5 +34,5 @@ export interface Builder {
     context: BuilderStepItem;
     inputs: BuilderStepItem;
     inputTypes: BuilderStepItem;
-    // constraints: BuilderStepItem;
+    constraints: BuilderStepItem;
 }

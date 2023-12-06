@@ -357,7 +357,7 @@ export async function setBlocksAndOpenUIBuilder(
     // inputs
     let childInputIds = [];
     for (const [tokenIndex, inputType] of Object.entries(
-        builder.inputTypes.value as object,
+        (builder.inputTypes.value as object) ?? {},
     )) {
         const token = builder.inputs.value[tokenIndex] as Token;
         const inputBlock = getBlockForInput(token, inputType);

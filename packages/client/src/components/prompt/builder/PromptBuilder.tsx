@@ -11,12 +11,11 @@ import {
     PROMPT_BUILDER_CONTEXT_STEP,
     PROMPT_BUILDER_INPUTS_STEP,
     PROMPT_BUILDER_INPUT_TYPES_STEP,
-    // PROMPT_BUILDER_CONSTRAINTS_STEP,
+    PROMPT_BUILDER_CONSTRAINTS_STEP,
     PROMPT_BUILDER_PREVIEW_STEP,
     TOKEN_TYPE_INPUT,
 } from '../prompt.constants';
 import { styled, Box, Button, Grid, Paper } from '@semoss/ui';
-// import { PromptBuilderConstraintsStep } from './PromptBuilderConstraintsStep';
 import { PromptBuilderSummary } from './summary';
 import { useRootStore } from '@/hooks';
 import { PromptBuilderStep } from './step';
@@ -76,12 +75,12 @@ const initialBuilder: Builder = {
         required: true,
         display: 'Input Types',
     },
-    // constraints: {
-    //     step: PROMPT_BUILDER_CONSTRAINTS_STEP,
-    //     value: undefined,
-    //     required: true,
-    //     display: 'Constraints',
-    // },
+    constraints: {
+        step: PROMPT_BUILDER_CONSTRAINTS_STEP,
+        value: undefined,
+        required: true,
+        display: 'Constraints',
+    },
 };
 
 export const PromptBuilder = () => {
@@ -101,9 +100,9 @@ export const PromptBuilder = () => {
     };
 
     const nextButtonText =
-        currentBuilderStep < PROMPT_BUILDER_INPUT_TYPES_STEP
+        currentBuilderStep < PROMPT_BUILDER_CONSTRAINTS_STEP
             ? 'Next'
-            : currentBuilderStep === PROMPT_BUILDER_INPUT_TYPES_STEP
+            : currentBuilderStep === PROMPT_BUILDER_CONSTRAINTS_STEP
             ? 'Preview'
             : 'Create App';
 
