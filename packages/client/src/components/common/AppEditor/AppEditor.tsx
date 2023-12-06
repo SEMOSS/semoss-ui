@@ -271,7 +271,6 @@ export const AppEditor = (props: AppEditorProps) => {
     const notification = useNotification();
     const [openAppAssetsPanel, setOpenAppAssetsPanel] = useState(true);
     const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
-    const [allFolders, setAllFolders] = useState([]);
 
     // state vars for file deletion
     interface FileData {
@@ -315,72 +314,45 @@ export const AppEditor = (props: AppEditorProps) => {
     );
     const [counterTextEditor, setCounterTextEditor] = useState(0);
 
-    // remove later, tracking open directories
-    // useEffect(() => {
-    //     console.log({
-    //         // appDirectory,
-    //         // expanded,
-    //         // selected,
-    //         // counter,
-    //         // filesToView,
-    //         // activeFileIndex,
-    //         // hoverSet,
-    //         // openFolderSet,
-    //         // deletedNodesSet,
-    //         // controlledFiles,
-    //         // counterTextEditor,
-    //     });
-    // }, [
-    //     // appDirectory,
-    //     // expanded,
-    //     // selected,
-    //     // counter,
-    //     // filesToView,
-    //     // activeFileIndex,
-    //     // hoverSet,
-    //     // openFolderSet,
-    //     // deletedNodesSet,
-    //     // controlledFiles,
-    //     // counterTextEditor,
-    // ]);
-
-    // remove later, tracking open directories
+    // temporary solution for stopping useEffect checking for new folders from the backend
+    const [firstUserClick, setFirstUserClick] = useState(false);
+    const firstClickHandler = () => {
+        setFirstUserClick(true);
+        document.removeEventListener('click', firstClickHandler);
+    };
 
     useEffect(() => {
         getInitialAppStructure();
+        // set event listener for first user click to disable auto folder opening
+        document.addEventListener('click', firstClickHandler);
     }, []);
 
+    // helper function for recursive folder opening on initial explorer load
+    const openFoldersHelper = (node) => {
+        // console.log(`recursive frame - ${node.id}`) // confirm that recursion stops after app is fully loaded
+
+        if (node.type !== 'directory') {
+            // TODO: find a way to stop this based on base cases instead of stopping after the users first click
+            return;
+        }
+
+        // add to open folders set for open folder icon rendering
+        const tempSet = new Set(openFolderSet);
+        tempSet.add(node.id);
+        setOpenFolderSet(tempSet);
+
+        // recursively call on all children
+        node.children.forEach(openFoldersHelper);
+        // only update appDirectory and trigger new useEffect if the folder has not been expanded yet
+        if (!expanded.includes(node.id)) openFolderById(node.id);
+    };
+
+    // recursvely opens folders until all folder contents loaded from BE, stops after user interacts with explorer
     useEffect(() => {
-        appDirectory.forEach((appEle) => {
-            if (appEle.type === 'directory') {
-                appEle.children.forEach((nestedEle) => {
-                    if (
-                        nestedEle.type === 'directory' &&
-                        !expanded.includes(nestedEle.id)
-                    ) {
-                        openFolderById(nestedEle.id);
-                    }
-                });
-
-                if (!expanded.includes(appEle.id)) {
-                    openFolderById(appEle.id);
-                }
-            }
-        });
+        if (firstUserClick) return;
+        appDirectory.forEach(openFoldersHelper);
+        // only runs recursive directory check on updates to appDirectory, not continuously
     }, [appDirectory]);
-
-    // useEffect(() => {
-    //     console.log({allFolders})
-    //     console.log('@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@');
-    //     allFolders.forEach((folderId) => {
-    //         console.log('forEach', {
-    //             folderId,
-    //             appDirectory,
-    //         });
-    //         // openFolderById(folderId);
-    //     });
-    //     console.log('@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@');
-    // }, [allFolders]);
 
     useEffect(() => {
         if (newDirectoryRefs.current) {
@@ -444,26 +416,6 @@ export const AppEditor = (props: AppEditorProps) => {
                         },
                     ],
                 });
-
-                // this should at least be able to open the first layer of folders
-                // currently showing toggle icon correctly but no files / children
-
-                // setOpenAccordion([...openAccordion, node.path])
-                // handleToggle(null, [node.path])
-
-                // setExpanded([...expanded, node.path])
-                // setOpenFolderSet(new Set([...openFolderSet, node.path]))
-
-                // openFolderById(node.path)
-                // console.log({ allFolders: [...allFolders, node.path] });
-                // openFolderById(node.path)
-
-                const nodeId = node.path;
-
-                // setAllFolders([...allFolders, node.path]);
-
-                // run and await new open directory sequence
-                // copied and pasted from
             } else {
                 formattedNodes.push(nodeWithID);
             }
@@ -472,18 +424,6 @@ export const AppEditor = (props: AppEditorProps) => {
         const formattedDirectoryNodes = sortArrayOfObjects(
             formattedNodes,
             'type',
-        );
-
-        console.log(
-            'vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv',
-            'Initial App Load...',
-            {
-                output,
-                formattedNodes,
-                formattedDirectoryNodes,
-                controlledFiles,
-            },
-            'vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv',
         );
 
         setAppDirectory(formattedDirectoryNodes);
@@ -631,7 +571,7 @@ export const AppEditor = (props: AppEditorProps) => {
         }
 
         // No issues with reactor, set selected nodes for visual representation
-        setSelected(nodeIds);
+        if (firstUserClick) setSelected(nodeIds);
 
         // return nodeIds;
     };
@@ -726,14 +666,14 @@ export const AppEditor = (props: AppEditorProps) => {
             });
 
             await viewAsset(!parent ? ['version/assets/'] : [parent.id]);
-            setSelected(parent ? [parent.id] : []);
+            if (firstUserClick) setSelected(parent ? [parent.id] : []);
             return;
         }
 
         // save nodeReplacement in tree
         if (assetType === 'directory') {
             await viewAsset([parent ? parent.id : ['version/assets']]);
-            setSelected([nodeReplacement.id]);
+            if (firstUserClick) setSelected([nodeReplacement.id]);
         } else {
             const commitAssetPixel = `
             CommitAsset(filePath=["${nodeReplacement.id}"], comment=["Added Asset from App Editor: path='${nodeReplacement.id}' "], space=["${appId}"])
@@ -759,7 +699,7 @@ export const AppEditor = (props: AppEditorProps) => {
 
         // set this file as the active file in the editor
 
-        // setSelected([nodeReplacement.id]);
+        // if (firstUserClick) setSelected([nodeReplacement.id]);
         setCounter(counter + 1);
     };
 
@@ -1119,7 +1059,8 @@ export const AppEditor = (props: AppEditorProps) => {
                                                 ? ['version/assets/']
                                                 : parent.id,
                                         ]);
-                                        setSelected([parent.id]);
+                                        if (firstUserClick)
+                                            setSelected([parent.id]);
                                         return;
                                     }
                                     // 2. save the asset and change interface accordingly
@@ -1166,11 +1107,12 @@ export const AppEditor = (props: AppEditorProps) => {
                                                     ? ['version/assets/']
                                                     : parent.id,
                                             ]);
-                                            setSelected(
-                                                !parent
-                                                    ? ['version/assets/']
-                                                    : [parent.id],
-                                            );
+                                            if (firstUserClick)
+                                                setSelected(
+                                                    !parent
+                                                        ? ['version/assets/']
+                                                        : [parent.id],
+                                                );
                                             return;
                                         }
                                         // 2. save the asset and change interface accordingly
@@ -1200,12 +1142,6 @@ export const AppEditor = (props: AppEditorProps) => {
                                 }
                                 onMouseLeave={() => setHoverSet(new Set())}
                             >
-                                {/* {!node.children ? (
-                                    <StyledFiletypeIcon
-                                        path={FILE_ICON_MAP.document}
-                                        size={1}
-                                    ></StyledFiletypeIcon>
-                                ) : null} */}
                                 <StyledTypography variant="body1">
                                     <StyledFiletypeIcon
                                         path={
@@ -1255,25 +1191,9 @@ export const AppEditor = (props: AppEditorProps) => {
 
         setActiveFileIndex(0);
         setFilesToView(newFilesToView);
-        // works to remove from files to view but doesn't close tab
-        // might not be possible outside of TextEditor without edits to component / props
-        // right now crashes without manual setActiveFileIndex change
-        // causes buggy repeated creation of new repeat tabs for file on hover in explorer
-        // seems to need to be addressed in the TextEditor possibly with controlledFiles
-        // only props currently passed in to TextEditor {
-        // files <-- activeFiles,
-        // activeIndex <-- activeFileIndex,
-        // setActiveIndex,
-        // onSave,
-        // onClose
-        // }
-        // unclear if controlledFiles is just meant to mirror activeFiles
     };
 
     const confirmFileDeleteHandler = async () => {
-        // removeFileFromFilesToViewById(fileToBeDeleted);
-        // above line causing buggy behavior, needs work inside TextEditor component possibly
-
         try {
             await monolithStore.runQuery(
                 `DeleteAsset(filePath=["${fileToBeDeleted.path}"], space=["${appId}"]);`,
@@ -1371,7 +1291,7 @@ export const AppEditor = (props: AppEditorProps) => {
                                 }
                                 onChange={() => {
                                     setExpanded([]);
-                                    setSelected([]);
+                                    if (firstUserClick) setSelected([]);
                                     handleAccordionChange('file');
                                 }}
                             >
@@ -1458,7 +1378,7 @@ export const AppEditor = (props: AppEditorProps) => {
                                 }
                                 onChange={() => {
                                     setExpanded([]);
-                                    setSelected([]);
+                                    if (firstUserClick) setSelected([]);
                                     handleAccordionChange('dependency');
                                 }}
                             >
