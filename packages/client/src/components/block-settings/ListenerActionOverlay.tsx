@@ -134,7 +134,7 @@ export const ListenerActionOverlay = observer(
         return (
             <>
                 <Modal.Title>
-                    {`${isNew ? 'Add' : 'Edit'} ${listener}`}
+                    {`${isNew ? 'Add' : 'Edit'} ${listener} Action`}
                 </Modal.Title>
                 <Modal.Content>
                     <Stack padding={2}>
