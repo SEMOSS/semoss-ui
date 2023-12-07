@@ -76,7 +76,7 @@ export const Screen = observer((props: ScreenProps) => {
      *
      *  @param event - mouse event
      */
-    const handleMouseDown = (event: React.MouseEvent) => {
+    const handleMouseUp = (event: React.MouseEvent) => {
         const id = getNearestBlock(event.target as Element);
 
         // if there is no id ignore it
@@ -251,7 +251,7 @@ export const Screen = observer((props: ScreenProps) => {
             <StyledContent off={designer.drag.active ? true : false}>
                 <StyledContentOuter onMouseLeave={handleMouseLeave}>
                     <StyledContentInner
-                        onMouseDown={handleMouseDown}
+                        onMouseUp={handleMouseUp} // use mouse up so that new block is not selected until click event over
                         onMouseOver={handleMouseOver}
                     >
                         {children}

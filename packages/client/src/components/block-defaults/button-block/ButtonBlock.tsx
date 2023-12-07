@@ -20,30 +20,26 @@ export const ButtonBlock: BlockComponent = observer(({ id }) => {
     const { designer } = useDesigner();
     const { workspace } = useWorkspace();
 
-    const pointerEvents = () => {
-        console.log(designer?.selected);
-        // disable if not selected in edit mode
-        if (workspace.isEditMode) {
-            return designer?.selected === id ? 'auto' : 'none';
+    const clickEvent = () => {
+        // disable if in edit mode and not selected
+        if (workspace.isEditMode && designer?.selected !== id) {
+            return () => {};
         }
-
-        return 'auto';
+        return () => {
+            listeners.onClick();
+        };
     };
 
     return (
-        <span>
-            <button
-                style={{
-                    pointerEvents: pointerEvents(),
-                    ...data.style,
-                }}
-                onClick={() => {
-                    listeners.onClick();
-                }}
-                {...attrs}
-            >
-                {data.label}
-            </button>
-        </span>
+        <button
+            style={{
+                cursor: 'pointer',
+                ...data.style,
+            }}
+            onClick={clickEvent()}
+            {...attrs}
+        >
+            {data.label}
+        </button>
     );
 });
