@@ -1438,11 +1438,10 @@ export const MembersTable = (props: MembersTableProps) => {
                                                         marginLeft: '30px',
                                                     }}
                                                 >
-                                                    {
-                                                        PERMISSION_DESCRIPTION_MAP[
-                                                            name
-                                                        ]['Author']
-                                                    }
+                                                    {PERMISSION_DESCRIPTION_MAP[
+                                                        name.toLowerCase()
+                                                    ]?.author ||
+                                                        `Error: update key in test-editor.constants to "${name}"`}
                                                 </Box>
                                             }
                                             action={
@@ -1485,11 +1484,10 @@ export const MembersTable = (props: MembersTableProps) => {
                                                         marginLeft: '30px',
                                                     }}
                                                 >
-                                                    {
-                                                        PERMISSION_DESCRIPTION_MAP[
-                                                            name
-                                                        ]['Editor']
-                                                    }
+                                                    {PERMISSION_DESCRIPTION_MAP[
+                                                        name.toLowerCase()
+                                                    ]?.editor ||
+                                                        `Error: update key in test-editor.constants to "${name}"`}
                                                 </Box>
                                             }
                                             action={
@@ -1532,11 +1530,10 @@ export const MembersTable = (props: MembersTableProps) => {
                                                         marginLeft: '30px',
                                                     }}
                                                 >
-                                                    {
-                                                        PERMISSION_DESCRIPTION_MAP[
-                                                            name
-                                                        ]['Read-Only']
-                                                    }
+                                                    {PERMISSION_DESCRIPTION_MAP[
+                                                        name.toLowerCase()
+                                                    ]?.readonly ||
+                                                        `Error: update key in test-editor.constants to "${name}"`}
                                                 </Box>
                                             }
                                             action={
