@@ -64,7 +64,7 @@ export const config: BlockConfig<FileUploadBlockDef> = {
                     render: ({ id }) => (
                         <InputSettings
                             id={id}
-                            label="Size (Megabytes)"
+                            label="Size"
                             path="name.size"
                             disabled={true}
                         />
