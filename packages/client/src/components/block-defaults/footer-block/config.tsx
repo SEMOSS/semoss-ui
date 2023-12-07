@@ -5,6 +5,7 @@ import {
     buildLayoutSection,
     buildColorSection,
     buildTypographySection,
+    buildDimensionsSection,
 } from '../block-defaults.shared';
 
 import { FooterBlockDef, FooterBlock } from './FooterBlock';
@@ -17,9 +18,7 @@ export const config: BlockConfig<FooterBlockDef> = {
     type: BLOCK_TYPE_LAYOUT,
     data: {
         style: {
-            display: 'flex',
-            height: '5%',
-            width: '100%',
+            height: '10%',
         },
     },
     listeners: {},
@@ -30,6 +29,7 @@ export const config: BlockConfig<FooterBlockDef> = {
     icon: BorderBottom,
     contentMenu: [],
     styleMenu: [
+        buildDimensionsSection(),
         buildLayoutSection(),
         // root footers don't get margin for spacing
         {

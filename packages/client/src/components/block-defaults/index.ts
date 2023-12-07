@@ -1,5 +1,5 @@
 import { Registry } from '@/stores';
-
+import { config as BodyBlockConfig, BodyBlockDef } from './body-block';
 import { config as ButtonBlockConfig, ButtonBlockDef } from './button-block';
 import {
     config as ContainerBlockConfig,
@@ -29,6 +29,7 @@ import {
 import { config as SectionBlockConfig, SectionBlockDef } from './section-block';
 
 export type DefaultBlockDefinitions =
+    | BodyBlockDef
     | ButtonBlockDef
     | ContainerBlockDef
     | DividerBlockDef
@@ -46,6 +47,7 @@ export type DefaultBlockDefinitions =
     | SectionBlockDef;
 
 export const DefaultBlocks: Registry<DefaultBlockDefinitions> = {
+    [BodyBlockConfig.widget]: BodyBlockConfig,
     [ButtonBlockConfig.widget]: ButtonBlockConfig,
     [ContainerBlockConfig.widget]: ContainerBlockConfig,
     [DividerBlockConfig.widget]: DividerBlockConfig,

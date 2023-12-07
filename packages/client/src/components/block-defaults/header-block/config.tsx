@@ -5,6 +5,7 @@ import {
     buildLayoutSection,
     buildColorSection,
     buildTypographySection,
+    buildDimensionsSection,
 } from '../block-defaults.shared';
 
 import { HeaderBlockDef, HeaderBlock } from './HeaderBlock';
@@ -17,9 +18,7 @@ export const config: BlockConfig<HeaderBlockDef> = {
     type: BLOCK_TYPE_LAYOUT,
     data: {
         style: {
-            display: 'flex',
-            height: '5%',
-            width: '100%',
+            height: '10%',
         },
     },
     listeners: {},
@@ -30,6 +29,7 @@ export const config: BlockConfig<HeaderBlockDef> = {
     icon: BorderTop,
     contentMenu: [],
     styleMenu: [
+        buildDimensionsSection(),
         buildLayoutSection(),
         // root headers don't get margin for spacing
         {

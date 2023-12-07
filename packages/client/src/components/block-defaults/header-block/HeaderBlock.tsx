@@ -19,6 +19,7 @@ export const HeaderBlock: BlockComponent = observer(({ id }) => {
     return (
         <header
             style={{
+                background: '#FFFFFF',
                 ...data.style,
             }}
             {...attrs}

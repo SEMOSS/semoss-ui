@@ -19,6 +19,7 @@ export const FooterBlock: BlockComponent = observer(({ id }) => {
     return (
         <footer
             style={{
+                background: '#FFFFFF',
                 ...data.style,
             }}
             {...attrs}
