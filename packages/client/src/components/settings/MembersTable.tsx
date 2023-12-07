@@ -34,6 +34,8 @@ import { useRootStore, useAPI, useSettings } from '@/hooks';
 import { LoadingScreen } from '@/components/ui';
 import { SETTINGS_MODE, SETTINGS_ROLE } from './settings.types';
 
+import { PERMISSION_DESCRIPTION_MAP } from './member-permissions.constants';
+
 const colors = [
     '#22A4FF',
     '#FA3F20',
@@ -1436,10 +1438,11 @@ export const MembersTable = (props: MembersTableProps) => {
                                                         marginLeft: '30px',
                                                     }}
                                                 >
-                                                    Ability to provision other
-                                                    users, edit {name} details
-                                                    and hide or delete the
-                                                    {name}.
+                                                    {
+                                                        PERMISSION_DESCRIPTION_MAP[
+                                                            name
+                                                        ]['Author']
+                                                    }
                                                 </Box>
                                             }
                                             action={
@@ -1482,10 +1485,11 @@ export const MembersTable = (props: MembersTableProps) => {
                                                         marginLeft: '30px',
                                                     }}
                                                 >
-                                                    Has the ability to use the
-                                                    {name} to generate insights
-                                                    and can query against the{' '}
-                                                    {name}.
+                                                    {
+                                                        PERMISSION_DESCRIPTION_MAP[
+                                                            name
+                                                        ]['Editor']
+                                                    }
                                                 </Box>
                                             }
                                             action={
@@ -1528,7 +1532,11 @@ export const MembersTable = (props: MembersTableProps) => {
                                                         marginLeft: '30px',
                                                     }}
                                                 >
-                                                    Can view data from {name}.
+                                                    {
+                                                        PERMISSION_DESCRIPTION_MAP[
+                                                            name
+                                                        ]['Read-Only']
+                                                    }
                                                 </Box>
                                             }
                                             action={
