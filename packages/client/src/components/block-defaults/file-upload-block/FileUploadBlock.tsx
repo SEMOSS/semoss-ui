@@ -1,4 +1,3 @@
-//! FILE IMPORTS
 //* State Management & Helpers
 import { CSSProperties } from 'react';
 import { observer } from 'mobx-react-lite';
