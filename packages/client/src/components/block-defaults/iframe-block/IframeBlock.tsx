@@ -1,7 +1,7 @@
 import { CSSProperties } from 'react';
 import { observer } from 'mobx-react-lite';
 
-import { useBlock, useDesigner } from '@/hooks';
+import { useBlock, useDesigner, useWorkspace } from '@/hooks';
 import { BlockDef, BlockComponent } from '@/stores';
 
 export interface IframeBlockDef extends BlockDef<'iframe'> {
@@ -18,14 +18,19 @@ export interface IframeBlockDef extends BlockDef<'iframe'> {
 export const IframeBlock: BlockComponent = observer(({ id }) => {
     const { attrs, data } = useBlock<IframeBlockDef>(id);
     const { designer } = useDesigner();
+    const { workspace } = useWorkspace();
 
     const pointerEvents = () => {
         // if disabled, always none
         if (data.disabled) {
             return 'none';
         }
-        // otherwise disable is not selected
-        return designer.selected === id ? 'auto' : 'none';
+        // otherwise disable if not selected in edit mode
+        if (workspace.isEditMode) {
+            return designer.selected === id ? 'auto' : 'none';
+        }
+
+        return 'auto';
     };
 
     return (
