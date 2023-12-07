@@ -61,6 +61,7 @@ export const config: BlockConfig<FileUploadBlockDef> = {
             ],
         },
     ],
+    //* Section Settings
     styleMenu: [
         buildLayoutSection(),
         buildDimensionsSection(),

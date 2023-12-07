@@ -25,6 +25,7 @@ import {
     TextFieldBlockDef,
 } from './text-field-block';
 import { config as SectionBlockConfig, SectionBlockDef } from './section-block';
+//* Render File Upload Block on UI
 import {
     config as FileBlockConfig,
     FileUploadBlockDef,
