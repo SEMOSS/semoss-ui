@@ -54,7 +54,11 @@ export const config: BlockConfig<InputBlockDef> = {
                 {
                     description: 'Required',
                     render: ({ id }) => (
-                        <InputSettings id={id} label="Value" path="required" />
+                        <InputSettings
+                            id={id}
+                            label="Required"
+                            path="required"
+                        />
                     ),
                 },
             ],

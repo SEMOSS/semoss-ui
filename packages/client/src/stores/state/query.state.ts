@@ -259,13 +259,16 @@ export class QueryState {
             // convert the steps to the raw pixel
             const raw = this._toPixel();
 
+            debugger;
             // fill the braces {{ }} to create the final pixel
             const filled = this._state.flattenParameter(raw);
 
+            debugger;
             // run as a single pixel block;
             const { pixelReturn } = await this._state._runPixel(filled);
 
             const stepLen = this._store.steps.length;
+            debugger;
             if (pixelReturn.length !== stepLen) {
                 throw new Error(
                     'Error processing pixel. Steps do not equal pixelReturn',

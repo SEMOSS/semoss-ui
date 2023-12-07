@@ -5,6 +5,7 @@ import { setValueByPath } from '@/utility';
 import { Cell, CellDef } from './state.types';
 import { StateStore } from './state.store';
 import { QueryState } from './query.state';
+import { ActionMessages } from './state.actions';
 
 export interface StepStateStoreInterface<D extends CellDef = CellDef> {
     /** Id of the step */
@@ -233,12 +234,33 @@ export class StepState<D extends CellDef = CellDef> {
         this._store.output = output;
     }
 
+    private findValueByDynamicKey(obj, keyToFind) {
+        let result = null;
+
+        for (const key in obj) {
+            if (typeof obj[key] === 'object') {
+                result = this.findValueByDynamicKey(obj[key], keyToFind);
+                if (result !== null) {
+                    return result;
+                }
+            } else if (
+                typeof obj[key] === 'string' &&
+                obj[key].includes(keyToFind)
+            ) {
+                // Check if the string contains the dynamic key
+                return obj[key];
+            }
+        }
+
+        return result;
+    }
     /**
      * Process running of the step
      *
      * @param parameters - Run the step with these parameters. They will be saved if successful
      */
     async _processRun(parameters: Partial<Record<string, unknown>> = {}) {
+        debugger;
         try {
             // check the loading state
             if (this._store.isLoading) {
@@ -247,6 +269,24 @@ export class StepState<D extends CellDef = CellDef> {
 
             // start the loading screen
             this._store.isLoading = true;
+
+            // Go set all blocks to disabled that are dependent on this running query
+            Object.values(this._state.blocks).forEach((b) => {
+                const found = this.findValueByDynamicKey(b.data, this.query.id);
+                if (found) {
+                    const copiedBlock = b;
+                    copiedBlock.data.disabled = true;
+                    // set block to loading
+                    this._state.dispatch({
+                        message: ActionMessages.SET_BLOCK_DATA,
+                        payload: {
+                            id: b.id,
+                            path: 'disabled',
+                            value: true,
+                        },
+                    });
+                }
+            });
 
             // merge the options
             const merged = {
@@ -257,12 +297,14 @@ export class StepState<D extends CellDef = CellDef> {
             // convert the steps to the raw pixel
             const raw = this._toPixel();
 
+            // QUESTION(JOHN): Do we run the pixel if {{}} bracket is still not fulfilled
             // fill the braces {{ }} to create the final pixel
             const filled = this._state.flattenParameter(raw);
 
             // run the pixel
             const { pixelReturn } = await this._state._runPixel(filled);
 
+            debugger;
             if (pixelReturn.length !== 1) {
                 throw new Error('Unexpected number of pixel statements');
             }

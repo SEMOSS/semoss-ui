@@ -18,9 +18,13 @@ export interface InputBlockDef extends BlockDef<'input'> {
 export const InputBlock: BlockComponent = observer(({ id }) => {
     const { attrs, data, setData } = useBlock<InputBlockDef>(id);
 
+    // if data.disabled is a string go look for query in store
+    // and see if it's still loading
+
     return (
         <input
             value={data.value}
+            disabled={data.disabled}
             style={{
                 ...data.style,
             }}

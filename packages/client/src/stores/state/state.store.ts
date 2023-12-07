@@ -199,6 +199,7 @@ export class StateStore {
             JSON.parse(JSON.stringify(action.payload)),
         );
 
+        debugger;
         try {
             // apply the action
             if (ActionMessages.SET_STATE === action.message) {
@@ -220,6 +221,7 @@ export class StateStore {
             } else if (ActionMessages.SET_BLOCK_DATA === action.message) {
                 const { id, path, value } = action.payload;
 
+                debugger;
                 this.setBlockData(id, path, value);
             } else if (ActionMessages.DELETE_BLOCK_DATA === action.message) {
                 const { id, path } = action.payload;
@@ -231,6 +233,10 @@ export class StateStore {
                 this.setListener(id, listener, actions);
             } else if (ActionMessages.NEW_QUERY === action.message) {
                 const { queryId, config } = action.payload;
+
+                // If it's a new query we need to set blocks that have a dependency on that query
+                // to there particular disabled state isLoading, isInitialized, isSuccesful
+                debugger;
 
                 this.newQuery(queryId, config);
             } else if (ActionMessages.DELETE_QUERY === action.message) {
@@ -244,10 +250,16 @@ export class StateStore {
             } else if (ActionMessages.RUN_QUERY === action.message) {
                 const { queryId } = action.payload;
 
+                // When we run a query set blocks that are dependent disabled state
+                debugger;
+
                 this.runQuery(queryId);
             } else if (ActionMessages.NEW_STEP === action.message) {
                 const { queryId, stepId, config, previousStepId } =
                     action.payload;
+
+                // If it's a new step in query we may need to set blocks that are dependent to loading
+                debugger;
 
                 this.newStep(queryId, stepId, config, previousStepId);
             } else if (ActionMessages.DELETE_STEP === action.message) {
@@ -261,6 +273,8 @@ export class StateStore {
             } else if (ActionMessages.RUN_STEP === action.message) {
                 const { queryId, stepId } = action.payload;
 
+                // Set Blocks disabled to state to false when its done running
+                debugger;
                 this.runStep(queryId, stepId);
             } else if (ActionMessages.DISPATCH_EVENT === action.message) {
                 const { name, detail } = action.payload;
@@ -300,7 +314,14 @@ export class StateStore {
 
         // check if it is in a query
         if (id && this._store.queries[id]) {
-            return getValueByPath(this._store.queries[id], path);
+            return getValueByPath(this._store.queries[id].data, path);
+            // const queryBlock = getValueByPath(this._store.queries[id], path);
+            // // Return the parameter if Query is not done
+            // if (queryBlock.isLoading || !queryBlock.isSuccessful) {
+            //     return parameter;
+            // } else {
+            //     return queryBlock.data;
+            // }
         }
 
         return parameter;
@@ -809,6 +830,7 @@ export class StateStore {
 
         // setup the promise
         const p = cancellablePromise(async () => {
+            debugger;
             // run the query
             await q._processRun();
 
@@ -819,6 +841,7 @@ export class StateStore {
         p.promise
             .then(() => {
                 // noop
+                debugger;
             })
             .catch((e) => {
                 console.error('ERROR:', e);
@@ -844,6 +867,7 @@ export class StateStore {
         // get the query
         const q = this._store.queries[queryId];
 
+        debugger;
         // add the step
         q._processNewStep(stepId, config, previousStepId);
     };
@@ -892,13 +916,23 @@ export class StateStore {
 
         const key = `step--${stepId} (query--${queryId});`;
 
+        debugger;
+        // debugger
         // cancel a previous command
         this._utils.queryPromises[key]?.cancel();
 
         // setup the promise
         const p = cancellablePromise(async () => {
+            // debugger
+            console.log('before run', q);
             // run the step
             await s._processRun();
+
+            console.log('after run', q);
+
+            debugger;
+
+            // Queries have ran switch blocks
 
             // turn it off
             return true;

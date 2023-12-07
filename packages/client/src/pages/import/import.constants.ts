@@ -3467,6 +3467,19 @@ export const CONNECTION_OPTIONS = {
                     //     helperText: 'Test',
                     // },
                     {
+                        fieldName: 'EMBEDDER_ENGINE_NAME',
+                        label: 'Embedder',
+                        defaultValue: '',
+                        options: {
+                            component: 'select',
+                            options: [],
+                            pixel: `MyEngines ( metaKeys = [] , metaFilters = [{ "tag" : "embeddings" }] , engineTypes = [ 'MODEL' ] ) ;`,
+                        },
+                        disabled: false,
+                        rules: { required: true },
+                        // pixel: '<EMBEDDER_ENGINE_ID>'
+                    },
+                    {
                         fieldName: 'EMBEDDER_ENGINE_ID',
                         label: 'Embedder',
                         defaultValue: '',
