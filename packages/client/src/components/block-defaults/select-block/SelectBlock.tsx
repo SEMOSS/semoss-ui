@@ -6,51 +6,45 @@ import { Autocomplete, TextField } from '@mui/material';
 
 //* UI Builder Queries
 //? =================
-// Fetch & List ALL User Engines
-//* (database_id || app_id && app_name)
+//? Fetch & List ALL User Engines
+//* (database_id || app_id)
 //* MyEngines(engineTypes=["MODEL", "VECTOR"]);
 //? =================
-//  Query LLM Engines
-//* LLM(engine = "2c6de0ff-62e0-4dd0-8380-782ac4d40245", command = "Sample Question", paramValues = [ {} ] );
+//?  Query LLM Engines
 //* LLM(engine = "e4449559-bcff-4941-ae72-0e3f18e06660", command = "Sample Question", paramValues = [ {} ] );
 //? =================
 // TODO Store the File Upload URL in the Vector DB -- needs to be dynamic (LATER)
-//* CreateEmbeddingsFromDocuments (engine = "377e2321-90b7-4856-b3e2-9f6c28663049", filePaths = ["fileName1.pdf", "fileName2.pdf"]);
-//? =================
-// TODO Dynamic Query (LATER)
-//* VectorDatabaseQuery(engine=["{{SelectBlock.value.selectedVectorDB}}"], command=["{{TextFieldBlock.value}}"], limit=[1]);
-//? =================
-// Static Query (now)
-//* VectorDatabaseQuery(engine=["377e2321-90b7-4856-b3e2-9f6c28663049"],command=["What is AI? How to use LLMs?"],limit=[1]);
-//? =================
-// List All Current Docs in Vector DB -- (if needed later on)
-//* ListDocumentsInVectorDatabase (engine = "377e2321-90b7-4856-b3e2-9f6c28663049");
-//? =================
-// TODO Update MarkdownBlock w/ Response/Content/Output
-//* {{VectorDatabaseQuery.pixelReturn[0].output[0].content}}
-//? =================
-
-//* MyEngines(engineTypes=["MODEL", "VECTOR"]);
-//? =================
+//? File Upload
 //* CreateEmbeddingsFromDocuments(engine="377e2321-90b7-4856-b3e2-9f6c28663049",filePaths=["fileName1.pdf","fileName2.pdf"]);
 //? =================
+// TODO Vector DB Query
 //* VectorDatabaseQuery(engine=["377e2321-90b7-4856-b3e2-9f6c28663049"],command=["What is AI? How to use LLMs?"],limit=[1]);
-//* VectorDatabaseQuery(engine=["{{SelectBlock.value.selectedVectorDB}}"],command=["{{TextFieldBlock.value}}"],limit=[1]);
+//* VectorDatabaseQuery(engine=["{{SelectBlock.value.selectedVectorDB}}"], command=["{{TextFieldBlock.value}}"], limit=[1]);
 //? =================
-//* Before Pulling Dev
-//* {{vectorDBOutput.data.0.content}}
-//* {{vectorDBQ.data.0.content}}
-//* After Pulling Dev
-//* {{vectorDBQ.pixelReturn.0.output.0.content}}
-//* {{vectorDBQ.pixelReturn[0].output[0].content}}
+//? Render Output in Markdown
+//* {{vectorDBQ.data.content}} - {{vectorDBQ.data.0.content}} (newest)
 //? =================
-// if you have to use
+//? List All Current Docs in Vector DB -- (if needed later on)
 //* ListDocumentsInVectorDatabase (engine = "377e2321-90b7-4856-b3e2-9f6c28663049");
-//* {{ListDocumentsInVectorDatabase.pixelReturn[0].output[0].fileName}};
+//? =================
+//* Dynamic Pixel Query
+//* VectorDatabaseQuery(engine=["{{SelectBlock.value}}"], command=["{{FileUploadBlock.name.path}}"], limit=[1]);
+//? =================
+//* Basic Logic Query Steps
+// TODO 1. Upload & Process Document
+//* CreateEmbeddingsFromDocuments(engine=["ENGINE_ID"], filePaths=["UPLOADED_FILE_NAME_PATH.pdf"]);
+//? =================
+// TODO 2. Query Vector DB
+//* VectorDatabaseQuery(engine=["ENGINE_ID"], command=["QUERY_STRING"], limit=[1]);
+//? =================
+// TODO 3. Render Output in Markdown
+//* {{vectorDBQ.data.content}} or {{vectorDBQ.data.0.content}}
+
+//! Handle State Correctly
+//! Error Handling
 
 /* 
 ? =================
-//* VectorDatabaseQuery(engine=["377e2321-90b7-4856-b3e2-9f6c28663049"],command=["What is AI? How to use LLMs?"],limit=[1]);
 ? JSON Response/Content/Output from the VectorDatabaseQuery pixel:
 * [
 *   {
@@ -100,7 +94,6 @@ export const SelectBlock: BlockComponent = observer(({ id }) => {
                 database: engine.database_id,
             }));
             setData('options', options);
-            // console.log('enginesData: ', enginesData);
 
             //? Checking that the current value exists in the new options
             if (!options.some((option) => option.database === data.value)) {
