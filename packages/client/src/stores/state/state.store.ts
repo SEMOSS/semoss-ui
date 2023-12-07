@@ -300,7 +300,7 @@ export class StateStore {
 
         // check if it is in a query
         if (id && this._store.queries[id]) {
-            return getValueByPath(this._store.queries[id], path);
+            return getValueByPath(this._store.queries[id].data, path);
         }
 
         return parameter;

@@ -70,8 +70,8 @@ export interface EngineData {
     app_sub_type: string;
 }
 
-export interface SelectBlockDef extends BlockDef<'select'> {
-    widget: 'select';
+export interface EnginesBlockDef extends BlockDef<'engines'> {
+    widget: 'engines';
     data: {
         style: CSSProperties;
         label: string;
@@ -80,8 +80,8 @@ export interface SelectBlockDef extends BlockDef<'select'> {
     };
 }
 
-export const SelectBlock: BlockComponent = observer(({ id }) => {
-    const { attrs, data, setData } = useBlock<SelectBlockDef>(id);
+export const EnginesBlock: BlockComponent = observer(({ id }) => {
+    const { attrs, data, setData } = useBlock<EnginesBlockDef>(id);
 
     const { data: enginesData, status: enginesStatus } = usePixel<EngineData[]>(
         `MyEngines(engineTypes=["MODEL", "VECTOR"]);`,

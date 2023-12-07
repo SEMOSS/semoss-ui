@@ -29,6 +29,7 @@ import {
     config as FileBlockConfig,
     FileUploadBlockDef,
 } from './file-upload-block';
+import { config as EnginesBlockConfig, EnginesBlockDef } from './engines-block';
 
 export type DefaultBlockDefinitions =
     | ButtonBlockDef
@@ -44,7 +45,8 @@ export type DefaultBlockDefinitions =
     | TextBlockDef
     | TextFieldBlockDef
     | SectionBlockDef
-    | FileUploadBlockDef;
+    | FileUploadBlockDef
+    | EnginesBlockDef;
 
 export const DefaultBlocks: Registry<DefaultBlockDefinitions> = {
     [ButtonBlockConfig.widget]: ButtonBlockConfig,
@@ -61,6 +63,7 @@ export const DefaultBlocks: Registry<DefaultBlockDefinitions> = {
     [TextFieldBlockConfig.widget]: TextFieldBlockConfig,
     [SectionBlockConfig.widget]: SectionBlockConfig,
     [FileBlockConfig.widget]: FileBlockConfig,
+    [EnginesBlockConfig.widget]: EnginesBlockConfig,
 };
 
 export function getIconForBlock(widget: string) {
