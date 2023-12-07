@@ -6,6 +6,7 @@ import {
     ContainerBlockDef,
 } from './container-block';
 import { config as DividerBlockConfig, DividerBlockDef } from './divider-block';
+import { config as FooterBlockConfig, FooterBlockDef } from './footer-block';
 import { config as FormBlockConfig, FormBlockDef } from './form-block';
 import { config as HeaderBlockConfig, HeaderBlockDef } from './header-block';
 import { config as IframeBlockConfig, IframeBlockDef } from './iframe-block';
@@ -31,6 +32,7 @@ export type DefaultBlockDefinitions =
     | ButtonBlockDef
     | ContainerBlockDef
     | DividerBlockDef
+    | FooterBlockDef
     | FormBlockDef
     | HeaderBlockDef
     | IframeBlockDef
@@ -47,6 +49,7 @@ export const DefaultBlocks: Registry<DefaultBlockDefinitions> = {
     [ButtonBlockConfig.widget]: ButtonBlockConfig,
     [ContainerBlockConfig.widget]: ContainerBlockConfig,
     [DividerBlockConfig.widget]: DividerBlockConfig,
+    [FooterBlockConfig.widget]: FooterBlockConfig,
     [FormBlockConfig.widget]: FormBlockConfig,
     [HeaderBlockConfig.widget]: HeaderBlockConfig,
     [IframeBlockConfig.widget]: IframeBlockConfig,
