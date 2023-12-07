@@ -14,7 +14,7 @@ export interface FileUploadBlockDef extends BlockDef<'file-upload'> {
         name: {
             path: string | null;
             type: string | null;
-            size: number | null;
+            size?: number | null;
         };
     };
     slots: never;

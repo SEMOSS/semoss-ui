@@ -37,7 +37,12 @@ import { Autocomplete, TextField } from '@mui/material';
 //* VectorDatabaseQuery(engine=["377e2321-90b7-4856-b3e2-9f6c28663049"],command=["What is AI? How to use LLMs?"],limit=[1]);
 //* VectorDatabaseQuery(engine=["{{SelectBlock.value.selectedVectorDB}}"],command=["{{TextFieldBlock.value}}"],limit=[1]);
 //? =================
+//* Before Pulling Dev
 //* {{vectorDBOutput.data.0.content}}
+//* {{vectorDBQ.data.0.content}}
+//* After Pulling Dev
+//* {{vectorDBQ.pixelReturn.0.output.0.content}}
+//* {{vectorDBQ.pixelReturn[0].output[0].content}}
 //? =================
 // if you have to use
 //* ListDocumentsInVectorDatabase (engine = "377e2321-90b7-4856-b3e2-9f6c28663049");
@@ -82,7 +87,6 @@ export interface SelectBlockDef extends BlockDef<'select'> {
 export const SelectBlock: BlockComponent = observer(({ id }) => {
     const { attrs, data, setData } = useBlock<SelectBlockDef>(id);
 
-    //* Fetch users engines (LLM & Vector DBs)
     const { data: enginesData, status: enginesStatus } = usePixel<EngineData[]>(
         `MyEngines(engineTypes=["MODEL", "VECTOR"]);`,
     );
@@ -96,13 +100,7 @@ export const SelectBlock: BlockComponent = observer(({ id }) => {
                 database: engine.database_id,
             }));
             setData('options', options);
-            console.log('enginesData: ', enginesData);
-
-            //* Set a default value on the first option in array
-            //? Messed up the save functionality, would also load the first option in the array
-            /* if (options.length > 0) {
-                setData('value', options[0].value);
-            } */
+            // console.log('enginesData: ', enginesData);
 
             //? Checking that the current value exists in the new options
             if (!options.some((option) => option.database === data.value)) {
@@ -117,7 +115,6 @@ export const SelectBlock: BlockComponent = observer(({ id }) => {
         setData('value', newValue?.database || '');
     };
 
-    //* Check if the option is equal to the Engine Database ID Value
     const isOptionEqualToValue = (option, value) =>
         option.database === value?.database;
 
