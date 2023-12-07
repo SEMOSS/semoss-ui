@@ -343,7 +343,7 @@ export async function setBlocksAndOpenUIBuilder(
                 },
                 data: {
                     style: {},
-                    markdown: `{{${PROMPT_QUERY_ID}.data.output}}`,
+                    markdown: `{{${PROMPT_QUERY_ID}.data.0.output}}`,
                 },
                 listeners: {},
                 slots: {},
