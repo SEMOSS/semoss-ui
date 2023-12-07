@@ -319,10 +319,15 @@ export const AppEditor = (props: AppEditorProps) => {
     );
     const [counterTextEditor, setCounterTextEditor] = useState(0);
 
-    // temporary solution for stopping useEffect checking for new folders from the backend
-    const [firstUserClick, setFirstUserClick] = useState(false);
+    // limit the number of files that are displayed on initial load
+    // limit will often be exceeded due to unknown file count in folders but when limit is met no new folders will be opened
+    const INITIAL_LOAD_FILE_LIMIT = 15;
+    const initialLoadFileSet = useRef(new Set());
+    const [initLoadComplete, setInitLoadComplete] = useState(false);
+
+    // backup solution for stopping initial auto-opening folders if file limit is never met
     const firstClickHandler = () => {
-        setFirstUserClick(true);
+        setInitLoadComplete(true);
         document.removeEventListener('click', firstClickHandler);
     };
 
@@ -334,27 +339,37 @@ export const AppEditor = (props: AppEditorProps) => {
 
     // helper function for recursive folder opening on initial explorer load
     const openFoldersHelper = (node) => {
-        // console.log(`recursive frame - ${node.id}`) // confirm that recursion stops after app is fully loaded
-
-        if (node.type !== 'directory') {
-            // TODO: find a way to stop this based on base cases instead of stopping after the users first click
+        initialLoadFileSet.current = new Set([
+            ...initialLoadFileSet.current,
+            node.id,
+        ]);
+        if (initialLoadFileSet.current.size >= INITIAL_LOAD_FILE_LIMIT)
+            setInitLoadComplete(true);
+        if (
+            node.type !== 'directory' ||
+            initialLoadFileSet.current.size >= INITIAL_LOAD_FILE_LIMIT
+        )
             return;
-        }
 
         // add to open folders set for open folder icon rendering
-        const tempSet = new Set(openFolderSet);
-        tempSet.add(node.id);
-        setOpenFolderSet(tempSet);
+        const tempSet2 = new Set(openFolderSet);
+        tempSet2.add(node.id);
+        setOpenFolderSet(tempSet2);
+
+        // only update appDirectory and trigger new useEffect if the folder has not been expanded yet
+        if (!expanded.includes(node.id)) openFolderById(node.id);
 
         // recursively call on all children
         node.children.forEach(openFoldersHelper);
-        // only update appDirectory and trigger new useEffect if the folder has not been expanded yet
-        if (!expanded.includes(node.id)) openFolderById(node.id);
     };
 
     // recursvely opens folders until all folder contents loaded from BE, stops after user interacts with explorer
     useEffect(() => {
-        if (firstUserClick) return;
+        if (
+            initLoadComplete ||
+            initialLoadFileSet.current.size >= INITIAL_LOAD_FILE_LIMIT
+        )
+            return;
         // if the user has not yet interacted with the page open all folders recursively
         appDirectory.forEach(openFoldersHelper);
         // only runs recursive directory check on updates to appDirectory, not continuously
@@ -577,7 +592,7 @@ export const AppEditor = (props: AppEditorProps) => {
         }
 
         // No issues with reactor, set selected nodes for visual representation
-        if (firstUserClick) setSelected(nodeIds);
+        if (initLoadComplete) setSelected(nodeIds);
 
         // return nodeIds;
     };
@@ -672,14 +687,14 @@ export const AppEditor = (props: AppEditorProps) => {
             });
 
             await viewAsset(!parent ? ['version/assets/'] : [parent.id]);
-            if (firstUserClick) setSelected(parent ? [parent.id] : []);
+            if (initLoadComplete) setSelected(parent ? [parent.id] : []);
             return;
         }
 
         // save nodeReplacement in tree
         if (assetType === 'directory') {
             await viewAsset([parent ? parent.id : ['version/assets']]);
-            if (firstUserClick) setSelected([nodeReplacement.id]);
+            if (initLoadComplete) setSelected([nodeReplacement.id]);
         } else {
             const commitAssetPixel = `
             CommitAsset(filePath=["${nodeReplacement.id}"], comment=["Added Asset from App Editor: path='${nodeReplacement.id}' "], space=["${appId}"])
@@ -705,7 +720,7 @@ export const AppEditor = (props: AppEditorProps) => {
 
         // set this file as the active file in the editor
 
-        // if (firstUserClick) setSelected([nodeReplacement.id]);
+        // if (initLoadComplete) setSelected([nodeReplacement.id]);
         setCounter(counter + 1);
     };
 
@@ -1020,7 +1035,6 @@ export const AppEditor = (props: AppEditorProps) => {
      * - New file/dir added input Node
      */
     const renderTreeNodes = (nodes) => {
-        // console.log('renderTreeNodes(nodes)', { nodes });
         return nodes.map((node, i) => {
             // 1. New nodes that need a name
 
@@ -1065,7 +1079,7 @@ export const AppEditor = (props: AppEditorProps) => {
                                                 ? ['version/assets/']
                                                 : parent.id,
                                         ]);
-                                        if (firstUserClick)
+                                        if (initLoadComplete)
                                             setSelected([parent.id]);
                                         return;
                                     }
@@ -1113,7 +1127,7 @@ export const AppEditor = (props: AppEditorProps) => {
                                                     ? ['version/assets/']
                                                     : parent.id,
                                             ]);
-                                            if (firstUserClick)
+                                            if (initLoadComplete)
                                                 setSelected(
                                                     !parent
                                                         ? ['version/assets/']
@@ -1202,8 +1216,6 @@ export const AppEditor = (props: AppEditorProps) => {
                 newFilesToView.push(currFile);
             }
         }
-        console.log({ filesToView });
-        console.log({ newFilesToView });
 
         setActiveFileIndex(0);
         setFilesToView(newFilesToView);
@@ -1307,7 +1319,7 @@ export const AppEditor = (props: AppEditorProps) => {
                                 }
                                 onChange={() => {
                                     setExpanded([]);
-                                    if (firstUserClick) setSelected([]);
+                                    if (initLoadComplete) setSelected([]);
                                     handleAccordionChange('file');
                                 }}
                             >
@@ -1394,7 +1406,7 @@ export const AppEditor = (props: AppEditorProps) => {
                                 }
                                 onChange={() => {
                                     setExpanded([]);
-                                    if (firstUserClick) setSelected([]);
+                                    if (initLoadComplete) setSelected([]);
                                     handleAccordionChange('dependency');
                                 }}
                             >
