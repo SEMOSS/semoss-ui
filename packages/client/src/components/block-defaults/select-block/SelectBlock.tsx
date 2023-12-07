@@ -62,6 +62,7 @@ import { Autocomplete, TextField } from '@mui/material';
 //* Structure the data fetched from pixel script
 export interface EngineData {
     database_type: string;
+    database_id: string;
     app_name: string;
     app_type: string;
     app_id: string;
@@ -73,7 +74,7 @@ export interface SelectBlockDef extends BlockDef<'select'> {
     data: {
         style: CSSProperties;
         label: string;
-        options: { label: string; value: string }[];
+        options: { label: string; value: string; database?: string }[];
         value: string;
     };
 }
@@ -86,48 +87,56 @@ export const SelectBlock: BlockComponent = observer(({ id }) => {
         `MyEngines(engineTypes=["MODEL", "VECTOR"]);`,
     );
 
-    //? Fetch users engines (LLM & Vector DBs)
+    //* Fetch users engines (LLM & Vector DBs)
     useEffect(() => {
         if (enginesStatus === 'SUCCESS' && Array.isArray(enginesData)) {
             const options = enginesData.map((engine) => ({
                 label: engine.app_name,
                 value: engine.app_id,
+                database: engine.database_id,
             }));
             setData('options', options);
+            console.log('enginesData: ', enginesData);
 
-            //* Set the default value for the first option
-            if (options.length > 0) {
+            //* Set a default value on the first option in array
+            //? Messed up the save functionality, would also load the first option in the array
+            /* if (options.length > 0) {
                 setData('value', options[0].value);
+            } */
+
+            //? Checking that the current value exists in the new options
+            if (!options.some((option) => option.database === data.value)) {
+                setData('value', options.length > 0 ? options[0].database : '');
             }
         } else if (enginesStatus === 'ERROR') {
             console.error('Error fetching engines data');
         }
-    }, [enginesData, enginesStatus, setData]);
+    }, [enginesData, enginesStatus, setData, data.value]);
 
     const handleChange = (_, newValue) => {
-        setData('value', newValue?.value || '');
+        setData('value', newValue?.database || '');
     };
 
+    //* Check if the option is equal to the Engine Database ID Value
     const isOptionEqualToValue = (option, value) =>
-        option.value === value.value;
+        option.database === value?.database;
 
-    //* Get selected value from the options array
     const selectedOption =
-        data.options.find((option) => option.value === data.value) || null;
+        data.options.find((option) => option.database === data.value) || null;
 
     return (
         <Autocomplete
             disableClearable
-            options={data.options.map((option) => ({ ...option }))}
+            options={data.options}
             value={selectedOption}
             getOptionLabel={(option) => option.label || ''}
             isOptionEqualToValue={isOptionEqualToValue}
+            onChange={handleChange}
             style={{
                 cursor: 'pointer',
                 width: '100%',
                 ...data.style,
             }}
-            onChange={handleChange}
             renderInput={(params) => (
                 <TextField
                     {...params}
