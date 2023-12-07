@@ -23,6 +23,11 @@ interface InputSettingsProps<D extends BlockDef = BlockDef> {
      * Path to update
      */
     path: Paths<Block<D>['data'], 4>;
+
+    /**
+     //? Optional: A disabled prop to disable the input
+     */
+    disabled?: boolean;
 }
 
 export const InputSettings = observer(
@@ -30,6 +35,7 @@ export const InputSettings = observer(
         id,
         label = '',
         path,
+        disabled = false,
     }: InputSettingsProps<D>) => {
         const { data, setData } = useBlockSettings<D>(id);
 
@@ -104,6 +110,7 @@ export const InputSettings = observer(
                     size="small"
                     variant="outlined"
                     autoComplete="off"
+                    disabled={disabled}
                 />
             </BaseSettingSection>
         );

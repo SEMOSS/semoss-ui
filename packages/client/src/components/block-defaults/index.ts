@@ -25,6 +25,10 @@ import {
     TextFieldBlockDef,
 } from './text-field-block';
 import { config as SectionBlockConfig, SectionBlockDef } from './section-block';
+import {
+    config as FileBlockConfig,
+    FileUploadBlockDef,
+} from './file-upload-block';
 
 export type DefaultBlockDefinitions =
     | ButtonBlockDef
@@ -39,7 +43,8 @@ export type DefaultBlockDefinitions =
     | TextAreaBlockDef
     | TextBlockDef
     | TextFieldBlockDef
-    | SectionBlockDef;
+    | SectionBlockDef
+    | FileUploadBlockDef;
 
 export const DefaultBlocks: Registry<DefaultBlockDefinitions> = {
     [ButtonBlockConfig.widget]: ButtonBlockConfig,
@@ -55,6 +60,7 @@ export const DefaultBlocks: Registry<DefaultBlockDefinitions> = {
     [TextBlockConfig.widget]: TextBlockConfig,
     [TextFieldBlockConfig.widget]: TextFieldBlockConfig,
     [SectionBlockConfig.widget]: SectionBlockConfig,
+    [FileBlockConfig.widget]: FileBlockConfig,
 };
 
 export function getIconForBlock(widget: string) {
