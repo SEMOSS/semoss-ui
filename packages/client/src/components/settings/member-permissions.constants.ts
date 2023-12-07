@@ -18,11 +18,6 @@ export const PERMISSION_DESCRIPTION_MAP: Record<
         Editor: 'Ability to edit the model details, provision other users as editors and read-only users, and all read-only permissions',
         'Read-Only': 'Ability to run the model',
     },
-    VectorDb: {
-        Author: 'Ability to hide or delete the vector database, provision other authors, and all editor permissions',
-        Editor: 'Ability to add and remove files from the vector database, and all read-only permissions',
-        'Read-Only': 'Ability to query against the vector database',
-    },
     Storage: {
         Author: 'Ability to hide or delete the remote storage, provision other authors, and all editor permissions',
         Editor: 'Ability to push and delete files from the remote storage, and all read-only permissions',
@@ -32,5 +27,11 @@ export const PERMISSION_DESCRIPTION_MAP: Record<
         Author: 'Ability to edit the database connection details, set the database as discoverable, delete the database, provision other authors, and all editor permissions',
         Editor: 'Ability to edit the database structure, provision other users as editors and read-only users, and all read-only permissions',
         'Read-Only': 'Ability to query and read data from the database',
+    },
+    // TODO: this key is the only one that is untested, need valid vector database, may need to change
+    Vector: {
+        Author: 'Ability to hide or delete the vector database, provision other authors, and all editor permissions',
+        Editor: 'Ability to add and remove files from the vector database, and all read-only permissions',
+        'Read-Only': 'Ability to query against the vector database',
     },
 };
