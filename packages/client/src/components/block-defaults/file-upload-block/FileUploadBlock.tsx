@@ -6,7 +6,6 @@ import { BlockDef, BlockComponent } from '@/stores';
 //* Hooks
 import { useBlock } from '@/hooks';
 
-//* File Block Settings
 export interface FileUploadBlockDef extends BlockDef<'file-upload'> {
     widget: 'file-upload';
     data: {
@@ -19,7 +18,6 @@ export interface FileUploadBlockDef extends BlockDef<'file-upload'> {
     slots: never;
 }
 
-//* File Upload Block
 export const FileUploadBlock: BlockComponent = observer(({ id }) => {
     const { attrs, data, setData } = useBlock<FileUploadBlockDef>(id);
 
@@ -27,14 +25,16 @@ export const FileUploadBlock: BlockComponent = observer(({ id }) => {
         //? Get Users Uploaded File Information
         const file = e.target.files[0];
 
-        //* Check if there is an uploaded file
+        //? Check for Users Uploaded File
         if (e.target.files?.length > 0 && file) {
             console.log('Users File: ', file);
-            //? Set data for the file name and type
+            //? Set the data (name, type) of the file
             setData('name.path', file.name);
             setData('name.type', file.type);
-            console.log('Name & Type: ', file.name, file.type);
-            console.log('File Size: ', file.size);
+            console.log('Name & Type: ', file.name, '~', file.type);
+            // TODO Might want to add a file size limit to the block in the future, especially when allowing mulitple files to be uploaded at once
+            console.log('File Size: ', file.size / 1024 / 1024, 'MB');
+            console.log('File Size: ', file.size / 1024 / 1024 / 1024, 'GB');
         }
     };
 

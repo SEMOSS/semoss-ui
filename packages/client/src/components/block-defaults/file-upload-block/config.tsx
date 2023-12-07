@@ -31,7 +31,6 @@ export const config: BlockConfig<FileUploadBlockDef> = {
     },
     render: FileUploadBlock,
     icon: CloudUploadIcon,
-    //* Block Settings, Menu, & Sections
     contentMenu: [
         {
             name: 'View File Settings',
@@ -61,7 +60,6 @@ export const config: BlockConfig<FileUploadBlockDef> = {
             ],
         },
     ],
-    //* Section Settings
     styleMenu: [
         buildLayoutSection(),
         buildDimensionsSection(),

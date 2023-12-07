@@ -25,7 +25,8 @@ interface InputSettingsProps<D extends BlockDef = BlockDef> {
     path: Paths<Block<D>['data'], 4>;
 
     /**
-     //? Optional: Disabled prop for Block Settings inputs, defaults to false
+     //? Optional: Disabled prop for Block Settings inputs
+     //! Default: false
      */
     disabled?: boolean;
 }
