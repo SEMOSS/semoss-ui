@@ -38,8 +38,6 @@ import {
 } from '@mui/icons-material/';
 
 const StyledTypography = styled(Typography)(({ theme }) => ({
-    // display: 'flex',
-    // alignItems: 'center',
     overflow: 'hidden',
     whiteSpace: 'nowrap',
     textOverflow: 'ellipsis',
