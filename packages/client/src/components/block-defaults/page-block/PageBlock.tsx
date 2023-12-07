@@ -23,7 +23,6 @@ export const PageBlock: BlockComponent = observer(({ id }) => {
                 minHeight: '100%',
                 background: '#FFFFFF',
                 height: '100%',
-                overflow: 'scroll',
                 ...data.style,
             }}
             {...attrs}
