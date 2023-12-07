@@ -38,8 +38,12 @@ import {
 } from '@mui/icons-material/';
 
 const StyledTypography = styled(Typography)(({ theme }) => ({
-    display: 'flex',
-    alignItems: 'center',
+    // display: 'flex',
+    // alignItems: 'center',
+    overflow: 'hidden',
+    whiteSpace: 'nowrap',
+    textOverflow: 'ellipsis',
+    flex: '1',
 }));
 
 const StyledModalContent = styled(Modal.Content)(({ theme }) => ({
@@ -66,15 +70,15 @@ const StyledDeleteOutlineIcon = styled(DeleteOutline)(({ theme }) => ({
     color: 'rgba(0, 0, 0, 0.3)',
 }));
 
+// wraps file icon, name and delete icon for every file in explorer
 const StyledTreeViewItem = styled(TreeView.Item)(({ theme }) => ({
-    overflow: 'hidden',
     '.MuiCollapse-wrapperInner': {
         height: 'auto',
         overflow: 'none',
     },
 }));
 
-const DeleteIconWrapper = styled('div')(({ theme }) => ({
+const FilenameFlexWrapper = styled('div')(({ theme }) => ({
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'space-between',
@@ -82,9 +86,12 @@ const DeleteIconWrapper = styled('div')(({ theme }) => ({
     width: '100%',
 }));
 
-const StyledFiletypeIcon = styled(FiletypeIcon)(({ theme }) => ({
+// file icon in explorer
+const FiletypeIconWrapper = styled(Icon)(({ theme }) => ({
     color: 'rgba(0, 0, 0, 0.6)',
-    marginRight: '4px',
+    marginRight: '6px',
+    width: '24px',
+    height: '24px',
 }));
 
 const TextEditorCodeGenerationWrapper = styled('div')(({ theme }) => ({
@@ -350,6 +357,7 @@ export const AppEditor = (props: AppEditorProps) => {
     // recursvely opens folders until all folder contents loaded from BE, stops after user interacts with explorer
     useEffect(() => {
         if (firstUserClick) return;
+        // if the user has not yet interacted with the page open all folders recursively
         appDirectory.forEach(openFoldersHelper);
         // only runs recursive directory check on updates to appDirectory, not continuously
     }, [appDirectory]);
@@ -1136,24 +1144,34 @@ export const AppEditor = (props: AppEditorProps) => {
                         nodeId={node.id}
                         title={node.id}
                         label={
-                            <DeleteIconWrapper
+                            <FilenameFlexWrapper
                                 onMouseEnter={() =>
                                     setHoverSet(new Set([node.id]))
                                 }
                                 onMouseLeave={() => setHoverSet(new Set())}
                             >
-                                <StyledTypography variant="body1">
-                                    <StyledFiletypeIcon
+                                <FiletypeIconWrapper>
+                                    <FiletypeIcon
                                         path={
                                             node.type === 'directory'
                                                 ? openFolderSet.has(node.id)
                                                     ? FILE_ICON_MAP.open
                                                     : FILE_ICON_MAP.directory
                                                 : FILE_ICON_MAP[node.type] ||
-                                                  FILE_ICON_MAP.file
+                                                  // if the file has just been created it will need to parse id for correct filetype icon
+                                                  FILE_ICON_MAP[
+                                                      node.id
+                                                          .split('/')
+                                                          [
+                                                              node.id.split('/')
+                                                                  .length - 2
+                                                          ].split('.')[1]
+                                                  ] ||
+                                                  FILE_ICON_MAP.default
                                         }
-                                        size={0.85}
-                                    ></StyledFiletypeIcon>
+                                    ></FiletypeIcon>
+                                </FiletypeIconWrapper>
+                                <StyledTypography variant="body1">
                                     {node.name}
                                 </StyledTypography>
                                 {hoverSet.has(node.id) && (
@@ -1166,7 +1184,7 @@ export const AppEditor = (props: AppEditorProps) => {
                                         <StyledDeleteOutlineIcon fontSize="small" />
                                     </IconButton>
                                 )}
-                            </DeleteIconWrapper>
+                            </FilenameFlexWrapper>
                         }
                     >
                         {node.children && node.children.length > 0
