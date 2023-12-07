@@ -6,6 +6,7 @@ import { BlockDef, BlockComponent } from '@/stores';
 //* Hooks
 import { useBlock } from '@/hooks';
 
+//* Create a Data Object for the Uploaded File ~ Name, Type, Size
 export interface FileUploadBlockDef extends BlockDef<'file-upload'> {
     widget: 'file-upload';
     data: {
@@ -13,6 +14,7 @@ export interface FileUploadBlockDef extends BlockDef<'file-upload'> {
         name: {
             path: string | null;
             type: string | null;
+            size: number | null;
         };
     };
     slots: never;
@@ -22,20 +24,26 @@ export const FileUploadBlock: BlockComponent = observer(({ id }) => {
     const { attrs, data, setData } = useBlock<FileUploadBlockDef>(id);
 
     const handleFileChange = (e) => {
-        //? Get Users Uploaded File Information
+        //* Get the File
         const file = e.target.files[0];
+
+        // TODO Might want to add a file size limit to the block in the future, especially when allowing mulitple files to be uploaded at once
+        //? Store the File on Server?
+        //* File Size in MB
+        const exactFileSize = file.size / (1024 * 1024);
 
         //? Check for Users Uploaded File
         if (e.target.files?.length > 0 && file) {
-            console.log('Users File: ', file);
-            //? Set the data (name, type) of the file
+            //? Set data for name, type, size
             setData('name.path', file.name);
             setData('name.type', file.type);
-            console.log('Name & Type: ', file.name, '~', file.type);
-            // TODO Might want to add a file size limit to the block in the future, especially when allowing mulitple files to be uploaded at once
-            console.log('File Size: ', file.size / 1024 / 1024, 'MB');
-            console.log('File Size: ', file.size / 1024 / 1024 / 1024, 'GB');
+            setData('name.size', file.size < 20000000 ? exactFileSize : null);
         }
+
+        //? Log file size details
+        //? Max File Size to <20MB?
+        //* Blueprint AI Bill of Rights = 11MB (for reference)
+        console.log('Less then 20 MB? ', file.size < 20000000 ? true : false);
     };
 
     return (

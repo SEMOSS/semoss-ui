@@ -1,38 +1,36 @@
+//* Block Config
 import { BlockConfig } from '@/stores';
-import { InputSettings } from '@/components/block-settings';
-
 import { SelectBlockDef, SelectBlock } from './SelectBlock';
-import { ViewList } from '@mui/icons-material';
-
-import { buildSpacingSection } from '../block-defaults.shared';
 import { BLOCK_TYPE_INPUT } from '../block-defaults.constants';
+import {
+    buildDimensionsSection,
+    buildSpacingSection,
+} from '../block-defaults.shared';
+import { InputSettings } from '@/components/block-settings';
 import { SelectInputValueSettings } from '@/components/block-settings/custom/SelectInputValueSettings';
 import { SelectInputOptionsSettings } from '@/components/block-settings/custom/SelectInputOptionsSettings';
 
-// export the config for the block
+//* Material UI Components
+import { ViewList } from '@mui/icons-material';
+
 export const config: BlockConfig<SelectBlockDef> = {
     widget: 'select',
     type: BLOCK_TYPE_INPUT,
     data: {
-        style: {
-            width: '100%',
-            padding: '8px',
-        },
-        value: '',
-        label: 'Example Select Input',
+        style: {},
+        label: 'Engine',
         options: [],
+        value: '',
     },
     listeners: {
         onChange: [],
     },
-    slots: {
-        content: [],
-    },
+    slots: {},
     render: SelectBlock,
     icon: ViewList,
     contentMenu: [
         {
-            name: 'General',
+            name: 'View LLM & Vector DB Settings',
             children: [
                 {
                     description: 'Value',
@@ -60,5 +58,5 @@ export const config: BlockConfig<SelectBlockDef> = {
             ],
         },
     ],
-    styleMenu: [buildSpacingSection()],
+    styleMenu: [buildSpacingSection(), buildDimensionsSection()],
 };

@@ -10,6 +10,7 @@ import {
     buildSpacingSection,
     buildDimensionsSection,
     buildTypographySection,
+    buildColorSection,
 } from '../block-defaults.shared';
 
 //* Material UI Components
@@ -23,6 +24,7 @@ export const config: BlockConfig<FileUploadBlockDef> = {
         name: {
             path: 'File Name' || null,
             type: 'File Type' || null,
+            size: 0 || null,
         },
     },
     listeners: {},
@@ -33,7 +35,7 @@ export const config: BlockConfig<FileUploadBlockDef> = {
     icon: CloudUploadIcon,
     contentMenu: [
         {
-            name: 'View File Settings',
+            name: 'File Settings',
             children: [
                 {
                     description: 'The name of the File uploaded',
@@ -57,6 +59,17 @@ export const config: BlockConfig<FileUploadBlockDef> = {
                         />
                     ),
                 },
+                {
+                    description: 'The size of the File uploaded',
+                    render: ({ id }) => (
+                        <InputSettings
+                            id={id}
+                            label="Size (Megabytes)"
+                            path="name.size"
+                            disabled={true}
+                        />
+                    ),
+                },
             ],
         },
     ],
@@ -64,6 +77,7 @@ export const config: BlockConfig<FileUploadBlockDef> = {
         buildLayoutSection(),
         buildDimensionsSection(),
         buildSpacingSection(),
+        buildColorSection(),
         buildTypographySection(),
     ],
 };
