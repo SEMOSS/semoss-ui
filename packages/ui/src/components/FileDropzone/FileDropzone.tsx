@@ -12,6 +12,7 @@ import { useValue } from "./useValue";
 
 import { Button } from "../Button";
 import { Icon } from "../Icon";
+import { DownloadForOfflineRounded } from "@mui/icons-material";
 
 import { FileDisplay } from "./FileDisplay";
 
@@ -55,6 +56,36 @@ const StyledDropzone = styled("div", {
     cursor: disabled || dragging ? "default" : "",
 }));
 
+const StyledImageSelectorDropzone = styled("div", {
+    shouldForwardProp: (prop) =>
+        prop !== "disabled" && prop !== "valid" && prop !== "dragging",
+})<{
+    disabled: boolean;
+    valid: boolean;
+    dragging: boolean;
+}>(({ disabled, dragging, valid }) => ({
+    display: "flex",
+    flexDirection: "column",
+    justifyContent: "center",
+    alignItems: "center",
+    borderWidth: "1px",
+    borderStyle: "dashed",
+    borderRadius: "8px",
+    width: "100%",
+    height: "100%",
+    padding: "16px 8px",
+    borderColor: disabled
+        ? "#D9D9D9"
+        : dragging
+        ? "#40A0FF"
+        : !valid
+        ? "#F84C34"
+        : "#000",
+    backgroudnColor: disabled ? "#F8F8F8" : "",
+    color: disabled ? "#BDBDBD" : dragging ? "#40A0FF" : "BDBDBD",
+    cursor: disabled || dragging ? "default" : "",
+}));
+
 const StyledContentContainer = styled("div")({
     display: "flex",
     flexDirection: "column",
@@ -65,6 +96,11 @@ const StyledContentContainer = styled("div")({
 const StyledDropzoneDescription = styled("div")({
     fontSize: "12px",
     marginTop: "8px",
+    marginBottom: "16px 8px",
+});
+
+const StyledImageDropzoneDescription = styled("div")({
+    fontSize: "12px",
     marginBottom: "16px 8px",
 });
 
@@ -99,6 +135,10 @@ interface BaseFileDropzoneProps<V>
 
     /** Props to pass to the input */
     inputProps?: React.InputHTMLAttributes<HTMLInputElement>;
+
+    //need to render a smaller file upload for the image selector
+    //until an imageSelector / cropper is created
+    imageSelector?: boolean;
 }
 
 interface MultipleFileDropzoneProps extends BaseFileDropzoneProps<File[]> {
@@ -129,6 +169,7 @@ const _FileDropzone = <Multiple extends boolean>(
         multiple = false,
         disabled = false,
         valid = true,
+        imageSelector = false,
         description = "Drag and Drop File(s)",
         extensions = [],
         inputProps,
@@ -351,60 +392,117 @@ const _FileDropzone = <Multiple extends boolean>(
             return <></>;
         }
     }
+    ///remove inline styles
 
     return (
-        <StyledContainer ref={ref} {...otherProps}>
-            <StyledDropzone
-                valid={valid}
-                disabled={disabled}
-                dragging={drag}
-                onDragEnter={handleDropzoneDragEnter}
-                onDragOver={handleDropzoneDragOver}
-                onDragLeave={handleDropzoneDragLeave}
-                onDrop={handleDropzoneDrop}
-            >
-                <StyledContentContainer>
-                    <Icon aria-hidden="true" sx={{ fontSize: "1.5rem" }}>
-                        <svg
-                            xmlns="http://www.w3.org/2000/svg"
-                            fill="none"
-                            viewBox="0 0 24 24"
-                            strokeWidth={1.5}
-                            stroke="currentColor"
-                        >
-                            <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                d={mdiFolderUpload}
-                            />
-                        </svg>
-                    </Icon>
-                    <StyledDropzoneDescription>
-                        {description}
-                    </StyledDropzoneDescription>
-                    <div>
-                        <StyledFileUploadInput
-                            type="file"
-                            id={id}
-                            ref={inputRef}
-                            onChange={handleInputChange}
-                            accept={extensions.join(",")}
-                            multiple={multiple}
-                            {...inputProps}
-                        />
-                        <StyledButton
-                            size="small"
-                            variant="outlined"
-                            onClick={() => inputRef.current?.click()}
-                            disabled={disabled}
-                        >
-                            or upload file(s)
-                        </StyledButton>
-                    </div>
-                </StyledContentContainer>
-            </StyledDropzone>
-            <StyledFileListContainer>{renderFiles()}</StyledFileListContainer>
-        </StyledContainer>
+        <>
+            {imageSelector ? (
+                <StyledContainer ref={ref} {...otherProps}>
+                    <StyledImageSelectorDropzone
+                        valid={valid}
+                        disabled={disabled}
+                        dragging={drag}
+                        onDragEnter={handleDropzoneDragEnter}
+                        onDragOver={handleDropzoneDragOver}
+                        onDragLeave={handleDropzoneDragLeave}
+                        onDrop={handleDropzoneDrop}
+                    >
+                        <StyledContentContainer>
+                            <Icon
+                                aria-hidden="true"
+                                sx={{ fontSize: "1.5rem", marginTop: "4px" }}
+                                color="primary"
+                            >
+                                <DownloadForOfflineRounded />
+                            </Icon>
+                            <StyledButton
+                                size="small"
+                                variant="text"
+                                onClick={() => inputRef.current?.click()}
+                                disabled={disabled}
+                            >
+                                Browse
+                            </StyledButton>
+                            <StyledImageDropzoneDescription>
+                                or drop images to upload
+                            </StyledImageDropzoneDescription>
+                            <div>
+                                <StyledFileUploadInput
+                                    type="file"
+                                    id={id}
+                                    ref={inputRef}
+                                    onChange={handleInputChange}
+                                    accept={extensions.join(",")}
+                                    multiple={multiple}
+                                    {...inputProps}
+                                />
+                            </div>
+                        </StyledContentContainer>
+                    </StyledImageSelectorDropzone>
+                    <StyledFileListContainer>
+                        {renderFiles()}
+                    </StyledFileListContainer>
+                </StyledContainer>
+            ) : (
+                <StyledContainer ref={ref} {...otherProps}>
+                    <StyledDropzone
+                        valid={valid}
+                        disabled={disabled}
+                        dragging={drag}
+                        onDragEnter={handleDropzoneDragEnter}
+                        onDragOver={handleDropzoneDragOver}
+                        onDragLeave={handleDropzoneDragLeave}
+                        onDrop={handleDropzoneDrop}
+                    >
+                        <StyledContentContainer>
+                            <Icon
+                                aria-hidden="true"
+                                sx={{ fontSize: "1.5rem" }}
+                            >
+                                <svg
+                                    xmlns="http://www.w3.org/2000/svg"
+                                    fill="none"
+                                    viewBox="0 0 24 24"
+                                    strokeWidth={1.5}
+                                    stroke="currentColor"
+                                >
+                                    <path
+                                        strokeLinecap="round"
+                                        strokeLinejoin="round"
+                                        d={mdiFolderUpload}
+                                    />
+                                </svg>
+                            </Icon>
+                            <StyledDropzoneDescription>
+                                {description}
+                            </StyledDropzoneDescription>
+                            <div>
+                                <StyledFileUploadInput
+                                    type="file"
+                                    id={id}
+                                    ref={inputRef}
+                                    onChange={handleInputChange}
+                                    accept={extensions.join(",")}
+                                    multiple={multiple}
+                                    {...inputProps}
+                                />
+                                <StyledButton
+                                    size="small"
+                                    variant="outlined"
+                                    onClick={() => inputRef.current?.click()}
+                                    disabled={disabled}
+                                >
+                                    or upload file(s)
+                                </StyledButton>
+                            </div>
+                        </StyledContentContainer>
+                    </StyledDropzone>
+                    <StyledFileListContainer>
+                        {renderFiles()}
+                    </StyledFileListContainer>
+                </StyledContainer>
+            )}
+        </>
     );
 };
 

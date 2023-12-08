@@ -5,7 +5,6 @@ import {
     Stack,
     TextField,
     Autocomplete,
-    ImageSelector,
     useNotification,
     styled,
 } from '@semoss/ui';
@@ -17,11 +16,6 @@ import { MarkdownEditor } from '@/components/common';
 
 const StyledEditorContainer = styled('div')(({ theme }) => ({
     marginBottom: theme.spacing(1),
-}));
-
-const StyledEditorContainerImages = styled('div')(({ theme }) => ({
-    marginBottom: theme.spacing(10),
-    height: '430px',
 }));
 
 const StyledStack = styled(Stack)(({ theme }) => ({
@@ -50,13 +44,7 @@ interface EditDatabaseDetailsProps {
  */
 export const EditDatabaseDetails = observer(
     (props: EditDatabaseDetailsProps) => {
-        const {
-            open = false,
-            onClose = () => null,
-            values = {},
-            currentImageSrc,
-            type,
-        } = props;
+        const { open = false, onClose = () => null, values = {}, type } = props;
 
         // get the notification
         const notification = useNotification();
@@ -143,8 +131,6 @@ export const EditDatabaseDetails = observer(
                 }
             }
 
-            console.log('data is', data);
-
             if (Object.keys(meta).length === 0) {
                 notification.add({
                     color: 'warning',
@@ -201,45 +187,6 @@ export const EditDatabaseDetails = observer(
                 <Modal.Title>Edit {type} Details</Modal.Title>
                 <Modal.Content>
                     <StyledStack spacing={4}>
-                        <StyledEditorContainerImages>
-                            <Controller
-                                name={'image'}
-                                control={control}
-                                render={({ field }) => {
-                                    return (
-                                        <ImageSelector
-                                            value={currentImageSrc}
-                                            options={[
-                                                {
-                                                    title: 'Default',
-                                                    src: currentImageSrc,
-                                                },
-                                                {
-                                                    title: 'Blue Default',
-                                                    src: require('@/assets/img/BlueDefault.png'),
-                                                },
-                                                {
-                                                    title: 'Orange Default',
-                                                    src: require('@/assets/img/OrangeDefault.png'),
-                                                },
-                                                {
-                                                    title: 'Purple Default',
-                                                    src: require('@/assets/img/PurpleDefault.png'),
-                                                },
-                                                {
-                                                    title: 'Red Default',
-                                                    src: require('@/assets/img/RedDefault.png'),
-                                                },
-                                            ]}
-                                            onChange={(newValues) => {
-                                                field.onChange(newValues);
-                                            }}
-                                        />
-                                    );
-                                }}
-                            />
-                        </StyledEditorContainerImages>
-
                         {databaseMetaKeys.map((key) => {
                             const { metakey, display_options } = key;
                             const label =
@@ -381,15 +328,16 @@ export const EditDatabaseDetails = observer(
                 <Modal.Actions>
                     <Button
                         variant="text"
+                        color="error"
                         onClick={() => {
                             // trigger the close
                             onClose(false);
                         }}
                     >
-                        Close
+                        Cancel
                     </Button>
                     <Button variant="contained" onClick={() => onSubmit()}>
-                        Submit
+                        Save
                     </Button>
                 </Modal.Actions>
             </Modal>

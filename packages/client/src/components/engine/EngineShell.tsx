@@ -4,6 +4,7 @@ import {
     Breadcrumbs,
     Button,
     Chip,
+    Card,
     IconButton,
     Stack,
     Typography,
@@ -16,6 +17,7 @@ import { Env } from '@/env';
 import { useRootStore, useEngine, usePixel } from '@/hooks';
 
 import { EditDatabaseDetails } from '@/components/database';
+import { EditDatabaseImage } from '@/components/database';
 import { Page, LoadingScreen } from '@/components/ui';
 import { EngineAccessButton } from './';
 import {
@@ -73,12 +75,25 @@ const StyledLink = styled(Link)(() => ({
     color: 'inherit',
 }));
 
-const StyledDatabaseImage = styled('img')({
+const StyledDatabaseImage = styled(Card.Media)({
     width: '288px',
     height: '161.723px',
     flexShrink: '0',
     borderRadius: '8.862px',
     aspectRatio: 'auto',
+});
+
+const StyledImageOverlay = styled(Typography)({
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    width: '100%',
+    height: '100%',
+    margin: 0,
+    backgroundColor: 'rgba(0, 0, 0, 0.2)',
+    textAlign: 'center',
+    paddingTop: '20%',
+    color: 'white',
 });
 
 interface EngineShellProps {
@@ -107,8 +122,14 @@ export const EngineShell = (props: EngineShellProps) => {
     // track the edit state
     const [edit, setEdit] = useState(false);
 
+    // track the image edit state
+    const [editImage, setEditImage] = useState(false);
+
     // export loading state
     const [exportLoading, setExportLoading] = useState(false);
+
+    // Image Hover state
+    const [imageHover, setImageHover] = useState(false);
 
     // get the engine info
     const { status, data } = usePixel<{
@@ -181,7 +202,6 @@ export const EngineShell = (props: EngineShellProps) => {
                                         <EditDatabaseDetails
                                             values={metaVals}
                                             open={edit}
-                                            currentImageSrc={`${Env.MODULE}/api/app-${id}/appImage/download`}
                                             type={
                                                 type.charAt(0).toUpperCase() +
                                                 type.slice(1)
@@ -203,6 +223,30 @@ export const EngineShell = (props: EngineShellProps) => {
                                     >
                                         Edit
                                     </Button>
+                                </>
+                            )}
+                            {/* image selector modal */}
+                            {canEdit && (
+                                <>
+                                    {editImage && (
+                                        <EditDatabaseImage
+                                            values={metaVals}
+                                            open={editImage}
+                                            currentImageSrc={`${Env.MODULE}/api/app-${id}/appImage/download`}
+                                            type={
+                                                type.charAt(0).toUpperCase() +
+                                                type.slice(1)
+                                            }
+                                            onClose={(success) => {
+                                                // reload if successfully submitted
+                                                if (success) {
+                                                    refresh();
+                                                }
+
+                                                setEditImage(false);
+                                            }}
+                                        />
+                                    )}
                                 </>
                             )}
                         </Stack>
@@ -268,9 +312,28 @@ export const EngineShell = (props: EngineShellProps) => {
                     </StyledChipContainer>
                 </StyledInfoLeft>
                 <StyledInfoRight>
-                    <StyledDatabaseImage
-                        src={`${Env.MODULE}/api/e-${id}/image/download`}
-                    />
+                    {/* image display */}
+                    <Card
+                        onMouseEnter={() => setImageHover(true)}
+                        onMouseLeave={() => setImageHover(false)}
+                    >
+                        <Card.ActionsArea>
+                            <StyledDatabaseImage
+                                image={`${Env.MODULE}/api/e-${id}/image/download`}
+                            />
+
+                            {imageHover ? (
+                                <StyledImageOverlay
+                                    variant="subtitle1"
+                                    onClick={() => setEditImage(!editImage)}
+                                >
+                                    Change Image
+                                </StyledImageOverlay>
+                            ) : (
+                                ''
+                            )}
+                        </Card.ActionsArea>
+                    </Card>
                     <Stack
                         alignItems={'flex-end'}
                         spacing={1}

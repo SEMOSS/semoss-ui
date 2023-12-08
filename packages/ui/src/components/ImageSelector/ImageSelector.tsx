@@ -64,6 +64,9 @@ export interface ImageSelectorProps {
     /** changes the value of the component*/
     onChange?: (val) => void;
 
+    /** upload image enpoint*/
+    uploadImage?: (val) => void;
+
     // image options
     options: { title: string; src: string; fileContents?: unknown }[];
 }
@@ -96,7 +99,7 @@ export const ImageSelector = (props: ImageSelectorProps): JSX.Element => {
     const checkImage = (image) => {
         setCheckbox(image.src);
 
-        // Pass image to parent
+        //Pass image to parent
         onChange(image);
     };
 
@@ -144,6 +147,7 @@ export const ImageSelector = (props: ImageSelectorProps): JSX.Element => {
                 >
                     <StyledDragAndDrop key={0}>
                         <StyledFileDropzone
+                            imageSelector={true}
                             description="Browse"
                             onChange={(value) => handleAddNewImage(value)}
                         />
@@ -156,7 +160,10 @@ export const ImageSelector = (props: ImageSelectorProps): JSX.Element => {
                                 className={`${
                                     checked === image.src ? "isChecked" : ""
                                 }`}
-                                sx={{ backgroundImage: `url(${image.src})` }}
+                                sx={{
+                                    backgroundImage: `url(${image.src})`,
+                                    loading: "lazy",
+                                }}
                             >
                                 <StyledImageListItemBar
                                     position={"top"}
