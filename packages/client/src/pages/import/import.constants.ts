@@ -638,7 +638,7 @@ export const CONNECTION_OPTIONS = {
                         options: {
                             component: 'text-field',
                         },
-                        disabled: true,
+                        disabled: false,
                         rules: { required: true },
                     },
                     {
