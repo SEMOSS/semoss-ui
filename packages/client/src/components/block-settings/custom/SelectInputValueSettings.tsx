@@ -88,11 +88,15 @@ export const SelectInputValueSettings = observer(
         return (
             <BaseSettingSection label="Value">
                 <Autocomplete
+                    disableClearable
                     options={data.options as string[]}
                     value={value}
                     onChange={(_, newValue: string) => {
                         // sync the data on change
                         onChange(newValue);
+                    }}
+                    style={{
+                        width: '100%',
                     }}
                     renderInput={(params) => (
                         <TextField

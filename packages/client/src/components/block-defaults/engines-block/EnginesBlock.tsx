@@ -32,12 +32,11 @@ import { Autocomplete, TextField } from '@mui/material';
 //? =================
 //* Basic Logic Query Steps
 // TODO 1. Upload & Process Document
-//* CreateEmbeddingsFromDocuments(engine=["ENGINE_ID"], filePaths=["UPLOADED_FILE_NAME_PATH.pdf"]);
-//* CreateEmbeddingsFromDocuments(engine="SELECTED_ENGINE_ID", filePaths=["{{FileUploadBlock.name.path}}"]);
+//* CreateEmbeddingsFromDocuments(engine=["{{engines--5538.value}}"],filePaths=["{{file-upload--5198.name.path}}"]);
 //? =================
 // TODO 2. Query Vector DB
 //* VectorDatabaseQuery(engine=["ENGINE_ID"], command=["QUERY_STRING"], limit=[1]);
-//* VectorDatabaseQuery(engine=["{{SelectBlock.value}}"], command=["{{TextFieldBlock.value}}"], limit=[1]);
+//* VectorDatabaseQuery(engine=["{{engines--8537.value}}"],command=["{{text-area--5173.value}}"], limit=[1]);
 //? =================
 // TODO 3. Render Output in Markdown
 //* {{vectorDBQ.data.content}} or {{vectorDBQ.data.0.content}}
