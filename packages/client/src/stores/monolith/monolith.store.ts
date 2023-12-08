@@ -2028,7 +2028,6 @@ export class MonolithStore {
      */
     async createUserAccessKey(tokenName: string, tokenDescription = '') {
         const url = `${Env.MODULE}/api/auth/user/createUserAccessKey`;
-        // debugger;
         let body = 'tokenName=' + encodeURIComponent(tokenName);
         if (tokenDescription) {
             body += '&tokenDescription=' + encodeURIComponent(tokenDescription);
