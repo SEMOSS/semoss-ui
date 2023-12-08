@@ -12,6 +12,9 @@ import { Autocomplete, TextField } from '@mui/material';
 //? =================
 //?  Query LLM Engines
 //* LLM(engine = "e4449559-bcff-4941-ae72-0e3f18e06660", command = "Sample Question", paramValues = [ {} ] );
+// LLM(engine = "2c6de0ff-62e0-4dd0-8380-782ac4d40245", command = "What year did Tom Brady when the super bowl last", context = "response" ) ;
+// {"numberOfTokensInPrompt":22,"response":"As of my knowledge cutoff in October 2021, Tom Brady won his most recent Super Bowl in 2021. He led the Tampa Bay Buccaneers to victory in Super Bowl LV, which took place on February 7, 2021.","numberOfTokensInResponse":49,"messageId":"4afe7514-1ae2-4cb5-8bb8-eb50f16291b0","roomId":"8a61692e-ec2b-4009-8761-45f18be94066"}
+// {{superBowlResponse.response}}
 //? =================
 // TODO Store the File Upload URL in the Vector DB -- needs to be dynamic (LATER)
 //? File Upload
@@ -32,17 +35,34 @@ import { Autocomplete, TextField } from '@mui/material';
 //? =================
 //* Basic Logic Query Steps
 // TODO 1. Upload & Process Document
-//* CreateEmbeddingsFromDocuments(engine=["{{engines--5538.value}}"],filePaths=["{{file-upload--5198.name.path}}"]);
+//* CreateEmbeddingsFromDocuments ( engine= "{{engines--5538.value}}", filePaths = [ "{{file-upload--5198.name.path}}" ]);
 //? =================
 // TODO 2. Query Vector DB
-//* VectorDatabaseQuery(engine=["ENGINE_ID"], command=["QUERY_STRING"], limit=[1]);
-//* VectorDatabaseQuery(engine=["{{engines--8537.value}}"],command=["{{text-area--5173.value}}"], limit=[1]);
+//* VectorDatabaseQuery ( engine = "ENGINE_ID", command = ["QUERY_STRING"], limit=[1]);
+//VectorDatabaseQuery (engine = "{{engines--5538.value}}", command = "what is the first 5 chapters", limit=[5]);
+//* VectorDatabaseQuery ( engine = "{{engines--8537.value}}], command = "{{text-area--5173.value}}", limit=[1]);
 //? =================
 // TODO 3. Render Output in Markdown
 //* {{vectorDBQ.data.content}} or {{vectorDBQ.data.0.content}}
+// {{embedUserFileQueryVectorDB.data.content}}
 
-//! Handle State Correctly
-//! Error Handling
+//? Dynamic Pixel Query
+//? This made the Text Area Block Dynamic ( Description )
+// LLM(engine = "2c6de0ff-62e0-4dd0-8380-782ac4d40245", command = "{{text-area--5173.value}}", context = "response" ) ;
+// TODO Fully Dynamic Query with Engine and Text Area
+//* LLM(engine = "{{engines--8537.value}}", command = "{{text-area--5173.value}}", context = "response" ) ;
+
+//* Vector DB - Sample Pixel Queries
+/* 
+    ## Add document(s) that have been uploaded to the insight ##
+CreateEmbeddingsFromDocuments (engine = "377e2321-90b7-4856-b3e2-9f6c28663049", filePaths = ["fileName1.pdf", "fileName2.pdf"]);
+
+    ## Perform a nearest neighbor search on the embedded documents ##
+VectorDatabaseQuery (engine = "377e2321-90b7-4856-b3e2-9f6c28663049", command = "Sample Search Statement", limit = 5);
+
+    ## List all the documents the vector database currently comprises of ##
+ListDocumentsInVectorDatabase (engine = "377e2321-90b7-4856-b3e2-9f6c28663049");
+*/
 
 /* 
 ? =================
