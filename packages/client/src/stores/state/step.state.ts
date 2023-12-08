@@ -270,6 +270,7 @@ export class StepState<D extends CellDef = CellDef> {
             // start the loading screen
             this._store.isLoading = true;
 
+            // Fix this John
             // Go set all blocks to disabled that are dependent on this running query
             Object.values(this._state.blocks).forEach((b) => {
                 const found = this.findValueByDynamicKey(b.data, this.query.id);
