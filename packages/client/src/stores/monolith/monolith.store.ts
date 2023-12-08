@@ -2033,7 +2033,7 @@ export class MonolithStore {
             body += '&tokenDescription=' + encodeURIComponent(tokenDescription);
         }
 
-        console.log('hello', body);
+        debugger;
 
         const response = await axios
             .post<{
