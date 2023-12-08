@@ -230,7 +230,6 @@ export const EngineShell = (props: EngineShellProps) => {
                                 <>
                                     {editImage && (
                                         <EditDatabaseImage
-                                            values={metaVals}
                                             open={editImage}
                                             currentImageSrc={`${Env.MODULE}/api/app-${id}/appImage/download`}
                                             type={

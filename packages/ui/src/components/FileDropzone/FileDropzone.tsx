@@ -85,6 +85,10 @@ const StyledImageSelectorDropzone = styled("div", {
     color: disabled ? "#BDBDBD" : dragging ? "#40A0FF" : "BDBDBD",
     cursor: disabled || dragging ? "default" : "",
 }));
+const StyledIcon = styled(Icon)({
+    fontSizeL: "1.5rem",
+    marginTop: "4px",
+});
 
 const StyledContentContainer = styled("div")({
     display: "flex",
@@ -408,13 +412,9 @@ const _FileDropzone = <Multiple extends boolean>(
                         onDrop={handleDropzoneDrop}
                     >
                         <StyledContentContainer>
-                            <Icon
-                                aria-hidden="true"
-                                sx={{ fontSize: "1.5rem", marginTop: "4px" }}
-                                color="primary"
-                            >
+                            <StyledIcon aria-hidden="true" color="primary">
                                 <DownloadForOfflineRounded />
-                            </Icon>
+                            </StyledIcon>
                             <StyledButton
                                 size="small"
                                 variant="text"

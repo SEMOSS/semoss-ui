@@ -1,9 +1,10 @@
 import { useState, useEffect } from "react";
-import { styled, useMediaQuery } from "@mui/material";
-import { Checkbox, FileDropzone, Typography, Grid } from "../../";
+import { useMediaQuery } from "@mui/material";
+import { Checkbox, FileDropzone, Typography, Grid, styled } from "../../";
 import { ImageList } from "./ImageList";
 import { ImageListItem } from "./ImageListItem";
 import { ImageListItemBar } from "./ImageListItemBar";
+import { DeleteOutline } from "@mui/icons-material";
 
 const StyledContainer = styled(Grid)({
     width: "800px",
@@ -68,7 +69,12 @@ export interface ImageSelectorProps {
     uploadImage?: (val) => void;
 
     // image options
-    options: { title: string; src: string; fileContents?: unknown }[];
+    options: {
+        title: string;
+        src: string;
+        fileContents?: unknown;
+        newImage?: boolean;
+    }[];
 }
 
 export const ImageSelector = (props: ImageSelectorProps): JSX.Element => {
@@ -80,7 +86,12 @@ export const ImageSelector = (props: ImageSelectorProps): JSX.Element => {
     // set checked image to the default value
     const [checked, setCheckbox] = useState(value);
     const [controlledImages, setControlledImages] = useState<
-        { title: string; src: string; fileContents?: unknown }[]
+        {
+            title: string;
+            src: string;
+            fileContents?: unknown;
+            newImage?: boolean;
+        }[]
     >([]);
 
     useEffect(() => {
@@ -116,6 +127,7 @@ export const ImageSelector = (props: ImageSelectorProps): JSX.Element => {
             title: value.name,
             src: imageurl,
             fileContents: value,
+            newImage: true,
         };
 
         const newControlledImages = controlledImages;
@@ -168,10 +180,18 @@ export const ImageSelector = (props: ImageSelectorProps): JSX.Element => {
                                 <StyledImageListItemBar
                                     position={"top"}
                                     actionIcon={
-                                        <Checkbox
-                                            checked={checked === image.src}
-                                            onChange={() => checkImage(image)}
-                                        />
+                                        <>
+                                            <Checkbox
+                                                checked={checked === image.src}
+                                                onChange={() =>
+                                                    checkImage(image)
+                                                }
+                                            />
+                                            {/*TODO delete icon if new image */}
+                                            {/* {image.newImage && (
+                                                <DeletedOutline />
+                                            )} */}
+                                        </>
                                     }
                                     actionPosition={"left"}
                                 />
