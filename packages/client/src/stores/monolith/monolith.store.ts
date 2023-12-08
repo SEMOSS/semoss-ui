@@ -2033,8 +2033,6 @@ export class MonolithStore {
             body += '&tokenDescription=' + encodeURIComponent(tokenDescription);
         }
 
-        debugger;
-
         const response = await axios
             .post<{
                 ACCESSKEY: string;
