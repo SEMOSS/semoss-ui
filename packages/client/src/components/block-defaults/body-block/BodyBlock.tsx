@@ -5,29 +5,26 @@ import { useBlock } from '@/hooks';
 import { BlockDef, BlockComponent } from '@/stores';
 import { Slot } from '@/components/blocks';
 
-export interface PageBlockDef extends BlockDef<'page'> {
-    widget: 'page';
+export interface BodyBlockDef extends BlockDef<'body'> {
+    widget: 'body';
     data: {
         style: CSSProperties;
     };
     slots: 'content';
 }
 
-export const PageBlock: BlockComponent = observer(({ id }) => {
-    const { attrs, data, slots } = useBlock<PageBlockDef>(id);
+export const BodyBlock: BlockComponent = observer(({ id }) => {
+    const { attrs, data, slots } = useBlock<BodyBlockDef>(id);
 
     return (
-        <div
+        <body
             style={{
-                minWidth: '100%',
-                minHeight: '100%',
                 background: '#FFFFFF',
-                height: '100%',
                 ...data.style,
             }}
             {...attrs}
         >
             <Slot slot={slots.content}></Slot>
-        </div>
+        </body>
     );
 });
