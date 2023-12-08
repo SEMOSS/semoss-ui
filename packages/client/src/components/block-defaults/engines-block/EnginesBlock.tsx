@@ -126,9 +126,7 @@ export const EnginesBlock: BlockComponent = observer(({ id }) => {
             getOptionLabel={(option) => option.label || ''}
             isOptionEqualToValue={isOptionEqualToValue}
             onChange={handleChange}
-            style={{
-                cursor: 'pointer',
-                width: '100%',
+            sx={{
                 ...data.style,
             }}
             renderInput={(params) => (

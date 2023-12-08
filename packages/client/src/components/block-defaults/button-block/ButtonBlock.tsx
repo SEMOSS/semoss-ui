@@ -21,7 +21,6 @@ export const ButtonBlock: BlockComponent = observer(({ id }) => {
     return (
         <button
             style={{
-                cursor: 'pointer',
                 ...data.style,
             }}
             onClick={() => {

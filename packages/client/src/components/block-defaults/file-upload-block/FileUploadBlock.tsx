@@ -53,7 +53,6 @@ export const FileUploadBlock: BlockComponent = observer(({ id }) => {
             type="file"
             accept=".pdf,.doc,.docx,xlsx,.xls,.csv,.txt"
             style={{
-                cursor: 'pointer',
                 ...data.style,
             }}
             {...attrs}
