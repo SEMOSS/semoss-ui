@@ -278,8 +278,9 @@ interface FileData {
     id: string;
 }
 
-// Gets a certain amount of directories
+// Gets a certain amount of directories - time limit for projects with fewer files
 const INITIAL_LOAD_FILE_LIMIT = 15;
+const INITIAL_LOAD_TIME_LIMIT = 1500; // milliseconds
 
 export const AppEditor = (props: AppEditorProps) => {
     const { appId, width, onSave } = props;
@@ -327,8 +328,6 @@ export const AppEditor = (props: AppEditorProps) => {
     const initialLoadFileSet = useRef(new Set());
     const [initLoadComplete, setInitLoadComplete] = useState(false);
 
-    const [isLoading, setIsLoading] = useState(false);
-
     // backup solution for stopping initial auto-opening folders if file limit is never met
     const firstClickHandler = () => {
         setInitLoadComplete(true);
@@ -340,6 +339,9 @@ export const AppEditor = (props: AppEditorProps) => {
 
         // set event listener for first user click to disable auto folder opening
         document.addEventListener('click', firstClickHandler);
+
+        // temporary solution to end initial load state for projects with fewer than file initial load file limit
+        setTimeout(() => setInitLoadComplete(true), INITIAL_LOAD_TIME_LIMIT);
     }, []);
 
     // helper function for recursive folder opening on initial explorer load
