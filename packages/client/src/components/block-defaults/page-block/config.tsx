@@ -10,6 +10,7 @@ import {
 import { PageBlockDef, PageBlock } from './PageBlock';
 import { BLOCK_TYPE_LAYOUT } from '../block-defaults.constants';
 import { SelectInputSettings } from '@/components/block-settings/shared/SelectInputSettings';
+import { BorderSettings } from '@/components/block-settings';
 
 // export the config for the block
 export const config: BlockConfig<PageBlockDef> = {
@@ -67,6 +68,17 @@ export const config: BlockConfig<PageBlockDef> = {
             ],
         },
         buildColorSection(),
+        {
+            name: 'Border',
+            children: [
+                {
+                    description: 'Border',
+                    render: ({ id }) => (
+                        <BorderSettings id={id} path="style.border" />
+                    ),
+                },
+            ],
+        },
         buildTypographySection(),
     ],
 };

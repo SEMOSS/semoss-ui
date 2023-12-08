@@ -10,6 +10,7 @@ import {
     buildSpacingSection,
     buildDimensionsSection,
     buildColorSection,
+    buildBorderSection,
 } from '../block-defaults.shared';
 import { InputModalSettings } from '@/components/block-settings/shared/InputModalSettings';
 
@@ -79,6 +80,7 @@ export const config: BlockConfig<TextAreaBlockDef> = {
         buildTypographySection(),
         buildTextAlignSection(),
         buildColorSection(),
+        buildBorderSection(),
         buildSpacingSection(),
         buildDimensionsSection(),
     ],

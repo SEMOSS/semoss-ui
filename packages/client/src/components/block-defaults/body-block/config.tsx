@@ -11,6 +11,7 @@ import {
 import { BodyBlockDef, BodyBlock } from './BodyBlock';
 import { BLOCK_TYPE_LAYOUT } from '../block-defaults.constants';
 import { SelectInputSettings } from '@/components/block-settings/shared/SelectInputSettings';
+import { BorderSettings } from '@/components/block-settings';
 
 // export the config for the block
 export const config: BlockConfig<BodyBlockDef> = {
@@ -68,6 +69,17 @@ export const config: BlockConfig<BodyBlockDef> = {
             ],
         },
         buildColorSection(),
+        {
+            name: 'Border', // no border radius
+            children: [
+                {
+                    description: 'Border',
+                    render: ({ id }) => (
+                        <BorderSettings id={id} path="style.border" />
+                    ),
+                },
+            ],
+        },
         buildTypographySection(),
     ],
 };

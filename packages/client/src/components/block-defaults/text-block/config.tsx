@@ -5,6 +5,7 @@ import {
     buildColorSection,
     buildTypographySection,
     buildTextAlignSection,
+    buildBorderSection,
 } from '../block-defaults.shared';
 import { TextBlockDef, TextBlock } from './TextBlock';
 import { TextFields } from '@mui/icons-material';
@@ -42,6 +43,7 @@ export const config: BlockConfig<TextBlockDef> = {
         buildTypographySection(),
         buildTextAlignSection(),
         buildColorSection(),
+        buildBorderSection(),
         buildSpacingSection(),
         buildDimensionsSection(),
     ],
