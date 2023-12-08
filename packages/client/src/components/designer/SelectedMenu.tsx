@@ -20,10 +20,6 @@ const StyledTypography = styled(Typography)(() => ({
     fontWeight: 'bold',
 }));
 
-const Spacer = styled('div')(() => ({
-    flex: 1,
-}));
-
 const StyledMenu = styled('div')(({ theme }) => ({
     display: 'flex',
     flexDirection: 'column',

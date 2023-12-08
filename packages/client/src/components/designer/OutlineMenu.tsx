@@ -35,13 +35,16 @@ const StyledMenuHeader = styled('div')(({ theme }) => ({
     display: 'flex',
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
     width: '100%',
     paddingTop: theme.spacing(1.5),
     paddingRight: theme.spacing(1),
     paddingBottom: theme.spacing(1.5),
     paddingLeft: theme.spacing(2),
     gap: theme.spacing(1),
+}));
+
+const Spacer = styled('div')(() => ({
+    flex: 1,
 }));
 
 const StyledMenuScroll = styled('div')(({ theme }) => ({
@@ -236,6 +239,9 @@ export const OutlineMenu = observer((): JSX.Element => {
                         <TextField
                             placeholder="Search"
                             size="small"
+                            sx={{
+                                width: '200px',
+                            }}
                             value={search}
                             variant="outlined"
                             onChange={(e) => setSearch(e.target.value)}
