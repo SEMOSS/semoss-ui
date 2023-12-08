@@ -10,7 +10,7 @@ import {
     Collapse,
 } from '@semoss/ui';
 import { useBlocks, useDesigner } from '@/hooks';
-import { SearchOutlined } from '@mui/icons-material';
+import { Search, SearchOff } from '@mui/icons-material';
 import { getIconForBlock } from '../block-defaults';
 import { BlockAvatar } from './BlockAvatar';
 import { SelectedMenuSection } from './SelectedMenuSection';
@@ -164,36 +164,42 @@ export const SelectedMenu = observer(() => {
     return (
         <StyledMenu>
             <StyledMenuHeader>
-                <Stack
-                    flex={1}
-                    spacing={2}
-                    direction="row"
-                    alignItems={'center'}
-                >
+                <Stack flex={1} spacing={2} direction="row" alignItems="center">
                     <BlockAvatar icon={getIconForBlock(block.widget)} />
                     <StyledTypography variant="h6">
                         {block.widget}
                     </StyledTypography>
-                    <Spacer />
-                    <Collapse orientation="horizontal" in={showSearch}>
-                        <TextField
-                            placeholder="Search"
-                            size="small"
-                            value={search}
-                            variant="outlined"
-                            onChange={(e) => setSearch(e.target.value)}
-                        />
-                    </Collapse>
-                    <IconButton
-                        color="default"
-                        size="small"
-                        onClick={() => {
-                            setShowSearch(!showSearch);
-                            setSearch('');
-                        }}
+                    <Stack
+                        flex={1}
+                        spacing={1}
+                        direction="row"
+                        alignItems="center"
+                        justifyContent="end"
                     >
-                        <SearchOutlined fontSize="medium" />
-                    </IconButton>
+                        <Collapse orientation="horizontal" in={showSearch}>
+                            <TextField
+                                placeholder="Search"
+                                size="small"
+                                value={search}
+                                variant="outlined"
+                                onChange={(e) => setSearch(e.target.value)}
+                            />
+                        </Collapse>
+                        <IconButton
+                            color="default"
+                            size="small"
+                            onClick={() => {
+                                setShowSearch(!showSearch);
+                                setSearch('');
+                            }}
+                        >
+                            {showSearch ? (
+                                <SearchOff fontSize="medium" />
+                            ) : (
+                                <Search fontSize="medium" />
+                            )}
+                        </IconButton>
+                    </Stack>
                 </Stack>
             </StyledMenuHeader>
             <Divider />
@@ -217,55 +223,6 @@ export const SelectedMenu = observer(() => {
                     setAccordion={setStyleAccordion}
                 />
             </StyledMenuScroll>
-            {/* <StyledMenuHeader>
-                <Typography variant="subtitle1">Appearance</Typography>
-            </StyledMenuHeader>
-            <StyledMenuScroll>
-                {styleMenu.map((s: {name: string;
-                    children: {
-                        description: string;
-                        render: (props: {
-                            id: string;
-                        }) => JSX.Element;
-                    }[];
-                }, sIdx: number) => {
-                    const key = `section--${sIdx}`;
-
-                    return (
-                        <React.Fragment key={key}>
-                            <StyledMenuSection
-                                expanded={accordion[key]}
-                                onChange={() =>
-                                    setAccordion({
-                                        ...accordion,
-                                        [key]: !accordion[key],
-                                    })
-                                }
-                            >
-                                <StyledMenuSectionTitle
-                                    expandIcon={<ExpandMore />}
-                                >
-                                    <StyledMenuSectionTitleTypography variant="body2">
-                                        {s.name}
-                                    </StyledMenuSectionTitleTypography>
-                                </StyledMenuSectionTitle>
-                                <Accordion.Content>
-                                    {s.children.length > 0 ? (
-                                        <Stack direction="column" spacing={1}>
-                                            {s.children.map((c, cIdx) => {
-                                                return createElement(c.render, {
-                                                    key: cIdx,
-                                                    id: block.id,
-                                                });
-                                            })}
-                                        </Stack>
-                                    ) : null}
-                                </Accordion.Content>
-                            </StyledMenuSection>
-                        </React.Fragment>
-                    );
-                })}
-            </StyledMenuScroll> */}
         </StyledMenu>
     );
 });

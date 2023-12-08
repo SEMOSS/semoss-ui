@@ -6,6 +6,7 @@ import {
     Icon,
     IconButton,
     List,
+    Stack,
     TextField,
     TreeView,
     Typography,
@@ -16,10 +17,10 @@ import {
     ChevronRight,
     ExpandMore,
     Home,
-    SearchOutlined,
+    Search,
+    SearchOff,
 } from '@mui/icons-material/';
 
-import { getIconForBlock } from '../block-defaults';
 import { Block } from '@/stores/state/state.types';
 
 const StyledMenu = styled('div')(({ theme }) => ({
@@ -35,18 +36,12 @@ const StyledMenuHeader = styled('div')(({ theme }) => ({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
+    width: '100%',
     paddingTop: theme.spacing(1.5),
     paddingRight: theme.spacing(1),
     paddingBottom: theme.spacing(1.5),
     paddingLeft: theme.spacing(2),
     gap: theme.spacing(1),
-}));
-
-const StyledCollapseSearch = styled('div')(({ theme }) => ({
-    display: 'flex',
-    flexDirection: 'row',
-    width: '100%',
-    justifyContent: 'flex-end',
 }));
 
 const StyledMenuScroll = styled('div')(({ theme }) => ({
@@ -230,7 +225,13 @@ export const OutlineMenu = observer((): JSX.Element => {
 
             <StyledMenuHeader>
                 <Typography variant="body1">Layers</Typography>
-                <StyledCollapseSearch>
+                <Stack
+                    flex={1}
+                    spacing={1}
+                    direction="row"
+                    alignItems="center"
+                    justifyContent="end"
+                >
                     <Collapse orientation="horizontal" in={showSearch}>
                         <TextField
                             placeholder="Search"
@@ -248,9 +249,13 @@ export const OutlineMenu = observer((): JSX.Element => {
                             setSearch('');
                         }}
                     >
-                        <SearchOutlined fontSize="medium" />
+                        {showSearch ? (
+                            <SearchOff fontSize="medium" />
+                        ) : (
+                            <Search fontSize="medium" />
+                        )}
                     </IconButton>
-                </StyledCollapseSearch>
+                </Stack>
             </StyledMenuHeader>
             <Divider />
             <StyledMenuScroll>
