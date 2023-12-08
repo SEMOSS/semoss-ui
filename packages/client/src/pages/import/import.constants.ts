@@ -61,6 +61,7 @@ import FLAN from '@/assets/img/FLAN.jpg';
 import BERT from '@/assets/img/BERT.png';
 import ELEUTHER from '@/assets/img/ELEUTHER_AI.png';
 import NEMO from '@/assets/img/NEMO.png';
+import GOOGLE from '@/assets/img/google.png';
 //Embedded Models
 import ORCA from '@/assets/img/ORCA.png';
 import STABILITY_AI from '@/assets/img/STABILITY_AI.png';
