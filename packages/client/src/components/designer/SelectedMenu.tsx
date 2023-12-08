@@ -150,6 +150,14 @@ export const SelectedMenu = observer(() => {
         return m;
     }, [registry, block ? block.widget : '', search]);
 
+    // clear search on blocks no longer selected
+    useMemo(() => {
+        if (!block) {
+            setSearch('');
+            setShowSearch(false);
+        }
+    }, [block]);
+
     // ignore if there is no menu
     if (!block) {
         return (
