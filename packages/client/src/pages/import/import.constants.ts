@@ -634,7 +634,7 @@ export const CONNECTION_OPTIONS = {
                     {
                         fieldName: 'MODEL',
                         label: 'Model',
-                        defaultValue: '',
+                        defaultValue: 'text-bison',
                         options: {
                             component: 'text-field',
                         },
