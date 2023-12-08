@@ -46,17 +46,20 @@ export const config: BlockConfig<EnginesBlockDef> = {
                         <InputSettings id={id} label="Label" path="label" />
                     ),
                 },
-                // {
-                //     description: 'Options',
-                //     render: ({ id }) => {
-                //         return (
-                //             <SelectInputOptionsSettings
-                //                 id={id}
-                //                 path="options"
-                //             />
-                //         );
-                //     },
-                // },
+                //* Removed Options Settings
+                /*
+                {
+                    description: 'Options',
+                    render: ({ id }) => {
+                        return (
+                            <SelectInputOptionsSettings
+                                id={id}
+                                path="options"
+                            />
+                        );
+                    },
+                },
+                */
             ],
         },
     ],
