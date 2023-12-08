@@ -313,7 +313,6 @@ export const ImportPage = () => {
 
     const mapEngineOptions = () => {
         const entries = Object.values(connectionOptions[steps[0].data]);
-        debugger;
 
         // Change in structure, quick 20 minute ask from Leadership
         if (Array.isArray(entries[0])) {
@@ -322,7 +321,6 @@ export const ImportPage = () => {
                     {Object.entries(connectionOptions[steps[0].data]).map(
                         (kv: [string, any[]], i) => {
                             // TODO FIX ANY TYPE
-                            debugger;
                             return (
                                 <Box key={i}>
                                     <StyledCategoryTitle>
@@ -498,7 +496,6 @@ export const ImportPage = () => {
                         },
                     )}
                     {e.map((kv: [string, any[]], i) => {
-                        debugger;
                         return (
                             <Box key={i}>
                                 <StyledCategoryTitle>
