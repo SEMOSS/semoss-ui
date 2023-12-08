@@ -272,6 +272,15 @@ interface NodeInterface {
     children?: unknown;
 }
 
+interface FileData {
+    name: string;
+    path: string;
+    id: string;
+}
+
+// Gets a certain amount of directories
+const INITIAL_LOAD_FILE_LIMIT = 15;
+
 export const AppEditor = (props: AppEditorProps) => {
     const { appId, width, onSave } = props;
     const { monolithStore, configStore } = useRootStore();
@@ -279,12 +288,6 @@ export const AppEditor = (props: AppEditorProps) => {
     const [openAppAssetsPanel, setOpenAppAssetsPanel] = useState(true);
     const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
 
-    // state vars for file deletion
-    interface FileData {
-        name: string;
-        path: string;
-        id: string;
-    }
     const [fileToBeDeleted, setFileToBeDeleted] = useState<FileData>({
         name: '',
         path: '',
@@ -292,6 +295,7 @@ export const AppEditor = (props: AppEditorProps) => {
     });
     const [UINodes, setUINodes] = useState(null);
     const [openAccordion, setOpenAccordion] = useState(['file']);
+    const [counter, setCounter] = useState(0); // Test and remove
 
     /**
      * FILE EXPLORER START OF CODE
@@ -299,9 +303,6 @@ export const AppEditor = (props: AppEditorProps) => {
     const [appDirectory, setAppDirectory] = useState([]);
     const [expanded, setExpanded] = React.useState<string[]>([]);
     const [selected, setSelected] = React.useState<string[]>([]);
-
-    // Dummy state for refreshing with updated state
-    const [counter, setCounter] = useState(0);
 
     // When we gather input from add new file/folder
     const newDirectoryRefs = useRef(null);
@@ -323,7 +324,6 @@ export const AppEditor = (props: AppEditorProps) => {
 
     // limit the number of files that are displayed on initial load
     // limit will often be exceeded due to unknown file count in folders but when limit is met no new folders will be opened
-    const INITIAL_LOAD_FILE_LIMIT = 15;
     const initialLoadFileSet = useRef(new Set());
     const [initLoadComplete, setInitLoadComplete] = useState(false);
 
@@ -337,6 +337,7 @@ export const AppEditor = (props: AppEditorProps) => {
 
     useEffect(() => {
         getInitialAppStructure();
+
         // set event listener for first user click to disable auto folder opening
         document.addEventListener('click', firstClickHandler);
     }, []);
@@ -347,6 +348,7 @@ export const AppEditor = (props: AppEditorProps) => {
             ...initialLoadFileSet.current,
             node.id,
         ]);
+
         if (initialLoadFileSet.current.size >= INITIAL_LOAD_FILE_LIMIT)
             setInitLoadComplete(true);
         if (
@@ -374,6 +376,7 @@ export const AppEditor = (props: AppEditorProps) => {
             initialLoadFileSet.current.size >= INITIAL_LOAD_FILE_LIMIT
         )
             return;
+
         // if the user has not yet interacted with the page open all folders recursively
         appDirectory.forEach(openFoldersHelper);
         // only runs recursive directory check on updates to appDirectory, not continuously
