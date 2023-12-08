@@ -185,9 +185,6 @@ const StyledIcon = styled(Icon)(({ theme }) => ({
 }));
 
 const CustomAccordion = styled(Accordion)(({ theme }) => ({
-    maxHeight: 'calc(95vh - 120px)',
-    width: '95%',
-    overflow: 'scroll',
     background: 'inherit',
     boxShadow: 'none',
     padding: '0',
@@ -244,8 +241,10 @@ const CustomAccordionTriggerLabel = styled('div')(({ theme }) => ({
 }));
 
 const CustomAccordionContent = styled(Accordion.Content)(({ theme }) => ({
-    display: 'flex',
+    maxHeight: 'calc(87.5vh - 120px)',
     overflow: 'scroll',
+    width: '98%',
+    display: 'flex',
     padding: '0px',
 }));
 
@@ -408,11 +407,7 @@ export const AppEditor = (props: AppEditorProps) => {
      */
     const getInitialAppStructure = async () => {
         const pixel = `BrowseAsset(filePath=["version/assets"], space=["${appId}"]);`;
-
-        setIsLoading(true);
         const response = await monolithStore.runQuery(pixel);
-        setIsLoading(false);
-
         const output = response.pixelReturn[0].output,
             operationType = response.pixelReturn[0].operationType;
 
@@ -489,9 +484,7 @@ export const AppEditor = (props: AppEditorProps) => {
             selectionType = 'asset';
         }
 
-        setIsLoading(true);
         const response = await monolithStore.runQuery(pixel);
-        setIsLoading(false);
 
         const folderContents = response.pixelReturn[0].output,
             operationType = response.pixelReturn[0].operationType;
@@ -622,9 +615,7 @@ export const AppEditor = (props: AppEditorProps) => {
             CommitAsset(filePath=["${file.id}"], comment=["Hardcoded comment from the App Page editor"], space=["${appId}"])
         `;
 
-        setIsLoading(true);
         const response = await monolithStore.runQuery(pixel);
-        setIsLoading(false);
 
         const output = response.pixelReturn[0].output,
             operationType = response.pixelReturn[0].operationType,
@@ -689,10 +680,7 @@ export const AppEditor = (props: AppEditorProps) => {
         }
 
         const { parent } = await findNodeAndParentById(appDirectory, node.id);
-
-        setIsLoading(true);
         const response = await monolithStore.runQuery(pixel);
-        setIsLoading(false);
 
         const output = response.pixelReturn[0].output,
             operationType = response.pixelReturn[0].operationType;
@@ -717,11 +705,9 @@ export const AppEditor = (props: AppEditorProps) => {
             CommitAsset(filePath=["${nodeReplacement.id}"], comment=["Added Asset from App Editor: path='${nodeReplacement.id}' "], space=["${appId}"])
             `;
 
-            setIsLoading(true);
             const commitAssetResponse = await monolithStore.runQuery(
                 commitAssetPixel,
             );
-            setIsLoading(false);
 
             const commitAssetOutput = commitAssetResponse.pixelReturn[0].output,
                 commitAssetOperationType =
@@ -752,20 +738,16 @@ export const AppEditor = (props: AppEditorProps) => {
             const path = 'version/assets/';
 
             // upnzip the file in the new app
-            setIsLoading(true);
             const response = await monolithStore.runQuery(
                 `DownloadAsset(filePath=["${path}"], space=["${appId}"]);`,
             );
-            setIsLoading(false);
 
             const key = response.pixelReturn[0].output;
             if (!key) {
                 throw new Error('Error Downloading Asset');
             }
 
-            setIsLoading(true);
             await monolithStore.download(configStore.store.insightID, key);
-            setIsLoading(false);
         } catch (e) {
             console.error(e);
 
@@ -1248,11 +1230,9 @@ export const AppEditor = (props: AppEditorProps) => {
 
     const confirmFileDeleteHandler = async () => {
         try {
-            setIsLoading(true);
             await monolithStore.runQuery(
                 `DeleteAsset(filePath=["${fileToBeDeleted.path}"], space=["${appId}"]);`,
             );
-            setIsLoading(false);
 
             await removeNodeById(UINodes, fileToBeDeleted.id);
 
