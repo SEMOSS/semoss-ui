@@ -10,6 +10,8 @@ const meta: Meta<typeof Button> = {
         variant: "contained",
         color: "primary",
         disabled: false,
+        size: "medium",
+        loading: false,
     },
     argTypes: {
         variant: {
@@ -26,12 +28,15 @@ const meta: Meta<typeof Button> = {
                 "warning",
             ],
         },
+        size: {
+            options: ["small", "medium", "large"],
+        },
     },
 };
 
 export default meta;
 type Story = StoryObj<typeof Button>;
 
-export const Variant: Story = {
+export const Base: Story = {
     render: (args) => <Button {...args} />,
 };
