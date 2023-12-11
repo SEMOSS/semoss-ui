@@ -1,9 +1,14 @@
 import { ReactNode } from "react";
-import { Avatar as MuiAvatar, SxProps } from "@mui/material";
+import { CircularProgress, Avatar as MuiAvatar, SxProps } from "@mui/material";
 
 export interface AvatarProps {
     /** children to be rendered */
     children?: ReactNode;
+
+    /**
+     * Set loading state
+     */
+    loading?: boolean;
 
     /** custom style object */
     sx?: SxProps;
@@ -29,11 +34,18 @@ export interface AvatarProps {
 }
 
 export const Avatar = (props: AvatarProps) => {
-    const { children, sx } = props;
+    let muiAvatarProps = { ...props };
+    if (muiAvatarProps?.loading) {
+        delete muiAvatarProps.loading;
+    }
 
     return (
-        <MuiAvatar sx={sx} {...props}>
-            {children}
+        <MuiAvatar {...muiAvatarProps}>
+            {props?.loading ? (
+                <CircularProgress color="inherit" size="1em" />
+            ) : (
+                props.children
+            )}
         </MuiAvatar>
     );
 };
