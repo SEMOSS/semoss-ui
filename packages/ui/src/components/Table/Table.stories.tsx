@@ -139,6 +139,44 @@ function BasicTable(args) {
     );
 }
 
+function NoDataTable() {
+    return (
+        <Table.Container>
+            <Table sx={{ minWidth: 650 }} aria-label="no data table">
+                <Table.Head>
+                    <Table.Row>
+                        <Table.Cell>Name</Table.Cell>
+                        <Table.Cell align="right">Age</Table.Cell>
+                        <Table.Cell align="right">Location</Table.Cell>
+                        <Table.Cell align="right">Email</Table.Cell>
+                        <Table.Cell align="right">Number</Table.Cell>
+                    </Table.Row>
+                </Table.Head>
+                <Table.Body></Table.Body>
+            </Table>
+        </Table.Container>
+    );
+}
+
+function LoadingTable() {
+    return (
+        <Table.Container>
+            <Table sx={{ minWidth: 650 }} aria-label="loading table">
+                <Table.Head loading>
+                    <Table.Row>
+                        <Table.Cell>Name</Table.Cell>
+                        <Table.Cell align="right">Age</Table.Cell>
+                        <Table.Cell align="right">Location</Table.Cell>
+                        <Table.Cell align="right">Email</Table.Cell>
+                        <Table.Cell align="right">Number</Table.Cell>
+                    </Table.Row>
+                </Table.Head>
+                <Table.Body noDataText="Loading users..."></Table.Body>
+            </Table>
+        </Table.Container>
+    );
+}
+
 function DenseTable() {
     const StyledTableCell = styled(Table.Cell)(({ theme }) => ({
         [`&.${tableCellClasses.head}`]: {
@@ -239,13 +277,7 @@ function Row(props) {
                 >
                     <Collapse in={open} timeout="auto" unmountOnExit>
                         <Box sx={{ margin: 1 }}>
-                            <Typography
-                                variant="h6"
-                                gutterBottom
-                                component="div"
-                            >
-                                History
-                            </Typography>
+                            <Typography variant="h6">History</Typography>
                             <Table size="small" aria-label="purchases">
                                 <Table.Head>
                                     <Table.Row>
@@ -327,4 +359,12 @@ export const Dense: Story = {
 
 export const CollapsibleTableExample: Story = {
     render: () => <CollapsibleTable />,
+};
+
+export const NoData: Story = {
+    render: () => <NoDataTable />,
+};
+
+export const Loading: Story = {
+    render: () => <LoadingTable />,
 };
