@@ -14,7 +14,7 @@ import {
 } from '../block-defaults.shared';
 
 //* Material UI Components
-import { CloudUpload as CloudUploadIcon } from '@mui/icons-material';
+import OpenInBrowserRoundedIcon from '@mui/icons-material/OpenInBrowserRounded';
 
 export const config: BlockConfig<FileUploadBlockDef> = {
     widget: 'file-upload',
@@ -32,7 +32,7 @@ export const config: BlockConfig<FileUploadBlockDef> = {
         test: [],
     },
     render: FileUploadBlock,
-    icon: CloudUploadIcon,
+    icon: OpenInBrowserRoundedIcon,
     contentMenu: [
         {
             name: 'File Settings',

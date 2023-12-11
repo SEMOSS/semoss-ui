@@ -1,6 +1,6 @@
 //* Block Config
 import { BlockConfig } from '@/stores';
-import { EnginesBlockDef, EnginesBlock } from './EnginesBlock';
+import { ModelsBlockDef, ModelsBlock } from './ModelsBlock';
 import { BLOCK_TYPE_CUSTOM } from '../block-defaults.constants';
 
 import {
@@ -11,16 +11,19 @@ import { InputSettings } from '@/components/block-settings';
 import { SelectInputValueSettings } from '@/components/block-settings/custom/SelectInputValueSettings';
 // import { SelectInputOptionsSettings } from '@/components/block-settings/custom/SelectInputOptionsSettings';
 
+//* Assets
+import BRAIN from '@/assets/img/BRAIN.png';
+
 //* Material UI Components
 // import { ViewList } from '@mui/icons-material';
-import TokenOutlinedIcon from '@mui/icons-material/TokenOutlined';
+import { EngineeringOutlined as EnginesOutlineIcon } from '@mui/icons-material';
 
-export const config: BlockConfig<EnginesBlockDef> = {
-    widget: 'engines',
+export const config: BlockConfig<ModelsBlockDef> = {
+    widget: 'models',
     type: BLOCK_TYPE_CUSTOM,
     data: {
         style: {},
-        label: 'Engine',
+        label: 'Models',
         options: [],
         value: '',
     },
@@ -28,11 +31,11 @@ export const config: BlockConfig<EnginesBlockDef> = {
         onChange: [],
     },
     slots: {},
-    render: EnginesBlock,
-    icon: TokenOutlinedIcon,
+    render: ModelsBlock,
+    icon: EnginesOutlineIcon,
     contentMenu: [
         {
-            name: 'Engines Models & VectorDB Settings',
+            name: 'Model Settings',
             children: [
                 {
                     description: 'Value',
@@ -46,20 +49,6 @@ export const config: BlockConfig<EnginesBlockDef> = {
                         <InputSettings id={id} label="Label" path="label" />
                     ),
                 },
-                //* Removed Options Settings
-                /*
-                {
-                    description: 'Options',
-                    render: ({ id }) => {
-                        return (
-                            <SelectInputOptionsSettings
-                                id={id}
-                                path="options"
-                            />
-                        );
-                    },
-                },
-                */
             ],
         },
     ],

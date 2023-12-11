@@ -29,7 +29,7 @@ export const FileUploadBlock: BlockComponent = observer(({ id }) => {
         if (file) {
             //? Calculate File Size in KB
             const fileSizeKB = file.size / 1024;
-            // console.log(fileSizeKB);
+            console.log(fileSizeKB);
 
             //* Display File Size in KB or MB
             let displaySize;
@@ -44,7 +44,7 @@ export const FileUploadBlock: BlockComponent = observer(({ id }) => {
             setData('name.path', file.name);
             setData('name.type', file.type);
             setData('name.size', displaySize);
-            // console.log('File Size: ', displaySize);
+            console.log('File Size: ', displaySize);
         }
     };
 

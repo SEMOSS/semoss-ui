@@ -1,6 +1,6 @@
 //* Block Config
 import { BlockConfig } from '@/stores';
-import { EnginesBlockDef, EnginesBlock } from './EnginesBlock';
+import { VectorsBlockDef, VectorsBlock } from './VectorsBlock';
 import { BLOCK_TYPE_CUSTOM } from '../block-defaults.constants';
 
 import {
@@ -9,18 +9,16 @@ import {
 } from '../block-defaults.shared';
 import { InputSettings } from '@/components/block-settings';
 import { SelectInputValueSettings } from '@/components/block-settings/custom/SelectInputValueSettings';
-// import { SelectInputOptionsSettings } from '@/components/block-settings/custom/SelectInputOptionsSettings';
 
 //* Material UI Components
-// import { ViewList } from '@mui/icons-material';
 import TokenOutlinedIcon from '@mui/icons-material/TokenOutlined';
 
-export const config: BlockConfig<EnginesBlockDef> = {
-    widget: 'engines',
+export const config: BlockConfig<VectorsBlockDef> = {
+    widget: 'vectors',
     type: BLOCK_TYPE_CUSTOM,
     data: {
         style: {},
-        label: 'Engine',
+        label: 'Vectors',
         options: [],
         value: '',
     },
@@ -28,11 +26,11 @@ export const config: BlockConfig<EnginesBlockDef> = {
         onChange: [],
     },
     slots: {},
-    render: EnginesBlock,
+    render: VectorsBlock,
     icon: TokenOutlinedIcon,
     contentMenu: [
         {
-            name: 'Engines Models & VectorDB Settings',
+            name: 'Vector Database Settings',
             children: [
                 {
                     description: 'Value',
@@ -46,20 +44,6 @@ export const config: BlockConfig<EnginesBlockDef> = {
                         <InputSettings id={id} label="Label" path="label" />
                     ),
                 },
-                //* Removed Options Settings
-                /*
-                {
-                    description: 'Options',
-                    render: ({ id }) => {
-                        return (
-                            <SelectInputOptionsSettings
-                                id={id}
-                                path="options"
-                            />
-                        );
-                    },
-                },
-                */
             ],
         },
     ],
