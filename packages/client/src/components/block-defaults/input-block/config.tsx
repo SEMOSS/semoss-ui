@@ -7,6 +7,7 @@ import {
     buildDimensionsSection,
     buildColorSection,
     buildTypographySection,
+    buildBorderSection,
 } from '../block-defaults.shared';
 
 import { InputBlockDef, InputBlock } from './InputBlock';
@@ -65,6 +66,7 @@ export const config: BlockConfig<InputBlockDef> = {
         buildSpacingSection(),
         buildDimensionsSection(),
         buildColorSection(),
+        buildBorderSection(),
         buildTypographySection(),
     ],
 };
