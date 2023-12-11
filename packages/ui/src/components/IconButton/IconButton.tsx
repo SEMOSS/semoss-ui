@@ -1,4 +1,8 @@
-import { IconButton as MuiIconButton, SxProps } from "@mui/material";
+import {
+    CircularProgress,
+    IconButton as MuiIconButton,
+    SxProps,
+} from "@mui/material";
 
 export interface IconButtonProps
     extends React.ButtonHTMLAttributes<HTMLButtonElement> {
@@ -45,6 +49,11 @@ export interface IconButtonProps
     edge?: "start" | "end" | false;
 
     /**
+     * Set loading state
+     */
+    loading?: boolean;
+
+    /**
      * The size of the component.
      * `small` is equivalent to the dense button styling.
      * @default 'medium'
@@ -59,10 +68,21 @@ export interface IconButtonProps
 }
 
 export const IconButton = (props: IconButtonProps) => {
-    const { children, sx } = props;
+    let muiIconButtonProps = { ...props };
+    if (muiIconButtonProps?.loading) {
+        delete muiIconButtonProps.loading;
+    }
+
     return (
-        <MuiIconButton sx={sx} {...props}>
-            {children}
+        <MuiIconButton
+            {...muiIconButtonProps}
+            disabled={props?.disabled || props?.loading}
+        >
+            {props?.loading ? (
+                <CircularProgress color="inherit" size="1em" />
+            ) : (
+                props?.children
+            )}
         </MuiIconButton>
     );
 };
