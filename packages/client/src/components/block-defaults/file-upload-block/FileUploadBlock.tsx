@@ -5,6 +5,7 @@ import { BlockDef, BlockComponent } from '@/stores';
 
 //* Hooks
 import { useBlock } from '@/hooks';
+import { useRootStore } from '@/hooks/useRootStore';
 
 //* Create a Data Object for the Uploaded File ~ Name, Type, Size
 export interface FileUploadBlockDef extends BlockDef<'file-upload'> {
@@ -22,9 +23,39 @@ export interface FileUploadBlockDef extends BlockDef<'file-upload'> {
 
 export const FileUploadBlock: BlockComponent = observer(({ id }) => {
     const { attrs, data, setData } = useBlock<FileUploadBlockDef>(id);
+    const { monolithStore, configStore } = useRootStore();
 
-    const handleFileChange = (e) => {
+    const handleFileChange = async (e) => {
+        const files = e.target.files;
         const file = e.target.files[0];
+        console.log('File: ', file);
+
+        //string that will become the filePaths
+        let fileLocations = '';
+        try {
+            //upload the file
+            const upload = await monolithStore.uploadFile(
+                file,
+                configStore.store.insightID,
+            );
+
+            upload.map((file, index) => {
+                const { fileLocation } = file;
+                if (index + 1 === upload.length) {
+                    //last member
+                    fileLocations = fileLocations += `"${fileLocation}"`;
+                } else {
+                    //all other members
+                    fileLocations = fileLocations += `"${fileLocation}", `;
+                }
+            });
+            // Embedding the File
+            await monolithStore.runQuery(`
+                CreateEmbeddingsFromDocuments( engine= "377e2321-90b7-4856-b3e2-9f6c28663049", filePaths= [${fileLocations}])
+            `);
+        } catch (e) {
+            console.error(e);
+        }
 
         if (file) {
             //? Calculate File Size in KB
