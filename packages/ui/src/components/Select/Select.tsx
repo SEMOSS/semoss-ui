@@ -2,6 +2,7 @@ import {
     TextField as MuiTextField,
     SxProps,
     InternalStandardProps as StandardProps,
+    LinearProgress,
 } from "@mui/material";
 
 export interface SelectProps {
@@ -76,6 +77,11 @@ export interface SelectProps {
     label?: React.ReactNode;
 
     /**
+     * Set loading state
+     */
+    loading?: boolean;
+
+    /**
      * Name attribute of the `input` element.
      */
     name?: string;
@@ -128,5 +134,24 @@ export interface SelectProps {
 }
 
 export const Select = (props: SelectProps) => {
-    return <MuiTextField variant="outlined" select {...props} />;
+    let muiSelectProps = { ...props };
+    if (muiSelectProps?.loading) {
+        delete muiSelectProps.loading;
+    }
+
+    return (
+        <MuiTextField
+            variant="outlined"
+            select
+            {...muiSelectProps}
+            helperText={
+                props?.loading ? (
+                    <LinearProgress color="primary" />
+                ) : (
+                    props?.helperText
+                )
+            }
+            disabled={props?.disabled || props?.loading}
+        />
+    );
 };

@@ -56,28 +56,21 @@ const SelectComponent = (args) => {
 
     return (
         <Stack spacing={2}>
-            <div style={{}}>
-                <div style={{ width: "70%" }}>Hey</div>
-                <div style={{ width: "10%" }}>
-                    <Select
-                        {...args}
-                        sx={{ width: "100%" }}
-                        onChange={onChange}
-                        value={selected}
-                        helperText="Select helper text"
-                        placeholder="Select placeholder"
-                        label="Select Label"
-                    >
-                        <Select.Item value={1}>1</Select.Item>
-                        <Select.Item value={2}>2</Select.Item>
-                        <Select.Item value={3}>3</Select.Item>
-                        <Select.Item value={4}>4</Select.Item>
-                        <Select.Item value={5}>5</Select.Item>
-                    </Select>
-                </div>
-
-                <div style={{ width: "20%" }}>Hello</div>
-            </div>
+            <Select
+                {...args}
+                sx={{ width: "100%" }}
+                onChange={onChange}
+                value={selected}
+                helperText="Select helper text"
+                placeholder="Select placeholder"
+                label="Select Label"
+            >
+                <Select.Item value={1}>1</Select.Item>
+                <Select.Item value={2}>2</Select.Item>
+                <Select.Item value={3}>3</Select.Item>
+                <Select.Item value={4}>4</Select.Item>
+                <Select.Item value={5}>5</Select.Item>
+            </Select>
             <Box>Value: {selected}</Box>
         </Stack>
     );
@@ -126,4 +119,16 @@ export const Multiple: Story = {
 
 export const Default: Story = {
     render: (args) => <SelectComponent {...args} />,
+};
+
+export const Loading: Story = {
+    render: () => (
+        <Select fullWidth label="Loading Select" loading>
+            <Select.Item value={1}>1</Select.Item>
+            <Select.Item value={2}>2</Select.Item>
+            <Select.Item value={3}>3</Select.Item>
+            <Select.Item value={4}>4</Select.Item>
+            <Select.Item value={5}>5</Select.Item>
+        </Select>
+    ),
 };
