@@ -58,7 +58,7 @@ export interface ButtonProps
     href?: string;
 
     /**
-     * Will set loading state when true
+     * Set loading state
      */
     loading?: boolean;
 
@@ -108,7 +108,7 @@ export const Button = (props: ButtonProps) => {
         );
     const endIcon =
         props?.loading && props?.endIcon ? (
-            <CircularProgress size="1em" color="inherit" />
+            <CircularProgress color="inherit" size="1em" />
         ) : (
             props?.endIcon
         );

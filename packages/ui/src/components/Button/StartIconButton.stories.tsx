@@ -10,9 +10,7 @@ const meta: Meta<typeof Button> = {
         children: "Delete",
         variant: "contained",
         color: "primary",
-        disabled: false,
         size: "medium",
-        loading: false,
         startIcon: <DeleteIcon />,
     },
     argTypes: {

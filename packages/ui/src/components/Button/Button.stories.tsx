@@ -9,9 +9,7 @@ const meta: Meta<typeof Button> = {
         children: "Button",
         variant: "contained",
         color: "primary",
-        disabled: false,
         size: "medium",
-        loading: false,
     },
     argTypes: {
         variant: {
@@ -37,6 +35,6 @@ const meta: Meta<typeof Button> = {
 export default meta;
 type Story = StoryObj<typeof Button>;
 
-export const Base: Story = {
+export const Default: Story = {
     render: (args) => <Button {...args} />,
 };

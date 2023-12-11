@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from "@storybook/react";
-import { Badge } from "../Badge/index";
+import { Badge } from "./index";
 import { Mail } from "@mui/icons-material";
 
 const meta: Meta<typeof Badge> = {

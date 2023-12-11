@@ -10,9 +10,7 @@ const meta: Meta<typeof Button> = {
         children: "View Templates",
         variant: "contained",
         color: "primary",
-        disabled: false,
         size: "medium",
-        loading: false,
         endIcon: <ArrowForwardIcon />,
     },
     argTypes: {

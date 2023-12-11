@@ -1,4 +1,13 @@
-import { Badge as MuiBadge, SxProps } from "@mui/material";
+import {
+    styled,
+    CircularProgress,
+    Badge as MuiBadge,
+    SxProps,
+} from "@mui/material";
+
+const StyledCircularProgress = styled(CircularProgress)(() => ({
+    color: "#fff",
+}));
 
 export interface BadgeOrigin {
     vertical: "top" | "bottom";
@@ -43,6 +52,11 @@ export interface BadgeProps {
     overlap?: "rectangular" | "circular";
 
     /**
+     * Set loading state
+     */
+    loading?: boolean;
+
+    /**
      * The variant to use.
      * @default 'standard'
      */
@@ -50,6 +64,25 @@ export interface BadgeProps {
 }
 
 export const Badge = (props: BadgeProps) => {
-    const { sx } = props;
-    return <MuiBadge sx={sx} {...props} />;
+    let muiBadgeProps = { ...props };
+    if (muiBadgeProps?.loading) {
+        delete muiBadgeProps.loading;
+    }
+
+    return (
+        <MuiBadge
+            {...muiBadgeProps}
+            sx={{
+                padding: 0,
+                ...props?.sx,
+            }}
+            badgeContent={
+                props?.loading && props?.badgeContent ? (
+                    <StyledCircularProgress size="1em" />
+                ) : (
+                    props?.badgeContent
+                )
+            }
+        />
+    );
 };
