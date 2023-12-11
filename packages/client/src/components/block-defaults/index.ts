@@ -29,7 +29,6 @@ import {
     config as FileBlockConfig,
     FileUploadBlockDef,
 } from './file-upload-block';
-import { config as EnginesBlockConfig, EnginesBlockDef } from './engines-block';
 import { config as ModelsBlockConfig, ModelsBlockDef } from './models-block';
 import { config as VectorsBlockConfig, VectorsBlockDef } from './vectors-block';
 
@@ -48,7 +47,6 @@ export type DefaultBlockDefinitions =
     | TextFieldBlockDef
     | SectionBlockDef
     | FileUploadBlockDef
-    | EnginesBlockDef
     | ModelsBlockDef
     | VectorsBlockDef;
 
@@ -67,7 +65,6 @@ export const DefaultBlocks: Registry<DefaultBlockDefinitions> = {
     [TextFieldBlockConfig.widget]: TextFieldBlockConfig,
     [SectionBlockConfig.widget]: SectionBlockConfig,
     [FileBlockConfig.widget]: FileBlockConfig,
-    [EnginesBlockConfig.widget]: EnginesBlockConfig,
     [ModelsBlockConfig.widget]: ModelsBlockConfig,
     [VectorsBlockConfig.widget]: VectorsBlockConfig,
 };
