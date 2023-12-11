@@ -28,7 +28,6 @@ export const PERMISSION_DESCRIPTION_MAP: Record<
         editor: 'Ability to edit the database structure, provision other users as editors and read-only users, and all read-only permissions',
         readonly: 'Ability to query and read data from the database',
     },
-    // TODO: this key is the only one that is untested, need valid vector database, may need to change
     vector: {
         author: 'Ability to hide or delete the vector database, provision other authors, and all editor permissions',
         editor: 'Ability to add and remove files from the vector database, and all read-only permissions',
