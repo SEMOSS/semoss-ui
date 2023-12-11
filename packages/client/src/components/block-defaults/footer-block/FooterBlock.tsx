@@ -5,32 +5,26 @@ import { useBlock } from '@/hooks';
 import { BlockDef, BlockComponent } from '@/stores';
 import { Slot } from '@/components/blocks';
 
-export interface PageBlockDef extends BlockDef<'page'> {
-    widget: 'page';
+export interface FooterBlockDef extends BlockDef<'footer'> {
+    widget: 'footer';
     data: {
         style: CSSProperties;
     };
     slots: 'content';
 }
 
-export const PageBlock: BlockComponent = observer(({ id }) => {
-    const { attrs, data, slots } = useBlock<PageBlockDef>(id);
-
-    console.log('scroll');
+export const FooterBlock: BlockComponent = observer(({ id }) => {
+    const { attrs, data, slots } = useBlock<FooterBlockDef>(id);
 
     return (
-        <div
+        <footer
             style={{
-                minWidth: '100%',
-                minHeight: '100%',
                 background: '#FFFFFF',
-                height: '100%',
-                overflow: 'scroll',
                 ...data.style,
             }}
             {...attrs}
         >
             <Slot slot={slots.content}></Slot>
-        </div>
+        </footer>
     );
 });

@@ -7,6 +7,7 @@ import {
     buildDimensionsSection,
     buildColorSection,
     buildListener,
+    buildBorderSection,
 } from '../block-defaults.shared';
 
 import { ButtonBlockDef, ButtonBlock } from './ButtonBlock';
@@ -46,6 +47,7 @@ export const config: BlockConfig<ButtonBlockDef> = {
     ],
     styleMenu: [
         buildColorSection(),
+        buildBorderSection(),
         buildLayoutSection(),
         buildSpacingSection(),
         buildDimensionsSection(),

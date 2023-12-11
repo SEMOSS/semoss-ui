@@ -1,38 +1,38 @@
 import { BlockConfig } from '@/stores';
-import { FileCopyOutlined } from '@mui/icons-material';
+import { BorderBottom } from '@mui/icons-material';
 
 import {
     buildLayoutSection,
     buildColorSection,
     buildTypographySection,
+    buildDimensionsSection,
 } from '../block-defaults.shared';
 
-import { PageBlockDef, PageBlock } from './PageBlock';
+import { FooterBlockDef, FooterBlock } from './FooterBlock';
 import { BLOCK_TYPE_LAYOUT } from '../block-defaults.constants';
 import { SelectInputSettings } from '@/components/block-settings/shared/SelectInputSettings';
 import { BorderSettings } from '@/components/block-settings';
 
 // export the config for the block
-export const config: BlockConfig<PageBlockDef> = {
-    widget: 'page',
+export const config: BlockConfig<FooterBlockDef> = {
+    widget: 'footer',
     type: BLOCK_TYPE_LAYOUT,
     data: {
         style: {
-            display: 'flex',
-            gap: '2rem',
-            alignItems: 'start',
+            height: '10%',
         },
     },
     listeners: {},
     slots: {
         content: [],
     },
-    render: PageBlock,
-    icon: FileCopyOutlined,
+    render: FooterBlock,
+    icon: BorderBottom,
     contentMenu: [],
     styleMenu: [
+        buildDimensionsSection(),
         buildLayoutSection(),
-        // root pages don't get margin for spacing
+        // root footers don't get margin for spacing
         {
             name: 'Spacing',
             children: [

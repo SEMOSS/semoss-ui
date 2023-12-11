@@ -660,8 +660,9 @@ export class StateStore {
         // remove the children
         for (const slot in block.slots) {
             const { children } = block.slots[slot];
-            for (const c of children) {
-                this.removeBlock(c, keep);
+            // use copy of children so we can detach without breaking loop
+            for (const c of [...children]) {
+                this.removeBlock(c, false);
             }
         }
 
