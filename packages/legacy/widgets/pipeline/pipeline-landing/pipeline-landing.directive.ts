@@ -8,11 +8,12 @@ export default angular
     ])
     .directive('pipelineLanding', pipelineLandingDirective);
 
-pipelineLandingDirective.$inject = ['ENDPOINT', 'semossCoreService'];
+pipelineLandingDirective.$inject = ['ENDPOINT', 'semossCoreService', '$timeout'];
 
 function pipelineLandingDirective(
     ENDPOINT: EndPoint,
-    semossCoreService: SemossCoreService
+    semossCoreService: SemossCoreService,
+    $timeout,
 ) {
     pipelineLandingCtrl.$inject = [];
     pipelineLandingLink.$inject = ['scope', 'ele', 'attrs', 'ctrl'];
@@ -28,7 +29,7 @@ function pipelineLandingDirective(
         controllerAs: 'pipelineLanding',
     };
 
-    function pipelineLandingCtrl() {}
+    function pipelineLandingCtrl() { }
 
     function pipelineLandingLink(scope, ele, attrs, ctrl) {
         scope.widgetCtrl = ctrl[0];
@@ -54,6 +55,81 @@ function pipelineLandingDirective(
         scope.pipelineLanding.selectLanding = selectLanding;
         scope.pipelineLanding.searchLanding = searchLanding;
         scope.pipelineLanding.onFileDrop = onFileDrop;
+        scope.pipelineLanding.limit = 12;
+        scope.pipelineLanding.offset = 0;
+        scope.pipelineLanding.canCollect = true
+        scope.pipelineLanding.dbLoading = false
+
+        let
+            insightScrollEle,
+            insightScrollTimeout;
+
+        /** databases */
+
+        /**
+         * @name getInsights
+         * @desc called to get insights
+         * @param clear - if true, will reset the search
+         */
+        function getDatabases(clear = false): void {
+            scope.pipelineLanding.dbLoading = true;
+            const message: string =
+                semossCoreService.utility.random('query-pixel')
+
+            semossCoreService.once(message, function (response) {
+                const output = response.pixelReturn[0].output,
+                    type = response.pixelReturn[0].operationType[0];
+                // scope.landing.insights.search.loading = false;
+                if (type.indexOf('ERROR') > -1) {
+                    return;
+                }
+
+                // scope.landing.insights.canCollect =
+                //     output.length === scope.landing.insights.limit;
+            });
+
+            semossCoreService.emit('query-pixel', {
+                commandList: [
+                    {
+                        meta: true,
+                        type: 'getDatabaseList',
+                        components: [scope.pipelineLanding.limit, scope.pipelineLanding.offset],
+                        terminal: true,
+                    },
+                ],
+                listeners: [],
+                response: message,
+            });
+        }
+
+        /**
+         * @name getMoreDatabases
+         * @desc gets more insights on scroll
+         */
+        function getMoreDatabases(): void {
+            if (!scope.pipelineLanding.canCollect) {
+                return;
+            }
+            // if (insightScrollTimeout) {
+            //     $timeout.cancel(insightScrollTimeout);
+            // }
+
+            // debounce
+            insightScrollTimeout = $timeout(function () {
+                // check if it is at the bottom and going downwards
+                if (
+                    insightScrollEle.scrollTop +
+                    insightScrollEle.clientHeight >=
+                    insightScrollEle.scrollHeight * 0.75 &&
+                    !scope.landing.insights.search.loading
+                ) {
+                    // increment the offset to get more
+                    scope.pipelineLanding.offset +=
+                        scope.pipelineLanding.limit;
+                    getDatabases();
+                }
+            }, 300);
+        }
 
         /**
          * @name onFileDrop
@@ -248,7 +324,7 @@ function pipelineLandingDirective(
                     } else if (component.id === 'pipeline-rdf-file') {
                         if (
                             !scope.pipelineLanding.firstToSecond[
-                                'pipeline-file'
+                            'pipeline-file'
                             ]
                         ) {
                             scope.pipelineLanding.firstToSecond[
@@ -288,7 +364,7 @@ function pipelineLandingDirective(
                     {
                         meta: true,
                         type: 'getDatabaseList',
-                        components: [],
+                        components: [scope.pipelineLanding.limit, scope.pipelineLanding.offset],
                         terminal: true,
                     },
                 ],
@@ -313,6 +389,12 @@ function pipelineLandingDirective(
                 }
             );
         }
+
+        insightScrollEle = ele[0].querySelector(
+            '#pipeline-component'
+        );
+        console.log(insightScrollEle)
+        insightScrollEle.addEventListener('scroll', getMoreDatabases);
 
         initialize();
     }

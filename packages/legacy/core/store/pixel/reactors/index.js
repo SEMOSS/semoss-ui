@@ -4885,10 +4885,17 @@ const REACTORS = {
      * @name getDatabaseList
      * @returns {string} query
      */
-    getDatabaseList: function () {
+    getDatabaseList: function (limit, offset) {
         var query = '';
 
-        query = 'GetDatabaseList()';
+        query += 'GetDatabaseList(';
+        if (typeof limit !== 'undefined') {
+            query += `limit=[${limit}], `;
+        }
+        if (typeof offset !== 'undefined') {
+            query += `offset=["${offset}"] `;
+        }
+        query += ')';
 
         return query;
     },
