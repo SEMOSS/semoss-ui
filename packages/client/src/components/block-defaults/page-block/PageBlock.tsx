@@ -16,8 +16,6 @@ export interface PageBlockDef extends BlockDef<'page'> {
 export const PageBlock: BlockComponent = observer(({ id }) => {
     const { attrs, data, slots } = useBlock<PageBlockDef>(id);
 
-    console.log('scroll');
-
     return (
         <div
             style={{

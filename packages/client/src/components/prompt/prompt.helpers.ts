@@ -130,7 +130,16 @@ export function getQueryForPrompt(
         }
     });
 
-    const prompt = tokenStrings.join(' ');
+    let prompt = tokenStrings.join(' ');
+    // check if prompt ends with a period
+    // if not add it so it doesn't disrupt the "Ask based on" attachment in the function
+    if (
+        prompt[prompt.length - 1] !== '.' &&
+        prompt[prompt.length - 1] !== '!' &&
+        prompt[prompt.length - 1] !== '?'
+    ) {
+        prompt = prompt + '.';
+    }
 
     const functionQuery =
         `def jointVectorModelQuery(search_statement:str, limit = 5) -> str:` +
@@ -150,7 +159,7 @@ export function getQueryForPrompt(
         }` +
         `prompt = search_statement ${
             vector
-                ? `+ "Ask based on" + ' '.join([matchItem['Content'] for matchItem in matches])`
+                ? `+ " Ask based on" + ' '.join([matchItem['Content'] for matchItem in matches])`
                 : ''
         };` +
         `response = model.ask(question = prompt);` +
