@@ -83,7 +83,7 @@ export const config: BlockConfig<ContainerBlockDef> = {
                             label="Horizontal Align"
                             options={[
                                 {
-                                    value: 'left',
+                                    value: 'start',
                                     icon: AlignHorizontalLeft,
                                     title: 'Top',
                                     isDefault: true,
@@ -95,7 +95,7 @@ export const config: BlockConfig<ContainerBlockDef> = {
                                     isDefault: false,
                                 },
                                 {
-                                    value: 'right',
+                                    value: 'end',
                                     icon: AlignHorizontalRight,
                                     title: 'Right',
                                     isDefault: false,

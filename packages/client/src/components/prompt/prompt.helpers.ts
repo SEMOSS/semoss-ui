@@ -265,7 +265,6 @@ export async function setBlocksAndOpenUIBuilder(
                         background: 'white',
                         flexDirection: 'column',
                         gap: '2rem',
-                        padding: '3rem',
                         width: '100%',
                         maxWidth: '900px',
                         margin: '0 auto',
@@ -288,7 +287,8 @@ export async function setBlocksAndOpenUIBuilder(
                 },
                 data: {
                     style: {
-                        fontSize: '2.5rem',
+                        fontSize: '2.125rem',
+                        fontWeight: 'bold',
                         textAlign: 'center',
                     },
                     text: 'My App',
@@ -306,6 +306,7 @@ export async function setBlocksAndOpenUIBuilder(
                 data: {
                     style: {
                         textAlign: 'center',
+                        fontSize: '1rem',
                     },
                     text: 'Welcome to the UI Builder! Below are pre-configured blocks for your prompt inputs to use in your app.',
                 },
@@ -397,7 +398,9 @@ export async function setBlocksAndOpenUIBuilder(
                     slot: 'children',
                 },
                 data: {
-                    style: {},
+                    style: {
+                        fontSize: '1rem',
+                    },
                     markdown: `{{${PROMPT_QUERY_ID}.data.0.output}}`,
                 },
                 listeners: {},
