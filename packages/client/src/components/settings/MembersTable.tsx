@@ -178,6 +178,14 @@ const StyledCard = styled(Card)({
     borderRadius: '12px',
 });
 
+const StyledTableCell = styled(Table.Cell)({
+    paddingLeft: '16px',
+});
+
+const StyledCheckbox = styled(Checkbox)({
+    paddingBottom: '0px',
+});
+
 // maps for permissions,
 const permissionMapper = {
     1: 'Author', // BE: 'DISPLAY'
@@ -813,11 +821,11 @@ export const MembersTable = (props: MembersTableProps) => {
                                         if (user) {
                                             return (
                                                 <Table.Row key={user.name + i}>
-                                                    <Table.Cell
+                                                    <StyledTableCell
                                                         size="medium"
                                                         padding="checkbox"
                                                     >
-                                                        <Checkbox
+                                                        <StyledCheckbox
                                                             checked={isSelected}
                                                             onChange={() => {
                                                                 if (
@@ -849,7 +857,7 @@ export const MembersTable = (props: MembersTableProps) => {
                                                                 }
                                                             }}
                                                         />
-                                                    </Table.Cell>
+                                                    </StyledTableCell>
                                                     <UserInfoTableCell
                                                         size="medium"
                                                         component="td"
