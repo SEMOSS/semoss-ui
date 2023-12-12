@@ -5,6 +5,7 @@ import {
     buildColorSection,
     buildTypographySection,
     buildTextAlignSection,
+    buildBorderSection,
 } from '../block-defaults.shared';
 
 import { MarkdownBlockDef, MarkdownBlock } from './Markdown';
@@ -47,6 +48,7 @@ export const config: BlockConfig<MarkdownBlockDef> = {
         buildTypographySection(),
         buildTextAlignSection(),
         buildColorSection(),
+        buildBorderSection(),
         buildSpacingSection(),
         buildDimensionsSection(),
     ],

@@ -112,7 +112,7 @@ export const FILE_ICON_MAP: Record<string, string> = {
     csv: mdiFileDelimitedOutline,
 
     // generic file icons
-    file: mdiFileOutline,
+    default: mdiFileOutline,
     document: mdiFileDocumentOutline,
     code: mdiFileCodeOutline,
     directory: mdiFolderOutline,

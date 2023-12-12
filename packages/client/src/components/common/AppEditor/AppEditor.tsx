@@ -22,7 +22,10 @@ import {
     useNotification,
     styled,
     Typography,
+    LinearProgress,
 } from '@semoss/ui';
+
+import { LoadingScreen } from '@/components/ui';
 
 import { Icon as FiletypeIcon } from '@mdi/react';
 import { FILE_ICON_MAP } from '../TextEditor/text-editor.constants';
@@ -38,8 +41,10 @@ import {
 } from '@mui/icons-material/';
 
 const StyledTypography = styled(Typography)(({ theme }) => ({
-    display: 'flex',
-    alignItems: 'center',
+    overflow: 'hidden',
+    whiteSpace: 'nowrap',
+    textOverflow: 'ellipsis',
+    flex: '1',
 }));
 
 const StyledModalContent = styled(Modal.Content)(({ theme }) => ({
@@ -66,15 +71,15 @@ const StyledDeleteOutlineIcon = styled(DeleteOutline)(({ theme }) => ({
     color: 'rgba(0, 0, 0, 0.3)',
 }));
 
+// wraps file icon, name and delete icon for every file in explorer
 const StyledTreeViewItem = styled(TreeView.Item)(({ theme }) => ({
-    overflow: 'hidden',
     '.MuiCollapse-wrapperInner': {
         height: 'auto',
         overflow: 'none',
     },
 }));
 
-const DeleteIconWrapper = styled('div')(({ theme }) => ({
+const FilenameFlexWrapper = styled('div')(({ theme }) => ({
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'space-between',
@@ -82,9 +87,12 @@ const DeleteIconWrapper = styled('div')(({ theme }) => ({
     width: '100%',
 }));
 
-const StyledFiletypeIcon = styled(FiletypeIcon)(({ theme }) => ({
+// file icon in explorer
+const FiletypeIconWrapper = styled(Icon)(({ theme }) => ({
     color: 'rgba(0, 0, 0, 0.6)',
-    marginRight: '4px',
+    marginRight: '6px',
+    width: '24px',
+    height: '24px',
 }));
 
 const TextEditorCodeGenerationWrapper = styled('div')(({ theme }) => ({
@@ -177,9 +185,6 @@ const StyledIcon = styled(Icon)(({ theme }) => ({
 }));
 
 const CustomAccordion = styled(Accordion)(({ theme }) => ({
-    maxHeight: 'calc(95vh - 120px)',
-    width: '95%',
-    overflow: 'scroll',
     background: 'inherit',
     boxShadow: 'none',
     padding: '0',
@@ -236,8 +241,10 @@ const CustomAccordionTriggerLabel = styled('div')(({ theme }) => ({
 }));
 
 const CustomAccordionContent = styled(Accordion.Content)(({ theme }) => ({
-    display: 'flex',
+    maxHeight: 'calc(87.5vh - 120px)',
     overflow: 'scroll',
+    width: '98%',
+    display: 'flex',
     padding: '0px',
 }));
 
@@ -265,6 +272,15 @@ interface NodeInterface {
     children?: unknown;
 }
 
+interface FileData {
+    name: string;
+    path: string;
+    id: string;
+}
+
+// Gets a certain amount of directories
+const INITIAL_LOAD_FILE_LIMIT = 15;
+
 export const AppEditor = (props: AppEditorProps) => {
     const { appId, width, onSave } = props;
     const { monolithStore, configStore } = useRootStore();
@@ -272,19 +288,14 @@ export const AppEditor = (props: AppEditorProps) => {
     const [openAppAssetsPanel, setOpenAppAssetsPanel] = useState(true);
     const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
 
-    // state vars for file deletion
-    interface FileData {
-        name: string;
-        path: string;
-        id: string;
-    }
     const [fileToBeDeleted, setFileToBeDeleted] = useState<FileData>({
         name: '',
         path: '',
         id: '',
     });
     const [UINodes, setUINodes] = useState(null);
-    const [openAccordion, setOpenAccordion] = useState([]);
+    const [openAccordion, setOpenAccordion] = useState(['file']);
+    const [counter, setCounter] = useState(0); // Test and remove
 
     /**
      * FILE EXPLORER START OF CODE
@@ -292,9 +303,6 @@ export const AppEditor = (props: AppEditorProps) => {
     const [appDirectory, setAppDirectory] = useState([]);
     const [expanded, setExpanded] = React.useState<string[]>([]);
     const [selected, setSelected] = React.useState<string[]>([]);
-
-    // Dummy state for refreshing with updated state
-    const [counter, setCounter] = useState(0);
 
     // When we gather input from add new file/folder
     const newDirectoryRefs = useRef(null);
@@ -314,9 +322,65 @@ export const AppEditor = (props: AppEditorProps) => {
     );
     const [counterTextEditor, setCounterTextEditor] = useState(0);
 
+    // limit the number of files that are displayed on initial load
+    // limit will often be exceeded due to unknown file count in folders but when limit is met no new folders will be opened
+    const initialLoadFileSet = useRef(new Set());
+    const [initLoadComplete, setInitLoadComplete] = useState(false);
+
+    const [isLoading, setIsLoading] = useState(false);
+
+    // backup solution for stopping initial auto-opening folders if file limit is never met
+    const firstClickHandler = () => {
+        setInitLoadComplete(true);
+        document.removeEventListener('click', firstClickHandler);
+    };
+
     useEffect(() => {
         getInitialAppStructure();
+
+        // set event listener for first user click to disable auto folder opening
+        document.addEventListener('click', firstClickHandler);
     }, []);
+
+    // helper function for recursive folder opening on initial explorer load
+    const openFoldersHelper = (node) => {
+        initialLoadFileSet.current = new Set([
+            ...initialLoadFileSet.current,
+            node.id,
+        ]);
+
+        if (initialLoadFileSet.current.size >= INITIAL_LOAD_FILE_LIMIT)
+            setInitLoadComplete(true);
+        if (
+            node.type !== 'directory' ||
+            initialLoadFileSet.current.size >= INITIAL_LOAD_FILE_LIMIT
+        )
+            return;
+
+        // add to open folders set for open folder icon rendering
+        const tempSet2 = new Set(openFolderSet);
+        tempSet2.add(node.id);
+        setOpenFolderSet(tempSet2);
+
+        // only update appDirectory and trigger new useEffect if the folder has not been expanded yet
+        if (!expanded.includes(node.id)) openFolderById(node.id);
+
+        // recursively call on all children
+        node.children.forEach(openFoldersHelper);
+    };
+
+    // recursvely opens folders until all folder contents loaded from BE, stops after user interacts with explorer
+    useEffect(() => {
+        if (
+            initLoadComplete ||
+            initialLoadFileSet.current.size >= INITIAL_LOAD_FILE_LIMIT
+        )
+            return;
+
+        // if the user has not yet interacted with the page open all folders recursively
+        appDirectory.forEach(openFoldersHelper);
+        // only runs recursive directory check on updates to appDirectory, not continuously
+    }, [appDirectory]);
 
     useEffect(() => {
         if (newDirectoryRefs.current) {
@@ -346,7 +410,6 @@ export const AppEditor = (props: AppEditorProps) => {
      */
     const getInitialAppStructure = async () => {
         const pixel = `BrowseAsset(filePath=["version/assets"], space=["${appId}"]);`;
-
         const response = await monolithStore.runQuery(pixel);
         const output = response.pixelReturn[0].output,
             operationType = response.pixelReturn[0].operationType;
@@ -425,6 +488,7 @@ export const AppEditor = (props: AppEditorProps) => {
         }
 
         const response = await monolithStore.runQuery(pixel);
+
         const folderContents = response.pixelReturn[0].output,
             operationType = response.pixelReturn[0].operationType;
 
@@ -535,7 +599,7 @@ export const AppEditor = (props: AppEditorProps) => {
         }
 
         // No issues with reactor, set selected nodes for visual representation
-        setSelected(nodeIds);
+        if (initLoadComplete) setSelected(nodeIds);
 
         // return nodeIds;
     };
@@ -555,6 +619,7 @@ export const AppEditor = (props: AppEditorProps) => {
         `;
 
         const response = await monolithStore.runQuery(pixel);
+
         const output = response.pixelReturn[0].output,
             operationType = response.pixelReturn[0].operationType,
             outputTwo = response.pixelReturn[1].output,
@@ -618,8 +683,8 @@ export const AppEditor = (props: AppEditorProps) => {
         }
 
         const { parent } = await findNodeAndParentById(appDirectory, node.id);
-
         const response = await monolithStore.runQuery(pixel);
+
         const output = response.pixelReturn[0].output,
             operationType = response.pixelReturn[0].operationType;
 
@@ -630,14 +695,14 @@ export const AppEditor = (props: AppEditorProps) => {
             });
 
             await viewAsset(!parent ? ['version/assets/'] : [parent.id]);
-            setSelected(parent ? [parent.id] : []);
+            if (initLoadComplete) setSelected(parent ? [parent.id] : []);
             return;
         }
 
         // save nodeReplacement in tree
         if (assetType === 'directory') {
             await viewAsset([parent ? parent.id : ['version/assets']]);
-            setSelected([nodeReplacement.id]);
+            if (initLoadComplete) setSelected([nodeReplacement.id]);
         } else {
             const commitAssetPixel = `
             CommitAsset(filePath=["${nodeReplacement.id}"], comment=["Added Asset from App Editor: path='${nodeReplacement.id}' "], space=["${appId}"])
@@ -646,6 +711,7 @@ export const AppEditor = (props: AppEditorProps) => {
             const commitAssetResponse = await monolithStore.runQuery(
                 commitAssetPixel,
             );
+
             const commitAssetOutput = commitAssetResponse.pixelReturn[0].output,
                 commitAssetOperationType =
                     commitAssetResponse.pixelReturn[0].operationType;
@@ -663,7 +729,7 @@ export const AppEditor = (props: AppEditorProps) => {
 
         // set this file as the active file in the editor
 
-        // setSelected([nodeReplacement.id]);
+        // if (initLoadComplete) setSelected([nodeReplacement.id]);
         setCounter(counter + 1);
     };
 
@@ -678,6 +744,7 @@ export const AppEditor = (props: AppEditorProps) => {
             const response = await monolithStore.runQuery(
                 `DownloadAsset(filePath=["${path}"], space=["${appId}"]);`,
             );
+
             const key = response.pixelReturn[0].output;
             if (!key) {
                 throw new Error('Error Downloading Asset');
@@ -1022,7 +1089,8 @@ export const AppEditor = (props: AppEditorProps) => {
                                                 ? ['version/assets/']
                                                 : parent.id,
                                         ]);
-                                        setSelected([parent.id]);
+                                        if (initLoadComplete)
+                                            setSelected([parent.id]);
                                         return;
                                     }
                                     // 2. save the asset and change interface accordingly
@@ -1069,11 +1137,12 @@ export const AppEditor = (props: AppEditorProps) => {
                                                     ? ['version/assets/']
                                                     : parent.id,
                                             ]);
-                                            setSelected(
-                                                !parent
-                                                    ? ['version/assets/']
-                                                    : [parent.id],
-                                            );
+                                            if (initLoadComplete)
+                                                setSelected(
+                                                    !parent
+                                                        ? ['version/assets/']
+                                                        : [parent.id],
+                                                );
                                             return;
                                         }
                                         // 2. save the asset and change interface accordingly
@@ -1097,30 +1166,34 @@ export const AppEditor = (props: AppEditorProps) => {
                         nodeId={node.id}
                         title={node.id}
                         label={
-                            <DeleteIconWrapper
+                            <FilenameFlexWrapper
                                 onMouseEnter={() =>
                                     setHoverSet(new Set([node.id]))
                                 }
                                 onMouseLeave={() => setHoverSet(new Set())}
                             >
-                                {/* {!node.children ? (
-                                    <StyledFiletypeIcon
-                                        path={FILE_ICON_MAP.document}
-                                        size={1}
-                                    ></StyledFiletypeIcon>
-                                ) : null} */}
-                                <StyledTypography variant="body1">
-                                    <StyledFiletypeIcon
+                                <FiletypeIconWrapper>
+                                    <FiletypeIcon
                                         path={
                                             node.type === 'directory'
                                                 ? openFolderSet.has(node.id)
                                                     ? FILE_ICON_MAP.open
                                                     : FILE_ICON_MAP.directory
                                                 : FILE_ICON_MAP[node.type] ||
-                                                  FILE_ICON_MAP.file
+                                                  // if the file has just been created it will need to parse id for correct filetype icon
+                                                  FILE_ICON_MAP[
+                                                      node.id
+                                                          .split('/')
+                                                          [
+                                                              node.id.split('/')
+                                                                  .length - 2
+                                                          ].split('.')[1]
+                                                  ] ||
+                                                  FILE_ICON_MAP.default
                                         }
-                                        size={0.85}
-                                    ></StyledFiletypeIcon>
+                                    ></FiletypeIcon>
+                                </FiletypeIconWrapper>
+                                <StyledTypography variant="body1">
                                     {node.name}
                                 </StyledTypography>
                                 {hoverSet.has(node.id) && (
@@ -1133,7 +1206,7 @@ export const AppEditor = (props: AppEditorProps) => {
                                         <StyledDeleteOutlineIcon fontSize="small" />
                                     </IconButton>
                                 )}
-                            </DeleteIconWrapper>
+                            </FilenameFlexWrapper>
                         }
                     >
                         {node.children && node.children.length > 0
@@ -1153,30 +1226,12 @@ export const AppEditor = (props: AppEditorProps) => {
                 newFilesToView.push(currFile);
             }
         }
-        console.log({ filesToView });
-        console.log({ newFilesToView });
 
         setActiveFileIndex(0);
         setFilesToView(newFilesToView);
-        // works to remove from files to view but doesn't close tab
-        // might not be possible outside of TextEditor without edits to component / props
-        // right now crashes without manual setActiveFileIndex change
-        // causes buggy repeated creation of new repeat tabs for file on hover in explorer
-        // seems to need to be addressed in the TextEditor possibly with controlledFiles
-        // only props currently passed in to TextEditor {
-        // files <-- activeFiles,
-        // activeIndex <-- activeFileIndex,
-        // setActiveIndex,
-        // onSave,
-        // onClose
-        // }
-        // unclear if controlledFiles is just meant to mirror activeFiles
     };
 
     const confirmFileDeleteHandler = async () => {
-        // removeFileFromFilesToViewById(fileToBeDeleted);
-        // above line causing buggy behavior, needs work inside TextEditor component possibly
-
         try {
             await monolithStore.runQuery(
                 `DeleteAsset(filePath=["${fileToBeDeleted.path}"], space=["${appId}"]);`,
@@ -1230,6 +1285,31 @@ export const AppEditor = (props: AppEditorProps) => {
         setCounterTextEditor(counterTextEditor + 1);
     };
 
+    const openFolderById = (nodeId) => {
+        const foundNode = findNodeById(appDirectory, nodeId);
+        setExpanded([...expanded, nodeId]); // rotates folder carret
+
+        const formattedChildren = sortArrayOfObjects(
+            foundNode.children,
+            'type',
+        );
+
+        const updatedTreeData = updateNodeRecursively(appDirectory, nodeId, {
+            ...foundNode,
+            children: formattedChildren,
+        });
+
+        viewAsset([nodeId]);
+        setAppDirectory(updatedTreeData);
+    };
+
+    // only
+    if (!initLoadComplete) {
+        return (
+            <LoadingScreen.Trigger description="Retrieving files from application..." />
+        );
+    }
+
     return (
         <StyledEditorPanel>
             {/* If Open: Displays App Explorer */}
@@ -1248,6 +1328,7 @@ export const AppEditor = (props: AppEditorProps) => {
                             <CustomAccordion
                                 disableGutters
                                 square={true}
+                                // ### expanded
                                 expanded={
                                     openAccordion.indexOf('file') > -1
                                         ? true
@@ -1255,7 +1336,7 @@ export const AppEditor = (props: AppEditorProps) => {
                                 }
                                 onChange={() => {
                                     setExpanded([]);
-                                    setSelected([]);
+                                    if (initLoadComplete) setSelected([]);
                                     handleAccordionChange('file');
                                 }}
                             >
@@ -1306,6 +1387,7 @@ export const AppEditor = (props: AppEditorProps) => {
                                 <CustomAccordionContent>
                                     <StyledTreeView
                                         multiSelect
+                                        // ### explanded
                                         expanded={expanded}
                                         selected={selected}
                                         onNodeToggle={handleToggle}
@@ -1341,7 +1423,7 @@ export const AppEditor = (props: AppEditorProps) => {
                                 }
                                 onChange={() => {
                                     setExpanded([]);
-                                    setSelected([]);
+                                    if (initLoadComplete) setSelected([]);
                                     handleAccordionChange('dependency');
                                 }}
                             >

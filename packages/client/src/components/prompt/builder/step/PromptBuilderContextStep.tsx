@@ -159,7 +159,6 @@ export const PromptBuilderContextStep = (props: {
                             )}
                         />
                         <Autocomplete
-                            disableClearable
                             fullWidth
                             id="vector-autocomplete"
                             loading={cfgLibraryVectorDbs.loading}

@@ -42,7 +42,9 @@ export const DeleteDuplicateMask = observer(() => {
 
     // get the store
     const { designer } = useDesigner();
-    const { deleteBlock, duplicateBlock } = useBlock(designer.selected);
+    const { clearBlock, deleteBlock, duplicateBlock } = useBlock(
+        designer.selected,
+    );
 
     // get the root, watch changes, and reposition the mask
     useLayoutEffect(() => {
@@ -133,6 +135,11 @@ export const DeleteDuplicateMask = observer(() => {
         return { top, left };
     };
 
+    const onClear = () => {
+        designer.setSelected('');
+        clearBlock();
+    };
+
     const onDelete = () => {
         designer.setSelected('');
         deleteBlock();
@@ -142,6 +149,8 @@ export const DeleteDuplicateMask = observer(() => {
         designer.setSelected('');
         duplicateBlock();
     };
+
+    // TODO: revisit these actions for the base page once multiple pages/routing is enabled
 
     return (
         <StyledContainer id="delete-duplicate-mask" style={getStyle()}>
@@ -160,7 +169,11 @@ export const DeleteDuplicateMask = observer(() => {
                     size="small"
                     startIcon={<Delete />}
                     variant="contained"
-                    onClick={onDelete}
+                    onClick={
+                        designer.rendered === designer.selected
+                            ? onClear
+                            : onDelete
+                    }
                 >
                     Delete
                 </StyledButtonGroupButton>
