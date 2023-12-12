@@ -15,8 +15,12 @@ import {
 } from '@/stores';
 import { AppMetadata } from '../app';
 
-export const DESCRIPTION_CONTAINER = 'description-container';
-export const PROMPT_CONTAINER_BLOCK_ID = 'prompt-container';
+export const APP_PAGE_BLOCK_ID = 'page-1';
+export const PAGE_HEADER_BLOCK_ID = 'page-header';
+export const DESCRIPTION_BLOCK_ID = 'description';
+export const PAGE_BODY_BLOCK_ID = 'page-body';
+export const PROMPT_BLOCK_ID = 'prompt';
+export const PAGE_FOOTER_BLOCK_ID = 'page-footer';
 export const APP_TITLE_BLOCK_ID = 'title';
 export const HELP_TEXT_BLOCK_ID = 'help-text';
 export const PROMPT_SUBMIT_BLOCK_ID = 'prompt-submit';
@@ -45,7 +49,7 @@ function getTextFieldInputBlock(
         id: getIdForInput(inputType, index),
         widget: 'text-field',
         parent: {
-            id: PROMPT_CONTAINER_BLOCK_ID,
+            id: PROMPT_BLOCK_ID,
             slot: 'children',
         },
         data: {
@@ -64,7 +68,7 @@ function getSelectInputBlock(inputType: string, index: number, label: string) {
         id: getIdForInput(inputType, index),
         widget: 'select',
         parent: {
-            id: PROMPT_CONTAINER_BLOCK_ID,
+            id: PROMPT_BLOCK_ID,
             slot: 'children',
         },
         data: {
@@ -208,8 +212,8 @@ export async function setBlocksAndOpenUIBuilder(
     const state: SerializedState = {
         queries: {},
         blocks: {
-            'page-1': {
-                id: 'page-1',
+            [APP_PAGE_BLOCK_ID]: {
+                id: APP_PAGE_BLOCK_ID,
                 widget: 'page',
                 parent: null,
                 data: {
@@ -222,17 +226,38 @@ export async function setBlocksAndOpenUIBuilder(
                     content: {
                         name: 'content',
                         children: [
-                            DESCRIPTION_CONTAINER,
-                            PROMPT_CONTAINER_BLOCK_ID,
+                            PAGE_HEADER_BLOCK_ID,
+                            PAGE_BODY_BLOCK_ID,
+                            PAGE_FOOTER_BLOCK_ID,
                         ],
                     },
                 },
             },
-            [DESCRIPTION_CONTAINER]: {
-                id: DESCRIPTION_CONTAINER,
+            [PAGE_HEADER_BLOCK_ID]: {
+                id: PAGE_HEADER_BLOCK_ID,
+                widget: 'header',
+                parent: {
+                    id: APP_PAGE_BLOCK_ID,
+                    slot: 'content',
+                },
+                data: {
+                    style: {
+                        padding: '1rem',
+                    },
+                },
+                listeners: {},
+                slots: {
+                    content: {
+                        name: 'content',
+                        children: [DESCRIPTION_BLOCK_ID],
+                    },
+                },
+            },
+            [DESCRIPTION_BLOCK_ID]: {
+                id: DESCRIPTION_BLOCK_ID,
                 widget: 'container',
                 parent: {
-                    id: 'page-1',
+                    id: PAGE_HEADER_BLOCK_ID,
                     slot: 'content',
                 },
                 data: {
@@ -258,7 +283,7 @@ export async function setBlocksAndOpenUIBuilder(
                 id: APP_TITLE_BLOCK_ID,
                 widget: 'text',
                 parent: {
-                    id: DESCRIPTION_CONTAINER,
+                    id: DESCRIPTION_BLOCK_ID,
                     slot: 'children',
                 },
                 data: {
@@ -275,7 +300,7 @@ export async function setBlocksAndOpenUIBuilder(
                 id: HELP_TEXT_BLOCK_ID,
                 widget: 'text',
                 parent: {
-                    id: DESCRIPTION_CONTAINER,
+                    id: DESCRIPTION_BLOCK_ID,
                     slot: 'children',
                 },
                 data: {
@@ -287,11 +312,31 @@ export async function setBlocksAndOpenUIBuilder(
                 listeners: {},
                 slots: {},
             },
-            [PROMPT_CONTAINER_BLOCK_ID]: {
-                id: PROMPT_CONTAINER_BLOCK_ID,
+            [PAGE_BODY_BLOCK_ID]: {
+                id: PAGE_BODY_BLOCK_ID,
+                widget: 'body',
+                parent: {
+                    id: APP_PAGE_BLOCK_ID,
+                    slot: 'content',
+                },
+                data: {
+                    style: {
+                        padding: '1rem',
+                    },
+                },
+                listeners: {},
+                slots: {
+                    content: {
+                        name: 'content',
+                        children: [PROMPT_BLOCK_ID],
+                    },
+                },
+            },
+            [PROMPT_BLOCK_ID]: {
+                id: PROMPT_BLOCK_ID,
                 widget: 'container',
                 parent: {
-                    id: 'page-1',
+                    id: PAGE_BODY_BLOCK_ID,
                     slot: 'content',
                 },
                 data: {
@@ -303,6 +348,7 @@ export async function setBlocksAndOpenUIBuilder(
                         width: '100%',
                         maxWidth: '900px',
                         margin: '0 auto',
+                        alignItems: 'center',
                     },
                 },
                 listeners: {},
@@ -320,7 +366,7 @@ export async function setBlocksAndOpenUIBuilder(
                 id: PROMPT_SUBMIT_BLOCK_ID,
                 widget: 'button',
                 parent: {
-                    id: PROMPT_CONTAINER_BLOCK_ID,
+                    id: PROMPT_BLOCK_ID,
                     slot: 'children',
                 },
                 data: {
@@ -347,7 +393,7 @@ export async function setBlocksAndOpenUIBuilder(
                 id: PROMPT_RESPONSE_BLOCK_ID,
                 widget: 'markdown',
                 parent: {
-                    id: PROMPT_CONTAINER_BLOCK_ID,
+                    id: PROMPT_BLOCK_ID,
                     slot: 'children',
                 },
                 data: {
@@ -377,9 +423,9 @@ export async function setBlocksAndOpenUIBuilder(
     }
 
     // submit
-    state.blocks[PROMPT_CONTAINER_BLOCK_ID].slots.children.children = [
+    state.blocks[PROMPT_BLOCK_ID].slots.children.children = [
         ...childInputIds,
-        ...state.blocks[PROMPT_CONTAINER_BLOCK_ID].slots.children.children,
+        ...state.blocks[PROMPT_BLOCK_ID].slots.children.children,
     ];
 
     state.queries = getQueryForPrompt(
