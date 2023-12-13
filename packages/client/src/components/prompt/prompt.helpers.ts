@@ -345,7 +345,6 @@ export async function setBlocksAndOpenUIBuilder(
                         background: 'white',
                         flexDirection: 'column',
                         gap: '2rem',
-                        padding: '3rem',
                         width: '100%',
                         maxWidth: '900px',
                         margin: '0 auto',
