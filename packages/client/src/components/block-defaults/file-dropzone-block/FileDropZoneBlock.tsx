@@ -3,11 +3,12 @@ import { CSSProperties } from 'react';
 import { observer } from 'mobx-react-lite';
 import { BlockDef, BlockComponent } from '@/stores';
 
-//* Hooks
-import { useBlock } from '@/hooks';
-import { useRootStore } from '@/hooks/useRootStore';
+//* UI Blocks
+import { FileDropzone } from '@semoss/ui';
 
-//* Create a Data Object for the FileDropZone
+//* Hooks
+import * as hooks from '@/hooks';
+
 export interface FileDropZoneBlockDef extends BlockDef<'file-dropzone'> {
     widget: 'file-dropzone';
     data: {
@@ -22,47 +23,11 @@ export interface FileDropZoneBlockDef extends BlockDef<'file-dropzone'> {
 }
 
 export const FileDropZoneBlock: BlockComponent = observer(({ id }) => {
-    const { attrs, data, setData } = useBlock<FileDropZoneBlockDef>(id);
-    const { monolithStore, configStore } = useRootStore();
+    const { attrs, data, setData } = hooks.useBlock<FileDropZoneBlockDef>(id);
 
-    const handleFileChange = async (e) => {
-        const files = e.target.files;
-        const file = e.target.files[0];
-        console.log('File: ', file);
-
-        //string that will become the filePaths
-        let fileLocations = '';
-        try {
-            //upload the file
-            const upload = await monolithStore.uploadFile(
-                file,
-                configStore.store.insightID,
-            );
-
-            upload.map((file, index) => {
-                const { fileLocation } = file;
-                if (index + 1 === upload.length) {
-                    //last member
-                    fileLocations = fileLocations += `"${fileLocation}"`;
-                } else {
-                    //all other members
-                    fileLocations = fileLocations += `"${fileLocation}", `;
-                }
-            });
-            // Embedding the File
-            await monolithStore.runQuery(`
-                CreateEmbeddingsFromDocuments( engine= "377e2321-90b7-4856-b3e2-9f6c28663049", filePaths= [${fileLocations}])
-            `);
-        } catch (e) {
-            console.error(e);
-        }
-
+    const handleFileChange = (file: File | null) => {
         if (file) {
-            //? Calculate File Size in KB
             const fileSizeKB = file.size / 1024;
-            console.log(fileSizeKB);
-
-            //* Display File Size in KB or MB
             let displaySize;
             if (fileSizeKB >= 1024) {
                 //? at least 1 MB
@@ -71,23 +36,18 @@ export const FileDropZoneBlock: BlockComponent = observer(({ id }) => {
                 //? less than 1 MB
                 displaySize = `${fileSizeKB.toFixed(2)} KB`;
             }
-            //* Set File Data
+
             setData('name.path', file.name);
             setData('name.type', file.type);
             setData('name.size', displaySize);
-            console.log('File Size: ', displaySize);
         }
     };
 
     return (
-        <input
-            type="file"
-            accept=".pdf,.doc,.docx,xlsx,.xls,.csv,.txt"
-            style={{
-                ...data.style,
-            }}
-            {...attrs}
+        <FileDropzone
+            style={{ ...data.style }}
             onChange={handleFileChange}
+            {...attrs}
         />
     );
 });

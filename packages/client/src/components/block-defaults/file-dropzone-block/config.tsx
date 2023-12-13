@@ -7,6 +7,7 @@ import { FileDropZoneBlockDef, FileDropZoneBlock } from './FileDropZoneBlock';
 import { InputSettings } from '@/components/block-settings';
 import {
     buildLayoutSection,
+    buildBorderSection,
     buildSpacingSection,
     buildDimensionsSection,
     buildTypographySection,
@@ -75,6 +76,7 @@ export const config: BlockConfig<FileDropZoneBlockDef> = {
     ],
     styleMenu: [
         buildLayoutSection(),
+        buildBorderSection(),
         buildDimensionsSection(),
         buildSpacingSection(),
         buildColorSection(),

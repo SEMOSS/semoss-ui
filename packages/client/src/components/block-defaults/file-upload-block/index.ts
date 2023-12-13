@@ -1,2 +1,2 @@
-// export * from './config';
-// export * from './FileUploadBlock';
+export * from './config';
+export * from './FileUploadBlock';
