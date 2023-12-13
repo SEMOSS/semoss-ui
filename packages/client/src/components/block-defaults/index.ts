@@ -27,6 +27,10 @@ import {
     TextFieldBlockDef,
 } from './text-field-block';
 import { config as SectionBlockConfig, SectionBlockDef } from './section-block';
+import {
+    config as FileDropZoneBlockConfig,
+    FileDropZoneBlockDef,
+} from './file-dropzone-block';
 
 export type DefaultBlockDefinitions =
     | BodyBlockDef
@@ -44,7 +48,8 @@ export type DefaultBlockDefinitions =
     | TextAreaBlockDef
     | TextBlockDef
     | TextFieldBlockDef
-    | SectionBlockDef;
+    | SectionBlockDef
+    | FileDropZoneBlockDef;
 
 export const DefaultBlocks: Registry<DefaultBlockDefinitions> = {
     [BodyBlockConfig.widget]: BodyBlockConfig,
@@ -63,6 +68,7 @@ export const DefaultBlocks: Registry<DefaultBlockDefinitions> = {
     [TextBlockConfig.widget]: TextBlockConfig,
     [TextFieldBlockConfig.widget]: TextFieldBlockConfig,
     [SectionBlockConfig.widget]: SectionBlockConfig,
+    [FileDropZoneBlockConfig.widget]: FileDropZoneBlockConfig,
 };
 
 export function getIconForBlock(widget: string) {
