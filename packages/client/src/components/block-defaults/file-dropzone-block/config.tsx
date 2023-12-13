@@ -35,10 +35,10 @@ export const config: BlockConfig<FileDropZoneBlockDef> = {
     icon: DriveFileMoveIcon,
     contentMenu: [
         {
-            name: 'FileDropZone Settings',
+            name: 'File Drop Zone Settings',
             children: [
                 {
-                    description: 'The name of the File uploaded',
+                    description: 'The Name of the Uploaded File',
                     render: ({ id }) => (
                         <InputSettings
                             id={id}
@@ -49,7 +49,7 @@ export const config: BlockConfig<FileDropZoneBlockDef> = {
                     ),
                 },
                 {
-                    description: 'The type of the File uploaded',
+                    description: 'The Type of the Uploaded File',
                     render: ({ id }) => (
                         <InputSettings
                             id={id}
@@ -60,7 +60,7 @@ export const config: BlockConfig<FileDropZoneBlockDef> = {
                     ),
                 },
                 {
-                    description: 'The size of the File uploaded',
+                    description: 'The Size of the Uploaded File',
                     render: ({ id }) => (
                         <InputSettings
                             id={id}
