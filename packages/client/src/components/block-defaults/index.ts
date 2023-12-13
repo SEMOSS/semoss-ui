@@ -10,6 +10,7 @@ import { config as FooterBlockConfig, FooterBlockDef } from './footer-block';
 import { config as FormBlockConfig, FormBlockDef } from './form-block';
 import { config as HeaderBlockConfig, HeaderBlockDef } from './header-block';
 import { config as IframeBlockConfig, IframeBlockDef } from './iframe-block';
+import { config as ImageBlockConfig, ImageBlockDef } from './image-block';
 import { config as InputBlockConfig, InputBlockDef } from './input-block';
 import {
     config as MarkdownBlockConfig,
@@ -44,7 +45,8 @@ export type DefaultBlockDefinitions =
     | TextAreaBlockDef
     | TextBlockDef
     | TextFieldBlockDef
-    | SectionBlockDef;
+    | SectionBlockDef
+    | ImageBlockDef;
 
 export const DefaultBlocks: Registry<DefaultBlockDefinitions> = {
     [BodyBlockConfig.widget]: BodyBlockConfig,
@@ -63,6 +65,7 @@ export const DefaultBlocks: Registry<DefaultBlockDefinitions> = {
     [TextBlockConfig.widget]: TextBlockConfig,
     [TextFieldBlockConfig.widget]: TextFieldBlockConfig,
     [SectionBlockConfig.widget]: SectionBlockConfig,
+    [ImageBlockConfig.widget]: ImageBlockConfig,
 };
 
 export function getIconForBlock(widget: string) {
