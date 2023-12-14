@@ -7,6 +7,7 @@ import {
     Typography,
     Chip,
     ButtonGroup,
+    CircularProgress,
 } from '@semoss/ui';
 import {
     ContentCopyOutlined,
@@ -115,7 +116,13 @@ export const NotebookStep = observer(
                                 <ButtonGroup.Item
                                     title="Run the step"
                                     variant="outlined"
-                                    startIcon={<PlayArrowRounded />}
+                                    startIcon={
+                                        step.isLoading ? (
+                                            <CircularProgress size="1em" />
+                                        ) : (
+                                            <PlayArrowRounded />
+                                        )
+                                    }
                                     disabled={step.isLoading}
                                     onClick={() =>
                                         state.dispatch({
@@ -132,6 +139,7 @@ export const NotebookStep = observer(
                                 <ButtonGroup.Item
                                     title="Duplicate the step"
                                     variant="outlined"
+                                    disabled={step.isLoading}
                                     onClick={() => {
                                         // copy and add the step to the end
                                         state.dispatch({
@@ -150,8 +158,6 @@ export const NotebookStep = observer(
                                                     parameters: {
                                                         ...step.parameters,
                                                     },
-                                                    output: undefined,
-                                                    operation: [],
                                                 },
                                             },
                                         });
@@ -162,6 +168,7 @@ export const NotebookStep = observer(
                                 <ButtonGroup.Item
                                     title="Delete the step"
                                     variant="outlined"
+                                    disabled={step.isLoading}
                                     onClick={() => {
                                         // copy and add the step to the end
                                         state.dispatch({

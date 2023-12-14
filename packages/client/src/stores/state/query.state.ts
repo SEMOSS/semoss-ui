@@ -1,7 +1,7 @@
 import { makeAutoObservable, runInAction } from 'mobx';
 
-import { StepState } from './step.state';
-import { StateStoreImplementation } from './state.store';
+import { StepState, StepStateConfig } from './step.state';
+import { StateStore } from './state.store';
 import { setValueByPath } from '@/utility';
 
 export interface QueryStateStoreInterface {
@@ -30,13 +30,16 @@ export interface QueryStateConfig {
 
     /** Is the query automatically run or manully */
     mode: 'automatic' | 'manual';
+
+    /** Steps in the query */
+    steps: StepStateConfig[];
 }
 
 /**
  * Store that manages instances of the insights and handles applicaiton level querying
  */
 export class QueryState {
-    private _state: StateStoreImplementation;
+    private _state: StateStore;
     private _store: QueryStateStoreInterface = {
         id: '',
         isInitialized: false,
@@ -46,13 +49,18 @@ export class QueryState {
         steps: [],
     };
 
-    constructor(config: QueryStateConfig, state: StateStoreImplementation) {
+    constructor(config: QueryStateConfig, state: StateStore) {
         // register the state
         this._state = state;
 
         // set the id
         this._store.id = config.id;
         this._store.mode = config.mode;
+
+        // create the steps
+        this._store.steps = config.steps.map((s) => {
+            return new StepState(s, this, this._state);
+        }, {});
 
         // make it observable
         makeAutoObservable(this);
@@ -207,6 +215,20 @@ export class QueryState {
     };
 
     /**
+     * Actions
+     */
+    /**
+     * Serialize to JSON
+     */
+    toJSON = (): QueryStateConfig => {
+        return {
+            id: this._store.id,
+            mode: this._store.mode,
+            steps: this._store.steps.map((s) => s.toJSON()),
+        };
+    };
+
+    /**
      * Helpers
      */
     /**
@@ -217,7 +239,7 @@ export class QueryState {
     };
 
     /**
-     * Process State
+     * Process running of a pixel
      */
     /**
      * Process running of the query
@@ -235,13 +257,16 @@ export class QueryState {
             // convert the steps to the raw pixel
             const raw = this._toPixel();
 
+            debugger;
             // fill the braces {{ }} to create the final pixel
             const filled = this._state.flattenParameter(raw);
 
+            debugger;
             // run as a single pixel block;
             const { pixelReturn } = await this._state._runPixel(filled);
 
             const stepLen = this._store.steps.length;
+            debugger;
             if (pixelReturn.length !== stepLen) {
                 throw new Error(
                     'Error processing pixel. Steps do not equal pixelReturn',
@@ -303,7 +328,21 @@ export class QueryState {
      * @param step - new step being added
      * @param previousStepId - id of the previous step
      */
-    _processNewStep = (step: StepState, previousStepId: string) => {
+    _processNewStep = (
+        stepId: string,
+        config: Omit<StepStateConfig, 'id'>,
+        previousStepId: string,
+    ) => {
+        // create the new step
+        const step = new StepState(
+            {
+                ...config,
+                id: stepId,
+            },
+            this,
+            this._state,
+        );
+
         if (!previousStepId) {
             this._store.steps.push(step);
             return;
@@ -313,7 +352,7 @@ export class QueryState {
         const addStepIdx = this.getStepIdx(previousStepId);
 
         // add it
-        this._store.steps.splice(addStepIdx, 0, step);
+        this._store.steps.splice(addStepIdx + 1, 0, step);
     };
 
     /**

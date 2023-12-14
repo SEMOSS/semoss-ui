@@ -5,10 +5,10 @@ import { PromptLibraryDialog } from './PromptLibraryDialog';
 import { Builder } from '../prompt.types';
 import { StyledTooltip } from '../prompt.styled';
 
-export function PromptLibraryDialogButton(props: {
+export const PromptLibraryDialogButton = (props: {
     disabled: boolean;
     builder: Builder;
-}) {
+}) => {
     const [promptLibraryOpen, setPromptLibraryOpen] = useState(false);
 
     const closePromptLibrary = () => {
@@ -60,4 +60,4 @@ export function PromptLibraryDialogButton(props: {
             />
         </>
     );
-}
+};

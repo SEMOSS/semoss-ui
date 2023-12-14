@@ -1,10 +1,11 @@
-import { makeAutoObservable, runInAction } from 'mobx';
+import { makeAutoObservable, runInAction, toJS } from 'mobx';
 
 import { setValueByPath } from '@/utility';
 
 import { Cell, CellDef } from './state.types';
-import { StateStoreImplementation } from './state.store';
+import { StateStore } from './state.store';
 import { QueryState } from './query.state';
+import { ActionMessages } from './state.actions';
 
 export interface StepStateStoreInterface<D extends CellDef = CellDef> {
     /** Id of the step */
@@ -30,12 +31,6 @@ export interface StepStateConfig<D extends CellDef = CellDef> {
     /** Id of the step */
     id: string;
 
-    /** operation type associated with the step */
-    operation: string[];
-
-    /** Output associated with the step */
-    output: unknown | undefined;
-
     /** Widget to bind the step to */
     widget: D['widget'];
 
@@ -47,7 +42,7 @@ export interface StepStateConfig<D extends CellDef = CellDef> {
  * Store that manages each step in a query
  */
 export class StepState<D extends CellDef = CellDef> {
-    private _state: StateStoreImplementation;
+    private _state: StateStore;
     private _query: QueryState;
     private _store: StepStateStoreInterface<D> = {
         id: '',
@@ -58,11 +53,7 @@ export class StepState<D extends CellDef = CellDef> {
         parameters: {},
     };
 
-    constructor(
-        config: StepStateConfig,
-        query: QueryState,
-        state: StateStoreImplementation,
-    ) {
+    constructor(config: StepStateConfig, query: QueryState, state: StateStore) {
         // register the query + state
         this._query = query;
         this._state = state;
@@ -71,8 +62,6 @@ export class StepState<D extends CellDef = CellDef> {
         this._store.id = config.id;
         this._store.widget = config.widget;
         this._store.parameters = config.parameters;
-        this._store.operation = config.operation;
-        this._store.output = config.output;
 
         // make it observable
         makeAutoObservable(this);
@@ -189,6 +178,20 @@ export class StepState<D extends CellDef = CellDef> {
     }
 
     /**
+     * Actions
+     */
+    /**
+     * Serialize to JSON
+     */
+    toJSON = (): StepStateConfig => {
+        return {
+            id: this._store.id,
+            widget: this._store.widget,
+            parameters: toJS(this._store.parameters),
+        };
+    };
+
+    /**
      * Helpers
      */
     /**
@@ -232,6 +235,33 @@ export class StepState<D extends CellDef = CellDef> {
     }
 
     /**
+     * John: used to search through block data to see if query is present
+     * @param obj
+     * @param keyToFind
+     * @returns
+     */
+    // private findValueByDynamicKey(obj, keyToFind) {
+    //     let result = null;
+
+    //     for (const key in obj) {
+    //         if (typeof obj[key] === 'object') {
+    //             result = this.findValueByDynamicKey(obj[key], keyToFind);
+    //             if (result !== null) {
+    //                 return result;
+    //             }
+    //         } else if (
+    //             typeof obj[key] === 'string' &&
+    //             obj[key].includes(keyToFind)
+    //         ) {
+    //             // Check if the string contains the dynamic key
+    //             return obj[key];
+    //         }
+    //     }
+
+    //     return result;
+    // }
+
+    /**
      * Process running of the step
      *
      * @param parameters - Run the step with these parameters. They will be saved if successful
@@ -246,6 +276,35 @@ export class StepState<D extends CellDef = CellDef> {
             // start the loading screen
             this._store.isLoading = true;
 
+            // (JOHN): Go set all blocks to loading that are dependent on this running query
+            // Object.values(this._state.blocks).forEach((b) => {
+            //     // Find the Query if it is on the block
+            //     const found = this.findValueByDynamicKey(b.data, this.query.id);
+
+            //     if (found) {
+            //         if (
+            //             b.data.state === 'loading' ||
+            //             b.data.state === 'error'
+            //         ) {
+            //             return;
+            //             // previousBlockState[b.id] = b.data.state;
+            //         } else {
+            //             const copiedBlock = b;
+            //             copiedBlock.data.disabled = true;
+
+            //             // set block to loading
+            //             this._state.dispatch({
+            //                 message: ActionMessages.SET_BLOCK_DATA,
+            //                 payload: {
+            //                     id: b.id,
+            //                     path: 'disabled',
+            //                     value: `${this.query.id}.isLoading`,
+            //                 },
+            //             });
+            //         }
+            //     }
+            // });
+
             // merge the options
             const merged = {
                 ...this._store.parameters,
@@ -255,6 +314,7 @@ export class StepState<D extends CellDef = CellDef> {
             // convert the steps to the raw pixel
             const raw = this._toPixel();
 
+            // QUESTION(JOHN): Do we run the pixel if {{}} bracket is still not fulfilled
             // fill the braces {{ }} to create the final pixel
             const filled = this._state.flattenParameter(raw);
 
@@ -272,6 +332,32 @@ export class StepState<D extends CellDef = CellDef> {
                 if (operationType.indexOf('ERROR') > -1) {
                     this._store.parameters = merged;
                 }
+
+                // (JOHN): Go set all loading states off for block were dependent on this running query
+                // Object.values(this._state.blocks).forEach((b) => {
+                //     debugger
+                //     // if (!previousBlockState[b.id]) {
+                //         // Find the Query if it is on the block
+                //         const found = this.findValueByDynamicKey(
+                //             b.data,
+                //             this.query.id,
+                //         );
+                //         if (found) {
+                //             // turn loading off for block show error or not
+                //             this._state.dispatch({
+                //                 message: ActionMessages.SET_BLOCK_DATA,
+                //                 payload: {
+                //                     id: b.id,
+                //                     path: 'state',
+                //                     value:
+                //                         operationType.indexOf('ERROR') > -1
+                //                             ? 'error'
+                //                             : '',
+                //                 },
+                //             });
+                //         }
+                //     // }
+                // });
 
                 this._store.operation = operationType;
                 this._store.output = output;

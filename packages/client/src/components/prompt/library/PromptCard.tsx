@@ -28,14 +28,14 @@ const Spacer = styled('div')(() => ({
     flex: 1,
 }));
 
-export function PromptCard(props: {
+export const PromptCard = (props: {
     cardKey: string;
     title: string;
     tags: string[];
     tokens: Token[];
     inputTypes: object;
     openUIBuilderForTemplate: () => void;
-}) {
+}) => {
     // todo: hook this up to a real bookmark system
     const [isBookmarked, setIsBookmarked] = useState(false);
 
@@ -86,4 +86,4 @@ export function PromptCard(props: {
             </Card.Actions>
         </StyledCard>
     );
-}
+};

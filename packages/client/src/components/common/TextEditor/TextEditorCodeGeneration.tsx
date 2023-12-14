@@ -2,7 +2,6 @@ import { useState, useMemo } from 'react';
 import {
     Button,
     Modal,
-    IconButton,
     TextField,
     Skeleton,
     useNotification,
@@ -12,11 +11,7 @@ import {
     Select,
     Menu,
 } from '@semoss/ui';
-import {
-    AutoAwesome,
-    ContentCopyOutlined,
-    ExpandMore,
-} from '@mui/icons-material/';
+import { AutoAwesome, ContentCopyOutlined } from '@mui/icons-material/';
 
 import { usePixel, useRootStore } from '@/hooks';
 

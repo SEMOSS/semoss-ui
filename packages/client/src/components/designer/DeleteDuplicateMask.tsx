@@ -5,7 +5,6 @@ import { styled, ButtonGroup, Button } from '@semoss/ui';
 import { getRelativeSize, getRootElement, getBlockElement } from '@/stores';
 import { useBlock, useDesigner } from '@/hooks';
 import { ContentCopy, Delete } from '@mui/icons-material';
-import { ACTIVE } from '@/pages/DesignPage';
 
 const STYLED_BUTTON_GROUP_BUTTON_WIDTH = 116;
 const STYLED_BUTTON_GROUP_BUTTON_HEIGHT = 32;
@@ -21,8 +20,15 @@ const StyledContainer = styled('div')(() => ({
     height: `${STYLED_BUTTON_GROUP_BUTTON_HEIGHT}px`,
 }));
 
+const StyledButtonGroup = styled(ButtonGroup)(() => ({
+    boxShadow:
+        '0px 5px 22px 0px rgba(0, 0, 0, 0.10), 0px 4px 4px 0.5px rgba(0, 0, 0, 0.03)', // custom from design team
+}));
 const StyledButtonGroupButton = styled(Button)(() => ({
     width: `${STYLED_BUTTON_GROUP_BUTTON_WIDTH}px`,
+    backgroundColor: 'white',
+    boxShadow:
+        '0 0 0 0 rgba(0,0,0,0), 0 0 0 0 rgba(0,0,0,0), 0px 1px 5px 0px rgba(0,0,0,0.12)',
 }));
 
 export const DeleteDuplicateMask = observer(() => {
@@ -47,7 +53,7 @@ export const DeleteDuplicateMask = observer(() => {
 
         // reposition the mask
         const repositionMask = () => {
-            // get the block elemenent
+            // get the block element
             const blockEle = getBlockElement(designer.selected);
 
             if (!blockEle) {
@@ -80,7 +86,7 @@ export const DeleteDuplicateMask = observer(() => {
 
     const getStyle = () => {
         // get position of page root block element
-        const rootElement = getBlockElement(ACTIVE);
+        const rootElement = getRootElement();
         const rootElementSize = rootElement.getBoundingClientRect();
         // get position of selected block element
         const selectedElement = getBlockElement(designer.selected);
@@ -129,10 +135,14 @@ export const DeleteDuplicateMask = observer(() => {
         return { top, left };
     };
 
-    const onDelete = () => {
-        const rootIsSelected = designer.selected === ACTIVE;
+    const onClear = () => {
         designer.setSelected('');
-        rootIsSelected ? clearBlock() : deleteBlock();
+        clearBlock();
+    };
+
+    const onDelete = () => {
+        designer.setSelected('');
+        deleteBlock();
     };
 
     const onDuplicate = () => {
@@ -140,9 +150,11 @@ export const DeleteDuplicateMask = observer(() => {
         duplicateBlock();
     };
 
+    // TODO: revisit these actions for the base page once multiple pages/routing is enabled
+
     return (
         <StyledContainer id="delete-duplicate-mask" style={getStyle()}>
-            <ButtonGroup>
+            <StyledButtonGroup>
                 <StyledButtonGroupButton
                     color="inherit"
                     size="small"
@@ -157,11 +169,15 @@ export const DeleteDuplicateMask = observer(() => {
                     size="small"
                     startIcon={<Delete />}
                     variant="contained"
-                    onClick={onDelete}
+                    onClick={
+                        designer.rendered === designer.selected
+                            ? onClear
+                            : onDelete
+                    }
                 >
                     Delete
                 </StyledButtonGroupButton>
-            </ButtonGroup>
+            </StyledButtonGroup>
         </StyledContainer>
     );
 });

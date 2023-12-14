@@ -21,7 +21,6 @@ export const AppRouter = observer(() => {
             >
                 <Route index element={<AddAppPage />}></Route>
                 {/* Build with template */}
-                {/* <Route path="build" element={<div>UI Builder</div>}></Route> */}
                 {/* <Route path="configure" element={<div></div>}></Route> */}
                 {/* <Route path="members" element={<div></div>}></Route>  */}
             </Route>

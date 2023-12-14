@@ -1,17 +1,15 @@
 import { makeAutoObservable } from 'mobx';
 
-import { Role, WorkspaceDef, WorkspaceView } from '@/types';
+import { Role } from '@/types';
 import { RootStore } from '@/stores';
 
 import { AppMetadata } from '@/components/app';
 
-export interface WorkspaceStoreInterface<
-    D extends WorkspaceDef = WorkspaceDef,
-> {
+export interface WorkspaceStoreInterface {
     /**
      * ID of App
      */
-    id: string;
+    appId: string;
 
     /**
      * Show Loading or not
@@ -26,7 +24,7 @@ export interface WorkspaceStoreInterface<
     /**
      *  View of the workspace when in edit mode
      */
-    view: WorkspaceView;
+    view: string;
 
     /**
      * User's role relative to the app
@@ -41,30 +39,27 @@ export interface WorkspaceStoreInterface<
     /**
      * Type of the app
      */
-    type: D['type'];
-
-    /**
-     * Options associated with the app
-     */
-    options: D['options'];
+    type: 'BLOCKS' | 'CODE';
 
     /** overlay information */
     overlay: {
-        /** track if the overlay is open or closed */
+        /**
+         * Track if the overlay is open or closed
+         */
         open: boolean;
 
-        /** content to display in the overlay */
+        /**
+         * Content to display in the overlay
+         */
         content: () => JSX.Element;
     };
 }
 
-export interface WorkspaceConfigInterface<
-    D extends WorkspaceDef = WorkspaceDef,
-> {
+export interface WorkspaceConfigInterface {
     /**
-     * ID of App
+     * Get the ID of the connected app
      */
-    id: string;
+    appId: string;
 
     /**
      * User's role relative to the app
@@ -74,12 +69,7 @@ export interface WorkspaceConfigInterface<
     /**
      * Type of the app
      */
-    type: D['type'];
-
-    /**
-     * Options associated with the app
-     */
-    options: D['options'];
+    type: 'BLOCKS' | 'CODE';
 
     /**
      * Metadata associated with the loaded app
@@ -90,16 +80,15 @@ export interface WorkspaceConfigInterface<
 /**
  * Store that manages instances of the insights and handles applicaiton level querying
  */
-export class WorkspaceStore<D extends WorkspaceDef = WorkspaceDef> {
+export class WorkspaceStore {
     private _root: RootStore;
-    private _store: WorkspaceStoreInterface<D> = {
-        id: '',
+    private _store: WorkspaceStoreInterface = {
+        appId: '',
         isLoading: false,
         isEditMode: false,
-        view: 'design',
+        view: '',
         role: 'READ_ONLY',
-        type: 'code',
-        options: {},
+        type: 'CODE',
         metadata: {
             project_id: '',
             project_name: '',
@@ -122,9 +111,8 @@ export class WorkspaceStore<D extends WorkspaceDef = WorkspaceDef> {
         this._root = root;
 
         // set the appId
-        this._store.id = config.id;
+        this._store.appId = config.appId;
         this._store.type = config.type;
-        this._store.options = config.options;
 
         // update the data
         if (config.role) {
@@ -143,10 +131,10 @@ export class WorkspaceStore<D extends WorkspaceDef = WorkspaceDef> {
      * Getters
      */
     /**
-     * Get the ID of the app
+     * Get the ID of the connected app
      */
     get appId() {
-        return this._store.id;
+        return this._store.appId;
     }
 
     /**
@@ -184,13 +172,6 @@ export class WorkspaceStore<D extends WorkspaceDef = WorkspaceDef> {
     }
 
     /**
-     * Options associated with the app
-     */
-    get options() {
-        return this._store.options;
-    }
-
-    /**
      * Get metadata associated with the app
      */
     get metadata() {
@@ -207,6 +188,17 @@ export class WorkspaceStore<D extends WorkspaceDef = WorkspaceDef> {
     /**
      * Actions
      */
+
+    /**
+     * Configure the worksapce based on the settings
+     * @param settings - settings to configure the workspace with
+     */
+    configure = (settings: {
+        /** Initial View */
+        view: string;
+    }) => {
+        this._store.view = settings.view;
+    };
     /**
      * Set the loading screen for the app
      * @param isLoading - true if loading screen is on
@@ -217,21 +209,19 @@ export class WorkspaceStore<D extends WorkspaceDef = WorkspaceDef> {
 
     /**
      * Set if the workspace is in edit mode
-     * @param isEditMode - track if the workspace is in editmode
+     * @param editMode - track if the workspace is in editmode
      */
-    setEditMode = (isEditMode: boolean) => {
-        this._store.isEditMode = isEditMode;
+
+    setEditMode = (editMode: boolean) => {
+        this._store.isEditMode = editMode;
     };
 
     /**
-     * Set the view of the app, only can be done in edit mode
-     * @param view - true if it is in edit mode
+     * Set the view of the workspack
+     * @param view - new view
      */
-    setView = (view: WorkspaceView) => {
-        if (!this._store.isEditMode) {
-            throw new Error('Not in Edit Mode');
-        }
 
+    setView = (view: string) => {
         this._store.view = view;
     };
 

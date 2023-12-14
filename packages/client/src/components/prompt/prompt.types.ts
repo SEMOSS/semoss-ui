@@ -30,8 +30,9 @@ export interface Builder {
     title: BuilderStepItem;
     tags: BuilderStepItem;
     model: BuilderStepItem;
+    vector: BuilderStepItem;
     context: BuilderStepItem;
     inputs: BuilderStepItem;
     inputTypes: BuilderStepItem;
-    // constraints: BuilderStepItem;
+    constraints: BuilderStepItem;
 }

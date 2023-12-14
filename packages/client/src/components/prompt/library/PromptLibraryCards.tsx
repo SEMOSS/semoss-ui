@@ -7,7 +7,7 @@ const StyledTypography = styled(Typography)(() => ({
     textTransform: 'capitalize',
 }));
 
-export function PromptLibraryCards(props: {
+export const PromptLibraryCards = (props: {
     prompts: Prompt[];
     filter: string;
     openUIBuilderForTemplate: (
@@ -15,7 +15,7 @@ export function PromptLibraryCards(props: {
         inputs: Token[],
         inputTypes: object,
     ) => void;
-}) {
+}) => {
     return (
         <Grid container spacing={2}>
             <Grid item xs={12}>
@@ -45,4 +45,4 @@ export function PromptLibraryCards(props: {
             })}
         </Grid>
     );
-}
+};

@@ -1,8 +1,11 @@
 import { TOKEN_TYPE_TEXT } from '../prompt.constants';
 import { Token } from '../prompt.types';
-import { PromptHoverToken } from '../shared/PromptToken';
+import { PromptHoverToken } from './token';
 
-export function PromptPreview(props: { tokens: Token[]; inputTypes: object }) {
+export const PromptPreview = (props: {
+    tokens: Token[];
+    inputTypes: object;
+}) => {
     const getTokenInputType = (token: Token) => {
         if (token.type === TOKEN_TYPE_TEXT || token.isHiddenPhraseInputToken) {
             return null;
@@ -22,4 +25,4 @@ export function PromptPreview(props: { tokens: Token[]; inputTypes: object }) {
             ))}
         </>
     );
-}
+};

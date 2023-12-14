@@ -60,8 +60,6 @@ export const NotebookNewStep = observer(
                             appendStep({
                                 widget: DefaultCells['code'].widget,
                                 parameters: DefaultCells['code'].parameters,
-                                operation: [],
-                                output: undefined,
                             });
                         }}
                     >
@@ -77,8 +75,6 @@ export const NotebookNewStep = observer(
                                     ...DefaultCells['code'].parameters,
                                     type: 'py',
                                 },
-                                operation: [],
-                                output: undefined,
                             });
                         }}
                     >
@@ -94,8 +90,6 @@ export const NotebookNewStep = observer(
                                     ...DefaultCells['code'].parameters,
                                     type: 'r',
                                 },
-                                operation: [],
-                                output: undefined,
                             });
                         }}
                     >

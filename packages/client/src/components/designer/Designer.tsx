@@ -1,6 +1,6 @@
 import { observer } from 'mobx-react-lite';
-import { styled, Stack, Icon, Divider, Paper, Modal } from '@semoss/ui';
-import { DataObject, Layers, Visibility, Widgets } from '@mui/icons-material';
+import { styled, Stack, Icon, Divider, Paper } from '@semoss/ui';
+import { DataObject, Layers, Widgets } from '@mui/icons-material';
 import { useState } from 'react';
 
 import { DesignerContext } from '@/contexts';
@@ -118,9 +118,7 @@ export const Designer = observer((props: DesignerProps): JSX.Element => {
     const { children, designer } = props;
 
     // view
-    const [view, setView] = useState<'outline' | 'query' | 'add' | 'app' | ''>(
-        'app',
-    );
+    const [view, setView] = useState<'outline' | 'query' | 'add' | ''>('');
 
     /**
      * Set the view. If it is the same, close it
@@ -157,26 +155,18 @@ export const Designer = observer((props: DesignerProps): JSX.Element => {
                 <StyledLeftMenu onMouseDown={handleMouseDown}>
                     <StyledSidebar>
                         <StyledSidebarItem
-                            disabled={view === 'app'}
+                            disabled={false}
                             selected={view === 'outline'}
-                            onClick={
-                                view === 'app'
-                                    ? undefined
-                                    : () => updateView('outline')
-                            }
+                            onClick={() => updateView('outline')}
                         >
                             <Icon>
                                 <Layers />
                             </Icon>
                         </StyledSidebarItem>
                         <StyledSidebarItem
-                            disabled={view === 'app'}
+                            disabled={false}
                             selected={view === 'query'}
-                            onClick={
-                                view === 'app'
-                                    ? undefined
-                                    : () => updateView('query')
-                            }
+                            onClick={() => updateView('query')}
                         >
                             <Icon>
                                 <DataObject />
@@ -184,29 +174,16 @@ export const Designer = observer((props: DesignerProps): JSX.Element => {
                         </StyledSidebarItem>
                         <StyledSidebarDivider />
                         <StyledSidebarItem
-                            disabled={view === 'app'}
+                            disabled={false}
                             selected={view === 'add'}
-                            onClick={
-                                view === 'app'
-                                    ? undefined
-                                    : () => updateView('add')
-                            }
+                            onClick={() => updateView('add')}
                         >
                             <Icon>
                                 <Widgets />
                             </Icon>
                         </StyledSidebarItem>
-                        <StyledSidebarItem
-                            disabled={false}
-                            selected={view === 'app'}
-                            onClick={() => updateView('app')}
-                        >
-                            <Icon>
-                                <Visibility />
-                            </Icon>
-                        </StyledSidebarItem>
                     </StyledSidebar>
-                    {view && view !== 'app' ? (
+                    {view ? (
                         <StyledSidebarContent elevation={7}>
                             <StyledSidebarContentInner>
                                 {view === 'outline' ? <OutlineMenu /> : null}
@@ -217,19 +194,11 @@ export const Designer = observer((props: DesignerProps): JSX.Element => {
                     ) : null}
                 </StyledLeftMenu>
                 <Stack flex="1">
-                    {view !== 'app' ? (
-                        <Screen>{children}</Screen>
-                    ) : (
-                        <>{children}</>
-                    )}
+                    <Screen>{children}</Screen>
                 </Stack>
-                {view !== 'app' ? (
-                    <StyledRightMenu elevation={7}>
-                        <SelectedMenu />
-                    </StyledRightMenu>
-                ) : (
-                    <></>
-                )}
+                <StyledRightMenu elevation={7}>
+                    <SelectedMenu />
+                </StyledRightMenu>
             </StyledDesignerContainer>
         </DesignerContext.Provider>
     );

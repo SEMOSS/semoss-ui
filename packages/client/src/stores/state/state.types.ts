@@ -1,6 +1,7 @@
 import React from 'react';
 import { RunQueryAction, DispatchEventAction } from './state.actions';
 import { StepState } from './step.state';
+import { QueryStateConfig } from './query.state';
 /**
  * Block
  */
@@ -213,3 +214,11 @@ export type CellComponent<D extends CellDef = CellDef> =
         /** Step that is controlling the cell */
         step: StepState<D>;
     }>;
+
+export type SerializedState = {
+    /** Queries rendered in the insight */
+    queries: Record<string, QueryStateConfig>;
+
+    /** Blocks rendered in the insight */
+    blocks: Record<string, Block>;
+};

@@ -11,9 +11,9 @@ import {
     Typography,
 } from '@semoss/ui';
 import { useBlocks, useWorkspace } from '@/hooks';
-import { Add, Edit, Search } from '@mui/icons-material';
+import { Add, Search } from '@mui/icons-material';
 
-import { QueryOverlay } from '@/components/notebook';
+import { NewQueryOverlay } from '@/components/notebook';
 
 const StyledMenu = styled('div')(({ theme }) => ({
     display: 'flex',
@@ -47,6 +47,11 @@ const StyledMenuScroll = styled('div')(({ theme }) => ({
 const StyledJson = styled('pre')(({ theme }) => ({
     ...theme.typography.caption,
     textWrap: 'wrap',
+}));
+
+const StyledListItemText = styled(List.ItemText)(() => ({
+    overflow: 'hidden',
+    textOverflow: 'ellipsis',
 }));
 
 /**
@@ -117,14 +122,22 @@ export const QueryMenu = observer((): JSX.Element => {
 
     /**
      * Edit or create a query
-     * @param id - id to open in the overlay. If not defined, it will create a new one.
      */
-    const openQueryOverlay = (id = '') => {
+    const openQueryOverlay = () => {
         workspace.openOverlay(() => {
             return (
-                <QueryOverlay
-                    id={id}
-                    onClose={() => workspace.closeOverlay()}
+                <NewQueryOverlay
+                    onClose={(newQueryId) => {
+                        workspace.closeOverlay();
+
+                        if (newQueryId) {
+                            // switch the view
+                            workspace.setView('data');
+
+                            // select the query
+                            notebook.selectQuery(newQueryId);
+                        }
+                    }}
                 />
             );
         });
@@ -165,17 +178,7 @@ export const QueryMenu = observer((): JSX.Element => {
                 <List>
                     {renderedQueries.map((q) => {
                         return (
-                            <List.Item
-                                key={q.id}
-                                dense={true}
-                                secondaryAction={
-                                    <List.ItemButton
-                                        onClick={() => openQueryOverlay(q.id)}
-                                    >
-                                        <Edit />
-                                    </List.ItemButton>
-                                }
-                            >
+                            <List.Item key={q.id} dense={true}>
                                 <List.ItemButton
                                     onClick={() => {
                                         // switch the view
@@ -185,13 +188,24 @@ export const QueryMenu = observer((): JSX.Element => {
                                         notebook.selectQuery(q.id);
                                     }}
                                 >
-                                    <List.ItemText
+                                    <StyledListItemText
                                         primary={
-                                            <Typography
-                                                variant="body1"
-                                                fontWeight="bold"
-                                            >
+                                            <Typography variant="subtitle2">
                                                 {q.id}
+                                            </Typography>
+                                        }
+                                        secondary={
+                                            <Typography
+                                                variant="caption"
+                                                noWrap={true}
+                                            >
+                                                {q.data ? (
+                                                    JSON.stringify(q.data)
+                                                ) : (
+                                                    <em>
+                                                        Query not yet executed
+                                                    </em>
+                                                )}
                                             </Typography>
                                         }
                                     />
@@ -230,10 +244,7 @@ export const QueryMenu = observer((): JSX.Element => {
                                 <div>
                                     <List.ItemText
                                         primary={
-                                            <Typography
-                                                variant="body1"
-                                                fontWeight="bold"
-                                            >
+                                            <Typography variant="subtitle2">
                                                 {b.id}
                                             </Typography>
                                         }

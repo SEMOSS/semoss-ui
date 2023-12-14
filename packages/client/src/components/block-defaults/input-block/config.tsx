@@ -1,7 +1,7 @@
 import { BlockConfig } from '@/stores';
 import {
+    AutocompleteQuerySettings,
     InputSettings,
-    SelectInputSettings,
 } from '@/components/block-settings';
 
 import {
@@ -10,6 +10,7 @@ import {
     buildDimensionsSection,
     buildColorSection,
     buildTypographySection,
+    buildBorderSection,
 } from '../block-defaults.shared';
 
 import { InputBlockDef, InputBlock } from './InputBlock';
@@ -38,14 +39,23 @@ export const config: BlockConfig<InputBlockDef> = {
         {
             name: 'General',
             children: [
+                {
+                    description: 'Test Setting',
+                    render: ({ id }) => (
+                        <AutocompleteQuerySettings
+                            id={id}
+                            label="Test Setting"
+                            path="test-setting"
+                        />
+                    ),
+                },
                 // {
-                //     description: 'Queries',
+                //     description: 'Test Setting 2',
                 //     render: ({ id }) => (
-                //         <SelectInputSettings
+                //         <AutocompleteQuerySettings
                 //             id={id}
-                //             label="Query"
-                //             path="query"
-                //             options={[]}
+                //             label="Test Setting 2"
+                //             path="test-setting-2"
                 //         />
                 //     ),
                 // },
@@ -68,7 +78,11 @@ export const config: BlockConfig<InputBlockDef> = {
                 {
                     description: 'Required',
                     render: ({ id }) => (
-                        <InputSettings id={id} label="Value" path="required" />
+                        <InputSettings
+                            id={id}
+                            label="Required"
+                            path="required"
+                        />
                     ),
                 },
             ],
@@ -79,6 +93,7 @@ export const config: BlockConfig<InputBlockDef> = {
         buildSpacingSection(),
         buildDimensionsSection(),
         buildColorSection(),
+        buildBorderSection(),
         buildTypographySection(),
     ],
 };

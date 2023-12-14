@@ -1,5 +1,4 @@
 import { useEffect, useMemo, useState } from 'react';
-import { ContentCopyOutlined } from '@mui/icons-material';
 import {
     Outlet,
     Link,
@@ -15,7 +14,6 @@ import {
     ToggleButton,
     Tooltip,
     Paper,
-    useNotification,
     IconButton,
 } from '@semoss/ui';
 
@@ -24,7 +22,21 @@ import { SettingsContext } from '@/contexts';
 import { Page } from '@/components/ui/';
 import { SETTINGS_ROUTES } from './settings.constants';
 import { observer } from 'mobx-react-lite';
-import { AdminPanelSettingsOutlined } from '@mui/icons-material';
+import {
+    AdminPanelSettingsOutlined,
+    ContentCopyOutlined,
+} from '@mui/icons-material';
+
+const StyledHeader = styled('div')(({ theme }) => ({
+    display: 'flex',
+    justifyContent: 'space-between',
+}));
+
+const StyledAdminHeader = styled('div')(({ theme }) => ({
+    height: '24px',
+    display: 'flex',
+    justifyContent: 'flex-end',
+}));
 
 const StyledId = styled(Typography)(({ theme }) => ({
     color: theme.palette.secondary.dark,
@@ -42,15 +54,15 @@ const StyledAdminContainer = styled(Paper)(({ theme }) => ({
     zIndex: 1,
 }));
 
-const StyledLink = {
+const StyledLink = styled(Link)(({ theme }) => ({
     textDecoration: 'none',
     color: 'inherit',
-};
+}));
+
 export const SettingsLayout = observer(() => {
     const { configStore } = useRootStore();
     const { id } = useParams();
     const { pathname, state } = useLocation();
-    const notification = useNotification();
 
     // track the active breadcrumbs
     const [adminMode, setAdminMode] = useState(false);
@@ -72,25 +84,17 @@ export const SettingsLayout = observer(() => {
         return null;
     }, [pathname]);
 
-    const copy = async (text: string) => {
-        try {
-            await navigator.clipboard.writeText(text);
-
-            notification.add({
-                color: 'success',
-                message: 'Successfully copied id',
-            });
-        } catch (e) {
-            notification.add({
-                color: 'error',
-                message: 'Unable to copy id',
-            });
-        }
-    };
-
     if (!matchedRoute) {
         return null;
     }
+
+    /**
+     * Copy text and add it to the clipboard
+     * @param text - text to copy
+     */
+    const copy = (text: string) => {
+        navigator.clipboard.writeText(text);
+    };
 
     return (
         <SettingsContext.Provider
@@ -102,20 +106,12 @@ export const SettingsLayout = observer(() => {
                 header={
                     <Stack>
                         {matchedRoute.path ? (
-                            <div
-                                style={{
-                                    display: 'flex',
-                                    justifyContent: 'space-between',
-                                }}
-                            >
+                            <StyledHeader>
                                 <Breadcrumbs separator="/">
-                                    <Link to={'.'} style={StyledLink}>
-                                        Settings
-                                    </Link>
+                                    <StyledLink to={'.'}>Settings</StyledLink>
                                     {matchedRoute.history.map((link, i) => {
                                         return (
-                                            <Link
-                                                style={StyledLink}
+                                            <StyledLink
                                                 to={link.replace('<id>', id)}
                                                 key={i + link}
                                                 state={...state}
@@ -123,7 +119,7 @@ export const SettingsLayout = observer(() => {
                                                 {link.includes('<id>')
                                                     ? id
                                                     : matchedRoute.title}
-                                            </Link>
+                                            </StyledLink>
                                         );
                                     })}
                                 </Breadcrumbs>
@@ -152,15 +148,9 @@ export const SettingsLayout = observer(() => {
                                         </Tooltip>
                                     </StyledAdminContainer>
                                 ) : null}
-                            </div>
+                            </StyledHeader>
                         ) : (
-                            <div
-                                style={{
-                                    height: '24px',
-                                    display: 'flex',
-                                    justifyContent: 'flex-end',
-                                }}
-                            >
+                            <StyledAdminHeader>
                                 {configStore.store.user.admin ? (
                                     <StyledAdminContainer>
                                         <Tooltip
@@ -186,7 +176,7 @@ export const SettingsLayout = observer(() => {
                                         </Tooltip>
                                     </StyledAdminContainer>
                                 ) : null}
-                            </div>
+                            </StyledAdminHeader>
                         )}
                         <Typography variant="h4">
                             {matchedRoute.history.length < 2

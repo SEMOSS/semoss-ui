@@ -13,6 +13,7 @@ import {
     TextArea,
 } from '@semoss/ui';
 import { EditRounded, RemoveRedEyeRounded, Add } from '@mui/icons-material';
+import { PERMISSION_DESCRIPTION_MAP } from '@/components/settings/member-permissions.constants';
 
 import { Role } from '@/types';
 import { useRootStore, useEngine } from '@/hooks';
@@ -21,13 +22,16 @@ const StyledCard = styled(Card)({
     borderRadius: '12px',
 });
 
-export const EngineAccessButton = () => {
-    // get the database information
+interface EngineAccessButtonProps {
+    /**
+     * Model, Vector, Storage, Database, Function
+     */
+    name: string;
+}
 
-    // tom---> set role manually for testing remove later
+export const EngineAccessButton = (props: EngineAccessButtonProps) => {
+    const { name } = props;
     const { id, role } = useEngine();
-    // const { id } = useEngine();
-    // const role = 'DISCOVERABLE';
 
     const { monolithStore } = useRootStore();
     const notification = useNotification();
@@ -36,7 +40,6 @@ export const EngineAccessButton = () => {
     const [open, setOpen] = useState(false);
     const [requestedRole, setRequestedRole] = useState<Role>(role);
 
-    // tom---> tracking comment in useState
     const [comment, setComment] = useState<string>('');
 
     // close when the id changes
@@ -53,11 +56,6 @@ export const EngineAccessButton = () => {
      * Request the new access
      */
     const requestAccess = async () => {
-        // tom---> for testing remove later
-        // const newPixel = `META | RequestEngine(engine=['${id}'], permission=['${requestedRole}']${ comment && `, comment=['${comment}']`})`;
-        // console.log({newPixel});
-        // return;
-
         try {
             const response = await monolithStore.runQuery(
                 `META | RequestEngine(engine=['${id}'], permission=['${requestedRole}']${
@@ -156,9 +154,11 @@ export const EngineAccessButton = () => {
                                     sx={{ color: '#000' }}
                                     subheader={
                                         <Box sx={{ marginLeft: '30px' }}>
-                                            Ability to provision other users,
-                                            edit database details and hide or
-                                            delete the database.
+                                            {
+                                                PERMISSION_DESCRIPTION_MAP[
+                                                    name.toLowerCase()
+                                                ]?.author
+                                            }
                                         </Box>
                                     }
                                     action={
@@ -197,9 +197,11 @@ export const EngineAccessButton = () => {
                                     sx={{ color: '#000' }}
                                     subheader={
                                         <Box sx={{ marginLeft: '30px' }}>
-                                            Has the ability to use the database
-                                            to generate insights and can query
-                                            against the database.
+                                            {
+                                                PERMISSION_DESCRIPTION_MAP[
+                                                    name.toLowerCase()
+                                                ]?.editor
+                                            }
                                         </Box>
                                     }
                                     action={
@@ -238,8 +240,11 @@ export const EngineAccessButton = () => {
                                     sx={{ color: '#000' }}
                                     subheader={
                                         <Box sx={{ marginLeft: '30px' }}>
-                                            Can view insights built using the
-                                            database.
+                                            {
+                                                PERMISSION_DESCRIPTION_MAP[
+                                                    name.toLowerCase()
+                                                ]?.readonly
+                                            }
                                         </Box>
                                     }
                                     action={

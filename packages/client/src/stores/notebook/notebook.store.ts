@@ -1,6 +1,6 @@
 import { makeAutoObservable } from 'mobx';
 
-import { StateStoreImplementation } from '../state';
+import { StateStore } from '../state';
 
 export interface NotebookStoreInterface {
     /** Current selected query */
@@ -14,13 +14,13 @@ export interface NotebookStoreInterface {
  * Internal state management of the notebook object
  */
 export class NotebookStore {
-    private _state: StateStoreImplementation;
+    private _state: StateStore;
     private _store: NotebookStoreInterface = {
         selectedQueryId: '',
         selectedSteps: {},
     };
 
-    constructor(state: StateStoreImplementation) {
+    constructor(state: StateStore) {
         // set the state
         this._state = state;
 

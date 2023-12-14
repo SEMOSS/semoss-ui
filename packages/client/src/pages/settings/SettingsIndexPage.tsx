@@ -80,6 +80,8 @@ const CardActionsRight = styled('div')({
     marginLeft: 'auto',
 });
 
+const StyledSearch = styled(Search)({ width: '80%' });
+
 const DEFAULT_CARDS = SETTINGS_ROUTES.filter(
     (r) => !!r.path && r.history.length < 2,
 );
@@ -113,8 +115,6 @@ export const SettingsIndexPage = () => {
     const [search, setSearch] = useState<string>('');
     const [sort, setSort] = useState('Name');
 
-    // const { adminMode } = useSettings();
-
     useEffect(() => {
         // reset the options if there is no search value
         if (!search) {
@@ -134,7 +134,7 @@ export const SettingsIndexPage = () => {
     return (
         <StyledContainer>
             <StyledSearchbarContainer>
-                <Search
+                <StyledSearch
                     label={'Search'}
                     size={'small'}
                     onChange={(e) => {
@@ -144,7 +144,6 @@ export const SettingsIndexPage = () => {
                     InputProps={{
                         startAdornment: <SearchIcon />,
                     }}
-                    sx={{ width: '80%' }}
                 />
                 <StyledSort
                     size={'small'}
@@ -178,13 +177,7 @@ export const SettingsIndexPage = () => {
                                     </StyledCardContent>
                                     {/* disabled for now */}
                                     <Card.Actions>
-                                        <CardActionsLeft>
-                                            {' '}
-                                            {/* <AccessTime fontSize="small" />
-                                            <Typography variant="caption">
-                                                7/19/2023 10:00AM
-                                            </Typography> */}
-                                        </CardActionsLeft>
+                                        <CardActionsLeft></CardActionsLeft>
                                         <CardActionsRight>
                                             <IconButton disabled={true}>
                                                 <MoreVert />

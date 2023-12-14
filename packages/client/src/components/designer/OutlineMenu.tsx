@@ -6,6 +6,7 @@ import {
     Icon,
     IconButton,
     List,
+    Stack,
     TextField,
     TreeView,
     Typography,
@@ -16,10 +17,10 @@ import {
     ChevronRight,
     ExpandMore,
     Home,
-    SearchOutlined,
+    Search,
+    SearchOff,
 } from '@mui/icons-material/';
 
-import { getIconForBlock } from '../block-defaults';
 import { Block } from '@/stores/state/state.types';
 
 const StyledMenu = styled('div')(({ theme }) => ({
@@ -34,7 +35,7 @@ const StyledMenuHeader = styled('div')(({ theme }) => ({
     display: 'flex',
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
+    width: '100%',
     paddingTop: theme.spacing(1.5),
     paddingRight: theme.spacing(1),
     paddingBottom: theme.spacing(1.5),
@@ -42,11 +43,8 @@ const StyledMenuHeader = styled('div')(({ theme }) => ({
     gap: theme.spacing(1),
 }));
 
-const StyledCollapseSearch = styled('div')(({ theme }) => ({
-    display: 'flex',
-    flexDirection: 'row',
-    width: '100%',
-    justifyContent: 'flex-end',
+const Spacer = styled('div')(() => ({
+    flex: 1,
 }));
 
 const StyledMenuScroll = styled('div')(({ theme }) => ({
@@ -100,13 +98,17 @@ const StyledNoLayersContainer = styled('div')(({ theme }) => ({
  */
 export const OutlineMenu = observer((): JSX.Element => {
     // get the store
-    const { state } = useBlocks();
+    const { registry, state } = useBlocks();
     const { designer } = useDesigner();
 
     const [expanded, setExpanded] = useState<string[]>([]);
     const [selected, setSelected] = useState<string[]>([]);
     const [showSearch, setShowSearch] = useState<boolean>(false);
     const [search, setSearch] = useState<string>('');
+
+    console.log('queries', state.queries);
+    console.log('blocks', state.blocks);
+
     /**
      * Render the block and it's children
      * @param id - id of the block to render
@@ -121,7 +123,7 @@ export const OutlineMenu = observer((): JSX.Element => {
             return null;
         }
 
-        const WidgetIcon = getIconForBlock(block.widget);
+        const WidgetIcon = registry[block.widget].icon;
 
         const children = [];
         for (const s in block.slots) {
@@ -233,11 +235,20 @@ export const OutlineMenu = observer((): JSX.Element => {
 
             <StyledMenuHeader>
                 <Typography variant="body1">Layers</Typography>
-                <StyledCollapseSearch>
+                <Stack
+                    flex={1}
+                    spacing={1}
+                    direction="row"
+                    alignItems="center"
+                    justifyContent="end"
+                >
                     <Collapse orientation="horizontal" in={showSearch}>
                         <TextField
                             placeholder="Search"
                             size="small"
+                            sx={{
+                                width: '200px',
+                            }}
                             value={search}
                             variant="outlined"
                             onChange={(e) => setSearch(e.target.value)}
@@ -251,9 +262,13 @@ export const OutlineMenu = observer((): JSX.Element => {
                             setSearch('');
                         }}
                     >
-                        <SearchOutlined fontSize="medium" />
+                        {showSearch ? (
+                            <SearchOff fontSize="medium" />
+                        ) : (
+                            <Search fontSize="medium" />
+                        )}
                     </IconButton>
-                </StyledCollapseSearch>
+                </Stack>
             </StyledMenuHeader>
             <Divider />
             <StyledMenuScroll>

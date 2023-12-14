@@ -1,5 +1,5 @@
 import { useCallback, useMemo } from 'react';
-import { computed } from 'mobx';
+import { computed, toJS } from 'mobx';
 
 import { Paths, PathValue } from '@/types';
 import {
@@ -151,9 +151,9 @@ export const useBlock = <D extends BlockDef = BlockDef>(
             const block = state.blocks[id];
 
             const blockJson = {
-                widget: block.widget,
-                data: block.data,
-                listeners: block.listeners,
+                widget: toJS(block.widget),
+                data: toJS(block.data),
+                listeners: toJS(block.listeners),
                 slots: {},
             };
 
@@ -180,6 +180,7 @@ export const useBlock = <D extends BlockDef = BlockDef>(
                   type: 'after',
               }
             : undefined;
+
         state.dispatch({
             message: ActionMessages.ADD_BLOCK,
             payload: {

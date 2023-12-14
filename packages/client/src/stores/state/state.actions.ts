@@ -1,5 +1,5 @@
 import { BlockJSON, ListenerActions } from './state.types';
-import { StateStoreImplementation } from './state.store';
+import { StateStore } from './state.store';
 import { StepStateConfig } from './step.state';
 import { QueryStateConfig } from './query.state';
 
@@ -22,6 +22,11 @@ export enum ActionMessages {
     RUN_STEP = 'RUN_STEP',
     DISPATCH_EVENT = 'DISPATCH_EVENT',
 }
+
+const ACTIONS_DISPLAY = {
+    [ActionMessages.RUN_QUERY]: 'Run Query',
+    [ActionMessages.DISPATCH_EVENT]: 'Dispatch Event',
+};
 
 export type Actions =
     | SetStateAction
@@ -49,8 +54,8 @@ export interface Action {
 export interface SetStateAction extends Action {
     message: ActionMessages.SET_STATE;
     payload: {
-        blocks?: StateStoreImplementation['blocks'];
-        queries?: StateStoreImplementation['queries'];
+        blocks?: StateStore['blocks'];
+        queries?: StateStore['queries'];
     };
 }
 

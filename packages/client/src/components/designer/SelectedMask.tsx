@@ -1,4 +1,10 @@
-import { useCallback, useEffect, useLayoutEffect, useState } from 'react';
+import {
+    useCallback,
+    useEffect,
+    useLayoutEffect,
+    useMemo,
+    useState,
+} from 'react';
 import { observer } from 'mobx-react-lite';
 import { Typography, styled } from '@semoss/ui';
 
@@ -142,24 +148,38 @@ export const SelectedMask = observer(() => {
         designer,
     ]);
 
+    // reposition the mask
+    const repositionMask = () => {
+        // get the root element
+        const rootEle = getRootElement();
+
+        // get the block elemenent
+        const blockEle = getBlockElement(designer.selected);
+
+        if (!blockEle) {
+            return;
+        }
+
+        // calculate and set the side
+        const updated = getRelativeSize(blockEle, rootEle);
+        setSize(updated);
+    };
+
+    // update the mask when the screen is resized
+    useEffect(() => {
+        window.addEventListener('resize', repositionMask);
+    }, []);
+
+    // block resized is a custom event emitted by SizeSettings
+    // so we know to updated the mask when width/height changes
+    useEffect(() => {
+        window.addEventListener('blockResized', repositionMask);
+    }, []);
+
     // get the root, watch changes, and reposition the mask
     useLayoutEffect(() => {
         // get the root element
         const rootEle = getRootElement();
-
-        // reposition the mask
-        const repositionMask = () => {
-            // get the block elemenent
-            const blockEle = getBlockElement(designer.selected);
-
-            if (!blockEle) {
-                return;
-            }
-
-            // calculate and set the side
-            const updated = getRelativeSize(blockEle, rootEle);
-            setSize(updated);
-        };
 
         const observer = new MutationObserver(() => {
             repositionMask();

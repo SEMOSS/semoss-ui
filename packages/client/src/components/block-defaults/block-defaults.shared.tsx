@@ -270,8 +270,8 @@ export const buildDimensionsSection = () => ({
 });
 
 /**
- * Build the Style Section
- * @returns a style section
+ * Build the Color Section
+ * @returns a color section
  */
 export const buildColorSection = () => ({
     name: 'Color',
@@ -292,9 +292,29 @@ export const buildColorSection = () => ({
                 <ColorSettings id={id} label="Color" path="style.color" />
             ),
         },
+    ],
+});
+
+/**
+ * Build the Border Section
+ * @returns a border section
+ */
+export const buildBorderSection = () => ({
+    name: 'Border',
+    children: [
         {
             description: 'Border',
             render: ({ id }) => <BorderSettings id={id} path="style.border" />,
+        },
+        {
+            description: 'Border Radius',
+            render: ({ id }) => (
+                <SizeSettings
+                    id={id}
+                    label="Border Radius"
+                    path="style.border-radius"
+                />
+            ),
         },
     ],
 });
@@ -372,7 +392,7 @@ export const buildTypographySection = () => ({
             ),
         },
         {
-            description: 'Type',
+            description: 'Font Size',
             render: ({ id }) => (
                 <FontSizeSettings
                     id={id}
@@ -385,14 +405,14 @@ export const buildTypographySection = () => ({
 });
 
 /**
- * Build the Listeners Section
+ * Build the Listener Section
  * @returns the Listener Section
  */
-export const buildListeners = <D extends BlockDef = BlockDef>(
-    triggers: Extract<keyof D['listeners'], string>[] = [],
+export const buildListener = <D extends BlockDef = BlockDef>(
+    trigger: Extract<keyof D['listeners'], string>,
 ) => [
-    ...triggers.map((t) => ({
-        description: t,
-        render: ({ id }) => <ListenerSettings id={id} listener={t} />,
-    })),
+    {
+        description: trigger,
+        render: ({ id }) => <ListenerSettings id={id} listener={trigger} />,
+    },
 ];

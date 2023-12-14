@@ -1,12 +1,15 @@
 import { Registry } from '@/stores';
-
+import { config as BodyBlockConfig, BodyBlockDef } from './body-block';
 import { config as ButtonBlockConfig, ButtonBlockDef } from './button-block';
 import {
     config as ContainerBlockConfig,
     ContainerBlockDef,
 } from './container-block';
 import { config as DividerBlockConfig, DividerBlockDef } from './divider-block';
+import { config as FooterBlockConfig, FooterBlockDef } from './footer-block';
 import { config as FormBlockConfig, FormBlockDef } from './form-block';
+import { config as HeaderBlockConfig, HeaderBlockDef } from './header-block';
+import { config as IframeBlockConfig, IframeBlockDef } from './iframe-block';
 import { config as InputBlockConfig, InputBlockDef } from './input-block';
 import {
     config as MarkdownBlockConfig,
@@ -26,10 +29,14 @@ import {
 import { config as SectionBlockConfig, SectionBlockDef } from './section-block';
 
 export type DefaultBlockDefinitions =
+    | BodyBlockDef
     | ButtonBlockDef
     | ContainerBlockDef
     | DividerBlockDef
+    | FooterBlockDef
     | FormBlockDef
+    | HeaderBlockDef
+    | IframeBlockDef
     | InputBlockDef
     | MarkdownBlockDef
     | PageBlockDef
@@ -40,10 +47,14 @@ export type DefaultBlockDefinitions =
     | SectionBlockDef;
 
 export const DefaultBlocks: Registry<DefaultBlockDefinitions> = {
+    [BodyBlockConfig.widget]: BodyBlockConfig,
     [ButtonBlockConfig.widget]: ButtonBlockConfig,
     [ContainerBlockConfig.widget]: ContainerBlockConfig,
     [DividerBlockConfig.widget]: DividerBlockConfig,
+    [FooterBlockConfig.widget]: FooterBlockConfig,
     [FormBlockConfig.widget]: FormBlockConfig,
+    [HeaderBlockConfig.widget]: HeaderBlockConfig,
+    [IframeBlockConfig.widget]: IframeBlockConfig,
     [InputBlockConfig.widget]: InputBlockConfig,
     [MarkdownBlockConfig.widget]: MarkdownBlockConfig,
     [PageBlockConfig.widget]: PageBlockConfig,

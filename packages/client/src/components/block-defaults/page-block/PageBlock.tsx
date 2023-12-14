@@ -16,17 +16,16 @@ export interface PageBlockDef extends BlockDef<'page'> {
 export const PageBlock: BlockComponent = observer(({ id }) => {
     const { attrs, data, slots } = useBlock<PageBlockDef>(id);
 
+    console.log('scroll');
+
     return (
         <div
             style={{
-                // position: 'absolute',
-                // top: '0',
-                // right: '0',
-                // bottom: '0',
-                // left: '0',
                 minWidth: '100%',
                 minHeight: '100%',
                 background: '#FFFFFF',
+                height: '100%',
+                overflow: 'scroll',
                 ...data.style,
             }}
             {...attrs}

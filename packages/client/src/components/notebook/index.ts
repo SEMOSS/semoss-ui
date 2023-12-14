@@ -1,3 +1,3 @@
 export * from './Notebook';
 
-export * from './QueryOverlay';
+export * from './NewQueryOverlay';
