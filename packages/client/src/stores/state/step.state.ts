@@ -234,33 +234,39 @@ export class StepState<D extends CellDef = CellDef> {
         this._store.output = output;
     }
 
-    private findValueByDynamicKey(obj, keyToFind) {
-        let result = null;
+    /**
+     * John: used to search through block data to see if query is present
+     * @param obj
+     * @param keyToFind
+     * @returns
+     */
+    // private findValueByDynamicKey(obj, keyToFind) {
+    //     let result = null;
 
-        for (const key in obj) {
-            if (typeof obj[key] === 'object') {
-                result = this.findValueByDynamicKey(obj[key], keyToFind);
-                if (result !== null) {
-                    return result;
-                }
-            } else if (
-                typeof obj[key] === 'string' &&
-                obj[key].includes(keyToFind)
-            ) {
-                // Check if the string contains the dynamic key
-                return obj[key];
-            }
-        }
+    //     for (const key in obj) {
+    //         if (typeof obj[key] === 'object') {
+    //             result = this.findValueByDynamicKey(obj[key], keyToFind);
+    //             if (result !== null) {
+    //                 return result;
+    //             }
+    //         } else if (
+    //             typeof obj[key] === 'string' &&
+    //             obj[key].includes(keyToFind)
+    //         ) {
+    //             // Check if the string contains the dynamic key
+    //             return obj[key];
+    //         }
+    //     }
 
-        return result;
-    }
+    //     return result;
+    // }
+
     /**
      * Process running of the step
      *
      * @param parameters - Run the step with these parameters. They will be saved if successful
      */
     async _processRun(parameters: Partial<Record<string, unknown>> = {}) {
-        debugger;
         try {
             // check the loading state
             if (this._store.isLoading) {
@@ -270,24 +276,34 @@ export class StepState<D extends CellDef = CellDef> {
             // start the loading screen
             this._store.isLoading = true;
 
-            // Fix this John
-            // Go set all blocks to disabled that are dependent on this running query
-            Object.values(this._state.blocks).forEach((b) => {
-                const found = this.findValueByDynamicKey(b.data, this.query.id);
-                if (found) {
-                    const copiedBlock = b;
-                    copiedBlock.data.disabled = true;
-                    // set block to loading
-                    this._state.dispatch({
-                        message: ActionMessages.SET_BLOCK_DATA,
-                        payload: {
-                            id: b.id,
-                            path: 'disabled',
-                            value: true,
-                        },
-                    });
-                }
-            });
+            // (JOHN): Go set all blocks to loading that are dependent on this running query
+            // Object.values(this._state.blocks).forEach((b) => {
+            //     // Find the Query if it is on the block
+            //     const found = this.findValueByDynamicKey(b.data, this.query.id);
+
+            //     if (found) {
+            //         if (
+            //             b.data.state === 'loading' ||
+            //             b.data.state === 'error'
+            //         ) {
+            //             return;
+            //             // previousBlockState[b.id] = b.data.state;
+            //         } else {
+            //             const copiedBlock = b;
+            //             copiedBlock.data.disabled = true;
+
+            //             // set block to loading
+            //             this._state.dispatch({
+            //                 message: ActionMessages.SET_BLOCK_DATA,
+            //                 payload: {
+            //                     id: b.id,
+            //                     path: 'disabled',
+            //                     value: `${this.query.id}.isLoading`,
+            //                 },
+            //             });
+            //         }
+            //     }
+            // });
 
             // merge the options
             const merged = {
@@ -305,7 +321,6 @@ export class StepState<D extends CellDef = CellDef> {
             // run the pixel
             const { pixelReturn } = await this._state._runPixel(filled);
 
-            debugger;
             if (pixelReturn.length !== 1) {
                 throw new Error('Unexpected number of pixel statements');
             }
@@ -317,6 +332,32 @@ export class StepState<D extends CellDef = CellDef> {
                 if (operationType.indexOf('ERROR') > -1) {
                     this._store.parameters = merged;
                 }
+
+                // (JOHN): Go set all loading states off for block were dependent on this running query
+                // Object.values(this._state.blocks).forEach((b) => {
+                //     debugger
+                //     // if (!previousBlockState[b.id]) {
+                //         // Find the Query if it is on the block
+                //         const found = this.findValueByDynamicKey(
+                //             b.data,
+                //             this.query.id,
+                //         );
+                //         if (found) {
+                //             // turn loading off for block show error or not
+                //             this._state.dispatch({
+                //                 message: ActionMessages.SET_BLOCK_DATA,
+                //                 payload: {
+                //                     id: b.id,
+                //                     path: 'state',
+                //                     value:
+                //                         operationType.indexOf('ERROR') > -1
+                //                             ? 'error'
+                //                             : '',
+                //                 },
+                //             });
+                //         }
+                //     // }
+                // });
 
                 this._store.operation = operationType;
                 this._store.output = output;

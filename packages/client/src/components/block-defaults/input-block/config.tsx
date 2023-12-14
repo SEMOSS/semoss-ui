@@ -1,5 +1,8 @@
 import { BlockConfig } from '@/stores';
-import { InputSettings } from '@/components/block-settings';
+import {
+    AutocompleteQuerySettings,
+    InputSettings,
+} from '@/components/block-settings';
 
 import {
     buildLayoutSection,
@@ -36,6 +39,26 @@ export const config: BlockConfig<InputBlockDef> = {
         {
             name: 'General',
             children: [
+                {
+                    description: 'Test Setting',
+                    render: ({ id }) => (
+                        <AutocompleteQuerySettings
+                            id={id}
+                            label="Test Setting"
+                            path="test-setting"
+                        />
+                    ),
+                },
+                // {
+                //     description: 'Test Setting 2',
+                //     render: ({ id }) => (
+                //         <AutocompleteQuerySettings
+                //             id={id}
+                //             label="Test Setting 2"
+                //             path="test-setting-2"
+                //         />
+                //     ),
+                // },
                 {
                     description: 'Value',
                     render: ({ id }) => (
