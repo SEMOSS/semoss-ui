@@ -4,10 +4,17 @@ import { observer } from 'mobx-react-lite';
 import { useBlock } from '@/hooks';
 import { BlockDef, BlockComponent } from '@/stores';
 
+interface CustomCSSProperties extends CSSProperties {
+    width?: string | number;
+    height?: string | number;
+    justifyContent?: string;
+}
+
 export interface ImageBlockDef extends BlockDef<'image'> {
     widget: 'image';
     data: {
-        style: CSSProperties;
+        // style: CSSProperties;
+        style: CustomCSSProperties;
         src: string;
         title: string;
         disabled: boolean;
@@ -40,12 +47,50 @@ export const ImageBlock: BlockComponent = observer(({ id }) => {
             </span>
         );
 
-    console.log({ data });
-
-    // could wrap in a tag conditionally if clickable link is desired - probably full conditional return components
-    // could also add tescription p tag underneath but would require style options
-    // might want to add centering option - full width div wrapper with auto margins
-    // TODO - add background styling / centering / covering etc
+    if (data.style.height) {
+        return (
+            <span
+                style={{
+                    ...data.style,
+                    // this logic is here to make the outer border wrap just the image if the alignment is left
+                    width:
+                        data.style.justifyContent === 'left' ||
+                        !data.style.justifyContent
+                            ? data.style.width || '100%'
+                            : '100%',
+                    // temporary fix to cover the broken height percentage property
+                    height:
+                        `${data.style.height}`.slice(-1) === '%'
+                            ? `${data.style.height}`.slice(0, -1) + 'px'
+                            : data.style.height,
+                    display: 'flex',
+                }}
+                {...attrs}
+            >
+                <div
+                    style={{
+                        backgroundPosition: 'center',
+                        ...data.style,
+                        // this logic is here to make the outer border wrap just the image if the alignment is left
+                        width:
+                            data.style.justifyContent === 'left' ||
+                            !data.style.justifyContent
+                                ? '100%'
+                                : data.style.width || '100%',
+                        // temporary fix to cover the broken height percentage property
+                        height:
+                            `${data.style.height}`.slice(-1) === '%'
+                                ? `${data.style.height}`.slice(0, -1) + 'px'
+                                : data.style.height,
+                        display: 'block',
+                        backgroundImage: `url('${data.src}')`,
+                        backgroundSize: 'cover',
+                    }}
+                    title={data.title}
+                ></div>
+            </span>
+        );
+    }
 
     return (
         <span

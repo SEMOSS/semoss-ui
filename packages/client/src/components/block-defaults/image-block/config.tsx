@@ -10,12 +10,19 @@ import {
     AlignHorizontalLeft,
     AlignHorizontalCenter,
     AlignHorizontalRight,
+    ArrowUpward,
+    ArrowBack,
+    ArrowForward,
+    ArrowDownward,
+    FilterCenterFocus,
 } from '@mui/icons-material';
 import { BLOCK_TYPE_DISPLAY } from '../block-defaults.constants';
 import { InputModalSettings } from '@/components/block-settings/shared/InputModalSettings';
 import { BorderSettings, InputSettings } from '@/components/block-settings';
 // import { ButtonGroupSettings } from '../block-settings/shared/ButtonGroupSettings';
 import { ButtonGroupSettings } from '../../block-settings/shared/ButtonGroupSettings';
+import { SwitchSettings } from '@/components/block-settings/shared/SwitchSettings';
+import { SizeSettings } from '../../block-settings/shared/SizeSettings';
 
 // import { SwitchSettings } from '@/components/block-settings/shared/SwitchSettings';
 
@@ -40,7 +47,75 @@ export const config: BlockConfig<ImageBlockDef> = {
             name: 'General',
             children: [
                 {
+                    description: 'Image Source',
+                    render: ({ id }) => (
+                        <InputSettings id={id} label="Source" path="src" />
+                    ),
+                },
+                {
                     description: 'Image Description (optional)',
+                    render: ({ id }) => (
+                        <InputSettings
+                            id={id}
+                            label="Description"
+                            path="title"
+                        />
+                    ),
+                },
+                {
+                    description: 'Border Radius',
+                    render: ({ id }) => (
+                        <SizeSettings
+                            id={id}
+                            label="Border Radius"
+                            path="style.borderRadius"
+                        />
+                    ),
+                },
+                {
+                    description: 'Cropped Position',
+                    render: ({ id }) => (
+                        <ButtonGroupSettings
+                            id={id}
+                            path="style.backgroundPosition"
+                            label="Cropped Position"
+                            options={[
+                                {
+                                    value: 'center',
+                                    icon: FilterCenterFocus,
+                                    title: 'Center Image',
+                                    isDefault: true,
+                                },
+                                {
+                                    value: 'top',
+                                    icon: ArrowDownward,
+                                    title: 'Top Edge',
+                                    isDefault: false,
+                                },
+                                {
+                                    value: 'right',
+                                    icon: ArrowBack,
+                                    title: 'Right Edge',
+                                    isDefault: false,
+                                },
+                                {
+                                    value: 'bottom',
+                                    icon: ArrowUpward,
+                                    title: 'Bottom Edge',
+                                    isDefault: false,
+                                },
+                                {
+                                    value: 'left',
+                                    icon: ArrowForward,
+                                    title: 'Left Edge',
+                                    isDefault: false,
+                                },
+                            ]}
+                        />
+                    ),
+                },
+                {
+                    description: 'Horizontal Alignment',
                     render: ({ id }) => (
                         <ButtonGroupSettings
                             id={id}
@@ -66,27 +141,6 @@ export const config: BlockConfig<ImageBlockDef> = {
                                     isDefault: false,
                                 },
                             ]}
-                        />
-                    ),
-                },
-                {
-                    description: 'Image Source',
-                    render: ({ id }) => (
-                        <InputModalSettings
-                            id={id}
-                            label="Source"
-                            placeholder="https://www.example.com"
-                            path="src"
-                        />
-                    ),
-                },
-                {
-                    description: 'Image Description (optional)',
-                    render: ({ id }) => (
-                        <InputSettings
-                            id={id}
-                            label="Description"
-                            path="title"
                         />
                     ),
                 },
