@@ -13,6 +13,7 @@ import { TableBlockDef, TableBlock } from './TableBlock';
 import { TableChart } from '@mui/icons-material';
 import { BLOCK_TYPE_DATA } from '../block-defaults.constants';
 import { InputSettings } from '@/components/block-settings';
+import { TableHeaderSettings } from '@/components/block-settings/custom/TableHeaderSettings';
 
 // export the config for the block
 export const config: BlockConfig<TableBlockDef> = {
@@ -20,9 +21,10 @@ export const config: BlockConfig<TableBlockDef> = {
     type: BLOCK_TYPE_DATA,
     data: {
         style: {
-            display: 'table',
+            maxWidth: '1200px',
         },
-        rows: [],
+        content: [],
+        headers: [],
     },
     listeners: {},
     slots: {},
@@ -33,9 +35,15 @@ export const config: BlockConfig<TableBlockDef> = {
             name: 'General',
             children: [
                 {
-                    description: 'Rows',
+                    description: 'Columns',
                     render: ({ id }) => (
-                        <InputSettings id={id} label="Rows" path="rows" />
+                        <TableHeaderSettings id={id} path="headers" />
+                    ),
+                },
+                {
+                    description: 'Content',
+                    render: ({ id }) => (
+                        <InputSettings id={id} label="Content" path="content" />
                     ),
                 },
             ],

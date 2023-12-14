@@ -1,4 +1,4 @@
-import { CSSProperties } from 'react';
+import { CSSProperties, useMemo } from 'react';
 import { observer } from 'mobx-react-lite';
 
 import { useBlock } from '@/hooks';
@@ -7,7 +7,6 @@ import {
     Table,
     TableBody,
     TableCell,
-    TableContainer,
     TableHead,
     TableRow,
 } from '@mui/material';
@@ -16,51 +15,89 @@ export interface TableBlockDef extends BlockDef<'table'> {
     widget: 'table';
     data: {
         style: CSSProperties;
-        rows: Array<object>;
+        content: Array<object> | string;
+        headers: Array<{ display: string; value: string }>;
     };
 }
 
 export const TableBlock: BlockComponent = observer(({ id }) => {
-    const { data } = useBlock<TableBlockDef>(id);
+    const { attrs, data } = useBlock<TableBlockDef>(id);
+
+    const content = useMemo(() => {
+        if (!data?.content) {
+            return [];
+        }
+
+        if (typeof data?.content === 'string') {
+            // try to parse as an array, if not return empty array
+            try {
+                if (Array.isArray(JSON.parse(data.content))) {
+                    return JSON.parse(data.content);
+                }
+            } catch (e) {
+                return [];
+            }
+        }
+
+        return data.content;
+    }, [data?.content]);
+
+    const headerDisplay = useMemo(() => {
+        if (!data?.headers || data?.headers?.length === 0) {
+            return content?.length ? Object.keys(content[0]) : [];
+        }
+
+        return data.headers.map((header) => header.display);
+    }, [data?.headers]);
+
+    const headerValues = useMemo(() => {
+        if (!data?.headers || data?.headers?.length === 0) {
+            return content?.length ? Object.keys(content[0]) : [];
+        }
+
+        return data.headers.map((header) => header.value);
+    }, [data?.headers]);
 
     return (
-        <TableContainer component={'div'} sx={{ maxWidth: '100%' }}>
+        <div
+            style={{ maxWidth: '1200px', overflow: 'scroll', ...data.style }}
+            {...attrs}
+        >
             <Table
                 sx={{
-                    ...data.style,
+                    display: 'table',
                 }}
             >
                 <TableHead>
                     <TableRow>
-                        {Array.from(
-                            data?.rows?.length ? Object.keys(data.rows[0]) : [],
-                            (header) => {
-                                return (
-                                    <TableCell key={header}>{header}</TableCell>
-                                );
-                            },
-                        )}
+                        {Array.from(headerDisplay, (header) => {
+                            return (
+                                <TableCell
+                                    sx={{ textTransform: 'capitalize' }}
+                                    key={header}
+                                >
+                                    {header.replaceAll('_', ' ')}
+                                </TableCell>
+                            );
+                        })}
                     </TableRow>
                 </TableHead>
                 <TableBody>
-                    {Array.from(data?.rows ?? [], (row, i) => {
+                    {Array.from(content, (row, i) => {
                         return (
                             <TableRow key={i}>
-                                {Array.from(
-                                    Object.values(row),
-                                    (rowValue, j) => {
-                                        return (
-                                            <TableCell key={`${i}-${j}`}>
-                                                {rowValue}
-                                            </TableCell>
-                                        );
-                                    },
-                                )}
+                                {Array.from(headerValues, (headerValue, j) => {
+                                    return (
+                                        <TableCell key={`${i}-${j}`}>
+                                            {row[headerValue] ?? ''}
+                                        </TableCell>
+                                    );
+                                })}
                             </TableRow>
                         );
                     })}
                 </TableBody>
             </Table>
-        </TableContainer>
+        </div>
     );
 });
