@@ -40,15 +40,23 @@ export const ImageBlock: BlockComponent = observer(({ id }) => {
             </span>
         );
 
+    console.log({ data });
+
+    // could wrap in a tag conditionally if clickable link is desired - probably full conditional return components
+    // could also add tescription p tag underneath but would require style options
+    // might want to add centering option - full width div wrapper with auto margins
+    // TODO - add background styling / centering / covering etc
+
     return (
-        // could wrap in a tag conditionally if clickable link is desired - probably full conditional return components
-        // could also add tescription p tag underneath but would require style options
-        // might want to add centering option - full width div wrapper with auto margins
-        // TODO - add background styling / centering / covering etc
         <span
             style={{
                 ...data.style,
-                width: '100%',
+                // this logic is here to make the outer border wrap just the image if the alignment is left
+                width:
+                    data.style.justifyContent === 'left' ||
+                    !data.style.justifyContent
+                        ? data.style.width || '100%'
+                        : '100%',
                 display: 'flex',
             }}
             {...attrs}
@@ -56,6 +64,12 @@ export const ImageBlock: BlockComponent = observer(({ id }) => {
             <img
                 style={{
                     ...data.style,
+                    // this logic is here to make the outer border wrap just the image if the alignment is left
+                    width:
+                        data.style.justifyContent === 'left' ||
+                        !data.style.justifyContent
+                            ? '100%'
+                            : data.style.width || '100%',
                 }}
                 src={data.src}
                 title={data.title}

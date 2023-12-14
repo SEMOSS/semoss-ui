@@ -40,27 +40,6 @@ export const config: BlockConfig<ImageBlockDef> = {
             name: 'General',
             children: [
                 {
-                    description: 'Image Source',
-                    render: ({ id }) => (
-                        <InputModalSettings
-                            id={id}
-                            label="Source"
-                            placeholder="https://www.example.com"
-                            path="src"
-                        />
-                    ),
-                },
-                {
-                    description: 'Image Description (optional)',
-                    render: ({ id }) => (
-                        <InputSettings
-                            id={id}
-                            label="Description"
-                            path="title"
-                        />
-                    ),
-                },
-                {
                     description: 'Image Description (optional)',
                     render: ({ id }) => (
                         <ButtonGroupSettings
@@ -90,11 +69,31 @@ export const config: BlockConfig<ImageBlockDef> = {
                         />
                     ),
                 },
+                {
+                    description: 'Image Source',
+                    render: ({ id }) => (
+                        <InputModalSettings
+                            id={id}
+                            label="Source"
+                            placeholder="https://www.example.com"
+                            path="src"
+                        />
+                    ),
+                },
+                {
+                    description: 'Image Description (optional)',
+                    render: ({ id }) => (
+                        <InputSettings
+                            id={id}
+                            label="Description"
+                            path="title"
+                        />
+                    ),
+                },
             ],
         },
     ],
     styleMenu: [
-        // buildLayoutSection(),
         buildDimensionsSection(),
         buildSpacingSection(),
         {
