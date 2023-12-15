@@ -62,17 +62,25 @@ export const TableBlock: BlockComponent = observer(({ id }) => {
 
         return data.headers.map((header) => header.value);
     }, [data?.headers, data?.content]);
-
     return (
         <div style={{ overflow: 'scroll', ...data.style }} {...attrs}>
             <TableContainer>
                 <Table stickyHeader>
                     <TableHead>
-                        <TableRow>
+                        <TableRow
+                            sx={{
+                                color: 'inherit',
+                                backgroundColor: 'inherit',
+                            }}
+                        >
                             {Array.from(headerDisplay, (header) => {
                                 return (
                                     <TableCell
-                                        sx={{ textTransform: 'capitalize' }}
+                                        sx={{
+                                            textTransform: 'capitalize',
+                                            color: 'inherit',
+                                            backgroundColor: 'inherit',
+                                        }}
                                         key={header}
                                     >
                                         {header.replaceAll('_', ' ')}
@@ -95,6 +103,11 @@ export const TableBlock: BlockComponent = observer(({ id }) => {
                                             (headerValue, j) => {
                                                 return (
                                                     <TableCell
+                                                        sx={{
+                                                            color: 'inherit',
+                                                            backgroundColor:
+                                                                'inherit',
+                                                        }}
                                                         key={`${i}-${j}`}
                                                     >
                                                         {row[

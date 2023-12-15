@@ -14,6 +14,7 @@ import { TableChart } from '@mui/icons-material';
 import { BLOCK_TYPE_DATA } from '../block-defaults.constants';
 import { TableHeaderSettings } from '@/components/block-settings/custom/TableHeaderSettings';
 import { InputModalSettings } from '@/components/block-settings/shared/InputModalSettings';
+import { SelectInputSettings } from '@/components/block-settings';
 
 // export the config for the block
 export const config: BlockConfig<TableBlockDef> = {
@@ -54,11 +55,47 @@ export const config: BlockConfig<TableBlockDef> = {
         },
     ],
     styleMenu: [
-        buildLayoutSection(),
         buildSpacingSection(),
         buildDimensionsSection(),
         buildColorSection(),
         buildBorderSection(),
-        buildTypographySection(),
+        {
+            name: 'Text',
+            children: [
+                {
+                    description: 'Font',
+                    render: ({ id }) => (
+                        <SelectInputSettings
+                            id={id}
+                            path="style.fontFamily"
+                            label="Font"
+                            options={[
+                                {
+                                    value: 'Roboto',
+                                    display: 'Roboto',
+                                },
+                                {
+                                    value: 'Helvetica',
+                                    display: 'Helvetica',
+                                },
+                                {
+                                    value: 'Arial',
+                                    display: 'Arial',
+                                },
+                                {
+                                    value: 'Times New Roman',
+                                    display: 'Times New Roman',
+                                },
+                                {
+                                    value: 'Georgia',
+                                    display: 'Georgia',
+                                },
+                            ]}
+                            allowUnset
+                        />
+                    ),
+                },
+            ],
+        },
     ],
 };
