@@ -1,4 +1,4 @@
-import { CSSProperties, useMemo } from 'react';
+import { CSSProperties, useMemo, useState } from 'react';
 import { observer } from 'mobx-react-lite';
 
 import { useBlock } from '@/hooks';
@@ -7,7 +7,9 @@ import {
     Table,
     TableBody,
     TableCell,
+    TableContainer,
     TableHead,
+    TablePagination,
     TableRow,
 } from '@mui/material';
 
@@ -22,6 +24,8 @@ export interface TableBlockDef extends BlockDef<'table'> {
 
 export const TableBlock: BlockComponent = observer(({ id }) => {
     const { attrs, data } = useBlock<TableBlockDef>(id);
+    const [page, setPage] = useState(0);
+    const [rowsPerPage, setRowsPerPage] = useState(10);
 
     const content = useMemo(() => {
         if (!data?.content) {
@@ -31,8 +35,9 @@ export const TableBlock: BlockComponent = observer(({ id }) => {
         if (typeof data?.content === 'string') {
             // try to parse as an array, if not return empty array
             try {
-                if (Array.isArray(JSON.parse(data.content))) {
-                    return JSON.parse(data.content);
+                const jsonSafeString = data.content.replace(/'/g, '"');
+                if (Array.isArray(JSON.parse(jsonSafeString))) {
+                    return JSON.parse(jsonSafeString);
                 }
             } catch (e) {
                 return [];
@@ -48,7 +53,7 @@ export const TableBlock: BlockComponent = observer(({ id }) => {
         }
 
         return data.headers.map((header) => header.display);
-    }, [data?.headers]);
+    }, [data?.headers, data?.content]);
 
     const headerValues = useMemo(() => {
         if (!data?.headers || data?.headers?.length === 0) {
@@ -56,48 +61,74 @@ export const TableBlock: BlockComponent = observer(({ id }) => {
         }
 
         return data.headers.map((header) => header.value);
-    }, [data?.headers]);
+    }, [data?.headers, data?.content]);
 
     return (
         <div
             style={{ maxWidth: '1200px', overflow: 'scroll', ...data.style }}
             {...attrs}
         >
-            <Table
-                sx={{
-                    display: 'table',
+            <TableContainer>
+                <Table
+                    sx={{
+                        display: 'table',
+                    }}
+                    stickyHeader
+                >
+                    <TableHead>
+                        <TableRow>
+                            {Array.from(headerDisplay, (header) => {
+                                return (
+                                    <TableCell
+                                        sx={{ textTransform: 'capitalize' }}
+                                        key={header}
+                                    >
+                                        {header.replaceAll('_', ' ')}
+                                    </TableCell>
+                                );
+                            })}
+                        </TableRow>
+                    </TableHead>
+                    <TableBody>
+                        {Array.from(
+                            content.slice(
+                                page * rowsPerPage,
+                                page * rowsPerPage + rowsPerPage,
+                            ),
+                            (row, i) => {
+                                return (
+                                    <TableRow key={i}>
+                                        {Array.from(
+                                            headerValues,
+                                            (headerValue, j) => {
+                                                return (
+                                                    <TableCell
+                                                        key={`${i}-${j}`}
+                                                    >
+                                                        {row[headerValue] ?? ''}
+                                                    </TableCell>
+                                                );
+                                            },
+                                        )}
+                                    </TableRow>
+                                );
+                            },
+                        )}
+                    </TableBody>
+                </Table>
+            </TableContainer>
+            <TablePagination
+                rowsPerPageOptions={[10, 25, 50, 100]}
+                component="div"
+                count={content.length}
+                rowsPerPage={rowsPerPage}
+                page={page}
+                onPageChange={(_, newPage) => setPage(newPage)}
+                onRowsPerPageChange={(e) => {
+                    setRowsPerPage(parseInt(e.target.value));
+                    setPage(0);
                 }}
-            >
-                <TableHead>
-                    <TableRow>
-                        {Array.from(headerDisplay, (header) => {
-                            return (
-                                <TableCell
-                                    sx={{ textTransform: 'capitalize' }}
-                                    key={header}
-                                >
-                                    {header.replaceAll('_', ' ')}
-                                </TableCell>
-                            );
-                        })}
-                    </TableRow>
-                </TableHead>
-                <TableBody>
-                    {Array.from(content, (row, i) => {
-                        return (
-                            <TableRow key={i}>
-                                {Array.from(headerValues, (headerValue, j) => {
-                                    return (
-                                        <TableCell key={`${i}-${j}`}>
-                                            {row[headerValue] ?? ''}
-                                        </TableCell>
-                                    );
-                                })}
-                            </TableRow>
-                        );
-                    })}
-                </TableBody>
-            </Table>
+            />
         </div>
     );
 });

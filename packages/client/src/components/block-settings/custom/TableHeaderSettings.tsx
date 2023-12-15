@@ -14,7 +14,7 @@ import {
     ToggleButton,
     ToggleButtonGroup,
 } from '@mui/material';
-import { Add, Delete } from '@mui/icons-material';
+import { Add, ArrowDownward, ArrowUpward, Delete } from '@mui/icons-material';
 
 interface TableHeaderSettingsProps<D extends BlockDef = BlockDef> {
     /**
