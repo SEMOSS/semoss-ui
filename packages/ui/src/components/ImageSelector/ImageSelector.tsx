@@ -1,10 +1,9 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useMediaQuery } from "@mui/material";
 import { Checkbox, FileDropzone, Typography, Grid, styled } from "../../";
 import { ImageList } from "./ImageList";
 import { ImageListItem } from "./ImageListItem";
 import { ImageListItemBar } from "./ImageListItemBar";
-import { DeleteOutline } from "@mui/icons-material";
 
 const StyledContainer = styled(Grid)({
     width: "800px",
@@ -59,53 +58,36 @@ const StyledImageListItemBar = styled(ImageListItemBar)({
 });
 
 export interface ImageSelectorProps {
-    /** src value of selected image */
-    value: string;
+    /** value of selected image */
+    value: {
+        name: string;
+        src: string;
+        fileContents?: unknown;
+    };
 
     /** changes the value of the component*/
     onChange?: (val) => void;
 
-    /** upload image enpoint*/
-    uploadImage?: (val) => void;
-
-    // image options
-    options: {
-        title: string;
+    //default image options
+    defaultImageOptions: {
+        name: string;
         src: string;
         fileContents?: unknown;
-        newImage?: boolean;
     }[];
 }
 
 export const ImageSelector = (props: ImageSelectorProps): JSX.Element => {
-    const { value, options, onChange, ...otherProps } = props;
+    const { value, defaultImageOptions, onChange, ...otherProps } = props;
 
     //for number of columns
     const matchMedia = useMediaQuery("(min-width: 800px)");
 
     // set checked image to the default value
-    const [checked, setCheckbox] = useState(value);
-    const [controlledImages, setControlledImages] = useState<
-        {
-            title: string;
-            src: string;
-            fileContents?: unknown;
-            newImage?: boolean;
-        }[]
-    >([]);
-
-    useEffect(() => {
-        const contImages = [];
-        options.forEach((opt) => {
-            contImages.push(opt);
-        });
-
-        setControlledImages(options);
-
-        return () => {
-            setControlledImages([]);
-        };
-    }, [options.length, options]);
+    const [checked, setCheckbox] = useState(value.src);
+    const [controlledImages, setControlledImages] =
+        useState<{ title: string; src: string; fileContents?: unknown }[]>(
+            defaultImageOptions,
+        );
 
     const checkImage = (image) => {
         setCheckbox(image.src);
@@ -120,18 +102,19 @@ export const ImageSelector = (props: ImageSelectorProps): JSX.Element => {
      * @param value
      */
     const handleAddNewImage = (value) => {
-        // 1. Add File to controlledImages, but first create interface to hold new image url;
-        const imageurl = URL.createObjectURL(value);
+        // create image url from file
+        const imageUrl = URL.createObjectURL(value);
 
+        //create the image to add
         const newControlledImage = {
-            title: value.name,
-            src: imageurl,
+            name: value.name,
+            src: imageUrl,
             fileContents: value,
-            newImage: true,
         };
 
-        const newControlledImages = controlledImages;
-        newControlledImages.push(newControlledImage);
+        // new image will replace the first in list
+        const newControlledImages = defaultImageOptions;
+        newControlledImages[0] = newControlledImage;
 
         // Set new controlled images in state
         setControlledImages(newControlledImages);
@@ -167,8 +150,8 @@ export const ImageSelector = (props: ImageSelectorProps): JSX.Element => {
                     {controlledImages.map((image, id) => {
                         return (
                             <StyledImageListItem
-                                key={id}
-                                value={image.src}
+                                key={id.toString()}
+                                // value={image}
                                 className={`${
                                     checked === image.src ? "isChecked" : ""
                                 }`}
@@ -180,18 +163,10 @@ export const ImageSelector = (props: ImageSelectorProps): JSX.Element => {
                                 <StyledImageListItemBar
                                     position={"top"}
                                     actionIcon={
-                                        <>
-                                            <Checkbox
-                                                checked={checked === image.src}
-                                                onChange={() =>
-                                                    checkImage(image)
-                                                }
-                                            />
-                                            {/*TODO delete icon if new image */}
-                                            {/* {image.newImage && (
-                                                <DeletedOutline />
-                                            )} */}
-                                        </>
+                                        <Checkbox
+                                            checked={checked === image.src}
+                                            onChange={() => checkImage(image)}
+                                        />
                                     }
                                     actionPosition={"left"}
                                 />

@@ -1,2 +1,2 @@
 export * from './EditDatabaseDetails';
-export * from './EditDatabaseImage';
+export * from './EditEngineImage';

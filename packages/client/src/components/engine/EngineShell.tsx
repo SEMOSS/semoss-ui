@@ -17,7 +17,7 @@ import { Env } from '@/env';
 import { useRootStore, useEngine, usePixel } from '@/hooks';
 
 import { EditDatabaseDetails } from '@/components/database';
-import { EditDatabaseImage } from '@/components/database';
+import { EditEngineImage } from '@/components/database';
 import { Page, LoadingScreen } from '@/components/ui';
 import { EngineAccessButton } from './';
 import {
@@ -229,9 +229,9 @@ export const EngineShell = (props: EngineShellProps) => {
                             {canEdit && (
                                 <>
                                     {editImage && (
-                                        <EditDatabaseImage
+                                        <EditEngineImage
                                             open={editImage}
-                                            currentImageSrc={`${Env.MODULE}/api/app-${id}/appImage/download`}
+                                            currentImageSrc={`${Env.MODULE}/api/e-${id}/image/download`}
                                             type={
                                                 type.charAt(0).toUpperCase() +
                                                 type.slice(1)

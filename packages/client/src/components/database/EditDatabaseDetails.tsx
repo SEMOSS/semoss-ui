@@ -32,9 +32,6 @@ interface EditDatabaseDetailsProps {
     /** Values to show in the fields */
     values: Record<string, unknown>;
 
-    /** Current image src */
-    currentImageSrc?: string;
-
     /** Type of modal; db/storage/model */
     type: string;
 }

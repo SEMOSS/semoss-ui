@@ -14,11 +14,12 @@ type Story = StoryObj<typeof ImageSelector>;
 const Template = (args) => {
     return (
         <ImageSelector
-            value={
-                "https://images.unsplash.com/photo-1522770179533-24471fcdba45"
-            }
+            value={{
+                title: "default",
+                src: "https://images.unsplash.com/photo-1522770179533-24471fcdba45",
+            }}
             onChange={(value) => console.log("test", value)}
-            options={[
+            defaultImageOptions={[
                 {
                     title: "Camera",
                     src: "https://images.unsplash.com/photo-1522770179533-24471fcdba45",

@@ -424,7 +424,7 @@ const _FileDropzone = <Multiple extends boolean>(
                                 Browse
                             </StyledButton>
                             <StyledImageDropzoneDescription>
-                                or drop images to upload
+                                or drop image to upload
                             </StyledImageDropzoneDescription>
                             <div>
                                 <StyledFileUploadInput
@@ -439,9 +439,6 @@ const _FileDropzone = <Multiple extends boolean>(
                             </div>
                         </StyledContentContainer>
                     </StyledImageSelectorDropzone>
-                    <StyledFileListContainer>
-                        {renderFiles()}
-                    </StyledFileListContainer>
                 </StyledContainer>
             ) : (
                 <StyledContainer ref={ref} {...otherProps}>
