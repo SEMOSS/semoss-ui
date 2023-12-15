@@ -19,7 +19,7 @@ export const PageBlock: BlockComponent = observer(({ id }) => {
     return (
         <div
             style={{
-                minWidth: '100%',
+                width: '100%',
                 minHeight: '100%',
                 background: '#FFFFFF',
                 height: '100%',

@@ -64,17 +64,9 @@ export const TableBlock: BlockComponent = observer(({ id }) => {
     }, [data?.headers, data?.content]);
 
     return (
-        <div
-            style={{ maxWidth: '1200px', overflow: 'scroll', ...data.style }}
-            {...attrs}
-        >
+        <div style={{ overflow: 'scroll', ...data.style }} {...attrs}>
             <TableContainer>
-                <Table
-                    sx={{
-                        display: 'table',
-                    }}
-                    stickyHeader
-                >
+                <Table stickyHeader>
                     <TableHead>
                         <TableRow>
                             {Array.from(headerDisplay, (header) => {
@@ -105,7 +97,9 @@ export const TableBlock: BlockComponent = observer(({ id }) => {
                                                     <TableCell
                                                         key={`${i}-${j}`}
                                                     >
-                                                        {row[headerValue] ?? ''}
+                                                        {row[
+                                                            headerValue
+                                                        ].toString() ?? ''}
                                                     </TableCell>
                                                 );
                                             },

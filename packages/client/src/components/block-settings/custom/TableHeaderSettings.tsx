@@ -14,7 +14,8 @@ import {
     ToggleButton,
     ToggleButtonGroup,
 } from '@mui/material';
-import { Add, ArrowDownward, ArrowUpward, Delete } from '@mui/icons-material';
+import { Add, Delete, DragIndicator } from '@mui/icons-material';
+import { DragDropContext, Droppable, Draggable } from 'react-beautiful-dnd';
 
 interface TableHeaderSettingsProps<D extends BlockDef = BlockDef> {
     /**
@@ -86,7 +87,7 @@ export const TableHeaderSettings = observer(
             };
             setHeaders(newHeaders);
 
-            // clear out he old timeout
+            // clear out the old timeout
             if (timeoutRef.current) {
                 clearTimeout(timeoutRef.current);
                 timeoutRef.current = null;
@@ -115,7 +116,7 @@ export const TableHeaderSettings = observer(
             ];
             setHeaders(newHeaders);
 
-            // clear out he old timeout
+            // clear out the old timeout
             if (timeoutRef.current) {
                 clearTimeout(timeoutRef.current);
                 timeoutRef.current = null;
@@ -137,7 +138,7 @@ export const TableHeaderSettings = observer(
             // set the value
             setHeaders([{ display: '', value: '' }]);
 
-            // clear out he old timeout
+            // clear out the old timeout
             if (timeoutRef.current) {
                 clearTimeout(timeoutRef.current);
                 timeoutRef.current = null;
@@ -146,6 +147,35 @@ export const TableHeaderSettings = observer(
             timeoutRef.current = setTimeout(() => {
                 try {
                     setData(path, [] as PathValue<D['data'], typeof path>);
+                } catch (e) {
+                    console.log(e);
+                }
+            }, 300);
+        };
+
+        // a little function to help us with reordering the result
+        const reorder = (startIndex: number, endIndex: number) => {
+            if (!headers.length) {
+                return;
+            }
+            const newHeaders = Array.from(headers);
+            const [removed] = newHeaders.splice(startIndex, 1);
+            newHeaders.splice(endIndex, 0, removed);
+
+            setHeaders(newHeaders);
+
+            // clear out the old timeout
+            if (timeoutRef.current) {
+                clearTimeout(timeoutRef.current);
+                timeoutRef.current = null;
+            }
+
+            timeoutRef.current = setTimeout(() => {
+                try {
+                    setData(
+                        path,
+                        newHeaders as PathValue<D['data'], typeof path>,
+                    );
                 } catch (e) {
                     console.log(e);
                 }
@@ -181,58 +211,132 @@ export const TableHeaderSettings = observer(
                     </ToggleButtonGroup>
                 </BaseSettingSection>
                 {useCustomHeaders ? (
-                    <Stack gap={1}>
-                        {Array.from(
-                            headers,
-                            (header: { display: string; value: string }, i) => {
-                                return (
-                                    <Stack direction="row" gap={1} key={i}>
-                                        <TextField
-                                            fullWidth
-                                            value={header.display}
-                                            onChange={(e) => {
-                                                // sync the data on change
-                                                onChangeCustomHeader(
-                                                    headers,
-                                                    i,
-                                                    e.target.value,
-                                                    header.value,
-                                                );
-                                            }}
-                                            placeholder="Display"
-                                            size="small"
-                                            variant="outlined"
-                                            autoComplete="off"
-                                        />
-                                        <TextField
-                                            fullWidth
-                                            value={header.value}
-                                            onChange={(e) => {
-                                                // sync the data on change
-                                                onChangeCustomHeader(
-                                                    headers,
-                                                    i,
-                                                    header.display,
-                                                    e.target.value,
-                                                );
-                                            }}
-                                            placeholder="Value"
-                                            size="small"
-                                            variant="outlined"
-                                            autoComplete="off"
-                                        />
-                                        <IconButton
-                                            size="small"
-                                            onClick={() =>
-                                                onRemoveCustomHeader(i)
-                                            }
-                                        >
-                                            <Delete />
-                                        </IconButton>
-                                    </Stack>
+                    <>
+                        <DragDropContext
+                            onDragEnd={(result) => {
+                                if (!result.destination) {
+                                    return;
+                                }
+                                reorder(
+                                    result.source.index,
+                                    result.destination.index,
                                 );
-                            },
-                        )}
+                            }}
+                        >
+                            <Droppable droppableId="droppable">
+                                {(provided) => (
+                                    <Stack
+                                        gap={1}
+                                        ref={provided.innerRef}
+                                        {...provided.droppableProps}
+                                    >
+                                        {Array.from(
+                                            headers,
+                                            (
+                                                header: {
+                                                    display: string;
+                                                    value: string;
+                                                },
+                                                i,
+                                            ) => {
+                                                return (
+                                                    <Draggable
+                                                        key={`draggable-${i}`}
+                                                        draggableId={`draggable-${i}`}
+                                                        index={i}
+                                                    >
+                                                        {(
+                                                            provided,
+                                                            snapshot,
+                                                        ) => (
+                                                            <Stack
+                                                                direction="row"
+                                                                alignItems="center"
+                                                                gap={1}
+                                                                key={i}
+                                                                ref={
+                                                                    provided.innerRef
+                                                                }
+                                                                {...provided.dragHandleProps}
+                                                                {...provided.draggableProps}
+                                                            >
+                                                                <TextField
+                                                                    disabled={
+                                                                        snapshot.isDragging
+                                                                    }
+                                                                    fullWidth
+                                                                    value={
+                                                                        header.display
+                                                                    }
+                                                                    onChange={(
+                                                                        e,
+                                                                    ) => {
+                                                                        // sync the data on change
+                                                                        onChangeCustomHeader(
+                                                                            headers,
+                                                                            i,
+                                                                            e
+                                                                                .target
+                                                                                .value,
+                                                                            header.value,
+                                                                        );
+                                                                    }}
+                                                                    placeholder="Display"
+                                                                    size="small"
+                                                                    variant="outlined"
+                                                                    autoComplete="off"
+                                                                />
+                                                                <TextField
+                                                                    disabled={
+                                                                        snapshot.isDragging
+                                                                    }
+                                                                    fullWidth
+                                                                    value={
+                                                                        header.value
+                                                                    }
+                                                                    onChange={(
+                                                                        e,
+                                                                    ) => {
+                                                                        // sync the data on change
+                                                                        onChangeCustomHeader(
+                                                                            headers,
+                                                                            i,
+                                                                            header.display,
+                                                                            e
+                                                                                .target
+                                                                                .value,
+                                                                        );
+                                                                    }}
+                                                                    placeholder="Value"
+                                                                    size="small"
+                                                                    variant="outlined"
+                                                                    autoComplete="off"
+                                                                />
+                                                                <IconButton
+                                                                    disabled={
+                                                                        snapshot.isDragging
+                                                                    }
+                                                                    size="small"
+                                                                    onClick={() =>
+                                                                        onRemoveCustomHeader(
+                                                                            i,
+                                                                        )
+                                                                    }
+                                                                >
+                                                                    <Delete />
+                                                                </IconButton>
+                                                                <DragIndicator />
+                                                            </Stack>
+                                                        )}
+                                                    </Draggable>
+                                                );
+                                            },
+                                        )}
+                                        {provided.placeholder}
+                                    </Stack>
+                                )}
+                            </Droppable>
+                        </DragDropContext>
                         <Stack
                             alignItems="center"
                             justifyContent="center"
@@ -252,7 +356,7 @@ export const TableHeaderSettings = observer(
                                 Add Column
                             </Button>
                         </Stack>
-                    </Stack>
+                    </>
                 ) : (
                     <></>
                 )}
