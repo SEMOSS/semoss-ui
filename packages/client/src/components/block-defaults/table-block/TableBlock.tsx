@@ -4,6 +4,7 @@ import { observer } from 'mobx-react-lite';
 import { useBlock } from '@/hooks';
 import { BlockDef, BlockComponent } from '@/stores';
 import {
+    styled,
     Table,
     TableBody,
     TableCell,
@@ -19,8 +20,13 @@ export interface TableBlockDef extends BlockDef<'table'> {
         style: CSSProperties;
         content: Array<object> | string;
         headers: Array<{ display: string; value: string }>;
+        noDataText?: string;
     };
 }
+
+const StyledTableRow = styled(TableRow)(({ theme }) => ({
+    padding: theme.spacing(2),
+}));
 
 export const TableBlock: BlockComponent = observer(({ id }) => {
     const { attrs, data } = useBlock<TableBlockDef>(id);
@@ -44,7 +50,7 @@ export const TableBlock: BlockComponent = observer(({ id }) => {
             }
         }
 
-        return data.content;
+        return Array.isArray(data.content) ? data.content : [];
     }, [data?.content]);
 
     const headerDisplay = useMemo(() => {
@@ -96,38 +102,49 @@ export const TableBlock: BlockComponent = observer(({ id }) => {
                         </TableRow>
                     </TableHead>
                     <TableBody>
-                        {Array.from(
-                            content.slice(
-                                page * rowsPerPage,
-                                page * rowsPerPage + rowsPerPage,
-                            ),
-                            (row, i) => {
-                                return (
-                                    <TableRow key={i}>
-                                        {Array.from(
-                                            headerValues,
-                                            (headerValue, j) => {
-                                                return (
-                                                    <TableCell
-                                                        sx={{
-                                                            color: 'inherit',
-                                                            backgroundColor:
-                                                                'inherit',
-                                                        }}
-                                                        key={`${i}-${j}`}
-                                                    >
-                                                        {row[headerValue]
-                                                            ? row[
-                                                                  headerValue
-                                                              ].toString()
-                                                            : ''}
-                                                    </TableCell>
-                                                );
-                                            },
-                                        )}
-                                    </TableRow>
-                                );
-                            },
+                        {content.length ? (
+                            Array.from(
+                                content.slice(
+                                    page * rowsPerPage,
+                                    page * rowsPerPage + rowsPerPage,
+                                ),
+                                (row, i) => {
+                                    return (
+                                        <TableRow key={i}>
+                                            {Array.from(
+                                                headerValues,
+                                                (headerValue, j) => {
+                                                    return (
+                                                        <TableCell
+                                                            sx={{
+                                                                color: 'inherit',
+                                                                backgroundColor:
+                                                                    'inherit',
+                                                            }}
+                                                            key={`${i}-${j}`}
+                                                        >
+                                                            {row[headerValue]
+                                                                ? row[
+                                                                      headerValue
+                                                                  ].toString()
+                                                                : ''}
+                                                        </TableCell>
+                                                    );
+                                                },
+                                            )}
+                                        </TableRow>
+                                    );
+                                },
+                            )
+                        ) : (
+                            <StyledTableRow>
+                                <TableCell colSpan={100}>
+                                    <em>
+                                        {data?.noDataText ??
+                                            'No data available'}
+                                    </em>
+                                </TableCell>
+                            </StyledTableRow>
                         )}
                     </TableBody>
                 </Table>

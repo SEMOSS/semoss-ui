@@ -14,7 +14,10 @@ import { TableChart } from '@mui/icons-material';
 import { BLOCK_TYPE_DATA } from '../block-defaults.constants';
 import { TableHeaderSettings } from '@/components/block-settings/custom/TableHeaderSettings';
 import { InputModalSettings } from '@/components/block-settings/shared/InputModalSettings';
-import { SelectInputSettings } from '@/components/block-settings';
+import {
+    InputSettings,
+    SelectInputSettings,
+} from '@/components/block-settings';
 
 // export the config for the block
 export const config: BlockConfig<TableBlockDef> = {
@@ -48,6 +51,16 @@ export const config: BlockConfig<TableBlockDef> = {
                             id={id}
                             label="Content"
                             path="content"
+                        />
+                    ),
+                },
+                {
+                    description: 'No Data Text',
+                    render: ({ id }) => (
+                        <InputSettings
+                            id={id}
+                            label="No Data Text"
+                            path="noDataText"
                         />
                     ),
                 },
