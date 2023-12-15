@@ -193,9 +193,7 @@ export const Designer = observer((props: DesignerProps): JSX.Element => {
                         </StyledSidebarContent>
                     ) : null}
                 </StyledLeftMenu>
-                <Stack flex="1">
-                    <Screen>{children}</Screen>
-                </Stack>
+                <Screen>{children}</Screen>
                 <StyledRightMenu elevation={7}>
                     <SelectedMenu />
                 </StyledRightMenu>

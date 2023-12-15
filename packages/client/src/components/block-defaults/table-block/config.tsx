@@ -21,7 +21,7 @@ export const config: BlockConfig<TableBlockDef> = {
     type: BLOCK_TYPE_DATA,
     data: {
         style: {
-            maxWidth: '1200px',
+            maxWidth: '100%',
         },
         content: [],
         headers: [],
