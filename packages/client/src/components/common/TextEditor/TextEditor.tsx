@@ -54,10 +54,18 @@ const StyledEmptyFiles = styled('div')(({ theme }) => ({
     justifyContent: 'space-around',
 }));
 
-const StyledIconButton = styled(IconButton)(({ theme }) => ({
+const StyledPrettierIconButton = styled(IconButton)(({ theme }) => ({
+    // color: '#0000008A',
+    height: '50px',
+    width: '30px',
+    fontSize: 'inherit',
+}));
+
+const StyledSaveIconButton = styled(IconButton)(({ theme }) => ({
     color: '#0000008A',
     height: '50px',
-    width: '50px',
+    width: '30px',
+    marginRight: '20px',
     fontSize: 'inherit',
 }));
 
@@ -524,7 +532,8 @@ export const TextEditor = (props: TextEditorProps) => {
                                 );
                             })}
                         </Tabs>
-                        {/* <StyledIconButton
+                        <div style={{ flexGrow: 1 }}></div>
+                        <StyledPrettierIconButton
                             size={'small'}
                             color={'secondary'}
                             title={'Prettify'}
@@ -532,9 +541,17 @@ export const TextEditor = (props: TextEditorProps) => {
                                 prettifyFile();
                             }}
                         >
-                            <FormatAlignJustify />
-                        </StyledIconButton> */}
-                        <StyledIconButton
+                            <svg
+                                fill="#0000008A"
+                                viewBox="0 0 16 16"
+                                width="1em"
+                                height="1em"
+                            >
+                                <path d="M10.33 1.67h-8c-.45-.02-.43-.67 0-.67h8c.44 0 .46.64 0 .67Zm-8 2.66c-.45-.02-.43-.66 0-.66H7c.44 0 .45.64 0 .66H2.33ZM5.67 3c-.46-.02-.44-.66 0-.67h6.66c.44.01.46.65 0 .67H5.67Zm5.33.67c.44 0 .45.64 0 .66H8.33c-.45-.02-.43-.66 0-.66H11Zm1.33.66c-.45-.02-.43-.66 0-.66H13c.44 0 .45.64 0 .66h-.67Zm-10 1.34c-.45-.02-.43-.67 0-.67h1.34c.43 0 .45.64 0 .67H2.33Zm8 0c-.45-.02-.43-.67 0-.67h3.34c.43 0 .45.64 0 .67h-3.34ZM5 5.67C4.55 5.65 4.57 5 5 5h.67c.43 0 .45.64 0 .67H5Zm-2.67 8c-.45-.02-.43-.67 0-.67h1.34c.43 0 .45.64 0 .67H2.33Zm2.67 0c-.45-.02-.43-.67 0-.67h.67c.43 0 .45.64 0 .67H5ZM10.33 7c-.45-.02-.43-.66 0-.67h3.34c.43.01.45.65 0 .67h-3.34Zm-8 0c-.45-.02-.43-.66 0-.67h3.34c.43.01.45.65 0 .67H2.33Zm0 5.33c-.45-.02-.43-.66 0-.66h3.34c.43 0 .45.64 0 .66H2.33Zm0 2.67c-.45-.02-.43-.66 0-.67h3.34c.43.01.45.65 0 .67H2.33Zm0-6.67c-.45-.02-.43-.66 0-.66H3c.44 0 .45.64 0 .66h-.67Zm2 0c-.45-.02-.43-.66 0-.66h2c.44 0 .46.64 0 .66h-2Zm3.34 0c-.46-.02-.44-.66 0-.66H13c.44 0 .45.64 0 .66H7.67Zm2.66 1.34c-.45-.02-.43-.67 0-.67h2c.44 0 .46.64 0 .67h-2Zm-4 0c-.45-.02-.43-.67 0-.67H9c.44 0 .45.64 0 .67H6.33Zm-4 0c-.45-.02-.43-.67 0-.67H5c.44 0 .45.64 0 .67H2.33Zm0 1.33c-.45-.02-.43-.66 0-.67H3c.44.01.45.65 0 .67h-.67Zm2 0c-.45-.02-.43-.66 0-.67h6c.44.01.46.65 0 .67h-6Zm-2-8c-.45-.02-.43-.66 0-.67h2c.44.01.46.65 0 .67h-2Z"></path>
+                            </svg>
+                            {/* <FormatAlignJustify /> */}
+                        </StyledPrettierIconButton>
+                        <StyledSaveIconButton
                             size={'small'}
                             color={'secondary'}
                             title={'Save'}
@@ -543,7 +560,7 @@ export const TextEditor = (props: TextEditorProps) => {
                             }}
                         >
                             <SaveOutlined />
-                        </StyledIconButton>
+                        </StyledSaveIconButton>
                     </StyledFileTabs>
                     <StyledActiveFilePath>
                         {formatFilePath(activeFile.id)}
