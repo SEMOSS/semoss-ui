@@ -318,6 +318,7 @@ export const EngineShell = (props: EngineShellProps) => {
                     >
                         <Card.ActionsArea>
                             <StyledDatabaseImage
+                                key={Date.now()}
                                 image={`${Env.MODULE}/api/e-${id}/image/download`}
                             />
 

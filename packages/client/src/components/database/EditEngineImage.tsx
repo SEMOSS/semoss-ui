@@ -1,5 +1,12 @@
 import { useState } from 'react';
-import { Modal, Button, Stack, ImageSelector, styled } from '@semoss/ui';
+import {
+    Modal,
+    Button,
+    Stack,
+    ImageSelector,
+    styled,
+    useNotification,
+} from '@semoss/ui';
 import { observer } from 'mobx-react-lite';
 
 import { useRootStore, useEngine } from '@/hooks';
@@ -29,6 +36,9 @@ interface EditEngineImageProps {
 
 export const EditEngineImage = observer((props: EditEngineImageProps) => {
     const { open = false, onClose, currentImageSrc, type } = props;
+
+    // get the notification
+    const notification = useNotification();
 
     // get the configStore
     const { monolithStore } = useRootStore();
@@ -65,7 +75,7 @@ export const EditEngineImage = observer((props: EditEngineImageProps) => {
     ];
 
     //set default image to first in list
-    const [imageSelectorValue, setImageSelectorValue] = useState(
+    const [imageSelectorValue, setImageSelectorValue] = useState<File[]>(
         defaultImageOptions[0],
     );
 
@@ -94,8 +104,42 @@ export const EditEngineImage = observer((props: EditEngineImageProps) => {
         //upload image
         const upload = monolithStore.uploadImage(imageUpload, id);
 
-        //after successful upload trigger close modal & reload page
-        upload && onClose(true);
+        // after successful upload trigger close modal & reload page
+        upload &&
+            monolithStore
+                .runQuery(
+                    `SetEngineMetadata(engine=["${id}"], meta=[{"markdown":"undefined"}], jsonCleanup=[true])`,
+                )
+                .then((response) => {
+                    const { output, additionalOutput, operationType } =
+                        response.pixelReturn[0];
+
+                    // track the errors
+                    if (operationType.indexOf('ERROR') > -1) {
+                        notification.add({
+                            color: 'error',
+                            message: output,
+                        });
+
+                        return;
+                    }
+
+                    notification.add({
+                        color: 'success',
+                        message: additionalOutput[0].output,
+                    });
+
+                    // close it and succesfully message
+                    onClose(true);
+                })
+                .catch((error) => {
+                    notification.add({
+                        color: 'error',
+                        message: error.message,
+                    });
+                });
+
+        onClose(true);
     };
 
     //on change, set value to entire image
