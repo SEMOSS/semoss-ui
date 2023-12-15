@@ -1,16 +1,25 @@
 import { BlockConfig } from '@/stores';
-import { InputTypeSettings, InputSettings } from '@/components/block-settings';
+import { InputSettings } from '@/components/block-settings';
 
 import { TextFieldBlockDef, TextFieldBlock } from './TextFieldBlock';
 import { FormatShapes } from '@mui/icons-material';
-
-import { buildSpacingSection } from '../block-defaults.shared';
+import {
+    buildDimensionsSection,
+    buildSpacingSection,
+} from '../block-defaults.shared';
+import { BLOCK_TYPE_INPUT } from '../block-defaults.constants';
+import { SelectInputSettings } from '@/components/block-settings/shared/SelectInputSettings';
+import { InputModalSettings } from '@/components/block-settings/shared/InputModalSettings';
 
 // export the config for the block
 export const config: BlockConfig<TextFieldBlockDef> = {
     widget: 'text-field',
+    type: BLOCK_TYPE_INPUT,
     data: {
-        style: {},
+        style: {
+            width: '100%',
+            padding: '8px',
+        },
         value: '',
         label: 'Example Input',
         type: 'text',
@@ -23,14 +32,18 @@ export const config: BlockConfig<TextFieldBlockDef> = {
     },
     render: TextFieldBlock,
     icon: FormatShapes,
-    menu: [
+    contentMenu: [
         {
-            name: 'Text Field',
+            name: 'General',
             children: [
                 {
                     description: 'Value',
                     render: ({ id }) => (
-                        <InputSettings id={id} label="Value" path="value" />
+                        <InputModalSettings
+                            id={id}
+                            label="Value"
+                            path="value"
+                        />
                     ),
                 },
                 {
@@ -43,16 +56,30 @@ export const config: BlockConfig<TextFieldBlockDef> = {
                     description: 'Input Type',
                     render: ({ id }) => {
                         return (
-                            <InputTypeSettings
+                            <SelectInputSettings
                                 id={id}
-                                label="Type"
                                 path="type"
+                                label="Type"
+                                options={[
+                                    {
+                                        value: 'text',
+                                        display: 'Text',
+                                    },
+                                    {
+                                        value: 'number',
+                                        display: 'Number',
+                                    },
+                                    {
+                                        value: 'date',
+                                        display: 'Date',
+                                    },
+                                ]}
                             />
                         );
                     },
                 },
             ],
         },
-        buildSpacingSection(),
     ],
+    styleMenu: [buildSpacingSection(), buildDimensionsSection()],
 };

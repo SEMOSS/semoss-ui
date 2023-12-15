@@ -1,12 +1,12 @@
-import { styled, Stack, Icon, Divider, Paper, Modal } from '@semoss/ui';
-import { DataObject, Layers, Visibility, Widgets } from '@mui/icons-material';
+import { observer } from 'mobx-react-lite';
+import { styled, Stack, Icon, Divider, Paper } from '@semoss/ui';
+import { DataObject, Layers, Widgets } from '@mui/icons-material';
 import { useState } from 'react';
 
 import { DesignerContext } from '@/contexts';
 import { DesignerStore } from '@/stores';
 
-import { Overlay } from './Overlay';
-import { AddMenu } from './AddMenu';
+import { BlocksMenu } from './BlocksMenu';
 import { SelectedMenu } from './SelectedMenu';
 import { OutlineMenu } from './OutlineMenu';
 import { QueryMenu } from './QueryMenu';
@@ -84,16 +84,24 @@ const StyledSidebarContent = styled(Paper)(({ theme }) => ({
 
 const StyledSidebarContentInner = styled('div')(({ theme }) => ({
     flex: '1',
-    paddingTop: theme.spacing(2),
-    paddingBottom: theme.spacing(2),
     height: '100%',
     width: '100%',
+}));
+
+const StyledDesignerContainer = styled(Stack, {
+    shouldForwardProp: (prop) => prop !== 'isDragging',
+})<{
+    isDragging: boolean;
+}>(({ isDragging }) => ({
+    height: '100%',
+    width: '100%',
+    cursor: isDragging ? 'grabbing!important' : 'unset',
 }));
 
 const StyledRightMenu = styled(Paper)(({ theme }) => ({
     display: 'flex',
     height: '100%',
-    width: theme.spacing(43),
+    width: theme.spacing(50),
     flexDirection: 'row',
     borderRadius: '0',
 }));
@@ -106,13 +114,11 @@ interface DesignerProps {
     designer: DesignerStore;
 }
 
-export const Designer = (props: DesignerProps) => {
+export const Designer = observer((props: DesignerProps): JSX.Element => {
     const { children, designer } = props;
 
     // view
-    const [view, setView] = useState<'outline' | 'query' | 'add' | 'app' | ''>(
-        'app',
-    );
+    const [view, setView] = useState<'outline' | 'query' | 'add' | ''>('');
 
     /**
      * Set the view. If it is the same, close it
@@ -129,37 +135,38 @@ export const Designer = (props: DesignerProps) => {
         setView(v);
     };
 
+    /**
+     * Clear any selections when interacting with the left menu
+     */
+    const handleMouseDown = () => {
+        designer.setSelected('');
+    };
+
     return (
         <DesignerContext.Provider
             value={{
                 designer: designer,
             }}
         >
-            <Overlay />
-            <Stack height="100%" width={'100%'} direction="row" spacing={0}>
-                <StyledLeftMenu>
+            <StyledDesignerContainer
+                direction="row"
+                isDragging={!!designer.drag.ghostWidget}
+            >
+                <StyledLeftMenu onMouseDown={handleMouseDown}>
                     <StyledSidebar>
                         <StyledSidebarItem
-                            disabled={view === 'app'}
+                            disabled={false}
                             selected={view === 'outline'}
-                            onClick={
-                                view === 'app'
-                                    ? undefined
-                                    : () => updateView('outline')
-                            }
+                            onClick={() => updateView('outline')}
                         >
                             <Icon>
                                 <Layers />
                             </Icon>
                         </StyledSidebarItem>
                         <StyledSidebarItem
-                            disabled={view === 'app'}
+                            disabled={false}
                             selected={view === 'query'}
-                            onClick={
-                                view === 'app'
-                                    ? undefined
-                                    : () => updateView('query')
-                            }
+                            onClick={() => updateView('query')}
                         >
                             <Icon>
                                 <DataObject />
@@ -167,34 +174,21 @@ export const Designer = (props: DesignerProps) => {
                         </StyledSidebarItem>
                         <StyledSidebarDivider />
                         <StyledSidebarItem
-                            disabled={view === 'app'}
+                            disabled={false}
                             selected={view === 'add'}
-                            onClick={
-                                view === 'app'
-                                    ? undefined
-                                    : () => updateView('add')
-                            }
+                            onClick={() => updateView('add')}
                         >
                             <Icon>
                                 <Widgets />
                             </Icon>
                         </StyledSidebarItem>
-                        <StyledSidebarItem
-                            disabled={false}
-                            selected={view === 'app'}
-                            onClick={() => updateView('app')}
-                        >
-                            <Icon>
-                                <Visibility />
-                            </Icon>
-                        </StyledSidebarItem>
                     </StyledSidebar>
-                    {view && view !== 'app' ? (
+                    {view ? (
                         <StyledSidebarContent elevation={7}>
                             <StyledSidebarContentInner>
                                 {view === 'outline' ? <OutlineMenu /> : null}
                                 {view === 'query' ? <QueryMenu /> : null}
-                                {view === 'add' ? <AddMenu /> : null}
+                                {view === 'add' ? <BlocksMenu /> : null}
                             </StyledSidebarContentInner>
                         </StyledSidebarContent>
                     ) : null}
@@ -202,14 +196,10 @@ export const Designer = (props: DesignerProps) => {
                 <Stack flex="1">
                     <Screen>{children}</Screen>
                 </Stack>
-                {view !== 'app' ? (
-                    <StyledRightMenu elevation={7}>
-                        <SelectedMenu />
-                    </StyledRightMenu>
-                ) : (
-                    <></>
-                )}
-            </Stack>
+                <StyledRightMenu elevation={7}>
+                    <SelectedMenu />
+                </StyledRightMenu>
+            </StyledDesignerContainer>
         </DesignerContext.Provider>
     );
-};
+});

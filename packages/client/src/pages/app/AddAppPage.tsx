@@ -12,13 +12,12 @@ import {
 } from '@semoss/ui';
 
 import {
-    App,
     AppFilter,
     ConnectEngines,
     ImportAppForm,
     ImportAppAccess,
 } from '@/components/app';
-import { PromptGenerator } from '@/components/prompt';
+import { PromptBuilder } from '@/components/prompt';
 
 import { LoadingScreen } from '@/components/ui';
 
@@ -28,6 +27,7 @@ import { useStepper, useRootStore, usePixel } from '@/hooks';
 import { APP_STEP_INTERFACE, ADD_APP_STEPS } from './add-app.constants';
 import { AppShortcut } from '@mui/icons-material';
 import { BuildDb } from '@/assets/img/BuildDb';
+import { AppMetadata } from '@/components/app';
 
 const StyledContainer = styled('div')(({ theme }) => ({
     display: 'flex',
@@ -170,11 +170,7 @@ export const AddAppPage = () => {
             {/* All Import Workflows: Get Metadata, and import type specific properties */}
             {steps.length === 1 ? (
                 steps[0].data.type === 'PROMPT_BUILDER' ? (
-                    <PromptGenerator
-                        onSuccess={() => {
-                            console.warn('navigate to app page');
-                        }}
-                    />
+                    <PromptBuilder />
                 ) : (
                     <ImportAppForm
                         data={steps[0].data}
@@ -262,11 +258,7 @@ export const AddAppPage = () => {
             {steps.length === 3 ? (
                 <>
                     {steps[0].data.type === 'PROMPT_BUILDER' ? (
-                        <PromptGenerator
-                            onSuccess={() => {
-                                console.warn('navigate to app page');
-                            }}
-                        />
+                        <PromptBuilder />
                     ) : (
                         <ImportAppAccess
                             appId={appId}
@@ -287,7 +279,7 @@ interface SelectionStep {
     stepInProcess: number;
     data: {
         type: string;
-        options?: App;
+        options?: AppMetadata;
     };
 }
 interface AddAppSelectionPageProps {
@@ -326,7 +318,7 @@ export const AddAppSelectionPage = (props: AddAppSelectionPageProps) => {
     });
 
     // get the projects
-    const myApps = usePixel<App[]>(
+    const myApps = usePixel<AppMetadata[]>(
         `MyProjects(metaKeys = ${JSON.stringify(
             metaKeys,
         )}, onlyPortals=[true]);`,

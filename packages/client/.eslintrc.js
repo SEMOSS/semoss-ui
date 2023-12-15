@@ -23,6 +23,7 @@ module.exports = {
     plugins: ['react'],
     rules: {
         'react/prop-types': 0,
+        'no-debugger': 2,
     },
     settings: {
         react: {

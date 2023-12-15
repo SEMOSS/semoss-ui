@@ -34,6 +34,8 @@ import { useRootStore, useAPI, useSettings } from '@/hooks';
 import { LoadingScreen } from '@/components/ui';
 import { SETTINGS_MODE, SETTINGS_ROLE } from './settings.types';
 
+import { PERMISSION_DESCRIPTION_MAP } from './member-permissions.constants';
+
 const colors = [
     '#22A4FF',
     '#FA3F20',
@@ -43,6 +45,21 @@ const colors = [
     '#22A4FF',
     '#4CAF50',
 ];
+
+const UserInfoTableCell = styled(Table.Cell)({
+    display: 'flex',
+    alignItems: 'center',
+    height: '84px',
+});
+
+const AvatarWrapper = styled('div')({
+    display: 'inline-block',
+    width: '50px',
+});
+
+const NameIDWrapper = styled('div')({
+    display: 'inline-block',
+});
 
 const StyledMemberContent = styled('div')({
     display: 'flex',
@@ -63,7 +80,6 @@ const StyledMemberInnerContent = styled('div')({
 
 const StyledTableContainer = styled(Table.Container)({
     borderRadius: '12px',
-    // background: #FFF;
     /* Devias Drop Shadow */
     boxShadow: '0px 5px 22px 0px rgba(0, 0, 0, 0.06)',
 });
@@ -120,7 +136,6 @@ const StyledTableTitleMemberCount = styled('div')({
 
 const StyledSearchButtonContainer = styled('div')({
     display: 'flex',
-    // padding: '5px 8px',
     alignItems: 'center',
     // gap: '10px',
 });
@@ -163,6 +178,14 @@ const StyledCard = styled(Card)({
     borderRadius: '12px',
 });
 
+const StyledTableCell = styled(Table.Cell)({
+    paddingLeft: '16px',
+});
+
+const StyledCheckbox = styled(Checkbox)({
+    paddingBottom: '0px',
+});
+
 // maps for permissions,
 const permissionMapper = {
     1: 'Author', // BE: 'DISPLAY'
@@ -180,6 +203,7 @@ const permissionMapper = {
 interface Member {
     id: string;
     name: string;
+    type: string;
     EMAIL: string;
     SELECTED: boolean;
     permission: string;
@@ -514,6 +538,7 @@ export const MembersTable = (props: MembersTableProps) => {
             let response: AxiosResponse<Record<string, unknown>[]> | null =
                 null;
             if (mode === 'engine') {
+                // possibly add more db table columns / keys here to get id type for display under username
                 response = await monolithStore.getEngineUsersNoCredentials(
                     adminMode,
                     id,
@@ -674,7 +699,6 @@ export const MembersTable = (props: MembersTableProps) => {
                                     {Avatars.length > 0 ? (
                                         <StyledAvatarGroupContainer>
                                             <AvatarGroup
-                                                // sx={{ border: 'solid green' }}
                                                 spacing={'small'}
                                                 variant={'circular'}
                                                 max={4}
@@ -743,7 +767,10 @@ export const MembersTable = (props: MembersTableProps) => {
                             <StyledMemberTable>
                                 <Table.Head>
                                     <Table.Row>
-                                        <Table.Cell size="small">
+                                        <Table.Cell
+                                            size="small"
+                                            padding="checkbox"
+                                        >
                                             <Checkbox
                                                 checked={
                                                     selectedMembers.length ===
@@ -764,7 +791,6 @@ export const MembersTable = (props: MembersTableProps) => {
                                                 }}
                                             />
                                         </Table.Cell>
-                                        <Table.Cell size="small">ID</Table.Cell>
                                         <Table.Cell size="small">
                                             Name
                                         </Table.Cell>
@@ -795,8 +821,11 @@ export const MembersTable = (props: MembersTableProps) => {
                                         if (user) {
                                             return (
                                                 <Table.Row key={user.name + i}>
-                                                    <Table.Cell size="medium">
-                                                        <Checkbox
+                                                    <StyledTableCell
+                                                        size="medium"
+                                                        padding="checkbox"
+                                                    >
+                                                        <StyledCheckbox
                                                             checked={isSelected}
                                                             onChange={() => {
                                                                 if (
@@ -828,22 +857,26 @@ export const MembersTable = (props: MembersTableProps) => {
                                                                 }
                                                             }}
                                                         />
-                                                    </Table.Cell>
-
-                                                    <Table.Cell
+                                                    </StyledTableCell>
+                                                    <UserInfoTableCell
                                                         size="medium"
                                                         component="td"
                                                         scope="row"
                                                     >
-                                                        {user.id}
-                                                    </Table.Cell>
-                                                    <Table.Cell
-                                                        size="medium"
-                                                        component="td"
-                                                        scope="row"
-                                                    >
-                                                        {user.name}
-                                                    </Table.Cell>
+                                                        <AvatarWrapper>
+                                                            <Avatar>
+                                                                {user.name[0].toUpperCase()}
+                                                            </Avatar>
+                                                        </AvatarWrapper>
+                                                        <NameIDWrapper>
+                                                            <Stack>
+                                                                {user.name}
+                                                            </Stack>
+                                                            <Stack>
+                                                                {`${user.type} ID: ${user.id}`}
+                                                            </Stack>
+                                                        </NameIDWrapper>
+                                                    </UserInfoTableCell>
                                                     <Table.Cell size="medium">
                                                         <RadioGroup
                                                             row
@@ -1013,13 +1046,33 @@ export const MembersTable = (props: MembersTableProps) => {
                                 if (user) {
                                     return (
                                         <Table.Row key={user.id + i}>
-                                            <Table.Cell
+                                            {/* leaving this in case we want to add separate columns for name, id, login type */}
+                                            {/* <Table.Cell
                                                 size="small"
                                                 component="td"
                                                 scope="row"
                                             >
                                                 {user.name}
-                                            </Table.Cell>
+                                            </Table.Cell> */}
+
+                                            <UserInfoTableCell
+                                                size="medium"
+                                                component="td"
+                                                scope="row"
+                                            >
+                                                <AvatarWrapper>
+                                                    <Avatar>
+                                                        {user.name[0].toUpperCase()}
+                                                    </Avatar>
+                                                </AvatarWrapper>
+                                                <NameIDWrapper>
+                                                    <Stack>{user.name}</Stack>
+                                                    <Stack>
+                                                        {`${user.type} ID: ${user.id}`}
+                                                    </Stack>
+                                                </NameIDWrapper>
+                                            </UserInfoTableCell>
+
                                             <Table.Cell size="small">
                                                 <Select
                                                     value={
@@ -1393,10 +1446,10 @@ export const MembersTable = (props: MembersTableProps) => {
                                                         marginLeft: '30px',
                                                     }}
                                                 >
-                                                    Ability to provision other
-                                                    users, edit {name} details
-                                                    and hide or delete the
-                                                    {name}.
+                                                    {PERMISSION_DESCRIPTION_MAP[
+                                                        name.toLowerCase()
+                                                    ]?.author ||
+                                                        `Error: update key in test-editor.constants to "${name}"`}
                                                 </Box>
                                             }
                                             action={
@@ -1439,10 +1492,10 @@ export const MembersTable = (props: MembersTableProps) => {
                                                         marginLeft: '30px',
                                                     }}
                                                 >
-                                                    Has the ability to use the
-                                                    {name} to generate insights
-                                                    and can query against the{' '}
-                                                    {name}.
+                                                    {PERMISSION_DESCRIPTION_MAP[
+                                                        name.toLowerCase()
+                                                    ]?.editor ||
+                                                        `Error: update key in test-editor.constants to "${name}"`}
                                                 </Box>
                                             }
                                             action={
@@ -1485,7 +1538,10 @@ export const MembersTable = (props: MembersTableProps) => {
                                                         marginLeft: '30px',
                                                     }}
                                                 >
-                                                    Can view data from {name}.
+                                                    {PERMISSION_DESCRIPTION_MAP[
+                                                        name.toLowerCase()
+                                                    ]?.readonly ||
+                                                        `Error: update key in test-editor.constants to "${name}"`}
                                                 </Box>
                                             }
                                             action={

@@ -20,7 +20,7 @@ export const Renderer = observer(({ id }: RendererProps): JSX.Element => {
 
     // get block
     if (!block) {
-        throw Error(`Cannot find block ${id}`);
+        return null;
     }
 
     // get the widget

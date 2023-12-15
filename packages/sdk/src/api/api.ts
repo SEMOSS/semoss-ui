@@ -92,9 +92,10 @@ export const getSystemConfig = async (): Promise<{
 };
 
 /**
- * Run a pixel in the parent and process the response
- * @param insightId - id of the insight to run
+ * Run a pixel string
+ *
  * @param pixel - pixel
+ * @param insightId - id of the insight to run
  */
 export const runPixel = async <O extends unknown[] | []>(
     pixel: string,

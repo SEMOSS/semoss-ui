@@ -1,23 +1,24 @@
-import React, { createElement, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { observer } from 'mobx-react-lite';
 import {
     styled,
-    Accordion,
-    Button,
     Stack,
-    Icon,
     Typography,
     IconButton,
     Divider,
+    TextField,
+    Collapse,
 } from '@semoss/ui';
+import { useBlocks, useDesigner } from '@/hooks';
+import { Search, SearchOff } from '@mui/icons-material';
+import { getIconForBlock } from '../block-defaults';
+import { BlockAvatar } from './BlockAvatar';
+import { SelectedMenuSection } from './SelectedMenuSection';
 
-import { useBlock, useBlocks, useDesigner } from '@/hooks';
-import {
-    BarChartOutlined,
-    SearchOutlined,
-    ExpandMore,
-    DeleteOutline,
-} from '@mui/icons-material';
+const StyledTypography = styled(Typography)(() => ({
+    textTransform: 'capitalize',
+    fontWeight: 'bold',
+}));
 
 const StyledMenu = styled('div')(({ theme }) => ({
     display: 'flex',
@@ -31,7 +32,6 @@ const StyledMenuHeader = styled('div')(({ theme }) => ({
     display: 'flex',
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'flex-end',
     paddingTop: theme.spacing(1.5),
     paddingRight: theme.spacing(1),
     paddingBottom: theme.spacing(1.5),
@@ -48,80 +48,29 @@ const StyledMenuScroll = styled('div')(({ theme }) => ({
     overflowY: 'auto',
 }));
 
-const StyledMenuSection = styled(Accordion)(({ theme }) => ({
-    boxShadow: 'none',
-    borderRadius: '0 !important',
-    border: '0px',
-    borderBottom: `1px solid ${theme.palette.divider}`,
-    '&:before': {
-        display: 'none',
-    },
-    '&.Mui-expanded': {
-        margin: '0',
-        '&:last-child': {
-            borderBottom: '0px',
-        },
-    },
-}));
-
-const StyledMenuSectionTitle = styled(Accordion.Trigger)(({ theme }) => ({
-    minHeight: 'auto !important',
-    height: theme.spacing(6),
-}));
-
-interface DeleteBlockMenuItemProps {
-    /**
-     * Id of the block that is being worked with
-     */
-    id: string;
-}
-
-const DeleteBlockMenuItem = observer(({ id }: DeleteBlockMenuItemProps) => {
-    const { deleteBlock } = useBlock(id);
-    const { designer } = useDesigner();
-    return (
-        <>
-            {
-                // don't allow deletion of the base rendered element (page)
-                designer.rendered === id ? (
-                    <></>
-                ) : (
-                    <Stack direction="row" padding={2}>
-                        <Button
-                            color="error"
-                            fullWidth
-                            startIcon={<DeleteOutline />}
-                            variant="outlined"
-                            onClick={() => {
-                                deleteBlock();
-                                designer.setSelected('');
-                            }}
-                        >
-                            Delete Block
-                        </Button>
-                    </Stack>
-                )
-            }
-        </>
-    );
-});
-
 export const SelectedMenu = observer(() => {
     const { designer } = useDesigner();
     const { state, registry } = useBlocks();
 
-    const [accordion, setAccordion] = useState<Record<string, boolean>>({});
+    const [contentAccordion, setContentAccordion] = useState<
+        Record<string, boolean>
+    >({});
+    const [styleAccordion, setStyleAccordion] = useState<
+        Record<string, boolean>
+    >({});
+    const [showSearch, setShowSearch] = useState<boolean>(false);
+    const [search, setSearch] = useState<string>('');
 
     // get the selected block
     const block = designer.selected ? state.getBlock(designer.selected) : null;
 
-    // get the menu
-    const menu = useMemo(() => {
+    // get the content menu
+    const contentMenu = useMemo(() => {
         if (!registry || !block || !registry[block.widget]) {
             return [];
         }
 
-        const m = registry[block.widget].menu;
+        const m = registry[block.widget].contentMenu;
 
         // clear out the accordion
         const acc = {};
@@ -130,78 +79,153 @@ export const SelectedMenu = observer(() => {
 
             acc[key] = true;
         }
-        setAccordion(acc);
+        setContentAccordion(acc);
 
-        // set the menu
+        // set the menu with search filter
+        if (!!search) {
+            // filter section headers that match search
+            const filteredSectionMenu = m.filter((menuItem) => {
+                if (menuItem.name.toLowerCase().includes(search)) {
+                    return true;
+                }
+                return menuItem.children.some((child) => {
+                    return child.description.toLowerCase().includes(search);
+                });
+            });
+            // filter section children that match search
+            return filteredSectionMenu.map((menuItem) => {
+                return {
+                    ...menuItem,
+                    children: menuItem.children.filter((child) =>
+                        child.description.toLowerCase().includes(search),
+                    ),
+                };
+            });
+        }
         return m;
-    }, [registry, block ? block.widget : '']);
+    }, [registry, block ? block.widget : '', search]);
+
+    // get the style menu
+    const styleMenu = useMemo(() => {
+        if (!registry || !block || !registry[block.widget]) {
+            return [];
+        }
+
+        const m = registry[block.widget].styleMenu;
+
+        // clear out the accordion
+        const acc = {};
+        for (let sIdx = 0, sLen = m.length; sIdx < sLen; sIdx++) {
+            const key = `section--${sIdx}`;
+
+            acc[key] = true;
+        }
+        setStyleAccordion(acc);
+
+        // set the menu with search filter
+        if (!!search) {
+            // filter section headers that match search
+            const filteredSectionMenu = m.filter((menuItem) => {
+                if (menuItem.name.toLowerCase().includes(search)) {
+                    return true;
+                }
+                return menuItem.children.some((child) => {
+                    return child.description.toLowerCase().includes(search);
+                });
+            });
+            // filter section children that match search
+            return filteredSectionMenu.map((menuItem) => {
+                return {
+                    ...menuItem,
+                    children: menuItem.children.filter((child) =>
+                        child.description.toLowerCase().includes(search),
+                    ),
+                };
+            });
+        }
+        return m;
+    }, [registry, block ? block.widget : '', search]);
+
+    // clear search on blocks no longer selected
+    useMemo(() => {
+        if (!block) {
+            setSearch('');
+            setShowSearch(false);
+        }
+    }, [block]);
 
     // ignore if there is no menu
     if (!block) {
-        return <>Select a Block</>;
+        return (
+            <StyledMenuHeader>
+                <Typography variant="body1">
+                    <em>Select a component to configure styling</em>
+                </Typography>
+            </StyledMenuHeader>
+        );
     }
 
     return (
         <StyledMenu>
             <StyledMenuHeader>
-                <Icon fontSize="medium">
-                    <BarChartOutlined />
-                </Icon>
-                <Stack flex={'1'} direction="row" alignItems={'center'}>
-                    <Typography
-                        variant="body1"
-                        fontWeight="regular"
-                        sx={{
-                            flex: '1',
-                        }}
-                    >
+                <Stack flex={1} spacing={2} direction="row" alignItems="center">
+                    <BlockAvatar icon={getIconForBlock(block.widget)} />
+                    <StyledTypography variant="h6">
                         {block.widget}
-                    </Typography>
-                    <IconButton size="small" color="default">
-                        <SearchOutlined fontSize="medium" />
-                    </IconButton>
+                    </StyledTypography>
+                    <Stack
+                        flex={1}
+                        spacing={1}
+                        direction="row"
+                        alignItems="center"
+                        justifyContent="end"
+                    >
+                        <Collapse orientation="horizontal" in={showSearch}>
+                            <TextField
+                                placeholder="Search"
+                                size="small"
+                                value={search}
+                                variant="outlined"
+                                onChange={(e) => setSearch(e.target.value)}
+                            />
+                        </Collapse>
+                        <IconButton
+                            color="default"
+                            size="small"
+                            onClick={() => {
+                                setShowSearch(!showSearch);
+                                setSearch('');
+                            }}
+                        >
+                            {showSearch ? (
+                                <SearchOff fontSize="medium" />
+                            ) : (
+                                <Search fontSize="medium" />
+                            )}
+                        </IconButton>
+                    </Stack>
                 </Stack>
             </StyledMenuHeader>
             <Divider />
             <StyledMenuScroll>
-                {menu.map((s, sIdx) => {
-                    const key = `section--${sIdx}`;
-
-                    return (
-                        <React.Fragment key={key}>
-                            <StyledMenuSection
-                                expanded={accordion[key]}
-                                onChange={() =>
-                                    setAccordion({
-                                        ...accordion,
-                                        [key]: !accordion[key],
-                                    })
-                                }
-                            >
-                                <StyledMenuSectionTitle
-                                    expandIcon={<ExpandMore />}
-                                >
-                                    <Typography variant="subtitle2">
-                                        {s.name}
-                                    </Typography>
-                                </StyledMenuSectionTitle>
-                                <Accordion.Content>
-                                    {s.children.length > 0 ? (
-                                        <Stack direction="column" spacing={1}>
-                                            {s.children.map((c, cIdx) => {
-                                                return createElement(c.render, {
-                                                    key: cIdx,
-                                                    id: block.id,
-                                                });
-                                            })}
-                                        </Stack>
-                                    ) : null}
-                                </Accordion.Content>
-                            </StyledMenuSection>
-                        </React.Fragment>
-                    );
-                })}
-                <DeleteBlockMenuItem id={block?.id} />
+                {contentMenu.length ? (
+                    <SelectedMenuSection
+                        id={block.id}
+                        sectionTitle="Content"
+                        menu={contentMenu}
+                        accordion={contentAccordion}
+                        setAccordion={setContentAccordion}
+                    />
+                ) : (
+                    <></>
+                )}
+                <SelectedMenuSection
+                    id={block.id}
+                    sectionTitle="Appearance"
+                    menu={styleMenu}
+                    accordion={styleAccordion}
+                    setAccordion={setStyleAccordion}
+                />
             </StyledMenuScroll>
         </StyledMenu>
     );

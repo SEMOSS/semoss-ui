@@ -5,20 +5,23 @@ import {
     buildLayoutSection,
     buildSpacingSection,
     buildDimensionsSection,
-    buildStyleSection,
+    buildColorSection,
     buildTypographySection,
+    buildBorderSection,
 } from '../block-defaults.shared';
 
 import { ContainerBlockDef, ContainerBlock } from './ContainerBlock';
 import { HighlightAlt } from '@mui/icons-material';
+import { BLOCK_TYPE_LAYOUT } from '../block-defaults.constants';
 
 // export the config for the block
 export const config: BlockConfig<ContainerBlockDef> = {
     widget: 'container',
+    type: BLOCK_TYPE_LAYOUT,
     data: {
         style: {
             display: 'flex',
-            gap: '16px',
+            gap: '2rem',
         },
     },
     listeners: {},
@@ -27,52 +30,13 @@ export const config: BlockConfig<ContainerBlockDef> = {
     },
     render: ContainerBlock,
     icon: HighlightAlt,
-    menu: [
-        {
-            name: 'Layout',
-            children: [
-                ...buildLayoutSection().children,
-                {
-                    description: 'Direction',
-                    render: ({ id }) => (
-                        <InputSettings
-                            id={id}
-                            label="Direction"
-                            path="style.flexDirection"
-                        />
-                    ),
-                },
-                {
-                    description: 'Align',
-                    render: ({ id }) => (
-                        <InputSettings
-                            id={id}
-                            label="Align"
-                            path="style.alignItems"
-                        />
-                    ),
-                },
-                {
-                    description: 'Justify',
-                    render: ({ id }) => (
-                        <InputSettings
-                            id={id}
-                            label="Justify"
-                            path="style.justifyContent"
-                        />
-                    ),
-                },
-                {
-                    description: 'Gap',
-                    render: ({ id }) => (
-                        <InputSettings id={id} label="Gap" path="style.gap" />
-                    ),
-                },
-            ],
-        },
+    contentMenu: [],
+    styleMenu: [
+        buildLayoutSection(),
         buildSpacingSection(),
         buildDimensionsSection(),
-        buildStyleSection(),
+        buildColorSection(),
+        buildBorderSection(),
         buildTypographySection(),
     ],
 };

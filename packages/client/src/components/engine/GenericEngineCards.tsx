@@ -23,6 +23,19 @@ import {
 import { Env } from '@/env';
 import defaultDbImage from '../../assets/img/placeholder.png';
 import { formatName } from '@/utils';
+import GOOGLE from '@/assets/img/google.png';
+
+const StyledCardImg = styled('img')({
+    display: 'flex',
+    height: '20px',
+    width: '20px',
+    alignItems: 'flex-start',
+    gap: '10px',
+    alignSelf: 'stretch',
+    overflowClipMargin: 'content-box',
+    overflow: 'clip',
+    objectFit: 'cover',
+});
 
 const StyledLandscapeCard = styled(Card)({
     display: 'flex',
@@ -326,6 +339,9 @@ interface DatabaseCardProps {
     /** Tag of the Database */
     tag?: string[] | string;
 
+    /** Subtype for Icon */
+    sub_type?: string;
+
     /** Whether or not the database is viewable by everyone */
     isGlobal?: boolean;
 
@@ -357,6 +373,7 @@ export const EngineLandscapeCard = (props: DatabaseCardProps) => {
         isGlobal,
         isFavorite,
         isUpvoted,
+        sub_type,
         owner = 'N/A',
         votes = '0',
         // views = 'N/A',
@@ -376,7 +393,18 @@ export const EngineLandscapeCard = (props: DatabaseCardProps) => {
                 <StyledLandscapeCardHeaderDiv>
                     <StyledLandscapeCardTitleDiv>
                         <Typography variant={'body1'}>
-                            {name ? formatDBName(name) : id}
+                            <div
+                                style={{
+                                    display: 'flex',
+                                    flexDirection: 'row',
+                                    gap: '8px',
+                                }}
+                            >
+                                <span>{formatDBName(name)}</span>
+                                {sub_type === 'EMBEDDED' ? (
+                                    <StyledCardImg src={GOOGLE}></StyledCardImg>
+                                ) : null}
+                            </div>
                         </Typography>
                         <IconButton
                             size={'small'}
@@ -521,6 +549,7 @@ export const EngineTileCard = (props: DatabaseCardProps) => {
         tag,
         isGlobal,
         isFavorite,
+        sub_type,
         isUpvoted,
         owner = 'N/A',
         votes = '0',
@@ -540,7 +569,24 @@ export const EngineTileCard = (props: DatabaseCardProps) => {
                 sx={{ height: '118px' }}
             />
             <Card.Header
-                title={name ? formatDBName(name) : id}
+                title={
+                    name ? (
+                        <div
+                            style={{
+                                display: 'flex',
+                                flexDirection: 'row',
+                                gap: '8px',
+                            }}
+                        >
+                            <span>{formatDBName(name)}</span>
+                            {sub_type === 'VERTEX' ? (
+                                <StyledCardImg src={GOOGLE}></StyledCardImg>
+                            ) : null}
+                        </div>
+                    ) : (
+                        id
+                    )
+                }
                 subheader={
                     <StyledPublishedByContainer>
                         <StyledAvatar>

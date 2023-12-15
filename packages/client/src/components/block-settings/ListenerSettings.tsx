@@ -1,11 +1,20 @@
 import { observer } from 'mobx-react-lite';
 import { styled, Stack, Typography, IconButton, Button } from '@semoss/ui';
 
-import { useDesigner, useBlockSettings } from '@/hooks';
-import { BlockDef } from '@/stores';
+import { useBlockSettings, useWorkspace } from '@/hooks';
+import { ACTIONS_DISPLAY, BlockDef } from '@/stores';
 import { Add, Delete, Edit } from '@mui/icons-material';
 
 import { ListenerActionOverlay } from './ListenerActionOverlay';
+import { BaseSettingSection } from './BaseSettingSection';
+
+const Spacer = styled('div')(() => ({
+    flex: 1,
+}));
+
+/**
+ * TODO: reorganize and update the styling once app/blocks is up and working
+ */
 
 interface ListenerSettingsProps<D extends BlockDef = BlockDef> {
     /**
@@ -19,17 +28,13 @@ interface ListenerSettingsProps<D extends BlockDef = BlockDef> {
     listener: Extract<keyof D['listeners'], string>;
 }
 
-const StyledLabel = styled(Typography)(({ theme }) => ({
-    flex: 1,
-}));
-
 export const ListenerSettings = observer(
     <D extends BlockDef = BlockDef>({
         id,
         listener,
     }: ListenerSettingsProps<D>) => {
         const { listeners, setListener } = useBlockSettings(id);
-        const { designer } = useDesigner();
+        const { workspace } = useWorkspace();
 
         /**
          * Open the overlay to create a edit action
@@ -37,12 +42,13 @@ export const ListenerSettings = observer(
          * @param actionIdx - index of the action to edit. Will create a new one if -1
          */
         const openActionOverlay = (actionIdx = -1) => {
-            designer.openOverlay(() => {
+            workspace.openOverlay(() => {
                 return (
                     <ListenerActionOverlay
                         id={id}
                         listener={listener}
                         actionIdx={actionIdx}
+                        onClose={() => workspace.closeOverlay()}
                     />
                 );
             });
@@ -64,24 +70,18 @@ export const ListenerSettings = observer(
         };
 
         return (
-            <Stack
-                direction="column"
-                justifyContent={'center'}
-                title={`Edit ${listener}`}
-            >
-                <StyledLabel variant="body2" noWrap={true}>
-                    {listener}
-                </StyledLabel>
+            <Stack>
                 {listeners[listener].map((a, aIdx) => (
                     <Stack
                         key={aIdx}
                         alignItems={'center'}
-                        flex={'1'}
+                        flex={1}
                         direction="row"
                     >
-                        <Typography variant="body2" sx={{ flex: 1 }}>
-                            {a.message}
+                        <Typography variant="body2">
+                            {ACTIONS_DISPLAY[a.message]}
                         </Typography>
+                        <Spacer />
                         <IconButton
                             size="small"
                             onClick={() => openActionOverlay(aIdx)}

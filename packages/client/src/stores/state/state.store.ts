@@ -1,4 +1,4 @@
-import { makeAutoObservable, reaction, runInAction } from 'mobx';
+import { makeAutoObservable, reaction, toJS } from 'mobx';
 
 import { runPixel } from '@/api';
 import { cancellablePromise, getValueByPath } from '@/utility';
@@ -10,23 +10,50 @@ import {
     MoveBlockAction,
     RemoveBlockAction,
 } from './state.actions';
-import { Query, Block, BlockJSON, ListenerActions } from './state.types';
+import {
+    Block,
+    BlockJSON,
+    CellRegistry,
+    ListenerActions,
+    SerializedState,
+} from './state.types';
+import { QueryState, QueryStateConfig } from './query.state';
+import { StepStateConfig } from './step.state';
 
 interface StateStoreInterface {
+    /** insightID to load */
+    insightId: string;
+
     /** Queries rendered in the insight */
-    queries: Record<string, Query>;
+    queries: Record<string, QueryState>;
 
     /** Blocks rendered in the insight */
     blocks: Record<string, Block>;
+
+    /** Cells registered to the insight */
+    cellRegistry: CellRegistry;
+}
+
+export class StateStoreConfig {
+    /** insightID to load */
+    insightId: string;
+
+    /** State to load into the store */
+    state: SerializedState;
+
+    /** Cells registered to the insight */
+    cellRegistry: CellRegistry;
 }
 
 /**
- * Block store that helps users build a view
+ * Hold the state information for the insight
  */
-export class StateStoreImplementation {
+export class StateStore {
     private _store: StateStoreInterface = {
+        insightId: '',
         queries: {},
         blocks: {},
+        cellRegistry: {},
     };
 
     /**
@@ -40,43 +67,16 @@ export class StateStoreImplementation {
             string,
             ReturnType<typeof cancellablePromise> | null
         >;
-
-        /**
-         * Track callbacks
-         */
-        callbacks: {
-            /**
-             * onQuery callback that is triggered after a query has been ran
-             */
-            onQuery: (event: { query: string }) => Promise<{
-                data: unknown;
-            }>;
-        };
     } = {
         queryPromises: {},
-        callbacks: {
-            onQuery: async () => ({
-                data: undefined,
-            }),
-        },
     };
 
-    constructor(
-        config: {
-            /** Queries that will be loaed into the view */
-            queries?: Record<string, Query>;
+    constructor(config: StateStoreConfig) {
+        // save the connected insight
+        this._store.insightId = config.insightId;
 
-            /** Blocks that will be loaded into the view */
-            blocks?: Record<string, Block>;
-        },
-        callbacks: {
-            onQuery: (event: { query: string }) => Promise<{
-                data: unknown;
-            }>;
-        },
-    ) {
-        // set the callbacks
-        this._utils.callbacks = callbacks;
+        // register the cells
+        this._store.cellRegistry = config.cellRegistry || {};
 
         // make it observable
         makeAutoObservable(this);
@@ -90,7 +90,9 @@ export class StateStoreImplementation {
                     const q = this._store.queries[val];
 
                     // map id -> actual
-                    acc[q.id] = `${this.flattenParameter(q.query)}--${q.mode}`;
+                    acc[q.id] = `${this.flattenParameter(q._toPixel())}--${
+                        q.mode
+                    }`;
 
                     return acc;
                 }, {});
@@ -102,12 +104,12 @@ export class StateStoreImplementation {
 
                     // if they are the same ignore
                     if (!q || curr[id] === prev[id]) {
-                        return;
+                        continue;
                     }
 
                     // ignore if not automatic
                     if (q.mode !== 'automatic') {
-                        return;
+                        continue;
                     }
 
                     // run the query
@@ -117,15 +119,20 @@ export class StateStoreImplementation {
         );
 
         // set the initial state after reactive to invoke it
-        runInAction(() => {
-            this._store.blocks = config.blocks || {};
-            this._store.queries = config.queries || {};
-        });
+        this.loadState(config.state);
     }
 
     /**
      * Getters
      */
+    /**
+     * Get the Insight ID
+     * @returns the Insight ID
+     */
+    get insightId() {
+        return this._store.insightId;
+    }
+
     /**
      * Get the blocks
      * @returns the blocks
@@ -140,6 +147,14 @@ export class StateStoreImplementation {
      */
     get queries() {
         return this._store.queries;
+    }
+
+    /**
+     * Get the cell registry
+     * @returns the cell registry
+     */
+    get cellRegistry() {
+        return this._store.cellRegistry;
     }
 
     /**
@@ -160,7 +175,7 @@ export class StateStoreImplementation {
      * @param id - id of the queries to get
      * @returns the specific block information
      */
-    getQuery(id: string): Query | null {
+    getQuery(id: string): QueryState | null {
         if (this._store.queries[id]) {
             return this._store.queries[id];
         }
@@ -214,18 +229,39 @@ export class StateStoreImplementation {
                 const { id, listener, actions } = action.payload;
 
                 this.setListener(id, listener, actions);
-            } else if (ActionMessages.SET_QUERY === action.message) {
-                const { id, query } = action.payload;
+            } else if (ActionMessages.NEW_QUERY === action.message) {
+                const { queryId, config } = action.payload;
 
-                this.setQuery(id, query);
+                this.newQuery(queryId, config);
             } else if (ActionMessages.DELETE_QUERY === action.message) {
-                const { id } = action.payload;
+                const { queryId } = action.payload;
 
-                this.deleteQuery(id);
+                this.deleteQuery(queryId);
+            } else if (ActionMessages.UPDATE_QUERY === action.message) {
+                const { queryId, path, value } = action.payload;
+
+                this.updateQuery(queryId, path, value);
             } else if (ActionMessages.RUN_QUERY === action.message) {
-                const { id } = action.payload;
+                const { queryId } = action.payload;
 
-                this.runQuery(id);
+                this.runQuery(queryId);
+            } else if (ActionMessages.NEW_STEP === action.message) {
+                const { queryId, stepId, config, previousStepId } =
+                    action.payload;
+
+                this.newStep(queryId, stepId, config, previousStepId);
+            } else if (ActionMessages.DELETE_STEP === action.message) {
+                const { queryId, stepId } = action.payload;
+
+                this.deleteStep(queryId, stepId);
+            } else if (ActionMessages.UPDATE_STEP === action.message) {
+                const { queryId, stepId, path, value } = action.payload;
+
+                this.updateStep(queryId, stepId, path, value);
+            } else if (ActionMessages.RUN_STEP === action.message) {
+                const { queryId, stepId } = action.payload;
+
+                this.runStep(queryId, stepId);
             } else if (ActionMessages.DISPATCH_EVENT === action.message) {
                 const { name, detail } = action.payload;
 
@@ -238,7 +274,7 @@ export class StateStoreImplementation {
 
     /**
      * Calculate the value of a parameter
-     * @param id - id of the block to get
+     * @param parameter - string with mustach syntax for inputs
      * @returns the specific block information
      */
     calculateParameter(parameter: string): unknown {
@@ -257,12 +293,12 @@ export class StateStoreImplementation {
         const id = split.shift();
         const path = split.join('.');
 
-        // check if it is a block
+        // check if it is in the block's data
         if (id && this._store.blocks[id]) {
             return getValueByPath(this._store.blocks[id].data, path);
         }
 
-        // check if it is a query
+        // check if it is in a query
         if (id && this._store.queries[id]) {
             return getValueByPath(this._store.queries[id], path);
         }
@@ -288,11 +324,40 @@ export class StateStoreImplementation {
     };
 
     /**
+     * Serialize to JSON
+     */
+    toJSON(): SerializedState {
+        return {
+            queries: Object.keys(this._store.queries).reduce((acc, val) => {
+                acc[val] = this._store.queries[val].toJSON();
+                return acc;
+            }, {} as SerializedState['queries']),
+            blocks: toJS(this._store.blocks),
+        };
+    }
+
+    /**
      * Internal
      */
     /**
      * Helpers
      */
+
+    /**
+     * Load the state
+     * @param state - state to load into the store
+     */
+    private loadState = (state: SerializedState) => {
+        // store the block information
+        this._store.blocks = state.blocks;
+
+        // load the queries
+        this._store.queries = Object.keys(state.queries).reduce((acc, val) => {
+            acc[val] = new QueryState(state.queries[val], this);
+            return acc;
+        }, {});
+    };
+
     /**
      * Generate a new block from the json
      * @param json - json of the block that we are generating
@@ -574,8 +639,9 @@ export class StateStoreImplementation {
         // remove the children
         for (const slot in block.slots) {
             const { children } = block.slots[slot];
-            for (const c of children) {
-                this.removeBlock(c, keep);
+            // use copy of children so we can detach without breaking loop
+            for (const c of [...children]) {
+                this.removeBlock(c, false);
             }
         }
 
@@ -689,86 +755,166 @@ export class StateStoreImplementation {
     };
 
     /**
-     * Set a query
-     * @param id - name of the query that we are setting
-     * @param query - query that we are setting
+     * Create a new query
+     * @param queryId - name of the query that we are setting
      */
-    private setQuery = (id: string, query: string): void => {
-        this._store.queries[id] = {
-            id: id,
-            isInitialized: false,
-            isLoading: false,
-            error: null,
-            query: query,
-            data: undefined,
-            mode: 'manual',
-        };
+    private newQuery = (
+        queryId: string,
+        config: Omit<QueryStateConfig, 'id'>,
+    ): void => {
+        this._store.queries[queryId] = new QueryState(
+            {
+                ...config,
+                id: queryId,
+            },
+            this,
+        );
     };
 
     /**
      * Delete a query
-     * @param id - name of the query that we are deleting
+     * @param queryId - name of the query that we are deleting
      */
-    private deleteQuery = (id: string): void => {
-        delete this._store.queries[id];
+    private deleteQuery = (queryId: string): void => {
+        delete this._store.queries[queryId];
+    };
+
+    /**
+     * Update the store in the query
+     * @param queryId - id of the updated query
+     * @param path - path of the data to set
+     * @param value - value of the data
+     */
+    private updateQuery = (
+        queryId: string,
+        path: string | null,
+        value: unknown,
+    ): void => {
+        const q = this._store.queries[queryId];
+
+        // set the value
+        q._processUpdate(path, value);
     };
 
     /**
      * Run a query
-     * @param id - name of the query that we are running
+     * @param queryId - name of the query that we are running
      */
-    private runQuery = (id: string): void => {
-        const q = this._store.queries[id];
+    private runQuery = (queryId: string): void => {
+        const q = this._store.queries[queryId];
 
-        // set the state to show it is initialized and loading
-        q.isInitialized = false;
-        q.isLoading = true;
-        q.error = null;
-
-        // reset
-        q.data = undefined;
+        const key = `query--${queryId};`;
 
         // cancel a previous command
-        this._utils.queryPromises[id]?.cancel();
+        this._utils.queryPromises[key]?.cancel();
 
         // setup the promise
-        const p = cancellablePromise(() => {
-            // fill the query
-            const filled = this.flattenParameter(q.query);
+        const p = cancellablePromise(async () => {
+            // run the query
+            await q._processRun();
 
-            // call the callback
-            return this._utils.callbacks.onQuery({
-                query: filled,
-            });
+            // turn it off
+            return true;
         });
 
         p.promise
-            .then(({ data }) => {
-                runInAction(() => {
-                    // set the data
-                    q.data = data;
-                });
+            .then(() => {
+                // noop
             })
             .catch((e) => {
-                runInAction(() => {
-                    // set in the error state
-                    q.error = e;
-
-                    console.error('ERROR:', e);
-                });
-            })
-            .finally(() => {
-                runInAction(() => {
-                    // set it is initialized
-                    q.isInitialized = true;
-
-                    // turn off the loading screen
-                    q.isLoading = false;
-                });
+                console.error('ERROR:', e);
             });
 
         // save the promise
-        this._utils.queryPromises[id] = p;
+        this._utils.queryPromises[key] = p;
+    };
+
+    /**
+     * Create a new step
+     * @param queryId - id of the updated query
+     * @param stepId - id of the new step
+     * @param config - config of the
+     * @param previousStepId: id of the previous step,
+     */
+    private newStep = (
+        queryId: string,
+        stepId: string,
+        config: Omit<StepStateConfig, 'id'>,
+        previousStepId: string,
+    ): void => {
+        // get the query
+        const q = this._store.queries[queryId];
+
+        // add the step
+        q._processNewStep(stepId, config, previousStepId);
+    };
+
+    /**
+     * Delete a step
+     * @param queryId - id of the updated query
+     * @param stepId - id of the deleted step
+     */
+    private deleteStep = (queryId: string, stepId: string): void => {
+        // get the query
+        const q = this._store.queries[queryId];
+
+        // add the step
+        q._processDeleteStep(stepId);
+    };
+
+    /**
+     * Update the store in the step
+     * @param queryId - id of the updated query
+     * @param stepId - id of the updated step
+     * @param path - path of the data to set
+     * @param value - value of the data
+     */
+    private updateStep = (
+        queryId: string,
+        stepId: string,
+        path: string | null,
+        value: unknown,
+    ): void => {
+        const q = this._store.queries[queryId];
+        const s = q.getStep(stepId);
+
+        // set the value
+        s._processUpdate(path, value);
+    };
+
+    /**
+     * Run the step
+     * @param queryId - id of the updated query
+     * @param stepId - id of the deleted step
+     */
+    private runStep = (queryId: string, stepId: string): void => {
+        const q = this._store.queries[queryId];
+        const s = q.getStep(stepId);
+
+        const key = `step--${stepId} (query--${queryId});`;
+
+        // cancel a previous command
+        this._utils.queryPromises[key]?.cancel();
+
+        // setup the promise
+        const p = cancellablePromise(async () => {
+            // run the step
+            await s._processRun();
+
+            // turn it off
+            return true;
+        });
+
+        p.promise
+            .then(() => {
+                // noop
+            })
+            .catch((e) => {
+                console.error('ERROR:', e);
+            });
+
+        // save the promise
+        this._utils.queryPromises[key] = p;
     };
 
     /**
@@ -787,42 +933,13 @@ export class StateStoreImplementation {
         // dispatch the event to the window
         window.dispatchEvent(event);
     };
-}
 
-// initialize state with blank page and basic onQuery function
-// if we want a more complex default page, we can set that up here
-export const StateStore = new StateStoreImplementation(
-    {
-        blocks: {
-            'page-1': {
-                id: 'page-1',
-                widget: 'page',
-                parent: null,
-                data: {
-                    style: {
-                        fontFamily: 'roboto',
-                    },
-                },
-                listeners: {},
-                slots: {
-                    content: {
-                        name: 'content',
-                        children: [],
-                    },
-                },
-            },
-        },
-        queries: {},
-    },
-    {
-        onQuery: async ({ query }) => {
-            const response = await runPixel('', query);
-            if (response.errors.length) {
-                throw new Error(response.errors.join(''));
-            }
-            return {
-                data: response.pixelReturn[0].output,
-            };
-        },
-    },
-);
+    /**
+     * Run a pixel string
+     *
+     * @param pixel - pixel to execute
+     */
+    async _runPixel<O extends unknown[] | []>(pixel: string) {
+        return await runPixel<O>(pixel, this._store.insightId);
+    }
+}

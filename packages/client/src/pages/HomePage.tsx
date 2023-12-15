@@ -6,7 +6,7 @@ import { useNavigate } from 'react-router-dom';
 
 import { usePixel, useRootStore } from '@/hooks';
 import { Page } from '@/components/ui';
-import { App, AppTileCard, AddApp } from '@/components/app';
+import { AppMetadata, AppTileCard, AddApp } from '@/components/app';
 
 const StyledContainer = styled('div')(({ theme }) => ({
     display: 'flex',
@@ -48,7 +48,7 @@ export const HomePage = observer((): JSX.Element => {
     });
 
     // get the projects
-    const myApps = usePixel<App[]>(
+    const myApps = usePixel<AppMetadata[]>(
         `MyProjects(metaKeys = ${JSON.stringify(
             metaKeys,
         )}, filterWord=["${search}"], onlyPortals=[true]);`,

@@ -6,7 +6,7 @@
  *
  * @returns path to the attribute
  */
-export const getValueByPath = (target: unknown, path: string) => {
+export const getValueByPath = <T extends object>(target: T, path: string) => {
     if (!(target instanceof Object)) {
         return target;
     }
@@ -26,10 +26,52 @@ export const getValueByPath = (target: unknown, path: string) => {
         }
 
         // move forward
-        target = (target as Record<string, unknown>)[p];
+        target = target[p];
     }
 
     return target;
+};
+
+/**
+ * Set a value from an object based on the path. This will generate partials.
+ *
+ * @param target - target object to set the value on
+ * @param path - path to the attribute
+ * @param path - value to set
+ */
+export const setValueByPath = <T extends object>(
+    target: T,
+    path: string,
+    value: unknown,
+) => {
+    // get the keys
+    const p = path.split('.');
+
+    // get the last key. If there is none, ignore it
+    const last = p.pop();
+    if (!last) {
+        return;
+    }
+
+    // traverse to the correct element
+    let current = target;
+    while (p.length) {
+        const key = p.shift();
+
+        if (!key) {
+            return;
+        }
+
+        // create the object if the key doesn't exist. This will allow partials
+        if (!current[key]) {
+            current[key] = {};
+        }
+
+        current = current[key];
+    }
+
+    // set the value
+    current[last] = value;
 };
 
 /**

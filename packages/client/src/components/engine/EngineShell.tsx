@@ -151,9 +151,9 @@ export const EngineShell = (props: EngineShellProps) => {
 
         monolithStore.runQuery(pixel).then((response) => {
             const output = response.pixelReturn[0].output,
-                insightID = response.insightID;
+                insightId = response.insightId;
 
-            monolithStore.download(insightID, output);
+            monolithStore.download(insightId, output);
         });
         setExportLoading(false);
     };
@@ -179,7 +179,7 @@ export const EngineShell = (props: EngineShellProps) => {
                         </Typography>
                         <Stack flex={1}> &nbsp;</Stack>
                         <Stack direction="row">
-                            <EngineAccessButton />
+                            <EngineAccessButton name={name} />
                             {role === 'OWNER' && (
                                 <Button
                                     disabled={exportLoading}

@@ -12,6 +12,7 @@ export interface Token {
     display: string; // preserves context punctuation for display
     type: string; // can be text or input
     isHiddenPhraseInputToken: boolean; // additional words in phrase input, keep record but don't display
+    linkedInputToken: undefined | number;
 }
 export interface BuilderStepItem {
     step: number;
@@ -29,8 +30,9 @@ export interface Builder {
     title: BuilderStepItem;
     tags: BuilderStepItem;
     model: BuilderStepItem;
+    vector: BuilderStepItem;
     context: BuilderStepItem;
     inputs: BuilderStepItem;
     inputTypes: BuilderStepItem;
-    // constraints: BuilderStepItem;
+    constraints: BuilderStepItem;
 }

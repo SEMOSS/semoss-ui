@@ -203,11 +203,11 @@ export const EngineMetadataPage = observer(() => {
      */
     const printMeta = () => {
         const pixel = `META|DatabaseMetadataToPdf(database=["${id}"] );`;
-        monolithStore.runQuery(pixel).then((response) => {
-            const output = response.pixelReturn[0].output,
-                insightID = response.insightID;
+        monolithStore.runQuery<[string]>(pixel).then((response) => {
+            const output = response.pixelReturn[0].output;
+            const insightId = response.insightId;
 
-            monolithStore.download(insightID, output);
+            monolithStore.download(insightId, output);
         });
     };
 

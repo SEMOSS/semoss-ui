@@ -24,7 +24,7 @@ export const TextFieldBlock: BlockComponent = observer(({ id }) => {
             value={data.value}
             label={data.label}
             size="small"
-            sx={{
+            style={{
                 ...data.style,
             }}
             InputLabelProps={{
