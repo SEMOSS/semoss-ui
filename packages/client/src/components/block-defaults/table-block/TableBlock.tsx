@@ -62,6 +62,7 @@ export const TableBlock: BlockComponent = observer(({ id }) => {
 
         return data.headers.map((header) => header.value);
     }, [data?.headers, data?.content]);
+
     return (
         <div style={{ overflow: 'scroll', ...data.style }} {...attrs}>
             <TableContainer>
@@ -77,13 +78,18 @@ export const TableBlock: BlockComponent = observer(({ id }) => {
                                 return (
                                     <TableCell
                                         sx={{
-                                            textTransform: 'capitalize',
+                                            textTransform: data?.headers?.length
+                                                ? 'none'
+                                                : 'capitalize',
+                                            fontWeight: 700,
                                             color: 'inherit',
                                             backgroundColor: 'inherit',
                                         }}
                                         key={header}
                                     >
-                                        {header.replaceAll('_', ' ')}
+                                        {data?.headers?.length
+                                            ? header
+                                            : header.replaceAll('_', ' ')}
                                     </TableCell>
                                 );
                             })}
@@ -110,9 +116,11 @@ export const TableBlock: BlockComponent = observer(({ id }) => {
                                                         }}
                                                         key={`${i}-${j}`}
                                                     >
-                                                        {row[
-                                                            headerValue
-                                                        ].toString() ?? ''}
+                                                        {row[headerValue]
+                                                            ? row[
+                                                                  headerValue
+                                                              ].toString()
+                                                            : ''}
                                                     </TableCell>
                                                 );
                                             },
