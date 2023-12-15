@@ -64,6 +64,9 @@ export const ImageBlock: BlockComponent = observer(({ id }) => {
                             ? `${data.style.height}`.slice(0, -1) + 'px'
                             : data.style.height,
                     display: 'flex',
+                    padding: 'none',
+                    border: 'none',
+                    margin: 'none',
                 }}
                 {...attrs}
             >
@@ -85,6 +88,7 @@ export const ImageBlock: BlockComponent = observer(({ id }) => {
                         display: 'block',
                         backgroundImage: `url('${data.src}')`,
                         backgroundSize: 'cover',
+                        margin: 'none',
                     }}
                     title={data.title}
                 ></div>
@@ -103,6 +107,9 @@ export const ImageBlock: BlockComponent = observer(({ id }) => {
                         ? data.style.width || '100%'
                         : '100%',
                 display: 'flex',
+                border: 'none',
+                padding: 'none',
+                margin: 'none',
             }}
             {...attrs}
         >
