@@ -8,6 +8,11 @@ interface CustomCSSProperties extends CSSProperties {
     width?: string | number;
     height?: string | number;
     justifyContent?: string;
+    margin?: string;
+    marginLeft?: string;
+    marginTop?: string;
+    marginRight?: string;
+    marginBottom?: string;
 }
 
 export interface ImageBlockDef extends BlockDef<'image'> {
