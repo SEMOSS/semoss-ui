@@ -3,6 +3,7 @@ import {
     Create,
     DisplaySettings,
     Input,
+    Search,
     Preview,
 } from '@mui/icons-material';
 
@@ -10,8 +11,9 @@ import {
 export const PROMPT_BUILDER_CONTEXT_STEP = 1;
 export const PROMPT_BUILDER_INPUTS_STEP = 2;
 export const PROMPT_BUILDER_INPUT_TYPES_STEP = 3;
-export const PROMPT_BUILDER_CONSTRAINTS_STEP = 4;
-export const PROMPT_BUILDER_PREVIEW_STEP = 5;
+export const PROMPT_BUILDER_KNOWLEDGE_REPOSITORY_STEP = 4;
+export const PROMPT_BUILDER_CONSTRAINTS_STEP = 5;
+export const PROMPT_BUILDER_PREVIEW_STEP = 6;
 
 export const LIBRARY_PROMPT_TAG_TRAVEL = 'travel';
 export const LIBRARY_PROMPT_TAG_COMMUNICATIONS = 'communications';
@@ -60,6 +62,10 @@ export const SUMMARY_STEPS = [
     {
         title: 'Define Input Types',
         icon: DisplaySettings,
+    },
+    {
+        title: 'Refine Search',
+        icon: Search,
     },
     {
         title: 'Set Constraints',

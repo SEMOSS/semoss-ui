@@ -11,6 +11,7 @@ import {
     PROMPT_BUILDER_CONTEXT_STEP,
     PROMPT_BUILDER_INPUTS_STEP,
     PROMPT_BUILDER_INPUT_TYPES_STEP,
+    PROMPT_BUILDER_KNOWLEDGE_REPOSITORY_STEP,
     PROMPT_BUILDER_CONSTRAINTS_STEP,
     PROMPT_BUILDER_PREVIEW_STEP,
     TOKEN_TYPE_INPUT,
@@ -23,6 +24,8 @@ import { PromptBuilderStep } from './step';
 const StyledPaper = styled(Paper)(({ theme }) => ({
     padding: theme.spacing(4),
     margin: theme.spacing(1),
+    maxHeight: '100%',
+    overflow: 'scroll',
 }));
 
 const StyledBox = styled(Box)(({ theme }) => ({
@@ -75,6 +78,12 @@ const initialBuilder: Builder = {
         required: true,
         display: 'Input Types',
     },
+    knowledgeRepositorySearchStatements: {
+        step: PROMPT_BUILDER_KNOWLEDGE_REPOSITORY_STEP,
+        value: undefined,
+        required: true,
+        display: 'Input Types',
+    },
     constraints: {
         step: PROMPT_BUILDER_CONSTRAINTS_STEP,
         value: undefined,
@@ -110,14 +119,23 @@ export const PromptBuilder = () => {
         if (currentBuilderStep === PROMPT_BUILDER_PREVIEW_STEP) {
             // prompt flow finished, move on
             setBlocksAndOpenUIBuilder(builder, monolithStore, navigate);
-        } else if (currentBuilderStep === 2) {
-            // skip input types step if not inputs configured
+        } else if (currentBuilderStep === PROMPT_BUILDER_INPUTS_STEP) {
+            // skip input types step if no inputs configured
             const hasInputs = (builder.inputs.value as Token[]).some(
                 (token: Token) => {
                     return token.type === TOKEN_TYPE_INPUT;
                 },
             );
             changeBuilderStep(currentBuilderStep + (hasInputs ? 1 : 2));
+        } else if (currentBuilderStep === PROMPT_BUILDER_INPUT_TYPES_STEP) {
+            // skip knowledge repository step if no knowledge repository configured
+            const hasKnowledgeRepository =
+                builder.vector.value && Array.isArray(builder.vector.value)
+                    ? Boolean(builder.vector.value.length)
+                    : false;
+            changeBuilderStep(
+                currentBuilderStep + (hasKnowledgeRepository ? 1 : 2),
+            );
         } else {
             changeBuilderStep(currentBuilderStep + 1);
         }

@@ -65,9 +65,9 @@ export const PromptBuilderContextStep = (props: {
 
         let vectorDbIds: string[] = [];
         let vectorDbDisplay = {};
-        myVectorDbs.data.forEach((model) => {
-            vectorDbIds.push(model.app_id);
-            vectorDbDisplay[model.app_id] = model.app_name;
+        myVectorDbs.data.forEach((vector) => {
+            vectorDbIds.push(vector.app_id);
+            vectorDbDisplay[vector.app_id] = vector.app_name;
         });
         setCfgLibraryVectorDbs({
             loading: false,
@@ -160,18 +160,18 @@ export const PromptBuilderContextStep = (props: {
                         />
                         <Autocomplete
                             fullWidth
+                            multiple
                             id="vector-autocomplete"
                             loading={cfgLibraryVectorDbs.loading}
                             options={cfgLibraryVectorDbs.ids}
-                            value={props.builder.vector.value ?? null}
+                            value={
+                                (props.builder.vector.value as string[]) ?? []
+                            }
                             getOptionLabel={(vectorId: string) =>
                                 cfgLibraryVectorDbs.display[vectorId] ?? ''
                             }
-                            onChange={(_, newVectorId) => {
-                                props.setBuilderValue(
-                                    'vector',
-                                    newVectorId as string,
-                                );
+                            onChange={(_, newVectorId: string[]) => {
+                                props.setBuilderValue('vector', newVectorId);
                             }}
                             renderInput={(params) => (
                                 <TextField

@@ -14,12 +14,19 @@ export interface Token {
     isHiddenPhraseInputToken: boolean; // additional words in phrase input, keep record but don't display
     linkedInputToken: undefined | number;
 }
+
+export interface KnowledgeRepositorySearchStatement {
+    knowledgeRepositoryId: string;
+    searchStatement: string;
+}
+
 export interface BuilderStepItem {
     step: number;
     value:
         | string
         | string[]
         | Token[]
+        | KnowledgeRepositorySearchStatement[]
         | ConstraintSettings
         | object
         | undefined;
@@ -34,5 +41,6 @@ export interface Builder {
     context: BuilderStepItem;
     inputs: BuilderStepItem;
     inputTypes: BuilderStepItem;
+    knowledgeRepositorySearchStatements: BuilderStepItem;
     constraints: BuilderStepItem;
 }

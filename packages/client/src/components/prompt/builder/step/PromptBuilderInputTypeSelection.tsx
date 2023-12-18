@@ -13,7 +13,7 @@ export const PromptBuilderInputTypeSelection = (props: {
         <Grid
             sx={{
                 justifyContent: 'space-between',
-                alignItem: 'center',
+                alignItems: 'center',
                 marginY: 2,
             }}
             container
