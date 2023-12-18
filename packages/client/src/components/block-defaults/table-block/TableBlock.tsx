@@ -5,6 +5,7 @@ import { useBlock } from '@/hooks';
 import { BlockDef, BlockComponent } from '@/stores';
 import {
     styled,
+    LinearProgress,
     Table,
     TableBody,
     TableCell,
@@ -21,6 +22,7 @@ export interface TableBlockDef extends BlockDef<'table'> {
         content: Array<object> | string;
         headers: Array<{ display: string; value: string }>;
         noDataText?: string;
+        loading?: boolean;
     };
 }
 
@@ -100,6 +102,15 @@ export const TableBlock: BlockComponent = observer(({ id }) => {
                                 );
                             })}
                         </TableRow>
+                        {data?.loading ? (
+                            <tr>
+                                <td colSpan={100}>
+                                    <LinearProgress color="inherit" />
+                                </td>
+                            </tr>
+                        ) : (
+                            <></>
+                        )}
                     </TableHead>
                     <TableBody>
                         {content.length ? (

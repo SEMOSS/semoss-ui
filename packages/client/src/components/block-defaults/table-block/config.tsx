@@ -18,6 +18,7 @@ import {
     InputSettings,
     SelectInputSettings,
 } from '@/components/block-settings';
+import { QuerySelectionSettings } from '@/components/block-settings/custom/QuerySelectionSettings';
 
 // export the config for the block
 export const config: BlockConfig<TableBlockDef> = {
@@ -61,6 +62,16 @@ export const config: BlockConfig<TableBlockDef> = {
                             id={id}
                             label="No Data Text"
                             path="noDataText"
+                        />
+                    ),
+                },
+                {
+                    description: 'Loading',
+                    render: ({ id }) => (
+                        <QuerySelectionSettings
+                            id={id}
+                            label="Loading"
+                            path="loading"
                         />
                     ),
                 },
