@@ -2,7 +2,6 @@ import { BlockConfig } from '@/stores';
 import {
     buildSpacingSection,
     buildDimensionsSection,
-    buildLayoutSection,
 } from '../block-defaults.shared';
 import { ImageBlockDef, ImageBlock } from './ImageBlock';
 import {
@@ -17,14 +16,9 @@ import {
     FilterCenterFocus,
 } from '@mui/icons-material';
 import { BLOCK_TYPE_DISPLAY } from '../block-defaults.constants';
-import { InputModalSettings } from '@/components/block-settings/shared/InputModalSettings';
 import { BorderSettings, InputSettings } from '@/components/block-settings';
-// import { ButtonGroupSettings } from '../block-settings/shared/ButtonGroupSettings';
 import { ButtonGroupSettings } from '../../block-settings/shared/ButtonGroupSettings';
-import { SwitchSettings } from '@/components/block-settings/shared/SwitchSettings';
 import { SizeSettings } from '../../block-settings/shared/SizeSettings';
-
-// import { SwitchSettings } from '@/components/block-settings/shared/SwitchSettings';
 
 // export the config for the block
 export const config: BlockConfig<ImageBlockDef> = {
@@ -66,13 +60,42 @@ export const config: BlockConfig<ImageBlockDef> = {
                         />
                     ),
                 },
+            ],
+        },
+    ],
+    styleMenu: [
+        buildDimensionsSection(),
+        // buildSpacingSection(),
+        {
+            name: 'Image Position',
+            children: [
                 {
-                    description: 'Border Radius',
+                    description: 'Horizontal Alignment',
                     render: ({ id }) => (
-                        <SizeSettings
+                        <ButtonGroupSettings
                             id={id}
-                            label="Border Radius"
-                            path="style.borderRadius"
+                            path="style.justifyContent"
+                            label="Horizontal Align"
+                            options={[
+                                {
+                                    value: 'left',
+                                    icon: AlignHorizontalLeft,
+                                    title: 'Top',
+                                    isDefault: true,
+                                },
+                                {
+                                    value: 'center',
+                                    icon: AlignHorizontalCenter,
+                                    title: 'Center',
+                                    isDefault: false,
+                                },
+                                {
+                                    value: 'right',
+                                    icon: AlignHorizontalRight,
+                                    title: 'Right',
+                                    isDefault: false,
+                                },
+                            ]}
                         />
                     ),
                 },
@@ -118,45 +141,21 @@ export const config: BlockConfig<ImageBlockDef> = {
                         />
                     ),
                 },
+            ],
+        },
+        {
+            name: 'Border',
+            children: [
                 {
-                    description: 'Horizontal Alignment',
+                    description: 'Border Radius',
                     render: ({ id }) => (
-                        <ButtonGroupSettings
+                        <SizeSettings
                             id={id}
-                            path="style.justifyContent"
-                            label="Horizontal Align"
-                            options={[
-                                {
-                                    value: 'left',
-                                    icon: AlignHorizontalLeft,
-                                    title: 'Top',
-                                    isDefault: true,
-                                },
-                                {
-                                    value: 'center',
-                                    icon: AlignHorizontalCenter,
-                                    title: 'Center',
-                                    isDefault: false,
-                                },
-                                {
-                                    value: 'right',
-                                    icon: AlignHorizontalRight,
-                                    title: 'Right',
-                                    isDefault: false,
-                                },
-                            ]}
+                            label="Border Radius"
+                            path="style.borderRadius"
                         />
                     ),
                 },
-            ],
-        },
-    ],
-    styleMenu: [
-        buildDimensionsSection(),
-        buildSpacingSection(),
-        {
-            name: 'Color',
-            children: [
                 {
                     description: 'Border',
                     render: ({ id }) => (
@@ -165,5 +164,17 @@ export const config: BlockConfig<ImageBlockDef> = {
                 },
             ],
         },
+        // buildSpacingSection(),
+        // {
+        //     name: 'Border',
+        //     children: [
+        //         {
+        //             description: 'Border',
+        //             render: ({ id }) => (
+        //                 <BorderSettings id={id} path="style.border" />
+        //             ),
+        //         },
+        //     ],
+        // },
     ],
 };

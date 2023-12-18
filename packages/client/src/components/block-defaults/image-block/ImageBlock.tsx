@@ -13,7 +13,6 @@ interface CustomCSSProperties extends CSSProperties {
 export interface ImageBlockDef extends BlockDef<'image'> {
     widget: 'image';
     data: {
-        // style: CSSProperties;
         style: CustomCSSProperties;
         src: string;
         title: string;
@@ -48,6 +47,12 @@ export const ImageBlock: BlockComponent = observer(({ id }) => {
         );
 
     if (data.style.height) {
+        console.log({
+            'data.style.height': data.style.height,
+            'data.style.margin': data.style.margin,
+            'data.style.marginLeft': data.style.marginLeft,
+            'data.style.justifyContent': data.style.justifyContent,
+        });
         return (
             <span
                 style={{
@@ -66,7 +71,26 @@ export const ImageBlock: BlockComponent = observer(({ id }) => {
                     display: 'flex',
                     padding: 'none',
                     border: 'none',
-                    margin: 'none',
+                    // margin: 'none',
+
+                    // these conditional margins cover margins for centered and right aligned images
+                    ...(data.style.justifyContent === 'left'
+                        ? {
+                              margin: 'none',
+                              marginLeft: 'none',
+                              marginTop: data.style.margin,
+                              marginBottom: data.style.margin,
+                          }
+                        : {}),
+                    ...(data.style.justifyContent === 'right'
+                        ? {
+                              margin: 'none',
+                              marginLeft: 'none',
+                              marginTop: data.style.margin,
+                              marginBottom: data.style.margin,
+                              marginRight: data.style.margin,
+                          }
+                        : {}),
                 }}
                 {...attrs}
             >
@@ -104,12 +128,29 @@ export const ImageBlock: BlockComponent = observer(({ id }) => {
                 width:
                     data.style.justifyContent === 'left' ||
                     !data.style.justifyContent
-                        ? data.style.width || '100%'
+                        ? // || data.style.margin
+                          data.style.width || '100%'
                         : '100%',
                 display: 'flex',
+                // these conditional margins cover margins for centered and right aligned images
+                ...(data.style.justifyContent === 'center'
+                    ? {
+                          margin: 'none',
+                          marginTop: data.style.margin,
+                          marginBottom: data.style.margin,
+                      }
+                    : {}),
+                ...(data.style.justifyContent === 'right'
+                    ? {
+                          margin: 'none',
+                          marginTop: data.style.margin,
+                          marginBottom: data.style.margin,
+                          marginRight: data.style.margin,
+                      }
+                    : {}),
                 border: 'none',
-                padding: 'none',
-                margin: 'none',
+                // padding: 'none',
+                // margin: 'none',
             }}
             {...attrs}
         >
@@ -122,6 +163,9 @@ export const ImageBlock: BlockComponent = observer(({ id }) => {
                         !data.style.justifyContent
                             ? '100%'
                             : data.style.width || '100%',
+                    // border: 'none',
+                    padding: 'none',
+                    margin: 'none',
                 }}
                 src={data.src}
                 title={data.title}
