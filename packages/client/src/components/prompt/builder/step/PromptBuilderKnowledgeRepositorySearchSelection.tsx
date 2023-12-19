@@ -1,5 +1,6 @@
 import { Autocomplete } from '@mui/material';
 import { Grid, TextField, Typography } from '@semoss/ui';
+import { PromptReadonlyInputToken } from '../../shared';
 
 export const PromptBuilderKnowledgeRepositorySearchSelection = (props: {
     knowledgeRepositoryDisplay: string;
@@ -46,6 +47,56 @@ export const PromptBuilderKnowledgeRepositorySearchSelection = (props: {
                             variant="standard"
                         />
                     )}
+                    renderTags={(value, renderProps) =>
+                        value.map((searchOption, index) => {
+                            console.log(searchOption);
+                            if (searchOption !== '') {
+                                return (
+                                    <PromptReadonlyInputToken
+                                        tokenKey={searchOption.replaceAll(
+                                            /[TZ]/g,
+                                            '',
+                                        )}
+                                    />
+                                );
+                            } else {
+                                const propOption = props.searchOptions.find(
+                                    (option) => option.value == searchOption,
+                                );
+                                const display = propOption?.display;
+
+                                return (
+                                    <Typography
+                                        {...renderProps({ index })}
+                                        variant="body1"
+                                    >
+                                        {display}
+                                    </Typography>
+                                );
+                            }
+                        })
+                    }
+                    renderOption={(renderProps, searchOption) => {
+                        if (searchOption !== '') {
+                            return (
+                                <li {...renderProps}>
+                                    <PromptReadonlyInputToken
+                                        tokenKey={searchOption.replaceAll(
+                                            /[{}]/g,
+                                            '',
+                                        )}
+                                    />
+                                </li>
+                            );
+                        } else {
+                            const propOption = props.searchOptions.find(
+                                (option) => option.value == searchOption,
+                            );
+                            const display = propOption?.display;
+
+                            return <li {...renderProps}>{display}</li>;
+                        }
+                    }}
                 />
             </Grid>
         </Grid>

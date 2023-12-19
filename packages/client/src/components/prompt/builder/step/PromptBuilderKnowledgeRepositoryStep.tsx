@@ -4,6 +4,7 @@ import { StyledStepPaper } from '../../prompt.styled';
 import { Box, Typography } from '@semoss/ui';
 import { PromptBuilderKnowledgeRepositorySearchSelection } from './PromptBuilderKnowledgeRepositorySearchSelection';
 import { usePixel } from '@/hooks';
+import { TOKEN_TYPE_INPUT } from '../../prompt.constants';
 
 export const PromptBuilderKnowledgeRepositoryStep = (props: {
     builder: Builder;
@@ -29,7 +30,11 @@ export const PromptBuilderKnowledgeRepositoryStep = (props: {
             },
         ];
         (props.builder.inputs.value as Token[]).forEach((token) => {
-            if (!token.isHiddenPhraseInputToken && !token.linkedInputToken) {
+            if (
+                token.type === TOKEN_TYPE_INPUT &&
+                !token.isHiddenPhraseInputToken &&
+                !token.linkedInputToken
+            ) {
                 options.push({
                     display: token.display,
                     value: `{{${token.key}}}`,

@@ -20,7 +20,7 @@ export const PromptBuilderInputTypeSelection = (props: {
             direction="row"
         >
             <Grid item>
-                <PromptReadonlyInputToken token={props.inputToken} />
+                <PromptReadonlyInputToken tokenKey={props.inputToken.key} />
             </Grid>
             <Grid item xs={8} md={4}>
                 <Autocomplete
