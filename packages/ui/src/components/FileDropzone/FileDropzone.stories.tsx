@@ -7,12 +7,7 @@ export default {
     component: FileDropzone,
     argTypes: {},
     args: {
-        id: "default-file-dropzone",
-        extensions: [".pdf", ".doc", ".docx", ".xls", ".xlsx", ".ppt", ".pptx"],
-        description: "Drag and Drop ONE File",
-        multiple: false,
-        disabled: false,
-        valid: false,
+        extensions: [".pdf", ".doc", ".xlsx", ".csv", ".txt", ".zip"],
     },
 };
 
@@ -44,7 +39,9 @@ const Template: Story<ComponentProps<typeof FileDropzone>> = (args) => {
 export const Default = Template.bind({});
 
 Default.args = {
+    id: "default-file-dropzone",
     onChange: () => null,
+    description: "Drag and Drop ONE File",
 };
 
 //* Disabled

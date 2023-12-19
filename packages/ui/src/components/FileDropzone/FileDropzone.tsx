@@ -37,7 +37,7 @@ const StyledDropzone = styled("div", {
     flexDirection: "column",
     justifyContent: "center",
     alignItems: "center",
-    borderWidth: "2px",
+    borderWidth: "1px",
     borderStyle: "dashed",
     borderRadius: "0.25rem",
     width: "100%",
@@ -49,9 +49,9 @@ const StyledDropzone = styled("div", {
         ? "#40A0FF"
         : !valid
         ? "#F84C34"
-        : "#000",
+        : "rgba(0,0,0,.25)",
     backgroudnColor: disabled ? "#F8F8F8" : "",
-    color: disabled ? "#BDBDBD" : dragging ? "#40A0FF" : "BDBDBD",
+    color: disabled ? "#BDBDBD" : dragging ? "#40A0FF" : "#000000",
     cursor: disabled || dragging ? "default" : "",
 }));
 

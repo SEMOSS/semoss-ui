@@ -5,6 +5,8 @@ import { BlockConfig } from '@/stores';
 import { BLOCK_TYPE_UPLOAD } from '../block-defaults.constants';
 import { FileDropZoneBlockDef, FileDropZoneBlock } from './FileDropZoneBlock';
 import { InputSettings } from '@/components/block-settings';
+import { SwitchSettings } from '@/components/block-settings/shared/SwitchSettings';
+import { Checkbox } from '@semoss/ui';
 import {
     buildLayoutSection,
     buildBorderSection,
@@ -15,60 +17,86 @@ import {
 } from '../block-defaults.shared';
 
 //* Material UI Components
-import DriveFileMoveIcon from '@mui/icons-material/DriveFileMove';
+import OpenInBrowserRoundedIcon from '@mui/icons-material/OpenInBrowserRounded';
 
 export const config: BlockConfig<FileDropZoneBlockDef> = {
     widget: 'file-dropzone',
     type: BLOCK_TYPE_UPLOAD,
     data: {
         style: {},
-        name: {
-            path: 'File Name' || null,
-            type: 'File Type' || null,
-            size: 0 || null,
-        },
+        name: 'New File Upload',
+        type: 'File Type',
+        typeList: ['csv', 'doc', 'pdf', 'txt', 'xlsx', 'ZIP'],
+        size: 0,
+        sizeLimit: '30 MB',
     },
     listeners: {},
     slots: {
         test: [],
     },
     render: FileDropZoneBlock,
-    icon: DriveFileMoveIcon,
+    icon: OpenInBrowserRoundedIcon,
     contentMenu: [
         {
-            name: 'File Drop Zone Settings',
+            name: 'General',
             children: [
                 {
                     description: 'The Name of the Uploaded File',
                     render: ({ id }) => (
-                        <InputSettings
+                        <InputSettings id={id} label="Name" path="name" />
+                    ),
+                },
+            ],
+        },
+        {
+            name: 'Configure',
+            children: [
+                {
+                    description: 'Toggle button for setting the file size',
+                    render: ({ id }) => (
+                        <SwitchSettings
                             id={id}
-                            label="Name"
-                            path="name.path"
-                            disabled={true}
+                            label="Set file size"
+                            path="size"
                         />
                     ),
                 },
                 {
-                    description: 'The Type of the Uploaded File',
+                    description: 'Input block setting for the file size limit',
                     render: ({ id }) => (
-                        <InputSettings
+                        <InputSettings id={id} label="Size" path="sizeLimit" />
+                    ),
+                },
+                {
+                    description: 'Toggle button for the file types accepted',
+                    render: ({ id }) => (
+                        <SwitchSettings
                             id={id}
-                            label="Type"
-                            path="name.type"
-                            disabled={true}
+                            label="Set file type"
+                            path="type"
                         />
                     ),
                 },
                 {
-                    description: 'The Size of the Uploaded File',
+                    description: 'Accepted Uploaded File Types',
                     render: ({ id }) => (
-                        <InputSettings
-                            id={id}
-                            label="Size"
-                            path="name.size"
-                            disabled={true}
-                        />
+                        <>
+                            {config.data.typeList.map((type) => (
+                                <Checkbox
+                                    key={type}
+                                    id={id}
+                                    label={type}
+                                    value={type}
+                                    onChange={(e) => {
+                                        console.log(
+                                            'File Type Selected: ',
+                                            type,
+                                        );
+                                        console.log('Event Target: ', e.target);
+                                    }}
+                                />
+                            ))}
+                        </>
                     ),
                 },
             ],

@@ -26,7 +26,6 @@ interface InputSettingsProps<D extends BlockDef = BlockDef> {
 
     /**
      //? Optional: Disabled prop for Block Settings inputs
-     //* Default: false
      */
     disabled?: boolean;
 }
