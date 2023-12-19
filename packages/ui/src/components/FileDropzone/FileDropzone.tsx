@@ -12,6 +12,7 @@ import { useValue } from "./useValue";
 
 import { Button } from "../Button";
 import { Icon } from "../Icon";
+import OpenInBrowserRoundedIcon from "@mui/icons-material/OpenInBrowserRounded";
 
 import { FileDisplay } from "./FileDisplay";
 
@@ -364,21 +365,7 @@ const _FileDropzone = <Multiple extends boolean>(
                 onDrop={handleDropzoneDrop}
             >
                 <StyledContentContainer>
-                    <Icon aria-hidden="true" sx={{ fontSize: "1.5rem" }}>
-                        <svg
-                            xmlns="http://www.w3.org/2000/svg"
-                            fill="none"
-                            viewBox="0 0 24 24"
-                            strokeWidth={1.5}
-                            stroke="currentColor"
-                        >
-                            <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                d={mdiFolderUpload}
-                            />
-                        </svg>
-                    </Icon>
+                    <OpenInBrowserRoundedIcon sx={{ fontSize: "1.5rem" }} />
                     <StyledDropzoneDescription>
                         {description}
                     </StyledDropzoneDescription>
