@@ -54,7 +54,7 @@ export const PromptBuilderVectorStep = (props: {
                             token.linkedInputToken ?? token.index
                         ],
                         token.linkedInputToken ?? token.index,
-                    )}}}`,
+                    )}.value}}`,
                 });
             }
         });
