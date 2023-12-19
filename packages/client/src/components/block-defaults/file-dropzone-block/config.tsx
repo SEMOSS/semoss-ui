@@ -25,10 +25,14 @@ export const config: BlockConfig<FileDropZoneBlockDef> = {
     data: {
         style: {},
         name: 'New File Upload',
-        type: 'File Type',
-        typeList: ['csv', 'doc', 'pdf', 'txt', 'xlsx', 'ZIP'],
+        value: [],
+        type: 'Accepeted File Types',
+        extensions: ['.csv', '.doc', '.pdf', '.txt', '.xlsx', '.zip'],
+        onChange: (files: File[]) => ({ files }),
         size: 0,
         sizeLimit: '30 MB',
+        multiple: true,
+        valid: true,
     },
     listeners: {},
     slots: {
@@ -81,19 +85,16 @@ export const config: BlockConfig<FileDropZoneBlockDef> = {
                     description: 'Accepted Uploaded File Types',
                     render: ({ id }) => (
                         <>
-                            {config.data.typeList.map((type) => (
+                            {config.data.extensions.map((type) => (
                                 <Checkbox
                                     key={type}
                                     id={id}
                                     label={type}
                                     value={type}
                                     onChange={(e) => {
-                                        console.log(
-                                            'File Type Selected: ',
-                                            type,
-                                        );
-                                        console.log('Event Target: ', e.target);
+                                        null;
                                     }}
+                                    path="extensions"
                                 />
                             ))}
                         </>

@@ -69,12 +69,15 @@ interface FileDisplayProps
     /** Callback triggered on deleting of the file */
     onDelete: () => void;
 }
-
 export const FileDisplay = (props: FileDisplayProps): JSX.Element => {
     const { disabled, file, onDelete, ...otherProps } = props;
 
     const href = useMemo(() => {
-        return URL.createObjectURL(file);
+        //* ** make sure file is an instance of File[] before creating a URL object **
+        if (file instanceof File) {
+            return URL.createObjectURL(file);
+        }
+        return "";
     }, [file]);
 
     return (
