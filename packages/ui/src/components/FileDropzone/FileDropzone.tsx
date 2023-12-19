@@ -74,10 +74,13 @@ const StyledFileUploadInput = styled("input")({
 });
 
 const StyledFileListContainer = styled("div")({
-    overflowY: "auto",
+    // overflowY: "auto",
     zIndex: 1,
-    maxHeight: "4rem 2rem",
+    // maxHeight: "4rem 2rem",
     marginBottom: "12px",
+    height: "50%",
+    maxHeight: "100%",
+    overflowY: "auto",
 });
 
 interface BaseFileDropzoneProps<V>

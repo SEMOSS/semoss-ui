@@ -57,46 +57,38 @@ export const config: BlockConfig<FileDropZoneBlockDef> = {
             name: 'Configure',
             children: [
                 {
-                    description: 'Toggle button for setting the file size',
-                    render: ({ id }) => (
-                        <SwitchSettings
-                            id={id}
-                            label="Set file size"
-                            path="size"
-                        />
-                    ),
-                },
-                {
                     description: 'Input block setting for the file size limit',
                     render: ({ id }) => (
-                        <InputSettings id={id} label="Size" path="sizeLimit" />
-                    ),
-                },
-                {
-                    description: 'Toggle button for the file types accepted',
-                    render: ({ id }) => (
-                        <SwitchSettings
+                        <InputSettings
                             id={id}
-                            label="Set file type"
-                            path="type"
+                            label="Total Upload Size"
+                            path="sizeLimit"
                         />
                     ),
                 },
                 {
                     description: 'Accepted Uploaded File Types',
                     render: ({ id }) => (
-                        <FileExtensionSettings
-                            id={id}
-                            path="extensions"
-                            extensions={[
-                                '.csv',
-                                '.doc',
-                                '.pdf',
-                                '.txt',
-                                '.xlsx',
-                                '.zip',
-                            ]}
-                        />
+                        <>
+                            <InputSettings
+                                id={id}
+                                label="File Extensions"
+                                path="extensions"
+                                disabled={true}
+                            />
+                            <FileExtensionSettings
+                                id={id}
+                                path="extensions"
+                                extensions={[
+                                    '.csv',
+                                    '.doc',
+                                    '.pdf',
+                                    '.txt',
+                                    '.xlsx',
+                                    '.zip',
+                                ]}
+                            />
+                        </>
                     ),
                 },
             ],

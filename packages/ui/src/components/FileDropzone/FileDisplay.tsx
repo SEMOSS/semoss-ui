@@ -7,6 +7,7 @@ import { IconButton } from "../IconButton";
 const StyledContainer = styled("div")({
     display: "flex",
     alignItems: "center",
+    width: "100%",
     columnGap: 1,
     justifyContent: "space-between",
     marginTop: "1rem",
