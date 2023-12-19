@@ -8,3 +8,4 @@ export { DistinctPathButtonGroupSettings } from './DistinctPathButtonGroupSettin
 export { InputSettings } from './InputSettings';
 export { SelectInputSettings } from './SelectInputSettings';
 export { SizeSettings } from './SizeSettings';
+export { ImageInputSettings } from './ImageInputSettings';

@@ -16,7 +16,11 @@ import {
     FilterCenterFocus,
 } from '@mui/icons-material';
 import { BLOCK_TYPE_DISPLAY } from '../block-defaults.constants';
-import { BorderSettings, InputSettings } from '@/components/block-settings';
+import {
+    BorderSettings,
+    InputSettings,
+    ImageInputSettings,
+} from '@/components/block-settings';
 import { ButtonGroupSettings } from '../../block-settings/shared/ButtonGroupSettings';
 import { SizeSettings } from '../../block-settings/shared/SizeSettings';
 
@@ -43,9 +47,9 @@ export const config: BlockConfig<ImageBlockDef> = {
                 {
                     description: 'Image Source',
                     render: ({ id }) => (
-                        <InputSettings
+                        <ImageInputSettings
                             id={id}
-                            label="Source (temporary)"
+                            label="Source (foo)"
                             path="src"
                         />
                     ),

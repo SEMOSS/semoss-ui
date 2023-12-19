@@ -29,6 +29,20 @@ export interface ImageBlockDef extends BlockDef<'image'> {
 export const ImageBlock: BlockComponent = observer(({ id }) => {
     const { attrs, data } = useBlock<ImageBlockDef>(id);
 
+    // OVERHAUL
+    // outer span is always used
+    // full width if centered or right aligned
+
+    // inner component conditional
+    // if no image source, choose an image text / outlined div
+    // if no height defined, normal image element
+    // if custom height is defined, a div with a background url
+
+    // conditional margins
+    // top margin only if centered or right aligned
+
+    // responsible for all other styling
+
     if (!data.src)
         return (
             <span
