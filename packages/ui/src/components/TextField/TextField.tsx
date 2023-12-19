@@ -1,4 +1,5 @@
 import {
+    LinearProgress,
     TextField as MuiTextField,
     TextFieldProps as MuiTextFieldProps,
     SxProps,
@@ -7,9 +8,29 @@ import {
 export type TextFieldProps = MuiTextFieldProps & {
     /** custom style object */
     sx?: SxProps;
+
+    /**
+     * Set loading state
+     */
+    loading?: boolean;
 };
 
 export const TextField = (props: TextFieldProps) => {
-    const { sx } = props;
-    return <MuiTextField sx={sx} {...props} />;
+    let muiTextFieldProps = { ...props };
+    if (muiTextFieldProps?.loading) {
+        delete muiTextFieldProps.loading;
+    }
+
+    return (
+        <MuiTextField
+            {...muiTextFieldProps}
+            helperText={
+                props?.loading ? (
+                    <LinearProgress color="primary" />
+                ) : (
+                    props?.helperText
+                )
+            }
+        />
+    );
 };
