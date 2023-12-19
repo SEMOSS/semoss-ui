@@ -32,7 +32,7 @@ function capitalizeLabel(label: string): string {
     return words.join(' ');
 }
 
-function getIdForInput(inputType: string, index: number) {
+export function getIdForInput(inputType: string, index: number) {
     return `${inputType}-input-${index}`;
 }
 
@@ -105,9 +105,9 @@ export function getBlockForInput(
 
 export function getQueryForPrompt(
     model: string,
-    vector: string | undefined,
     tokens: Token[],
     inputTypes: object,
+    vectorSearchStatements: object,
 ): Record<string, QueryStateConfig> {
     const tokenStrings: string[] = [];
     // compose tokens into a command
@@ -141,31 +141,59 @@ export function getQueryForPrompt(
         prompt = prompt + '.';
     }
 
-    const functionQuery =
-        `def jointVectorModelQuery(search_statement:str, limit = 5) -> str:` +
-        `import json;` +
-        `from gaas_gpt_model import ModelEngine;` +
-        `from gaas_gpt_vector import VectorEngine;` +
-        `model = ModelEngine(engine_id = "${model}", insight_id = '\${i}');` +
-        `${
-            vector
-                ? `vector = VectorEngine(engine_id = "${vector}", insight_id = '\${i}', insight_folder = '\${if}');`
-                : ''
-        }` +
-        `${
-            vector
-                ? `matches = vector.nearestNeighbor(search_statement = search_statement, limit = limit);`
-                : ''
-        }` +
-        `prompt = search_statement ${
-            vector
-                ? `+ " Ask based on" + ' '.join([matchItem['Content'] for matchItem in matches])`
-                : ''
-        };` +
-        `response = model.ask(question = prompt);` +
-        `return json.dumps(response[0]['response']);`;
+    const functionQuery = () => {
+        let functionQueryString = `def jointVectorModelQuery(search_statement:str, ${Object.keys(
+            vectorSearchStatements,
+        )
+            .map((_, index: number) => {
+                return `vector_${index}_statement:str`;
+            })
+            .join(', ')}${
+            Object.keys(vectorSearchStatements).length ? ', ' : ''
+        }limit = 5) -> str:`;
 
-    const query = `jointVectorModelQuery("${prompt}")`;
+        functionQueryString +=
+            `import json;` +
+            `from gaas_gpt_model import ModelEngine;` +
+            `from gaas_gpt_vector import VectorEngine;` +
+            `model = ModelEngine(engine_id = "${model}", insight_id = '\${i}');`;
+
+        Object.keys(vectorSearchStatements).forEach(
+            (vectorId: string, index: number) => {
+                functionQueryString += `vector_${index} = VectorEngine(engine_id = "${vectorId}", insight_id = '\${i}', insight_folder = '\${if}');`;
+                functionQueryString += `matches_${index} = vector.nearestNeighbor(search_statement = vector_${index}_statement, limit = limit);`;
+            },
+        );
+
+        if (!Object.keys(vectorSearchStatements).length) {
+            functionQueryString += `prompt = search_statement;`;
+        } else {
+            functionQueryString += `prompt = search_statement + ' Ask based on ' + ${Object.keys(
+                vectorSearchStatements,
+            )
+                .map((_, index: number) => {
+                    return `' '.join([matchItem['Content'] for matchItem in matches_${index}])`;
+                })
+                .join(` + ' and ' + `)};`;
+        }
+        functionQueryString +=
+            `response = model.ask(question = prompt);` +
+            `return json.dumps(response[0]['response']);`;
+
+        return functionQueryString;
+    };
+
+    const query = `jointVectorModelQuery("${prompt}"${
+        Object.keys(vectorSearchStatements).length ? ', ' : ''
+    }${Object.keys(vectorSearchStatements)
+        .map((vectorId: string) => {
+            if (vectorSearchStatements[vectorId] !== '') {
+                return `"${vectorSearchStatements[vectorId]}"`;
+            } else {
+                return `"${prompt}"`;
+            }
+        })
+        .join(', ')})`;
 
     return {
         [PROMPT_FUNCTION_QUERY_ID]: {
@@ -177,7 +205,7 @@ export function getQueryForPrompt(
                     widget: 'code',
                     parameters: {
                         type: 'py',
-                        code: functionQuery,
+                        code: functionQuery(),
                     },
                 },
             ],
@@ -384,9 +412,9 @@ export async function setBlocksAndOpenUIBuilder(
 
     state.queries = getQueryForPrompt(
         builder.model.value as string,
-        builder.vector.value as string | undefined,
         builder.inputs.value as Token[],
         builder.inputTypes.value as object,
+        builder.vectorSearchStatements.value as object,
     );
 
     const pixel = `CreateAppFromBlocks ( project = [ "${

@@ -15,18 +15,12 @@ export interface Token {
     linkedInputToken: undefined | number;
 }
 
-export interface KnowledgeRepositorySearchStatement {
-    knowledgeRepositoryId: string;
-    searchStatement: string;
-}
-
 export interface BuilderStepItem {
     step: number;
     value:
         | string
         | string[]
         | Token[]
-        | KnowledgeRepositorySearchStatement[]
         | ConstraintSettings
         | object
         | undefined;
@@ -41,6 +35,6 @@ export interface Builder {
     context: BuilderStepItem;
     inputs: BuilderStepItem;
     inputTypes: BuilderStepItem;
-    knowledgeRepositorySearchStatements: BuilderStepItem;
+    vectorSearchStatements: BuilderStepItem;
     constraints: BuilderStepItem;
 }

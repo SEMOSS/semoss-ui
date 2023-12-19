@@ -78,7 +78,7 @@ const initialBuilder: Builder = {
         required: true,
         display: 'Input Types',
     },
-    knowledgeRepositorySearchStatements: {
+    vectorSearchStatements: {
         step: PROMPT_BUILDER_KNOWLEDGE_REPOSITORY_STEP,
         value: undefined,
         required: true,
@@ -129,13 +129,11 @@ export const PromptBuilder = () => {
             changeBuilderStep(currentBuilderStep + (hasInputs ? 1 : 2));
         } else if (currentBuilderStep === PROMPT_BUILDER_INPUT_TYPES_STEP) {
             // skip knowledge repository step if no knowledge repository configured
-            const hasKnowledgeRepository =
+            const hasVector =
                 builder.vector.value && Array.isArray(builder.vector.value)
                     ? Boolean(builder.vector.value.length)
                     : false;
-            changeBuilderStep(
-                currentBuilderStep + (hasKnowledgeRepository ? 1 : 2),
-            );
+            changeBuilderStep(currentBuilderStep + (hasVector ? 1 : 2));
         } else {
             changeBuilderStep(currentBuilderStep + 1);
         }
