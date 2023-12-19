@@ -111,7 +111,7 @@ export const PromptBuilderVectorStep = (props: {
                     Refine Knowledge Repository Search
                 </Typography>
                 <Typography variant="body1">
-                    Use the dropdowns to define the search statements to be used
+                    Use the dropdowns to refine the search statements to be used
                     with each Knowledge Repository.
                 </Typography>
             </Box>
