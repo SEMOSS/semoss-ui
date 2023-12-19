@@ -6,6 +6,7 @@ import { BLOCK_TYPE_UPLOAD } from '../block-defaults.constants';
 import { FileDropZoneBlockDef, FileDropZoneBlock } from './FileDropZoneBlock';
 import { InputSettings } from '@/components/block-settings';
 import { SwitchSettings } from '@/components/block-settings/shared/SwitchSettings';
+import { FileExtensionSettings } from '@/components/block-settings/shared/FileExtensionSettings';
 import { Checkbox } from '@semoss/ui';
 import {
     buildLayoutSection,
@@ -84,20 +85,18 @@ export const config: BlockConfig<FileDropZoneBlockDef> = {
                 {
                     description: 'Accepted Uploaded File Types',
                     render: ({ id }) => (
-                        <>
-                            {config.data.extensions.map((type) => (
-                                <Checkbox
-                                    key={type}
-                                    id={id}
-                                    label={type}
-                                    value={type}
-                                    onChange={(e) => {
-                                        null;
-                                    }}
-                                    path="extensions"
-                                />
-                            ))}
-                        </>
+                        <FileExtensionSettings
+                            id={id}
+                            path="extensions"
+                            extensions={[
+                                '.csv',
+                                '.doc',
+                                '.pdf',
+                                '.txt',
+                                '.xlsx',
+                                '.zip',
+                            ]}
+                        />
                     ),
                 },
             ],
