@@ -170,7 +170,7 @@ export function getQueryForPrompt(
         Object.keys(vectorSearchStatements).forEach(
             (vectorId: string, index: number) => {
                 functionQueryString += `vector_${index} = VectorEngine(engine_id = "${vectorId}", insight_id = '\${i}', insight_folder = '\${if}');`;
-                functionQueryString += `matches_${index} = vector.nearestNeighbor(search_statement = vector_${index}_statement, limit = limit);`;
+                functionQueryString += `matches_${index} = vector_${index}.nearestNeighbor(search_statement = vector_${index}_statement, limit = limit);`;
             },
         );
 
