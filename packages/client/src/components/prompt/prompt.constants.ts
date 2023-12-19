@@ -50,6 +50,11 @@ export const INPUT_TYPE_DISPLAY = {
     [INPUT_TYPE_RANGE]: 'Range Slider',
     [INPUT_TYPE_SELECT]: 'Select',
 };
+
+export const VECTOR_SEARCH_FULL_CONTEXT = 'full';
+export const VECTOR_SEARCH_INPUT = 'input';
+export const VECTOR_SEARCH_CUSTOM = 'custom';
+
 export const SUMMARY_STEPS = [
     {
         title: 'Create Prompt',

@@ -32,9 +32,9 @@ export const PromptBuilderSummaryStepItem = (props: BuilderStepItemProps) => {
     };
 
     return (
-        <List>
+        <List disablePadding>
             {Array.from(stepItemsForSummaryStep, (item: BuilderStepItem, i) => (
-                <List.Item key={i} sx={{ marginLeft: '16px' }}>
+                <List.Item disableGutters key={i} sx={{ marginLeft: '16px' }}>
                     <List.ItemText
                         primary={item.display}
                         secondary={

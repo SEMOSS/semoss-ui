@@ -4,8 +4,13 @@ import { StyledStepPaper } from '../../prompt.styled';
 import { Box, Typography } from '@semoss/ui';
 import { PromptBuilderVectorSearchSelection } from './PromptBuilderVectorSearchSelection';
 import { usePixel } from '@/hooks';
-import { TOKEN_TYPE_INPUT } from '../../prompt.constants';
-import { getIdForInput } from '../../prompt.helpers';
+import {
+    TOKEN_TYPE_INPUT,
+    VECTOR_SEARCH_CUSTOM,
+    VECTOR_SEARCH_FULL_CONTEXT,
+    VECTOR_SEARCH_INPUT,
+} from '../../prompt.constants';
+import { getIdForInput, getInputFormatPrompt } from '../../prompt.helpers';
 
 export const PromptBuilderVectorStep = (props: {
     builder: Builder;
@@ -19,11 +24,20 @@ export const PromptBuilderVectorStep = (props: {
         }));
     };
 
-    const searchOptions = useMemo(() => {
+    // options for vector search statement - full, input, or custom
+    const searchOptions: Array<{
+        display: string;
+        value: string;
+        type: string;
+    }> = useMemo(() => {
         let options = [
             {
                 display: 'Full Context',
-                value: '',
+                type: VECTOR_SEARCH_FULL_CONTEXT,
+                value: getInputFormatPrompt(
+                    props.builder.inputs.value as Token[],
+                    props.builder.inputTypes.value as object,
+                ),
             },
         ];
         (props.builder.inputs.value as Token[]).forEach((token) => {
@@ -34,6 +48,7 @@ export const PromptBuilderVectorStep = (props: {
             ) {
                 options.push({
                     display: token.key,
+                    type: `${VECTOR_SEARCH_INPUT}_${token.key}`,
                     value: `{{${getIdForInput(
                         props.builder.inputTypes.value[
                             token.linkedInputToken ?? token.index
@@ -43,21 +58,35 @@ export const PromptBuilderVectorStep = (props: {
                 });
             }
         });
+        options.push({
+            display: 'Custom',
+            type: VECTOR_SEARCH_CUSTOM,
+            value: '',
+        });
         return options;
     }, [props.builder.inputs]);
 
-    const knowledgeRepositories = useMemo(() => {
+    // vector db IDs selected in context step (step 1)
+    const selectedVectors = useMemo(() => {
         return [...(props.builder.vector.value as string[])];
     }, [props.builder.vector]);
 
+    // set statement type to full context by default
     useEffect(() => {
         setVectorStatements(
-            knowledgeRepositories.reduce((acc, krId) => {
-                return { ...acc, [krId]: '' };
+            selectedVectors.reduce((acc, krId) => {
+                return {
+                    ...acc,
+                    [krId]: getInputFormatPrompt(
+                        props.builder.inputs.value as Token[],
+                        props.builder.inputTypes.value as object,
+                    ),
+                };
             }, {}),
         );
-    }, [knowledgeRepositories]);
+    }, [selectedVectors]);
 
+    // update builder tracked value
     useEffect(() => {
         props.setBuilderValue('vectorSearchStatements', vectorStatements);
     }, [vectorStatements]);
@@ -86,7 +115,7 @@ export const PromptBuilderVectorStep = (props: {
                     with each Knowledge Repository.
                 </Typography>
             </Box>
-            {Array.from(knowledgeRepositories, (vectorId: string) => (
+            {Array.from(selectedVectors, (vectorId: string) => (
                 <PromptBuilderVectorSearchSelection
                     key={vectorId}
                     vectorDisplay={vectorDisplay ? vectorDisplay[vectorId] : ''}

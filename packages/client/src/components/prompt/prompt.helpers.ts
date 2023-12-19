@@ -103,12 +103,10 @@ export function getBlockForInput(
     }
 }
 
-export function getQueryForPrompt(
-    model: string,
+export function getInputFormatPrompt(
     tokens: Token[],
     inputTypes: object,
-    vectorSearchStatements: object,
-): Record<string, QueryStateConfig> {
+): string {
     const tokenStrings: string[] = [];
     // compose tokens into a command
     tokens.forEach((token: Token) => {
@@ -140,6 +138,17 @@ export function getQueryForPrompt(
     ) {
         prompt = prompt + '.';
     }
+
+    return prompt;
+}
+
+export function getQueryForPrompt(
+    model: string,
+    tokens: Token[],
+    inputTypes: object,
+    vectorSearchStatements: object,
+): Record<string, QueryStateConfig> {
+    const prompt = getInputFormatPrompt(tokens, inputTypes);
 
     const functionQuery = () => {
         let functionQueryString = `def jointVectorModelQuery(search_statement:str, ${Object.keys(
@@ -187,11 +196,7 @@ export function getQueryForPrompt(
         Object.keys(vectorSearchStatements).length ? ', ' : ''
     }${Object.keys(vectorSearchStatements)
         .map((vectorId: string) => {
-            if (vectorSearchStatements[vectorId] !== '') {
-                return `"${vectorSearchStatements[vectorId]}"`;
-            } else {
-                return `"${prompt}"`;
-            }
+            return `"${vectorSearchStatements[vectorId]}"`;
         })
         .join(', ')})`;
 
