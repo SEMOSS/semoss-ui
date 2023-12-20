@@ -75,10 +75,10 @@ export const ImageInputSettings = observer(
             const imageUrl = URL.createObjectURL(value);
             setData(path, imageUrl as PathValue<D['data'], typeof path>);
 
-            // // from roses branch, should work after merge
-            // // packages/legacy/core/store/pixels/index.js
-            // const upload = monolithStore.uploadImage(value, id);
-            // console.log({upload})
+            // from roses branch, should work after merge
+            // packages/legacy/core/store/pixels/index.js
+            const upload = monolithStore.uploadImage(value, id);
+            console.log({ upload });
 
             // // other possible approach
             // // this is currently failing due to user permission issue, this may not be viable
