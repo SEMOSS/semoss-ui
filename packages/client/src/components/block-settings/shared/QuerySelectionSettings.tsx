@@ -86,11 +86,8 @@ export const QuerySelectionSettings = observer(
                 timeoutRef.current = null;
             }
 
-            // TO-DO (John): Go change blocks to loading if that query is loading
-            // State Action: SET_BLOCK_QUERIES
             timeoutRef.current = setTimeout(() => {
                 try {
-                    debugger;
                     // Go set the block dependencies in that blocks data
                     setBlockQueries(value);
                 } catch (e) {

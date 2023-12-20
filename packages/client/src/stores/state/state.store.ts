@@ -99,7 +99,6 @@ export class StateStore {
             },
             (curr, prev) => {
                 for (const id in curr) {
-                    // debugger;
                     // get the query
                     const q = this._store.queries[id];
 
@@ -113,7 +112,6 @@ export class StateStore {
                         continue;
                     }
 
-                    // debugger;
                     // run the query
                     this.runQuery(id);
                 }
@@ -771,11 +769,12 @@ export class StateStore {
      * @param queries
      */
     private setBlockQueries = (id: string, queries: string): void => {
+        // Check to see if query is currently loading
         const loading = JSON.parse(
             this.flattenParameter(queries).toLowerCase(),
         );
 
-        this._store.blocks[id]['queries'] = queries;
+        this._store.blocks[id].data['queries'] = queries;
         this._store.blocks[id].data['loading'] = loading;
     };
 
@@ -787,12 +786,14 @@ export class StateStore {
     private setBlocksLoading = (queryId: string, loading: boolean) => {
         const blocks = this._store.blocks;
         for (const key in blocks) {
-            const block = blocks[key];
-            if (block['queries']) {
-                const match = (block['queries'] as string).match(/{{([^.]*)\./);
+            const blockData = blocks[key]['data'];
+            if (blockData['queries']) {
+                const match = (blockData['queries'] as string).match(
+                    /{{([^.]*)\./,
+                );
 
                 if (match && match[1] === queryId) {
-                    block['data']['loading'] = loading;
+                    blockData['loading'] = loading;
                 } else {
                     console.error('query not found');
                 }

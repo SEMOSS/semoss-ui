@@ -25,8 +25,8 @@ export const config: BlockConfig<ButtonBlockDef> = {
         style: {},
         label: 'Submit',
         loading: false,
+        queries: '',
     },
-    queries: '',
     listeners: {
         onClick: [],
     },
@@ -44,7 +44,7 @@ export const config: BlockConfig<ButtonBlockDef> = {
                     ),
                 },
                 {
-                    description: 'loading',
+                    description: 'queries',
                     render: ({ id }) => (
                         <QuerySelectionSettings
                             id={id}

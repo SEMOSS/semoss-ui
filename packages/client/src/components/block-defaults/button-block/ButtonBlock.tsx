@@ -12,6 +12,7 @@ export interface ButtonBlockDef extends BlockDef<'button'> {
         style: CSSProperties;
         label: string;
         loading?: boolean;
+        queries?: string;
     };
     listeners: {
         onClick: true;
@@ -23,13 +24,13 @@ export const ButtonBlock: BlockComponent = observer(({ id }) => {
 
     return (
         <Button
-            loading={data.loading}
             sx={{
                 ...data.style,
             }}
             onClick={() => {
                 listeners.onClick();
             }}
+            loading={data.loading}
             {...attrs}
         >
             {data.label}
