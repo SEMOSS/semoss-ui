@@ -120,11 +120,6 @@ export interface BlockConfig<D extends BlockDef = BlockDef> {
             }) => JSX.Element;
         }[];
     }[];
-
-    /** Query Dependencies used for loading state */
-    queries?: string;
-    /** Loading state for block on/off */
-    loading?: boolean;
 }
 
 /**

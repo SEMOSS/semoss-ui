@@ -21,9 +21,7 @@ export enum ActionMessages {
     UPDATE_STEP = 'UPDATE_STEP',
     RUN_STEP = 'RUN_STEP',
     DISPATCH_EVENT = 'DISPATCH_EVENT',
-    // John ---
-    SET_BLOCK_QUERIES = 'SET_BLOCK_QUERIES',
-    // End  ---
+    SET_BLOCK_QUERIES = 'SET_BLOCK_QUERIES', // John
 }
 
 const ACTIONS_DISPLAY = {

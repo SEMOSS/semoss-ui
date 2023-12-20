@@ -235,33 +235,6 @@ export class StepState<D extends CellDef = CellDef> {
     }
 
     /**
-     * John: used to search through block data to see if query is present
-     * @param obj
-     * @param keyToFind
-     * @returns
-     */
-    // private findValueByDynamicKey(obj, keyToFind) {
-    //     let result = null;
-
-    //     for (const key in obj) {
-    //         if (typeof obj[key] === 'object') {
-    //             result = this.findValueByDynamicKey(obj[key], keyToFind);
-    //             if (result !== null) {
-    //                 return result;
-    //             }
-    //         } else if (
-    //             typeof obj[key] === 'string' &&
-    //             obj[key].includes(keyToFind)
-    //         ) {
-    //             // Check if the string contains the dynamic key
-    //             return obj[key];
-    //         }
-    //     }
-
-    //     return result;
-    // }
-
-    /**
      * Process running of the step
      *
      * @param parameters - Run the step with these parameters. They will be saved if successful

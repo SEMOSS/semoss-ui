@@ -15,9 +15,6 @@ interface useBlockSettingsReturn<D extends BlockDef = BlockDef> {
     /** Data for the block  */
     listeners: Block<D>['listeners'];
 
-    /** Loading State of block */
-    loading?: boolean;
-
     /**
      * Dispatch a message to set data
      * @param path - path of the data to set
@@ -144,7 +141,6 @@ export const useBlockSettings = <D extends BlockDef = BlockDef>(
     return {
         data: block.data || {},
         listeners: block.listeners || {},
-        loading: block.loading,
         setData: setData,
         deleteData: deleteData,
         setListener: setListener,

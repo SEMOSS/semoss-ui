@@ -89,7 +89,6 @@ export class StateStore {
                 >((acc, val) => {
                     const q = this._store.queries[val];
 
-                    // debugger;
                     // map id -> actual
                     acc[q.id] = `${this.flattenParameter(q._toPixel())}--${
                         q.mode

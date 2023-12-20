@@ -264,7 +264,6 @@ export class QueryState {
             const { pixelReturn } = await this._state._runPixel(filled);
 
             const stepLen = this._store.steps.length;
-
             if (pixelReturn.length !== stepLen) {
                 throw new Error(
                     'Error processing pixel. Steps do not equal pixelReturn',

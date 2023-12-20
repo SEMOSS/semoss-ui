@@ -12,7 +12,6 @@ export default {
 /* Stories */
 const Template: Story<ComponentProps<typeof FileDropzone>> = (args) => {
     const { value, onChange, ...otherArgs } = args;
-    console.log(value);
     const [selectedValues, setSelectedValues] = useState(value);
 
     useEffect(() => {
