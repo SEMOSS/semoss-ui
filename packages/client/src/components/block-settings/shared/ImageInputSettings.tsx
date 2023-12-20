@@ -94,7 +94,7 @@ export const ImageInputSettings = observer(
         return (
             <form onSubmit={submitHandler}>
                 <FileDropzone
-                    // imageSelector={true} // <--- is this valid in rose's branch?
+                    imageSelector={true} // <--- is this valid in rose's branch?
                     description="Browse"
                     onChange={(value) => dropzoneHandler(value)}
                 />
