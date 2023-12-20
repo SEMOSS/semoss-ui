@@ -297,17 +297,21 @@ export class StateStore {
         // extract the id and path
         const split = cleaned.split('.');
 
-        const id = split.shift();
-        const path = split.join('.');
+        // only continue loop if here is something meaninful to be split
+        // ex don't continue for something like {{query1}} or {{query1.}}
+        if (split.length > 1 && split[1]) {
+            const id = split.shift();
+            const path = split.join('.');
 
-        // check if it is in the block's data
-        if (id && this._store.blocks[id]) {
-            return getValueByPath(this._store.blocks[id].data, path);
-        }
+            // check if it is in the block's data
+            if (id && this._store.blocks[id]) {
+                return getValueByPath(this._store.blocks[id].data, path);
+            }
 
-        // check if it is in a query and we actually want the data
-        if (id && this._store.queries[id]) {
-            return getValueByPath(this._store.queries[id], path);
+            // check if it is in a query
+            if (id && this._store.queries[id]) {
+                return getValueByPath(this._store.queries[id], path);
+            }
         }
 
         return parameter;
