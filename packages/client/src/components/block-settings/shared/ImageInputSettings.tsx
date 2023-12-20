@@ -7,6 +7,9 @@ import { useBlockSettings } from '@/hooks';
 import { Block, BlockDef } from '@/stores';
 import { getValueByPath } from '@/utility';
 
+import { useRootStore, useEngine } from '@/hooks';
+import { ContrastOutlined } from '@mui/icons-material';
+
 interface ImageInputSettingsProps<D extends BlockDef = BlockDef> {
     /**
      * Id of the block that is being worked with
@@ -38,6 +41,9 @@ export const ImageInputSettings = observer(
         // track the ref to debounce the input
         const timeoutRef = useRef<ReturnType<typeof setTimeout>>(null);
 
+        const { monolithStore, configStore } = useRootStore();
+        // const { id } = useEngine();
+
         // get the value of the input (wrapped in usememo because of path prop)
         const computedValue = useMemo(() => {
             return computed(() => {
@@ -61,7 +67,7 @@ export const ImageInputSettings = observer(
             setValue(computedValue);
         }, [computedValue]);
 
-        const dropzoneHandler = (value) => {
+        const dropzoneHandler = async (value) => {
             // get temporary blob path for image and set as source to UI image element
             // this may not be necessary after reactor is running
             // we may want a confirm image upload button or modal
@@ -69,8 +75,32 @@ export const ImageInputSettings = observer(
             const imageUrl = URL.createObjectURL(value);
             setData(path, imageUrl as PathValue<D['data'], typeof path>);
 
-            // automatically run reactor and get image url
-            // await response and assign image url to src
+            // // from roses branch, should work after merge
+            // // packages/legacy/core/store/pixels/index.js
+            // const upload = monolithStore.uploadImage(value, id);
+            // console.log({upload})
+
+            // // other possible approach
+            // // this is currently failing due to user permission issue, this may not be viable
+            // const upload = await monolithStore.uploadFile(
+            //     // [data.PROJECT_UPLOAD],
+            //     // configStore.store.insightID,
+            //     // appId,
+            //     // path,
+
+            //     [value],
+            //     configStore.store.insightID,
+            //     id,
+            //     path,
+            // );
+            // console.log({ upload });
+            // // after upload is confirmed replace placeholder blob url src
+            // const uploadImageUrl = upload.src // check key
+            // setData(path, uploadImageUrl as PathValue<D['data'], typeof path>);
+
+            // // other possible approach
+            // // automatically run reactor and get image url
+            // // await response and assign image url to src
 
             // // need to find the correct reactor
             // const pixel = `CreateImage ( url = [ "${
