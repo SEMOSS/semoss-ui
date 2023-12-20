@@ -28,6 +28,9 @@ interface useBlockReturn<D extends BlockDef = BlockDef> {
         ) => void
     >;
 
+    /** Loading State of block  */
+    loading?: boolean;
+
     /** Slots */
     slots: Block<D>['slots'];
 

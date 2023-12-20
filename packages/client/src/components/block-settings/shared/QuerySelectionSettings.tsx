@@ -1,29 +1,14 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { computed } from 'mobx';
 import { observer } from 'mobx-react-lite';
-import { Autocomplete, Box, Typography, TextField, styled } from '@semoss/ui';
+import { Autocomplete, TextField } from '@mui/material';
 import { Paths, PathValue } from '@/types';
 import { useBlockSettings, useBlocks } from '@/hooks';
 import { Block, BlockDef } from '@/stores';
 import { getValueByPath } from '@/utility';
 import { BaseSettingSection } from '../BaseSettingSection';
 
-const StyledAutocomplete = styled(Autocomplete)(({ theme }) => ({
-    width: '100%',
-}));
-
-const StyledBox = styled(Box)(({ theme }) => ({
-    position: 'relative',
-}));
-
-const StyledTypography = styled(Typography)(({ theme }) => ({
-    position: 'absolute',
-    opacity: 0.5,
-    left: 14,
-    top: 9,
-}));
-
-interface AutocompleteQuerySettingsProps<D extends BlockDef = BlockDef> {
+interface QuerySelectionSettingsProps<D extends BlockDef = BlockDef> {
     /**
      * Id of the block that is being worked with
      */
@@ -40,19 +25,20 @@ interface AutocompleteQuerySettingsProps<D extends BlockDef = BlockDef> {
     label: string;
 }
 
-export const AutocompleteQuerySettings = observer(
+/**
+ * Specifically for selecting a query for to associate with loading/disabled/etc
+ */
+export const QuerySelectionSettings = observer(
     <D extends BlockDef = BlockDef>({
         id,
         path,
         label,
-    }: AutocompleteQuerySettingsProps<D>) => {
-        const { data, setData } = useBlockSettings(id);
+    }: QuerySelectionSettingsProps<D>) => {
+        const { data, setBlockQueries } = useBlockSettings(id);
         const { state } = useBlocks();
 
         // track the value
         const [value, setValue] = useState('');
-
-        const hint = useRef('');
 
         // track the ref to debounce the input
         const timeoutRef = useRef<ReturnType<typeof setTimeout>>(null);
@@ -82,10 +68,9 @@ export const AutocompleteQuerySettings = observer(
 
         // available queries for autocomplete
         const queries = useMemo(() => {
-            const queries = Object.keys(state.queries);
-            return queries.map((q) => {
-                return `{{${q}}}`;
-            });
+            return Object.keys(state.queries).reduce((acc, queryKey) => {
+                return { ...acc, [`{{${queryKey}.isLoading}}`]: queryKey };
+            }, {});
         }, [Object.keys(state.queries).length]);
 
         /**
@@ -95,16 +80,19 @@ export const AutocompleteQuerySettings = observer(
             // set the value
             setValue(value);
 
-            // clear out he old timeout
+            // clear out the old timeout
             if (timeoutRef.current) {
                 clearTimeout(timeoutRef.current);
                 timeoutRef.current = null;
             }
 
+            // TO-DO (John): Go change blocks to loading if that query is loading
+            // State Action: SET_BLOCK_QUERIES
             timeoutRef.current = setTimeout(() => {
                 try {
-                    // set the value
-                    setData(path, value as PathValue<D['data'], typeof path>);
+                    debugger;
+                    // Go set the block dependencies in that blocks data
+                    setBlockQueries(value);
                 } catch (e) {
                     console.log(e);
                 }
@@ -113,37 +101,20 @@ export const AutocompleteQuerySettings = observer(
 
         return (
             <BaseSettingSection label={label}>
-                <StyledAutocomplete
-                    open={false}
-                    size={'small'}
-                    inputValue={value}
-                    onInputChange={(event, newInputValue, reason) => {
-                        if (reason === 'input') {
-                            onChange(newInputValue);
-
-                            // Find a matching option or use the input value as the hint
-                            const matchingOption = queries.find((option) =>
-                                option
-                                    .toLowerCase()
-                                    .startsWith(newInputValue.toLowerCase()),
-                            );
-
-                            hint.current = matchingOption
-                                ? matchingOption
-                                : newInputValue;
-                        }
+                <Autocomplete
+                    fullWidth
+                    disableClearable={value === ''}
+                    size="small"
+                    value={value}
+                    options={Object.keys(queries)}
+                    getOptionLabel={(queryLoadingInput: string) =>
+                        queries[queryLoadingInput] ?? ''
+                    }
+                    onChange={(_, value) => {
+                        onChange(value);
                     }}
-                    onBlur={() => {
-                        hint.current = '';
-                    }}
-                    options={queries}
                     renderInput={(params) => (
-                        <StyledBox>
-                            <StyledTypography variant={'body1'}>
-                                {hint.current}
-                            </StyledTypography>
-                            <TextField {...params} />
-                        </StyledBox>
+                        <TextField {...params} placeholder="Query" />
                     )}
                 />
             </BaseSettingSection>

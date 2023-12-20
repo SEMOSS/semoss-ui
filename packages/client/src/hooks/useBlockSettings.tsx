@@ -15,6 +15,9 @@ interface useBlockSettingsReturn<D extends BlockDef = BlockDef> {
     /** Data for the block  */
     listeners: Block<D>['listeners'];
 
+    /** Loading State of block */
+    loading?: boolean;
+
     /**
      * Dispatch a message to set data
      * @param path - path of the data to set
@@ -39,6 +42,11 @@ interface useBlockSettingsReturn<D extends BlockDef = BlockDef> {
         listener: keyof Block<D>['listeners'],
         actions: ListenerActions[],
     ) => void;
+
+    /**
+     * Dispatch a message to set the queries used on block
+     */
+    setBlockQueries: (queries: string) => void;
 }
 
 /**
@@ -120,11 +128,26 @@ export const useBlockSettings = <D extends BlockDef = BlockDef>(
         [],
     );
 
+    /**
+     * Dispatch a message to set the query dependencies for a block (Loading)
+     */
+    const setBlockQueries = useCallback((queries?: ''): void => {
+        state.dispatch({
+            message: ActionMessages.SET_BLOCK_QUERIES,
+            payload: {
+                id: id,
+                queries,
+            },
+        });
+    }, []);
+
     return {
         data: block.data || {},
         listeners: block.listeners || {},
+        loading: block.loading,
         setData: setData,
         deleteData: deleteData,
         setListener: setListener,
+        setBlockQueries: setBlockQueries,
     };
 };

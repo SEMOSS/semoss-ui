@@ -223,6 +223,10 @@ export class StateStore {
                 const { id, path, value } = action.payload;
 
                 this.setBlockData(id, path, value);
+            } else if (ActionMessages.SET_BLOCK_QUERIES === action.message) {
+                const { id, queries } = action.payload;
+
+                this.setBlockQueries(id, queries);
             } else if (ActionMessages.DELETE_BLOCK_DATA === action.message) {
                 const { id, path } = action.payload;
 
@@ -263,8 +267,6 @@ export class StateStore {
             } else if (ActionMessages.RUN_STEP === action.message) {
                 const { queryId, stepId } = action.payload;
 
-                // Set Blocks disabled to state to false when its done running
-                // debugger;
                 this.runStep(queryId, stepId);
             } else if (ActionMessages.DISPATCH_EVENT === action.message) {
                 const { name, detail } = action.payload;
@@ -282,7 +284,7 @@ export class StateStore {
      * @param getQueryState we do not want to set block settings the evaluated query unless its the data
      * @returns the specific block information
      */
-    calculateParameter(parameter: string, getQueryState?: boolean): unknown {
+    calculateParameter(parameter: string): unknown {
         // check if there is actually a parameter (we only handle 1 for now)
         let cleaned = parameter.trim();
         if (!cleaned.startsWith('{{') || !cleaned.endsWith('}}')) {
@@ -303,11 +305,8 @@ export class StateStore {
             return getValueByPath(this._store.blocks[id].data, path);
         }
 
-        debugger;
         // check if it is in a query and we actually want the data
-        if (id && this._store.queries[id] && (!path || path === 'data')) {
-            return getValueByPath(this._store.queries[id], 'data');
-        } else if (id && this._store.queries[id] && getQueryState) {
+        if (id && this._store.queries[id]) {
             return getValueByPath(this._store.queries[id], path);
         }
 
@@ -319,9 +318,9 @@ export class StateStore {
      * @param parameter - parameter to flatten
      * @returns the flatten parameter
      */
-    flattenParameter = (parameter: string, getQueryState?: boolean): string => {
+    flattenParameter = (parameter: string): string => {
         return parameter.replace(/{{(.*?)}}/g, (match) => {
-            const v = this.calculateParameter(match, getQueryState);
+            const v = this.calculateParameter(match);
 
             if (typeof v === 'string') {
                 return v;
@@ -763,6 +762,41 @@ export class StateStore {
     };
 
     /**
+     * Set Block to loading if query is currently loading
+     * @param id
+     * @param queries
+     */
+    private setBlockQueries = (id: string, queries: string): void => {
+        const loading = JSON.parse(
+            this.flattenParameter(queries).toLowerCase(),
+        );
+
+        this._store.blocks[id]['queries'] = queries;
+        this._store.blocks[id].data['loading'] = loading;
+    };
+
+    /**
+     * Set load state for blocks dependendent on query id
+     * @param queryId
+     * @param loading
+     */
+    private setBlocksLoading = (queryId: string, loading: boolean) => {
+        const blocks = this._store.blocks;
+        for (const key in blocks) {
+            const block = blocks[key];
+            if (block['queries']) {
+                const match = (block['queries'] as string).match(/{{([^.]*)\./);
+
+                if (match && match[1] === queryId) {
+                    block['data']['loading'] = loading;
+                } else {
+                    console.error('query not found');
+                }
+            }
+        }
+    };
+
+    /**
      * Create a new query
      * @param queryId - name of the query that we are setting
      */
@@ -816,8 +850,14 @@ export class StateStore {
         // cancel a previous command
         this._utils.queryPromises[key]?.cancel();
 
+        // look at blocks that have queryId and turn on loading
+        this.setBlocksLoading(queryId, true);
+
         // setup the promise
         const p = cancellablePromise(async () => {
+            // Check which blocks that were dependent on that query,
+            // And shut that blocks loading state on
+
             // run the query
             await q._processRun();
 
@@ -828,9 +868,16 @@ export class StateStore {
         p.promise
             .then(() => {
                 // noop
+
+                // Turn off loading
+                this.setBlocksLoading(queryId, false);
             })
             .catch((e) => {
                 console.error('ERROR:', e);
+
+                // Turn off blocks loading
+                this.setBlocksLoading(queryId, false);
+                // TODO: Turn on Error State
             });
 
         // save the promise
@@ -904,6 +951,9 @@ export class StateStore {
         // cancel a previous command
         this._utils.queryPromises[key]?.cancel();
 
+        // look at blocks that have queryId and turn on loading
+        this.setBlocksLoading(queryId, true);
+
         // setup the promise
         const p = cancellablePromise(async () => {
             // run the step
@@ -916,9 +966,15 @@ export class StateStore {
         p.promise
             .then(() => {
                 // noop
+
+                // Turn off blocks loading
+                this.setBlocksLoading(queryId, false);
             })
             .catch((e) => {
                 console.error('ERROR:', e);
+                // Turn off blocks loading
+                this.setBlocksLoading(queryId, false);
+                // TODO: Turn on Error State
             });
 
         // save the promise
