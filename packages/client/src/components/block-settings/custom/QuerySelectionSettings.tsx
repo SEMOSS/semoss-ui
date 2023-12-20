@@ -34,7 +34,7 @@ export const QuerySelectionSettings = observer(
         path,
         label,
     }: QuerySelectionSettingsProps<D>) => {
-        const { data, setData } = useBlockSettings(id);
+        const { data, setBlockQueries } = useBlockSettings(id);
         const { state } = useBlocks();
 
         // track the value
@@ -88,8 +88,8 @@ export const QuerySelectionSettings = observer(
 
             timeoutRef.current = setTimeout(() => {
                 try {
-                    // set the value
-                    setData(path, value as PathValue<D['data'], typeof path>);
+                    // Go set the block dependencies in that blocks data
+                    setBlockQueries(value);
                 } catch (e) {
                     console.log(e);
                 }
