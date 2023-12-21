@@ -1,5 +1,5 @@
 import { BlockConfig } from '@/stores';
-import { BorderBottom } from '@mui/icons-material';
+import { BorderClear } from '@mui/icons-material';
 
 import {
     buildLayoutSection,
@@ -28,7 +28,7 @@ export const config: BlockConfig<BodyBlockDef> = {
         content: [],
     },
     render: BodyBlock,
-    icon: BorderBottom,
+    icon: BorderClear,
     contentMenu: [],
     styleMenu: [
         buildDimensionsSection(),

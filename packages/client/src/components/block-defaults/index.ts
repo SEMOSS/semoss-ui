@@ -17,6 +17,7 @@ import {
 } from './markdown-block';
 import { config as PageBlockConfig, PageBlockDef } from './page-block';
 import { config as SelectBlockConfig, SelectBlockDef } from './select-block';
+import { config as TableBlockConfig, TableBlockDef } from './table-block';
 import {
     config as TextAreaBlockConfig,
     TextAreaBlockDef,
@@ -41,6 +42,7 @@ export type DefaultBlockDefinitions =
     | MarkdownBlockDef
     | PageBlockDef
     | SelectBlockDef
+    | TableBlockDef
     | TextAreaBlockDef
     | TextBlockDef
     | TextFieldBlockDef
@@ -59,6 +61,7 @@ export const DefaultBlocks: Registry<DefaultBlockDefinitions> = {
     [MarkdownBlockConfig.widget]: MarkdownBlockConfig,
     [PageBlockConfig.widget]: PageBlockConfig,
     [SelectBlockConfig.widget]: SelectBlockConfig,
+    [TableBlockConfig.widget]: TableBlockConfig,
     [TextAreaBlockConfig.widget]: TextAreaBlockConfig,
     [TextBlockConfig.widget]: TextBlockConfig,
     [TextFieldBlockConfig.widget]: TextFieldBlockConfig,

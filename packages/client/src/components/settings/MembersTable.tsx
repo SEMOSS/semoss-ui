@@ -34,6 +34,8 @@ import { useRootStore, useAPI, useSettings } from '@/hooks';
 import { LoadingScreen } from '@/components/ui';
 import { SETTINGS_MODE, SETTINGS_ROLE } from './settings.types';
 
+import { PERMISSION_DESCRIPTION_MAP } from './member-permissions.constants';
+
 const colors = [
     '#22A4FF',
     '#FA3F20',
@@ -174,6 +176,14 @@ const StyledNoMembersDiv = styled('div')({
 
 const StyledCard = styled(Card)({
     borderRadius: '12px',
+});
+
+const StyledTableCell = styled(Table.Cell)({
+    paddingLeft: '16px',
+});
+
+const StyledCheckbox = styled(Checkbox)({
+    paddingBottom: '0px',
 });
 
 // maps for permissions,
@@ -811,11 +821,11 @@ export const MembersTable = (props: MembersTableProps) => {
                                         if (user) {
                                             return (
                                                 <Table.Row key={user.name + i}>
-                                                    <Table.Cell
+                                                    <StyledTableCell
                                                         size="medium"
                                                         padding="checkbox"
                                                     >
-                                                        <Checkbox
+                                                        <StyledCheckbox
                                                             checked={isSelected}
                                                             onChange={() => {
                                                                 if (
@@ -847,7 +857,7 @@ export const MembersTable = (props: MembersTableProps) => {
                                                                 }
                                                             }}
                                                         />
-                                                    </Table.Cell>
+                                                    </StyledTableCell>
                                                     <UserInfoTableCell
                                                         size="medium"
                                                         component="td"
@@ -1436,10 +1446,10 @@ export const MembersTable = (props: MembersTableProps) => {
                                                         marginLeft: '30px',
                                                     }}
                                                 >
-                                                    Ability to provision other
-                                                    users, edit {name} details
-                                                    and hide or delete the
-                                                    {name}.
+                                                    {PERMISSION_DESCRIPTION_MAP[
+                                                        name.toLowerCase()
+                                                    ]?.author ||
+                                                        `Error: update key in test-editor.constants to "${name}"`}
                                                 </Box>
                                             }
                                             action={
@@ -1482,10 +1492,10 @@ export const MembersTable = (props: MembersTableProps) => {
                                                         marginLeft: '30px',
                                                     }}
                                                 >
-                                                    Has the ability to use the
-                                                    {name} to generate insights
-                                                    and can query against the{' '}
-                                                    {name}.
+                                                    {PERMISSION_DESCRIPTION_MAP[
+                                                        name.toLowerCase()
+                                                    ]?.editor ||
+                                                        `Error: update key in test-editor.constants to "${name}"`}
                                                 </Box>
                                             }
                                             action={
@@ -1528,7 +1538,10 @@ export const MembersTable = (props: MembersTableProps) => {
                                                         marginLeft: '30px',
                                                     }}
                                                 >
-                                                    Can view data from {name}.
+                                                    {PERMISSION_DESCRIPTION_MAP[
+                                                        name.toLowerCase()
+                                                    ]?.readonly ||
+                                                        `Error: update key in test-editor.constants to "${name}"`}
                                                 </Box>
                                             }
                                             action={
