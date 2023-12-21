@@ -3,6 +3,7 @@ import {
     InputSettings,
     QuerySelectionSettings,
 } from '@/components/block-settings';
+import { useBlock } from '@/hooks';
 
 import { TextFieldBlockDef, TextFieldBlock } from './TextFieldBlock';
 import { FormatShapes } from '@mui/icons-material';
@@ -25,11 +26,13 @@ export const config: BlockConfig<TextFieldBlockDef> = {
         },
         value: '',
         label: 'Example Input',
+        hint: '',
         type: 'text',
-        loading: false,
+        rows: 1,
+        multiline: false,
         disabled: false,
         required: false,
-        hint: '',
+        loading: false,
     },
     listeners: {
         onChange: [],
@@ -90,6 +93,17 @@ export const config: BlockConfig<TextFieldBlockDef> = {
                             />
                         );
                     },
+                },
+                {
+                    description: 'Rows',
+                    render: ({ id }) => (
+                        <InputSettings
+                            id={id}
+                            label="Rows"
+                            path="rows"
+                            type="number"
+                        />
+                    ),
                 },
                 {
                     description: 'Loading',

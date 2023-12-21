@@ -18,10 +18,6 @@ import {
 import { config as PageBlockConfig, PageBlockDef } from './page-block';
 import { config as SelectBlockConfig, SelectBlockDef } from './select-block';
 import { config as TableBlockConfig, TableBlockDef } from './table-block';
-import {
-    config as TextAreaBlockConfig,
-    TextAreaBlockDef,
-} from './text-area-block';
 import { config as TextBlockConfig, TextBlockDef } from './text-block';
 import {
     config as TextFieldBlockConfig,
@@ -43,7 +39,6 @@ export type DefaultBlockDefinitions =
     | PageBlockDef
     | SelectBlockDef
     | TableBlockDef
-    | TextAreaBlockDef
     | TextBlockDef
     | TextFieldBlockDef
     | SectionBlockDef;
@@ -62,7 +57,6 @@ export const DefaultBlocks: Registry<DefaultBlockDefinitions> = {
     [PageBlockConfig.widget]: PageBlockConfig,
     [SelectBlockConfig.widget]: SelectBlockConfig,
     [TableBlockConfig.widget]: TableBlockConfig,
-    [TextAreaBlockConfig.widget]: TextAreaBlockConfig,
     [TextBlockConfig.widget]: TextBlockConfig,
     [TextFieldBlockConfig.widget]: TextFieldBlockConfig,
     [SectionBlockConfig.widget]: SectionBlockConfig,
