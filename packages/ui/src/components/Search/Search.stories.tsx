@@ -7,7 +7,6 @@ export default {
     args: {
         disabled: false,
         label: "Label",
-        clearable: false,
     },
 };
 
