@@ -1,4 +1,4 @@
-import { Autocomplete as MuiAutocomplete } from "@mui/material";
+import { LinearProgress, Autocomplete as MuiAutocomplete } from "@mui/material";
 import {
     AutocompleteProps as MuiAutocompleteProps,
     ChipTypeMap,
@@ -65,6 +65,7 @@ export interface AutocompleteProps<
         FreeSolo
     >["renderInput"];
     label?: React.ReactNode;
+    loading?: boolean;
 }
 
 export function Autocomplete<
@@ -75,6 +76,7 @@ export function Autocomplete<
     ChipComponent extends React.ElementType = ChipTypeMap["defaultComponent"],
 >({
     label,
+    loading,
     ...props
 }: AutocompleteProps<T, Multiple, DisableClearable, FreeSolo, ChipComponent>) {
     return (
@@ -88,6 +90,9 @@ export function Autocomplete<
                     }}
                     {...params}
                     label={label}
+                    helperText={
+                        loading ? <LinearProgress color="primary" /> : null
+                    }
                 />
             )}
             {...props}

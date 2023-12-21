@@ -7,6 +7,15 @@ import Stack from "@mui/material/Stack";
 const meta: Meta<typeof Autocomplete> = {
     title: "Components/Autocomplete",
     component: Autocomplete,
+    args: {
+        loading: false,
+    },
+    argTypes: {
+        loading: {
+            options: [true, false],
+            control: { type: "radio" },
+        },
+    },
 };
 
 export default meta;
@@ -43,7 +52,7 @@ const films = [
     },
 ];
 
-const Example = () => {
+const Example = (props) => {
     const [values, setValue] = useState<{ label: string; year: number }[]>([
         films[2],
     ]);
@@ -66,6 +75,7 @@ const Example = () => {
                 isOptionEqualToValue={(option, value) => {
                     return option === value;
                 }}
+                {...props}
             />
             <Box>Values: {values.map((v) => `${v.label} `)}</Box>
         </Stack>
@@ -73,5 +83,5 @@ const Example = () => {
 };
 
 export const MultipleValues: Story = {
-    render: () => <Example />,
+    render: (args) => <Example {...args} />,
 };

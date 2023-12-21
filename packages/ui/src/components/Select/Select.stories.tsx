@@ -82,14 +82,12 @@ const SelectMultipleComponent = () => {
     });
 
     const handleFieldChange = (event) => {
-        console.log(event);
         setFormState((formState) => ({
             ...formState,
             [event.target.name]: event.target.value,
         }));
     };
 
-    console.log(formState);
     return (
         <Stack spacing={2}>
             <Select

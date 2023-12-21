@@ -7,6 +7,15 @@ import Stack from "@mui/material/Stack";
 const meta: Meta<typeof Autocomplete> = {
     title: "Components/Autocomplete",
     component: Autocomplete,
+    args: {
+        loading: false,
+    },
+    argTypes: {
+        loading: {
+            options: [true, false],
+            control: { type: "radio" },
+        },
+    },
 };
 
 export default meta;
@@ -51,6 +60,7 @@ const Example = (props) => {
         <Stack spacing={2}>
             <Autocomplete
                 label="Select Movie"
+                loading={props.loading}
                 id="combo-box-demo"
                 options={films.map((val) => val.label)}
                 value={selected}
@@ -71,5 +81,5 @@ const Example = (props) => {
 };
 
 export const SingleValue: Story = {
-    render: () => <Example />,
+    render: (args) => <Example {...args} />,
 };
