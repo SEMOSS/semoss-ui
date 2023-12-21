@@ -93,6 +93,7 @@ export class StateStore {
                     acc[q.id] = `${this.flattenParameter(q._toPixel())}--${
                         q.mode
                     }`;
+
                     return acc;
                 }, {});
             },
@@ -274,7 +275,6 @@ export class StateStore {
     /**
      * Calculate the value of a parameter
      * @param parameter - string with mustach syntax for inputs
-     * @param getQueryState we do not want to set block settings the evaluated query unless its the data
      * @returns the specific block information
      */
     calculateParameter(parameter: string): unknown {
