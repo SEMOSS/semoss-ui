@@ -59,22 +59,24 @@ export const config: BlockConfig<FileDropZoneBlockDef> = {
                 {
                     description: 'Input block setting for the file size limit',
                     render: ({ id }) => (
-                        <InputSettings
-                            id={id}
-                            label="Total Upload Size"
-                            path="sizeLimit"
-                        />
-                    ),
-                },
-                {
-                    description: 'Accepted Uploaded File Types',
-                    render: ({ id }) => (
                         <>
                             <InputSettings
                                 id={id}
-                                label="File Extensions"
-                                path="extensions"
-                                disabled={true}
+                                label="Total Upload Size"
+                                path="sizeLimit"
+                            />
+                            <Checkbox
+                                label="Multiple Files"
+                                id={id}
+                                path="multiple"
+                                extensions={[
+                                    '.csv',
+                                    '.doc',
+                                    '.pdf',
+                                    '.txt',
+                                    '.xlsx',
+                                    '.zip',
+                                ]}
                             />
                             <FileExtensionSettings
                                 id={id}

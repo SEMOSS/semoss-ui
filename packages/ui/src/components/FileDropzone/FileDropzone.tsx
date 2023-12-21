@@ -66,7 +66,9 @@ const StyledDropzoneDescription = styled("div")({
     fontSize: "14px",
     marginTop: "8px",
     marginBottom: "16px 8px",
-    color: "rgba(0,0,0,.25)",
+    color: "rgba(0, 0, 0, 0.87)",
+    // color: "rgba(0,0,0,.25)",
+    // color: "secondary",
 });
 
 const StyledFileUploadInput = styled("input")({
@@ -365,7 +367,13 @@ const _FileDropzone = <Multiple extends boolean>(
                 onDrop={handleDropzoneDrop}
             >
                 <StyledContentContainer>
+                    {/* //* FileDropZone Icon */}
                     <OpenInBrowserRoundedIcon sx={{ fontSize: "1.5rem" }} />
+                    {/* //* Text Description of FileDropZone */}
+                    <StyledDropzoneDescription>
+                        {description}
+                    </StyledDropzoneDescription>
+                    {/* //* Browse Button */}
                     <div>
                         <StyledFileUploadInput
                             type="file"
@@ -382,13 +390,10 @@ const _FileDropzone = <Multiple extends boolean>(
                             onClick={() => inputRef.current?.click()}
                             disabled={disabled}
                         >
-                            Browse
-                            {/* or upload file(s) */}
+                            Browse Files
+                            {/* //? or upload file(s) */}
                         </StyledButton>
                     </div>
-                    <StyledDropzoneDescription>
-                        {description}
-                    </StyledDropzoneDescription>
                 </StyledContentContainer>
             </StyledDropzone>
             <StyledFileListContainer>{renderFiles()}</StyledFileListContainer>

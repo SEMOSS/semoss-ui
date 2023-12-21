@@ -14,9 +14,9 @@ interface FileExtensionSettingsProps<D extends BlockDef = BlockDef> {
 }
 
 const StyledFileExtension = styled(Stack)(({ theme }) => ({
-    padding: theme.spacing(2),
+    padding: theme.spacing(1),
     flexDirection: 'column',
-    justifyContent: 'space-between',
+    justifyContent: 'start',
     alignItems: 'center',
 }));
 
