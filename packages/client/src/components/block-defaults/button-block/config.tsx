@@ -25,6 +25,7 @@ export const config: BlockConfig<ButtonBlockDef> = {
         style: {},
         label: 'Submit',
         loading: false,
+        disabled: false,
     },
     listeners: {
         onClick: [],

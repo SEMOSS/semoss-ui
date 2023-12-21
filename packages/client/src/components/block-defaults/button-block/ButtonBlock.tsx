@@ -4,7 +4,31 @@ import { observer } from 'mobx-react-lite';
 import { useBlock } from '@/hooks';
 import { BlockDef, BlockComponent } from '@/stores';
 
-import { CircularProgress, Button } from '@mui/material';
+import { CircularProgress, Button, styled } from '@mui/material';
+
+const StyledButton = styled(Button, {
+    shouldForwardProp: (prop) => prop !== 'loading',
+})<{ loading?: boolean }>(({ loading }) => ({
+    '& .MuiButton-endIcon svg': {
+        visibility: loading === true ? 'hidden' : 'visible',
+    },
+    '& .MuiButton-startIcon svg': {
+        visibility: loading === true ? 'hidden' : 'visible',
+    },
+}));
+
+const StyledLabel = styled('span', {
+    shouldForwardProp: (prop) => prop !== 'loading',
+})<{ loading?: boolean }>(({ loading }) => ({
+    visibility: loading ? 'hidden' : 'visible',
+}));
+
+const StyledCircularProgress = styled(CircularProgress, {
+    shouldForwardProp: (prop) => prop !== 'loading',
+})<{ loading?: boolean }>(({ loading }) => ({
+    zIndex: 10,
+    position: 'absolute',
+}));
 
 export interface ButtonBlockDef extends BlockDef<'button'> {
     widget: 'button';
@@ -12,6 +36,9 @@ export interface ButtonBlockDef extends BlockDef<'button'> {
         style: CSSProperties;
         label: string;
         loading?: boolean;
+        disabled?: boolean;
+        // Will add other properties in later PRs
+        // size?: string;
     };
     listeners: {
         onClick: true;
@@ -22,8 +49,10 @@ export const ButtonBlock: BlockComponent = observer(({ id }) => {
     const { attrs, data, listeners } = useBlock<ButtonBlockDef>(id);
 
     return (
-        <Button
+        <StyledButton
             size="large"
+            loading={data?.loading}
+            disabled={data?.disabled || data?.loading}
             sx={{
                 ...data.style,
             }}
@@ -32,22 +61,12 @@ export const ButtonBlock: BlockComponent = observer(({ id }) => {
             }}
             {...attrs}
         >
-            <span
-                style={{
-                    visibility: data?.loading ? 'hidden' : 'visible',
-                }}
-            >
-                {data.label}
-            </span>
+            <StyledLabel loading={data?.loading}>{data.label}</StyledLabel>
             {data.loading ? (
-                <CircularProgress
-                    color="inherit"
-                    size="2em"
-                    sx={{ zIndex: 10, position: 'absolute' }}
-                />
+                <StyledCircularProgress color="inherit" size="2em" />
             ) : (
                 <></>
             )}
-        </Button>
+        </StyledButton>
     );
 });
