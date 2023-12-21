@@ -76,12 +76,10 @@ const StyledFileUploadInput = styled("input")({
 });
 
 const StyledFileListContainer = styled("div")({
-    // overflowY: "auto",
     zIndex: 1,
-    // maxHeight: "4rem 2rem",
     marginBottom: "12px",
     height: "50%",
-    maxHeight: "100%",
+    maxHeight: "200px",
     overflowY: "auto",
 });
 
