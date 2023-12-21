@@ -24,6 +24,8 @@ import {
     TextFieldBlockDef,
 } from './text-field-block';
 import { config as SectionBlockConfig, SectionBlockDef } from './section-block';
+import { config as ModelsBlockConfig, ModelsBlockDef } from './models-block';
+import { config as VectorsBlockConfig, VectorsBlockDef } from './vectors-block';
 
 export type DefaultBlockDefinitions =
     | BodyBlockDef
@@ -41,7 +43,9 @@ export type DefaultBlockDefinitions =
     | TableBlockDef
     | TextBlockDef
     | TextFieldBlockDef
-    | SectionBlockDef;
+    | SectionBlockDef
+    | ModelsBlockDef
+    | VectorsBlockDef;
 
 export const DefaultBlocks: Registry<DefaultBlockDefinitions> = {
     [BodyBlockConfig.widget]: BodyBlockConfig,
@@ -60,6 +64,8 @@ export const DefaultBlocks: Registry<DefaultBlockDefinitions> = {
     [TextBlockConfig.widget]: TextBlockConfig,
     [TextFieldBlockConfig.widget]: TextFieldBlockConfig,
     [SectionBlockConfig.widget]: SectionBlockConfig,
+    [ModelsBlockConfig.widget]: ModelsBlockConfig,
+    [VectorsBlockConfig.widget]: VectorsBlockConfig,
 };
 
 export function getIconForBlock(widget: string) {
