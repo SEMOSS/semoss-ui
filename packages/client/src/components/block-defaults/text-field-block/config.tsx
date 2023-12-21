@@ -29,7 +29,7 @@ export const config: BlockConfig<TextFieldBlockDef> = {
         loading: false,
         disabled: false,
         required: false,
-        description: '',
+        hint: '',
     },
     listeners: {
         onChange: [],
@@ -60,13 +60,9 @@ export const config: BlockConfig<TextFieldBlockDef> = {
                     ),
                 },
                 {
-                    description: 'Description',
+                    description: 'Hint',
                     render: ({ id }) => (
-                        <InputSettings
-                            id={id}
-                            label="Description"
-                            path="description"
-                        />
+                        <InputSettings id={id} label="Hint" path="hint" />
                     ),
                 },
                 {
