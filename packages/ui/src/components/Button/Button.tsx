@@ -1,4 +1,20 @@
-import { CircularProgress, Button as MuiButton, SxProps } from "@mui/material";
+import {
+    styled,
+    CircularProgress,
+    Button as MuiButton,
+    SxProps,
+} from "@mui/material";
+
+const StyledMuiButton = styled(MuiButton, {
+    shouldForwardProp: (prop) => prop !== "loading",
+})<{ loading?: boolean }>(({ loading }) => ({
+    "& .MuiButton-endIcon svg": {
+        visibility: loading === true ? "hidden" : "visible",
+    },
+    "& .MuiButton-startIcon svg": {
+        visibility: loading === true ? "hidden" : "visible",
+    },
+}));
 
 export interface ButtonProps
     extends React.ButtonHTMLAttributes<HTMLButtonElement> {
@@ -88,11 +104,6 @@ export interface ButtonProps
 }
 
 export const Button = (props: ButtonProps) => {
-    let muiButtonProps = { ...props };
-    if (muiButtonProps?.loading) {
-        delete muiButtonProps.loading;
-    }
-
     const progressCircularSize =
         props?.size === "medium"
             ? "1.5em"
@@ -100,37 +111,19 @@ export const Button = (props: ButtonProps) => {
             ? "1em"
             : "2em";
 
-    const startIcon =
-        props?.loading && props?.startIcon ? (
-            <CircularProgress color="inherit" size="1em" />
-        ) : (
-            props?.startIcon
-        );
-    const endIcon =
-        props?.loading && props?.endIcon ? (
-            <CircularProgress color="inherit" size="1em" />
-        ) : (
-            props?.endIcon
-        );
-
     return (
-        <MuiButton
-            {...muiButtonProps}
+        <StyledMuiButton
+            {...props}
             disabled={props?.disabled || props?.loading}
-            startIcon={startIcon}
-            endIcon={endIcon}
         >
             <span
                 style={{
-                    visibility:
-                        props?.loading && !(props?.startIcon || props?.endIcon)
-                            ? "hidden"
-                            : "visible",
+                    visibility: props?.loading ? "hidden" : "visible",
                 }}
             >
                 {props.children}
             </span>
-            {props?.loading && !(props?.startIcon || props?.endIcon) ? (
+            {props?.loading ? (
                 <CircularProgress
                     color="inherit"
                     size={progressCircularSize}
@@ -139,6 +132,6 @@ export const Button = (props: ButtonProps) => {
             ) : (
                 <></>
             )}
-        </MuiButton>
+        </StyledMuiButton>
     );
 };
