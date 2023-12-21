@@ -1,29 +1,31 @@
-import { useRef, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 // import { Button } from "../Button";
 import { TextFieldProps } from "../TextField";
 import { CloseOutlined, SearchOutlined } from "@mui/icons-material";
-import { TextField } from "../../";
-import { IconButton, InputAdornment } from "@mui/material";
+import { IconButton, InputAdornment, TextField } from "@mui/material";
 
 export type SearchFieldProps = TextFieldProps & {
     /**
-     * If max items is exceeded, the number of items to show after the ellipsis.
      * @default false
      */
-    enableEndAdornment?: boolean;
+    clearable?: boolean;
+
+    /**
+     * Pass state function directly to avoid ref issues
+     */
+    onClear?: Function;
 };
 
 export const Search = (props: SearchFieldProps) => {
-    const enableEndAdornment = props?.enableEndAdornment ?? false;
+    const clearable = props?.clearable ?? false;
     const textInput = useRef(null);
 
     const [focused, setFocused] = useState<boolean>(false);
 
-    const hasSearch = !textInput
-        ? false
-        : !textInput.current
-        ? false
-        : textInput.current.value.length > 0;
+    const hasSearch = useMemo(() => {
+        const searchValue: string = (props?.value as string) ?? "";
+        return searchValue.length > 0;
+    }, [props?.value]);
 
     return (
         <TextField
@@ -37,10 +39,13 @@ export const Search = (props: SearchFieldProps) => {
                 ),
                 endAdornment: (
                     <>
-                        {enableEndAdornment && (
+                        {clearable && (
                             <IconButton
-                                onClick={(e) => {
-                                    textInput.current.value = "";
+                                onClick={async () => {
+                                    setFocused(false);
+                                    props?.onClear
+                                        ? await props.onClear()
+                                        : null;
                                 }}
                                 disabled={!hasSearch}
                             >

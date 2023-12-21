@@ -219,7 +219,8 @@ export const ProjectSettingsPage = () => {
                         }}
                         label="Project"
                         size="small"
-                        enableEndAdornment={true}
+                        clearable
+                        onClear={() => setSearch('')}
                         ref={searchbarRef}
                     />
                     <StyledSort

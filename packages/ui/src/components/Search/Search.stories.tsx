@@ -6,7 +6,6 @@ export default {
     component: Search,
     args: {
         disabled: false,
-        enableEndAdornment: false,
         label: "Label",
     },
 };
@@ -19,6 +18,10 @@ const Template = (args) => {
             value={value}
             onChange={(e) => {
                 setValue(e.target.value);
+            }}
+            clearable
+            onClear={() => {
+                setValue("");
             }}
         />
     );

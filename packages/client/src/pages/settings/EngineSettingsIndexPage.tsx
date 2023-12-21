@@ -414,7 +414,8 @@ export const EngineSettingsIndexPage = (
                         }}
                         label="Database"
                         size="small"
-                        enableEndAdornment={true}
+                        clearable
+                        onClear={() => setSearch('')}
                         ref={searchbarRef}
                     />
                     <StyledSort
