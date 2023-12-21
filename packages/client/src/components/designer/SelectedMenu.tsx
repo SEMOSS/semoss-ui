@@ -165,8 +165,6 @@ export const SelectedMenu = observer(() => {
         );
     }
 
-    console.log('Block Content Menu:', contentMenu);
-
     return (
         <StyledMenu>
             <StyledMenuHeader>

@@ -21,7 +21,6 @@ export enum ActionMessages {
     UPDATE_STEP = 'UPDATE_STEP',
     RUN_STEP = 'RUN_STEP',
     DISPATCH_EVENT = 'DISPATCH_EVENT',
-    SET_BLOCK_QUERIES = 'SET_BLOCK_QUERIES', // John
 }
 
 const ACTIONS_DISPLAY = {
@@ -35,7 +34,6 @@ export type Actions =
     | MoveBlockAction
     | RemoveBlockAction
     | SetBlockDataAction
-    | SetBlockQueriesAction
     | DeleteBlockDataAction
     | SetListenerAction
     | NewQueryAction
@@ -119,14 +117,6 @@ export interface SetBlockDataAction extends Action {
         id: string;
         path: string | null;
         value: unknown;
-    };
-}
-
-export interface SetBlockQueriesAction extends Action {
-    message: ActionMessages.SET_BLOCK_QUERIES;
-    payload: {
-        id: string;
-        queries: string;
     };
 }
 

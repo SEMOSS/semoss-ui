@@ -220,10 +220,6 @@ export class StateStore {
                 const { id, path, value } = action.payload;
 
                 this.setBlockData(id, path, value);
-            } else if (ActionMessages.SET_BLOCK_QUERIES === action.message) {
-                const { id, queries } = action.payload;
-
-                this.setBlockQueries(id, queries);
             } else if (ActionMessages.DELETE_BLOCK_DATA === action.message) {
                 const { id, path } = action.payload;
 
@@ -763,44 +759,6 @@ export class StateStore {
     };
 
     /**
-     * Set Block to loading if query is currently loading
-     * @param id
-     * @param queries
-     */
-    private setBlockQueries = (id: string, queries: string): void => {
-        // Check to see if query is currently loading
-        const loading = JSON.parse(
-            this.flattenParameter(queries).toLowerCase(),
-        );
-
-        this._store.blocks[id].data['queries'] = queries;
-        this._store.blocks[id].data['loading'] = loading;
-    };
-
-    /**
-     * Set load state for blocks dependendent on query id
-     * @param queryId
-     * @param loading
-     */
-    private setBlocksLoading = (queryId: string, loading: boolean) => {
-        const blocks = this._store.blocks;
-        for (const key in blocks) {
-            const blockData = blocks[key]['data'];
-            if (blockData['queries']) {
-                const match = (blockData['queries'] as string).match(
-                    /{{([^.]*)\./,
-                );
-
-                if (match && match[1] === queryId) {
-                    blockData['loading'] = loading;
-                } else {
-                    console.error('query not found');
-                }
-            }
-        }
-    };
-
-    /**
      * Create a new query
      * @param queryId - name of the query that we are setting
      */
@@ -854,9 +812,6 @@ export class StateStore {
         // cancel a previous command
         this._utils.queryPromises[key]?.cancel();
 
-        // look at blocks that have queryId and turn on loading
-        this.setBlocksLoading(queryId, true);
-
         // setup the promise
         const p = cancellablePromise(async () => {
             // Check which blocks that were dependent on that query,
@@ -872,16 +827,9 @@ export class StateStore {
         p.promise
             .then(() => {
                 // noop
-
-                // Turn off loading
-                this.setBlocksLoading(queryId, false);
             })
             .catch((e) => {
                 console.error('ERROR:', e);
-
-                // Turn off blocks loading
-                this.setBlocksLoading(queryId, false);
-                // TODO: Turn on Error State
             });
 
         // save the promise
@@ -955,9 +903,6 @@ export class StateStore {
         // cancel a previous command
         this._utils.queryPromises[key]?.cancel();
 
-        // look at blocks that have queryId and turn on loading
-        this.setBlocksLoading(queryId, true);
-
         // setup the promise
         const p = cancellablePromise(async () => {
             // run the step
@@ -970,15 +915,9 @@ export class StateStore {
         p.promise
             .then(() => {
                 // noop
-
-                // Turn off blocks loading
-                this.setBlocksLoading(queryId, false);
             })
             .catch((e) => {
                 console.error('ERROR:', e);
-                // Turn off blocks loading
-                this.setBlocksLoading(queryId, false);
-                // TODO: Turn on Error State
             });
 
         // save the promise
