@@ -28,13 +28,6 @@ export type Block<D extends BlockDef = BlockDef> = D extends D
           /** Event listeners associated with the block */
           listeners: Record<keyof D['listeners'], ListenerActions[]>;
 
-          /**
-           * load state for a block
-           * Queries used to flip load state
-           * */
-          loading?: boolean;
-          queries?: string;
-
           /** Slots associated with the block */
           slots: Record<
               D['slots'],
@@ -63,9 +56,6 @@ export interface BlockDef<W extends string = string> {
 
     /** Names of the slot associated with the widget */
     slots: string;
-
-    /** Load state of block */
-    loading?: boolean;
 }
 
 /**
