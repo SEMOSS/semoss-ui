@@ -66,12 +66,6 @@ export const ImageBlock: BlockComponent = observer(({ id }) => {
         );
 
     if (data.style.height) {
-        console.log({
-            'data.style.height': data.style.height,
-            'data.style.margin': data.style.margin,
-            'data.style.marginLeft': data.style.marginLeft,
-            'data.style.justifyContent': data.style.justifyContent,
-        });
         return (
             <span
                 style={{
@@ -85,7 +79,7 @@ export const ImageBlock: BlockComponent = observer(({ id }) => {
                     // temporary fix to cover the broken height percentage property
                     height:
                         `${data.style.height}`.slice(-1) === '%'
-                            ? `${data.style.height}`.slice(0, -1) + 'px'
+                            ? `${data.style.height}`.slice(0, -1) + 'vh'
                             : data.style.height,
                     display: 'flex',
                     padding: 'none',
@@ -93,10 +87,9 @@ export const ImageBlock: BlockComponent = observer(({ id }) => {
                     // margin: 'none',
 
                     // these conditional margins cover margins for centered and right aligned images
-                    ...(data.style.justifyContent === 'left'
+                    ...(data.style.justifyContent === 'center'
                         ? {
                               margin: 'none',
-                              marginLeft: 'none',
                               marginTop: data.style.margin,
                               marginBottom: data.style.margin,
                           }
@@ -104,7 +97,6 @@ export const ImageBlock: BlockComponent = observer(({ id }) => {
                     ...(data.style.justifyContent === 'right'
                         ? {
                               margin: 'none',
-                              marginLeft: 'none',
                               marginTop: data.style.margin,
                               marginBottom: data.style.margin,
                               marginRight: data.style.margin,
@@ -126,7 +118,7 @@ export const ImageBlock: BlockComponent = observer(({ id }) => {
                         // temporary fix to cover the broken height percentage property
                         height:
                             `${data.style.height}`.slice(-1) === '%'
-                                ? `${data.style.height}`.slice(0, -1) + 'px'
+                                ? `${data.style.height}`.slice(0, -1) + 'vh'
                                 : data.style.height,
                         display: 'block',
                         backgroundImage: `url('${data.src}')`,

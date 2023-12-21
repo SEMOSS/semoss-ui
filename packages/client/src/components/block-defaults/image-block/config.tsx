@@ -23,6 +23,7 @@ import {
 } from '@/components/block-settings';
 import { ButtonGroupSettings } from '../../block-settings/shared/ButtonGroupSettings';
 import { SizeSettings } from '../../block-settings/shared/SizeSettings';
+import { SelectInputSettings } from '../../block-settings/shared/SelectInputSettings';
 
 // export the config for the block
 export const config: BlockConfig<ImageBlockDef> = {
@@ -69,7 +70,6 @@ export const config: BlockConfig<ImageBlockDef> = {
     ],
     styleMenu: [
         buildDimensionsSection(),
-        // buildSpacingSection(),
         {
             name: 'Image Position',
             children: [
@@ -145,6 +145,35 @@ export const config: BlockConfig<ImageBlockDef> = {
                         />
                     ),
                 },
+                {
+                    description: 'Margin',
+                    render: ({ id }) => (
+                        <SelectInputSettings
+                            id={id}
+                            path="style.margin"
+                            label="Margin"
+                            options={[
+                                {
+                                    value: '1rem',
+                                    display: 'Small',
+                                },
+                                {
+                                    value: '2rem',
+                                    display: 'Medium',
+                                },
+                                {
+                                    value: '3rem',
+                                    display: 'Large',
+                                },
+                                {
+                                    value: '4rem',
+                                    display: 'X-Large',
+                                },
+                            ]}
+                            allowUnset
+                        />
+                    ),
+                },
             ],
         },
         {
@@ -168,17 +197,5 @@ export const config: BlockConfig<ImageBlockDef> = {
                 },
             ],
         },
-        // buildSpacingSection(),
-        // {
-        //     name: 'Border',
-        //     children: [
-        //         {
-        //             description: 'Border',
-        //             render: ({ id }) => (
-        //                 <BorderSettings id={id} path="style.border" />
-        //             ),
-        //         },
-        //     ],
-        // },
     ],
 };

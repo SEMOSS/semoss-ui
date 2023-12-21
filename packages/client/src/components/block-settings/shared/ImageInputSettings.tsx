@@ -42,7 +42,9 @@ export const ImageInputSettings = observer(
         const timeoutRef = useRef<ReturnType<typeof setTimeout>>(null);
 
         const { monolithStore, configStore } = useRootStore();
-        // const { id } = useEngine();
+
+        // const { id: engineId } = useEngine();
+        const engineId = 'd1b05400-25fb-4115-8c81-49bf8cc7e08d';
 
         // get the value of the input (wrapped in usememo because of path prop)
         const computedValue = useMemo(() => {
@@ -77,7 +79,7 @@ export const ImageInputSettings = observer(
 
             // from roses branch, should work after merge
             // packages/legacy/core/store/pixels/index.js
-            const upload = monolithStore.uploadImage(value, id);
+            const upload = monolithStore.uploadImage(value, engineId);
             console.log({ upload });
 
             // // other possible approach
@@ -124,7 +126,7 @@ export const ImageInputSettings = observer(
         return (
             <form onSubmit={submitHandler}>
                 <FileDropzone
-                    imageSelector={true} // <--- is this valid in rose's branch?
+                    // imageSelector={true} // <--- is this valid in rose's branch?
                     description="Browse"
                     onChange={(value) => dropzoneHandler(value)}
                 />
