@@ -52,7 +52,7 @@ const films = [
     },
 ];
 
-const Example = (props) => {
+const Example = (args) => {
     const [selected, setSelected] = useState<string>(films[0].label);
     const [inputValue, setInputValue] = useState("");
 
@@ -60,7 +60,6 @@ const Example = (props) => {
         <Stack spacing={2}>
             <Autocomplete
                 label="Select Movie"
-                loading={props.loading}
                 id="combo-box-demo"
                 options={films.map((val) => val.label)}
                 value={selected}
@@ -74,6 +73,7 @@ const Example = (props) => {
                 onInputChange={(_, newInputValue) => {
                     setInputValue(newInputValue);
                 }}
+                {...args}
             />
             <Box>Value: {selected}</Box>
         </Stack>
