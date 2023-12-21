@@ -669,7 +669,9 @@ export const EngineCatalogPage = observer(
                                 </Typography>
                                 <Search
                                     size={'small'}
-                                    label={`Search ${route ? route.name : ''}`}
+                                    placeholder={`Search ${
+                                        route ? route.name : ''
+                                    }`}
                                     value={search}
                                     onChange={(e) => {
                                         // Reset databases and reset offset
@@ -810,7 +812,7 @@ export const EngineCatalogPage = observer(
                                     <StyledFilterSearchContainer>
                                         <Search
                                             size={'small'}
-                                            label={'Search by...'}
+                                            placeholder={'Search by...'}
                                             value={filterSearch}
                                             onChange={(e) => {
                                                 dispatch({

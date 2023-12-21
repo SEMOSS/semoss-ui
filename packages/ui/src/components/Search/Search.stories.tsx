@@ -6,7 +6,7 @@ export default {
     component: Search,
     args: {
         disabled: false,
-        label: "Label",
+        placeholder: "Search",
     },
 };
 

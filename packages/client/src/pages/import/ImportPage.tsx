@@ -630,7 +630,6 @@ export const ImportPage = () => {
                 {steps.length < 1 ? (
                     <StyledSearchbarContainer>
                         <Search
-                            label={'Search'}
                             size={'small'}
                             value={importSearch}
                             onChange={(e) => {
@@ -651,7 +650,6 @@ export const ImportPage = () => {
                     steps[0].title !== 'Upload Database' && (
                         <StyledSearchbarContainer>
                             <Search
-                                label={'Search'}
                                 size={'small'}
                                 value={search}
                                 onChange={(e) => {

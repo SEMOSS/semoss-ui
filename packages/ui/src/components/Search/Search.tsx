@@ -11,8 +11,6 @@ export type SearchFieldProps = TextFieldProps & {
 };
 
 export const Search = (props: SearchFieldProps) => {
-    const [focused, setFocused] = useState<boolean>(false);
-
     const hasSearch = useMemo(() => {
         const searchValue: string = (props?.value as string) ?? "";
         return searchValue.length > 0;
@@ -31,34 +29,24 @@ export const Search = (props: SearchFieldProps) => {
                     <>
                         {props?.onClear && (
                             <IconButton
-                                onClick={async () => {
-                                    setFocused(false);
-                                    props?.onClear
-                                        ? await props.onClear()
-                                        : null;
+                                onClick={() => {
+                                    props?.onClear ? props.onClear() : null;
                                 }}
-                                disabled={!hasSearch}
+                                sx={{
+                                    visibility: hasSearch
+                                        ? "visible"
+                                        : "hidden",
+                                }}
                             >
                                 <CloseOutlined
                                     sx={{
-                                        color: hasSearch
-                                            ? "#5c5c5c"
-                                            : "disabled",
+                                        color: "#5c5c5c",
                                     }}
                                 />
                             </IconButton>
                         )}
                     </>
                 ),
-                onFocus: () => setFocused(true),
-                onBlur: () => setFocused(false),
-            }}
-            InputLabelProps={{
-                shrink: focused || hasSearch,
-                style: {
-                    marginLeft: focused || hasSearch ? "0px" : "30px",
-                    transition: "all 0.2s ease-out",
-                },
             }}
             {...props}
         >
