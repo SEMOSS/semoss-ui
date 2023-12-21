@@ -814,9 +814,6 @@ export class StateStore {
 
         // setup the promise
         const p = cancellablePromise(async () => {
-            // Check which blocks that were dependent on that query,
-            // And shut that blocks loading state on
-
             // run the query
             await q._processRun();
 
