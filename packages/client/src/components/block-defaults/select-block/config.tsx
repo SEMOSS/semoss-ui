@@ -1,5 +1,8 @@
 import { BlockConfig } from '@/stores';
-import { InputSettings } from '@/components/block-settings';
+import {
+    InputSettings,
+    QuerySelectionSettings,
+} from '@/components/block-settings';
 
 import { SelectBlockDef, SelectBlock } from './SelectBlock';
 import { ViewList } from '@mui/icons-material';
@@ -20,7 +23,11 @@ export const config: BlockConfig<SelectBlockDef> = {
         },
         value: '',
         label: 'Example Select Input',
+        hint: '',
         options: [],
+        required: false,
+        disabled: false,
+        loading: false,
     },
     listeners: {
         onChange: [],
@@ -47,6 +54,12 @@ export const config: BlockConfig<SelectBlockDef> = {
                     ),
                 },
                 {
+                    description: 'Hint',
+                    render: ({ id }) => (
+                        <InputSettings id={id} label="Hint" path="hint" />
+                    ),
+                },
+                {
                     description: 'Options',
                     render: ({ id }) => {
                         return (
@@ -56,6 +69,16 @@ export const config: BlockConfig<SelectBlockDef> = {
                             />
                         );
                     },
+                },
+                {
+                    description: 'Loading',
+                    render: ({ id }) => (
+                        <QuerySelectionSettings
+                            id={id}
+                            label="Loading"
+                            path="loading"
+                        />
+                    ),
                 },
             ],
         },
