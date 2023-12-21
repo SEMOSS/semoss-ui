@@ -4,7 +4,7 @@ import { observer } from 'mobx-react-lite';
 import { useBlock } from '@/hooks';
 import { BlockComponent, BlockDef } from '@/stores';
 
-import { TextArea } from '@semoss/ui';
+import { LinearProgress, TextField } from '@mui/material';
 
 export interface TextAreaBlockDef extends BlockDef<'text-area'> {
     widget: 'text-area';
@@ -15,6 +15,10 @@ export interface TextAreaBlockDef extends BlockDef<'text-area'> {
         type: string;
         rows: number;
         multiline: boolean;
+        required: boolean;
+        disabled: boolean;
+        hint?: string;
+        loading?: boolean;
     };
 }
 
@@ -22,11 +26,16 @@ export const TextAreaBlock: BlockComponent = observer(({ id }) => {
     const { attrs, data, setData } = useBlock<TextAreaBlockDef>(id);
 
     return (
-        <TextArea
+        <TextField
             rows={data.rows}
             multiline={data.multiline}
             value={data.value}
             label={data.label}
+            required={data.required}
+            disabled={data?.disabled || data?.loading}
+            helperText={
+                data?.loading ? <LinearProgress color="primary" /> : data?.hint
+            }
             sx={{
                 ...data.style,
             }}

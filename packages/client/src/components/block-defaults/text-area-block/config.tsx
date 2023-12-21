@@ -1,5 +1,8 @@
 import { BlockConfig } from '@/stores';
-import { InputSettings } from '@/components/block-settings';
+import {
+    InputSettings,
+    QuerySelectionSettings,
+} from '@/components/block-settings';
 
 import { TextAreaBlockDef, TextAreaBlock } from './TextAreaBlock';
 import { FormatShapes } from '@mui/icons-material';
@@ -28,6 +31,10 @@ export const config: BlockConfig<TextAreaBlockDef> = {
         multiline: false,
         rows: 4,
         type: '',
+        hint: '',
+        disabled: false,
+        required: true,
+        loading: false,
     },
     listeners: {
         onChange: [],
@@ -70,6 +77,16 @@ export const config: BlockConfig<TextAreaBlockDef> = {
                             id={id}
                             label="Multiline"
                             path="multiline"
+                        />
+                    ),
+                },
+                {
+                    description: 'Loading',
+                    render: ({ id }) => (
+                        <QuerySelectionSettings
+                            id={id}
+                            label="Loading"
+                            path="loading"
                         />
                     ),
                 },
