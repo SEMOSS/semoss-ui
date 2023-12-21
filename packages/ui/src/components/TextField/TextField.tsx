@@ -31,6 +31,7 @@ export const TextField = (props: TextFieldProps) => {
                     props?.helperText
                 )
             }
+            disabled={props?.loading || props?.disabled}
         />
     );
 };

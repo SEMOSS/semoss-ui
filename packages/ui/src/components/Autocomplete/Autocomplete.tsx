@@ -93,6 +93,7 @@ export function Autocomplete<
                     helperText={
                         loading ? <LinearProgress color="primary" /> : null
                     }
+                    disabled={loading || props?.disabled}
                 />
             )}
             {...props}
