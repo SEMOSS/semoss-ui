@@ -257,6 +257,7 @@ export class StepState<D extends CellDef = CellDef> {
             // convert the steps to the raw pixel
             const raw = this._toPixel();
 
+            // QUESTION(JOHN): Do we run the pixel if {{}} bracket is still not fulfilled
             // fill the braces {{ }} to create the final pixel
             const filled = this._state.flattenParameter(raw);
 
