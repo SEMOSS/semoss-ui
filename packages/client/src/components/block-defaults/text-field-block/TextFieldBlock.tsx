@@ -4,7 +4,7 @@ import { observer } from 'mobx-react-lite';
 import { useBlock } from '@/hooks';
 import { BlockComponent, BlockDef } from '@/stores';
 
-import { TextField } from '@semoss/ui';
+import { LinearProgress, TextField } from '@mui/material';
 
 export interface TextFieldBlockDef extends BlockDef<'text-field'> {
     widget: 'text-field';
@@ -13,6 +13,10 @@ export interface TextFieldBlockDef extends BlockDef<'text-field'> {
         label: string;
         value: string;
         type: string;
+        required: boolean;
+        disabled: boolean;
+        description?: string;
+        loading?: boolean;
     };
 }
 
@@ -21,9 +25,18 @@ export const TextFieldBlock: BlockComponent = observer(({ id }) => {
 
     return (
         <TextField
+            size="small"
             value={data.value}
             label={data.label}
-            size="small"
+            required={data.required}
+            disabled={data?.disabled || data?.loading}
+            helperText={
+                data?.loading ? (
+                    <LinearProgress color="primary" />
+                ) : (
+                    data?.description
+                )
+            }
             style={{
                 ...data.style,
             }}

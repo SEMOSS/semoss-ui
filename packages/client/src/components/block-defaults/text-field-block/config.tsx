@@ -1,5 +1,8 @@
 import { BlockConfig } from '@/stores';
-import { InputSettings } from '@/components/block-settings';
+import {
+    InputSettings,
+    QuerySelectionSettings,
+} from '@/components/block-settings';
 
 import { TextFieldBlockDef, TextFieldBlock } from './TextFieldBlock';
 import { FormatShapes } from '@mui/icons-material';
@@ -23,6 +26,10 @@ export const config: BlockConfig<TextFieldBlockDef> = {
         value: '',
         label: 'Example Input',
         type: 'text',
+        loading: false,
+        disabled: false,
+        required: false,
+        description: '',
     },
     listeners: {
         onChange: [],
@@ -53,6 +60,16 @@ export const config: BlockConfig<TextFieldBlockDef> = {
                     ),
                 },
                 {
+                    description: 'Description',
+                    render: ({ id }) => (
+                        <InputSettings
+                            id={id}
+                            label="Description"
+                            path="description"
+                        />
+                    ),
+                },
+                {
                     description: 'Input Type',
                     render: ({ id }) => {
                         return (
@@ -77,6 +94,16 @@ export const config: BlockConfig<TextFieldBlockDef> = {
                             />
                         );
                     },
+                },
+                {
+                    description: 'Loading',
+                    render: ({ id }) => (
+                        <QuerySelectionSettings
+                            id={id}
+                            label="Loading"
+                            path="loading"
+                        />
+                    ),
                 },
             ],
         },
