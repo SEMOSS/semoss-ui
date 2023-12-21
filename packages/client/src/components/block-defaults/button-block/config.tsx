@@ -43,7 +43,7 @@ export const config: BlockConfig<ButtonBlockDef> = {
                     ),
                 },
                 {
-                    description: 'loading',
+                    description: 'Loading',
                     render: ({ id }) => (
                         <QuerySelectionSettings
                             id={id}

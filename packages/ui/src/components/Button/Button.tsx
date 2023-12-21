@@ -89,6 +89,7 @@ export interface ButtonProps
 
 export const Button = (props: ButtonProps) => {
     const muiButtonProps = { ...props };
+
     if (muiButtonProps?.loading) {
         delete muiButtonProps.loading;
     }

@@ -4,7 +4,7 @@ import { observer } from 'mobx-react-lite';
 import { useBlock } from '@/hooks';
 import { BlockDef, BlockComponent } from '@/stores';
 
-import { Button } from '@semoss/ui';
+import { CircularProgress, Button } from '@mui/material';
 
 export interface ButtonBlockDef extends BlockDef<'button'> {
     widget: 'button';
@@ -23,16 +23,31 @@ export const ButtonBlock: BlockComponent = observer(({ id }) => {
 
     return (
         <Button
+            size="large"
             sx={{
                 ...data.style,
             }}
             onClick={() => {
                 listeners.onClick();
             }}
-            loading={data.loading}
             {...attrs}
         >
-            {data.label}
+            <span
+                style={{
+                    visibility: data?.loading ? 'hidden' : 'visible',
+                }}
+            >
+                {data.label}
+            </span>
+            {data.loading ? (
+                <CircularProgress
+                    color="inherit"
+                    size="2em"
+                    sx={{ zIndex: 10, position: 'absolute' }}
+                />
+            ) : (
+                <></>
+            )}
         </Button>
     );
 });
