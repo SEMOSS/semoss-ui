@@ -219,7 +219,6 @@ export const ProjectSettingsPage = () => {
                         }}
                         label="Project"
                         size="small"
-                        clearable
                         onClear={() => setSearch('')}
                         ref={searchbarRef}
                     />

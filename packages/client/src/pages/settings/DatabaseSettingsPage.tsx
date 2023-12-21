@@ -398,7 +398,6 @@ export const DatabaseSettingsPage = () => {
                         }}
                         label="Database"
                         size="small"
-                        clearable
                         onClear={() => setSearch('')}
                         ref={searchbarRef}
                     />

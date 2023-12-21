@@ -7,6 +7,7 @@ export default {
     args: {
         disabled: false,
         label: "Label",
+        clearable: false,
     },
 };
 
@@ -19,7 +20,6 @@ const Template = (args) => {
             onChange={(e) => {
                 setValue(e.target.value);
             }}
-            clearable
             onClear={() => {
                 setValue("");
             }}

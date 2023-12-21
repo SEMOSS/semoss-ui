@@ -414,7 +414,6 @@ export const EngineSettingsIndexPage = (
                         }}
                         label="Database"
                         size="small"
-                        clearable
                         onClear={() => setSearch('')}
                         ref={searchbarRef}
                     />

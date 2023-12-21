@@ -1,25 +1,16 @@
-import { useMemo, useRef, useState } from "react";
-// import { Button } from "../Button";
-import { TextFieldProps } from "../TextField";
+import { useMemo, useState } from "react";
+import { TextField, TextFieldProps } from "../TextField";
 import { CloseOutlined, SearchOutlined } from "@mui/icons-material";
-import { IconButton, InputAdornment, TextField } from "@mui/material";
+import { IconButton, InputAdornment } from "@mui/material";
 
 export type SearchFieldProps = TextFieldProps & {
     /**
-     * @default false
-     */
-    clearable?: boolean;
-
-    /**
-     * Pass state function directly to avoid ref issues
+     * Enable clearable functionality
      */
     onClear?: Function;
 };
 
 export const Search = (props: SearchFieldProps) => {
-    const clearable = props?.clearable ?? false;
-    const textInput = useRef(null);
-
     const [focused, setFocused] = useState<boolean>(false);
 
     const hasSearch = useMemo(() => {
@@ -30,7 +21,6 @@ export const Search = (props: SearchFieldProps) => {
     return (
         <TextField
             variant="outlined"
-            inputRef={textInput}
             InputProps={{
                 startAdornment: (
                     <InputAdornment position="start">
@@ -39,7 +29,7 @@ export const Search = (props: SearchFieldProps) => {
                 ),
                 endAdornment: (
                     <>
-                        {clearable && (
+                        {props?.onClear && (
                             <IconButton
                                 onClick={async () => {
                                     setFocused(false);
