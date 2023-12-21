@@ -23,12 +23,10 @@ const StyledLabel = styled('span', {
     visibility: loading ? 'hidden' : 'visible',
 }));
 
-const StyledCircularProgress = styled(CircularProgress, {
-    shouldForwardProp: (prop) => prop !== 'loading',
-})<{ loading?: boolean }>(({ loading }) => ({
+const StyledCircularProgress = styled(CircularProgress)({
     zIndex: 10,
     position: 'absolute',
-}));
+});
 
 export interface ButtonBlockDef extends BlockDef<'button'> {
     widget: 'button';
