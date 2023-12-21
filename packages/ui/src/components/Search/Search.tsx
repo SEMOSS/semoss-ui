@@ -1,8 +1,9 @@
-import { useRef, useMemo } from "react";
+import { useRef, useState } from "react";
 // import { Button } from "../Button";
 import { TextFieldProps } from "../TextField";
 import { CloseOutlined, SearchOutlined } from "@mui/icons-material";
-import { Button, TextField } from "../../";
+import { TextField } from "../../";
+import { IconButton, InputAdornment } from "@mui/material";
 
 export type SearchFieldProps = TextFieldProps & {
     /**
@@ -13,39 +14,55 @@ export type SearchFieldProps = TextFieldProps & {
 };
 
 export const Search = (props: SearchFieldProps) => {
-    const { enableEndAdornment } = props;
+    const enableEndAdornment = props?.enableEndAdornment ?? false;
     const textInput = useRef(null);
 
-    const refValue = !textInput
-        ? ""
+    const [focused, setFocused] = useState<boolean>(false);
+
+    const hasSearch = !textInput
+        ? false
         : !textInput.current
-        ? ""
-        : textInput.current.value;
+        ? false
+        : textInput.current.value.length > 0;
 
     return (
         <TextField
-            focused={false}
-            variant={"outlined"}
+            variant="outlined"
             inputRef={textInput}
             InputProps={{
-                startAdornment: <SearchOutlined />,
+                startAdornment: (
+                    <InputAdornment position="start">
+                        <SearchOutlined />
+                    </InputAdornment>
+                ),
                 endAdornment: (
                     <>
                         {enableEndAdornment && (
-                            <Button
-                                onClick={() => (textInput.current.value = "")}
+                            <IconButton
+                                onClick={(e) => {
+                                    textInput.current.value = "";
+                                }}
+                                disabled={!hasSearch}
                             >
-                                <CloseOutlined sx={{ color: "#5c5c5c" }} />
-                            </Button>
+                                <CloseOutlined
+                                    sx={{
+                                        color: hasSearch
+                                            ? "#5c5c5c"
+                                            : "disabled",
+                                    }}
+                                />
+                            </IconButton>
                         )}
                     </>
                 ),
+                onFocus: () => setFocused(true),
+                onBlur: () => setFocused(false),
             }}
             InputLabelProps={{
-                shrink: refValue.length > 0,
+                shrink: focused || hasSearch,
                 style: {
-                    marginLeft: refValue.length > 0 ? "0px" : "30px",
-                    transition: "all 0.1s ease-out",
+                    marginLeft: focused || hasSearch ? "0px" : "30px",
+                    transition: "all 0.2s ease-out",
                 },
             }}
             {...props}
