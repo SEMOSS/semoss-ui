@@ -43,6 +43,8 @@ export const ImageInputSettings = observer(
 
         const { monolithStore, configStore } = useRootStore();
 
+        // // this is currently throwing an error saying Im not in the right context to access the engine id but doesnt seem to work even with the valid engine ID set manually
+        // // currently getting a 400 error with the message --> User does not have access to this engine or the engine id does not exist
         // const { id: engineId } = useEngine();
         const engineId = 'd1b05400-25fb-4115-8c81-49bf8cc7e08d';
 
@@ -126,7 +128,7 @@ export const ImageInputSettings = observer(
         return (
             <form onSubmit={submitHandler}>
                 <FileDropzone
-                    // imageSelector={true} // <--- is this valid in rose's branch?
+                    // imageSelector={true} // <--- valid on rose's branch
                     description="Browse"
                     onChange={(value) => dropzoneHandler(value)}
                 />
