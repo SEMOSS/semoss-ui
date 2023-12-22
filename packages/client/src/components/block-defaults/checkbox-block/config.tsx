@@ -1,8 +1,5 @@
 import { BlockConfig } from '@/stores';
-import {
-    QuerySelectionSettings,
-    InputSettings,
-} from '@/components/block-settings';
+import { InputSettings } from '@/components/block-settings';
 
 import {
     buildLayoutSection,
@@ -14,7 +11,7 @@ import {
 } from '../block-defaults.shared';
 
 import { CheckboxBlockDef, CheckboxBlock } from './CheckboxBlock';
-import { SmartButton } from '@mui/icons-material';
+import { CheckBox } from '@mui/icons-material';
 import { BLOCK_TYPE_INPUT } from '../block-defaults.constants';
 
 // export the config for the block
@@ -29,11 +26,11 @@ export const config: BlockConfig<CheckboxBlockDef> = {
         value: false,
     },
     listeners: {
-        onClick: [],
+        onChange: [],
     },
     slots: {},
     render: CheckboxBlock,
-    icon: SmartButton,
+    icon: CheckBox,
     contentMenu: [
         {
             name: 'General',

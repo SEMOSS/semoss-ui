@@ -17,7 +17,7 @@ export interface CheckboxBlockDef extends BlockDef<'checkbox'> {
         disabled: boolean;
     };
     listeners: {
-        onClick: true;
+        onChange: true;
     };
 }
 
