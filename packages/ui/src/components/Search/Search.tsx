@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
 import { TextField, TextFieldProps } from "../TextField";
 import { CloseOutlined, SearchOutlined } from "@mui/icons-material";
 import { IconButton, InputAdornment } from "@mui/material";
@@ -19,6 +19,8 @@ export const Search = (props: SearchFieldProps) => {
     return (
         <TextField
             variant="outlined"
+            placeholder="Search"
+            {...props}
             InputProps={{
                 startAdornment: (
                     <InputAdornment position="start">
@@ -48,7 +50,6 @@ export const Search = (props: SearchFieldProps) => {
                     </>
                 ),
             }}
-            {...props}
         >
             {props.children}
         </TextField>

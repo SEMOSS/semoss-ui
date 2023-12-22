@@ -396,7 +396,6 @@ export const DatabaseSettingsPage = () => {
                         onChange={(e) => {
                             setSearch(e.target.value);
                         }}
-                        label="Database"
                         size="small"
                         onClear={() => setSearch('')}
                         ref={searchbarRef}

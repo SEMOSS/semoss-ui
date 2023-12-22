@@ -217,7 +217,7 @@ export const ProjectSettingsPage = () => {
                         onChange={(e) => {
                             setSearch(e.target.value);
                         }}
-                        label="Project"
+                        placeholder="Project"
                         size="small"
                         onClear={() => setSearch('')}
                         ref={searchbarRef}

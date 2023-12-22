@@ -668,9 +668,15 @@ export const EngineCatalogPage = observer(
                                     {route ? route.name : ''} Catalog
                                 </Typography>
                                 <Search
-                                    size={'small'}
+                                    size="small"
                                     placeholder={`Search ${
-                                        route ? route.name : ''
+                                        route
+                                            ? `${route.name}${
+                                                  route.name === 'Storage'
+                                                      ? ''
+                                                      : 's'
+                                              }`
+                                            : ''
                                     }`}
                                     value={search}
                                     onChange={(e) => {
