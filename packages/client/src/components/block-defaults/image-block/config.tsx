@@ -1,8 +1,5 @@
 import { BlockConfig } from '@/stores';
-import {
-    buildSpacingSection,
-    buildDimensionsSection,
-} from '../block-defaults.shared';
+import { buildDimensionsSection } from '../block-defaults.shared';
 import { ImageBlockDef, ImageBlock } from './ImageBlock';
 import {
     PanoramaOutlined,
@@ -46,9 +43,9 @@ export const config: BlockConfig<ImageBlockDef> = {
             name: 'General',
             children: [
                 {
-                    description: 'Image Source',
+                    description: 'External Image Source',
                     render: ({ id }) => (
-                        <ImageInputSettings id={id} label="Source" path="src" />
+                        <InputSettings id={id} label="Image URL" path="src" />
                     ),
                 },
                 {
@@ -58,6 +55,16 @@ export const config: BlockConfig<ImageBlockDef> = {
                             id={id}
                             label="Description"
                             path="title"
+                        />
+                    ),
+                },
+                {
+                    description: 'Upload Image Source',
+                    render: ({ id }) => (
+                        <ImageInputSettings
+                            id={id}
+                            label="Upload Image"
+                            path="src"
                         />
                     ),
                 },

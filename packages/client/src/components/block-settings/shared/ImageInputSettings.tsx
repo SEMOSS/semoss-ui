@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { computed } from 'mobx';
 import { observer } from 'mobx-react-lite';
-import { FileDropzone, TextField } from '@semoss/ui';
+import { FileDropzone, useNotification } from '@semoss/ui';
 import { Paths, PathValue } from '@/types';
 import { useBlockSettings } from '@/hooks';
 import { Block, BlockDef } from '@/stores';
@@ -34,19 +34,23 @@ export const ImageInputSettings = observer(
         path,
     }: ImageInputSettingsProps<D>) => {
         const { data, setData } = useBlockSettings<D>(id);
-
-        // track the value
         const [value, setValue] = useState('');
-
-        // track the ref to debounce the input
         const timeoutRef = useRef<ReturnType<typeof setTimeout>>(null);
-
         const { monolithStore, configStore } = useRootStore();
+        const notification = useNotification();
 
-        // // this is currently throwing an error saying Im not in the right context to access the engine id but doesnt seem to work even with the valid engine ID set manually
+        // // image upload is currently throwing an error saying Im not in the right context to access the engine id but doesnt seem to work even with the project ID or insight ID set manually
         // // currently getting a 400 error with the message --> User does not have access to this engine or the engine id does not exist
-        // const { id: engineId } = useEngine();
-        const engineId = 'd1b05400-25fb-4115-8c81-49bf8cc7e08d';
+
+        let engineId;
+        try {
+            const { id } = useEngine();
+            engineId = id;
+        } catch {
+            console.log(
+                'Error: Could not retrieve engineId from context. Uploaded image files will not be saved.',
+            );
+        }
 
         // get the value of the input (wrapped in usememo because of path prop)
         const computedValue = useMemo(() => {
@@ -71,54 +75,38 @@ export const ImageInputSettings = observer(
             setValue(computedValue);
         }, [computedValue]);
 
-        const dropzoneHandler = async (value) => {
+        // creates a file that for imageUpload
+        const createFile = async (
+            path: string,
+            name: string,
+            type: string,
+        ): Promise<File> => {
+            const response = await fetch(path);
+            const data = await response.blob();
+            const metadata = {
+                type: type,
+            };
+            return new File([data], name, metadata);
+        };
+
+        const dropzoneHandler = async (imageArg) => {
             // get temporary blob path for image and set as source to UI image element
             // this may not be necessary after reactor is running
-            // we may want a confirm image upload button or modal
-            // if we had that this could be re-introduced
-            const imageUrl = URL.createObjectURL(value);
+            const imageUrl = URL.createObjectURL(imageArg);
             setData(path, imageUrl as PathValue<D['data'], typeof path>);
 
-            // from roses branch, should work after merge
-            // packages/legacy/core/store/pixels/index.js
-            const upload = monolithStore.uploadImage(value, engineId);
-            console.log({ upload });
+            await createFile(imageArg.src, imageArg.name, imageArg.type)
+                .then((file) => monolithStore.uploadImage(file, engineId))
+                .then((res) => {})
+                .catch((error) => {
+                    notification.add({
+                        color: 'error',
+                        message: `Image Upload Error: ${error}`,
+                    });
+                    console.log({ error });
+                });
 
-            // // other possible approach
-            // // this is currently failing due to user permission issue, this may not be viable
-            // const upload = await monolithStore.uploadFile(
-            //     // [data.PROJECT_UPLOAD],
-            //     // configStore.store.insightID,
-            //     // appId,
-            //     // path,
-
-            //     [value],
-            //     configStore.store.insightID,
-            //     id,
-            //     path,
-            // );
-            // console.log({ upload });
-            // // after upload is confirmed replace placeholder blob url src
-            // const uploadImageUrl = upload.src // check key
-            // setData(path, uploadImageUrl as PathValue<D['data'], typeof path>);
-
-            // // other possible approach
-            // // automatically run reactor and get image url
-            // // await response and assign image url to src
-
-            // // need to find the correct reactor
-            // const pixel = `CreateImage ( url = [ "${
-            //     imageUrl
-            // }" ]);`;
-
-            // const { pixelReturn } = await monolithStore.runQuery<[AppMetadata]>(
-            //     pixel,
-            // );
-
-            // const app = pixelReturn[0].output;
-
-            // const newImageUrl = URL.createObjectURL(value);
-            // setData(path, newImageUrl as PathValue<D['data'], typeof path>);
+            // uploadImage --> packages/legacy/core/store/pixels/index.js
         };
 
         const submitHandler = (args) => {
@@ -128,11 +116,10 @@ export const ImageInputSettings = observer(
         return (
             <form onSubmit={submitHandler}>
                 <FileDropzone
-                    // imageSelector={true} // <--- valid on rose's branch
+                    // imageSelector={true} // <--- used on 103 branch
                     description="Browse"
                     onChange={(value) => dropzoneHandler(value)}
                 />
-                {/* <button>submit</button> */}
             </form>
         );
     },
