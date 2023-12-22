@@ -412,9 +412,8 @@ export const EngineSettingsIndexPage = (
                         onChange={(e) => {
                             setSearch(e.target.value);
                         }}
-                        label="Database"
                         size="small"
-                        enableEndAdornment={true}
+                        onClear={() => setSearch('')}
                         ref={searchbarRef}
                     />
                     <StyledSort

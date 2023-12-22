@@ -142,7 +142,6 @@ export const InsightSettingsPage = () => {
                     onChange={(e) => {
                         setSearch(e.target.value);
                     }}
-                    label="Insights"
                     size="small"
                 />
 

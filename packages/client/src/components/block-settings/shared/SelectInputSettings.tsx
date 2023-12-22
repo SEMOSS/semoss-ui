@@ -3,8 +3,8 @@ import { computed } from 'mobx';
 import { observer } from 'mobx-react-lite';
 import { MenuItem, Select } from '@semoss/ui';
 import { Paths, PathValue } from '@/types';
-import { useBlockSettings } from '@/hooks';
-import { Block, BlockDef } from '@/stores';
+import { useBlockSettings, useDesigner } from '@/hooks';
+import { ActionMessages, Block, BlockDef } from '@/stores';
 import { getValueByPath } from '@/utility';
 import { BaseSettingSection } from '../BaseSettingSection';
 
@@ -37,6 +37,9 @@ interface SelectInputSettingsProps<D extends BlockDef = BlockDef> {
      * Whether an empty 'None' option should be in the select
      */
     allowUnset?: boolean;
+
+    /** Whether we should dispatch an event to the designer to update the frame around the block */
+    resizeOnSet?: boolean;
 }
 
 export const SelectInputSettings = observer(
@@ -46,8 +49,10 @@ export const SelectInputSettings = observer(
         label,
         options,
         allowUnset = false,
+        resizeOnSet = false,
     }: SelectInputSettingsProps<D>) => {
         const { data, setData } = useBlockSettings(id);
+        const { designer } = useDesigner();
 
         // track the value
         const [value, setValue] = useState('');
@@ -95,6 +100,15 @@ export const SelectInputSettings = observer(
                 try {
                     // set the value
                     setData(path, value as PathValue<D['data'], typeof path>);
+                    if (resizeOnSet) {
+                        // emit event to resize the block on the screen
+                        designer.blocks.dispatch({
+                            message: ActionMessages.DISPATCH_EVENT,
+                            payload: {
+                                name: 'blockResized',
+                            },
+                        });
+                    }
                 } catch (e) {
                     console.log(e);
                 }
