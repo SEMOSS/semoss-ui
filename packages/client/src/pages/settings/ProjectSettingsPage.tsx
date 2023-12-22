@@ -217,9 +217,9 @@ export const ProjectSettingsPage = () => {
                         onChange={(e) => {
                             setSearch(e.target.value);
                         }}
-                        label="Project"
+                        placeholder="Project"
                         size="small"
-                        enableEndAdornment={true}
+                        onClear={() => setSearch('')}
                         ref={searchbarRef}
                     />
                     <StyledSort
