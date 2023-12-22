@@ -412,7 +412,6 @@ export const EngineSettingsIndexPage = (
                         onChange={(e) => {
                             setSearch(e.target.value);
                         }}
-                        label="Database"
                         size="small"
                         onClear={() => setSearch('')}
                         ref={searchbarRef}
