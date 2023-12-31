@@ -51,29 +51,9 @@ export const config: BlockConfig<FileDropZoneBlockDef> = {
             name: 'Configure',
             children: [
                 {
-                    description: 'Toggle button for setting the file size',
-                    render: ({ id }) => (
-                        <SwitchSettings
-                            id={id}
-                            label="Set file size"
-                            path="size"
-                        />
-                    ),
-                },
-                {
                     description: 'Input block setting for the file size limit',
                     render: ({ id }) => (
                         <InputSettings id={id} label="Size" path="sizeLimit" />
-                    ),
-                },
-                {
-                    description: 'Toggle button for the file types accepted',
-                    render: ({ id }) => (
-                        <SwitchSettings
-                            id={id}
-                            label="Set file type"
-                            path="type"
-                        />
                     ),
                 },
                 {
