@@ -7,6 +7,7 @@ import { IconButton } from "../IconButton";
 const StyledContainer = styled("div")({
     display: "flex",
     alignItems: "center",
+    width: "100%",
     columnGap: 1,
     justifyContent: "space-between",
     marginTop: "1rem",
@@ -74,7 +75,10 @@ export const FileDisplay = (props: FileDisplayProps): JSX.Element => {
     const { disabled, file, onDelete, ...otherProps } = props;
 
     const href = useMemo(() => {
-        return URL.createObjectURL(file);
+        if (file instanceof File) {
+            return URL.createObjectURL(file);
+        }
+        return "";
     }, [file]);
 
     return (

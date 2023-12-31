@@ -26,6 +26,10 @@ import {
 import { config as SectionBlockConfig, SectionBlockDef } from './section-block';
 import { config as ModelsBlockConfig, ModelsBlockDef } from './models-block';
 import { config as VectorsBlockConfig, VectorsBlockDef } from './vectors-block';
+import {
+    config as FileDropZoneBlockConfig,
+    FileDropZoneBlockDef,
+} from './file-dropzone-block';
 
 export type DefaultBlockDefinitions =
     | BodyBlockDef
@@ -45,7 +49,8 @@ export type DefaultBlockDefinitions =
     | TextFieldBlockDef
     | SectionBlockDef
     | ModelsBlockDef
-    | VectorsBlockDef;
+    | VectorsBlockDef
+    | FileDropZoneBlockDef;
 
 export const DefaultBlocks: Registry<DefaultBlockDefinitions> = {
     [BodyBlockConfig.widget]: BodyBlockConfig,
@@ -66,6 +71,7 @@ export const DefaultBlocks: Registry<DefaultBlockDefinitions> = {
     [SectionBlockConfig.widget]: SectionBlockConfig,
     [ModelsBlockConfig.widget]: ModelsBlockConfig,
     [VectorsBlockConfig.widget]: VectorsBlockConfig,
+    [FileDropZoneBlockConfig.widget]: FileDropZoneBlockConfig,
 };
 
 export function getIconForBlock(widget: string) {
