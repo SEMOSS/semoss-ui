@@ -74,7 +74,7 @@ const StyledFileUploadInput = styled("input")({
 
 const StyledFileListContainer = styled("div")({
     zIndex: 1,
-    marginBottom: "8px",
+    margin: "8px",
     height: "50%",
     maxHeight: "200px",
     overflowY: "auto",
