@@ -630,17 +630,12 @@ export const ImportPage = () => {
                 {steps.length < 1 ? (
                     <StyledSearchbarContainer>
                         <Search
-                            label={'Search'}
                             size={'small'}
                             value={importSearch}
                             onChange={(e) => {
                                 setImportSearch(e.target.value);
                             }}
-                            placeholder={'Search'}
-                            InputProps={{
-                                startAdornment: <SearchIcon />,
-                            }}
-                            sx={{ width: '100%' }}
+                            fullWidth
                         />
                     </StyledSearchbarContainer>
                 ) : null}
@@ -651,17 +646,12 @@ export const ImportPage = () => {
                     steps[0].title !== 'Upload Database' && (
                         <StyledSearchbarContainer>
                             <Search
-                                label={'Search'}
-                                size={'small'}
+                                size="small"
                                 value={search}
                                 onChange={(e) => {
                                     setSearch(e.target.value);
                                 }}
-                                placeholder={'Search'}
-                                InputProps={{
-                                    startAdornment: <SearchIcon />,
-                                }}
-                                sx={{ width: '100%' }}
+                                fullWidth
                             />
                         </StyledSearchbarContainer>
                     )}

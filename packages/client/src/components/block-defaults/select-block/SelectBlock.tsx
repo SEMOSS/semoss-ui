@@ -4,8 +4,7 @@ import { observer } from 'mobx-react-lite';
 import { useBlock } from '@/hooks';
 import { BlockComponent, BlockDef } from '@/stores';
 
-import { Autocomplete } from '@mui/material';
-import { TextField } from '@semoss/ui';
+import { Autocomplete, LinearProgress, TextField } from '@mui/material';
 
 export interface SelectBlockDef extends BlockDef<'select'> {
     widget: 'select';
@@ -14,6 +13,10 @@ export interface SelectBlockDef extends BlockDef<'select'> {
         label: string;
         value: string;
         options: string[];
+        required: boolean;
+        disabled: boolean;
+        hint?: string;
+        loading?: boolean;
     };
 }
 
@@ -29,6 +32,7 @@ export const SelectBlock: BlockComponent = observer(({ id }) => {
             disableClearable
             options={data.options}
             value={data.value}
+            disabled={data?.disabled || data?.loading}
             sx={{
                 ...data.style,
             }}
@@ -41,6 +45,15 @@ export const SelectBlock: BlockComponent = observer(({ id }) => {
                     size="small"
                     label={data.label}
                     variant="outlined"
+                    required={data.required}
+                    disabled={data?.disabled || data?.loading}
+                    helperText={
+                        data?.loading ? (
+                            <LinearProgress color="primary" />
+                        ) : (
+                            data?.hint
+                        )
+                    }
                     InputLabelProps={{
                         shrink: true,
                     }}

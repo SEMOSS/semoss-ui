@@ -1,54 +1,55 @@
-import { useRef, useMemo } from "react";
-// import { Button } from "../Button";
-import { TextFieldProps } from "../TextField";
+import { useMemo } from "react";
+import { TextField, TextFieldProps } from "../TextField";
 import { CloseOutlined, SearchOutlined } from "@mui/icons-material";
-import { Button, TextField } from "../../";
+import { IconButton, InputAdornment } from "@mui/material";
 
 export type SearchFieldProps = TextFieldProps & {
     /**
-     * If max items is exceeded, the number of items to show after the ellipsis.
-     * @default false
+     * Enable clearable functionality
      */
-    enableEndAdornment?: boolean;
+    onClear?: Function;
 };
 
 export const Search = (props: SearchFieldProps) => {
-    const { enableEndAdornment } = props;
-    const textInput = useRef(null);
-
-    const refValue = !textInput
-        ? ""
-        : !textInput.current
-        ? ""
-        : textInput.current.value;
+    const hasSearch = useMemo(() => {
+        const searchValue: string = (props?.value as string) ?? "";
+        return searchValue.length > 0;
+    }, [props?.value]);
 
     return (
         <TextField
-            focused={false}
-            variant={"outlined"}
-            inputRef={textInput}
+            variant="outlined"
+            placeholder="Search"
+            {...props}
             InputProps={{
-                startAdornment: <SearchOutlined />,
+                startAdornment: (
+                    <InputAdornment position="start">
+                        <SearchOutlined />
+                    </InputAdornment>
+                ),
                 endAdornment: (
                     <>
-                        {enableEndAdornment && (
-                            <Button
-                                onClick={() => (textInput.current.value = "")}
+                        {props?.onClear && (
+                            <IconButton
+                                onClick={() => {
+                                    props?.onClear ? props.onClear() : null;
+                                }}
+                                sx={{
+                                    visibility: hasSearch
+                                        ? "visible"
+                                        : "hidden",
+                                }}
                             >
-                                <CloseOutlined sx={{ color: "#5c5c5c" }} />
-                            </Button>
+                                <CloseOutlined
+                                    sx={{
+                                        color: "#5c5c5c",
+                                    }}
+                                />
+                            </IconButton>
                         )}
                     </>
                 ),
             }}
-            InputLabelProps={{
-                shrink: refValue.length > 0,
-                style: {
-                    marginLeft: refValue.length > 0 ? "0px" : "30px",
-                    transition: "all 0.1s ease-out",
-                },
-            }}
-            {...props}
         >
             {props.children}
         </TextField>

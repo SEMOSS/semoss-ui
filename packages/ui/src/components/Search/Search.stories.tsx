@@ -5,10 +5,8 @@ export default {
     title: "Components/Search",
     component: Search,
     args: {
-        placeholder: "Search Placeholder here",
         disabled: false,
-        enableEndAdornment: false,
-        label: "Label",
+        placeholder: "Search",
     },
 };
 
@@ -20,6 +18,9 @@ const Template = (args) => {
             value={value}
             onChange={(e) => {
                 setValue(e.target.value);
+            }}
+            onClear={() => {
+                setValue("");
             }}
         />
     );

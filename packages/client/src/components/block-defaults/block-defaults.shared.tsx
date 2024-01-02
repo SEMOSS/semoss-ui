@@ -96,6 +96,7 @@ export const buildLayoutSection = () => ({
                     id={id}
                     path="style.gap"
                     label="Gap"
+                    resizeOnSet
                     options={[
                         {
                             value: '1rem',
@@ -177,7 +178,12 @@ export const buildSpacingSection = () => ({
                     id={id}
                     path="style.margin"
                     label="Margin"
+                    resizeOnSet
                     options={[
+                        {
+                            value: 'auto',
+                            display: 'Auto',
+                        },
                         {
                             value: '1rem',
                             display: 'Small',
@@ -206,6 +212,7 @@ export const buildSpacingSection = () => ({
                     id={id}
                     path="style.padding"
                     label="Padding"
+                    resizeOnSet
                     options={[
                         {
                             value: '1rem',
