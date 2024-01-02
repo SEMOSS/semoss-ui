@@ -243,12 +243,6 @@ export const TextEditor = (props: TextEditorProps) => {
         setCounter,
     } = props;
 
-    // Refresh Controlled Values
-    // const [controlledFiles, setControlledFiles] = useState<ControlledFile[]>(
-    //     [],
-    // );
-    // const [counter, setCounter] = useState(0);
-
     /**
      * Listen for Keyboard Shortcuts, save and --> etc down the road
      */
@@ -291,16 +285,16 @@ export const TextEditor = (props: TextEditorProps) => {
      */
     const prettifyFile = () => {
         if (process.env.NODE_ENV == 'development') {
-            const formatted = prettier.format(activeFile.content, {
-                parser: 'babel', // Use 'babel' for JSX
-                plugins: [parserBabel], // Use the appropriate parser plugin
-                semi: false, // Example option: Remove semicolons
-                singleQuote: true, // Example option: Use single quotes
-            });
-
-            editFile(formatted);
+            // const formatted = prettier.format(activeFile.content, {
+            //     parser: 'babel', // Use 'babel' for JSX
+            //     plugins: [parserBabel], // Use the appropriate parser plugin
+            //     semi: false, // Example option: Remove semicolons
+            //     singleQuote: true, // Example option: Use single quotes
+            // });
+            // editFile(formatted);
         }
     };
+
     /**
      * Handles change with editor
      * @param newContent

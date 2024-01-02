@@ -268,15 +268,11 @@ export const ConfigurationsPage = () => {
                         </Accordion.Trigger>
                         <StyledBox>
                             <Search
-                                InputProps={{
-                                    startAdornment: <StyledSearchIcon />,
-                                }}
                                 size="small"
                                 value={authSearch}
                                 onChange={(e) => {
                                     setAuthSearch(e.target.value);
                                 }}
-                                placeholder="Search . . ."
                             />
                         </StyledBox>
                         {authentication.map((value, i) => {

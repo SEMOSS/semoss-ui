@@ -74,7 +74,7 @@ export interface ButtonProps
     href?: string;
 
     /**
-     * Set loading state
+     * Will set loading state when true
      */
     loading?: boolean;
 
@@ -104,6 +104,12 @@ export interface ButtonProps
 }
 
 export const Button = (props: ButtonProps) => {
+    const muiButtonProps = { ...props };
+
+    if (muiButtonProps?.loading) {
+        delete muiButtonProps.loading;
+    }
+
     const progressCircularSize =
         props?.size === "medium"
             ? "1.5em"

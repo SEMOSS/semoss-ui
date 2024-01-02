@@ -88,7 +88,6 @@ export const QuerySelectionSettings = observer(
 
             timeoutRef.current = setTimeout(() => {
                 try {
-                    // set the value
                     setData(path, value as PathValue<D['data'], typeof path>);
                 } catch (e) {
                     console.log(e);

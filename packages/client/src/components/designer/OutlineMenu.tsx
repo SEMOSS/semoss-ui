@@ -105,6 +105,10 @@ export const OutlineMenu = observer((): JSX.Element => {
     const [selected, setSelected] = useState<string[]>([]);
     const [showSearch, setShowSearch] = useState<boolean>(false);
     const [search, setSearch] = useState<string>('');
+
+    console.log('queries', state.queries);
+    console.log('blocks', state.blocks);
+
     /**
      * Render the block and it's children
      * @param id - id of the block to render
@@ -196,6 +200,9 @@ export const OutlineMenu = observer((): JSX.Element => {
 
         return children;
     }, [designer.rendered, search]);
+
+    console.log('blocks', state.blocks);
+    console.log('queries', state.queries);
 
     return (
         <StyledMenu>

@@ -18,10 +18,6 @@ const Template: Story<ComponentProps<typeof FileDropzone>> = (args) => {
         setSelectedValues(value);
     }, [value]);
 
-    // useEffect(() => {
-
-    // }, [])
-
     return (
         <FileDropzone
             value={selectedValues}
@@ -38,6 +34,7 @@ export const Default = Template.bind({});
 
 Default.args = {
     onChange: () => null,
+    value: null,
 };
 
 export const Disabled = Template.bind({});
@@ -52,4 +49,5 @@ export const Multiple = Template.bind({});
 Multiple.args = {
     ...Default.args,
     multiple: true,
+    value: [],
 };
