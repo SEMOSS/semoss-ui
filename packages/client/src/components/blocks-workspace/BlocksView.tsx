@@ -29,7 +29,11 @@ export const BlocksView = () => {
 
     return (
         <Designer designer={designer}>
-            <Renderer id={ACTIVE} />
+            <Renderer
+                id={ACTIVE}
+                selectedId={designer ? designer?.selected ?? null : null}
+                isEditMode={true}
+            />
         </Designer>
     );
 };

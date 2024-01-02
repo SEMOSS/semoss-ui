@@ -118,6 +118,10 @@ export interface BlockConfig<D extends BlockDef = BlockDef> {
 export type BlockComponent = (props: {
     /** Id of the block */
     id: string;
+    /** Id of selected block (if exists) */
+    selectedId?: string;
+    /** Whether or not workspace is in edit mode */
+    isEditMode?: boolean;
 }) => JSX.Element;
 
 /**

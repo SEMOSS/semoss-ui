@@ -1,7 +1,7 @@
-import { CSSProperties, useMemo } from 'react';
+import { CSSProperties } from 'react';
 import { observer } from 'mobx-react-lite';
 
-import { useBlock, useDesigner, useWorkspace } from '@/hooks';
+import { useBlock } from '@/hooks';
 import { BlockDef, BlockComponent } from '@/stores';
 
 import { CircularProgress, Button, styled } from '@mui/material';
@@ -43,39 +43,39 @@ export interface ButtonBlockDef extends BlockDef<'button'> {
     };
 }
 
-export const ButtonBlock: BlockComponent = observer(({ id }) => {
-    const { attrs, data, listeners } = useBlock<ButtonBlockDef>(id);
-    const { designer } = useDesigner();
-    const { workspace } = useWorkspace();
+export const ButtonBlock: BlockComponent = observer(
+    ({ id, selectedId, isEditMode }) => {
+        const { attrs, data, listeners } = useBlock<ButtonBlockDef>(id);
 
-    const clickEvent = () => {
-        // disable if in edit mode and not selected
-        if (workspace.isEditMode && designer?.selected !== id) {
-            return () => {};
-        }
-        return () => {
-            listeners.onClick();
+        const clickEvent = () => {
+            // disable if in edit mode and not selected
+            if (isEditMode && selectedId !== id) {
+                return () => {};
+            }
+            return () => {
+                listeners.onClick();
+            };
         };
-    };
 
-    return (
-        <StyledButton
-            size="large"
-            loading={data?.loading}
-            disabled={data?.disabled || data?.loading}
-            sx={{
-                cursor: 'pointer',
-                ...data.style,
-            }}
-            onClick={clickEvent()}
-            {...attrs}
-        >
-            <StyledLabel loading={data?.loading}>{data.label}</StyledLabel>
-            {data.loading ? (
-                <StyledCircularProgress color="inherit" size="2em" />
-            ) : (
-                <></>
-            )}
-        </StyledButton>
-    );
-});
+        return (
+            <StyledButton
+                size="large"
+                loading={data?.loading}
+                disabled={data?.disabled || data?.loading}
+                sx={{
+                    cursor: 'pointer',
+                    ...data.style,
+                }}
+                onClick={clickEvent()}
+                {...attrs}
+            >
+                <StyledLabel loading={data?.loading}>{data.label}</StyledLabel>
+                {data.loading ? (
+                    <StyledCircularProgress color="inherit" size="2em" />
+                ) : (
+                    <></>
+                )}
+            </StyledButton>
+        );
+    },
+);

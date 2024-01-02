@@ -1,7 +1,7 @@
 import { CSSProperties } from 'react';
 import { observer } from 'mobx-react-lite';
 
-import { useBlock, useDesigner, useWorkspace } from '@/hooks';
+import { useBlock } from '@/hooks';
 import { BlockDef, BlockComponent } from '@/stores';
 
 export interface IframeBlockDef extends BlockDef<'iframe'> {
@@ -15,43 +15,43 @@ export interface IframeBlockDef extends BlockDef<'iframe'> {
     slots: never;
 }
 
-export const IframeBlock: BlockComponent = observer(({ id }) => {
-    const { attrs, data } = useBlock<IframeBlockDef>(id);
-    const { designer } = useDesigner();
-    const { workspace } = useWorkspace();
+export const IframeBlock: BlockComponent = observer(
+    ({ id, selectedId, isEditMode }) => {
+        const { attrs, data } = useBlock<IframeBlockDef>(id);
 
-    const pointerEvents = () => {
-        // if disabled, always none
-        if (data.disabled) {
-            return 'none';
-        }
-        // otherwise disable if not selected in edit mode
-        if (workspace.isEditMode) {
-            return designer.selected === id ? 'auto' : 'none';
-        }
+        const pointerEvents = () => {
+            // if disabled, always none
+            if (data.disabled) {
+                return 'none';
+            }
+            // otherwise disable if not selected in edit mode
+            if (isEditMode) {
+                return selectedId === id ? 'auto' : 'none';
+            }
+            // not in edit mode, always enable pointer events
+            return 'auto';
+        };
 
-        return 'auto';
-    };
-
-    return (
-        <span
-            style={{
-                width: '100%',
-                height: '400px',
-                display: 'block',
-                ...data.style,
-            }}
-            {...attrs}
-        >
-            <iframe
+        return (
+            <span
                 style={{
                     width: '100%',
-                    height: '100%',
-                    pointerEvents: pointerEvents(),
+                    height: '400px',
+                    display: 'block',
+                    ...data.style,
                 }}
-                src={data.src}
-                title={data.title}
-            />
-        </span>
-    );
-});
+                {...attrs}
+            >
+                <iframe
+                    style={{
+                        width: '100%',
+                        height: '100%',
+                        pointerEvents: pointerEvents(),
+                    }}
+                    src={data.src}
+                    title={data.title}
+                />
+            </span>
+        );
+    },
+);
