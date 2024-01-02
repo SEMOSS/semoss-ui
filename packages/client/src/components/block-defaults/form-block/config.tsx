@@ -7,6 +7,7 @@ import {
     buildDimensionsSection,
     buildColorSection,
     buildTypographySection,
+    buildBorderSection,
 } from '../block-defaults.shared';
 
 import { FormBlockDef, FormBlock } from './FormBlock';
@@ -51,6 +52,7 @@ export const config: BlockConfig<FormBlockDef> = {
         buildSpacingSection(),
         buildDimensionsSection(),
         buildColorSection(),
+        buildBorderSection(),
         buildTypographySection(),
     ],
 };

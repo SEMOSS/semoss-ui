@@ -290,17 +290,21 @@ export class StateStore {
         // extract the id and path
         const split = cleaned.split('.');
 
-        const id = split.shift();
-        const path = split.join('.');
+        // only continue loop if here is something meaninful to be split
+        // ex don't continue for something like {{query1}} or {{query1.}}
+        if (split.length > 1 && split[1]) {
+            const id = split.shift();
+            const path = split.join('.');
 
-        // check if it is in the block's data
-        if (id && this._store.blocks[id]) {
-            return getValueByPath(this._store.blocks[id].data, path);
-        }
+            // check if it is in the block's data
+            if (id && this._store.blocks[id]) {
+                return getValueByPath(this._store.blocks[id].data, path);
+            }
 
-        // check if it is in a query
-        if (id && this._store.queries[id]) {
-            return getValueByPath(this._store.queries[id], path);
+            // check if it is in a query
+            if (id && this._store.queries[id]) {
+                return getValueByPath(this._store.queries[id], path);
+            }
         }
 
         return parameter;
@@ -639,8 +643,9 @@ export class StateStore {
         // remove the children
         for (const slot in block.slots) {
             const { children } = block.slots[slot];
-            for (const c of children) {
-                this.removeBlock(c, keep);
+            // use copy of children so we can detach without breaking loop
+            for (const c of [...children]) {
+                this.removeBlock(c, false);
             }
         }
 

@@ -158,7 +158,7 @@ export const EngineShell = (props: EngineShellProps) => {
                         </Typography>
                         <Stack flex={1}> &nbsp;</Stack>
                         <Stack direction="row">
-                            <EngineAccessButton />
+                            <EngineAccessButton name={name} />
                             {role === 'OWNER' && (
                                 <Button
                                     disabled={exportLoading}

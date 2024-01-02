@@ -38,23 +38,23 @@ const StyledContent = styled('div', {
     flexDirection: 'column',
     alignItems: 'center',
     userSelect: off ? 'none' : 'auto',
-    minWidth: '100%',
-    minHeight: '100%',
+    width: '100%',
+    height: '100%',
 }));
 
 const StyledContentOuter = styled('div')(({ theme }) => ({
     padding: theme.spacing(1),
     display: 'flex',
     flex: 1,
-    minWidth: '100%',
-    minHeight: '100%',
+    width: '100%',
+    height: '100%',
 }));
 
 const StyledContentInner = styled('div')(() => ({
     flex: 1,
     position: 'relative',
-    minWidth: '100%',
-    minHeight: '100%',
+    width: '100%',
+    height: '100%',
 }));
 
 interface ScreenProps {

@@ -96,6 +96,7 @@ export const buildLayoutSection = () => ({
                     id={id}
                     path="style.gap"
                     label="Gap"
+                    resizeOnSet
                     options={[
                         {
                             value: '1rem',
@@ -177,7 +178,12 @@ export const buildSpacingSection = () => ({
                     id={id}
                     path="style.margin"
                     label="Margin"
+                    resizeOnSet
                     options={[
+                        {
+                            value: 'auto',
+                            display: 'Auto',
+                        },
                         {
                             value: '1rem',
                             display: 'Small',
@@ -206,6 +212,7 @@ export const buildSpacingSection = () => ({
                     id={id}
                     path="style.padding"
                     label="Padding"
+                    resizeOnSet
                     options={[
                         {
                             value: '1rem',
@@ -270,8 +277,8 @@ export const buildDimensionsSection = () => ({
 });
 
 /**
- * Build the Style Section
- * @returns a style section
+ * Build the Color Section
+ * @returns a color section
  */
 export const buildColorSection = () => ({
     name: 'Color',
@@ -292,9 +299,29 @@ export const buildColorSection = () => ({
                 <ColorSettings id={id} label="Color" path="style.color" />
             ),
         },
+    ],
+});
+
+/**
+ * Build the Border Section
+ * @returns a border section
+ */
+export const buildBorderSection = () => ({
+    name: 'Border',
+    children: [
         {
             description: 'Border',
             render: ({ id }) => <BorderSettings id={id} path="style.border" />,
+        },
+        {
+            description: 'Border Radius',
+            render: ({ id }) => (
+                <SizeSettings
+                    id={id}
+                    label="Border Radius"
+                    path="style.border-radius"
+                />
+            ),
         },
     ],
 });

@@ -1,13 +1,20 @@
 import { useMemo, useEffect, SyntheticEvent } from 'react';
-import Editor from '@monaco-editor/react';
-import { IconButton, Typography, Tabs, styled, Container } from '@semoss/ui';
+import { Link } from 'react-router-dom';
 import { File, ControlledFile } from '../';
-import { Clear, FormatAlignJustify, SaveOutlined } from '@mui/icons-material';
-import { Button } from '@semoss/ui';
-
+import { Clear, SaveOutlined } from '@mui/icons-material';
 import { Icon as FiletypeIcon } from '@mdi/react';
 import { FILE_ICON_MAP } from './text-editor.constants';
+import { AutoAwesome } from '@mui/icons-material/';
+import {
+    Button,
+    IconButton,
+    Typography,
+    Tabs,
+    styled,
+    Container,
+} from '@semoss/ui';
 
+import Editor from '@monaco-editor/react';
 import prettier from 'prettier';
 import parserBabel from 'prettier/parser-babel'; // Choose the appropriate parser
 
@@ -17,6 +24,12 @@ import parserBabel from 'prettier/parser-babel'; // Choose the appropriate parse
 //         vs: '/monaco-editor/min/vs',
 //     },
 // });
+
+const StyledHeaderContainer = styled(Container)(({ theme }) => ({
+    display: 'flex',
+    flexDirection: 'column',
+    gap: theme.spacing(2),
+}));
 
 const StyledFiletypeIcon = styled(FiletypeIcon)(({ theme }) => ({
     color: 'rgba(0, 0, 0, 0.6)',
@@ -87,6 +100,22 @@ const StyledTabLabel = styled('div')(({ theme }) => ({
 const StyledSaveChangesIndicator = styled('div')(({ theme }) => ({
     color: theme.palette.primary.main,
 }));
+
+const StyledGenerateButton = styled(Button)(({ theme }) => {
+    const palette = theme.palette as unknown as {
+        purple: Record<string, string>;
+    };
+
+    return {
+        backgroundColor: palette.purple['400'],
+        color: theme.palette.background.paper,
+        width: '180px',
+        gap: theme.spacing(1),
+        '&:hover': {
+            backgroundColor: palette.purple['200'],
+        },
+    };
+});
 
 const StyledTypography = styled(Typography)(({ theme }) => ({
     textAlign: 'left',
@@ -214,12 +243,6 @@ export const TextEditor = (props: TextEditorProps) => {
         setCounter,
     } = props;
 
-    // Refresh Controlled Values
-    // const [controlledFiles, setControlledFiles] = useState<ControlledFile[]>(
-    //     [],
-    // );
-    // const [counter, setCounter] = useState(0);
-
     /**
      * Listen for Keyboard Shortcuts, save and --> etc down the road
      */
@@ -257,16 +280,21 @@ export const TextEditor = (props: TextEditorProps) => {
         setControlledFiles(newControlledFiles);
     }, [files.length, activeIndex, controlledFiles.length]);
 
+    /**
+     * Get other parsers
+     */
     const prettifyFile = () => {
-        const formatted = prettier.format(activeFile.content, {
-            parser: 'babel', // Use 'babel' for JSX
-            plugins: [parserBabel], // Use the appropriate parser plugin
-            semi: false, // Example option: Remove semicolons
-            singleQuote: true, // Example option: Use single quotes
-        });
-
-        editFile(formatted);
+        if (process.env.NODE_ENV == 'development') {
+            // const formatted = prettier.format(activeFile.content, {
+            //     parser: 'babel', // Use 'babel' for JSX
+            //     plugins: [parserBabel], // Use the appropriate parser plugin
+            //     semi: false, // Example option: Remove semicolons
+            //     singleQuote: true, // Example option: Use single quotes
+            // });
+            // editFile(formatted);
+        }
     };
+
     /**
      * Handles change with editor
      * @param newContent
@@ -371,23 +399,37 @@ export const TextEditor = (props: TextEditorProps) => {
         return (
             <StyledContainer>
                 <StyledEmptyFiles>
-                    <Container>
-                        <StyledTypography variant="h5">
-                            Welcome to the Code Editor
-                        </StyledTypography>
-                        <StyledTypography variant="body1">
-                            Get started by selecting a file or
-                        </StyledTypography>
-                        <Button>Generate Code</Button>
-                    </Container>
+                    <StyledHeaderContainer>
+                        <div>
+                            <StyledTypography variant="h5">
+                                Welcome to the Code Editor
+                            </StyledTypography>
+                            <StyledTypography variant="body1">
+                                Get started by selecting a file or
+                            </StyledTypography>
+                        </div>
+                        <StyledGenerateButton
+                            variant="contained"
+                            color="secondary"
+                        >
+                            <AutoAwesome />
+                            Generate Code
+                        </StyledGenerateButton>
+                    </StyledHeaderContainer>
                     <Container>
                         <Typography variant="h6">
                             Github Documentation
                         </Typography>
                         <ul>
-                            <li>Link</li>
-                            <li>Link</li>
-                            <li>Link</li>
+                            <li>
+                                <Link to={'#'}>Code Editor</Link>
+                            </li>
+                            {/* <li>
+                                <Link to={'#'}></Link>
+                            </li>
+                            <li>
+                                <Link to={'#'}>j</Link>
+                            </li> */}
                         </ul>
                     </Container>
                 </StyledEmptyFiles>

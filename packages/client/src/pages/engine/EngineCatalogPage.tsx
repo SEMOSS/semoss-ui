@@ -668,8 +668,16 @@ export const EngineCatalogPage = observer(
                                     {route ? route.name : ''} Catalog
                                 </Typography>
                                 <Search
-                                    size={'small'}
-                                    label={`Search ${route ? route.name : ''}`}
+                                    size="small"
+                                    placeholder={`Search ${
+                                        route
+                                            ? `${route.name}${
+                                                  route.name === 'Storage'
+                                                      ? ''
+                                                      : 's'
+                                              }`
+                                            : ''
+                                    }`}
                                     value={search}
                                     onChange={(e) => {
                                         // Reset databases and reset offset
@@ -810,7 +818,7 @@ export const EngineCatalogPage = observer(
                                     <StyledFilterSearchContainer>
                                         <Search
                                             size={'small'}
-                                            label={'Search by...'}
+                                            placeholder={'Search by...'}
                                             value={filterSearch}
                                             onChange={(e) => {
                                                 dispatch({
@@ -1036,6 +1044,7 @@ export const EngineCatalogPage = observer(
                                                     description={db.description}
                                                     votes={db.upvotes}
                                                     views={db.views}
+                                                    sub_type={db.app_subtype}
                                                     trending={db.trending}
                                                     isGlobal={
                                                         db.database_global
@@ -1070,6 +1079,7 @@ export const EngineCatalogPage = observer(
                                                     )}
                                                     id={db.database_id}
                                                     tag={db.tag}
+                                                    sub_type={db.app_subtype}
                                                     owner={
                                                         db.database_created_by
                                                     }

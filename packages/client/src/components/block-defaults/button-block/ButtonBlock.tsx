@@ -4,11 +4,39 @@ import { observer } from 'mobx-react-lite';
 import { useBlock, useDesigner, useWorkspace } from '@/hooks';
 import { BlockDef, BlockComponent } from '@/stores';
 
+import { CircularProgress, Button, styled } from '@mui/material';
+
+const StyledButton = styled(Button, {
+    shouldForwardProp: (prop) => prop !== 'loading',
+})<{ loading?: boolean }>(({ loading }) => ({
+    '& .MuiButton-endIcon svg': {
+        visibility: loading === true ? 'hidden' : 'visible',
+    },
+    '& .MuiButton-startIcon svg': {
+        visibility: loading === true ? 'hidden' : 'visible',
+    },
+}));
+
+const StyledLabel = styled('span', {
+    shouldForwardProp: (prop) => prop !== 'loading',
+})<{ loading?: boolean }>(({ loading }) => ({
+    visibility: loading ? 'hidden' : 'visible',
+}));
+
+const StyledCircularProgress = styled(CircularProgress)({
+    zIndex: 10,
+    position: 'absolute',
+});
+
 export interface ButtonBlockDef extends BlockDef<'button'> {
     widget: 'button';
     data: {
         style: CSSProperties;
         label: string;
+        loading?: boolean;
+        disabled?: boolean;
+        // Will add other properties in later PRs
+        // size?: string;
     };
     listeners: {
         onClick: true;
@@ -31,15 +59,23 @@ export const ButtonBlock: BlockComponent = observer(({ id }) => {
     };
 
     return (
-        <button
-            style={{
+        <StyledButton
+            size="large"
+            loading={data?.loading}
+            disabled={data?.disabled || data?.loading}
+            sx={{
                 cursor: 'pointer',
                 ...data.style,
             }}
             onClick={clickEvent()}
             {...attrs}
         >
-            {data.label}
-        </button>
+            <StyledLabel loading={data?.loading}>{data.label}</StyledLabel>
+            {data.loading ? (
+                <StyledCircularProgress color="inherit" size="2em" />
+            ) : (
+                <></>
+            )}
+        </StyledButton>
     );
 });

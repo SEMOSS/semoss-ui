@@ -1,5 +1,8 @@
 import { BlockConfig } from '@/stores';
-import { InputSettings } from '@/components/block-settings';
+import {
+    QuerySelectionSettings,
+    InputSettings,
+} from '@/components/block-settings';
 
 import {
     buildLayoutSection,
@@ -7,6 +10,7 @@ import {
     buildDimensionsSection,
     buildColorSection,
     buildListener,
+    buildBorderSection,
 } from '../block-defaults.shared';
 
 import { ButtonBlockDef, ButtonBlock } from './ButtonBlock';
@@ -20,6 +24,8 @@ export const config: BlockConfig<ButtonBlockDef> = {
     data: {
         style: {},
         label: 'Submit',
+        loading: false,
+        disabled: false,
     },
     listeners: {
         onClick: [],
@@ -37,6 +43,16 @@ export const config: BlockConfig<ButtonBlockDef> = {
                         <InputSettings id={id} label="Label" path="label" />
                     ),
                 },
+                {
+                    description: 'Loading',
+                    render: ({ id }) => (
+                        <QuerySelectionSettings
+                            id={id}
+                            label="Loading"
+                            path="loading"
+                        />
+                    ),
+                },
             ],
         },
         {
@@ -46,6 +62,7 @@ export const config: BlockConfig<ButtonBlockDef> = {
     ],
     styleMenu: [
         buildColorSection(),
+        buildBorderSection(),
         buildLayoutSection(),
         buildSpacingSection(),
         buildDimensionsSection(),

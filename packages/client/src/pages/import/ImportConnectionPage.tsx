@@ -53,7 +53,6 @@ export const ImportConnectionPage = () => {
 
                 setIsLoading(false);
 
-                debugger;
                 if (operationType.indexOf('ERROR') > -1) {
                     notification.add({
                         color: 'error',
@@ -83,8 +82,6 @@ export const ImportConnectionPage = () => {
                     operationType = response.pixelReturn[0].operationType;
 
                 setIsLoading(false);
-
-                debugger;
 
                 if (operationType.indexOf('ERROR') > -1) {
                     notification.add({
