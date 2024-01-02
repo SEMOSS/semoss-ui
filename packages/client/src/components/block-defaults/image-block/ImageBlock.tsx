@@ -81,7 +81,6 @@ export const ImageBlock: BlockComponent = observer(({ id }) => {
                         display: 'flex',
                         justifyContent: 'center',
                         alignItems: 'center',
-                        // border: data.style.border || '1px solid gray',
                         textAlign: 'center',
                         borderRadius: data.style.borderRadius,
                         margin: 'none',

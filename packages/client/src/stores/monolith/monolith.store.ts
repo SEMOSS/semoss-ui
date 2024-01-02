@@ -1778,28 +1778,6 @@ export class MonolithStore {
         return response.data;
     }
 
-    async uploadImage(file: File, id: string) {
-        const url = `${Env.MODULE}/api/images/engine/upload`,
-            fd: FormData = new FormData();
-
-        if (file) {
-            fd.append('file', file);
-        }
-
-        fd.append('engineId', id);
-
-        const response = await axios.post<{
-            fileName: string;
-            fileLocation: string;
-        }>(url, fd, {
-            headers: {
-                'content-type': 'application/x-www-form-urlencoded',
-            },
-        });
-
-        return response.data;
-    }
-
     async getApps(databaseId: string) {
         const url = `${Env.MODULE}/api/auth/admin/app/getApps?databaseId=${databaseId}`;
         const response = await axios.get(url).catch((error) => {
