@@ -68,6 +68,23 @@ export const DefaultBlocks: Registry<DefaultBlockDefinitions> = {
     [SectionBlockConfig.widget]: SectionBlockConfig,
 };
 
+// certain blocks should exist but not be exposed in the Blocks menu (ex Page)
+export const MenuBlocks: Registry<DefaultBlockDefinitions> = {
+    [ButtonBlockConfig.widget]: ButtonBlockConfig,
+    [CheckboxBlockConfig.widget]: CheckboxBlockConfig,
+    [ContainerBlockConfig.widget]: ContainerBlockConfig,
+    [DividerBlockConfig.widget]: DividerBlockConfig,
+    [FormBlockConfig.widget]: FormBlockConfig,
+    [IframeBlockConfig.widget]: IframeBlockConfig,
+    [InputBlockConfig.widget]: InputBlockConfig,
+    [MarkdownBlockConfig.widget]: MarkdownBlockConfig,
+    [SelectBlockConfig.widget]: SelectBlockConfig,
+    [TableBlockConfig.widget]: TableBlockConfig,
+    [TextBlockConfig.widget]: TextBlockConfig,
+    [TextFieldBlockConfig.widget]: TextFieldBlockConfig,
+    [SectionBlockConfig.widget]: SectionBlockConfig,
+};
+
 export function getIconForBlock(widget: string) {
     return DefaultBlocks[widget]?.icon;
 }
