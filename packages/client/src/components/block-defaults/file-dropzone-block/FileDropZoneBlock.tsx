@@ -4,8 +4,8 @@ import { BlockDef, BlockComponent } from '@/stores';
 import { FileDropzone } from '@semoss/ui';
 import * as hooks from '@/hooks';
 
-export interface FileDropZoneBlockDef extends BlockDef<'file-dropzone'> {
-    widget: 'file-dropzone';
+export interface FileDropZoneBlockDef extends BlockDef<'file-upload'> {
+    widget: 'file-upload';
     data: {
         style: CSSProperties;
         name: string;

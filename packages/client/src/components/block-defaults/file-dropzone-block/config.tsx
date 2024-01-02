@@ -2,7 +2,6 @@ import { BlockConfig } from '@/stores';
 import { BLOCK_TYPE_UPLOAD } from '../block-defaults.constants';
 import { FileDropZoneBlockDef, FileDropZoneBlock } from './FileDropZoneBlock';
 import { InputSettings } from '@/components/block-settings';
-import { SwitchSettings } from '@/components/block-settings/shared/SwitchSettings';
 import { Checkbox } from '@semoss/ui';
 import {
     buildLayoutSection,
@@ -15,7 +14,7 @@ import {
 import OpenInBrowserRoundedIcon from '@mui/icons-material/OpenInBrowserRounded';
 
 export const config: BlockConfig<FileDropZoneBlockDef> = {
-    widget: 'file-dropzone',
+    widget: 'file-upload',
     type: BLOCK_TYPE_UPLOAD,
     data: {
         style: {},

@@ -88,7 +88,7 @@ type FieldRadio2 = {
     }[];
 } & Omit<RadioProps, 'onChange' | 'value' | 'defaultValue'>;
 
-type FieldFileDropzone = { component: 'file-dropzone' } & Omit<
+type FieldFileDropzone = { component: 'file-upload' } & Omit<
     FileDropzoneProps<true>,
     'onChange' | 'value' | 'defaultValue'
 >;
@@ -101,7 +101,7 @@ type FieldDatepicker = { component: 'datepicker' } & Omit<
 interface FieldProps<V extends FieldValues> {
     name: Path<V>;
     control: Control<V>;
-    rules: Record<string,unknown>;
+    rules: Record<string, unknown>;
     options:
         | FieldInput
         | FieldNumberpicker
@@ -132,7 +132,7 @@ const validateBoolean = (value: boolean) => typeof value === 'boolean';
  * Field in a Form
  */
 export const Field = <V extends FieldValues>(
-    props: FieldProps<V>,
+    props: FieldProps<V>
 ): JSX.Element => {
     const {
         name,
@@ -215,9 +215,7 @@ export const Field = <V extends FieldValues>(
                                 valid={!hasError}
                                 value={field.value ? field.value : ''}
                                 onChange={(value) => field.onChange(value)}
-                                autoComplete={
-                                    options.autoComplete
-                                }
+                                autoComplete={options.autoComplete}
                             />
                         </Form.Field>
                     );
@@ -466,16 +464,15 @@ export const Field = <V extends FieldValues>(
                                     field.value !== null &&
                                     field.value !== ''
                                         ? options.options.find(
-                                              (opt) =>
-                                                  opt.value === field.value,
+                                              (opt) => opt.value === field.value
                                           )?.display
                                         : ''
                                 }
                                 onChange={(value) => {
                                     field.onChange(
                                         options.options.find(
-                                            (opt) => opt.display === value,
-                                        )?.value,
+                                            (opt) => opt.display === value
+                                        )?.value
                                     );
                                 }}
                             >
@@ -525,16 +522,15 @@ export const Field = <V extends FieldValues>(
                                     field.value !== null &&
                                     field.value !== ''
                                         ? options.options.find(
-                                              (opt) =>
-                                                  opt.value === field.value,
+                                              (opt) => opt.value === field.value
                                           )?.display
                                         : ''
                                 }
                                 onChange={(value) => {
                                     field.onChange(
                                         options.options.find(
-                                            (opt) => opt.display === value,
-                                        )?.value,
+                                            (opt) => opt.display === value
+                                        )?.value
                                     );
                                 }}
                             >
@@ -587,7 +583,7 @@ export const Field = <V extends FieldValues>(
                 }}
             />
         );
-    } else if (options.component === 'file-dropzone') {
+    } else if (options.component === 'file-upload') {
         // Still working on it
         return (
             <Controller

@@ -3,5 +3,6 @@
         "**/*.rollup.cache": true,
         "**/dist": true,
         "**/target": true
-    }
+    },
+    "editor.fontSize": 15
 }
