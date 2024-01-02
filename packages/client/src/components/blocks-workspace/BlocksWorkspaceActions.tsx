@@ -216,7 +216,7 @@ export const BlocksWorkspaceActions = observer(() => {
                 onClick={() => {
                     workspace.openOverlay(() => (
                         <ShareOverlay
-                            url={document.URL}
+                            appId={workspace.appId}
                             onClose={() => workspace.closeOverlay()}
                         />
                     ));
