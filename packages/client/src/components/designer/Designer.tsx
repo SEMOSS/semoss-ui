@@ -1,7 +1,7 @@
 import { observer } from 'mobx-react-lite';
 import { styled, Stack, Icon, Divider, Paper } from '@semoss/ui';
 import { DataObject, Layers, Widgets } from '@mui/icons-material';
-import { useState, useMemo } from 'react';
+import { useState } from 'react';
 
 import { DesignerContext } from '@/contexts';
 import { DesignerStore } from '@/stores';
@@ -11,6 +11,7 @@ import { SelectedMenu } from './SelectedMenu';
 import { OutlineMenu } from './OutlineMenu';
 import { QueryMenu } from './QueryMenu';
 import { Screen } from './Screen';
+import { Renderer } from '../blocks';
 
 const StyledLeftMenu = styled('div')(() => ({
     display: 'flex',
@@ -107,15 +108,12 @@ const StyledRightMenu = styled(Paper)(({ theme }) => ({
 }));
 
 interface DesignerProps {
-    /** Content to render in the designer */
-    children: React.ReactNode;
-
     /** Connect the designer to a store */
     designer: DesignerStore;
 }
 
 export const Designer = observer((props: DesignerProps): JSX.Element => {
-    const { children, designer } = props;
+    const { designer } = props;
 
     // view
     const [view, setView] = useState<'outline' | 'query' | 'add' | ''>('');
@@ -141,10 +139,6 @@ export const Designer = observer((props: DesignerProps): JSX.Element => {
     const handleMouseDown = () => {
         designer.setSelected('');
     };
-
-    useMemo(() => {
-        console.log(designer.selected);
-    }, [designer]);
 
     return (
         <DesignerContext.Provider
@@ -197,7 +191,15 @@ export const Designer = observer((props: DesignerProps): JSX.Element => {
                         </StyledSidebarContent>
                     ) : null}
                 </StyledLeftMenu>
-                <Screen>{children}</Screen>
+                <Screen>
+                    <Renderer
+                        id={designer.rendered}
+                        selectedId={
+                            designer ? designer?.selected ?? null : null
+                        }
+                        isEditMode={true}
+                    />
+                </Screen>
                 <StyledRightMenu elevation={7}>
                     <SelectedMenu />
                 </StyledRightMenu>

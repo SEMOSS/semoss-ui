@@ -84,17 +84,11 @@ export const BlocksWorkspace = observer((props: BlocksWorkspaceProps) => {
                 actions={<BlocksWorkspaceActions />}
             >
                 {!workspace.isEditMode ? (
-                    <>
-                        <Renderer key="preview" id={ACTIVE} />
-                        {console.log('test not edit mode')}
-                    </>
+                    <Renderer key="preview" id={ACTIVE} />
                 ) : (
                     <>
                         {workspace.view === 'design' ? (
-                            <>
-                                <BlocksView key={workspace.view} />
-                                {console.log('blocks view')}
-                            </>
+                            <BlocksView key={workspace.view} />
                         ) : null}
                         {workspace.view === 'data' ? <Notebook /> : null}
                         {workspace.view === 'settings' ? (

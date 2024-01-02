@@ -1,7 +1,6 @@
 import { useMemo } from 'react';
 import { DesignerStore } from '@/stores';
 import { Designer } from '@/components/designer';
-import { Renderer } from '@/components/blocks';
 import { useBlocks } from '@/hooks';
 
 const ACTIVE = 'page-1';
@@ -19,9 +18,6 @@ export const BlocksView = () => {
         // set the rendered one
         d.setRendered(ACTIVE);
 
-        console.log('in blocks view memo');
-        console.log(d.selected);
-
         // return the store
         return d;
     }, [state]);
@@ -30,13 +26,5 @@ export const BlocksView = () => {
         return null;
     }
 
-    return (
-        <Designer designer={designer}>
-            <Renderer
-                id={ACTIVE}
-                selectedId={designer ? designer?.selected ?? null : null}
-                isEditMode={true}
-            />
-        </Designer>
-    );
+    return <Designer designer={designer} />;
 };
