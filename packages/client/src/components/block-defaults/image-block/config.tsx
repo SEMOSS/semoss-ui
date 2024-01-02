@@ -41,7 +41,11 @@ export const config: BlockConfig<ImageBlockDef> = {
                 {
                     description: 'External Image Source',
                     render: ({ id }) => (
-                        <InputSettings id={id} label="Image URL" path="src" />
+                        <InputSettings
+                            id={id}
+                            label="Image Source"
+                            path="src"
+                        />
                     ),
                 },
                 {
