@@ -1,12 +1,12 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { computed } from 'mobx';
 import { observer } from 'mobx-react-lite';
-import { MenuItem, Select } from '@semoss/ui';
 import { Paths, PathValue } from '@/types';
 import { useBlockSettings, useDesigner } from '@/hooks';
 import { ActionMessages, Block, BlockDef } from '@/stores';
 import { getValueByPath } from '@/utility';
 import { BaseSettingSection } from '../BaseSettingSection';
+import { Autocomplete, TextField, createFilterOptions } from '@mui/material';
 
 /**
  * Used for discrete selection options tied to values, ex S/M/L
@@ -42,6 +42,8 @@ interface SelectInputSettingsProps<D extends BlockDef = BlockDef> {
     resizeOnSet?: boolean;
 }
 
+const filter = createFilterOptions<string>();
+
 export const SelectInputSettings = observer(
     <D extends BlockDef = BlockDef>({
         id,
@@ -53,6 +55,14 @@ export const SelectInputSettings = observer(
     }: SelectInputSettingsProps<D>) => {
         const { data, setData } = useBlockSettings(id);
         const { designer } = useDesigner();
+
+        const [autocompleteOptions, setAutocompleteOptions] = useState<
+            Array<string>
+        >([]);
+
+        useEffect(() => {
+            setAutocompleteOptions(options.map((option) => option.value));
+        }, [options]);
 
         // track the value
         const [value, setValue] = useState('');
@@ -117,28 +127,48 @@ export const SelectInputSettings = observer(
 
         return (
             <BaseSettingSection label={label}>
-                <Select
-                    fullWidth
-                    size="small"
+                <Autocomplete
                     value={value}
-                    onChange={(e) => {
-                        // sync the data on change
-                        onChange(e.target.value);
+                    onChange={(_, newValue) => {
+                        onChange(newValue);
                     }}
-                >
-                    {allowUnset ? (
-                        <MenuItem value={''}>
-                            <em>None</em>
-                        </MenuItem>
-                    ) : null}
-                    {Array.from(options, (option, i) => {
-                        return (
-                            <MenuItem key={i} value={option.value}>
-                                {option.display}
-                            </MenuItem>
+                    filterOptions={(autocompleteOptions, params) => {
+                        const filtered = filter(autocompleteOptions, params);
+
+                        const { inputValue } = params;
+                        // Suggest the creation of a new value
+                        const isExisting = autocompleteOptions.some(
+                            (option) => inputValue === option,
                         );
-                    })}
-                </Select>
+                        if (inputValue !== '' && !isExisting) {
+                            filtered.push(`Custom: "${inputValue}"`);
+                        }
+
+                        return filtered;
+                    }}
+                    selectOnFocus
+                    clearOnBlur
+                    handleHomeEndKeys
+                    options={autocompleteOptions}
+                    getOptionLabel={(option) => {
+                        const dropdownOptions = options.find(
+                            (element) => element.value == option,
+                        );
+                        return dropdownOptions?.display ?? option;
+                    }}
+                    renderOption={(props, option) => {
+                        const dropdownOptions = options.find(
+                            (element) => element.value == option,
+                        );
+                        return (
+                            <li {...props}>
+                                {dropdownOptions?.display ?? option}
+                            </li>
+                        );
+                    }}
+                    freeSolo
+                    renderInput={(params) => <TextField {...params} />}
+                />
             </BaseSettingSection>
         );
     },
