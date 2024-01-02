@@ -65,7 +65,7 @@ export interface BlockConfig<D extends BlockDef = BlockDef> {
     /** Unique widget name */
     widget: D['widget'];
 
-    /** Block type: BLOCK_TYPE_ACTION | BLOCK_TYPE_CHART | BLOCK_TYPE_DISPLAY | BLOCK_TYPE_INPUT | BLOCK_TYPE_LAYOUT */
+    /** Block type: BLOCK_TYPE_ACTION | BLOCK_TYPE_CHART | BLOCK_TYPE_DISPLAY | BLOCK_TYPE_INPUT | BLOCK_TYPE_LAYOUT | BLOCK_TYPE_DATA */
     type: string;
 
     /** Data associated with the block */
