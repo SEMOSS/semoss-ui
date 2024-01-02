@@ -1,46 +1,25 @@
 import { observer } from 'mobx-react-lite';
-import { Button, IconButton, useNotification, styled, Stack } from '@semoss/ui';
 import {
-    Code,
-    Download,
-    Share,
-    Settings,
-    PaletteOutlined,
-} from '@mui/icons-material';
+    Button,
+    IconButton,
+    useNotification,
+    styled,
+    Stack,
+    ButtonGroup,
+} from '@semoss/ui';
+import { Code, Download, Share, Settings } from '@mui/icons-material';
 
 import { useWorkspace, useRootStore, useBlocks } from '@/hooks';
-import { Database } from '@/assets/img/Database';
 import { ShareOverlay } from '@/components/workspace';
 
-const NAV_HEIGHT = '48px';
-const NAV_FOOTER = '24px';
-const SIDEBAR_WIDTH = '56px';
-
-const StyledNavItem = styled('div', {
+const StyledNavItem = styled(ButtonGroup.Item, {
     shouldForwardProp: (prop) => prop !== 'selected',
 })<{
     /** Track if item is selected */
     selected: boolean;
-}>(({ theme, selected }) => ({
-    display: 'flex',
-    flexDirection: 'column',
-    alignItems: 'center',
-    justifyContent: 'center',
-    color: 'inherit',
-    textDecoration: 'none',
-    height: NAV_HEIGHT,
-    width: SIDEBAR_WIDTH,
-    cursor: 'pointer',
-    backgroundColor: selected
-        ? theme.palette.primary.main
-        : theme.palette.common.black,
+}>(({ selected }) => ({
+    backgroundColor: selected ? 'rgba(4, 113, 240, 0.12)' : '',
     transition: 'backgroundColor 2s ease',
-    '&:hover': {
-        backgroundColor: selected
-            ? theme.palette.primary.main
-            : `${theme.palette.primary.dark}4D`,
-        transition: 'backgroundColor 2s ease',
-    },
 }));
 
 const StyledTrack = styled('div', {
@@ -149,33 +128,45 @@ export const BlocksWorkspaceActions = observer(() => {
             {(workspace.role === 'OWNER' || workspace.role === 'EDIT') &&
             workspace.isEditMode ? (
                 <Stack direction="row" alignItems={'center'} spacing={0}>
-                    <StyledNavItem
-                        title={'Design'}
-                        selected={workspace.view === 'design'}
-                        onClick={() => {
-                            workspace.setView('design');
-                        }}
+                    <ButtonGroup
+                        orientation="horizontal"
+                        color="primary"
+                        size="small"
+                        variant="outlined"
                     >
-                        <PaletteOutlined />
-                    </StyledNavItem>
-                    <StyledNavItem
-                        title={'Data'}
-                        selected={workspace.view === 'data'}
-                        onClick={() => {
-                            workspace.setView('data');
-                        }}
-                    >
-                        <Database />
-                    </StyledNavItem>
-                    <StyledNavItem
-                        title={'Settings'}
-                        selected={workspace.view === 'settings'}
-                        onClick={() => {
-                            workspace.setView('settings');
-                        }}
-                    >
-                        <Settings />
-                    </StyledNavItem>
+                        <StyledNavItem
+                            title={'Data'}
+                            selected={workspace.view === 'data'}
+                            onClick={() => {
+                                workspace.setView('data');
+                            }}
+                        >
+                            Data
+                        </StyledNavItem>
+                        <StyledNavItem
+                            title={'Design'}
+                            selected={workspace.view === 'design'}
+                            onClick={() => {
+                                workspace.setView('design');
+                            }}
+                        >
+                            Design
+                        </StyledNavItem>
+                        <StyledNavItem
+                            title={'Settings'}
+                            selected={workspace.view === 'settings'}
+                            onClick={() => {
+                                workspace.setView('settings');
+                            }}
+                        >
+                            <Stack
+                                alignItems={'center'}
+                                justifyContent={'center'}
+                            >
+                                <Settings fontSize="small" />
+                            </Stack>
+                        </StyledNavItem>
+                    </ButtonGroup>
                 </Stack>
             ) : (
                 <></>
