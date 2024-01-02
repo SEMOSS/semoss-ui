@@ -1,4 +1,4 @@
-import { CSSProperties } from 'react';
+import { CSSProperties, useMemo } from 'react';
 import { observer } from 'mobx-react-lite';
 
 import { useBlock } from '@/hooks';
@@ -47,7 +47,7 @@ export const ButtonBlock: BlockComponent = observer(
     ({ id, selectedId, isEditMode }) => {
         const { attrs, data, listeners } = useBlock<ButtonBlockDef>(id);
 
-        const clickEvent = () => {
+        const clickEvent = useMemo(() => {
             // disable if in edit mode and not selected
             if (isEditMode && selectedId !== id) {
                 return () => {};
@@ -55,18 +55,19 @@ export const ButtonBlock: BlockComponent = observer(
             return () => {
                 listeners.onClick();
             };
-        };
+        }, [selectedId, isEditMode]);
 
         return (
             <StyledButton
                 size="large"
+                variant="contained" // todo make this configurable
                 loading={data?.loading}
                 disabled={data?.disabled || data?.loading}
                 sx={{
                     cursor: 'pointer',
                     ...data.style,
                 }}
-                onClick={clickEvent()}
+                onClick={clickEvent}
                 {...attrs}
             >
                 <StyledLabel loading={data?.loading}>{data.label}</StyledLabel>

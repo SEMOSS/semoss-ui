@@ -15,29 +15,35 @@ export interface FormBlockDef extends BlockDef<'form'> {
     slots: 'children';
 }
 
-export const FormBlock: BlockComponent = observer(({ id }) => {
-    const { attrs, data, slots, listeners } = useBlock<FormBlockDef>(id);
+export const FormBlock: BlockComponent = observer(
+    ({ id, selectedId, isEditMode }) => {
+        const { attrs, data, slots, listeners } = useBlock<FormBlockDef>(id);
 
-    return (
-        <form
-            style={{
-                display: 'flex',
-                ...data.style,
-            }}
-            {...attrs}
-        >
-            <Slot slot={slots.children}></Slot>
-            <Button
-                sx={{
+        return (
+            <form
+                style={{
+                    display: 'flex',
                     ...data.style,
-                }}
-                onClick={() => {
-                    listeners.onClick();
                 }}
                 {...attrs}
             >
-                {data.label}
-            </Button>
-        </form>
-    );
-});
+                <Slot
+                    slot={slots.children}
+                    selectedId={selectedId}
+                    isEditMode={isEditMode}
+                ></Slot>
+                <Button
+                    sx={{
+                        ...data.style,
+                    }}
+                    onClick={() => {
+                        listeners.onClick();
+                    }}
+                    {...attrs}
+                >
+                    {data.label}
+                </Button>
+            </form>
+        );
+    },
+);

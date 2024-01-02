@@ -85,6 +85,7 @@ export const Screen = observer((props: ScreenProps) => {
         }
 
         designer.setSelected(id);
+        console.log(designer.selected);
     };
 
     /**

@@ -17,38 +17,44 @@ export interface SectionBlockDef extends BlockDef<'section'> {
     slots: 'children';
 }
 
-export const SectionBlock: BlockComponent = observer(({ id }) => {
-    const {
-        attrs,
-        data: {
-            style = { margin: '12px', gap: '8px' },
-            grid = {
-                value: '',
-                label: '',
-                config: { rows: 1, cols: 2 },
+export const SectionBlock: BlockComponent = observer(
+    ({ id, selectedId, isEditMode }) => {
+        const {
+            attrs,
+            data: {
+                style = { margin: '12px', gap: '8px' },
+                grid = {
+                    value: '',
+                    label: '',
+                    config: { rows: 1, cols: 2 },
+                },
             },
-        },
-        slots,
-    } = useBlock<SectionBlockDef>(id);
+            slots,
+        } = useBlock<SectionBlockDef>(id);
 
-    // Set the grid style dynamically based on the configuration
-    const gridStyle = {
-        ...style,
-        display: 'grid',
-        gridTemplateColumns: `repeat(${grid.config.cols}, 1fr)`,
-        gridTemplateRows: `repeat(${grid.config.rows}, 1fr)`,
-    };
+        // Set the grid style dynamically based on the configuration
+        const gridStyle = {
+            ...style,
+            display: 'grid',
+            gridTemplateColumns: `repeat(${grid.config.cols}, 1fr)`,
+            gridTemplateRows: `repeat(${grid.config.rows}, 1fr)`,
+        };
 
-    return (
-        <div style={{ display: 'flex', flexDirection: 'column' }}>
-            <div
-                style={{
-                    ...gridStyle,
-                }}
-                {...attrs}
-            >
-                <Slot slot={slots.children}></Slot>
+        return (
+            <div style={{ display: 'flex', flexDirection: 'column' }}>
+                <div
+                    style={{
+                        ...gridStyle,
+                    }}
+                    {...attrs}
+                >
+                    <Slot
+                        slot={slots.children}
+                        selectedId={selectedId}
+                        isEditMode={isEditMode}
+                    ></Slot>
+                </div>
             </div>
-        </div>
-    );
-});
+        );
+    },
+);

@@ -1,6 +1,5 @@
-import { createElement } from 'react';
+import { createElement, useMemo } from 'react';
 import { observer } from 'mobx-react-lite';
-
 import { useBlocks } from '@/hooks';
 
 export interface RendererProps {
@@ -18,11 +17,7 @@ export interface RendererProps {
  * Render a block
  */
 export const Renderer = observer(
-    ({
-        id,
-        selectedId = null,
-        isEditMode = false,
-    }: RendererProps): JSX.Element => {
+    ({ id, selectedId, isEditMode }: RendererProps): JSX.Element => {
         // get the store and mode
         const { state, registry } = useBlocks();
 
@@ -40,9 +35,14 @@ export const Renderer = observer(
             throw Error(`Widget ${b} for block ${id} is not registered`);
         }
 
+        useMemo(() => {
+            // console.log(selectedId);
+            // console.log(isEditMode);
+        }, [selectedId, isEditMode]);
+
         // render the view
         return createElement(b.render, {
-            key: id,
+            key: `${id}-${isEditMode ? 'edit' : ''}`,
             id: id,
             selectedId: selectedId,
             isEditMode: isEditMode,

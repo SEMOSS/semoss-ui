@@ -19,6 +19,9 @@ export const BlocksView = () => {
         // set the rendered one
         d.setRendered(ACTIVE);
 
+        console.log('in blocks view memo');
+        console.log(d.selected);
+
         // return the store
         return d;
     }, [state]);

@@ -1,4 +1,4 @@
-import { CSSProperties } from 'react';
+import { CSSProperties, useMemo } from 'react';
 import { observer } from 'mobx-react-lite';
 
 import { useBlock } from '@/hooks';
@@ -19,7 +19,7 @@ export const IframeBlock: BlockComponent = observer(
     ({ id, selectedId, isEditMode }) => {
         const { attrs, data } = useBlock<IframeBlockDef>(id);
 
-        const pointerEvents = () => {
+        const pointerEvents = useMemo(() => {
             // if disabled, always none
             if (data.disabled) {
                 return 'none';
@@ -30,7 +30,7 @@ export const IframeBlock: BlockComponent = observer(
             }
             // not in edit mode, always enable pointer events
             return 'auto';
-        };
+        }, [selectedId, isEditMode]);
 
         return (
             <span
@@ -46,7 +46,7 @@ export const IframeBlock: BlockComponent = observer(
                     style={{
                         width: '100%',
                         height: '100%',
-                        pointerEvents: pointerEvents(),
+                        pointerEvents: pointerEvents,
                     }}
                     src={data.src}
                     title={data.title}

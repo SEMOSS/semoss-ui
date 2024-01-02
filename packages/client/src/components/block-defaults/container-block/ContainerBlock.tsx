@@ -13,19 +13,25 @@ export interface ContainerBlockDef extends BlockDef<'container'> {
     slots: 'children';
 }
 
-export const ContainerBlock: BlockComponent = observer(({ id }) => {
-    const { attrs, data, slots } = useBlock<ContainerBlockDef>(id);
+export const ContainerBlock: BlockComponent = observer(
+    ({ id, selectedId, isEditMode }) => {
+        const { attrs, data, slots } = useBlock<ContainerBlockDef>(id);
 
-    return (
-        <div
-            style={{
-                display: 'flex',
-                flexWrap: 'wrap',
-                ...data.style,
-            }}
-            {...attrs}
-        >
-            <Slot slot={slots.children}></Slot>
-        </div>
-    );
-});
+        return (
+            <div
+                style={{
+                    display: 'flex',
+                    flexWrap: 'wrap',
+                    ...data.style,
+                }}
+                {...attrs}
+            >
+                <Slot
+                    slot={slots.children}
+                    selectedId={selectedId}
+                    isEditMode={isEditMode}
+                ></Slot>
+            </div>
+        );
+    },
+);

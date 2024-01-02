@@ -1,7 +1,7 @@
 import { observer } from 'mobx-react-lite';
 import { styled, Stack, Icon, Divider, Paper } from '@semoss/ui';
 import { DataObject, Layers, Widgets } from '@mui/icons-material';
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 
 import { DesignerContext } from '@/contexts';
 import { DesignerStore } from '@/stores';
@@ -141,6 +141,10 @@ export const Designer = observer((props: DesignerProps): JSX.Element => {
     const handleMouseDown = () => {
         designer.setSelected('');
     };
+
+    useMemo(() => {
+        console.log(designer.selected);
+    }, [designer]);
 
     return (
         <DesignerContext.Provider

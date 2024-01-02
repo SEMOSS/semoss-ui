@@ -13,18 +13,24 @@ export interface HeaderBlockDef extends BlockDef<'header'> {
     slots: 'content';
 }
 
-export const HeaderBlock: BlockComponent = observer(({ id }) => {
-    const { attrs, data, slots } = useBlock<HeaderBlockDef>(id);
+export const HeaderBlock: BlockComponent = observer(
+    ({ id, selectedId, isEditMode }) => {
+        const { attrs, data, slots } = useBlock<HeaderBlockDef>(id);
 
-    return (
-        <header
-            style={{
-                background: '#FFFFFF',
-                ...data.style,
-            }}
-            {...attrs}
-        >
-            <Slot slot={slots.content}></Slot>
-        </header>
-    );
-});
+        return (
+            <header
+                style={{
+                    background: '#FFFFFF',
+                    ...data.style,
+                }}
+                {...attrs}
+            >
+                <Slot
+                    slot={slots.content}
+                    selectedId={selectedId}
+                    isEditMode={isEditMode}
+                ></Slot>
+            </header>
+        );
+    },
+);
