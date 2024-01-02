@@ -97,12 +97,12 @@ export const config: BlockConfig<ImageBlockDef> = {
                     ),
                 },
                 {
-                    description: 'Cropped Position',
+                    description: 'Cropping',
                     render: ({ id }) => (
                         <ButtonGroupSettings
                             id={id}
                             path="style.backgroundPosition"
-                            label="Cropped Position"
+                            label="Cropping"
                             options={[
                                 {
                                     value: 'center',

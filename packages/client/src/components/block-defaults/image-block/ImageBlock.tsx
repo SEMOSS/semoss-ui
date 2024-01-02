@@ -44,11 +44,6 @@ export const ImageBlock: BlockComponent = observer(({ id }) => {
                         !data.style.justifyContent
                             ? data.style.width || '100%'
                             : '100%',
-                    // fix to cover the broken height percentage property
-                    height:
-                        `${data.style.height}`.slice(-1) === '%'
-                            ? `${data.style.height}`.slice(0, -1) + 'vh'
-                            : data.style.height,
                     display: 'flex',
                     padding: 'none',
                     border: data.style.border || '1px solid gray',
@@ -73,10 +68,7 @@ export const ImageBlock: BlockComponent = observer(({ id }) => {
             >
                 <span
                     style={{
-                        height:
-                            `${data.style.height}`.slice(-1) === '%'
-                                ? `${data.style.height}`.slice(0, -1) + 'vh'
-                                : data.style.height || '250px',
+                        height: data.style.height || '250px',
                         width: data.style.width || '100%',
                         display: 'flex',
                         justifyContent: 'center',
@@ -107,11 +99,6 @@ export const ImageBlock: BlockComponent = observer(({ id }) => {
                         !data.style.justifyContent
                             ? data.style.width || '100%'
                             : '100%',
-                    // fix to cover the broken height percentage property
-                    height:
-                        `${data.style.height}`.slice(-1) === '%'
-                            ? `${data.style.height}`.slice(0, -1) + 'vh'
-                            : data.style.height,
                     display: 'flex',
                     padding: 'none',
                     border: 'none',
@@ -144,11 +131,6 @@ export const ImageBlock: BlockComponent = observer(({ id }) => {
                             !data.style.justifyContent
                                 ? '100%'
                                 : data.style.width || '100%',
-                        // fix to cover the broken height percentage property
-                        height:
-                            `${data.style.height}`.slice(-1) === '%'
-                                ? `${data.style.height}`.slice(0, -1) + 'vh'
-                                : data.style.height,
                         display: 'block',
                         backgroundImage: `url('${data.src}')`,
                         backgroundSize: 'cover',
