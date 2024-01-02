@@ -120,7 +120,7 @@ export const BlocksWorkspaceActions = observer(() => {
             const { errors } = await monolithStore.runQuery<[true]>(
                 `SaveAppBlocksJson(project=["${
                     workspace.appId
-                }"], json=[${JSON.stringify(json)}]);`,
+                }"], json=["<encode>${JSON.stringify(json)}</encode>"]);`,
             );
 
             if (errors.length > 0) {

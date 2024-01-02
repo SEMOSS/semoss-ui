@@ -1,18 +1,14 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { computed } from 'mobx';
 import { observer } from 'mobx-react-lite';
-import { MenuItem, Select } from '@semoss/ui';
+import { Autocomplete, TextField } from '@mui/material';
 import { Paths, PathValue } from '@/types';
-import { useBlockSettings, useDesigner } from '@/hooks';
-import { ActionMessages, Block, BlockDef } from '@/stores';
+import { useBlockSettings, useBlocks } from '@/hooks';
+import { Block, BlockDef } from '@/stores';
 import { getValueByPath } from '@/utility';
 import { BaseSettingSection } from '../BaseSettingSection';
 
-/**
- * Used for discrete selection options tied to values, ex S/M/L
- */
-
-interface SelectInputSettingsProps<D extends BlockDef = BlockDef> {
+interface QuerySelectionSettingsProps<D extends BlockDef = BlockDef> {
     /**
      * Id of the block that is being worked with
      */
@@ -27,32 +23,19 @@ interface SelectInputSettingsProps<D extends BlockDef = BlockDef> {
      * Settings label
      */
     label: string;
-
-    /**
-     * Options for select
-     */
-    options: Array<{ value: string; display: string }>;
-
-    /**
-     * Whether an empty 'None' option should be in the select
-     */
-    allowUnset?: boolean;
-
-    /** Whether we should dispatch an event to the designer to update the frame around the block */
-    resizeOnSet?: boolean;
 }
 
-export const SelectInputSettings = observer(
+/**
+ * Specifically for selecting a query for to associate with loading/disabled/etc
+ */
+export const QuerySelectionSettings = observer(
     <D extends BlockDef = BlockDef>({
         id,
         path,
         label,
-        options,
-        allowUnset = false,
-        resizeOnSet = false,
-    }: SelectInputSettingsProps<D>) => {
+    }: QuerySelectionSettingsProps<D>) => {
         const { data, setData } = useBlockSettings(id);
-        const { designer } = useDesigner();
+        const { state } = useBlocks();
 
         // track the value
         const [value, setValue] = useState('');
@@ -83,6 +66,13 @@ export const SelectInputSettings = observer(
             setValue(computedValue);
         }, [computedValue]);
 
+        // available queries for autocomplete
+        const queries = useMemo(() => {
+            return Object.keys(state.queries).reduce((acc, queryKey) => {
+                return { ...acc, [`{{${queryKey}.isLoading}}`]: queryKey };
+            }, {});
+        }, [Object.keys(state.queries).length]);
+
         /**
          * Sync the data on change
          */
@@ -90,7 +80,7 @@ export const SelectInputSettings = observer(
             // set the value
             setValue(value);
 
-            // clear out he old timeout
+            // clear out the old timeout
             if (timeoutRef.current) {
                 clearTimeout(timeoutRef.current);
                 timeoutRef.current = null;
@@ -98,17 +88,7 @@ export const SelectInputSettings = observer(
 
             timeoutRef.current = setTimeout(() => {
                 try {
-                    // set the value
                     setData(path, value as PathValue<D['data'], typeof path>);
-                    if (resizeOnSet) {
-                        // emit event to resize the block on the screen
-                        designer.blocks.dispatch({
-                            message: ActionMessages.DISPATCH_EVENT,
-                            payload: {
-                                name: 'blockResized',
-                            },
-                        });
-                    }
                 } catch (e) {
                     console.log(e);
                 }
@@ -117,28 +97,22 @@ export const SelectInputSettings = observer(
 
         return (
             <BaseSettingSection label={label}>
-                <Select
+                <Autocomplete
                     fullWidth
+                    disableClearable={value === ''}
                     size="small"
                     value={value}
-                    onChange={(e) => {
-                        // sync the data on change
-                        onChange(e.target.value);
+                    options={Object.keys(queries)}
+                    getOptionLabel={(queryLoadingInput: string) =>
+                        queries[queryLoadingInput] ?? ''
+                    }
+                    onChange={(_, value) => {
+                        onChange(value);
                     }}
-                >
-                    {allowUnset ? (
-                        <MenuItem value={''}>
-                            <em>None</em>
-                        </MenuItem>
-                    ) : null}
-                    {Array.from(options, (option, i) => {
-                        return (
-                            <MenuItem key={i} value={option.value}>
-                                {option.display}
-                            </MenuItem>
-                        );
-                    })}
-                </Select>
+                    renderInput={(params) => (
+                        <TextField {...params} placeholder="Query" />
+                    )}
+                />
             </BaseSettingSection>
         );
     },

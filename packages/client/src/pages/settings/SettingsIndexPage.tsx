@@ -135,14 +135,9 @@ export const SettingsIndexPage = () => {
         <StyledContainer>
             <StyledSearchbarContainer>
                 <StyledSearch
-                    label={'Search'}
-                    size={'small'}
+                    size="small"
                     onChange={(e) => {
                         setSearch(e.target.value);
-                    }}
-                    placeholder={'Search'}
-                    InputProps={{
-                        startAdornment: <SearchIcon />,
                     }}
                 />
                 <StyledSort

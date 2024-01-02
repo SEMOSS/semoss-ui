@@ -728,8 +728,8 @@ export const MembersTable = (props: MembersTableProps) => {
                                 <StyledSearchButtonContainer>
                                     <Search
                                         ref={memberSearchRef}
-                                        placeholder={'Search members'}
-                                        size={'small'}
+                                        placeholder="Search Members"
+                                        size="small"
                                         value={searchFilter}
                                         onChange={(e) => {
                                             setValue(
@@ -1006,8 +1006,8 @@ export const MembersTable = (props: MembersTableProps) => {
                     >
                         <Search
                             ref={memberSearchRef}
-                            placeholder={'Search members'}
-                            size={'small'}
+                            placeholder="Search Members"
+                            size="small"
                             value={searchFilter}
                             onChange={(e) => {
                                 setValue('SEARCH_FILTER', e.target.value);

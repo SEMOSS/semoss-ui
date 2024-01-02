@@ -1933,7 +1933,6 @@ export function JobsPage() {
 
                 <Search
                     sx={{ width: '60%' }}
-                    placeholder="Search"
                     size="small"
                     onChange={(e) => setSearchValue(e.target.value)}
                 />
@@ -2132,8 +2131,7 @@ export function JobsPage() {
                 </Accordion.Trigger>
                 <Accordion.Content>
                     <Search
-                        fullWidth={true}
-                        placeholder="Search"
+                        fullWidth
                         size="small"
                         onChange={(e) => setHistorySearchValue(e.target.value)}
                     />
