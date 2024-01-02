@@ -13,6 +13,8 @@ import parserBabel from 'prettier/parser-babel';
 import parserHtml from 'prettier/parser-html';
 import parserTypescript from 'prettier/parser-typescript';
 import parserCss from 'prettier/parser-postcss';
+// Python Code Formatting
+import { spawn } from 'child_process';
 
 const TextEditorCodeGenerationWrapper = styled('div')(({ theme }) => ({
     width: '180px',
@@ -238,41 +240,60 @@ export const TextEditor = (props: TextEditorProps) => {
      */
     const prettifyFile = () => {
         if (process.env.NODE_ENV == 'development') {
-            const prettierConfig = {};
-
+            let formatted = activeFile.content;
             console.log(activeFile);
 
-            // parsers for other languages are needed
-            if (activeFile.type === 'html') {
-                prettierConfig['parser'] = 'html';
-                prettierConfig['plugins'] = [parserHtml];
-            } else if (
-                activeFile.type === 'js' ||
-                activeFile.type === 'jsx' ||
-                activeFile.type === 'ts' ||
-                activeFile.type === 'tsx'
-            ) {
-                prettierConfig['parser'] = 'babel';
-                prettierConfig['plugins'] = [parserBabel];
-                // prettierConfig['semi'] = false;
-                // prettierConfig['singleQuote'] = true;
-            } else if (
-                activeFile.type === 'css' ||
-                activeFile.type === 'scss'
-            ) {
-                prettierConfig['parser'] = 'css';
-                prettierConfig['plugins'] = [parserCss];
-            }
+            if (activeFile.type === 'py') {
+                (async () => {
+                    try {
+                        const formattedPythonCode = await runBlack(
+                            activeFile.content,
+                        );
+                        console.log(
+                            'Formatted Python Code:\n',
+                            formattedPythonCode,
+                        );
+                    } catch (error) {
+                        console.error(
+                            'Error formatting Python code:',
+                            error.message,
+                        );
+                    }
+                })();
+            } else {
+                const prettierConfig = {};
 
-            // If we have a configuration for the selected language
-            if (Object.keys(prettierConfig).length) {
-                const formatted = prettier.format(
-                    activeFile.content,
-                    prettierConfig,
-                );
+                // parsers for other languages are needed
+                if (activeFile.type === 'html') {
+                    prettierConfig['parser'] = 'html';
+                    prettierConfig['plugins'] = [parserHtml];
+                } else if (
+                    activeFile.type === 'js' ||
+                    activeFile.type === 'jsx' ||
+                    activeFile.type === 'ts' ||
+                    activeFile.type === 'tsx'
+                ) {
+                    prettierConfig['parser'] = 'babel';
+                    prettierConfig['plugins'] = [parserBabel];
+                    // prettierConfig['semi'] = false;
+                    // prettierConfig['singleQuote'] = true;
+                } else if (
+                    activeFile.type === 'css' ||
+                    activeFile.type === 'scss'
+                ) {
+                    prettierConfig['parser'] = 'css';
+                    prettierConfig['plugins'] = [parserCss];
+                }
 
-                editFile(formatted);
+                // If we have a configuration for the selected language
+                if (Object.keys(prettierConfig).length) {
+                    formatted = prettier.format(
+                        activeFile.content,
+                        prettierConfig,
+                    );
+                }
             }
+            editFile(formatted);
         }
     };
 
@@ -581,4 +602,34 @@ export const TextEditor = (props: TextEditorProps) => {
             return <StyledContainer>No active file</StyledContainer>;
         }
     }
+};
+
+// Formats Python Code
+const runBlack = (code) => {
+    // return new Promise((resolve, reject) => {
+    //     const blackProcess = spawn('black', ['-', '--quiet', '-']);
+
+    //     let formattedCode = '';
+    //     let errorOutput = '';
+
+    //     blackProcess.stdout.on('data', (data) => {
+    //         formattedCode += data;
+    //     });
+
+    //     blackProcess.stderr.on('data', (data) => {
+    //         errorOutput += data;
+    //     });
+
+    //     blackProcess.on('close', (code) => {
+    //         if (code === 0) {
+    //             resolve(formattedCode);
+    //         } else {
+    //             reject(new Error(`Black formatting failed: ${errorOutput}`));
+    //         }
+    //     });
+
+    //     blackProcess.stdin.write(code);
+    //     blackProcess.stdin.end();
+    // });
+    return code;
 };
