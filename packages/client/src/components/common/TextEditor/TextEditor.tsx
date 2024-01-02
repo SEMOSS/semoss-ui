@@ -1,24 +1,22 @@
 import { useMemo, useEffect, SyntheticEvent } from 'react';
 import { Link } from 'react-router-dom';
-import { File, ControlledFile } from '../';
+import { File, ControlledFile, TextEditorCodeGeneration } from '../';
 import { Clear, SaveOutlined } from '@mui/icons-material';
 import { Icon as FiletypeIcon } from '@mdi/react';
 import { FILE_ICON_MAP } from './text-editor.constants';
-import { AutoAwesome } from '@mui/icons-material/';
-import {
-    Button,
-    IconButton,
-    Typography,
-    Tabs,
-    styled,
-    Container,
-} from '@semoss/ui';
+import { IconButton, Typography, Tabs, styled, Container } from '@semoss/ui';
 
 import Editor from '@monaco-editor/react';
 
 import prettier from 'prettier';
 import parserBabel from 'prettier/parser-babel';
 import parserHtml from 'prettier/parser-html';
+import parserTypescript from 'prettier/parser-typescript';
+import parserCss from 'prettier/parser-postcss';
+
+const TextEditorCodeGenerationWrapper = styled('div')(({ theme }) => ({
+    width: '180px',
+}));
 
 const StyledSVG = styled('svg')(({ theme }) => ({
     fill: '#0000008A',
@@ -111,22 +109,6 @@ const StyledTabLabel = styled('div')(({ theme }) => ({
 const StyledSaveChangesIndicator = styled('div')(({ theme }) => ({
     color: theme.palette.primary.main,
 }));
-
-const StyledGenerateButton = styled(Button)(({ theme }) => {
-    const palette = theme.palette as unknown as {
-        purple: Record<string, string>;
-    };
-
-    return {
-        backgroundColor: palette.purple['400'],
-        color: theme.palette.background.paper,
-        width: '180px',
-        gap: theme.spacing(1),
-        '&:hover': {
-            backgroundColor: palette.purple['200'],
-        },
-    };
-});
 
 const StyledTypography = styled(Typography)(({ theme }) => ({
     textAlign: 'left',
@@ -250,7 +232,8 @@ export const TextEditor = (props: TextEditorProps) => {
     }, [files.length, activeIndex, controlledFiles.length]);
 
     /**
-     * Get other parsers
+     * @name prettifyFile
+     * Use custom parsers to format file
      * TO-DO: Save custom configs?
      */
     const prettifyFile = () => {
@@ -273,8 +256,15 @@ export const TextEditor = (props: TextEditorProps) => {
                 prettierConfig['plugins'] = [parserBabel];
                 // prettierConfig['semi'] = false;
                 // prettierConfig['singleQuote'] = true;
+            } else if (
+                activeFile.type === 'css' ||
+                activeFile.type === 'scss'
+            ) {
+                prettierConfig['parser'] = 'css';
+                prettierConfig['plugins'] = [parserCss];
             }
 
+            // If we have a configuration for the selected language
             if (Object.keys(prettierConfig).length) {
                 const formatted = prettier.format(
                     activeFile.content,
@@ -438,16 +428,15 @@ export const TextEditor = (props: TextEditorProps) => {
                                 Welcome to the Code Editor
                             </StyledTypography>
                             <StyledTypography variant="body1">
-                                Get started by selecting a file or
+                                Get started by selecting a file{' '}
+                                {process.env.NODE_ENV == 'development' && 'or'}
                             </StyledTypography>
                         </div>
-                        <StyledGenerateButton
-                            variant="contained"
-                            color="secondary"
-                        >
-                            <AutoAwesome />
-                            Generate Code
-                        </StyledGenerateButton>
+                        {process.env.NODE_ENV == 'development' && (
+                            <TextEditorCodeGenerationWrapper>
+                                <TextEditorCodeGeneration />
+                            </TextEditorCodeGenerationWrapper>
+                        )}
                     </StyledHeaderContainer>
                     <Container>
                         <Typography variant="h6">
