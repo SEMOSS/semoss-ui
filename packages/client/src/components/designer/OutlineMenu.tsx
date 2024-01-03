@@ -1,4 +1,5 @@
-import React, { useState, useMemo } from 'react';
+import { useState, useMemo } from 'react';
+import { computed } from 'mobx';
 import { observer } from 'mobx-react-lite';
 import {
     Collapse,
@@ -12,6 +13,12 @@ import {
     Typography,
     styled,
 } from '@semoss/ui';
+import {
+    useNavigate,
+    useLocation,
+    matchPath,
+    useResolvedPath,
+} from 'react-router-dom';
 import { useBlocks, useDesigner } from '@/hooks';
 import {
     ChevronRight,
@@ -20,8 +27,6 @@ import {
     Search,
     SearchOff,
 } from '@mui/icons-material/';
-
-import { Block } from '@/stores/state/state.types';
 
 const StyledMenu = styled('div')(({ theme }) => ({
     display: 'flex',
@@ -78,7 +83,7 @@ const StyledListItemButton = styled(List.ItemButton, {
     },
 }));
 
-const StyledIcon = styled(Icon)(({ theme }) => ({
+const StyledIcon = styled(Icon)(() => ({
     color: 'rgba(0, 0, 0, .3)',
 }));
 
@@ -100,29 +105,42 @@ export const OutlineMenu = observer((): JSX.Element => {
     // get the store
     const { registry, state } = useBlocks();
     const { designer } = useDesigner();
+    const navigate = useNavigate();
+    const location = useLocation();
+    const resolvedPath = useResolvedPath('');
 
     const [expanded, setExpanded] = useState<string[]>([]);
     const [selected, setSelected] = useState<string[]>([]);
     const [showSearch, setShowSearch] = useState<boolean>(false);
     const [search, setSearch] = useState<string>('');
 
-    console.log('queries', state.queries);
-    console.log('blocks', state.blocks);
+    /**
+     * Check if a path is active
+     * @param path - path to check against
+     * @returns true if the path is active
+     */
+    const isActive = (path: string) => {
+        return !!matchPath(
+            resolvedPath.pathname + '/' + path,
+            location.pathname,
+        );
+    };
 
     /**
      * Render the block and it's children
-     * @param id - id of the block to render
+     * @param id - id of the block that will be rendered
      * @returns tree of the widgets
      */
     const renderBlock = (id: string) => {
         // get the block
         const block = state.blocks[id];
 
-        // render each of hte c
+        // if there is no block, ignore it
         if (!block) {
             return null;
         }
 
+        // get the icon
         const WidgetIcon = registry[block.widget].icon;
 
         const children = [];
@@ -155,16 +173,25 @@ export const OutlineMenu = observer((): JSX.Element => {
                         </StyledSearchedLabel>
                     </StyledTreeItemLabel>
                 }
-                onClick={(e: React.SyntheticEvent) => {
+                onClick={(e) => {
+                    // stop the propogation
                     e.stopPropagation();
+
+                    // select it
                     designer.setSelected(block.id);
                 }}
-                onMouseOver={(e: React.SyntheticEvent) => {
+                onMouseOver={(e) => {
+                    // stop the propogation
                     e.stopPropagation();
+
+                    // set as hovered
                     designer.setHovered(block.id);
                 }}
-                onMouseLeave={(e: React.SyntheticEvent) => {
+                onMouseLeave={(e) => {
+                    // stop the propogation
                     e.stopPropagation();
+
+                    // clear the hovered state
                     designer.setHovered('');
                 }}
             >
@@ -175,63 +202,84 @@ export const OutlineMenu = observer((): JSX.Element => {
         );
     };
 
-    /**
-     * @returns List of pages
-     * TO-DO: Go from active page from wherever we decide to hold this in state
-     */
-    const pages = useMemo(() => {
-        const blocks = Object.entries(state.blocks);
-        // Filters out pages that are not children of a page
-        return blocks.filter((v) => v[1].widget === 'page' && !v[1].parent);
-    }, [designer.rendered]);
+    // get the pages as an array
+    const pages = computed(() => {
+        const pages: { route: string; name: string; id: string }[] = [];
+        for (const b in state.blocks) {
+            const block = state.blocks[b];
 
-    /**
-     * @returns Children of the Active Page
-     * TO-DO: Go off of Active_Page in depenedency array
-     */
-    const pageBlocks = useMemo(() => {
-        const renderedPage = state.blocks[designer.rendered];
-        const children = [];
-        if (renderedPage) {
-            for (const s in renderedPage.slots) {
-                children.push(...renderedPage.slots[s].children);
+            // check if it is a page widget
+            if (block.widget === 'page') {
+                // store the pages
+                pages.push({
+                    id: block.id,
+                    name: (block.data?.name as string) || '',
+                    route: (block.data?.route as string) || '',
+                });
             }
         }
 
-        return children;
-    }, [designer.rendered, search]);
+        // sort by the path
+        return pages.sort((a, b) => {
+            const aRoute = a.route.toLowerCase(),
+                bRoute = b.route.toLowerCase();
 
-    console.log('blocks', state.blocks);
-    console.log('queries', state.queries);
+            if (aRoute < bRoute) {
+                return -1;
+            }
+            if (aRoute > bRoute) {
+                return 1;
+            }
+            return 0;
+        });
+    }).get();
+
+    // get the active page
+    const activePage = useMemo(() => {
+        // find the active page
+        for (const p of pages) {
+            if (isActive(p.route)) {
+                return p.id;
+            }
+        }
+
+        return '';
+    }, [pages, resolvedPath.pathname, location.pathname]);
 
     return (
         <StyledMenu>
             <StyledMenuHeader>
                 <Typography variant="body1">Pages</Typography>
             </StyledMenuHeader>
-            <div>
-                {pages.length && (
-                    <List>
-                        {pages.map((p: [string, Block]) => {
-                            return (
-                                <StyledListItemButton
-                                    key={p[0]}
-                                    dense={true}
-                                    selected={false}
-                                    hovered={true}
-                                >
-                                    {/* TO-DO: Display link of active page */}
-                                    {/* p[1].id */}
-                                    <List.ItemText primary={'/'} />
-                                    <StyledIcon>
-                                        <Home />
-                                    </StyledIcon>
-                                </StyledListItemButton>
-                            );
-                        })}
-                    </List>
-                )}
-            </div>
+            {pages.length ? (
+                <List>
+                    {pages.map((p) => {
+                        return (
+                            <StyledListItemButton
+                                key={p.id}
+                                dense={true}
+                                selected={isActive(p.route)}
+                                hovered={true}
+                                onClick={() => {
+                                    // navigate to the page
+                                    navigate(p.route);
+
+                                    // select it
+                                    designer.setSelected(p.id);
+                                }}
+                            >
+                                <List.ItemText
+                                    primary={p.name}
+                                    secondary={p.route}
+                                />
+                                <StyledIcon>
+                                    <Home />
+                                </StyledIcon>
+                            </StyledListItemButton>
+                        );
+                    })}
+                </List>
+            ) : null}
 
             <StyledMenuHeader>
                 <Typography variant="body1">Layers</Typography>
@@ -271,21 +319,16 @@ export const OutlineMenu = observer((): JSX.Element => {
                 </Stack>
             </StyledMenuHeader>
             <Divider />
+
             <StyledMenuScroll>
                 <TreeView
                     multiSelect
                     expanded={expanded}
                     selected={selected}
-                    onNodeToggle={(
-                        e: React.SyntheticEvent,
-                        nodeIds: string[],
-                    ) => {
+                    onNodeToggle={(e, nodeIds: string[]) => {
                         setExpanded(nodeIds);
                     }}
-                    onNodeSelect={(
-                        e: React.SyntheticEvent,
-                        nodeIds: string[],
-                    ) => {
+                    onNodeSelect={(e, nodeIds: string[]) => {
                         setSelected(nodeIds);
                     }}
                     defaultCollapseIcon={
@@ -299,13 +342,11 @@ export const OutlineMenu = observer((): JSX.Element => {
                         </StyledIcon>
                     }
                 >
-                    {pageBlocks.length ? (
-                        pageBlocks.map((b: string) => {
-                            return renderBlock(b);
-                        })
+                    {activePage ? (
+                        renderBlock(activePage)
                     ) : (
                         <StyledNoLayersContainer>
-                            No layers to display...
+                            No layers
                         </StyledNoLayersContainer>
                     )}
                 </TreeView>

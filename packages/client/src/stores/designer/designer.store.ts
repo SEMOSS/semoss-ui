@@ -5,8 +5,6 @@ import { StateStore } from '../state';
 export interface DesignerStoreInterface {
     /** Blocks state information */
     state: StateStore;
-    /** Current rendered block */
-    rendered: string;
     /** Current selected block */
     selected: string;
     /** Current hovered block */
@@ -52,7 +50,6 @@ export interface DesignerStoreInterface {
 export class DesignerStore {
     private _store: DesignerStoreInterface = {
         state: undefined,
-        rendered: '',
         selected: '',
         hovered: '',
         drag: {
@@ -93,14 +90,6 @@ export class DesignerStore {
     }
 
     /**
-     * Get the rendered block
-     * @returns the rendered block
-     */
-    get rendered() {
-        return this._store.rendered;
-    }
-
-    /**
      * Get the hovered block
      * @returns the hovered block
      */
@@ -130,15 +119,6 @@ export class DesignerStore {
         }
 
         this._store.selected = id;
-    }
-
-    /**
-     * Set the rendered block
-     * @param id - id of the block that is rendered
-     */
-    setRendered(id: string) {
-        // set the rendered block
-        this._store.rendered = id;
     }
 
     /**

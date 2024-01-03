@@ -6,14 +6,13 @@ import { runPixel } from '@/api';
 import { SerializedState, StateStore, WorkspaceStore } from '@/stores';
 import { DefaultCells } from '@/components/cell-defaults';
 import { DefaultBlocks } from '@/components/block-defaults';
-import { Blocks, Renderer } from '@/components/blocks';
+import { Blocks, Router } from '@/components/blocks';
 import { Notebook } from '@/components/notebook';
+import { Designer } from '@/components/designer';
 import { Workspace, SettingsView } from '@/components/workspace';
 import { LoadingScreen } from '@/components/ui';
-import { BlocksView } from './BlocksView';
-import { BlocksWorkspaceActions } from './BlocksWorkspaceActions';
 
-const ACTIVE = 'page-1';
+import { BlocksWorkspaceActions } from './BlocksWorkspaceActions';
 
 interface BlocksWorkspaceProps {
     /** Workspace to render */
@@ -84,10 +83,10 @@ export const BlocksWorkspace = observer((props: BlocksWorkspaceProps) => {
                 actions={<BlocksWorkspaceActions />}
             >
                 {!workspace.isEditMode ? (
-                    <Renderer id={ACTIVE} />
+                    <Router />
                 ) : (
                     <>
-                        {workspace.view === 'design' ? <BlocksView /> : null}
+                        {workspace.view === 'design' ? <Designer /> : null}
                         {workspace.view === 'data' ? <Notebook /> : null}
                         {workspace.view === 'settings' ? (
                             <SettingsView />

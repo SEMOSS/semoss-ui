@@ -135,23 +135,6 @@ export const DeleteDuplicateMask = observer(() => {
         return { top, left };
     };
 
-    const onClear = () => {
-        designer.setSelected('');
-        clearBlock();
-    };
-
-    const onDelete = () => {
-        designer.setSelected('');
-        deleteBlock();
-    };
-
-    const onDuplicate = () => {
-        designer.setSelected('');
-        duplicateBlock();
-    };
-
-    // TODO: revisit these actions for the base page once multiple pages/routing is enabled
-
     return (
         <StyledContainer id="delete-duplicate-mask" style={getStyle()}>
             <StyledButtonGroup>
@@ -160,7 +143,13 @@ export const DeleteDuplicateMask = observer(() => {
                     size="small"
                     startIcon={<ContentCopy />}
                     variant="contained"
-                    onClick={onDuplicate}
+                    onClick={() => {
+                        // clear the selected
+                        designer.setSelected('');
+
+                        // duplicate it
+                        duplicateBlock();
+                    }}
                 >
                     Duplicate
                 </StyledButtonGroupButton>
@@ -169,11 +158,13 @@ export const DeleteDuplicateMask = observer(() => {
                     size="small"
                     startIcon={<Delete />}
                     variant="contained"
-                    onClick={
-                        designer.rendered === designer.selected
-                            ? onClear
-                            : onDelete
-                    }
+                    onClick={() => {
+                        // clear the selected
+                        designer.setSelected('');
+
+                        // delete it
+                        deleteBlock();
+                    }}
                 >
                     Delete
                 </StyledButtonGroupButton>

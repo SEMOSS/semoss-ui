@@ -1,10 +1,12 @@
+import { useMemo, useState } from 'react';
 import { observer } from 'mobx-react-lite';
 import { styled, Stack, Icon, Divider, Paper } from '@semoss/ui';
 import { DataObject, Layers, Widgets } from '@mui/icons-material';
-import { useState } from 'react';
 
 import { DesignerContext } from '@/contexts';
 import { DesignerStore } from '@/stores';
+import { useBlocks } from '@/hooks';
+import { Router } from '@/components/blocks';
 
 import { BlocksMenu } from './BlocksMenu';
 import { SelectedMenu } from './SelectedMenu';
@@ -82,7 +84,7 @@ const StyledSidebarContent = styled(Paper)(({ theme }) => ({
     borderRadius: '0',
 }));
 
-const StyledSidebarContentInner = styled('div')(({ theme }) => ({
+const StyledSidebarContentInner = styled('div')(() => ({
     flex: '1',
     height: '100%',
     width: '100%',
@@ -106,16 +108,17 @@ const StyledRightMenu = styled(Paper)(({ theme }) => ({
     borderRadius: '0',
 }));
 
-interface DesignerProps {
-    /** Content to render in the designer */
-    children: React.ReactNode;
+export const Designer = observer((): JSX.Element => {
+    // get the block state
+    const { state } = useBlocks();
 
-    /** Connect the designer to a store */
-    designer: DesignerStore;
-}
-
-export const Designer = observer((props: DesignerProps): JSX.Element => {
-    const { children, designer } = props;
+    /**
+     * Have the designer control the blocks
+     */
+    const designer = useMemo(() => {
+        // create a new store
+        return new DesignerStore(state);
+    }, [state]);
 
     // view
     const [view, setView] = useState<'outline' | 'query' | 'add' | ''>('');
@@ -135,13 +138,6 @@ export const Designer = observer((props: DesignerProps): JSX.Element => {
         setView(v);
     };
 
-    /**
-     * Clear any selections when interacting with the left menu
-     */
-    const handleMouseDown = () => {
-        designer.setSelected('');
-    };
-
     return (
         <DesignerContext.Provider
             value={{
@@ -152,7 +148,7 @@ export const Designer = observer((props: DesignerProps): JSX.Element => {
                 direction="row"
                 isDragging={!!designer.drag.ghostWidget}
             >
-                <StyledLeftMenu onMouseDown={handleMouseDown}>
+                <StyledLeftMenu>
                     <StyledSidebar>
                         <StyledSidebarItem
                             disabled={false}
@@ -193,7 +189,9 @@ export const Designer = observer((props: DesignerProps): JSX.Element => {
                         </StyledSidebarContent>
                     ) : null}
                 </StyledLeftMenu>
-                <Screen>{children}</Screen>
+                <Screen>
+                    <Router />
+                </Screen>
                 <StyledRightMenu elevation={7}>
                     <SelectedMenu />
                 </StyledRightMenu>

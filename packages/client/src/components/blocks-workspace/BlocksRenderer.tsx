@@ -6,7 +6,7 @@ import { runPixel } from '@/api';
 import { SerializedState, StateStore } from '@/stores';
 import { DefaultCells } from '@/components/cell-defaults';
 import { DefaultBlocks } from '@/components/block-defaults';
-import { Blocks, Renderer } from '@/components/blocks';
+import { Blocks, Renderer, Router } from '@/components/blocks';
 import { LoadingScreen } from '@/components/ui';
 
 const ACTIVE = 'page-1';
@@ -71,7 +71,7 @@ export const BlocksRenderer = observer((props: BlocksRendererProps) => {
 
     return (
         <Blocks state={state} registry={DefaultBlocks}>
-            <Renderer id={ACTIVE} />
+            <Router />
         </Blocks>
     );
 });
