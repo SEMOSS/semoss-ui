@@ -10,23 +10,28 @@ import {
     Typography,
     Stack,
 } from '@semoss/ui';
+import { resolvePath } from 'react-router-dom';
 import { ContentCopyOutlined } from '@mui/icons-material';
 
 interface ShareOverlayProps {
-    /** url to load */
-    url: string;
+    /** Id of the app to share */
+    appId: string;
 
     /** Method called to close overlay  */
     onClose: () => void;
 }
 
 export const ShareOverlay = observer((props: ShareOverlayProps) => {
-    const { url = '', onClose = () => null } = props;
+    const { appId, onClose = () => null } = props;
 
     const notification = useNotification();
 
     const [shareModalTab, setShareModalTab] = useState(0);
 
+    // create the url + iframe
+    const base = window.location.href.replace(window.location.hash, '#');
+    const path = resolvePath(`./s/${appId}`, base);
+    const url = path.pathname;
     const iframe = `<iframe frameborder="0" width="1000" height="600" style="border: 1px solid #ccc;" src="${url}"></iframe>`;
 
     /**
