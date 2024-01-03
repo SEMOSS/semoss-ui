@@ -5,7 +5,7 @@ export const BLOCK_TYPE_DATA = 'data';
 export const BLOCK_TYPE_INPUT = 'input';
 export const BLOCK_TYPE_ACTION = 'action';
 export const BLOCK_TYPE_CHART = 'chart';
-export const BLOCK_TYPE_CUSTOM = 'custom';
+// export const BLOCK_TYPE_CUSTOM = 'custom';
 
 export const BLOCK_TYPES = [
     BLOCK_TYPE_LAYOUT,
@@ -14,5 +14,5 @@ export const BLOCK_TYPES = [
     BLOCK_TYPE_DATA,
     BLOCK_TYPE_INPUT,
     BLOCK_TYPE_ACTION,
-    BLOCK_TYPE_CUSTOM,
+    // BLOCK_TYPE_CUSTOM,
 ];
