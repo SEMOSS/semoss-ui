@@ -43,48 +43,27 @@ export interface ButtonBlockDef extends BlockDef<'button'> {
     };
 }
 
-export const ButtonBlock: BlockComponent = observer(
-    ({ id, selectedId, isEditMode }) => {
-        const { attrs, data, listeners } = useBlock<ButtonBlockDef>(id);
+export const ButtonBlock: BlockComponent = observer(({ id }) => {
+    const { attrs, data, listeners } = useBlock<ButtonBlockDef>(id);
 
-        // designer block selection changes on mouseUp
-        // force click event on button to happen at mouseDown so the click event isn't trigged upon selection after mouseUp
-        const mouseDown = useMemo(() => {
-            // disable if in edit mode and not selected
-            if (isEditMode && selectedId !== id) {
-                return () => {};
-            }
-            return () => {
-                listeners.onClick();
-            };
-        }, [isEditMode, selectedId]);
-
-        // pointer cursor means query will actually be triggered
-        // default cursor indicates that you're selecting the block
-        const cursor = useMemo(() => {
-            return isEditMode && selectedId !== id ? 'default' : 'pointer';
-        }, [isEditMode, selectedId]);
-
-        return (
-            <StyledButton
-                size="large"
-                variant="contained" // todo make this configurable
-                loading={data?.loading}
-                disabled={data?.disabled || data?.loading}
-                sx={{
-                    cursor: cursor,
-                    ...data.style,
-                }}
-                onMouseDown={mouseDown}
-                {...attrs}
-            >
-                <StyledLabel loading={data?.loading}>{data.label}</StyledLabel>
-                {data.loading ? (
-                    <StyledCircularProgress color="inherit" size="2em" />
-                ) : (
-                    <></>
-                )}
-            </StyledButton>
-        );
-    },
-);
+    return (
+        <StyledButton
+            size="large"
+            variant="contained" // todo make this configurable
+            loading={data?.loading}
+            disabled={data?.disabled || data?.loading}
+            sx={{
+                ...data.style,
+            }}
+            onMouseUp={() => listeners.onClick()}
+            {...attrs}
+        >
+            <StyledLabel loading={data?.loading}>{data.label}</StyledLabel>
+            {data.loading ? (
+                <StyledCircularProgress color="inherit" size="2em" />
+            ) : (
+                <></>
+            )}
+        </StyledButton>
+    );
+});

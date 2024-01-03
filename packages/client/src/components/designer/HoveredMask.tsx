@@ -12,11 +12,12 @@ const StyledContainer = styled('div')(({ theme }) => ({
     bottom: '0',
     left: '0',
     zIndex: '20',
+    backgroundColor: theme.palette.primary.main,
+    opacity: 0.4,
     pointerEvents: 'none',
-    userSelect: 'none',
     outlineWidth: '1px',
     outlineStyle: 'solid',
-    outlineColor: theme.palette.secondary.main,
+    outlineColor: theme.palette.primary.main,
 }));
 
 const StyledTitle = styled('div')(({ theme }) => ({
@@ -29,7 +30,7 @@ const StyledTitle = styled('div')(({ theme }) => ({
     paddingLeft: theme.spacing(1),
     paddingRight: theme.spacing(1),
     pointerEvents: 'auto',
-    backgroundColor: theme.palette.secondary.main,
+    backgroundColor: theme.palette.primary.main,
     color: theme.palette.common.white,
     whiteSpace: 'nowrap',
 }));
@@ -56,7 +57,7 @@ export const HoveredMask = observer(() => {
 
         // reposition the mask
         const repositionMask = () => {
-            // get the block elemenent
+            // get the block element
             const blockEle = getBlockElement(designer.hovered);
 
             if (!blockEle) {
@@ -94,7 +95,12 @@ export const HoveredMask = observer(() => {
                 left: `${size.left}px`,
                 height: `${size.height}px`,
                 width: `${size.width}px`,
-                opacity: designer.drag.active ? 0 : 1,
+                opacity:
+                    !designer.hovered ||
+                    designer.hovered === designer.selected ||
+                    designer.drag.active
+                        ? 0
+                        : 0.4,
             }}
         >
             <StyledTitle>

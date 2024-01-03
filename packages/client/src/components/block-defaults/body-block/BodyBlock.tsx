@@ -13,24 +13,18 @@ export interface BodyBlockDef extends BlockDef<'body'> {
     slots: 'content';
 }
 
-export const BodyBlock: BlockComponent = observer(
-    ({ id, selectedId, isEditMode }) => {
-        const { attrs, data, slots } = useBlock<BodyBlockDef>(id);
+export const BodyBlock: BlockComponent = observer(({ id }) => {
+    const { attrs, data, slots } = useBlock<BodyBlockDef>(id);
 
-        return (
-            <body
-                style={{
-                    background: '#FFFFFF',
-                    ...data.style,
-                }}
-                {...attrs}
-            >
-                <Slot
-                    slot={slots.content}
-                    selectedId={selectedId}
-                    isEditMode={isEditMode}
-                ></Slot>
-            </body>
-        );
-    },
-);
+    return (
+        <body
+            style={{
+                background: '#FFFFFF',
+                ...data.style,
+            }}
+            {...attrs}
+        >
+            <Slot slot={slots.content}></Slot>
+        </body>
+    );
+});

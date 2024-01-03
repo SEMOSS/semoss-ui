@@ -40,6 +40,7 @@ const StyledTitle = styled('div')(({ theme }) => ({
     paddingLeft: theme.spacing(1),
     paddingRight: theme.spacing(1),
     pointerEvents: 'auto',
+    cursor: 'grab',
     backgroundColor: theme.palette.primary.main,
     color: theme.palette.common.white,
     whiteSpace: 'nowrap',

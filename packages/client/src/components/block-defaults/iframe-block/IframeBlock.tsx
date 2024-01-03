@@ -15,43 +15,28 @@ export interface IframeBlockDef extends BlockDef<'iframe'> {
     slots: never;
 }
 
-export const IframeBlock: BlockComponent = observer(
-    ({ id, selectedId, isEditMode }) => {
-        const { attrs, data } = useBlock<IframeBlockDef>(id);
+export const IframeBlock: BlockComponent = observer(({ id }) => {
+    const { attrs, data } = useBlock<IframeBlockDef>(id);
 
-        const pointerEvents = useMemo(() => {
-            // if disabled, always none
-            if (data.disabled) {
-                return 'none';
-            }
-            // otherwise disable if not selected in edit mode
-            if (isEditMode) {
-                return selectedId === id ? 'auto' : 'none';
-            }
-            // not in edit mode, always enable pointer events
-            return 'auto';
-        }, [selectedId, isEditMode]);
-
-        return (
-            <span
+    return (
+        <span
+            style={{
+                width: '100%',
+                height: '400px',
+                display: 'block',
+                ...data.style,
+            }}
+            {...attrs}
+        >
+            <iframe
                 style={{
                     width: '100%',
-                    height: '400px',
-                    display: 'block',
-                    ...data.style,
+                    height: '100%',
+                    pointerEvents: data.disabled ? 'none' : undefined,
                 }}
-                {...attrs}
-            >
-                <iframe
-                    style={{
-                        width: '100%',
-                        height: '100%',
-                        pointerEvents: pointerEvents,
-                    }}
-                    src={data.src}
-                    title={data.title}
-                />
-            </span>
-        );
-    },
-);
+                src={data.src}
+                title={data.title}
+            />
+        </span>
+    );
+});

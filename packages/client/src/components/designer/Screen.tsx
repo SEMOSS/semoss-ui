@@ -1,4 +1,4 @@
-import { useEffect, useRef, useCallback } from 'react';
+import { useEffect, useState, useRef, useCallback } from 'react';
 import { observer } from 'mobx-react-lite';
 import { styled } from '@semoss/ui';
 import { useDesigner } from '@/hooks';
@@ -50,12 +50,29 @@ const StyledContentOuter = styled('div')(({ theme }) => ({
     height: '100%',
 }));
 
-const StyledContentInner = styled('div')(() => ({
-    flex: 1,
-    position: 'relative',
-    width: '100%',
-    height: '100%',
-}));
+const StyledContentInner = styled('div', {
+    shouldForwardProp: (prop) =>
+        prop !== 'isHoveredOverSelectedBlock' &&
+        prop !== 'blockSelectionInProgress',
+})<{ isHoveredOverSelectedBlock: boolean; blockSelectionInProgress: boolean }>(
+    ({ isHoveredOverSelectedBlock, blockSelectionInProgress }) => {
+        return {
+            flex: 1,
+            position: 'relative',
+            width: '100%',
+            height: '100%',
+            cursor: !isHoveredOverSelectedBlock ? 'default' : 'auto',
+            '[data-block]': {
+                pointerEvents: !blockSelectionInProgress ? 'auto' : 'none',
+            },
+            '.MuiInputBase-input, .MuiButtonBase-root': {
+                cursor: !isHoveredOverSelectedBlock
+                    ? 'default!important'
+                    : 'inherit!imporant',
+            },
+        };
+    },
+);
 
 interface ScreenProps {
     /** Children to render */
@@ -71,20 +88,23 @@ export const Screen = observer((props: ScreenProps) => {
     // get the designer
     const { designer } = useDesigner();
 
+    const [blockSelectionInProgress, setBlockSelectionInProgress] =
+        useState(false);
+
     /**
-     * Handle the mousedown on the page. This will select the nearest block.
+     * Handle the mousedown on the page. This will select the hovered block.
      *
      *  @param event - mouse event
      */
-    const handleMouseUp = (event: React.MouseEvent) => {
-        const id = getNearestBlock(event.target as Element);
-
-        // if there is no id ignore it
-        if (!id) {
+    const handleMouseDown = (event: React.MouseEvent) => {
+        if (!designer.hovered || designer.hovered === designer.selected) {
             return;
         }
 
-        designer.setSelected(id);
+        // prevent click events for elements once selected
+        setBlockSelectionInProgress(true);
+
+        designer.setSelected(designer.hovered);
     };
 
     /**
@@ -96,7 +116,7 @@ export const Screen = observer((props: ScreenProps) => {
         const id = getNearestBlock(event.target as Element);
 
         // if there is no id ignore it
-        if (!id) {
+        if (!id || id == designer.hovered) {
             return;
         }
 
@@ -251,8 +271,13 @@ export const Screen = observer((props: ScreenProps) => {
             <StyledContent off={designer.drag.active ? true : false}>
                 <StyledContentOuter onMouseLeave={handleMouseLeave}>
                     <StyledContentInner
-                        onMouseUp={handleMouseUp} // use mouse up so that new block is not selected until click event over
+                        onMouseDown={handleMouseDown} // will execute before block onMouseUp events
                         onMouseOver={handleMouseOver}
+                        isHoveredOverSelectedBlock={
+                            designer.hovered === designer.selected
+                        }
+                        blockSelectionInProgress={blockSelectionInProgress}
+                        onClick={() => setBlockSelectionInProgress(false)} // will execute after block onMouseUp events
                     >
                         {children}
                     </StyledContentInner>

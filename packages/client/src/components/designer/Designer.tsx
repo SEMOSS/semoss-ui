@@ -192,13 +192,7 @@ export const Designer = observer((props: DesignerProps): JSX.Element => {
                     ) : null}
                 </StyledLeftMenu>
                 <Screen>
-                    <Renderer
-                        id={designer.rendered}
-                        selectedId={
-                            designer ? designer?.selected ?? null : null
-                        }
-                        isEditMode={true}
-                    />
+                    <Renderer id={designer.rendered} />
                 </Screen>
                 <StyledRightMenu elevation={7}>
                     <SelectedMenu />

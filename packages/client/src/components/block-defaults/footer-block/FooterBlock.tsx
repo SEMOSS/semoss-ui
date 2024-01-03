@@ -13,24 +13,18 @@ export interface FooterBlockDef extends BlockDef<'footer'> {
     slots: 'content';
 }
 
-export const FooterBlock: BlockComponent = observer(
-    ({ id, selectedId, isEditMode }) => {
-        const { attrs, data, slots } = useBlock<FooterBlockDef>(id);
+export const FooterBlock: BlockComponent = observer(({ id }) => {
+    const { attrs, data, slots } = useBlock<FooterBlockDef>(id);
 
-        return (
-            <footer
-                style={{
-                    background: '#FFFFFF',
-                    ...data.style,
-                }}
-                {...attrs}
-            >
-                <Slot
-                    slot={slots.content}
-                    selectedId={selectedId}
-                    isEditMode={isEditMode}
-                ></Slot>
-            </footer>
-        );
-    },
-);
+    return (
+        <footer
+            style={{
+                background: '#FFFFFF',
+                ...data.style,
+            }}
+            {...attrs}
+        >
+            <Slot slot={slots.content}></Slot>
+        </footer>
+    );
+});

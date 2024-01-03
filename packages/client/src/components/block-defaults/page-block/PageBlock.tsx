@@ -13,27 +13,21 @@ export interface PageBlockDef extends BlockDef<'page'> {
     slots: 'content';
 }
 
-export const PageBlock: BlockComponent = observer(
-    ({ id, selectedId, isEditMode }) => {
-        const { attrs, data, slots } = useBlock<PageBlockDef>(id);
+export const PageBlock: BlockComponent = observer(({ id }) => {
+    const { attrs, data, slots } = useBlock<PageBlockDef>(id);
 
-        return (
-            <div
-                style={{
-                    width: '100%',
-                    minHeight: '100%',
-                    background: '#FFFFFF',
-                    overflow: 'scroll',
-                    ...data.style,
-                }}
-                {...attrs}
-            >
-                <Slot
-                    slot={slots.content}
-                    selectedId={selectedId}
-                    isEditMode={isEditMode}
-                ></Slot>
-            </div>
-        );
-    },
-);
+    return (
+        <div
+            style={{
+                width: '100%',
+                minHeight: '100%',
+                background: '#FFFFFF',
+                overflow: 'scroll',
+                ...data.style,
+            }}
+            {...attrs}
+        >
+            <Slot slot={slots.content}></Slot>
+        </div>
+    );
+});
