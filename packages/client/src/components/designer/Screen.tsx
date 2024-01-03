@@ -55,23 +55,32 @@ const StyledContentInner = styled('div', {
         prop !== 'isHoveredOverSelectedBlock' &&
         prop !== 'blockSelectionInProgress',
 })<{ isHoveredOverSelectedBlock: boolean; blockSelectionInProgress: boolean }>(
-    ({ isHoveredOverSelectedBlock, blockSelectionInProgress }) => {
-        return {
-            flex: 1,
-            position: 'relative',
-            width: '100%',
-            height: '100%',
-            cursor: !isHoveredOverSelectedBlock ? 'default' : 'auto',
-            '[data-block]': {
-                pointerEvents: !blockSelectionInProgress ? 'auto' : 'none',
-            },
-            '.MuiInputBase-input, .MuiButtonBase-root': {
-                cursor: !isHoveredOverSelectedBlock
-                    ? 'default!important'
-                    : 'inherit!imporant',
-            },
-        };
-    },
+    ({ isHoveredOverSelectedBlock, blockSelectionInProgress }) => ({
+        flex: 1,
+        position: 'relative',
+        width: '100%',
+        height: '100%',
+        cursor: !isHoveredOverSelectedBlock ? 'pointer' : 'auto',
+        // prevent initial mouse event when selecting a block
+        // blocks should favor onMouseUp instead of onClick where applicable
+        '[data-block]': {
+            pointerEvents: !blockSelectionInProgress ? 'auto' : 'none',
+        },
+        // MUI input-level cursor overrides
+        '.MuiInputBase-input, .MuiButtonBase-root': {
+            cursor: !isHoveredOverSelectedBlock
+                ? 'pointer!important'
+                : 'inherit!imporant',
+        },
+        // block iframes should not get pointer events unless selected and we are trying to interact with it
+        'span[data-block] iframe': {
+            pointerEvents: !isHoveredOverSelectedBlock ? 'none' : 'auto',
+        },
+        // page scrolling is handled in the designer in design mode
+        '[root-page]': {
+            height: 'unset!important',
+        },
+    }),
 );
 
 interface ScreenProps {

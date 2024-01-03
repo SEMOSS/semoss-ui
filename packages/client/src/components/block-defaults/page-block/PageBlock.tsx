@@ -20,12 +20,13 @@ export const PageBlock: BlockComponent = observer(({ id }) => {
         <div
             style={{
                 width: '100%',
-                minHeight: '100%',
+                height: '100%',
                 background: '#FFFFFF',
                 overflow: 'scroll',
                 ...data.style,
             }}
             {...attrs}
+            root-page="true" // use to manage different scroll behaviors on designer vs preview
         >
             <Slot slot={slots.content}></Slot>
         </div>
