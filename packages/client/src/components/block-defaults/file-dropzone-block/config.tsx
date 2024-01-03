@@ -2,9 +2,7 @@ import { BlockConfig } from '@/stores';
 import { BLOCK_TYPE_UPLOAD } from '../block-defaults.constants';
 import { FileDropZoneBlockDef, FileDropZoneBlock } from './FileDropZoneBlock';
 import { InputSettings } from '@/components/block-settings';
-import { Checkbox } from '@semoss/ui';
 import {
-    buildLayoutSection,
     buildBorderSection,
     buildSpacingSection,
     buildDimensionsSection,
@@ -21,10 +19,10 @@ export const config: BlockConfig<FileDropZoneBlockDef> = {
         name: 'New File Upload',
         value: [],
         type: 'Accepeted File Types',
-        extensions: ['.csv', '.doc', '.pdf', '.txt', '.xlsx', '.zip'],
+        extensions: ['All', 'csv', 'doc', 'pdf', 'txt', 'xlsx', 'ZIP'],
         onChange: (files: File[]) => ({ files }),
         size: 0,
-        sizeLimit: '30 MB',
+        sizeLimit: '30',
         multiple: true,
         valid: true,
     },
@@ -39,7 +37,7 @@ export const config: BlockConfig<FileDropZoneBlockDef> = {
             name: 'General',
             children: [
                 {
-                    description: 'The Name of the Uploaded File',
+                    description: 'Input block setting for the name of the file',
                     render: ({ id }) => (
                         <InputSettings id={id} label="Name" path="name" />
                     ),
@@ -55,31 +53,10 @@ export const config: BlockConfig<FileDropZoneBlockDef> = {
                         <InputSettings id={id} label="Size" path="sizeLimit" />
                     ),
                 },
-                {
-                    description: 'Accepted Uploaded File Types',
-                    render: ({ id }) => (
-                        <>
-                            {config.data.extensions.map((type) => (
-                                <Checkbox
-                                    key={type}
-                                    id={id}
-                                    label={type}
-                                    value={type}
-                                    onChange={() => {
-                                        null;
-                                    }}
-                                    path="extensions"
-                                    multiple={true}
-                                />
-                            ))}
-                        </>
-                    ),
-                },
             ],
         },
     ],
     styleMenu: [
-        buildLayoutSection(),
         buildBorderSection(),
         buildDimensionsSection(),
         buildSpacingSection(),

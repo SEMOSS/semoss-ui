@@ -26,7 +26,7 @@ export const FileDropZoneBlock: BlockComponent = observer(({ id }) => {
     const { attrs, data, setData } = hooks.useBlock<FileDropZoneBlockDef>(id);
 
     const [files, setFiles] = useState<File[]>({ ...data.value });
-    console.log('Files: ', files);
+    console.log('Uploaded Files Array: ', files);
 
     useEffect(() => {
         setData('value', files);

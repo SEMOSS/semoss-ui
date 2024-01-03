@@ -42,6 +42,7 @@ const StyledDropzone = styled("div", {
     borderRadius: "0.25rem",
     width: "100%",
     height: "100%",
+    margin: "auto",
     padding: "16px 8px",
     borderColor: disabled
         ? "#D9D9D9"
@@ -49,8 +50,8 @@ const StyledDropzone = styled("div", {
         ? "#40A0FF"
         : !valid
         ? "#F84C34"
-        : "#000",
-    backgroudnColor: disabled ? "#F8F8F8" : "",
+        : "#2D73F0",
+    backgroundColor: disabled ? "#F8F8F8" : "#F5F9FF",
     color: disabled ? "#BDBDBD" : dragging ? "#40A0FF" : "BDBDBD",
     cursor: disabled || dragging ? "default" : "",
 }));
@@ -63,7 +64,11 @@ const StyledContentContainer = styled("div")({
 });
 
 const StyledDropzoneDescription = styled("div")({
+    color: "#2D73F0",
+    fontFamily: "Helvetica, Arial, sans-serif",
     fontSize: "12px",
+    fontWeight: 700,
+    borderRadius: "8px",
     marginTop: "8px",
     marginBottom: "16px 8px",
 });
