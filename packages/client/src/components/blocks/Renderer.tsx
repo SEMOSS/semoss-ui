@@ -15,7 +15,6 @@ export const Renderer = observer(({ id }: RendererProps): JSX.Element => {
     // get the store and mode
     const { state, registry } = useBlocks();
 
-    debugger;
     // get the block
     const block = state.getBlock(id);
 

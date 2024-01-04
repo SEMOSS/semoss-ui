@@ -33,6 +33,8 @@ import {
     SearchOff,
 } from '@mui/icons-material/';
 
+import { DefaultBlocks } from '../block-defaults';
+
 const StyledMenu = styled('div')(({ theme }) => ({
     display: 'flex',
     flexDirection: 'column',
@@ -116,7 +118,6 @@ export const OutlineMenu = observer((): JSX.Element => {
     const { registry, state } = useBlocks();
     const { designer } = useDesigner();
 
-    const navigate = useNavigate();
     const location = useLocation();
     const resolvedPath = useResolvedPath('');
 
@@ -129,25 +130,18 @@ export const OutlineMenu = observer((): JSX.Element => {
     const [newPageRoute, setNewPageRoute] = useState<string>('');
 
     /**
-     * Adds Page in state store
+     * Adds Page to app
      */
     const addPageBlock = () => {
-        // construct page json with route and dispatch to store
-        const json: BlockJSON = {
-            widget: 'page',
-            data: {
-                route: newPageRoute,
-            },
-            slots: {
-                content: [],
-            },
-            listeners: {},
-        };
+        // construct page block with route
+        const pageBlock = DefaultBlocks['page'];
+        pageBlock.data['route'] = newPageRoute;
 
+        // dispatch to store
         designer.blocks.dispatch({
             message: ActionMessages.ADD_BLOCK,
             payload: {
-                json: json,
+                json: pageBlock,
             },
         });
 
@@ -314,7 +308,7 @@ export const OutlineMenu = observer((): JSX.Element => {
                                 >
                                     <List.ItemText
                                         primary={p.name}
-                                        secondary={p.route}
+                                        secondary={p.route ? p.route : ''}
                                     />
                                     {!p.route && (
                                         <StyledIcon>
