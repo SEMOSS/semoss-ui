@@ -10,7 +10,7 @@ export interface IframeBlockDef extends BlockDef<'iframe'> {
         style: CSSProperties;
         src: string;
         title: string;
-        disabled: boolean;
+        enableFrameInteractions: boolean;
     };
     slots: never;
 }
@@ -32,7 +32,9 @@ export const IframeBlock: BlockComponent = observer(({ id }) => {
                 style={{
                     width: '100%',
                     height: '100%',
-                    pointerEvents: data.disabled ? 'none' : undefined,
+                    pointerEvents: !data.enableFrameInteractions
+                        ? 'none'
+                        : 'auto',
                 }}
                 src={data.src}
                 title={data.title}

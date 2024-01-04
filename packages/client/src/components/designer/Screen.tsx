@@ -51,29 +51,17 @@ const StyledContentOuter = styled('div')(({ theme }) => ({
 }));
 
 const StyledContentInner = styled('div', {
-    shouldForwardProp: (prop) =>
-        prop !== 'isHoveredOverSelectedBlock' &&
-        prop !== 'blockSelectionInProgress',
-})<{ isHoveredOverSelectedBlock: boolean; blockSelectionInProgress: boolean }>(
-    ({ isHoveredOverSelectedBlock, blockSelectionInProgress }) => ({
+    shouldForwardProp: (prop) => prop !== 'isHoveredOverSelectedBlock',
+})<{ isHoveredOverSelectedBlock: boolean }>(
+    ({ isHoveredOverSelectedBlock }) => ({
         flex: 1,
         position: 'relative',
         width: '100%',
         height: '100%',
-        cursor: !isHoveredOverSelectedBlock ? 'pointer' : 'auto',
-        // prevent initial mouse event when selecting a block
-        '[data-block]': {
-            pointerEvents: !blockSelectionInProgress ? 'auto' : 'none',
-        },
-        // MUI input-level cursor overrides
-        '.MuiInputBase-input, .MuiButtonBase-root': {
-            cursor: !isHoveredOverSelectedBlock
-                ? 'pointer!important'
-                : 'inherit!imporant',
-        },
-        // block iframes should not get pointer events unless selected and we are trying to interact with it
-        'span[data-block] iframe': {
-            pointerEvents: !isHoveredOverSelectedBlock ? 'none' : 'auto',
+        cursor: !isHoveredOverSelectedBlock ? 'pointer!important' : 'inherit',
+        // iframes should not get pointer events in design mode
+        iframe: {
+            pointerEvents: 'none!important',
         },
         // page scrolling is handled in the designer in design mode
         '[root-page]': {
@@ -96,21 +84,19 @@ export const Screen = observer((props: ScreenProps) => {
     // get the designer
     const { designer } = useDesigner();
 
-    const [blockSelectionInProgress, setBlockSelectionInProgress] =
-        useState(false);
-
     /**
      * Handle the mousedown on the page. This will select the hovered block.
      *
      *  @param event - mouse event
      */
-    const handleMouseDown = (event: React.MouseEvent) => {
+    const handleClickCapture = (event: React.MouseEvent) => {
         if (!designer.hovered || designer.hovered === designer.selected) {
             return;
         }
 
         // prevent click events for elements once selected
-        setBlockSelectionInProgress(true);
+        event.stopPropagation();
+        event.preventDefault();
 
         designer.setSelected(designer.hovered);
     };
@@ -282,12 +268,9 @@ export const Screen = observer((props: ScreenProps) => {
             <StyledContent off={designer.drag.active ? true : false}>
                 <StyledContentOuter onMouseLeave={handleMouseLeave}>
                     <StyledContentInner
-                        onMouseDown={handleMouseDown}
-                        onMouseOut={() => setBlockSelectionInProgress(false)}
                         onMouseOver={handleMouseOver}
                         isHoveredOverSelectedBlock={isHoveredOverSelectedBlock}
-                        blockSelectionInProgress={blockSelectionInProgress}
-                        onClick={() => setBlockSelectionInProgress(false)}
+                        onClickCapture={handleClickCapture}
                     >
                         {children}
                     </StyledContentInner>

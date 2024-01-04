@@ -21,7 +21,7 @@ const StyledContainer = styled('div')(({ theme }) => ({
     zIndex: '20',
     pointerEvents: 'none',
     userSelect: 'none',
-    outlineWidth: '1px',
+    outlineWidth: '2px',
     outlineStyle: 'solid',
     outlineColor: theme.palette.primary.main,
 }));
