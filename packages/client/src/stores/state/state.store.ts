@@ -206,7 +206,6 @@ export class StateStore {
 
                 this.setState(blocks, queries);
             } else if (ActionMessages.ADD_BLOCK === action.message) {
-                debugger;
                 const { json, position } = action.payload;
 
                 this.addBlock(json, position);

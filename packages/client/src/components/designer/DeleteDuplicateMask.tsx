@@ -90,6 +90,7 @@ export const DeleteDuplicateMask = observer(() => {
         const rootElementSize = rootElement.getBoundingClientRect();
         // get position of selected block element
         const selectedElement = getBlockElement(designer.selected);
+        // debugger
         const selectedElementSize = selectedElement.getBoundingClientRect();
 
         // check for overflow

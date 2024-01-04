@@ -20,6 +20,7 @@ import {
     useLocation,
     matchPath,
     useResolvedPath,
+    Link,
 } from 'react-router-dom';
 import { ActionMessages, BlockConfig, BlockJSON } from '@/stores';
 import { useBlocks, useDesigner } from '@/hooks';
@@ -64,6 +65,10 @@ const StyledMenuScroll = styled('div')(({ theme }) => ({
     paddingBottom: theme.spacing(1),
     overflowX: 'hidden',
     overflowY: 'auto',
+}));
+
+const StyledLink = styled(Link)(({ theme }) => ({
+    textDecoration: 'none',
 }));
 
 const StyledSearchedLabel = styled('span', {
@@ -136,7 +141,6 @@ export const OutlineMenu = observer((): JSX.Element => {
             slots: {
                 content: [],
             },
-            // slots: {},
             listeners: {},
         };
 
@@ -302,29 +306,23 @@ export const OutlineMenu = observer((): JSX.Element => {
                 <List>
                     {pages.map((p) => {
                         return (
-                            <StyledListItemButton
-                                key={p.id}
-                                dense={true}
-                                selected={isActive(p.route)}
-                                hovered={true}
-                                onClick={() => {
-                                    // navigate to the page
-                                    navigate(p.route);
-
-                                    // select it
-                                    designer.setSelected(p.id);
-                                }}
-                            >
-                                <List.ItemText
-                                    primary={p.name}
-                                    secondary={p.route}
-                                />
-                                {!p.route && (
-                                    <StyledIcon>
-                                        <Home />
-                                    </StyledIcon>
-                                )}
-                            </StyledListItemButton>
+                            <StyledLink to={p.route} key={p.id}>
+                                <StyledListItemButton
+                                    dense={true}
+                                    selected={isActive(p.route)}
+                                    hovered={false}
+                                >
+                                    <List.ItemText
+                                        primary={p.name}
+                                        secondary={p.route}
+                                    />
+                                    {!p.route && (
+                                        <StyledIcon>
+                                            <Home />
+                                        </StyledIcon>
+                                    )}
+                                </StyledListItemButton>
+                            </StyledLink>
                         );
                     })}
                 </List>
