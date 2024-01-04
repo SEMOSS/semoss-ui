@@ -1,10 +1,4 @@
-import {
-    useCallback,
-    useEffect,
-    useLayoutEffect,
-    useMemo,
-    useState,
-} from 'react';
+import { useCallback, useEffect, useLayoutEffect, useState } from 'react';
 import { observer } from 'mobx-react-lite';
 import { Typography, styled } from '@semoss/ui';
 
@@ -15,6 +9,8 @@ import {
     getBlockElement,
 } from '@/stores';
 import { useDesigner } from '@/hooks';
+
+import DragIndicatorIcon from '@mui/icons-material/DragIndicator';
 
 const StyledContainer = styled('div')(({ theme }) => ({
     position: 'absolute',
@@ -38,7 +34,6 @@ const StyledTitle = styled('div')(({ theme }) => ({
     left: `-1px`,
     height: theme.spacing(3),
     paddingLeft: theme.spacing(1),
-    paddingRight: theme.spacing(1),
     pointerEvents: 'auto',
     cursor: 'grab',
     backgroundColor: theme.palette.primary.main,
@@ -226,6 +221,7 @@ export const SelectedMask = observer(() => {
         >
             <StyledTitle onMouseDown={handleMouseDown}>
                 <Typography variant={'body2'}>{designer.selected}</Typography>
+                <DragIndicatorIcon sx={{ padding: '2px' }} />
             </StyledTitle>
         </StyledContainer>
     );
