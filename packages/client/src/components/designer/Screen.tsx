@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef, useCallback } from 'react';
+import { useEffect, useState, useMemo, useRef, useCallback } from 'react';
 import { observer } from 'mobx-react-lite';
 import { styled } from '@semoss/ui';
 import { useDesigner } from '@/hooks';
@@ -124,7 +124,6 @@ export const Screen = observer((props: ScreenProps) => {
     const handleMouseOver = (event: React.MouseEvent) => {
         const id = getNearestBlock(event.target as Element);
 
-        // if there is no id ignore it
         if (!id || id == designer.hovered) {
             return;
         }
@@ -135,7 +134,7 @@ export const Screen = observer((props: ScreenProps) => {
     /**
      * Handle the mouseleave on the page. This will deselect hovered widgets
      */
-    const handleMouseLeave = () => {
+    const handleMouseLeave = (event: React.MouseEvent) => {
         designer.setHovered('');
 
         // reset the placeholder / clear the ghost if is its off the screen
@@ -267,6 +266,16 @@ export const Screen = observer((props: ScreenProps) => {
         };
     }, [designer.drag.active, handleDocumentMouseMove]);
 
+    const isHoveredOverSelectedBlock = useMemo(() => {
+        return designer.hovered == designer.selected;
+    }, [designer.hovered, designer.selected, handleMouseOver]);
+
+    useEffect(() => {
+        window.addEventListener('iframeMouseLeave', () =>
+            setBlockSelectionInProgress(false),
+        );
+    }, []);
+
     return (
         <StyledContainer data-block="root" ref={rootRef}>
             {designer.selected && <SelectedMask />}
@@ -282,9 +291,7 @@ export const Screen = observer((props: ScreenProps) => {
                     <StyledContentInner
                         onMouseDown={handleMouseDown} // will execute before block onMouseUp events
                         onMouseOver={handleMouseOver}
-                        isHoveredOverSelectedBlock={
-                            designer.hovered === designer.selected
-                        }
+                        isHoveredOverSelectedBlock={isHoveredOverSelectedBlock}
                         blockSelectionInProgress={blockSelectionInProgress}
                         onClick={() => setBlockSelectionInProgress(false)} // will execute after block onMouseUp events
                     >

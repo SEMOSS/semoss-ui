@@ -141,12 +141,6 @@ export class DesignerStore {
      * @param id - id of the block that is hovered
      */
     setHovered(id: string) {
-        // if it is selected ignore it
-        if (this._store.selected === id) {
-            this._store.hovered = '';
-            return;
-        }
-
         this._store.hovered = id;
     }
 

@@ -11,7 +11,6 @@ import { SelectedMenu } from './SelectedMenu';
 import { OutlineMenu } from './OutlineMenu';
 import { QueryMenu } from './QueryMenu';
 import { Screen } from './Screen';
-import { Renderer } from '../blocks';
 
 const StyledLeftMenu = styled('div')(() => ({
     display: 'flex',
@@ -108,12 +107,15 @@ const StyledRightMenu = styled(Paper)(({ theme }) => ({
 }));
 
 interface DesignerProps {
+    /** Content to render in the designer */
+    children: React.ReactNode;
+
     /** Connect the designer to a store */
     designer: DesignerStore;
 }
 
 export const Designer = observer((props: DesignerProps): JSX.Element => {
-    const { designer } = props;
+    const { children, designer } = props;
 
     // view
     const [view, setView] = useState<'outline' | 'query' | 'add' | ''>('');
@@ -191,9 +193,7 @@ export const Designer = observer((props: DesignerProps): JSX.Element => {
                         </StyledSidebarContent>
                     ) : null}
                 </StyledLeftMenu>
-                <Screen>
-                    <Renderer id={designer.rendered} />
-                </Screen>
+                <Screen>{children}</Screen>
                 <StyledRightMenu elevation={7}>
                     <SelectedMenu />
                 </StyledRightMenu>

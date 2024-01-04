@@ -109,9 +109,7 @@ export const HoveredMask = observer(() => {
             height={size.height}
             width={size.width}
             hideHoveredMask={
-                !designer.hovered ||
-                designer.hovered === designer.selected ||
-                designer.drag.active
+                designer.hovered === designer.selected || designer.drag.active
             }
         >
             <StyledTitle>

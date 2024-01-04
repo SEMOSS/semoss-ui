@@ -1,6 +1,7 @@
 import { useMemo } from 'react';
 import { DesignerStore } from '@/stores';
 import { Designer } from '@/components/designer';
+import { Renderer } from '@/components/blocks';
 import { useBlocks } from '@/hooks';
 
 const ACTIVE = 'page-1';
@@ -26,5 +27,9 @@ export const BlocksView = () => {
         return null;
     }
 
-    return <Designer designer={designer} />;
+    return (
+        <Designer designer={designer}>
+            <Renderer id={ACTIVE} />
+        </Designer>
+    );
 };
