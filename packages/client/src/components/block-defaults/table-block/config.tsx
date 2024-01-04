@@ -117,7 +117,6 @@ export const config: BlockConfig<TableBlockDef> = {
                                     display: 'Georgia',
                                 },
                             ]}
-                            allowUnset
                         />
                     ),
                 },
