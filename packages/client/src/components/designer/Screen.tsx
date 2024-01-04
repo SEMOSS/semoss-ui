@@ -85,7 +85,7 @@ export const Screen = observer((props: ScreenProps) => {
     const { designer } = useDesigner();
 
     /**
-     * Handle the mousedown on the page. This will select the hovered block.
+     * Handle the click events on the page. This will select the hovered block and prevent block clicks if it hasn't been selected yet.
      *
      *  @param event - mouse event
      */
