@@ -94,7 +94,7 @@ export const Screen = observer((props: ScreenProps) => {
             return;
         }
 
-        // prevent click events for elements once selected
+        // prevent click events for elements until selected
         event.stopPropagation();
         event.preventDefault();
 
