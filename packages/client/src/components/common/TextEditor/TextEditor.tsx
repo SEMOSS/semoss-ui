@@ -239,8 +239,12 @@ export const TextEditor = (props: TextEditorProps) => {
      * TO-DO: Save custom configs?
      */
     const prettifyFile = () => {
+        // only run the function if in developer mode, if not do nothing
         if (process.env.NODE_ENV == 'development') {
+            // get file contents
             let formatted = activeFile.content;
+            // log active file including content
+            // ## seems fine for tsx and ts files
             console.log(activeFile);
 
             if (activeFile.type === 'py') {
