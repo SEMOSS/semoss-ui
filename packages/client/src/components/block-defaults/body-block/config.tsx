@@ -44,6 +44,8 @@ export const config: BlockConfig<BodyBlockDef> = {
                             id={id}
                             path="style.padding"
                             label="Padding"
+                            allowUnset
+                            allowCustomInput
                             options={[
                                 {
                                     value: '1rem',
@@ -62,7 +64,6 @@ export const config: BlockConfig<BodyBlockDef> = {
                                     display: 'X-Large',
                                 },
                             ]}
-                            allowUnset
                         />
                     ),
                 },

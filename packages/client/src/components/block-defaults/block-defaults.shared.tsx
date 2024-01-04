@@ -97,6 +97,8 @@ export const buildLayoutSection = () => ({
                     path="style.gap"
                     label="Gap"
                     resizeOnSet
+                    allowUnset
+                    allowCustomInput
                     options={[
                         {
                             value: '1rem',
@@ -115,7 +117,6 @@ export const buildLayoutSection = () => ({
                             display: 'X-Large',
                         },
                     ]}
-                    allowUnset
                 />
             ),
         },
@@ -179,6 +180,8 @@ export const buildSpacingSection = () => ({
                     path="style.margin"
                     label="Margin"
                     resizeOnSet
+                    allowUnset
+                    allowCustomInput
                     options={[
                         {
                             value: 'auto',
@@ -201,7 +204,6 @@ export const buildSpacingSection = () => ({
                             display: 'X-Large',
                         },
                     ]}
-                    allowUnset
                 />
             ),
         },
@@ -213,6 +215,8 @@ export const buildSpacingSection = () => ({
                     path="style.padding"
                     label="Padding"
                     resizeOnSet
+                    allowUnset
+                    allowCustomInput
                     options={[
                         {
                             value: '1rem',
@@ -231,7 +235,6 @@ export const buildSpacingSection = () => ({
                             display: 'X-Large',
                         },
                     ]}
-                    allowUnset
                 />
             ),
         },
@@ -372,6 +375,8 @@ export const buildTypographySection = () => ({
                     id={id}
                     path="style.fontFamily"
                     label="Font"
+                    allowUnset
+                    allowCustomInput
                     options={[
                         {
                             value: 'Roboto',
@@ -394,7 +399,6 @@ export const buildTypographySection = () => ({
                             display: 'Georgia',
                         },
                     ]}
-                    allowUnset
                 />
             ),
         },
