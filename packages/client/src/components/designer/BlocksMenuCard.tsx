@@ -62,6 +62,7 @@ export const BlocksMenuCard = observer((props: { block: BlockConfig }) => {
                 const siblingWidget = designer.blocks.getBlock(
                     placeholderAction.id,
                 );
+                debugger;
 
                 if (siblingWidget?.parent) {
                     designer.blocks.dispatch({

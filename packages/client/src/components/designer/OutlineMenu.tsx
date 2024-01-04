@@ -2,11 +2,13 @@ import { useState, useMemo } from 'react';
 import { computed } from 'mobx';
 import { observer } from 'mobx-react-lite';
 import {
+    Button,
     Collapse,
     Divider,
     Icon,
     IconButton,
     List,
+    Modal,
     Stack,
     TextField,
     TreeView,
@@ -19,8 +21,10 @@ import {
     matchPath,
     useResolvedPath,
 } from 'react-router-dom';
+import { ActionMessages, BlockConfig, BlockJSON } from '@/stores';
 import { useBlocks, useDesigner } from '@/hooks';
 import {
+    Add,
     ChevronRight,
     ExpandMore,
     Home,
@@ -40,6 +44,7 @@ const StyledMenuHeader = styled('div')(({ theme }) => ({
     display: 'flex',
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'space-between',
     width: '100%',
     paddingTop: theme.spacing(1.5),
     paddingRight: theme.spacing(1),
@@ -105,6 +110,7 @@ export const OutlineMenu = observer((): JSX.Element => {
     // get the store
     const { registry, state } = useBlocks();
     const { designer } = useDesigner();
+
     const navigate = useNavigate();
     const location = useLocation();
     const resolvedPath = useResolvedPath('');
@@ -113,6 +119,37 @@ export const OutlineMenu = observer((): JSX.Element => {
     const [selected, setSelected] = useState<string[]>([]);
     const [showSearch, setShowSearch] = useState<boolean>(false);
     const [search, setSearch] = useState<string>('');
+
+    const [addPageModal, setAddPageModal] = useState<boolean>(false);
+    const [newPageRoute, setNewPageRoute] = useState<string>('');
+
+    /**
+     * Adds Page in state store
+     */
+    const addPageBlock = () => {
+        // construct page json with route and dispatch to store
+        const json: BlockJSON = {
+            widget: 'page',
+            data: {
+                route: newPageRoute,
+            },
+            slots: {
+                content: [],
+            },
+            // slots: {},
+            listeners: {},
+        };
+
+        designer.blocks.dispatch({
+            message: ActionMessages.ADD_BLOCK,
+            payload: {
+                json: json,
+            },
+        });
+
+        setAddPageModal(false);
+        setNewPageRoute('');
+    };
 
     /**
      * Check if a path is active
@@ -246,10 +283,20 @@ export const OutlineMenu = observer((): JSX.Element => {
         return '';
     }, [pages, resolvedPath.pathname, location.pathname]);
 
+    console.log(state.blocks);
     return (
         <StyledMenu>
             <StyledMenuHeader>
                 <Typography variant="body1">Pages</Typography>
+                <IconButton
+                    color="default"
+                    size="small"
+                    onClick={() => {
+                        setAddPageModal(true);
+                    }}
+                >
+                    <Add fontSize="medium" />
+                </IconButton>
             </StyledMenuHeader>
             {pages.length ? (
                 <List>
@@ -272,9 +319,11 @@ export const OutlineMenu = observer((): JSX.Element => {
                                     primary={p.name}
                                     secondary={p.route}
                                 />
-                                <StyledIcon>
-                                    <Home />
-                                </StyledIcon>
+                                {!p.route && (
+                                    <StyledIcon>
+                                        <Home />
+                                    </StyledIcon>
+                                )}
                             </StyledListItemButton>
                         );
                     })}
@@ -351,6 +400,36 @@ export const OutlineMenu = observer((): JSX.Element => {
                     )}
                 </TreeView>
             </StyledMenuScroll>
+            <Modal open={addPageModal} fullWidth>
+                <Modal.Title>Add Page</Modal.Title>
+                <Modal.Content>
+                    <TextField
+                        required
+                        fullWidth
+                        label="Route"
+                        value={newPageRoute}
+                        onChange={(e) => setNewPageRoute(e.target.value)}
+                    ></TextField>
+                </Modal.Content>
+                <Modal.Actions>
+                    <Button
+                        onClick={() => {
+                            setAddPageModal(false);
+                            setNewPageRoute('');
+                        }}
+                    >
+                        Cancel
+                    </Button>
+                    <Button
+                        variant={'contained'}
+                        onClick={() => {
+                            addPageBlock();
+                        }}
+                    >
+                        Add
+                    </Button>
+                </Modal.Actions>
+            </Modal>
         </StyledMenu>
     );
 });
