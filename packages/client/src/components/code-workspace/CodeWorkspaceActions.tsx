@@ -3,7 +3,6 @@ import { Button, IconButton, useNotification, styled, Stack } from '@semoss/ui';
 import { Code, Download, Share, Settings } from '@mui/icons-material';
 
 import { useWorkspace, useRootStore } from '@/hooks';
-import { Env } from '@/env';
 import { ShareOverlay } from '@/components/workspace';
 
 const NAV_HEIGHT = '48px';
@@ -197,9 +196,7 @@ export const CodeWorkspaceActions = observer(() => {
                 onClick={() => {
                     workspace.openOverlay(() => (
                         <ShareOverlay
-                            url={new URL(
-                                `${Env.MODULE}/public_home/${workspace.appId}/portals/`,
-                            ).toString()}
+                            appId={workspace.appId}
                             onClose={() => workspace.closeOverlay()}
                         />
                     ));
