@@ -62,7 +62,6 @@ const StyledContentInner = styled('div', {
         height: '100%',
         cursor: !isHoveredOverSelectedBlock ? 'pointer' : 'auto',
         // prevent initial mouse event when selecting a block
-        // blocks should favor onMouseUp instead of onClick where applicable
         '[data-block]': {
             pointerEvents: !blockSelectionInProgress ? 'auto' : 'none',
         },
@@ -270,12 +269,6 @@ export const Screen = observer((props: ScreenProps) => {
         return designer.hovered == designer.selected;
     }, [designer.hovered, designer.selected, handleMouseOver]);
 
-    useEffect(() => {
-        window.addEventListener('iframeMouseLeave', () =>
-            setBlockSelectionInProgress(false),
-        );
-    }, []);
-
     return (
         <StyledContainer data-block="root" ref={rootRef}>
             {designer.selected && <SelectedMask />}
@@ -289,11 +282,12 @@ export const Screen = observer((props: ScreenProps) => {
             <StyledContent off={designer.drag.active ? true : false}>
                 <StyledContentOuter onMouseLeave={handleMouseLeave}>
                     <StyledContentInner
-                        onMouseDown={handleMouseDown} // will execute before block onMouseUp events
+                        onMouseDown={handleMouseDown}
+                        onMouseOut={() => setBlockSelectionInProgress(false)}
                         onMouseOver={handleMouseOver}
                         isHoveredOverSelectedBlock={isHoveredOverSelectedBlock}
                         blockSelectionInProgress={blockSelectionInProgress}
-                        onClick={() => setBlockSelectionInProgress(false)} // will execute after block onMouseUp events
+                        onClick={() => setBlockSelectionInProgress(false)}
                     >
                         {children}
                     </StyledContentInner>

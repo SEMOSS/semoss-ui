@@ -55,7 +55,7 @@ export const ButtonBlock: BlockComponent = observer(({ id }) => {
             sx={{
                 ...data.style,
             }}
-            onMouseUp={() => listeners.onClick()}
+            onClick={() => listeners.onClick()}
             {...attrs}
         >
             <StyledLabel loading={data?.loading}>{data.label}</StyledLabel>

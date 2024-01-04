@@ -1,8 +1,8 @@
-import { CSSProperties, useEffect } from 'react';
+import { CSSProperties } from 'react';
 import { observer } from 'mobx-react-lite';
 
-import { useBlock, useBlocks } from '@/hooks';
-import { BlockDef, BlockComponent, ActionMessages } from '@/stores';
+import { useBlock } from '@/hooks';
+import { BlockDef, BlockComponent } from '@/stores';
 
 export interface IframeBlockDef extends BlockDef<'iframe'> {
     widget: 'iframe';
@@ -17,25 +17,6 @@ export interface IframeBlockDef extends BlockDef<'iframe'> {
 
 export const IframeBlock: BlockComponent = observer(({ id }) => {
     const { attrs, data } = useBlock<IframeBlockDef>(id);
-    const { state } = useBlocks();
-
-    // bind custom frame leave event
-    function bindIFrameMouseleave(iframe: HTMLIFrameElement) {
-        iframe.contentDocument.addEventListener('mouseleave', function () {
-            state.dispatch({
-                message: ActionMessages.DISPATCH_EVENT,
-                payload: {
-                    name: 'iframeMouseLeave',
-                },
-            });
-        });
-    }
-
-    useEffect(() => {
-        bindIFrameMouseleave(
-            document.querySelector(`[data-block-frame="${id}"]`),
-        );
-    }, []);
 
     return (
         <span
