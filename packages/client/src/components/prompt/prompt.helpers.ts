@@ -180,6 +180,14 @@ export function getQueryForPrompt(
                         code: functionQuery,
                     },
                 },
+                {
+                    id: 'py-query-function',
+                    widget: 'code',
+                    parameters: {
+                        type: 'py',
+                        code: functionQuery,
+                    },
+                },
             ],
         },
         [PROMPT_QUERY_ID]: {
