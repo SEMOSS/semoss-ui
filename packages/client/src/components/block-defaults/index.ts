@@ -20,6 +20,7 @@ import {
     config as MarkdownBlockConfig,
     MarkdownBlockDef,
 } from './markdown-block';
+import { config as NavBarBlockConfig, NavBarBlockDef } from './nav-bar-block';
 import { config as PageBlockConfig, PageBlockDef } from './page-block';
 import { config as SelectBlockConfig, SelectBlockDef } from './select-block';
 import { config as TableBlockConfig, TableBlockDef } from './table-block';
@@ -43,6 +44,7 @@ export type DefaultBlockDefinitions =
     | InputBlockDef
     | LinkBlockDef
     | MarkdownBlockDef
+    | NavBarBlockDef
     | PageBlockDef
     | SelectBlockDef
     | TableBlockDef
@@ -63,6 +65,7 @@ export const DefaultBlocks: Registry<DefaultBlockDefinitions> = {
     [InputBlockConfig.widget]: InputBlockConfig,
     [LinkBlockConfig.widget]: LinkBlockConfig,
     [MarkdownBlockConfig.widget]: MarkdownBlockConfig,
+    [NavBarBlockConfig.widget]: NavBarBlockConfig,
     [PageBlockConfig.widget]: PageBlockConfig,
     [SelectBlockConfig.widget]: SelectBlockConfig,
     [TableBlockConfig.widget]: TableBlockConfig,
@@ -81,8 +84,8 @@ export const MenuBlocks: Registry<DefaultBlockDefinitions> = {
     [IframeBlockConfig.widget]: IframeBlockConfig,
     [InputBlockConfig.widget]: InputBlockConfig,
     [LinkBlockConfig.widget]: LinkBlockConfig,
-
     [MarkdownBlockConfig.widget]: MarkdownBlockConfig,
+    [NavBarBlockConfig.widget]: NavBarBlockConfig,
     [SelectBlockConfig.widget]: SelectBlockConfig,
     [TableBlockConfig.widget]: TableBlockConfig,
     [TextBlockConfig.widget]: TextBlockConfig,
