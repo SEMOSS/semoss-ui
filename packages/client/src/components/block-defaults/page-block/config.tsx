@@ -43,6 +43,8 @@ export const config: BlockConfig<PageBlockDef> = {
                             id={id}
                             path="style.padding"
                             label="Padding"
+                            allowUnset
+                            allowCustomInput
                             options={[
                                 {
                                     value: '1rem',
@@ -61,7 +63,6 @@ export const config: BlockConfig<PageBlockDef> = {
                                     display: 'X-Large',
                                 },
                             ]}
-                            allowUnset
                         />
                     ),
                 },
