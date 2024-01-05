@@ -14,6 +14,7 @@ import {
     PROMPT_BUILDER_CONSTRAINTS_STEP,
     PROMPT_BUILDER_PREVIEW_STEP,
     TOKEN_TYPE_INPUT,
+    INPUT_TYPE_VECTOR,
 } from '../prompt.constants';
 import { styled, Box, Button, Grid, Paper } from '@semoss/ui';
 import { PromptBuilderSummary } from './summary';
@@ -148,11 +149,17 @@ export const PromptBuilder = () => {
                 if (stepItems[0].value === undefined) {
                     return false;
                 }
+                // if there are inputs, make sure we have types for all
+                // and types that require extra info have the extra info
                 return (
                     Object.values(stepItems[0].value).length &&
                     Object.values(stepItems[0].value).every(
-                        (type: string | null) => {
-                            return !!type;
+                        (inputType: { type: string; meta: string }) => {
+                            if (inputType?.type === INPUT_TYPE_VECTOR) {
+                                return !!inputType.meta;
+                            } else {
+                                return !!inputType.type;
+                            }
                         },
                     )
                 );

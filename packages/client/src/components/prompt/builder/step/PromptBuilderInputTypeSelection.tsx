@@ -62,6 +62,7 @@ export const PromptBuilderInputTypeSelection = (props: {
                     <Fade in={props.inputType === INPUT_TYPE_VECTOR}>
                         <Autocomplete
                             fullWidth
+                            disableClearable
                             size="small"
                             id="vector-autocomplete"
                             loading={props.cfgLibraryVectorDbs.loading}
