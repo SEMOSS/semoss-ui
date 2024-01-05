@@ -1,9 +1,10 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { Builder, Token } from '../../prompt.types';
 import { StyledStepPaper } from '../../prompt.styled';
-import { Box, Typography } from '@semoss/ui';
+import { Box, Stack, Typography } from '@semoss/ui';
 import { TOKEN_TYPE_INPUT } from '../../prompt.constants';
 import { PromptBuilderInputTypeSelection } from './PromptBuilderInputTypeSelection';
+import { usePixel } from '@/hooks';
 
 export const PromptBuilderInputTypeStep = (props: {
     builder: Builder;
@@ -11,12 +12,46 @@ export const PromptBuilderInputTypeStep = (props: {
 }) => {
     const [inputTokens, setInputTokens] = useState([]);
     const [inputTypes, setInputTypes] = useState({});
-    const setInputType = (inputTokenIndex: number, inputType: string) => {
+    const setInputType = (
+        inputTokenIndex: number,
+        inputType: string,
+        inputTypeMeta: string | null,
+    ) => {
         setInputTypes((state) => ({
             ...state,
-            [inputTokenIndex]: inputType,
+            [inputTokenIndex]: {
+                type: inputType,
+                meta: inputTypeMeta,
+            },
         }));
     };
+
+    const [cfgLibraryVectorDbs, setCfgLibraryVectorDbs] = useState({
+        loading: false,
+        ids: [],
+        display: {},
+    });
+
+    const myVectorDbs = usePixel<{ app_id: string; app_name: string }[]>(
+        `MyEngines(engineTypes=['VECTOR']);`,
+    );
+    useMemo(() => {
+        if (myVectorDbs.status !== 'SUCCESS') {
+            return;
+        }
+
+        let vectorDbIds: string[] = [];
+        let vectorDbDisplay = {};
+        myVectorDbs.data.forEach((vector) => {
+            vectorDbIds.push(vector.app_id);
+            vectorDbDisplay[vector.app_id] = vector.app_name;
+        });
+        setCfgLibraryVectorDbs({
+            loading: false,
+            ids: vectorDbIds,
+            display: vectorDbDisplay,
+        });
+    }, [myVectorDbs.status, myVectorDbs.data]);
 
     useEffect(() => {
         const tokens = [...(props.builder.inputs.value as Token[])];
@@ -30,7 +65,7 @@ export const PromptBuilderInputTypeStep = (props: {
         );
         setInputTokens(filteredTokens);
         const keyedInputs = filteredTokens.reduce((acc, token: Token) => {
-            return { ...acc, [token.index]: null };
+            return { ...acc, [token.index]: { type: null, meta: null } };
         }, {});
         setInputTypes(keyedInputs);
     }, []);
@@ -50,14 +85,18 @@ export const PromptBuilderInputTypeStep = (props: {
                     inputs.
                 </Typography>
             </Box>
-            {Array.from(inputTokens, (inputToken: Token) => (
-                <PromptBuilderInputTypeSelection
-                    inputToken={inputToken}
-                    inputType={inputTypes[inputToken.index]}
-                    key={inputToken.index}
-                    setInputType={setInputType}
-                />
-            ))}
+            <Stack marginY={3} spacing={3}>
+                {Array.from(inputTokens, (inputToken: Token) => (
+                    <PromptBuilderInputTypeSelection
+                        inputToken={inputToken}
+                        inputType={inputTypes[inputToken.index].type}
+                        inputTypeMeta={inputTypes[inputToken.index].meta}
+                        key={inputToken.index}
+                        cfgLibraryVectorDbs={cfgLibraryVectorDbs}
+                        setInputType={setInputType}
+                    />
+                ))}
+            </Stack>
         </StyledStepPaper>
     );
 };

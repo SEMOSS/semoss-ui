@@ -22,7 +22,9 @@ import { PromptBuilderStep } from './step';
 
 const StyledPaper = styled(Paper)(({ theme }) => ({
     padding: theme.spacing(4),
+    paddingBottom: 0,
     margin: theme.spacing(1),
+    height: '100%',
     maxHeight: '100%',
     overflow: 'scroll',
 }));
@@ -119,8 +121,8 @@ export const PromptBuilder = () => {
         }
     };
     const backButtonAction = () => {
-        if (currentBuilderStep === PROMPT_BUILDER_PREVIEW_STEP) {
-            // moving back from preview step - if no input types, skip that step moving backwards
+        if (currentBuilderStep === PROMPT_BUILDER_INPUT_TYPES_STEP + 1) {
+            // moving back from step after input types step - if no input types, skip that step moving backwards
             const hasInputs = (builder.inputs.value as Token[]).some(
                 (token: Token) => {
                     return token.type === TOKEN_TYPE_INPUT;

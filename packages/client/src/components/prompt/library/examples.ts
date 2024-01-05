@@ -180,8 +180,14 @@ export const PromptExamples: Prompt[] = [
             },
         ],
         inputTypes: {
-            3: INPUT_TYPE_TEXT,
-            9: INPUT_TYPE_TEXT,
+            3: {
+                type: INPUT_TYPE_TEXT,
+                meta: null,
+            },
+            9: {
+                type: INPUT_TYPE_TEXT,
+                meta: null,
+            },
         },
     },
     {
@@ -304,8 +310,14 @@ export const PromptExamples: Prompt[] = [
             },
         ],
         inputTypes: {
-            9: INPUT_TYPE_TEXT,
-            13: INPUT_TYPE_TEXT,
+            9: {
+                type: INPUT_TYPE_TEXT,
+                meta: null,
+            },
+            13: {
+                type: INPUT_TYPE_TEXT,
+                meta: null,
+            },
         },
     },
     {
@@ -460,7 +472,10 @@ export const PromptExamples: Prompt[] = [
             },
         ],
         inputTypes: {
-            4: INPUT_TYPE_TEXT,
+            4: {
+                type: INPUT_TYPE_TEXT,
+                meta: null,
+            },
         },
     },
 ];
