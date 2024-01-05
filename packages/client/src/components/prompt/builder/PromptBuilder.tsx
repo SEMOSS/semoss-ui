@@ -11,7 +11,6 @@ import {
     PROMPT_BUILDER_CONTEXT_STEP,
     PROMPT_BUILDER_INPUTS_STEP,
     PROMPT_BUILDER_INPUT_TYPES_STEP,
-    PROMPT_BUILDER_KNOWLEDGE_REPOSITORY_STEP,
     PROMPT_BUILDER_CONSTRAINTS_STEP,
     PROMPT_BUILDER_PREVIEW_STEP,
     TOKEN_TYPE_INPUT,
@@ -54,12 +53,6 @@ const initialBuilder: Builder = {
         required: true,
         display: 'LLM',
     },
-    vector: {
-        step: PROMPT_BUILDER_CONTEXT_STEP,
-        value: undefined,
-        required: false,
-        display: 'Knowledge Repository',
-    },
     context: {
         step: PROMPT_BUILDER_CONTEXT_STEP,
         value: undefined,
@@ -74,12 +67,6 @@ const initialBuilder: Builder = {
     },
     inputTypes: {
         step: PROMPT_BUILDER_INPUT_TYPES_STEP,
-        value: undefined,
-        required: true,
-        display: 'Input Types',
-    },
-    vectorSearchStatements: {
-        step: PROMPT_BUILDER_KNOWLEDGE_REPOSITORY_STEP,
         value: undefined,
         required: true,
         display: 'Input Types',
@@ -127,13 +114,6 @@ export const PromptBuilder = () => {
                 },
             );
             changeBuilderStep(currentBuilderStep + (hasInputs ? 1 : 2));
-        } else if (currentBuilderStep === PROMPT_BUILDER_INPUT_TYPES_STEP) {
-            // skip knowledge repository step if no knowledge repository configured
-            const hasVector =
-                builder.vector.value && Array.isArray(builder.vector.value)
-                    ? Boolean(builder.vector.value.length)
-                    : false;
-            changeBuilderStep(currentBuilderStep + (hasVector ? 1 : 2));
         } else {
             changeBuilderStep(currentBuilderStep + 1);
         }

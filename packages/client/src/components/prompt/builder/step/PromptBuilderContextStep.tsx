@@ -55,26 +55,26 @@ export const PromptBuilderContextStep = (props: {
         });
     }, [myModels.status, myModels.data]);
 
-    const myVectorDbs = usePixel<{ app_id: string; app_name: string }[]>(
-        `MyEngines(engineTypes=['VECTOR']);`,
-    );
-    useMemo(() => {
-        if (myVectorDbs.status !== 'SUCCESS') {
-            return;
-        }
+    // const myVectorDbs = usePixel<{ app_id: string; app_name: string }[]>(
+    //     `MyEngines(engineTypes=['VECTOR']);`,
+    // );
+    // useMemo(() => {
+    //     if (myVectorDbs.status !== 'SUCCESS') {
+    //         return;
+    //     }
 
-        let vectorDbIds: string[] = [];
-        let vectorDbDisplay = {};
-        myVectorDbs.data.forEach((vector) => {
-            vectorDbIds.push(vector.app_id);
-            vectorDbDisplay[vector.app_id] = vector.app_name;
-        });
-        setCfgLibraryVectorDbs({
-            loading: false,
-            ids: vectorDbIds,
-            display: vectorDbDisplay,
-        });
-    }, [myVectorDbs.status, myVectorDbs.data]);
+    //     let vectorDbIds: string[] = [];
+    //     let vectorDbDisplay = {};
+    //     myVectorDbs.data.forEach((vector) => {
+    //         vectorDbIds.push(vector.app_id);
+    //         vectorDbDisplay[vector.app_id] = vector.app_name;
+    //     });
+    //     setCfgLibraryVectorDbs({
+    //         loading: false,
+    //         ids: vectorDbIds,
+    //         display: vectorDbDisplay,
+    //     });
+    // }, [myVectorDbs.status, myVectorDbs.data]);
 
     return (
         <StyledStepPaper elevation={2} square>
@@ -158,7 +158,7 @@ export const PromptBuilderContextStep = (props: {
                                 />
                             )}
                         />
-                        <Autocomplete
+                        {/* <Autocomplete
                             fullWidth
                             multiple
                             id="vector-autocomplete"
@@ -180,7 +180,7 @@ export const PromptBuilderContextStep = (props: {
                                     variant="outlined"
                                 />
                             )}
-                        />
+                        /> */}
                     </Stack>
                 </Grid>
             </Grid>

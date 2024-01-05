@@ -4,14 +4,12 @@ import {
     PROMPT_BUILDER_CONTEXT_STEP,
     PROMPT_BUILDER_INPUTS_STEP,
     PROMPT_BUILDER_INPUT_TYPES_STEP,
-    PROMPT_BUILDER_KNOWLEDGE_REPOSITORY_STEP,
     PROMPT_BUILDER_PREVIEW_STEP,
 } from '../../prompt.constants';
 import { styled, Paper } from '@semoss/ui';
 import { PromptBuilderConstraintsStep } from './PromptBuilderConstraintsStep';
 import { PromptBuilderInputStep } from './PromptBuilderInputStep';
 import { PromptBuilderInputTypeStep } from './PromptBuilderInputTypeStep';
-import { PromptBuilderVectorStep } from './PromptBuilderVectorStep';
 import { PromptBuilderPreviewStep } from './PromptBuilderPreviewStep';
 import { PromptBuilderContextStep } from './PromptBuilderContextStep';
 
@@ -35,8 +33,6 @@ export const PromptBuilderStep = (props: {
             return <PromptBuilderInputStep {...props} />;
         case PROMPT_BUILDER_INPUT_TYPES_STEP:
             return <PromptBuilderInputTypeStep {...props} />;
-        case PROMPT_BUILDER_KNOWLEDGE_REPOSITORY_STEP:
-            return <PromptBuilderVectorStep {...props} />;
         case PROMPT_BUILDER_CONSTRAINTS_STEP:
             return <PromptBuilderConstraintsStep {...props} />;
         case PROMPT_BUILDER_PREVIEW_STEP:
