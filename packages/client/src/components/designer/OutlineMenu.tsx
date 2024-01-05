@@ -300,7 +300,12 @@ export const OutlineMenu = observer((): JSX.Element => {
                 <List>
                     {pages.map((p) => {
                         return (
-                            <StyledLink to={p.route} key={p.id}>
+                            <StyledLink
+                                to={p.route}
+                                key={p.id}
+                                // getBoundingClientRect Error
+                                // onClick={() => designer.setSelected(p.id)}
+                            >
                                 <StyledListItemButton
                                     dense={true}
                                     selected={isActive(p.route)}
@@ -308,7 +313,7 @@ export const OutlineMenu = observer((): JSX.Element => {
                                 >
                                     <List.ItemText
                                         primary={p.name}
-                                        secondary={p.route ? p.route : ''}
+                                        secondary={p.route ? p.route : 'home'}
                                     />
                                     {!p.route && (
                                         <StyledIcon>

@@ -15,6 +15,7 @@ import { config as FormBlockConfig, FormBlockDef } from './form-block';
 import { config as HeaderBlockConfig, HeaderBlockDef } from './header-block';
 import { config as IframeBlockConfig, IframeBlockDef } from './iframe-block';
 import { config as InputBlockConfig, InputBlockDef } from './input-block';
+import { config as LinkBlockConfig, LinkBlockDef } from './link-block';
 import {
     config as MarkdownBlockConfig,
     MarkdownBlockDef,
@@ -40,6 +41,7 @@ export type DefaultBlockDefinitions =
     | HeaderBlockDef
     | IframeBlockDef
     | InputBlockDef
+    | LinkBlockDef
     | MarkdownBlockDef
     | PageBlockDef
     | SelectBlockDef
@@ -59,6 +61,7 @@ export const DefaultBlocks: Registry<DefaultBlockDefinitions> = {
     [HeaderBlockConfig.widget]: HeaderBlockConfig,
     [IframeBlockConfig.widget]: IframeBlockConfig,
     [InputBlockConfig.widget]: InputBlockConfig,
+    [LinkBlockConfig.widget]: LinkBlockConfig,
     [MarkdownBlockConfig.widget]: MarkdownBlockConfig,
     [PageBlockConfig.widget]: PageBlockConfig,
     [SelectBlockConfig.widget]: SelectBlockConfig,
@@ -77,6 +80,8 @@ export const MenuBlocks: Registry<DefaultBlockDefinitions> = {
     [FormBlockConfig.widget]: FormBlockConfig,
     [IframeBlockConfig.widget]: IframeBlockConfig,
     [InputBlockConfig.widget]: InputBlockConfig,
+    [LinkBlockConfig.widget]: LinkBlockConfig,
+
     [MarkdownBlockConfig.widget]: MarkdownBlockConfig,
     [SelectBlockConfig.widget]: SelectBlockConfig,
     [TableBlockConfig.widget]: TableBlockConfig,
