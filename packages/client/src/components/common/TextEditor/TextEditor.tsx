@@ -4,7 +4,14 @@ import { File, ControlledFile, TextEditorCodeGeneration } from '../';
 import { Clear, SaveOutlined } from '@mui/icons-material';
 import { Icon as FiletypeIcon } from '@mdi/react';
 import { FILE_ICON_MAP } from './text-editor.constants';
-import { IconButton, Typography, Tabs, styled, Container } from '@semoss/ui';
+import {
+    IconButton,
+    useNotification,
+    Typography,
+    Container,
+    styled,
+    Tabs,
+} from '@semoss/ui';
 
 import Editor from '@monaco-editor/react';
 
@@ -13,6 +20,9 @@ import parserBabel from 'prettier/parser-babel';
 import parserHtml from 'prettier/parser-html';
 import parserTypescript from 'prettier/parser-typescript';
 import parserCss from 'prettier/parser-postcss';
+// list of available prettier parsers does not include python --> https://prettier.io/docs/en/options#parser
+// need to find working python parser, autopep8 may be an option --> https://stackoverflow.com/questions/65410758/problem-formatting-python-when-using-prettier-in-vscode
+
 // Python Code Formatting
 import { spawn } from 'child_process';
 
@@ -187,14 +197,16 @@ export const TextEditor = (props: TextEditorProps) => {
     const {
         files,
         activeIndex,
-        setActiveIndex,
-        onSave,
-        onClose,
-        controlledFiles,
         setControlledFiles,
-        counter,
+        controlledFiles,
+        setActiveIndex,
         setCounter,
+        counter,
+        onClose,
+        onSave,
     } = props;
+
+    const notification = useNotification();
 
     /**
      * Listen for Keyboard Shortcuts, save and --> etc down the road
@@ -234,22 +246,36 @@ export const TextEditor = (props: TextEditorProps) => {
     }, [files.length, activeIndex, controlledFiles.length]);
 
     /**
+     * @name parseFiletype
+     * Return filetype abbreviation from filename string
+     */
+    function parseFiletype(filename: string): string | null {
+        const match = /\.([^.]+)$/.exec(filename);
+        if (match && match[1]) return `.${match[1]}`;
+        return null;
+    }
+
+    /**
      * @name prettifyFile
      * Use custom parsers to format file
      * TO-DO: Save custom configs?
      */
     const prettifyFile = () => {
+        // get filetype or parse out filetype if filetype is just 'file' in the case of python / html / css etc
+        const filetype =
+            activeFile.type === 'file'
+                ? parseFiletype(activeFile.name)
+                : activeFile.type;
+
         // only run the function if in developer mode, if not do nothing
         if (process.env.NODE_ENV == 'development') {
-            // get file contents
             let formatted = activeFile.content;
-            // log active file including content
-            // ## seems fine for tsx and ts files
-            console.log(activeFile);
 
-            if (activeFile.type === 'py') {
+            // this is currently not working to parse / format python
+            if (filetype === 'py') {
                 (async () => {
                     try {
+                        // currently this just returns the file content unchanged
                         const formattedPythonCode = await runBlack(
                             activeFile.content,
                         );
@@ -267,26 +293,28 @@ export const TextEditor = (props: TextEditorProps) => {
             } else {
                 const prettierConfig = {};
 
-                // parsers for other languages are needed
-                if (activeFile.type === 'html') {
+                // running babel as default else statement rather than specifically for these filetypes
+                // may change back to this later
+                // if (
+                //     filetype === 'js' ||
+                //     filetype === 'jsx' ||
+                //     filetype === 'ts' ||
+                //     filetype === 'tsx'
+                // ) {
+                //     prettierConfig['parser'] = 'babel';
+                //     prettierConfig['plugins'] = [parserBabel];
+                //     // prettierConfig['semi'] = false;
+                //     // prettierConfig['singleQuote'] = true;
+                // } else if (filetype === 'html') {
+                if (filetype === 'html') {
                     prettierConfig['parser'] = 'html';
                     prettierConfig['plugins'] = [parserHtml];
-                } else if (
-                    activeFile.type === 'js' ||
-                    activeFile.type === 'jsx' ||
-                    activeFile.type === 'ts' ||
-                    activeFile.type === 'tsx'
-                ) {
-                    prettierConfig['parser'] = 'babel';
-                    prettierConfig['plugins'] = [parserBabel];
-                    // prettierConfig['semi'] = false;
-                    // prettierConfig['singleQuote'] = true;
-                } else if (
-                    activeFile.type === 'css' ||
-                    activeFile.type === 'scss'
-                ) {
+                } else if (filetype === 'css' || filetype === 'scss') {
                     prettierConfig['parser'] = 'css';
                     prettierConfig['plugins'] = [parserCss];
+                } else {
+                    prettierConfig['parser'] = 'babel';
+                    prettierConfig['plugins'] = [parserBabel];
                 }
 
                 // If we have a configuration for the selected language
@@ -297,7 +325,24 @@ export const TextEditor = (props: TextEditorProps) => {
                     );
                 }
             }
-            editFile(formatted);
+
+            if (formatted != activeFile.content) {
+                // only apply prettier changes in DOM if changes have been made
+                editFile(formatted);
+
+                // optional success notification but not necessary
+                // notification.add({
+                //     color: 'success',
+                //     message: 'Prettier formatting changes complete.',
+                // });
+            } else {
+                // if no chages have been made alert user to avoid feeling of dead button
+                notification.add({
+                    color: 'error',
+                    message:
+                        'No formatting issues found in file or filetype may not be covered by Prettier.',
+                });
+            }
         }
     };
 
