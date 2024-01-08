@@ -61,7 +61,7 @@ export type DefaultBlockDefinitions =
     | ModelsBlockDef
     | VectorsBlockDef
     | FileDropZoneBlockDef
-    | FileEmbedBlockDef;
+    | FileEmbedBlockDef
     | SectionBlockDef
     | UploadBlockDef;
 
