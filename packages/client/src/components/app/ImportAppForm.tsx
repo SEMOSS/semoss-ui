@@ -17,7 +17,7 @@ import {
 
 import { Controller, useForm } from 'react-hook-form';
 import { useRootStore } from '@/hooks';
-import { HelloWorldApp, SerializedState } from '@/stores';
+import { CSVQueryApp, HelloWorldApp, SerializedState } from '@/stores';
 
 import { AppMetadata } from './app.types';
 
@@ -287,6 +287,20 @@ export const ImportAppForm = (props: CreateAppProps) => {
             const pixel = `CreateAppFromBlocks ( project = [ "${
                 formVals.APP_NAME
             }" ] , json =[${JSON.stringify(HelloWorldApp)}]  ) ;`;
+
+            // create the app
+            const { pixelReturn } = await monolithStore.runQuery<[AppMetadata]>(
+                pixel,
+            );
+
+            const app = pixelReturn[0].output;
+
+            onCreate(app.project_id);
+        } else if (APP_TYPE === 'CSV_QUERY') {
+            // TODO: fix this
+            const pixel = `CreateAppFromBlocks ( project = [ "${
+                formVals.APP_NAME
+            }" ] , json =[${JSON.stringify(CSVQueryApp)}]  ) ;`;
 
             // create the app
             const { pixelReturn } = await monolithStore.runQuery<[AppMetadata]>(
