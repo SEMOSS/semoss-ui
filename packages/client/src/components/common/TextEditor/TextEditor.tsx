@@ -1,29 +1,31 @@
 import { useMemo, useEffect, SyntheticEvent } from 'react';
 import { Link } from 'react-router-dom';
-import { File, ControlledFile } from '../';
+import { File, ControlledFile, TextEditorCodeGeneration } from '../';
 import { Clear, SaveOutlined } from '@mui/icons-material';
 import { Icon as FiletypeIcon } from '@mdi/react';
 import { FILE_ICON_MAP } from './text-editor.constants';
-import { AutoAwesome } from '@mui/icons-material/';
-import {
-    Button,
-    IconButton,
-    Typography,
-    Tabs,
-    styled,
-    Container,
-} from '@semoss/ui';
+import { IconButton, Typography, Tabs, styled, Container } from '@semoss/ui';
 
 import Editor from '@monaco-editor/react';
-import prettier from 'prettier';
-import parserBabel from 'prettier/parser-babel'; // Choose the appropriate parser
 
-// Weird thing with Monaco Editor and does not get loaded in correctly from install
-// loader.config({
-//     paths: {
-//         vs: '/monaco-editor/min/vs',
-//     },
-// });
+import prettier from 'prettier';
+import parserBabel from 'prettier/parser-babel';
+import parserHtml from 'prettier/parser-html';
+import parserTypescript from 'prettier/parser-typescript';
+import parserCss from 'prettier/parser-postcss';
+// Python Code Formatting
+import { spawn } from 'child_process';
+
+const TextEditorCodeGenerationWrapper = styled('div')(({ theme }) => ({
+    width: '180px',
+}));
+
+const StyledSVG = styled('svg')(({ theme }) => ({
+    fill: '#0000008A',
+    viewBox: '0 0 16 16',
+    width: '1em',
+    height: '1em',
+}));
 
 const StyledHeaderContainer = styled(Container)(({ theme }) => ({
     display: 'flex',
@@ -54,10 +56,19 @@ const StyledEmptyFiles = styled('div')(({ theme }) => ({
     justifyContent: 'space-around',
 }));
 
-const StyledIconButton = styled(IconButton)(({ theme }) => ({
+const StyledPrettierIconButton = styled(IconButton)(({ theme }) => ({
+    height: '50px',
+    width: '30px',
+    fontSize: 'inherit',
+    marginRight: '0px',
+    paddingRight: '0px',
+}));
+
+const StyledSaveIconButton = styled(IconButton)(({ theme }) => ({
     color: '#0000008A',
     height: '50px',
-    width: '50px',
+    width: '30px',
+    marginRight: '20px',
     fontSize: 'inherit',
 }));
 
@@ -101,22 +112,6 @@ const StyledSaveChangesIndicator = styled('div')(({ theme }) => ({
     color: theme.palette.primary.main,
 }));
 
-const StyledGenerateButton = styled(Button)(({ theme }) => {
-    const palette = theme.palette as unknown as {
-        purple: Record<string, string>;
-    };
-
-    return {
-        backgroundColor: palette.purple['400'],
-        color: theme.palette.background.paper,
-        width: '180px',
-        gap: theme.spacing(1),
-        '&:hover': {
-            backgroundColor: palette.purple['200'],
-        },
-    };
-});
-
 const StyledTypography = styled(Typography)(({ theme }) => ({
     textAlign: 'left',
     display: 'block',
@@ -150,15 +145,15 @@ const StyledGrayFileName = styled(Typography)(({ theme }) => ({
     paddingLeft: '0px',
 }));
 
+const PrettierPath = () => (
+    <path d="M10.33 1.67h-8c-.45-.02-.43-.67 0-.67h8c.44 0 .46.64 0 .67Zm-8 2.66c-.45-.02-.43-.66 0-.66H7c.44 0 .45.64 0 .66H2.33ZM5.67 3c-.46-.02-.44-.66 0-.67h6.66c.44.01.46.65 0 .67H5.67Zm5.33.67c.44 0 .45.64 0 .66H8.33c-.45-.02-.43-.66 0-.66H11Zm1.33.66c-.45-.02-.43-.66 0-.66H13c.44 0 .45.64 0 .66h-.67Zm-10 1.34c-.45-.02-.43-.67 0-.67h1.34c.43 0 .45.64 0 .67H2.33Zm8 0c-.45-.02-.43-.67 0-.67h3.34c.43 0 .45.64 0 .67h-3.34ZM5 5.67C4.55 5.65 4.57 5 5 5h.67c.43 0 .45.64 0 .67H5Zm-2.67 8c-.45-.02-.43-.67 0-.67h1.34c.43 0 .45.64 0 .67H2.33Zm2.67 0c-.45-.02-.43-.67 0-.67h.67c.43 0 .45.64 0 .67H5ZM10.33 7c-.45-.02-.43-.66 0-.67h3.34c.43.01.45.65 0 .67h-3.34Zm-8 0c-.45-.02-.43-.66 0-.67h3.34c.43.01.45.65 0 .67H2.33Zm0 5.33c-.45-.02-.43-.66 0-.66h3.34c.43 0 .45.64 0 .66H2.33Zm0 2.67c-.45-.02-.43-.66 0-.67h3.34c.43.01.45.65 0 .67H2.33Zm0-6.67c-.45-.02-.43-.66 0-.66H3c.44 0 .45.64 0 .66h-.67Zm2 0c-.45-.02-.43-.66 0-.66h2c.44 0 .46.64 0 .66h-2Zm3.34 0c-.46-.02-.44-.66 0-.66H13c.44 0 .45.64 0 .66H7.67Zm2.66 1.34c-.45-.02-.43-.67 0-.67h2c.44 0 .46.64 0 .67h-2Zm-4 0c-.45-.02-.43-.67 0-.67H9c.44 0 .45.64 0 .67H6.33Zm-4 0c-.45-.02-.43-.67 0-.67H5c.44 0 .45.64 0 .67H2.33Zm0 1.33c-.45-.02-.43-.66 0-.67H3c.44.01.45.65 0 .67h-.67Zm2 0c-.45-.02-.43-.66 0-.67h6c.44.01.46.65 0 .67h-6Zm-2-8c-.45-.02-.43-.66 0-.67h2c.44.01.46.65 0 .67h-2Z"></path>
+);
+
 interface TextEditorProps {
     /**
      * Params factored out to AppEditor parent component to make closing tabs possible on file deletion
      */
     controlledFiles: ControlledFile[];
-    setControlledFiles: (controlledFiles: ControlledFile[]) => void;
-    counter: number;
-    setCounter: (index: number) => void;
-
     /**
      * All Files
      */
@@ -179,56 +174,14 @@ interface TextEditorProps {
      * Closes indexed file tab in files
      */
     onClose?: (index) => void;
+    /**
+     * Sets new files to be controlled
+     */
+    setControlledFiles: (controlledFiles: ControlledFile[]) => void;
+
+    counter: number;
+    setCounter: (index: number) => void;
 }
-
-const formatFilePath = (activeFileid) => {
-    if (activeFileid[activeFileid.length - 1] == '/') {
-        activeFileid = activeFileid.slice(0, -1);
-    }
-
-    activeFileid = activeFileid.replace('version/assets/', '');
-    activeFileid = activeFileid.replace('version/assets', '');
-
-    if (activeFileid[0] == '/') {
-        activeFileid = activeFileid.slice(1);
-    }
-
-    const splitId = activeFileid.split('/');
-
-    let nonGrayPath = splitId.slice(0, splitId.length - 1).join('/');
-    nonGrayPath = nonGrayPath.replaceAll('/', ' / ');
-
-    if (nonGrayPath.length > 0) {
-        nonGrayPath = nonGrayPath + ' / ';
-    }
-
-    const grayFilename = splitId.slice(-1)[0];
-
-    console.log({ activeFileid, nonGrayPath, grayFilename });
-
-    return (
-        <>
-            <StyledFiletypeIcon
-                path={
-                    FILE_ICON_MAP[activeFileid?.split('.').slice(-1)[0]] ||
-                    FILE_ICON_MAP.document
-                }
-                size={1}
-            ></StyledFiletypeIcon>
-            <StyledActiveFilePathContainer>
-                {nonGrayPath.length > 0 && (
-                    <StyledNonGrayPath variant="body2">
-                        {nonGrayPath}
-                    </StyledNonGrayPath>
-                )}
-
-                <StyledGrayFileName variant="body2">
-                    {grayFilename}
-                </StyledGrayFileName>
-            </StyledActiveFilePathContainer>
-        </>
-    );
-};
 
 export const TextEditor = (props: TextEditorProps) => {
     const {
@@ -281,17 +234,95 @@ export const TextEditor = (props: TextEditorProps) => {
     }, [files.length, activeIndex, controlledFiles.length]);
 
     /**
-     * Get other parsers
+     * @name prettifyFile
+     * Use custom parsers to format file
+     * TO-DO: Save custom configs?
      */
     const prettifyFile = () => {
         if (process.env.NODE_ENV == 'development') {
-            // const formatted = prettier.format(activeFile.content, {
-            //     parser: 'babel', // Use 'babel' for JSX
-            //     plugins: [parserBabel], // Use the appropriate parser plugin
-            //     semi: false, // Example option: Remove semicolons
-            //     singleQuote: true, // Example option: Use single quotes
-            // });
-            // editFile(formatted);
+            let formatted = activeFile.content;
+            console.log(activeFile);
+
+            if (activeFile.type === 'py') {
+                (async () => {
+                    try {
+                        const formattedPythonCode = await runBlack(
+                            activeFile.content,
+                        );
+                        console.log(
+                            'Formatted Python Code:\n',
+                            formattedPythonCode,
+                        );
+                    } catch (error) {
+                        console.error(
+                            'Error formatting Python code:',
+                            error.message,
+                        );
+                    }
+                })();
+            } else {
+                const prettierConfig = {};
+
+                // parsers for other languages are needed
+                if (activeFile.type === 'html') {
+                    prettierConfig['parser'] = 'html';
+                    prettierConfig['plugins'] = [parserHtml];
+                } else if (
+                    activeFile.type === 'js' ||
+                    activeFile.type === 'jsx' ||
+                    activeFile.type === 'ts' ||
+                    activeFile.type === 'tsx'
+                ) {
+                    prettierConfig['parser'] = 'babel';
+                    prettierConfig['plugins'] = [parserBabel];
+                    // prettierConfig['semi'] = false;
+                    // prettierConfig['singleQuote'] = true;
+                } else if (
+                    activeFile.type === 'css' ||
+                    activeFile.type === 'scss'
+                ) {
+                    prettierConfig['parser'] = 'css';
+                    prettierConfig['plugins'] = [parserCss];
+                }
+
+                // If we have a configuration for the selected language
+                if (Object.keys(prettierConfig).length) {
+                    formatted = prettier.format(
+                        activeFile.content,
+                        prettierConfig,
+                    );
+                }
+            }
+            editFile(formatted);
+        }
+    };
+
+    /**
+     * Saves Asset
+     *
+     */
+    const saveFile = async () => {
+        // 1?. Format File
+        // 2. Save Asset with reactor
+        // 3. Save the controlled files new original to content
+        // 4. Trigger Memoized Val: Set New Counter to refresh active file based on new controlled files
+
+        // await prettifyFile();
+
+        const saveSuccessful: boolean = await onSave(
+            controlledFiles[activeIndex],
+        );
+
+        if (saveSuccessful) {
+            const updatedControlledFiles = controlledFiles;
+            updatedControlledFiles[activeIndex] = {
+                ...updatedControlledFiles[activeIndex],
+                original: updatedControlledFiles[activeIndex].content,
+            };
+            setControlledFiles(updatedControlledFiles);
+
+            let newCounter = counter;
+            setCounter((newCounter += 1));
         }
     };
 
@@ -316,40 +347,57 @@ export const TextEditor = (props: TextEditorProps) => {
         setCounter((newCounter += 1));
     };
 
-    /**
-     * Saves Asset
-     *
-     */
-    const saveFile = async () => {
-        // 1. Format File
-        // 2. Save Asset with reactor
-        // 3. Save the controlled files new original to content
-        // 4. Trigger Memoized Val: Set New Counter to refresh active file based on new controlled files
-
-        await prettifyFile();
-
-        const saveSuccessful: boolean = await onSave(
-            controlledFiles[activeIndex],
-        );
-
-        if (saveSuccessful) {
-            const updatedControlledFiles = controlledFiles;
-            updatedControlledFiles[activeIndex] = {
-                ...updatedControlledFiles[activeIndex],
-                original: updatedControlledFiles[activeIndex].content,
-            };
-            setControlledFiles(updatedControlledFiles);
-
-            let newCounter = counter;
-            setCounter((newCounter += 1));
+    const formatFilePath = (activeFileid) => {
+        if (activeFileid[activeFileid.length - 1] == '/') {
+            activeFileid = activeFileid.slice(0, -1);
         }
+
+        activeFileid = activeFileid.replace('version/assets/', '');
+        activeFileid = activeFileid.replace('version/assets', '');
+
+        if (activeFileid[0] == '/') {
+            activeFileid = activeFileid.slice(1);
+        }
+
+        const splitId = activeFileid.split('/');
+
+        let nonGrayPath = splitId.slice(0, splitId.length - 1).join('/');
+        nonGrayPath = nonGrayPath.replaceAll('/', ' / ');
+
+        if (nonGrayPath.length > 0) {
+            nonGrayPath = nonGrayPath + ' / ';
+        }
+
+        const grayFilename = splitId.slice(-1)[0];
+
+        return (
+            <>
+                <StyledFiletypeIcon
+                    path={
+                        FILE_ICON_MAP[activeFileid?.split('.').slice(-1)[0]] ||
+                        FILE_ICON_MAP.document
+                    }
+                    size={1}
+                ></StyledFiletypeIcon>
+                <StyledActiveFilePathContainer>
+                    {nonGrayPath.length > 0 && (
+                        <StyledNonGrayPath variant="body2">
+                            {nonGrayPath}
+                        </StyledNonGrayPath>
+                    )}
+
+                    <StyledGrayFileName variant="body2">
+                        {grayFilename}
+                    </StyledGrayFileName>
+                </StyledActiveFilePathContainer>
+            </>
+        );
     };
 
     /** ------------------
      * Memoized Values
      *  ------------------
      */
-
     /**
      * @returns the Active File for display
      */
@@ -391,10 +439,6 @@ export const TextEditor = (props: TextEditorProps) => {
         return interpretedLanguage;
     }, [activeIndex, files.length, counter]);
 
-    // const memoizedFiles = useMemo(() => {
-
-    // })
-
     if (!files.length) {
         return (
             <StyledContainer>
@@ -405,16 +449,15 @@ export const TextEditor = (props: TextEditorProps) => {
                                 Welcome to the Code Editor
                             </StyledTypography>
                             <StyledTypography variant="body1">
-                                Get started by selecting a file or
+                                Get started by selecting a file{' '}
+                                {process.env.NODE_ENV == 'development' && 'or'}
                             </StyledTypography>
                         </div>
-                        <StyledGenerateButton
-                            variant="contained"
-                            color="secondary"
-                        >
-                            <AutoAwesome />
-                            Generate Code
-                        </StyledGenerateButton>
+                        {process.env.NODE_ENV == 'development' && (
+                            <TextEditorCodeGenerationWrapper>
+                                <TextEditorCodeGeneration />
+                            </TextEditorCodeGenerationWrapper>
+                        )}
                     </StyledHeaderContainer>
                     <Container>
                         <Typography variant="h6">
@@ -424,12 +467,6 @@ export const TextEditor = (props: TextEditorProps) => {
                             <li>
                                 <Link to={'#'}>Code Editor</Link>
                             </li>
-                            {/* <li>
-                                <Link to={'#'}></Link>
-                            </li>
-                            <li>
-                                <Link to={'#'}>j</Link>
-                            </li> */}
                         </ul>
                     </Container>
                 </StyledEmptyFiles>
@@ -437,7 +474,6 @@ export const TextEditor = (props: TextEditorProps) => {
         );
     } else {
         if (activeFile) {
-            // const tabRefs = files.map(() => useRef());
             return (
                 <StyledContainer>
                     <StyledFileTabs>
@@ -518,7 +554,8 @@ export const TextEditor = (props: TextEditorProps) => {
                                 );
                             })}
                         </Tabs>
-                        {/* <StyledIconButton
+                        <div style={{ flexGrow: 1 }}></div>
+                        <StyledPrettierIconButton
                             size={'small'}
                             color={'secondary'}
                             title={'Prettify'}
@@ -526,9 +563,11 @@ export const TextEditor = (props: TextEditorProps) => {
                                 prettifyFile();
                             }}
                         >
-                            <FormatAlignJustify />
-                        </StyledIconButton> */}
-                        <StyledIconButton
+                            <StyledSVG>
+                                <PrettierPath />
+                            </StyledSVG>
+                        </StyledPrettierIconButton>
+                        <StyledSaveIconButton
                             size={'small'}
                             color={'secondary'}
                             title={'Save'}
@@ -537,7 +576,7 @@ export const TextEditor = (props: TextEditorProps) => {
                             }}
                         >
                             <SaveOutlined />
-                        </StyledIconButton>
+                        </StyledSaveIconButton>
                     </StyledFileTabs>
                     <StyledActiveFilePath>
                         {formatFilePath(activeFile.id)}
@@ -553,7 +592,7 @@ export const TextEditor = (props: TextEditorProps) => {
                             // Set new value of file in state, keep old contents
                             editFile(newValue);
 
-                            // onSave for App Renderer??
+                            // onSave for App Renderer
                             // onChange(newValue);
                         }}
                     ></Editor>
@@ -563,4 +602,34 @@ export const TextEditor = (props: TextEditorProps) => {
             return <StyledContainer>No active file</StyledContainer>;
         }
     }
+};
+
+// Formats Python Code
+const runBlack = (code) => {
+    // return new Promise((resolve, reject) => {
+    //     const blackProcess = spawn('black', ['-', '--quiet', '-']);
+
+    //     let formattedCode = '';
+    //     let errorOutput = '';
+
+    //     blackProcess.stdout.on('data', (data) => {
+    //         formattedCode += data;
+    //     });
+
+    //     blackProcess.stderr.on('data', (data) => {
+    //         errorOutput += data;
+    //     });
+
+    //     blackProcess.on('close', (code) => {
+    //         if (code === 0) {
+    //             resolve(formattedCode);
+    //         } else {
+    //             reject(new Error(`Black formatting failed: ${errorOutput}`));
+    //         }
+    //     });
+
+    //     blackProcess.stdin.write(code);
+    //     blackProcess.stdin.end();
+    // });
+    return code;
 };

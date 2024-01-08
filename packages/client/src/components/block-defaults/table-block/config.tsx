@@ -93,6 +93,8 @@ export const config: BlockConfig<TableBlockDef> = {
                             id={id}
                             path="style.fontFamily"
                             label="Font"
+                            allowUnset
+                            allowCustomInput
                             options={[
                                 {
                                     value: 'Roboto',
@@ -115,7 +117,6 @@ export const config: BlockConfig<TableBlockDef> = {
                                     display: 'Georgia',
                                 },
                             ]}
-                            allowUnset
                         />
                     ),
                 },

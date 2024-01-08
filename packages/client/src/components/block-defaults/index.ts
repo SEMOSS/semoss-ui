@@ -28,6 +28,7 @@ import {
     TextFieldBlockDef,
 } from './text-field-block';
 import { config as SectionBlockConfig, SectionBlockDef } from './section-block';
+import { config as UploadBlockConfig, UploadBlockDef } from './upload-block';
 
 export type DefaultBlockDefinitions =
     | BodyBlockDef
@@ -46,7 +47,8 @@ export type DefaultBlockDefinitions =
     | TableBlockDef
     | TextBlockDef
     | TextFieldBlockDef
-    | SectionBlockDef;
+    | SectionBlockDef
+    | UploadBlockDef;
 
 export const DefaultBlocks: Registry<DefaultBlockDefinitions> = {
     [BodyBlockConfig.widget]: BodyBlockConfig,
@@ -66,6 +68,25 @@ export const DefaultBlocks: Registry<DefaultBlockDefinitions> = {
     [TextBlockConfig.widget]: TextBlockConfig,
     [TextFieldBlockConfig.widget]: TextFieldBlockConfig,
     [SectionBlockConfig.widget]: SectionBlockConfig,
+    [UploadBlockConfig.widget]: UploadBlockConfig,
+};
+
+// certain blocks should exist but not be exposed in the Blocks menu (ex Page)
+export const MenuBlocks: Registry<DefaultBlockDefinitions> = {
+    [ButtonBlockConfig.widget]: ButtonBlockConfig,
+    [CheckboxBlockConfig.widget]: CheckboxBlockConfig,
+    [ContainerBlockConfig.widget]: ContainerBlockConfig,
+    [DividerBlockConfig.widget]: DividerBlockConfig,
+    [FormBlockConfig.widget]: FormBlockConfig,
+    [IframeBlockConfig.widget]: IframeBlockConfig,
+    [InputBlockConfig.widget]: InputBlockConfig,
+    [MarkdownBlockConfig.widget]: MarkdownBlockConfig,
+    [SelectBlockConfig.widget]: SelectBlockConfig,
+    [TableBlockConfig.widget]: TableBlockConfig,
+    [TextBlockConfig.widget]: TextBlockConfig,
+    [TextFieldBlockConfig.widget]: TextFieldBlockConfig,
+    [SectionBlockConfig.widget]: SectionBlockConfig,
+    [UploadBlockConfig.widget]: UploadBlockConfig,
 };
 
 export function getIconForBlock(widget: string) {

@@ -48,8 +48,9 @@ export const ButtonBlock: BlockComponent = observer(({ id }) => {
 
     return (
         <StyledButton
-            size="large"
-            variant="contained" // todo make this configurable
+            size="medium"
+            color={'primary'}
+            variant={'contained'}
             loading={data?.loading}
             disabled={data?.disabled || data?.loading}
             sx={{

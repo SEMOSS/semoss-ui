@@ -161,6 +161,7 @@ export const SizeSettings = observer(
                     {Array.from(SIZE_VALUE_TYPES, (buttonValueType: string) => {
                         return (
                             <ToggleButton
+                                key={buttonValueType}
                                 value={buttonValueType}
                                 color={getColorForButtonValue(buttonValueType)}
                                 onClick={() => setValueType(buttonValueType)}

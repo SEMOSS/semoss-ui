@@ -1,12 +1,18 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { computed } from 'mobx';
 import { observer } from 'mobx-react-lite';
-import { MenuItem, Select } from '@semoss/ui';
 import { Paths, PathValue } from '@/types';
 import { useBlockSettings, useDesigner } from '@/hooks';
 import { ActionMessages, Block, BlockDef } from '@/stores';
 import { getValueByPath } from '@/utility';
 import { BaseSettingSection } from '../BaseSettingSection';
+import {
+    Autocomplete,
+    MenuItem,
+    Select,
+    TextField,
+    createFilterOptions,
+} from '@mui/material';
 
 /**
  * Used for discrete selection options tied to values, ex S/M/L
@@ -38,9 +44,16 @@ interface SelectInputSettingsProps<D extends BlockDef = BlockDef> {
      */
     allowUnset?: boolean;
 
+    /**
+     * Whether custom entries are allowed
+     */
+    allowCustomInput?: boolean;
+
     /** Whether we should dispatch an event to the designer to update the frame around the block */
     resizeOnSet?: boolean;
 }
+
+const filter = createFilterOptions<string>();
 
 export const SelectInputSettings = observer(
     <D extends BlockDef = BlockDef>({
@@ -49,10 +62,26 @@ export const SelectInputSettings = observer(
         label,
         options,
         allowUnset = false,
+        allowCustomInput = false,
         resizeOnSet = false,
     }: SelectInputSettingsProps<D>) => {
         const { data, setData } = useBlockSettings(id);
         const { designer } = useDesigner();
+
+        const [autocompleteOptions, setAutocompleteOptions] = useState<
+            Array<string>
+        >([]);
+
+        useEffect(() => {
+            if (allowUnset) {
+                setAutocompleteOptions([
+                    '',
+                    ...options.map((option) => option.value),
+                ]);
+            } else {
+                setAutocompleteOptions(options.map((option) => option.value));
+            }
+        }, [options]);
 
         // track the value
         const [value, setValue] = useState('');
@@ -117,28 +146,81 @@ export const SelectInputSettings = observer(
 
         return (
             <BaseSettingSection label={label}>
-                <Select
-                    fullWidth
-                    size="small"
-                    value={value}
-                    onChange={(e) => {
-                        // sync the data on change
-                        onChange(e.target.value);
-                    }}
-                >
-                    {allowUnset ? (
-                        <MenuItem value={''}>
-                            <em>None</em>
-                        </MenuItem>
-                    ) : null}
-                    {Array.from(options, (option, i) => {
-                        return (
-                            <MenuItem key={i} value={option.value}>
-                                {option.display}
+                {allowCustomInput ? (
+                    <Autocomplete
+                        fullWidth
+                        size="small"
+                        value={value}
+                        onChange={(_, newValue) => {
+                            onChange(newValue.replace('Custom: ', ''));
+                        }}
+                        filterOptions={(autocompleteOptions, params) => {
+                            const filtered = filter(
+                                autocompleteOptions,
+                                params,
+                            );
+
+                            const { inputValue } = params;
+                            // Suggest the creation of a new value
+                            const isExisting = autocompleteOptions.some(
+                                (option) => inputValue === option,
+                            );
+                            if (inputValue !== '' && !isExisting) {
+                                filtered.push(`${inputValue}`);
+                            }
+
+                            return filtered;
+                        }}
+                        selectOnFocus
+                        clearOnBlur
+                        handleHomeEndKeys
+                        options={autocompleteOptions}
+                        getOptionLabel={(option) => {
+                            const dropdownOptions = options.find(
+                                (element) => element.value == option,
+                            );
+                            return dropdownOptions?.display ?? option;
+                        }}
+                        renderOption={(props, option) => {
+                            const dropdownOptions = options.find(
+                                (element) => element.value == option,
+                            );
+                            return (
+                                <li {...props}>
+                                    {dropdownOptions?.display ??
+                                        (option == ''
+                                            ? 'None'
+                                            : `Custom: ${option}`)}
+                                </li>
+                            );
+                        }}
+                        freeSolo
+                        renderInput={(params) => <TextField {...params} />}
+                    />
+                ) : (
+                    <Select
+                        fullWidth
+                        size="small"
+                        value={value}
+                        onChange={(e) => {
+                            // sync the data on change
+                            onChange(e.target.value);
+                        }}
+                    >
+                        {allowUnset ? (
+                            <MenuItem value={''}>
+                                <em>None</em>
                             </MenuItem>
-                        );
-                    })}
-                </Select>
+                        ) : null}
+                        {Array.from(options, (option, i) => {
+                            return (
+                                <MenuItem key={i} value={option.value}>
+                                    {option.display}
+                                </MenuItem>
+                            );
+                        })}
+                    </Select>
+                )}
             </BaseSettingSection>
         );
     },
