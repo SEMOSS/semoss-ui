@@ -7,7 +7,7 @@ import { useBlockSettings, useBlocks } from '@/hooks';
 import { Block, BlockDef } from '@/stores';
 import { getValueByPath } from '@/utility';
 import { BaseSettingSection } from '../BaseSettingSection';
-import { Checkbox } from '@semoss/ui';
+import { Checklist } from '@semoss/ui';
 
 interface PageSelectionSettingsProps<D extends BlockDef = BlockDef> {
     /**
@@ -38,49 +38,51 @@ export const PageSelectionSettings = observer(
         const { data, setData } = useBlockSettings(id);
         const { state } = useBlocks();
 
-        // track the value
-        const [value, setValue] = useState('');
-
         // track the ref to debounce the input
         const timeoutRef = useRef<ReturnType<typeof setTimeout>>(null);
 
-        // get the value of the input (wrapped in usememo because of path prop)
-        const computedValue = useMemo(() => {
-            return computed(() => {
-                if (!data) {
-                    return '';
-                }
-
-                const v = getValueByPath(data, path);
-                if (typeof v === 'undefined') {
-                    return '';
-                } else if (typeof v === 'string') {
-                    return v;
-                }
-
-                return JSON.stringify(v);
-            });
-        }, [data, path]).get();
-
-        // update the value whenever the computed one changes
-        useEffect(() => {
-            setValue(computedValue);
-        }, [computedValue]);
-
         // available pages for checklist
-        const pages = useMemo(() => {
-            // return Object.keys(state.queries).reduce((acc, queryKey) => {
-            //     return { ...acc, [`{{${queryKey}.isLoading}}`]: queryKey };
-            // }, {});
-        }, [Object.keys(state.blocks).length]);
+        const pages = computed(() => {
+            const pages: {
+                route: string;
+                name: string;
+                id: string;
+                label: string;
+            }[] = [];
+            for (const b in state.blocks) {
+                const block = state.blocks[b];
+
+                // check if it is a page widget
+                if (block.widget === 'page') {
+                    // store the pages
+                    pages.push({
+                        id: block.id,
+                        label: (block.data?.route as string) || 'home',
+                        name: (block.data?.name as string) || '',
+                        route: (block.data?.route as string) || '',
+                    });
+                }
+            }
+
+            // sort by the path
+            return pages.sort((a, b) => {
+                const aRoute = a.route.toLowerCase(),
+                    bRoute = b.route.toLowerCase();
+
+                if (aRoute < bRoute) {
+                    return -1;
+                }
+                if (aRoute > bRoute) {
+                    return 1;
+                }
+                return 0;
+            });
+        }).get();
 
         /**
          * Sync the data on change
          */
-        const onChange = (value: string) => {
-            // set the value
-            setValue(value);
-
+        const onChange = (value) => {
             // clear out the old timeout
             if (timeoutRef.current) {
                 clearTimeout(timeoutRef.current);
@@ -102,9 +104,12 @@ export const PageSelectionSettings = observer(
                 direction={'column'}
                 alignItems={'flex-start'}
             >
-                <div>p</div>
-                <div>j</div>
-                <Checkbox label={'P-1'} />
+                <Checklist
+                    getKey={(option) => option.id}
+                    onChange={onChange}
+                    options={pages}
+                    checked={data.pages}
+                />
             </BaseSettingSection>
         );
     },

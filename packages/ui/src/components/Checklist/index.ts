@@ -1,3 +1,3 @@
-import { Checklist } from "./Checklist";
+import { Checklist, ChecklistProps } from "./Checklist";
 
-export { Checklist };
+export { Checklist, ChecklistProps };

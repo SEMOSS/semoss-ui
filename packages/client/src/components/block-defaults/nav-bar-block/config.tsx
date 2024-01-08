@@ -30,7 +30,7 @@ export const config: BlockConfig<NavBarBlockDef> = {
             flexDirection: 'row',
         },
         name: 'Example Navbar',
-        pages: ['1', '2'],
+        pages: ['page-1'],
     },
     listeners: {},
     slots: {},
