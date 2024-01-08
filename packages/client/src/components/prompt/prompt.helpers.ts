@@ -143,8 +143,9 @@ export function getInputFormatPrompt(
 }
 
 function getVectorQuery() {
-    let vectorQueryFunctionString = `def runVectorSearch(search_statement:str, vector_engine_id:str):`;
+    let vectorQueryFunctionString = `def runVectorSearch(search_statement:str, vector_engine_id:str, limit:int):`;
 
+    vectorQueryFunctionString += `from gaas_gpt_vector import VectorEngine;`;
     vectorQueryFunctionString += `vector = VectorEngine(engine_id = vector_engine_id, insight_id = '\${i}', insight_folder = '\${if}');`;
     vectorQueryFunctionString += `matches = vector.nearestNeighbor(search_statement = search_statement, limit = limit);`;
 
@@ -187,7 +188,6 @@ export function getQueryForPrompt(
         promptQueryFunctionString +=
             `import json;` +
             `from gaas_gpt_model import ModelEngine;` +
-            `from gaas_gpt_vector import VectorEngine;` +
             `model = ModelEngine(engine_id = "${model}", insight_id = '\${i}');`;
 
         Object.keys(customInputTypes).forEach(
@@ -196,7 +196,7 @@ export function getQueryForPrompt(
                     customInputTypes[customInputTokenIndex]?.type ===
                     INPUT_TYPE_VECTOR
                 ) {
-                    promptQueryFunctionString += `${customInputTypes[customInputTokenIndex].type}_${index} = runVectorSearch(${customInputTypes[customInputTokenIndex]?.type}_${index}_statement,"${customInputTypes[customInputTokenIndex]?.meta}");`;
+                    promptQueryFunctionString += `${customInputTypes[customInputTokenIndex].type}_${index} = runVectorSearch(${customInputTypes[customInputTokenIndex]?.type}_${index}_statement,"${customInputTypes[customInputTokenIndex]?.meta}",limit);`;
                 }
                 if (
                     customInputTypes[customInputTokenIndex]?.type ===
@@ -228,11 +228,11 @@ export function getQueryForPrompt(
     const query = `promptQuery("${prompt}"${
         Object.keys(customInputTypes).length ? ', ' : ''
     }${Object.keys(customInputTypes)
-        .map((customInputTokenIndex, index: number) => {
-            return `{{${getIdForInput(
+        .map((customInputTokenIndex) => {
+            return `"{{${getIdForInput(
                 customInputTypes[customInputTokenIndex].type,
-                customInputTypes[customInputTokenIndex].index,
-            )}.value}}`;
+                parseInt(customInputTokenIndex),
+            )}.value}}"`;
         })
         .join(', ')})`;
 
@@ -434,6 +434,7 @@ export async function setBlocksAndOpenUIBuilder(
                         width: '125px',
                     },
                     label: 'Submit',
+                    loading: `{{${PROMPT_QUERY_ID}.isLoading}}`,
                 },
                 listeners: {
                     onClick: [
