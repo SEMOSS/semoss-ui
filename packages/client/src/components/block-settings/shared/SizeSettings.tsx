@@ -30,6 +30,8 @@ interface SizeSettingsProps<D extends BlockDef = BlockDef> {
     path: Paths<Block<D>['data'], 4>;
 }
 
+const SIZE_VALUE_TYPES = ['em', 'px', '%'];
+
 export const SizeSettings = observer(
     <D extends BlockDef = BlockDef>({
         id,
@@ -72,6 +74,8 @@ export const SizeSettings = observer(
                 setValueType('%');
             } else if (computedValue.includes('px')) {
                 setValueType('px');
+            } else if (computedValue.includes('em')) {
+                setValueType('em');
             }
             setValue(computedValue);
         }, [computedValue]);
@@ -85,7 +89,7 @@ export const SizeSettings = observer(
         // remove type when value is unset
         useMemo(() => {
             if (numericValue && !valueType) {
-                setValueType('%');
+                setValueType('em');
             } else if (!numericValue) {
                 setValueType('');
             }
@@ -134,8 +138,14 @@ export const SizeSettings = observer(
             }
         }, [valueType]);
 
+        const getColorForButtonValue = (
+            buttonValue: string,
+        ): 'primary' | undefined => {
+            return valueType === buttonValue ? 'primary' : undefined;
+        };
+
         return (
-            <BaseSettingSection label={label}>
+            <BaseSettingSection label={label} wide>
                 <TextField
                     fullWidth
                     value={numericValue}
@@ -148,20 +158,18 @@ export const SizeSettings = observer(
                     autoComplete="off"
                 />
                 <ToggleButtonGroup value={valueType} exclusive size="small">
-                    <ToggleButton
-                        value="%"
-                        color={valueType === '%' ? 'primary' : undefined}
-                        onClick={() => setValueType('%')}
-                    >
-                        %
-                    </ToggleButton>
-                    <ToggleButton
-                        value="px"
-                        color={valueType === 'px' ? 'primary' : undefined}
-                        onClick={() => setValueType('px')}
-                    >
-                        px
-                    </ToggleButton>
+                    {Array.from(SIZE_VALUE_TYPES, (buttonValueType: string) => {
+                        return (
+                            <ToggleButton
+                                key={buttonValueType}
+                                value={buttonValueType}
+                                color={getColorForButtonValue(buttonValueType)}
+                                onClick={() => setValueType(buttonValueType)}
+                            >
+                                {buttonValueType}
+                            </ToggleButton>
+                        );
+                    })}
                 </ToggleButtonGroup>
             </BaseSettingSection>
         );

@@ -93,6 +93,7 @@ export const HomePage = observer((): JSX.Element => {
                                 onChange={(e) => {
                                     setSearch(e.target.value);
                                 }}
+                                placeholder="Search Apps"
                             />
                         </Stack>
                         <Button

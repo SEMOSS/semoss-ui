@@ -167,13 +167,13 @@ export const TextEditorCodeGeneration = () => {
         <>
             <StyledGenerateButton
                 full={true}
+                startIcon={<AutoAwesome />}
                 variant="contained"
                 color="secondary"
                 onClick={() => {
                     setIsOpen(true);
                 }}
             >
-                <AutoAwesome />
                 Generate Code
             </StyledGenerateButton>
             {/* Generate Code Modal */}

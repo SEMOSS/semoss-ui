@@ -8,6 +8,7 @@ import { Stack, Typography } from '@semoss/ui';
 export const BaseSettingSection = (props: {
     label: string;
     children: ReactNode;
+    wide?: boolean;
 }) => {
     return (
         <Stack
@@ -16,7 +17,12 @@ export const BaseSettingSection = (props: {
             justifyContent="space-between"
         >
             <Typography variant="body2">{props.label}</Typography>
-            <Stack direction="row" justifyContent="end" spacing={1} width="50%">
+            <Stack
+                direction="row"
+                justifyContent="end"
+                spacing={1}
+                width={props?.wide ? '60%' : '50%'}
+            >
                 {props.children}
             </Stack>
         </Stack>

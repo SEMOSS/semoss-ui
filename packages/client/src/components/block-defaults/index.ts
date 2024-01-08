@@ -2,6 +2,10 @@ import { Registry } from '@/stores';
 import { config as BodyBlockConfig, BodyBlockDef } from './body-block';
 import { config as ButtonBlockConfig, ButtonBlockDef } from './button-block';
 import {
+    config as CheckboxBlockConfig,
+    CheckboxBlockDef,
+} from './checkbox-block';
+import {
     config as ContainerBlockConfig,
     ContainerBlockDef,
 } from './container-block';
@@ -34,10 +38,12 @@ import {
     config as FileEmbedBlockConfig,
     FileEmbedBlockDef,
 } from './file-embed-block';
+import { config as UploadBlockConfig, UploadBlockDef } from './upload-block';
 
 export type DefaultBlockDefinitions =
     | BodyBlockDef
     | ButtonBlockDef
+    | CheckboxBlockDef
     | ContainerBlockDef
     | DividerBlockDef
     | FooterBlockDef
@@ -56,10 +62,13 @@ export type DefaultBlockDefinitions =
     | VectorsBlockDef
     | FileDropZoneBlockDef
     | FileEmbedBlockDef;
+    | SectionBlockDef
+    | UploadBlockDef;
 
 export const DefaultBlocks: Registry<DefaultBlockDefinitions> = {
     [BodyBlockConfig.widget]: BodyBlockConfig,
     [ButtonBlockConfig.widget]: ButtonBlockConfig,
+    [CheckboxBlockConfig.widget]: CheckboxBlockConfig,
     [ContainerBlockConfig.widget]: ContainerBlockConfig,
     [DividerBlockConfig.widget]: DividerBlockConfig,
     [FooterBlockConfig.widget]: FooterBlockConfig,
@@ -78,6 +87,25 @@ export const DefaultBlocks: Registry<DefaultBlockDefinitions> = {
     [VectorsBlockConfig.widget]: VectorsBlockConfig,
     [FileDropZoneBlockConfig.widget]: FileDropZoneBlockConfig,
     [FileEmbedBlockConfig.widget]: FileEmbedBlockConfig,
+    [UploadBlockConfig.widget]: UploadBlockConfig,
+};
+
+// certain blocks should exist but not be exposed in the Blocks menu (ex Page)
+export const MenuBlocks: Registry<DefaultBlockDefinitions> = {
+    [ButtonBlockConfig.widget]: ButtonBlockConfig,
+    [CheckboxBlockConfig.widget]: CheckboxBlockConfig,
+    [ContainerBlockConfig.widget]: ContainerBlockConfig,
+    [DividerBlockConfig.widget]: DividerBlockConfig,
+    [FormBlockConfig.widget]: FormBlockConfig,
+    [IframeBlockConfig.widget]: IframeBlockConfig,
+    [InputBlockConfig.widget]: InputBlockConfig,
+    [MarkdownBlockConfig.widget]: MarkdownBlockConfig,
+    [SelectBlockConfig.widget]: SelectBlockConfig,
+    [TableBlockConfig.widget]: TableBlockConfig,
+    [TextBlockConfig.widget]: TextBlockConfig,
+    [TextFieldBlockConfig.widget]: TextFieldBlockConfig,
+    [SectionBlockConfig.widget]: SectionBlockConfig,
+    [UploadBlockConfig.widget]: UploadBlockConfig,
 };
 
 export function getIconForBlock(widget: string) {

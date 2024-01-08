@@ -85,4 +85,20 @@ export const ADD_APP_STEPS: Record<string, APP_STEP_INTERFACE> = {
         ],
         disabled: false,
     },
+    CSV_QUERY: {
+        title: 'CSV Query',
+        description:
+            'Craft visually stunning websites effortlessly with our UI Builder. Design pixel-perfect layouts, customize interactions, and bring ideas to life seamlessly, empowering you to create without code constraints.',
+        steps: [
+            {
+                name: 'metavals',
+                title: 'Details',
+            },
+            {
+                name: 'access',
+                title: 'Access',
+            },
+        ],
+        disabled: false,
+    },
 };
