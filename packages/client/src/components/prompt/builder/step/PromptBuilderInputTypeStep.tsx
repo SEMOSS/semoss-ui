@@ -17,7 +17,7 @@ export const StyledBox = styled(Box)(({ theme }) => ({
 }));
 
 export const StyledStack = styled(Stack)(({ theme }) => ({
-    padding: theme.spacing(4),
+    padding: `${theme.spacing(2)} ${theme.spacing(4)}`,
     maxHeight: '480px',
     overflowY: 'scroll',
 }));
@@ -104,7 +104,7 @@ export const PromptBuilderInputTypeStep = (props: {
                     inputs.
                 </Typography>
             </StyledBox>
-            <StyledStack spacing={2}>
+            <StyledStack spacing={3}>
                 {Array.from(inputTokens, (inputToken: Token) => (
                     <PromptBuilderInputTypeSelection
                         inputToken={inputToken}

@@ -21,9 +21,8 @@ export const APP_TITLE_BLOCK_ID = 'title';
 export const HELP_TEXT_BLOCK_ID = 'help-text';
 export const PROMPT_SUBMIT_BLOCK_ID = 'prompt-submit';
 export const PROMPT_RESPONSE_BLOCK_ID = 'prompt-response';
-export const PROMPT_VECTOR_QUERY_DEFINITION_ID = 'vector-search-definition';
-export const PROMPT_QUERY_ID = 'prompt-query';
-export const PROMPT_QUERY_DEFINITION_ID = 'prompt-query-definition';
+export const PROMPT_QUERY_ID = 'Prompt Query';
+export const PROMPT_QUERY_DEFINITION_ID = 'Query Definitions';
 
 function capitalizeLabel(label: string): string {
     const words = label.split(' ');
@@ -84,8 +83,9 @@ export function getBlockForInput(
     inputType: string,
 ): Block | null {
     switch (inputType) {
-        case INPUT_TYPE_VECTOR:
         case INPUT_TYPE_TEXT:
+        case INPUT_TYPE_VECTOR:
+        case INPUT_TYPE_CUSTOM_QUERY:
             return getTextFieldInputBlock(
                 inputType,
                 token.index,
@@ -153,6 +153,10 @@ function getVectorQuery() {
     return vectorQueryFunctionString;
 }
 
+function getCustomQuery(index: number) {
+    return `def runCustom_${index}(search_statement:str): return search_statement;`;
+}
+
 export function getQueryForPrompt(
     model: string,
     tokens: Token[],
@@ -194,6 +198,12 @@ export function getQueryForPrompt(
                 ) {
                     promptQueryFunctionString += `${customInputTypes[customInputTokenIndex].type}_${index} = runVectorSearch(${customInputTypes[customInputTokenIndex]?.type}_${index}_statement,"${customInputTypes[customInputTokenIndex]?.meta}");`;
                 }
+                if (
+                    customInputTypes[customInputTokenIndex]?.type ===
+                    INPUT_TYPE_CUSTOM_QUERY
+                ) {
+                    promptQueryFunctionString += `${customInputTypes[customInputTokenIndex].type}_${index} = runCustom_${index}(${customInputTypes[customInputTokenIndex]?.type}_${index}_statement);`;
+                }
             },
         );
 
@@ -228,7 +238,7 @@ export function getQueryForPrompt(
 
     let queryDefinitionSteps = [
         {
-            id: PROMPT_QUERY_DEFINITION_ID,
+            id: 'py-prompt-query-definition',
             widget: 'code',
             parameters: {
                 type: 'py',
@@ -236,13 +246,30 @@ export function getQueryForPrompt(
             },
         },
     ];
+    Object.keys(customInputTypes).forEach(
+        (customInputTokenIndex, index: number) => {
+            if (
+                customInputTypes[customInputTokenIndex]?.type ===
+                INPUT_TYPE_CUSTOM_QUERY
+            ) {
+                queryDefinitionSteps.unshift({
+                    id: `py-custom-query-${index}-definition`,
+                    widget: 'code',
+                    parameters: {
+                        type: 'py',
+                        code: getCustomQuery(index),
+                    },
+                });
+            }
+        },
+    );
     if (
         Object.values(customInputTypes).some(
             (inputType) => inputType?.type === INPUT_TYPE_VECTOR,
         )
     ) {
         queryDefinitionSteps.unshift({
-            id: PROMPT_VECTOR_QUERY_DEFINITION_ID,
+            id: 'py-vector-search-query-definition',
             widget: 'code',
             parameters: {
                 type: 'py',

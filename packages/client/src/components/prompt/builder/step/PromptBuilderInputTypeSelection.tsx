@@ -36,7 +36,7 @@ export const PromptBuilderInputTypeSelection = (props: {
                 <PromptReadonlyInputToken tokenKey={props.inputToken.key} />
             </Grid>
             <Grid item xs={9} md={6}>
-                <Stack spacing={1}>
+                <Stack spacing={2}>
                     <Autocomplete
                         fullWidth
                         disableClearable
