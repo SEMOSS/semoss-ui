@@ -1,10 +1,26 @@
 import { useEffect, useState, useMemo } from 'react';
 import { Builder, Token } from '../../prompt.types';
-import { StyledStepPaper } from '../../prompt.styled';
-import { Box, Stack, Typography } from '@semoss/ui';
-import { TOKEN_TYPE_INPUT } from '../../prompt.constants';
+// import { StyledStepPaper } from '../../prompt.styled';
+import { styled, Box, Paper, Stack, Typography } from '@semoss/ui';
+import { INPUT_TYPE_TEXT, TOKEN_TYPE_INPUT } from '../../prompt.constants';
 import { PromptBuilderInputTypeSelection } from './PromptBuilderInputTypeSelection';
 import { usePixel } from '@/hooks';
+
+export const StyledStepPaper = styled(Paper)(({ theme }) => ({
+    margin: theme.spacing(1),
+    height: '100%',
+}));
+
+export const StyledBox = styled(Box)(({ theme }) => ({
+    padding: theme.spacing(4),
+    paddingButton: theme.spacing(2),
+}));
+
+export const StyledStack = styled(Stack)(({ theme }) => ({
+    padding: theme.spacing(4),
+    maxHeight: '480px',
+    overflowY: 'scroll',
+}));
 
 export const PromptBuilderInputTypeStep = (props: {
     builder: Builder;
@@ -65,7 +81,10 @@ export const PromptBuilderInputTypeStep = (props: {
         );
         setInputTokens(filteredTokens);
         const keyedInputs = filteredTokens.reduce((acc, token: Token) => {
-            return { ...acc, [token.index]: { type: null, meta: null } };
+            return {
+                ...acc,
+                [token.index]: { type: INPUT_TYPE_TEXT, meta: null },
+            };
         }, {});
         setInputTypes(keyedInputs);
     }, []);
@@ -78,14 +97,14 @@ export const PromptBuilderInputTypeStep = (props: {
 
     return (
         <StyledStepPaper elevation={2} square>
-            <Box>
+            <StyledBox>
                 <Typography variant="h5">Define Input Types</Typography>
                 <Typography variant="body1">
                     Use the dropdowns to define the input types for each of your
                     inputs.
                 </Typography>
-            </Box>
-            <Stack marginY={3} spacing={3}>
+            </StyledBox>
+            <StyledStack spacing={2}>
                 {Array.from(inputTokens, (inputToken: Token) => (
                     <PromptBuilderInputTypeSelection
                         inputToken={inputToken}
@@ -96,7 +115,7 @@ export const PromptBuilderInputTypeStep = (props: {
                         setInputType={setInputType}
                     />
                 ))}
-            </Stack>
+            </StyledStack>
         </StyledStepPaper>
     );
 };
