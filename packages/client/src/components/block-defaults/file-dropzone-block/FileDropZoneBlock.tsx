@@ -36,14 +36,9 @@ export const FileDropZoneBlock: BlockComponent = observer(({ id }) => {
         setFiles(uploadedFiles);
     };
 
-    const handleFileDelete = (fileName: string) => {
-        setFiles(files.filter((file) => file.name !== fileName));
-    };
-
     return (
         <FileDropzone
             style={{ ...data.style }}
-            onDeleted={handleFileDelete}
             onChange={handleFileChange}
             multiple={true}
             valid={true}

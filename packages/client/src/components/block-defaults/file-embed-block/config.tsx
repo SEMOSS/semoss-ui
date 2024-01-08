@@ -1,6 +1,6 @@
 import { BlockConfig } from '@/stores';
-import { BLOCK_TYPE_UPLOAD } from '../block-defaults.constants';
-import { FileDropZoneBlockDef, FileDropZoneBlock } from './FileDropZoneBlock';
+import { BLOCK_TYPE_CUSTOM } from '../block-defaults.constants';
+import { FileEmbedBlockDef, FileEmbedBlock } from './FileEmbedBlock';
 import { InputSettings } from '@/components/block-settings';
 import {
     buildBorderSection,
@@ -10,13 +10,14 @@ import {
     buildColorSection,
 } from '../block-defaults.shared';
 import OpenInBrowserRoundedIcon from '@mui/icons-material/OpenInBrowserRounded';
+import CloudUploadOutlinedIcon from '@mui/icons-material/CloudUploadOutlined';
 
-export const config: BlockConfig<FileDropZoneBlockDef> = {
-    widget: 'file-upload',
-    type: BLOCK_TYPE_UPLOAD,
+export const config: BlockConfig<FileEmbedBlockDef> = {
+    widget: 'file-embed',
+    type: BLOCK_TYPE_CUSTOM,
     data: {
         style: {},
-        name: 'New File Upload',
+        name: 'Embed File',
         value: [],
         type: 'Value',
         extensions: ['All', 'csv', 'doc', 'pdf', 'txt', 'xlsx', 'ZIP'],
@@ -30,8 +31,8 @@ export const config: BlockConfig<FileDropZoneBlockDef> = {
     slots: {
         test: [],
     },
-    render: FileDropZoneBlock,
-    icon: OpenInBrowserRoundedIcon,
+    render: FileEmbedBlock,
+    icon: CloudUploadOutlinedIcon,
     contentMenu: [
         {
             name: 'General',

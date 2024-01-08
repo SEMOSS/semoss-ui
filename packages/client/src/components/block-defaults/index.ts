@@ -30,6 +30,10 @@ import {
     config as FileDropZoneBlockConfig,
     FileDropZoneBlockDef,
 } from './file-dropzone-block';
+import {
+    config as FileEmbedBlockConfig,
+    FileEmbedBlockDef,
+} from './file-embed-block';
 
 export type DefaultBlockDefinitions =
     | BodyBlockDef
@@ -50,7 +54,8 @@ export type DefaultBlockDefinitions =
     | SectionBlockDef
     | ModelsBlockDef
     | VectorsBlockDef
-    | FileDropZoneBlockDef;
+    | FileDropZoneBlockDef
+    | FileEmbedBlockDef;
 
 export const DefaultBlocks: Registry<DefaultBlockDefinitions> = {
     [BodyBlockConfig.widget]: BodyBlockConfig,
@@ -72,6 +77,7 @@ export const DefaultBlocks: Registry<DefaultBlockDefinitions> = {
     [ModelsBlockConfig.widget]: ModelsBlockConfig,
     [VectorsBlockConfig.widget]: VectorsBlockConfig,
     [FileDropZoneBlockConfig.widget]: FileDropZoneBlockConfig,
+    [FileEmbedBlockConfig.widget]: FileEmbedBlockConfig,
 };
 
 export function getIconForBlock(widget: string) {
