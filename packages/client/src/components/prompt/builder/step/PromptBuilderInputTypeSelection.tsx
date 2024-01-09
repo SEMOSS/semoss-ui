@@ -4,6 +4,7 @@ import { Grid, Stack, TextField, Collapse } from '@semoss/ui';
 import { Fade } from '@mui/material';
 import {
     INPUT_TYPES,
+    INPUT_TYPE_DATABASE,
     INPUT_TYPE_DISPLAY,
     INPUT_TYPE_VECTOR,
 } from '../../prompt.constants';
@@ -18,12 +19,62 @@ export const PromptBuilderInputTypeSelection = (props: {
         ids: Array<string>;
         display: object;
     };
+    cfgLibraryDatabases: {
+        loading: boolean;
+        ids: Array<string>;
+        display: object;
+    };
     setInputType: (
         inputTokenIndex: number,
         inputType: string,
         inputTypeMeta: string | null,
     ) => void;
 }) => {
+    const showMetaAutocomplete =
+        props.inputType === INPUT_TYPE_VECTOR ||
+        props.inputType === INPUT_TYPE_DATABASE;
+
+    const getMetaSelectorLoading = (): boolean => {
+        switch (props.inputType) {
+            case INPUT_TYPE_VECTOR:
+                return props.cfgLibraryVectorDbs.loading;
+            case INPUT_TYPE_DATABASE:
+                return props.cfgLibraryDatabases.loading;
+            default:
+                return false;
+        }
+    };
+    const getMetaSelectorOptions = (): Array<string> => {
+        switch (props.inputType) {
+            case INPUT_TYPE_VECTOR:
+                return props.cfgLibraryVectorDbs.ids;
+            case INPUT_TYPE_DATABASE:
+                return props.cfgLibraryDatabases.ids;
+            default:
+                return [];
+        }
+    };
+    const getMetaSelectorDisplay = (value: string): string => {
+        switch (props.inputType) {
+            case INPUT_TYPE_VECTOR:
+                return props.cfgLibraryVectorDbs.display[value] ?? '';
+            case INPUT_TYPE_DATABASE:
+                return props.cfgLibraryDatabases.display[value] ?? '';
+            default:
+                return '';
+        }
+    };
+    const getMetaSelectorLabel = (): string => {
+        switch (props.inputType) {
+            case INPUT_TYPE_VECTOR:
+                return 'Knowledge Repository';
+            case INPUT_TYPE_DATABASE:
+                return 'Database';
+            default:
+                return '';
+        }
+    };
+
     return (
         <Grid
             sx={{
@@ -59,30 +110,27 @@ export const PromptBuilderInputTypeSelection = (props: {
                             />
                         )}
                     />
-                    <Fade in={props.inputType === INPUT_TYPE_VECTOR}>
+                    <Fade in={showMetaAutocomplete}>
                         <Autocomplete
                             fullWidth
                             disableClearable
                             size="small"
-                            id="vector-autocomplete"
-                            loading={props.cfgLibraryVectorDbs.loading}
-                            options={props.cfgLibraryVectorDbs.ids}
+                            id="meta-autocomplete"
+                            loading={getMetaSelectorLoading()}
+                            options={getMetaSelectorOptions()}
                             value={props.inputTypeMeta ?? ''}
-                            getOptionLabel={(vectorId: string) =>
-                                props.cfgLibraryVectorDbs.display[vectorId] ??
-                                ''
-                            }
-                            onChange={(_, newVectorId: string) => {
+                            getOptionLabel={getMetaSelectorDisplay}
+                            onChange={(_, newMetaValue: string) => {
                                 props.setInputType(
                                     props.inputToken.index,
                                     props.inputType,
-                                    newVectorId,
+                                    newMetaValue,
                                 );
                             }}
                             renderInput={(params) => (
                                 <TextField
                                     {...params}
-                                    label="Knowledge Repository"
+                                    label={getMetaSelectorLabel()}
                                     variant="outlined"
                                 />
                             )}

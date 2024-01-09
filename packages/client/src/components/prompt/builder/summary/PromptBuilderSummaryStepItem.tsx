@@ -1,4 +1,4 @@
-import { INPUT_TYPE_VECTOR } from '../../prompt.constants';
+import { INPUT_TYPE_VECTOR, INPUT_TYPE_DATABASE } from '../../prompt.constants';
 import { Builder, BuilderStepItem } from '../../prompt.types';
 import { List } from '@semoss/ui';
 
@@ -25,7 +25,10 @@ export const PromptBuilderSummaryStepItem = (props: BuilderStepItemProps) => {
                     Object.values(item.value).length &&
                     Object.values(item.value).every(
                         (inputType: { type: string; meta: string }) => {
-                            if (inputType?.type === INPUT_TYPE_VECTOR) {
+                            if (
+                                inputType?.type === INPUT_TYPE_VECTOR ||
+                                props?.type === INPUT_TYPE_DATABASE
+                            ) {
                                 return !!inputType.meta;
                             } else {
                                 return !!inputType.type;

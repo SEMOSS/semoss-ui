@@ -24,17 +24,20 @@ export const INPUT_TYPE_TEXT = 'text';
 export const INPUT_TYPE_SELECT = 'select';
 export const INPUT_TYPE_VECTOR = 'vector';
 export const INPUT_TYPE_CUSTOM_QUERY = 'custom';
+export const INPUT_TYPE_DATABASE = 'database';
 export const INPUT_TYPES = [
     INPUT_TYPE_TEXT,
     INPUT_TYPE_SELECT,
     INPUT_TYPE_VECTOR,
     INPUT_TYPE_CUSTOM_QUERY,
+    INPUT_TYPE_DATABASE,
 ];
 export const INPUT_TYPE_DISPLAY = {
     [INPUT_TYPE_TEXT]: 'Text Field',
     [INPUT_TYPE_SELECT]: 'Select',
     [INPUT_TYPE_VECTOR]: 'Knowledge Search',
     [INPUT_TYPE_CUSTOM_QUERY]: 'Custom Query',
+    [INPUT_TYPE_DATABASE]: 'Database',
 };
 
 export const VECTOR_SEARCH_FULL_CONTEXT = 'full';

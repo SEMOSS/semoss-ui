@@ -5,6 +5,7 @@ import {
     TOKEN_TYPE_TEXT,
     INPUT_TYPE_VECTOR,
     INPUT_TYPE_CUSTOM_QUERY,
+    INPUT_TYPE_DATABASE,
 } from './prompt.constants';
 import {
     ActionMessages,
@@ -85,6 +86,7 @@ export function getBlockForInput(
     switch (inputType) {
         case INPUT_TYPE_TEXT:
         case INPUT_TYPE_VECTOR:
+        case INPUT_TYPE_DATABASE:
         case INPUT_TYPE_CUSTOM_QUERY:
             return getTextFieldInputBlock(
                 inputType,
@@ -158,6 +160,16 @@ function getCustomQuery(index: number) {
     return `def runCustom_${index}(search_statement:str): return search_statement;`;
 }
 
+function getDatabaseQuery() {
+    let databaseQueryFunctionString = `def runDatabaseQuery(query:str, database_engine_id:str):`;
+
+    databaseQueryFunctionString += `from gaas_gpt_database import DatabaseEngine;`;
+    databaseQueryFunctionString += `databaseEngine = DatabaseEngine(engine_id = database_engine_id, insight_id = '\${i}');`;
+    databaseQueryFunctionString += `return databaseEngine.execQuery(query = query).to_numpy().tolist();`;
+
+    return databaseQueryFunctionString;
+}
+
 export function getQueryForPrompt(
     model: string,
     tokens: Token[],
@@ -170,7 +182,8 @@ export function getQueryForPrompt(
         Object.entries(inputTypes).filter(
             ([_, value]) =>
                 value?.type === INPUT_TYPE_VECTOR ||
-                value?.type === INPUT_TYPE_CUSTOM_QUERY,
+                value?.type === INPUT_TYPE_CUSTOM_QUERY ||
+                value?.type === INPUT_TYPE_DATABASE,
         ),
     );
 
@@ -179,7 +192,14 @@ export function getQueryForPrompt(
             customInputTypes,
         )
             .map((customInputTokenIndex, index: number) => {
-                return `${customInputTypes[customInputTokenIndex]?.type}_${index}_statement:str`;
+                return `${
+                    customInputTypes[customInputTokenIndex]?.type
+                }_${index}_${
+                    customInputTypes[customInputTokenIndex]?.type ===
+                    INPUT_TYPE_DATABASE
+                        ? 'query'
+                        : 'statement'
+                }:str`;
             })
             .join(', ')}${
             Object.keys(customInputTypes).length ? ', ' : ''
@@ -203,6 +223,12 @@ export function getQueryForPrompt(
                     INPUT_TYPE_CUSTOM_QUERY
                 ) {
                     promptQueryFunctionString += `${customInputTypes[customInputTokenIndex].type}_${index} = runCustom_${index}(${customInputTypes[customInputTokenIndex]?.type}_${index}_statement);`;
+                }
+                if (
+                    customInputTypes[customInputTokenIndex]?.type ===
+                    INPUT_TYPE_DATABASE
+                ) {
+                    promptQueryFunctionString += `${customInputTypes[customInputTokenIndex].type}_${index} = runDatabaseQuery(${customInputTypes[customInputTokenIndex]?.type}_${index}_query,"${customInputTypes[customInputTokenIndex]?.meta}");`;
                 }
             },
         );
@@ -253,7 +279,7 @@ export function getQueryForPrompt(
                 INPUT_TYPE_CUSTOM_QUERY
             ) {
                 queryDefinitionSteps.unshift({
-                    id: `py-custom-query-${index}-definition`,
+                    id: `py-custom-query-${tokens[customInputTokenIndex].key}-definition`,
                     widget: 'code',
                     parameters: {
                         type: 'py',
@@ -274,6 +300,20 @@ export function getQueryForPrompt(
             parameters: {
                 type: 'py',
                 code: getVectorQuery(),
+            },
+        });
+    }
+    if (
+        Object.values(customInputTypes).some(
+            (inputType) => inputType?.type === INPUT_TYPE_DATABASE,
+        )
+    ) {
+        queryDefinitionSteps.unshift({
+            id: 'py-database-query-definition',
+            widget: 'code',
+            parameters: {
+                type: 'py',
+                code: getDatabaseQuery(),
             },
         });
     }

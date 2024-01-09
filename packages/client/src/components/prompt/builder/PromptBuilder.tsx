@@ -15,6 +15,7 @@ import {
     PROMPT_BUILDER_PREVIEW_STEP,
     TOKEN_TYPE_INPUT,
     INPUT_TYPE_VECTOR,
+    INPUT_TYPE_DATABASE,
 } from '../prompt.constants';
 import { styled, Box, Button, Grid, Paper } from '@semoss/ui';
 import { PromptBuilderSummary } from './summary';
@@ -155,7 +156,10 @@ export const PromptBuilder = () => {
                     Object.values(stepItems[0].value).length &&
                     Object.values(stepItems[0].value).every(
                         (inputType: { type: string; meta: string }) => {
-                            if (inputType?.type === INPUT_TYPE_VECTOR) {
+                            if (
+                                inputType?.type === INPUT_TYPE_VECTOR ||
+                                inputType?.type === INPUT_TYPE_DATABASE
+                            ) {
                                 return !!inputType.meta;
                             } else {
                                 return !!inputType.type;
