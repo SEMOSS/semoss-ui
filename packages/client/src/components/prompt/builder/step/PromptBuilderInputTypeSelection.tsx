@@ -1,14 +1,29 @@
+import React from 'react';
 import { Token } from '../../prompt.types';
 import { Autocomplete } from '@mui/material';
-import { Grid, Stack, TextField, Collapse } from '@semoss/ui';
+import {
+    styled,
+    Grid,
+    Stack,
+    TextField,
+    Tooltip,
+    Typography,
+} from '@semoss/ui';
 import { Fade } from '@mui/material';
+import { InfoOutlined } from '@mui/icons-material';
 import {
     INPUT_TYPES,
     INPUT_TYPE_DATABASE,
     INPUT_TYPE_DISPLAY,
+    INPUT_TYPE_HELP_TEXT,
     INPUT_TYPE_VECTOR,
 } from '../../prompt.constants';
 import { PromptReadonlyInputToken } from '../../shared/token';
+
+const HelpTextIcon = styled(InfoOutlined)(({ theme }) => ({
+    color: theme.palette.grey[400],
+    cursor: 'pointer',
+}));
 
 export const PromptBuilderInputTypeSelection = (props: {
     inputToken: Token;
@@ -111,30 +126,50 @@ export const PromptBuilderInputTypeSelection = (props: {
                         )}
                     />
                     <Fade in={showMetaAutocomplete}>
-                        <Autocomplete
-                            fullWidth
-                            disableClearable
-                            size="small"
-                            id="meta-autocomplete"
-                            loading={getMetaSelectorLoading()}
-                            options={getMetaSelectorOptions()}
-                            value={props.inputTypeMeta ?? ''}
-                            getOptionLabel={getMetaSelectorDisplay}
-                            onChange={(_, newMetaValue: string) => {
-                                props.setInputType(
-                                    props.inputToken.index,
-                                    props.inputType,
-                                    newMetaValue,
-                                );
-                            }}
-                            renderInput={(params) => (
-                                <TextField
-                                    {...params}
-                                    label={getMetaSelectorLabel()}
-                                    variant="outlined"
+                        <span>
+                            <Stack direction="row" alignItems="center">
+                                <Autocomplete
+                                    fullWidth
+                                    disableClearable
+                                    size="small"
+                                    id="meta-autocomplete"
+                                    loading={getMetaSelectorLoading()}
+                                    options={getMetaSelectorOptions()}
+                                    value={props.inputTypeMeta ?? ''}
+                                    getOptionLabel={getMetaSelectorDisplay}
+                                    onChange={(_, newMetaValue: string) => {
+                                        props.setInputType(
+                                            props.inputToken.index,
+                                            props.inputType,
+                                            newMetaValue,
+                                        );
+                                    }}
+                                    renderInput={(params) => (
+                                        <TextField
+                                            {...params}
+                                            label={getMetaSelectorLabel()}
+                                            variant="outlined"
+                                        />
+                                    )}
                                 />
-                            )}
-                        />
+                                <Tooltip
+                                    title={
+                                        <React.Fragment>
+                                            <Typography variant="body2">
+                                                {
+                                                    INPUT_TYPE_HELP_TEXT[
+                                                        props.inputType
+                                                    ]
+                                                }
+                                            </Typography>
+                                        </React.Fragment>
+                                    }
+                                    arrow
+                                >
+                                    <HelpTextIcon fontSize="small" />
+                                </Tooltip>
+                            </Stack>
+                        </span>
                     </Fade>
                 </Stack>
             </Grid>

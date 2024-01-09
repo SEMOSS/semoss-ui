@@ -39,10 +39,12 @@ export const INPUT_TYPE_DISPLAY = {
     [INPUT_TYPE_CUSTOM_QUERY]: 'Custom Query',
     [INPUT_TYPE_DATABASE]: 'Database',
 };
-
-export const VECTOR_SEARCH_FULL_CONTEXT = 'full';
-export const VECTOR_SEARCH_INPUT = 'input';
-export const VECTOR_SEARCH_CUSTOM = 'custom';
+export const INPUT_TYPE_HELP_TEXT = {
+    [INPUT_TYPE_VECTOR]:
+        'This input will be used as a search term for the selected knowledge repository. The search results will be used to support your prompt.',
+    [INPUT_TYPE_DATABASE]:
+        'This input will be used to query the selected database. The query results generated will be used to support your prompt.',
+};
 
 export const SUMMARY_STEPS = [
     {
