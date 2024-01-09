@@ -67,7 +67,7 @@ export const FileEmbedBlock: BlockComponent = observer(({ id }) => {
         <FileDropzone
             style={{ ...data.style }}
             onChange={handleFileChange}
-            multiple={true}
+            multiple={false}
             valid={true}
             {...attrs}
         />
