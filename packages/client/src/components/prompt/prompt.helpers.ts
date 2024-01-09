@@ -1,10 +1,10 @@
 import { Builder, Token } from './prompt.types';
 import {
-    INPUT_TYPE_DATE,
-    INPUT_TYPE_NUMBER,
     INPUT_TYPE_TEXT,
     INPUT_TYPE_SELECT,
     TOKEN_TYPE_TEXT,
+    INPUT_TYPE_VECTOR,
+    INPUT_TYPE_CUSTOM_QUERY,
 } from './prompt.constants';
 import {
     ActionMessages,
@@ -21,8 +21,8 @@ export const APP_TITLE_BLOCK_ID = 'title';
 export const HELP_TEXT_BLOCK_ID = 'help-text';
 export const PROMPT_SUBMIT_BLOCK_ID = 'prompt-submit';
 export const PROMPT_RESPONSE_BLOCK_ID = 'prompt-response';
-export const PROMPT_QUERY_ID = 'prompt-query';
-export const PROMPT_FUNCTION_QUERY_ID = 'prompt-query-function';
+export const PROMPT_QUERY_ID = 'Prompt Query';
+export const PROMPT_QUERY_DEFINITION_ID = 'Query Definitions';
 
 function capitalizeLabel(label: string): string {
     const words = label.split(' ');
@@ -32,7 +32,7 @@ function capitalizeLabel(label: string): string {
     return words.join(' ');
 }
 
-function getIdForInput(inputType: string, index: number) {
+export function getIdForInput(inputType: string, index: number) {
     return `${inputType}-input-${index}`;
 }
 
@@ -83,9 +83,9 @@ export function getBlockForInput(
     inputType: string,
 ): Block | null {
     switch (inputType) {
-        case INPUT_TYPE_DATE:
-        case INPUT_TYPE_NUMBER:
         case INPUT_TYPE_TEXT:
+        case INPUT_TYPE_VECTOR:
+        case INPUT_TYPE_CUSTOM_QUERY:
             return getTextFieldInputBlock(
                 inputType,
                 token.index,
@@ -103,12 +103,10 @@ export function getBlockForInput(
     }
 }
 
-export function getQueryForPrompt(
-    model: string,
-    vector: string | undefined,
+export function getInputFormatPrompt(
     tokens: Token[],
     inputTypes: object,
-): Record<string, QueryStateConfig> {
+): string {
     const tokenStrings: string[] = [];
     // compose tokens into a command
     tokens.forEach((token: Token) => {
@@ -122,8 +120,8 @@ export function getQueryForPrompt(
             const keyIndex = inputTokenParts.indexOf(token.key);
             inputTokenParts[keyIndex] = `{{${getIdForInput(
                 token.linkedInputToken !== undefined
-                    ? inputTypes[token.linkedInputToken]
-                    : inputTypes[token.index],
+                    ? inputTypes[token.linkedInputToken].type
+                    : inputTypes[token.index].type,
                 token.linkedInputToken ?? token.index,
             )}.value}}`;
             tokenStrings.push(inputTokenParts.join(''));
@@ -141,54 +139,150 @@ export function getQueryForPrompt(
         prompt = prompt + '.';
     }
 
-    const functionQuery =
-        `def jointVectorModelQuery(search_statement:str, limit = 5) -> str:` +
-        `import json;` +
-        `from gaas_gpt_model import ModelEngine;` +
-        `from gaas_gpt_vector import VectorEngine;` +
-        `model = ModelEngine(engine_id = "${model}", insight_id = '\${i}');` +
-        `${
-            vector
-                ? `vector = VectorEngine(engine_id = "${vector}", insight_id = '\${i}', insight_folder = '\${if}');`
-                : ''
-        }` +
-        `${
-            vector
-                ? `matches = vector.nearestNeighbor(search_statement = search_statement, limit = limit);`
-                : ''
-        }` +
-        `prompt = search_statement ${
-            vector
-                ? `+ " Ask based on" + ' '.join([matchItem['Content'] for matchItem in matches])`
-                : ''
-        };` +
-        `response = model.ask(question = prompt);` +
-        `return json.dumps(response[0]['response']);`;
+    return prompt;
+}
 
-    const query = `jointVectorModelQuery("${prompt}")`;
+function getVectorQuery() {
+    let vectorQueryFunctionString = `def runVectorSearch(search_statement:str, vector_engine_id:str, limit:int):`;
 
-    return {
-        [PROMPT_FUNCTION_QUERY_ID]: {
-            id: PROMPT_FUNCTION_QUERY_ID,
+    vectorQueryFunctionString += `from gaas_gpt_vector import VectorEngine;`;
+    vectorQueryFunctionString += `vector = VectorEngine(engine_id = vector_engine_id, insight_id = '\${i}', insight_folder = '\${if}');`;
+    vectorQueryFunctionString += `matches = vector.nearestNeighbor(search_statement = search_statement, limit = limit);`;
+
+    vectorQueryFunctionString += `return ' '.join([matchItem['Content'] for matchItem in matches]);`;
+
+    return vectorQueryFunctionString;
+}
+
+function getCustomQuery(index: number) {
+    return `def runCustom_${index}(search_statement:str): return search_statement;`;
+}
+
+export function getQueryForPrompt(
+    model: string,
+    tokens: Token[],
+    inputTypes: object,
+): Record<string, QueryStateConfig> {
+    const prompt = getInputFormatPrompt(tokens, inputTypes);
+
+    // filter out custom input types
+    const customInputTypes = Object.fromEntries(
+        Object.entries(inputTypes).filter(
+            ([_, value]) =>
+                value?.type === INPUT_TYPE_VECTOR ||
+                value?.type === INPUT_TYPE_CUSTOM_QUERY,
+        ),
+    );
+
+    const queryDefinition = () => {
+        let promptQueryFunctionString = `def promptQuery(search_statement:str, ${Object.keys(
+            customInputTypes,
+        )
+            .map((customInputTokenIndex, index: number) => {
+                return `${customInputTypes[customInputTokenIndex]?.type}_${index}_statement:str`;
+            })
+            .join(', ')}${
+            Object.keys(customInputTypes).length ? ', ' : ''
+        }limit = 5) -> str:`;
+
+        promptQueryFunctionString +=
+            `import json;` +
+            `from gaas_gpt_model import ModelEngine;` +
+            `model = ModelEngine(engine_id = "${model}", insight_id = '\${i}');`;
+
+        Object.keys(customInputTypes).forEach(
+            (customInputTokenIndex, index: number) => {
+                if (
+                    customInputTypes[customInputTokenIndex]?.type ===
+                    INPUT_TYPE_VECTOR
+                ) {
+                    promptQueryFunctionString += `${customInputTypes[customInputTokenIndex].type}_${index} = runVectorSearch(${customInputTypes[customInputTokenIndex]?.type}_${index}_statement,"${customInputTypes[customInputTokenIndex]?.meta}",limit);`;
+                }
+                if (
+                    customInputTypes[customInputTokenIndex]?.type ===
+                    INPUT_TYPE_CUSTOM_QUERY
+                ) {
+                    promptQueryFunctionString += `${customInputTypes[customInputTokenIndex].type}_${index} = runCustom_${index}(${customInputTypes[customInputTokenIndex]?.type}_${index}_statement);`;
+                }
+            },
+        );
+
+        if (!Object.keys(customInputTypes).length) {
+            promptQueryFunctionString += `prompt = search_statement;`;
+        } else {
+            promptQueryFunctionString += `prompt = search_statement + ' Ask based on ' + ${Object.keys(
+                customInputTypes,
+            )
+                .map((customInputTokenIndex, index: number) => {
+                    return `${customInputTypes[customInputTokenIndex].type}_${index}`;
+                })
+                .join(` + ' and ' + `)};`;
+        }
+        promptQueryFunctionString +=
+            `response = model.ask(question = prompt);` +
+            `return json.dumps(response[0]['response']);`;
+
+        return promptQueryFunctionString;
+    };
+
+    const query = `promptQuery("${prompt}"${
+        Object.keys(customInputTypes).length ? ', ' : ''
+    }${Object.keys(customInputTypes)
+        .map((customInputTokenIndex) => {
+            return `"{{${getIdForInput(
+                customInputTypes[customInputTokenIndex].type,
+                parseInt(customInputTokenIndex),
+            )}.value}}"`;
+        })
+        .join(', ')})`;
+
+    let queryDefinitionSteps = [
+        {
+            id: 'py-prompt-query-definition',
+            widget: 'code',
+            parameters: {
+                type: 'py',
+                code: queryDefinition(),
+            },
+        },
+    ];
+    Object.keys(customInputTypes).forEach(
+        (customInputTokenIndex, index: number) => {
+            if (
+                customInputTypes[customInputTokenIndex]?.type ===
+                INPUT_TYPE_CUSTOM_QUERY
+            ) {
+                queryDefinitionSteps.unshift({
+                    id: `py-custom-query-${index}-definition`,
+                    widget: 'code',
+                    parameters: {
+                        type: 'py',
+                        code: getCustomQuery(index),
+                    },
+                });
+            }
+        },
+    );
+    if (
+        Object.values(customInputTypes).some(
+            (inputType) => inputType?.type === INPUT_TYPE_VECTOR,
+        )
+    ) {
+        queryDefinitionSteps.unshift({
+            id: 'py-vector-search-query-definition',
+            widget: 'code',
+            parameters: {
+                type: 'py',
+                code: getVectorQuery(),
+            },
+        });
+    }
+
+    let queryJson: Record<string, QueryStateConfig> = {
+        [PROMPT_QUERY_DEFINITION_ID]: {
+            id: PROMPT_QUERY_DEFINITION_ID,
             mode: 'automatic',
-            steps: [
-                {
-                    id: 'py-query-function',
-                    widget: 'code',
-                    parameters: {
-                        type: 'py',
-                        code: functionQuery,
-                    },
-                },
-                {
-                    id: 'py-query-function',
-                    widget: 'code',
-                    parameters: {
-                        type: 'py',
-                        code: functionQuery,
-                    },
-                },
-            ],
+            steps: queryDefinitionSteps,
         },
         [PROMPT_QUERY_ID]: {
             id: PROMPT_QUERY_ID,
@@ -205,6 +299,8 @@ export function getQueryForPrompt(
             ],
         },
     };
+
+    return queryJson;
 }
 
 export async function setBlocksAndOpenUIBuilder(
@@ -338,6 +434,7 @@ export async function setBlocksAndOpenUIBuilder(
                         width: '125px',
                     },
                     label: 'Submit',
+                    loading: `{{${PROMPT_QUERY_ID}.isLoading}}`,
                 },
                 listeners: {
                     onClick: [
@@ -377,7 +474,7 @@ export async function setBlocksAndOpenUIBuilder(
         (builder.inputTypes.value as object) ?? {},
     )) {
         const token = builder.inputs.value[tokenIndex] as Token;
-        const inputBlock = getBlockForInput(token, inputType);
+        const inputBlock = getBlockForInput(token, inputType.type);
         if (inputBlock) {
             childInputIds = [...childInputIds, inputBlock.id];
             state.blocks = { ...state.blocks, [inputBlock.id]: inputBlock };
@@ -392,7 +489,6 @@ export async function setBlocksAndOpenUIBuilder(
 
     state.queries = getQueryForPrompt(
         builder.model.value as string,
-        builder.vector.value as string | undefined,
         builder.inputs.value as Token[],
         builder.inputTypes.value as object,
     );
