@@ -33,7 +33,7 @@ export const INPUT_TYPES = [
 export const INPUT_TYPE_DISPLAY = {
     [INPUT_TYPE_TEXT]: 'Text Field',
     [INPUT_TYPE_SELECT]: 'Select',
-    [INPUT_TYPE_VECTOR]: 'Vector Database Search',
+    [INPUT_TYPE_VECTOR]: 'Knowledge Search',
     [INPUT_TYPE_CUSTOM_QUERY]: 'Custom Query',
 };
 
