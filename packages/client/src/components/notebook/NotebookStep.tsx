@@ -39,6 +39,12 @@ const StyledContent = styled('div')(({ theme }) => ({
     borderRadius: theme.shape.borderRadius,
 }));
 
+const StyledJson = styled('pre')(({ theme }) => ({
+    ...theme.typography.body2,
+    textWrap: 'wrap',
+    padding: theme.spacing(2),
+}));
+
 interface NotebookStepProps {
     /** Step to bind the notebook step to */
     step: StepState;
@@ -230,13 +236,10 @@ export const NotebookStep = observer(
                                 </StyledContent>
                             ) : null}
                             {step.isSuccessful ? (
-                                <StyledContent>
-                                    <Typography
-                                        variant="body2"
-                                        sx={{ padding: '16px' }}
-                                    >
-                                        {JSON.stringify(step.output)}
-                                    </Typography>
+                                <StyledContent id="output-content">
+                                    <StyledJson>
+                                        {JSON.stringify(step.output, null, 4)}
+                                    </StyledJson>
                                 </StyledContent>
                             ) : null}
                         </>

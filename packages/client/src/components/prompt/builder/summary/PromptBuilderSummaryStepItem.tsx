@@ -27,7 +27,7 @@ export const PromptBuilderSummaryStepItem = (props: BuilderStepItemProps) => {
                         (inputType: { type: string; meta: string }) => {
                             if (
                                 inputType?.type === INPUT_TYPE_VECTOR ||
-                                props?.type === INPUT_TYPE_DATABASE
+                                inputType?.type === INPUT_TYPE_DATABASE
                             ) {
                                 return !!inputType.meta;
                             } else {
