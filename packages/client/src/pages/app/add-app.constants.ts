@@ -64,8 +64,7 @@ export const ADD_APP_STEPS: Record<string, APP_STEP_INTERFACE> = {
     },
     PROMPT_BUILDER: {
         title: 'Prompt Builder',
-        description:
-            'Empower your web design journey with our innovative UI Builder, responding to the prompt to create visually stunning websites effortlessly.  This intuitive platform allows you to design pixel-perfect layouts, customize interactions, and bring ideas to life seamlessly, all while freeing you from code constraints',
+        description: '',
         steps: [],
         disabled: false,
     },
