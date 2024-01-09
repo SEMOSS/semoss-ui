@@ -145,7 +145,7 @@ export function getInputFormatPrompt(
 }
 
 function getVectorQuery() {
-    let vectorQueryFunctionString = `def runVectorSearch(search_statement:str, vector_engine_id:str, limit:int):`;
+    let vectorQueryFunctionString = `def runVectorSearch(search_statement:str, vector_engine_id:str, limit:int) -> str:`;
 
     vectorQueryFunctionString += `from gaas_gpt_vector import VectorEngine;`;
     vectorQueryFunctionString += `vector = VectorEngine(engine_id = vector_engine_id, insight_id = '\${i}', insight_folder = '\${if}');`;
@@ -157,15 +157,16 @@ function getVectorQuery() {
 }
 
 function getCustomQuery(index: number) {
-    return `def runCustom_${index}(search_statement:str): return search_statement;`;
+    return `def runCustom_${index}(search_statement:str) -> str: return search_statement;`;
 }
 
 function getDatabaseQuery() {
-    let databaseQueryFunctionString = `def runDatabaseQuery(query:str, database_engine_id:str):`;
+    let databaseQueryFunctionString = `def runDatabaseQuery(query:str, database_engine_id:str) -> str:`;
 
     databaseQueryFunctionString += `from gaas_gpt_database import DatabaseEngine;`;
     databaseQueryFunctionString += `databaseEngine = DatabaseEngine(engine_id = database_engine_id, insight_id = '\${i}');`;
-    databaseQueryFunctionString += `return databaseEngine.execQuery(query = query).to_numpy().tolist();`;
+    databaseQueryFunctionString += `result_df = databaseEngine.execQuery(query = query)`;
+    databaseQueryFunctionString += `return f"Use the following list of objects representing each row in table to inform your answer: {result_df.to_dict(orient='records')}. The are the headers for the table are: {list(result_df.columns)}";`;
 
     return databaseQueryFunctionString;
 }
