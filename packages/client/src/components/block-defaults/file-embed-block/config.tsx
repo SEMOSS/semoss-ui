@@ -17,6 +17,7 @@ export const config: BlockConfig<FileEmbedBlockDef> = {
     data: {
         style: {},
         name: 'Embed File',
+        fileName: '',
         value: [],
         type: 'Value',
         extensions: ['All', 'csv', 'doc', 'pdf', 'txt', 'xlsx', 'ZIP'],
@@ -47,6 +48,16 @@ export const config: BlockConfig<FileEmbedBlockDef> = {
         {
             name: 'Configure',
             children: [
+                {
+                    description: 'New file name after upload',
+                    render: ({ id }) => (
+                        <InputSettings
+                            id={id}
+                            label="File Name"
+                            path="fileName"
+                        />
+                    ),
+                },
                 {
                     description: 'Input block setting for the file size limit',
                     render: ({ id }) => (

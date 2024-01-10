@@ -9,6 +9,8 @@ export interface FileEmbedBlockDef extends BlockDef<'file-embed'> {
     data: {
         style: CSSProperties;
         name: string;
+        fileName?: string;
+        fileLocation?: string;
         value?: File[] | null;
         size?: number;
         sizeLimit?: string;
@@ -28,10 +30,14 @@ export const FileEmbedBlock: BlockComponent = observer(({ id }) => {
     const { monolithStore } = hooks.useRootStore();
 
     const [files, setFiles] = useState<File[]>({ ...data.value });
-    console.log('Files Array: ', files);
+    console.log('Users Docs: ', files);
 
+    //* grab the first file uploaded
+    const usersFileName = files.name;
+    console.log('New File Name: ', usersFileName);
     useEffect(() => {
         setData('value', files);
+        setData('fileName', usersFileName);
     }, [files, setData]);
 
     const uploadFile = async (files, insightId, projectId) => {
@@ -41,14 +47,26 @@ export const FileEmbedBlock: BlockComponent = observer(({ id }) => {
                 insightId,
                 projectId,
             );
-            console.log('Upload Result:', upload);
+            //* file object
+            setFiles(files);
+            console.log('Result Obj:', upload[0]);
+
+            //* file location
+            const fileLocationUpload = upload[0].fileLocation;
+            setData('fileLocation', fileLocationUpload);
+            console.log('Location Mock Copy:', fileLocationUpload);
+
+            //* file name
+            const fileNameUpload = upload[0].fileName;
+            setData('fileName', fileNameUpload);
+            console.log('Name Mock Copy:', fileNameUpload);
         } catch (error) {
             console.error('Error uploading file:', error);
             throw error;
         }
     };
+
     const handleFileChange = async (uploadedFiles) => {
-        setFiles(uploadedFiles);
         const insightId = state.insightId,
             projectId = '66a2a9ad-056f-4e4a-ae1c-b28cfd4331f8';
         try {
@@ -57,7 +75,12 @@ export const FileEmbedBlock: BlockComponent = observer(({ id }) => {
                 insightId,
                 projectId,
             );
-            console.log('Uploaded File Details:', uploadResult);
+            setFiles(uploadedFiles);
+            setData('value', uploadedFiles);
+            setData('fileName', uploadedFiles.name);
+            console.log('File Upload:', uploadedFiles);
+
+            return uploadResult;
         } catch (error) {
             console.error('Error in file upload:', error);
         }
