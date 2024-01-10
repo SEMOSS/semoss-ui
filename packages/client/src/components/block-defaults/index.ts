@@ -105,6 +105,10 @@ export const MenuBlocks: Registry<DefaultBlockDefinitions> = {
     [TextBlockConfig.widget]: TextBlockConfig,
     [TextFieldBlockConfig.widget]: TextFieldBlockConfig,
     [SectionBlockConfig.widget]: SectionBlockConfig,
+    [ModelsBlockConfig.widget]: ModelsBlockConfig,
+    [VectorsBlockConfig.widget]: VectorsBlockConfig,
+    [FileDropZoneBlockConfig.widget]: FileDropZoneBlockConfig,
+    [FileEmbedBlockConfig.widget]: FileEmbedBlockConfig,
     [UploadBlockConfig.widget]: UploadBlockConfig,
 };
 

@@ -1,9 +1,6 @@
 import { BlockConfig } from '@/stores';
 import { ModelsBlockDef, ModelsBlock } from './ModelsBlock';
-import {
-    BLOCK_TYPE_CUSTOM,
-    BLOCK_TYPE_INPUT,
-} from '../block-defaults.constants';
+import { BLOCK_TYPE_CUSTOM } from '../block-defaults.constants';
 import {
     buildDimensionsSection,
     buildSpacingSection,
@@ -14,7 +11,7 @@ import { EngineeringOutlined as EnginesOutlineIcon } from '@mui/icons-material';
 
 export const config: BlockConfig<ModelsBlockDef> = {
     widget: 'models',
-    type: BLOCK_TYPE_INPUT,
+    type: BLOCK_TYPE_CUSTOM,
     data: {
         style: {},
         label: 'Models',

@@ -1,8 +1,5 @@
 import { BlockConfig } from '@/stores';
-import {
-    BLOCK_TYPE_CUSTOM,
-    BLOCK_TYPE_INPUT,
-} from '../block-defaults.constants';
+import { BLOCK_TYPE_CUSTOM } from '../block-defaults.constants';
 import { FileEmbedBlockDef, FileEmbedBlock } from './FileEmbedBlock';
 import { InputSettings } from '@/components/block-settings';
 import {
@@ -16,7 +13,7 @@ import CloudUploadOutlinedIcon from '@mui/icons-material/CloudUploadOutlined';
 
 export const config: BlockConfig<FileEmbedBlockDef> = {
     widget: 'file-embed',
-    type: BLOCK_TYPE_INPUT,
+    type: BLOCK_TYPE_CUSTOM,
     data: {
         style: {},
         name: 'Embed File',
