@@ -21,10 +21,10 @@ const AccordionExample = (args) => {
 
     return (
         <Accordion
-            {...args}
             expanded={expanded}
             onChange={() => setExpanded(!expanded)}
             variant="outlined"
+            {...args}
         >
             <Accordion.Trigger>Summary 1</Accordion.Trigger>
             <Accordion.Content>Details 1</Accordion.Content>

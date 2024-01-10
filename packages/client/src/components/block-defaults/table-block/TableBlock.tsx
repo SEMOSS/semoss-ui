@@ -71,6 +71,8 @@ export const TableBlock: BlockComponent = observer(({ id }) => {
         return data.headers.map((header) => header.value);
     }, [data?.headers, data?.content]);
 
+    console.log(data);
+
     return (
         <div style={{ overflow: 'scroll', ...data.style }} {...attrs}>
             <TableContainer>
