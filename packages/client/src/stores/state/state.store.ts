@@ -320,10 +320,10 @@ export class StateStore {
             const v = this.calculateParameter(match);
 
             if (typeof v === 'string') {
-                return v.replace(/"/g, '\\"').replace(/'/g, "\\'");
+                return v?.replace(/"/g, '\\"').replace(/'/g, "\\'");
             }
 
-            return JSON.stringify(v).replace(/"/g, '\\"').replace(/'/g, "\\'");
+            return JSON.stringify(v)?.replace(/"/g, '\\"').replace(/'/g, "\\'");
         });
     };
 

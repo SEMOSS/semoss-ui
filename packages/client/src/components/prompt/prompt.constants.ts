@@ -29,21 +29,21 @@ export const INPUT_TYPES = [
     INPUT_TYPE_TEXT,
     INPUT_TYPE_SELECT,
     INPUT_TYPE_VECTOR,
-    INPUT_TYPE_CUSTOM_QUERY,
     INPUT_TYPE_DATABASE,
+    INPUT_TYPE_CUSTOM_QUERY,
 ];
 export const INPUT_TYPE_DISPLAY = {
     [INPUT_TYPE_TEXT]: 'Text Field',
     [INPUT_TYPE_SELECT]: 'Select',
     [INPUT_TYPE_VECTOR]: 'Knowledge Search',
     [INPUT_TYPE_CUSTOM_QUERY]: 'Custom Query',
-    [INPUT_TYPE_DATABASE]: 'Database',
+    [INPUT_TYPE_DATABASE]: 'Database Query',
 };
 export const INPUT_TYPE_HELP_TEXT = {
     [INPUT_TYPE_VECTOR]:
-        'This input will be used as a search term for the selected knowledge repository. The search results will be used to support your prompt.',
+        'This input will be used as a search term for the selected knowledge repository. The search results can be modified to fit your needs and will be used to support your prompt.',
     [INPUT_TYPE_DATABASE]:
-        'This input will be used to query the selected database. The query results generated will be used to support your prompt.',
+        'This input will be used to query the selected database. The query results generated can be modified to fit your needs and will be used to support your prompt.',
 };
 
 export const SUMMARY_STEPS = [

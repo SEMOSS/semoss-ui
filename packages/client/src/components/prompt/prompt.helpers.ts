@@ -86,13 +86,17 @@ export function getBlockForInput(
     switch (inputType) {
         case INPUT_TYPE_TEXT:
         case INPUT_TYPE_VECTOR:
-        case INPUT_TYPE_DATABASE:
         case INPUT_TYPE_CUSTOM_QUERY:
             return getTextFieldInputBlock(
                 inputType,
                 token.index,
                 capitalizeLabel(token.key),
             );
+        case INPUT_TYPE_DATABASE:
+            const label = capitalizeLabel(token.key).includes('Query')
+                ? capitalizeLabel(token.key)
+                : `${capitalizeLabel(token.key)} Query`;
+            return getTextFieldInputBlock(inputType, token.index, label);
         case INPUT_TYPE_SELECT:
             return getSelectInputBlock(
                 inputType,
@@ -119,14 +123,22 @@ export function getInputFormatPrompt(
             const inputTokenParts = token.display.split(
                 new RegExp(`(${token.key})`),
             );
-            const keyIndex = inputTokenParts.indexOf(token.key);
-            inputTokenParts[keyIndex] = `{{${getIdForInput(
-                token.linkedInputToken !== undefined
-                    ? inputTypes[token.linkedInputToken].type
-                    : inputTypes[token.index].type,
-                token.linkedInputToken ?? token.index,
-            )}.value}}`;
-            tokenStrings.push(inputTokenParts.join(''));
+            // don't pass database query into the prompt itself
+            // we will just use the query results to supplement the prompt at the end
+            if (
+                inputTypes[token.linkedInputToken].type === INPUT_TYPE_DATABASE
+            ) {
+                tokenStrings.push(token.display);
+            } else {
+                const keyIndex = inputTokenParts.indexOf(token.key);
+                inputTokenParts[keyIndex] = `{{${getIdForInput(
+                    token.linkedInputToken !== undefined
+                        ? inputTypes[token.linkedInputToken].type
+                        : inputTypes[token.index].type,
+                    token.linkedInputToken ?? token.index,
+                )}.value}}`;
+                tokenStrings.push(inputTokenParts.join(''));
+            }
         }
     });
 
@@ -165,7 +177,7 @@ function getDatabaseQuery() {
 
     databaseQueryFunctionString += `from gaas_gpt_database import DatabaseEngine;`;
     databaseQueryFunctionString += `databaseEngine = DatabaseEngine(engine_id = database_engine_id, insight_id = '\${i}');`;
-    databaseQueryFunctionString += `result_df = databaseEngine.execQuery(query = query)`;
+    databaseQueryFunctionString += `result_df = databaseEngine.execQuery(query = query);`;
     databaseQueryFunctionString += `return f"Use the following list of objects representing each row in table to inform your answer: {result_df.to_dict(orient='records')}. The are the headers for the table are: {list(result_df.columns)}";`;
 
     return databaseQueryFunctionString;
@@ -234,17 +246,47 @@ export function getQueryForPrompt(
             },
         );
 
-        if (!Object.keys(customInputTypes).length) {
-            promptQueryFunctionString += `prompt = search_statement;`;
-        } else {
-            promptQueryFunctionString += `prompt = search_statement + ' Ask based on ' + ${Object.keys(
+        promptQueryFunctionString += `prompt = search_statement`;
+        if (
+            Object.values(customInputTypes).some(
+                (inputType) =>
+                    inputType?.type === INPUT_TYPE_VECTOR ||
+                    inputType?.type === INPUT_TYPE_CUSTOM_QUERY,
+            )
+        ) {
+            promptQueryFunctionString += ` + ' Ask based on ' + ${Object.keys(
                 customInputTypes,
             )
+                .filter(
+                    (customInputTokenIndex) =>
+                        customInputTypes[customInputTokenIndex].type ===
+                            INPUT_TYPE_VECTOR ||
+                        customInputTypes[customInputTokenIndex].type ===
+                            INPUT_TYPE_CUSTOM_QUERY,
+                )
                 .map((customInputTokenIndex, index: number) => {
                     return `${customInputTypes[customInputTokenIndex].type}_${index}`;
                 })
-                .join(` + ' and ' + `)};`;
+                .join(` + ' and ' + `)}.`;
         }
+        if (
+            Object.values(customInputTypes).some(
+                (inputType) => inputType?.type === INPUT_TYPE_DATABASE,
+            )
+        ) {
+            promptQueryFunctionString += ` + ${Object.keys(customInputTypes)
+                .filter(
+                    (customInputTokenIndex) =>
+                        customInputTypes[customInputTokenIndex].type ===
+                        INPUT_TYPE_DATABASE,
+                )
+                .map((customInputTokenIndex, index: number) => {
+                    return `' ' + ${customInputTypes[customInputTokenIndex].type}_${index}`;
+                })
+                .join(` + `)}`;
+        }
+        promptQueryFunctionString += ` + ' Format the result as markdown.';`;
+
         promptQueryFunctionString +=
             `response = model.ask(question = prompt);` +
             `return json.dumps(response[0]['response']);`;

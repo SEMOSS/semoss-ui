@@ -43,6 +43,8 @@ const StyledJson = styled('pre')(({ theme }) => ({
     ...theme.typography.body2,
     textWrap: 'wrap',
     padding: theme.spacing(2),
+    maxHeight: '200px',
+    overflowY: 'scroll',
 }));
 
 interface NotebookStepProps {
