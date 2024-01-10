@@ -28,7 +28,7 @@ const StyledRightPanel = styled('div')(() => ({
 }));
 
 const StyledVertDivider = styled('div')(({ theme }) => ({
-    width: theme.spacing(0.5),
+    minWidth: theme.spacing(0.5),
     background: theme.palette.divider,
     '&:hover': {
         cursor: 'col-resize',

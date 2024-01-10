@@ -8,6 +8,7 @@ import {
     TextField,
     IconButton,
     InputAdornment,
+    Stack,
     Typography,
 } from '@semoss/ui';
 import { useBlocks, useWorkspace } from '@/hooks';
@@ -15,13 +16,13 @@ import { Add, Search } from '@mui/icons-material';
 
 import { NewQueryOverlay } from '@/components/notebook';
 
-const StyledMenu = styled('div')(({ theme }) => ({
-    display: 'flex',
-    flexDirection: 'column',
-    height: '100%',
-    width: '100%',
-    paddingTop: theme.spacing(1),
-}));
+// const StyledMenu = styled('div')(({ theme }) => ({
+//     display: 'flex',
+//     flexDirection: 'column',
+//     height: '100%',
+//     width: '100%',
+//     paddingTop: theme.spacing(1),
+// }));
 
 const StyledMenuHeader = styled('div')(({ theme }) => ({
     display: 'flex',
@@ -36,7 +37,6 @@ const StyledMenuHeader = styled('div')(({ theme }) => ({
 }));
 
 const StyledMenuScroll = styled('div')(({ theme }) => ({
-    flex: '1',
     height: '100%',
     width: '100%',
     paddingBottom: theme.spacing(1),
@@ -47,6 +47,12 @@ const StyledMenuScroll = styled('div')(({ theme }) => ({
 const StyledJson = styled('pre')(({ theme }) => ({
     ...theme.typography.caption,
     textWrap: 'wrap',
+}));
+
+const StyledSecondaryTypography = styled(Typography)(({ theme }) => ({
+    ...theme.typography.caption,
+    overflow: 'hidden',
+    textOverflow: 'ellipsis',
 }));
 
 const StyledListItemText = styled(List.ItemText)(() => ({
@@ -144,7 +150,7 @@ export const QueryMenu = observer((): JSX.Element => {
     };
 
     return (
-        <StyledMenu>
+        <Stack id="query-menu">
             <StyledMenuHeader>
                 <TextField
                     type="text"
@@ -195,8 +201,8 @@ export const QueryMenu = observer((): JSX.Element => {
                                             </Typography>
                                         }
                                         secondary={
-                                            <Typography
-                                                variant="caption"
+                                            <StyledSecondaryTypography
+                                                variant="body2"
                                                 noWrap={true}
                                             >
                                                 {q.data ? (
@@ -206,7 +212,7 @@ export const QueryMenu = observer((): JSX.Element => {
                                                         Query not yet executed
                                                     </em>
                                                 )}
-                                            </Typography>
+                                            </StyledSecondaryTypography>
                                         }
                                     />
                                 </List.ItemButton>
@@ -216,7 +222,7 @@ export const QueryMenu = observer((): JSX.Element => {
                 </List>
             </StyledMenuScroll>
             <Divider />
-            <StyledMenuHeader>
+            {/* <StyledMenuHeader>
                 <TextField
                     type="text"
                     size={'small'}
@@ -257,7 +263,7 @@ export const QueryMenu = observer((): JSX.Element => {
                         );
                     })}
                 </List>
-            </StyledMenuScroll>
-        </StyledMenu>
+            </StyledMenuScroll> */}
+        </Stack>
     );
 });

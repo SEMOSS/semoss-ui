@@ -1,7 +1,7 @@
 import { observer } from 'mobx-react-lite';
 import { styled, Stack, Icon, Divider, Paper } from '@semoss/ui';
 import { DataObject, Layers, Widgets } from '@mui/icons-material';
-import { useState } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 
 import { DesignerContext } from '@/contexts';
 import { DesignerStore } from '@/stores';
@@ -12,10 +12,13 @@ import { OutlineMenu } from './OutlineMenu';
 import { QueryMenu } from './QueryMenu';
 import { Screen } from './Screen';
 
-const StyledLeftMenu = styled('div')(() => ({
+const StyledLeftMenu = styled('div', {
+    shouldForwardProp: (prop) => prop !== 'width',
+})<{ width: number }>(({ theme, width }) => ({
     display: 'flex',
     height: '100%',
     flexDirection: 'row',
+    width: `calc(${width}% + ${theme.spacing(7)});`,
 }));
 
 const StyledSidebar = styled('div')(({ theme }) => ({
@@ -25,7 +28,7 @@ const StyledSidebar = styled('div')(({ theme }) => ({
     alignItems: 'center',
     gap: theme.spacing(1),
     height: '100%',
-    width: theme.spacing(7),
+    minWidth: theme.spacing(7),
     overflow: 'hidden',
     color: 'rgba(235, 238, 254, 1)',
     backgroundColor: theme.palette.common.black,
@@ -74,11 +77,8 @@ const StyledSidebarDivider = styled(Divider)(({ theme }) => ({
 
 const StyledSidebarContent = styled(Paper)(({ theme }) => ({
     display: 'flex',
-    flexDirection: 'column',
-    flex: '1',
-    overflowX: 'hidden',
-    overflowY: 'auto',
-    width: theme.spacing(43),
+    flexDirection: 'row',
+    width: '100%',
     borderRadius: '0',
 }));
 
@@ -89,21 +89,44 @@ const StyledSidebarContentInner = styled('div')(({ theme }) => ({
 }));
 
 const StyledDesignerContainer = styled(Stack, {
-    shouldForwardProp: (prop) => prop !== 'isDragging',
+    shouldForwardProp: (prop) =>
+        prop !== 'isDragging' && prop !== 'isMenuResizing',
 })<{
     isDragging: boolean;
-}>(({ isDragging }) => ({
+    isMenuResizing: boolean;
+}>(({ isDragging, isMenuResizing }) => ({
     height: '100%',
     width: '100%',
-    cursor: isDragging ? 'grabbing!important' : 'unset',
+    cursor: isDragging
+        ? 'grabbing!important'
+        : isMenuResizing
+        ? 'col-resize'
+        : 'unset',
 }));
 
-const StyledRightMenu = styled(Paper)(({ theme }) => ({
+const StyledRightMenu = styled(Paper, {
+    shouldForwardProp: (prop) => prop !== 'width',
+})<{ width: number }>(({ theme, width }) => ({
     display: 'flex',
     height: '100%',
-    width: theme.spacing(50),
+    width: `${width}%`,
     flexDirection: 'row',
     borderRadius: '0',
+}));
+
+const StyledDragger = styled('div', {
+    shouldForwardProp: (prop) => prop !== 'isMenuResizing',
+})<{ isMenuResizing: boolean }>(({ theme, isMenuResizing }) => ({
+    // width: theme.spacing(0.5),
+    minWidth: theme.spacing(0.5),
+    cursor: 'col-resize',
+    zIndex: '100',
+    backgroundColor: theme.palette.divider,
+    opacity: isMenuResizing ? 1 : 0.2,
+    '&:hover': {
+        transition: 'opacity 2s ease',
+        opacity: 1,
+    },
 }));
 
 interface DesignerProps {
@@ -119,6 +142,22 @@ export const Designer = observer((props: DesignerProps): JSX.Element => {
 
     // view
     const [view, setView] = useState<'outline' | 'query' | 'add' | ''>('');
+
+    // menu resize
+    const [leftMenuResize, setLeftMenuResize] = useState<{
+        width: number;
+        isResizing: boolean;
+    }>({
+        width: 25,
+        isResizing: false,
+    });
+    const [rightMenuResize, setRightMenuResize] = useState<{
+        width: number;
+        isResizing: boolean;
+    }>({
+        width: 25,
+        isResizing: false,
+    });
 
     /**
      * Set the view. If it is the same, close it
@@ -138,8 +177,36 @@ export const Designer = observer((props: DesignerProps): JSX.Element => {
     /**
      * Clear any selections when interacting with the left menu
      */
-    const handleMouseDown = () => {
+    const handleLeftMenuMouseDown = () => {
         designer.setSelected('');
+    };
+
+    const handleLeftMenuResize = (e) => {
+        const containerWidth = window.innerWidth;
+        const menuWidth = (e.clientX / containerWidth) * 100;
+        if (menuWidth > 48 || menuWidth < 20) {
+            // don't allow menu to take up more than 48% of screen
+            // or less than 20% of the screen
+            return;
+        }
+
+        setLeftMenuResize((state) => {
+            return { ...state, width: menuWidth };
+        });
+    };
+
+    const handleRightMenuResize = (e) => {
+        const containerWidth = window.innerWidth;
+        const menuWidth = ((containerWidth - e.clientX) / containerWidth) * 100;
+        if (menuWidth > 48 || menuWidth < 20) {
+            // don't allow menu to take up more than 48% of screen
+            // or less than 20% of the screen
+            return;
+        }
+
+        setRightMenuResize((state) => {
+            return { ...state, width: menuWidth };
+        });
     };
 
     return (
@@ -151,8 +218,15 @@ export const Designer = observer((props: DesignerProps): JSX.Element => {
             <StyledDesignerContainer
                 direction="row"
                 isDragging={!!designer.drag.ghostWidget}
+                isMenuResizing={
+                    rightMenuResize.isResizing || leftMenuResize.isResizing
+                }
             >
-                <StyledLeftMenu onMouseDown={handleMouseDown}>
+                <StyledLeftMenu
+                    id="left-menu"
+                    onMouseDown={handleLeftMenuMouseDown}
+                    width={view ? leftMenuResize.width : 0}
+                >
                     <StyledSidebar>
                         <StyledSidebarItem
                             disabled={false}
@@ -192,9 +266,57 @@ export const Designer = observer((props: DesignerProps): JSX.Element => {
                             </StyledSidebarContentInner>
                         </StyledSidebarContent>
                     ) : null}
+                    {view ? (
+                        <StyledDragger
+                            onMouseDown={(e) => {
+                                e.preventDefault();
+                                setLeftMenuResize((state) => {
+                                    return { ...state, isResizing: true };
+                                });
+                                window.addEventListener(
+                                    'mousemove',
+                                    handleLeftMenuResize,
+                                );
+                                window.addEventListener('mouseup', () => {
+                                    setLeftMenuResize((state) => {
+                                        return { ...state, isResizing: false };
+                                    });
+                                    window.removeEventListener(
+                                        'mousemove',
+                                        handleLeftMenuResize,
+                                    );
+                                });
+                            }}
+                            isMenuResizing={leftMenuResize.isResizing}
+                            id="left-dragger"
+                        />
+                    ) : null}
                 </StyledLeftMenu>
                 <Screen>{children}</Screen>
-                <StyledRightMenu elevation={7}>
+                <StyledRightMenu width={rightMenuResize.width} elevation={7}>
+                    <StyledDragger
+                        onMouseDown={(e) => {
+                            e.preventDefault();
+                            setRightMenuResize((state) => {
+                                return { ...state, isResizing: true };
+                            });
+                            window.addEventListener(
+                                'mousemove',
+                                handleRightMenuResize,
+                            );
+                            window.addEventListener('mouseup', () => {
+                                setRightMenuResize((state) => {
+                                    return { ...state, isResizing: false };
+                                });
+                                window.removeEventListener(
+                                    'mousemove',
+                                    handleRightMenuResize,
+                                );
+                            });
+                        }}
+                        isMenuResizing={rightMenuResize.isResizing}
+                        id="right-dragger"
+                    />
                     <SelectedMenu />
                 </StyledRightMenu>
             </StyledDesignerContainer>
