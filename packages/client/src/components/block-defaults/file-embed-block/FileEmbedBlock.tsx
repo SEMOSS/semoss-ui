@@ -30,9 +30,10 @@ export const FileEmbedBlock: BlockComponent = observer(({ id }) => {
     const { monolithStore } = hooks.useRootStore();
 
     const [files, setFiles] = useState<File[]>({ ...data.value });
+    console.log('File:', files);
 
     //* grab the first file uploaded
-    const usersFileName = files.name;
+    const usersFileName = data.fileName;
     console.log('New File Name: ', usersFileName);
     useEffect(() => {
         setFiles(files);
