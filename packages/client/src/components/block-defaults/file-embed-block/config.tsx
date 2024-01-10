@@ -18,6 +18,7 @@ export const config: BlockConfig<FileEmbedBlockDef> = {
         style: {},
         name: 'Embed File',
         fileName: '',
+        fileLocation: '',
         value: [],
         type: 'Value',
         extensions: ['All', 'csv', 'doc', 'pdf', 'txt', 'xlsx', 'ZIP'],
@@ -55,6 +56,16 @@ export const config: BlockConfig<FileEmbedBlockDef> = {
                             id={id}
                             label="File Name"
                             path="fileName"
+                        />
+                    ),
+                },
+                {
+                    description: 'Location of uploaded file',
+                    render: ({ id }) => (
+                        <InputSettings
+                            id={id}
+                            label="File Location"
+                            path="fileLocation"
                         />
                     ),
                 },
