@@ -3,25 +3,19 @@ import { computed } from 'mobx';
 import { observer } from 'mobx-react-lite';
 import {
     styled,
+    Chip,
     List,
     Divider,
     TextField,
     IconButton,
     InputAdornment,
+    Stack,
     Typography,
 } from '@semoss/ui';
 import { useBlocks, useWorkspace } from '@/hooks';
 import { Add, Search } from '@mui/icons-material';
 
 import { NewQueryOverlay } from '@/components/notebook';
-
-const StyledMenu = styled('div')(({ theme }) => ({
-    display: 'flex',
-    flexDirection: 'column',
-    height: '100%',
-    width: '100%',
-    paddingTop: theme.spacing(1),
-}));
 
 const StyledMenuHeader = styled('div')(({ theme }) => ({
     display: 'flex',
@@ -35,18 +29,23 @@ const StyledMenuHeader = styled('div')(({ theme }) => ({
     gap: theme.spacing(1),
 }));
 
-const StyledMenuScroll = styled('div')(({ theme }) => ({
-    flex: '1',
-    height: '100%',
-    width: '100%',
-    paddingBottom: theme.spacing(1),
-    overflowX: 'hidden',
-    overflowY: 'auto',
-}));
-
 const StyledJson = styled('pre')(({ theme }) => ({
     ...theme.typography.caption,
     textWrap: 'wrap',
+}));
+
+const StyledSecondaryTypography = styled(Typography)(({ theme }) => ({
+    ...theme.typography.caption,
+    overflow: 'hidden',
+    textOverflow: 'ellipsis',
+}));
+
+const StyledList = styled(List)(() => ({
+    overflow: 'auto',
+}));
+
+const StyledListItem = styled(List.Item)(() => ({
+    padding: '0px 4px',
 }));
 
 const StyledListItemText = styled(List.ItemText)(() => ({
@@ -144,41 +143,40 @@ export const QueryMenu = observer((): JSX.Element => {
     };
 
     return (
-        <StyledMenu>
-            <StyledMenuHeader>
-                <TextField
-                    type="text"
-                    size={'small'}
-                    label={'Queries'}
-                    value={querySearch}
-                    onChange={(e) => setQuerySearch(e.target.value)}
-                    sx={{
-                        flex: '1',
-                    }}
-                    InputProps={{
-                        endAdornment: (
-                            <InputAdornment position="start">
-                                <Search />
-                            </InputAdornment>
-                        ),
-                    }}
-                />
-                <IconButton
-                    size="small"
-                    color="default"
-                    onClick={() => {
-                        openQueryOverlay();
-                    }}
-                >
-                    <Add />
-                </IconButton>
-            </StyledMenuHeader>
-            <Divider />
-            <StyledMenuScroll>
-                <List>
+        <Stack id="query-blocks-menu" height="100%" divider={<Divider />}>
+            <Stack height="50%" id="query-menu">
+                <StyledMenuHeader>
+                    <TextField
+                        type="text"
+                        size={'small'}
+                        label={'Queries'}
+                        value={querySearch}
+                        onChange={(e) => setQuerySearch(e.target.value)}
+                        sx={{
+                            flex: '1',
+                        }}
+                        InputProps={{
+                            endAdornment: (
+                                <InputAdornment position="start">
+                                    <Search />
+                                </InputAdornment>
+                            ),
+                        }}
+                    />
+                    <IconButton
+                        size="small"
+                        color="default"
+                        onClick={() => {
+                            openQueryOverlay();
+                        }}
+                    >
+                        <Add />
+                    </IconButton>
+                </StyledMenuHeader>
+                <StyledList>
                     {renderedQueries.map((q) => {
                         return (
-                            <List.Item key={q.id} dense={true}>
+                            <StyledListItem key={q.id} dense={true}>
                                 <List.ItemButton
                                     onClick={() => {
                                         // switch the view
@@ -189,60 +187,75 @@ export const QueryMenu = observer((): JSX.Element => {
                                     }}
                                 >
                                     <StyledListItemText
+                                        disableTypography
                                         primary={
                                             <Typography variant="subtitle2">
                                                 {q.id}
                                             </Typography>
                                         }
                                         secondary={
-                                            <Typography
-                                                variant="caption"
+                                            <StyledSecondaryTypography
+                                                variant="body2"
                                                 noWrap={true}
                                             >
-                                                {q.data ? (
-                                                    JSON.stringify(q.data)
+                                                {q.isLoading ? (
+                                                    <em>Loading...</em>
+                                                ) : q.data ? (
+                                                    <Chip
+                                                        color={
+                                                            q.isSuccessful
+                                                                ? 'green'
+                                                                : 'lcpink'
+                                                        }
+                                                        variant="outlined"
+                                                        label={
+                                                            q.isSuccessful
+                                                                ? 'Success'
+                                                                : 'Error'
+                                                        }
+                                                        size="small"
+                                                    />
                                                 ) : (
                                                     <em>
                                                         Query not yet executed
                                                     </em>
                                                 )}
-                                            </Typography>
+                                            </StyledSecondaryTypography>
                                         }
                                     />
                                 </List.ItemButton>
-                            </List.Item>
+                            </StyledListItem>
                         );
                     })}
-                </List>
-            </StyledMenuScroll>
-            <Divider />
-            <StyledMenuHeader>
-                <TextField
-                    type="text"
-                    size={'small'}
-                    label={'Blocks'}
-                    value={blockSearch}
-                    onChange={(e) => setBlockSearch(e.target.value)}
-                    sx={{
-                        flex: '1',
-                    }}
-                    InputProps={{
-                        endAdornment: (
-                            <InputAdornment position="start">
-                                <Search />
-                            </InputAdornment>
-                        ),
-                    }}
-                />
-            </StyledMenuHeader>
-            <Divider />
-            <StyledMenuScroll>
-                <List>
+                </StyledList>
+            </Stack>
+            <Stack height="50%" id="existing-blocks-menu">
+                <StyledMenuHeader>
+                    <TextField
+                        type="text"
+                        size={'small'}
+                        label={'Blocks'}
+                        value={blockSearch}
+                        onChange={(e) => setBlockSearch(e.target.value)}
+                        sx={{
+                            flex: '1',
+                        }}
+                        InputProps={{
+                            endAdornment: (
+                                <InputAdornment position="start">
+                                    <Search />
+                                </InputAdornment>
+                            ),
+                        }}
+                    />
+                </StyledMenuHeader>
+                <StyledList>
                     {renderedBlocks.map((b) => {
                         return (
                             <List.Item key={b.id} dense={true}>
                                 <div>
                                     <List.ItemText
+                                        disableTypography
                                         primary={
                                             <Typography variant="subtitle2">
                                                 {b.id}
@@ -256,8 +269,8 @@ export const QueryMenu = observer((): JSX.Element => {
                             </List.Item>
                         );
                     })}
-                </List>
-            </StyledMenuScroll>
-        </StyledMenu>
+                </StyledList>
+            </Stack>
+        </Stack>
     );
 });

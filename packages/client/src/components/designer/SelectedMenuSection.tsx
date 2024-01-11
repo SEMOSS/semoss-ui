@@ -27,7 +27,7 @@ const StyledMenuSection = styled(Accordion)(({ theme }) => ({
     },
 }));
 
-const StyledMenuSectionTitleTypography = styled(Typography)(() => ({
+const StyledTypography = styled(Typography)(() => ({
     textTransform: 'uppercase',
     fontWeight: 'bold',
 }));
@@ -54,9 +54,9 @@ export const SelectedMenuSection = observer(
         return (
             <Stack>
                 <StyledMenuSectionHeader>
-                    <Typography variant="subtitle1">
+                    <StyledTypography variant="subtitle1">
                         {props.sectionTitle}
-                    </Typography>
+                    </StyledTypography>
                 </StyledMenuSectionHeader>
                 {props.menu.map((s, sIdx) => {
                     const key = `section--${sIdx}`;
@@ -75,9 +75,9 @@ export const SelectedMenuSection = observer(
                                 <StyledMenuSectionTitle
                                     expandIcon={<ExpandMore />}
                                 >
-                                    <StyledMenuSectionTitleTypography variant="body2">
+                                    <StyledTypography variant="body2">
                                         {s.name}
-                                    </StyledMenuSectionTitleTypography>
+                                    </StyledTypography>
                                 </StyledMenuSectionTitle>
                                 <Accordion.Content>
                                     {s.children.length > 0 ? (
