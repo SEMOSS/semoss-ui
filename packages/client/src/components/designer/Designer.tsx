@@ -79,6 +79,7 @@ const StyledSidebarContent = styled(Paper)(({ theme }) => ({
     display: 'flex',
     flexDirection: 'row',
     width: '100%',
+    height: '100%',
     borderRadius: '0',
 }));
 
