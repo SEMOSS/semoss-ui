@@ -1,26 +1,32 @@
-import { useState, useEffect, useCallback } from 'react';
-import { observer } from 'mobx-react-lite';
-import { styled, Card } from '@semoss/ui';
+import React, { useEffect, useState, useCallback } from 'react';
+import { List, Typography, styled } from '@semoss/ui';
+import { useBlocks, useWorkspace, useDesigner } from '@/hooks';
+import { ActionMessages, QueryState, BlockJSON } from '@/stores';
 
-import { ActionMessages, BlockConfig, BlockJSON } from '@/stores';
-import { useDesigner } from '@/hooks';
-import { BlocksMenuCardContent } from './BlocksMenuCardContent';
-
-const StyledCard = styled(Card)(() => ({
-    borderRadius: '8px',
-    boxShadow: '0px 5px 22px 0px rgba(0, 0, 0, 0.06)',
-    cursor: 'grab',
+const StyledListItemText = styled(List.ItemText)(() => ({
+    overflow: 'hidden',
+    textOverflow: 'ellipsis',
 }));
 
-export const BlocksMenuCard = observer((props: { block: BlockConfig }) => {
-    const json: BlockJSON = {
-        widget: props.block.widget,
-        data: props.block.data,
-        slots: (props.block.slots || {}) as BlockJSON['slots'],
-        listeners: props.block.listeners || {},
-    };
+interface QueryMenuItemProps {
+    query: QueryState;
+}
 
+export const QueryMenuItem = (props: QueryMenuItemProps) => {
+    const { query } = props;
+    const { notebook } = useBlocks();
+    const { workspace } = useWorkspace();
     const { designer } = useDesigner();
+
+    const json: BlockJSON = {
+        widget: 'text',
+        data: {
+            text: `{{${query.id}.data}}`,
+        },
+        slots: {} as BlockJSON['slots'],
+        listeners: {},
+    };
+    console.log(query);
 
     // track if it is this one that is dragging
     const [local, setLocal] = useState(false);
@@ -30,7 +36,7 @@ export const BlocksMenuCard = observer((props: { block: BlockConfig }) => {
      */
     const handleMouseDown = () => {
         // set the dragged
-        designer.activateDrag(props.block.widget, () => {
+        designer.activateDrag('text', () => {
             return true;
         });
 
@@ -54,7 +60,7 @@ export const BlocksMenuCard = observer((props: { block: BlockConfig }) => {
 
         // apply the action
         const placeholderAction = designer.drag.placeholderAction;
-        console.log('placeholder Action', placeholderAction);
+
         if (placeholderAction) {
             if (
                 placeholderAction.type === 'before' ||
@@ -125,13 +131,33 @@ export const BlocksMenuCard = observer((props: { block: BlockConfig }) => {
             document.removeEventListener('mouseup', handleDocumentMouseUp);
         };
     }, [designer.drag.active, local, handleDocumentMouseUp]);
-
     return (
-        <StyledCard onMouseDown={handleMouseDown}>
-            <BlocksMenuCardContent
-                widget={props.block.widget}
-                icon={props.block.icon}
-            />
-        </StyledCard>
+        <List.Item onMouseDown={handleMouseDown}>
+            <List.ItemButton
+                onClick={() => {
+                    console.log('click');
+                    // switch the view
+                    workspace.setView('data');
+
+                    // select the query
+                    notebook.selectQuery(query.id);
+                }}
+            >
+                <StyledListItemText
+                    primary={
+                        <Typography variant="subtitle2">{query.id}</Typography>
+                    }
+                    secondary={
+                        <Typography variant="caption" noWrap={true}>
+                            {query.data ? (
+                                JSON.stringify(query.data)
+                            ) : (
+                                <em>Query not yet executed</em>
+                            )}
+                        </Typography>
+                    }
+                />
+            </List.ItemButton>
+        </List.Item>
     );
-});
+};

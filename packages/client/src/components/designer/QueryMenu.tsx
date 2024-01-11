@@ -14,6 +14,7 @@ import { useBlocks, useWorkspace } from '@/hooks';
 import { Add, Search } from '@mui/icons-material';
 
 import { NewQueryOverlay } from '@/components/notebook';
+import { QueryMenuItem } from './QueryMenuItem';
 
 const StyledMenu = styled('div')(({ theme }) => ({
     display: 'flex',
@@ -178,39 +179,40 @@ export const QueryMenu = observer((): JSX.Element => {
                 <List>
                     {renderedQueries.map((q) => {
                         return (
-                            <List.Item key={q.id} dense={true}>
-                                <List.ItemButton
-                                    onClick={() => {
-                                        // switch the view
-                                        workspace.setView('data');
+                            <QueryMenuItem key={q.id} query={q} />
+                            // <List.Item key={q.id} dense={true}>
+                            //     <List.ItemButton
+                            //         onClick={() => {
+                            //             // switch the view
+                            //             workspace.setView('data');
 
-                                        // select the query
-                                        notebook.selectQuery(q.id);
-                                    }}
-                                >
-                                    <StyledListItemText
-                                        primary={
-                                            <Typography variant="subtitle2">
-                                                {q.id}
-                                            </Typography>
-                                        }
-                                        secondary={
-                                            <Typography
-                                                variant="caption"
-                                                noWrap={true}
-                                            >
-                                                {q.data ? (
-                                                    JSON.stringify(q.data)
-                                                ) : (
-                                                    <em>
-                                                        Query not yet executed
-                                                    </em>
-                                                )}
-                                            </Typography>
-                                        }
-                                    />
-                                </List.ItemButton>
-                            </List.Item>
+                            //             // select the query
+                            //             notebook.selectQuery(q.id);
+                            //         }}
+                            //     >
+                            //         <StyledListItemText
+                            //             primary={
+                            //                 <Typography variant="subtitle2">
+                            //                     {q.id}
+                            //                 </Typography>
+                            //             }
+                            //             secondary={
+                            //                 <Typography
+                            //                     variant="caption"
+                            //                     noWrap={true}
+                            //                 >
+                            //                     {q.data ? (
+                            //                         JSON.stringify(q.data)
+                            //                     ) : (
+                            //                         <em>
+                            //                             Query not yet executed
+                            //                         </em>
+                            //                     )}
+                            //                 </Typography>
+                            //             }
+                            //         />
+                            //     </List.ItemButton>
+                            // </List.Item>
                         );
                     })}
                 </List>
