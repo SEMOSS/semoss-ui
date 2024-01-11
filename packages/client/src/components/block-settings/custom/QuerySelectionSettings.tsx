@@ -33,7 +33,8 @@ export const QuerySelectionSettings = observer(
         id,
         path,
         label,
-    }: QuerySelectionSettingsProps<D>) => {
+    }: // queryProp,
+    QuerySelectionSettingsProps<D>) => {
         const { data, setData } = useBlockSettings(id);
         const { state } = useBlocks();
 
@@ -70,6 +71,8 @@ export const QuerySelectionSettings = observer(
         const queries = useMemo(() => {
             return Object.keys(state.queries).reduce((acc, queryKey) => {
                 return { ...acc, [`{{${queryKey}.isLoading}}`]: queryKey };
+                //? return all of the query props (isLoading, id, isError, etc)
+                // return { ...acc, [`{{${queryKey}.${queryProp}}}`]: queryKey };
             }, {});
         }, [Object.keys(state.queries).length]);
 

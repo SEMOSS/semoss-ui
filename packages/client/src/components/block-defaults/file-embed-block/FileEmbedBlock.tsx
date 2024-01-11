@@ -30,7 +30,6 @@ export const FileEmbedBlock: BlockComponent = observer(({ id }) => {
     const { monolithStore } = hooks.useRootStore();
 
     const [files, setFiles] = useState<File[]>({ ...data.value });
-    // console.log('File:', files);
 
     if (!data.fileName || !files || typeof files === 'undefined') return;
 
@@ -43,13 +42,9 @@ export const FileEmbedBlock: BlockComponent = observer(({ id }) => {
         setData('fileName', usersFileName);
     }, [files, usersFileName]);
 
-    const uploadFile = async (files, insightId, projectId) => {
+    const uploadFile = async (files, insightId) => {
         try {
-            const upload = await monolithStore.uploadFile(
-                files,
-                insightId,
-                projectId,
-            );
+            const upload = await monolithStore.uploadFile(files, insightId);
             //* file object
             setFiles(files);
             console.log('Result Obj:', upload[0]);
@@ -70,14 +65,9 @@ export const FileEmbedBlock: BlockComponent = observer(({ id }) => {
     };
 
     const handleFileChange = async (uploadedFiles) => {
-        const insightId = state.insightId,
-            projectId = '66a2a9ad-056f-4e4a-ae1c-b28cfd4331f8';
+        const insightId = state.insightId;
         try {
-            const uploadResult = await uploadFile(
-                uploadedFiles,
-                insightId,
-                projectId,
-            );
+            const uploadResult = await uploadFile(uploadedFiles, insightId);
             setFiles(uploadedFiles);
             setData('value', uploadedFiles);
             setData('fileName', uploadedFiles.name);
@@ -94,6 +84,15 @@ export const FileEmbedBlock: BlockComponent = observer(({ id }) => {
             style={{ ...data.style }}
             onChange={handleFileChange}
             multiple={false}
+            extensions={[
+                '.pdf',
+                '.csv',
+                '.txt',
+                '.doc',
+                '.ppt',
+                '.docx',
+                '.pptx',
+            ]}
             valid={true}
             {...attrs}
         />
