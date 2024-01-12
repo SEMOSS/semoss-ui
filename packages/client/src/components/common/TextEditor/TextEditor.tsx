@@ -4,7 +4,14 @@ import { File, ControlledFile, TextEditorCodeGeneration } from '../';
 import { Clear, SaveOutlined } from '@mui/icons-material';
 import { Icon as FiletypeIcon } from '@mdi/react';
 import { FILE_ICON_MAP } from './text-editor.constants';
-import { IconButton, Typography, Tabs, styled, Container } from '@semoss/ui';
+import {
+    IconButton,
+    useNotification,
+    Typography,
+    Container,
+    styled,
+    Tabs,
+} from '@semoss/ui';
 
 import Editor from '@monaco-editor/react';
 
@@ -13,8 +20,23 @@ import parserBabel from 'prettier/parser-babel';
 import parserHtml from 'prettier/parser-html';
 import parserTypescript from 'prettier/parser-typescript';
 import parserCss from 'prettier/parser-postcss';
+
+// list of available prettier parsers does not include python --> https://prettier.io/docs/en/options#parser
+// need to find working python parser, autopep8 may be an option --> https://stackoverflow.com/questions/65410758/problem-formatting-python-when-using-prettier-in-vscode
+// import pluginPython from '@prettier/plugin-python';
+
+// Python formatting notes:
+// black seems to be usable only on the backend
+// so does @prettier/plugin-python
+// we might be able to compile something in WebAssembly
+// might be more reasonable to make a backend call
+// we can write a placeholder by hand
+// black documentation doesn't indicate any intended use on FE only
+// black in-browser sandbox seems to send code to BE for formatting --> https://black.vercel.app/
+
 // Python Code Formatting
-import { spawn } from 'child_process';
+// import { spawn } from 'child_process';
+// child_process is a node Node.js module, can't run on the frontend
 
 const TextEditorCodeGenerationWrapper = styled('div')(({ theme }) => ({
     width: '180px',
@@ -187,14 +209,16 @@ export const TextEditor = (props: TextEditorProps) => {
     const {
         files,
         activeIndex,
-        setActiveIndex,
-        onSave,
-        onClose,
-        controlledFiles,
         setControlledFiles,
-        counter,
+        controlledFiles,
+        setActiveIndex,
         setCounter,
+        counter,
+        onClose,
+        onSave,
     } = props;
+
+    const notification = useNotification();
 
     /**
      * Listen for Keyboard Shortcuts, save and --> etc down the road
@@ -234,55 +258,181 @@ export const TextEditor = (props: TextEditorProps) => {
     }, [files.length, activeIndex, controlledFiles.length]);
 
     /**
+     * @name parseFiletype
+     * Return filetype abbreviation from filename string
+     */
+    function parseFiletype(filename: string): string | null {
+        const match = /\.([^.]+)$/.exec(filename);
+        if (match && match[1]) return `.${match[1]}`;
+        return null;
+    }
+
+    /**
+     * @name fixPythonParentFunction
+     * Use helper functions to manually fix python syntax
+     */
+    const fixPythonParentFunction = (input: string): string => {
+        // first fix indentation
+        let fixedInputPythonString = input;
+        fixedInputPythonString = fixPythonEmptyLines(fixedInputPythonString);
+        fixedInputPythonString = fixPythonIndentation(fixedInputPythonString);
+        // then fix empty lines
+        fixedInputPythonString = fixedInputPythonString.replace(/\n+$/, '');
+
+        console.log({ fixedInputPythonString });
+
+        // this would have to be expanded to cover all python syntax corrections
+        // might not be a reasonable scope to cover
+        return fixedInputPythonString;
+    };
+
+    /**
+     * @name fixPythonIndentation
+     * Helper function for manually fixing python indentation
+     */
+    const fixPythonIndentation = (input: string): string => {
+        let lines = input.split('\n');
+        let output = '';
+        let currentIndentation = 0;
+
+        for (let i = 0; i < lines.length; i++) {
+            let line = lines[i].trim();
+
+            if (line === '') {
+                output += '\n'; // Keep empty lines
+                currentIndentation = 0; // Reset indentation for empty lines
+            } else if (line.endsWith(':')) {
+                output += ' '.repeat(currentIndentation) + line + '\n';
+                currentIndentation += 2;
+            } else if (line.startsWith('elif ') || line.startsWith('else:')) {
+                currentIndentation -= 2;
+                output += ' '.repeat(currentIndentation) + line + '\n';
+                currentIndentation += 2;
+            } else if (
+                line.startsWith('except ') ||
+                line.startsWith('finally:')
+            ) {
+                currentIndentation -= 2;
+                output += ' '.repeat(currentIndentation) + line + '\n';
+                currentIndentation += 2;
+            } else if (
+                line.startsWith('elif') ||
+                line.startsWith('else') ||
+                line.startsWith('except') ||
+                line.startsWith('finally')
+            ) {
+                currentIndentation -= 2;
+                output += ' '.repeat(currentIndentation) + line + '\n';
+                currentIndentation += 2;
+            } else {
+                // Check if it's a new block starting with 'if'
+                if (line.startsWith('if')) {
+                    output += ' '.repeat(currentIndentation) + line + '\n';
+                    currentIndentation += 2;
+                } else {
+                    output += ' '.repeat(currentIndentation) + line + '\n';
+                }
+            }
+        }
+
+        return output;
+    };
+
+    /**
+     * @name fixPythonEmptyLines
+     * Helper function for manually fixing python indentation
+     */
+    const fixPythonEmptyLines = (input) => {
+        let lines = input.split('\n');
+        let output = '';
+        let emptyLineCount = 0;
+
+        for (let i = 0; i < lines.length; i++) {
+            let line = lines[i].trim();
+
+            if (line === '') {
+                emptyLineCount++;
+                if (emptyLineCount === 1) {
+                    output += '\n'; // Keep a single empty line
+                }
+            } else {
+                emptyLineCount = 0; // Reset empty line count
+                output += line + '\n';
+            }
+        }
+
+        return output;
+    };
+
+    /**
      * @name prettifyFile
      * Use custom parsers to format file
      * TO-DO: Save custom configs?
      */
     const prettifyFile = () => {
+        // get filetype or parse out filetype if filetype is just 'file' in the case of python / html / css etc
+        const filetype =
+            activeFile.type === 'file'
+                ? parseFiletype(activeFile.name)
+                : activeFile.type;
+
+        // only run the function if in developer mode, if not do nothing
         if (process.env.NODE_ENV == 'development') {
             let formatted = activeFile.content;
-            console.log(activeFile);
 
-            if (activeFile.type === 'py') {
-                (async () => {
-                    try {
-                        const formattedPythonCode = await runBlack(
-                            activeFile.content,
-                        );
-                        console.log(
-                            'Formatted Python Code:\n',
-                            formattedPythonCode,
-                        );
-                    } catch (error) {
-                        console.error(
-                            'Error formatting Python code:',
-                            error.message,
-                        );
-                    }
-                })();
+            if (filetype === 'py') {
+                // temporary partail fix manually correcting basic python syntax
+                const manuallyCorrectedPython = fixPythonParentFunction(
+                    activeFile.content,
+                );
+
+                // only apply prettier changes in DOM if changes have been made and notify user
+                if (manuallyCorrectedPython != activeFile.content) {
+                    editFile(manuallyCorrectedPython);
+                    notification.add({
+                        color: 'success',
+                        message: 'Formatting changes complete.',
+                    });
+                } else {
+                    notification.add({
+                        color: 'error',
+                        message:
+                            'No formatting issues found in file or filetype may not be covered.',
+                    });
+                }
+
+                // old async IIFE maybe usable after reactor is made for python formatting
+                // (async () => {
+                //     try {
+                //         alert("trying")
+                //         // currently this just returns the file content unchanged
+                //         const formattedPythonCode = await runBlack(
+                //             activeFile.content,
+                //         );
+                //         console.log(
+                //             'Formatted Python Code:\n',
+                //             formattedPythonCode,
+                //         );
+                //     } catch (error) {
+                //         alert("catching")
+                //         console.error(
+                //             'Error formatting Python code:',
+                //             error.message,
+                //         );
+                //     }
+                // })();
             } else {
                 const prettierConfig = {};
 
-                // parsers for other languages are needed
-                if (activeFile.type === 'html') {
+                if (filetype === 'html') {
                     prettierConfig['parser'] = 'html';
                     prettierConfig['plugins'] = [parserHtml];
-                } else if (
-                    activeFile.type === 'js' ||
-                    activeFile.type === 'jsx' ||
-                    activeFile.type === 'ts' ||
-                    activeFile.type === 'tsx'
-                ) {
-                    prettierConfig['parser'] = 'babel';
-                    prettierConfig['plugins'] = [parserBabel];
-                    // prettierConfig['semi'] = false;
-                    // prettierConfig['singleQuote'] = true;
-                } else if (
-                    activeFile.type === 'css' ||
-                    activeFile.type === 'scss'
-                ) {
+                } else if (filetype === 'css' || filetype === 'scss') {
                     prettierConfig['parser'] = 'css';
                     prettierConfig['plugins'] = [parserCss];
+                } else {
+                    prettierConfig['parser'] = 'babel';
+                    prettierConfig['plugins'] = [parserBabel];
                 }
 
                 // If we have a configuration for the selected language
@@ -292,8 +442,22 @@ export const TextEditor = (props: TextEditorProps) => {
                         prettierConfig,
                     );
                 }
+
+                // only apply prettier changes in DOM if changes have been made and notify user
+                if (formatted != activeFile.content) {
+                    editFile(formatted);
+                    notification.add({
+                        color: 'success',
+                        message: 'Formatting changes complete.',
+                    });
+                } else {
+                    notification.add({
+                        color: 'error',
+                        message:
+                            'No formatting issues found in file or filetype may not be covered.',
+                    });
+                }
             }
-            editFile(formatted);
         }
     };
 
