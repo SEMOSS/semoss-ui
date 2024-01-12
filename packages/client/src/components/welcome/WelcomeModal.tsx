@@ -98,7 +98,6 @@ export const WelcomeModal = () => {
 
     // don't show modal within the same browser session
     useEffect(() => {
-        setOpen(true);
         if (!sessionStorage.getItem('platform-welcome')) {
             setOpen(true);
             sessionStorage.setItem('platform-welcome', 'true');
