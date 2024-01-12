@@ -35,23 +35,8 @@ const StyledJson = styled('pre')(({ theme }) => ({
     textWrap: 'wrap',
 }));
 
-const StyledSecondaryTypography = styled(Typography)(({ theme }) => ({
-    ...theme.typography.caption,
-    overflow: 'hidden',
-    textOverflow: 'ellipsis',
-}));
-
 const StyledList = styled(List)(() => ({
     overflow: 'auto',
-}));
-
-const StyledListItem = styled(List.Item)(() => ({
-    padding: '0px 4px',
-}));
-
-const StyledListItemText = styled(List.ItemText)(() => ({
-    overflow: 'hidden',
-    textOverflow: 'ellipsis',
 }));
 
 /**
