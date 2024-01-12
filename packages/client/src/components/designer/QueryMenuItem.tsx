@@ -12,6 +12,16 @@ const StyledListItemText = styled(List.ItemText)(() => ({
     textOverflow: 'ellipsis',
 }));
 
+const StyledSuccessChip = styled(Chip)(({ theme }) => ({
+    backgroundColor: '#E7F4E5',
+    color: theme.palette.success.main,
+}));
+
+const StyledErrorChip = styled(Chip)(({ theme }) => ({
+    backgroundColor: '#FBE9E8',
+    color: theme.palette.error.main,
+}));
+
 interface QueryMenuItemProps {
     query: QueryState;
 }
@@ -156,16 +166,17 @@ export const QueryMenuItem = (props: QueryMenuItemProps) => {
                             {query.isLoading ? (
                                 <em>Loading...</em>
                             ) : query.data ? (
-                                <Chip
-                                    color={
-                                        query.isSuccessful ? 'green' : 'lcpink'
-                                    }
-                                    variant="outlined"
-                                    label={
-                                        query.isSuccessful ? 'Success' : 'Error'
-                                    }
-                                    size="small"
-                                />
+                                query.isSuccessful ? (
+                                    <StyledSuccessChip
+                                        label="Success"
+                                        size="small"
+                                    />
+                                ) : (
+                                    <StyledErrorChip
+                                        label="Error"
+                                        size="small"
+                                    />
+                                )
                             ) : (
                                 <em>Query not yet executed</em>
                             )}
