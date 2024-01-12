@@ -5,6 +5,7 @@ import {
     TOKEN_TYPE_TEXT,
     INPUT_TYPE_VECTOR,
     INPUT_TYPE_CUSTOM_QUERY,
+    INPUT_TYPE_DATABASE,
 } from './prompt.constants';
 import {
     ActionMessages,
@@ -91,6 +92,11 @@ export function getBlockForInput(
                 token.index,
                 capitalizeLabel(token.key),
             );
+        case INPUT_TYPE_DATABASE:
+            const label = capitalizeLabel(token.key).includes('Query')
+                ? capitalizeLabel(token.key)
+                : `${capitalizeLabel(token.key)} Query`;
+            return getTextFieldInputBlock(inputType, token.index, label);
         case INPUT_TYPE_SELECT:
             return getSelectInputBlock(
                 inputType,
@@ -117,14 +123,22 @@ export function getInputFormatPrompt(
             const inputTokenParts = token.display.split(
                 new RegExp(`(${token.key})`),
             );
-            const keyIndex = inputTokenParts.indexOf(token.key);
-            inputTokenParts[keyIndex] = `{{${getIdForInput(
-                token.linkedInputToken !== undefined
-                    ? inputTypes[token.linkedInputToken].type
-                    : inputTypes[token.index].type,
-                token.linkedInputToken ?? token.index,
-            )}.value}}`;
-            tokenStrings.push(inputTokenParts.join(''));
+            // don't pass database query into the prompt itself
+            // we will just use the query results to supplement the prompt at the end
+            if (
+                inputTypes[token.linkedInputToken].type === INPUT_TYPE_DATABASE
+            ) {
+                tokenStrings.push(token.display);
+            } else {
+                const keyIndex = inputTokenParts.indexOf(token.key);
+                inputTokenParts[keyIndex] = `{{${getIdForInput(
+                    token.linkedInputToken !== undefined
+                        ? inputTypes[token.linkedInputToken].type
+                        : inputTypes[token.index].type,
+                    token.linkedInputToken ?? token.index,
+                )}.value}}`;
+                tokenStrings.push(inputTokenParts.join(''));
+            }
         }
     });
 
@@ -143,7 +157,7 @@ export function getInputFormatPrompt(
 }
 
 function getVectorQuery() {
-    let vectorQueryFunctionString = `def runVectorSearch(search_statement:str, vector_engine_id:str, limit:int):`;
+    let vectorQueryFunctionString = `def runVectorSearch(search_statement:str, vector_engine_id:str, limit:int) -> str:`;
 
     vectorQueryFunctionString += `from gaas_gpt_vector import VectorEngine;`;
     vectorQueryFunctionString += `vector = VectorEngine(engine_id = vector_engine_id, insight_id = '\${i}', insight_folder = '\${if}');`;
@@ -155,7 +169,18 @@ function getVectorQuery() {
 }
 
 function getCustomQuery(index: number) {
-    return `def runCustom_${index}(search_statement:str): return search_statement;`;
+    return `def runCustom_${index}(search_statement:str) -> str: return search_statement;`;
+}
+
+function getDatabaseQuery() {
+    let databaseQueryFunctionString = `def runDatabaseQuery(query:str, database_engine_id:str) -> str:`;
+
+    databaseQueryFunctionString += `from gaas_gpt_database import DatabaseEngine;`;
+    databaseQueryFunctionString += `databaseEngine = DatabaseEngine(engine_id = database_engine_id, insight_id = '\${i}');`;
+    databaseQueryFunctionString += `result_df = databaseEngine.execQuery(query = query);`;
+    databaseQueryFunctionString += `return f"Use the following list of objects representing each row in table to inform your answer: {result_df.to_dict(orient='records')}. The are the headers for the table are: {list(result_df.columns)}";`;
+
+    return databaseQueryFunctionString;
 }
 
 export function getQueryForPrompt(
@@ -170,7 +195,8 @@ export function getQueryForPrompt(
         Object.entries(inputTypes).filter(
             ([_, value]) =>
                 value?.type === INPUT_TYPE_VECTOR ||
-                value?.type === INPUT_TYPE_CUSTOM_QUERY,
+                value?.type === INPUT_TYPE_CUSTOM_QUERY ||
+                value?.type === INPUT_TYPE_DATABASE,
         ),
     );
 
@@ -179,7 +205,14 @@ export function getQueryForPrompt(
             customInputTypes,
         )
             .map((customInputTokenIndex, index: number) => {
-                return `${customInputTypes[customInputTokenIndex]?.type}_${index}_statement:str`;
+                return `${
+                    customInputTypes[customInputTokenIndex]?.type
+                }_${index}_${
+                    customInputTypes[customInputTokenIndex]?.type ===
+                    INPUT_TYPE_DATABASE
+                        ? 'query'
+                        : 'statement'
+                }:str`;
             })
             .join(', ')}${
             Object.keys(customInputTypes).length ? ', ' : ''
@@ -204,20 +237,56 @@ export function getQueryForPrompt(
                 ) {
                     promptQueryFunctionString += `${customInputTypes[customInputTokenIndex].type}_${index} = runCustom_${index}(${customInputTypes[customInputTokenIndex]?.type}_${index}_statement);`;
                 }
+                if (
+                    customInputTypes[customInputTokenIndex]?.type ===
+                    INPUT_TYPE_DATABASE
+                ) {
+                    promptQueryFunctionString += `${customInputTypes[customInputTokenIndex].type}_${index} = runDatabaseQuery(${customInputTypes[customInputTokenIndex]?.type}_${index}_query,"${customInputTypes[customInputTokenIndex]?.meta}");`;
+                }
             },
         );
 
-        if (!Object.keys(customInputTypes).length) {
-            promptQueryFunctionString += `prompt = search_statement;`;
-        } else {
-            promptQueryFunctionString += `prompt = search_statement + ' Ask based on ' + ${Object.keys(
+        promptQueryFunctionString += `prompt = search_statement`;
+        if (
+            Object.values(customInputTypes).some(
+                (inputType) =>
+                    inputType?.type === INPUT_TYPE_VECTOR ||
+                    inputType?.type === INPUT_TYPE_CUSTOM_QUERY,
+            )
+        ) {
+            promptQueryFunctionString += ` + ' Ask based on ' + ${Object.keys(
                 customInputTypes,
             )
+                .filter(
+                    (customInputTokenIndex) =>
+                        customInputTypes[customInputTokenIndex].type ===
+                            INPUT_TYPE_VECTOR ||
+                        customInputTypes[customInputTokenIndex].type ===
+                            INPUT_TYPE_CUSTOM_QUERY,
+                )
                 .map((customInputTokenIndex, index: number) => {
                     return `${customInputTypes[customInputTokenIndex].type}_${index}`;
                 })
-                .join(` + ' and ' + `)};`;
+                .join(` + ' and ' + `)}.`;
         }
+        if (
+            Object.values(customInputTypes).some(
+                (inputType) => inputType?.type === INPUT_TYPE_DATABASE,
+            )
+        ) {
+            promptQueryFunctionString += ` + ${Object.keys(customInputTypes)
+                .filter(
+                    (customInputTokenIndex) =>
+                        customInputTypes[customInputTokenIndex].type ===
+                        INPUT_TYPE_DATABASE,
+                )
+                .map((customInputTokenIndex, index: number) => {
+                    return `' ' + ${customInputTypes[customInputTokenIndex].type}_${index}`;
+                })
+                .join(` + `)}`;
+        }
+        promptQueryFunctionString += ` + ' Format the result as markdown.';`;
+
         promptQueryFunctionString +=
             `response = model.ask(question = prompt);` +
             `return json.dumps(response[0]['response']);`;
@@ -253,7 +322,7 @@ export function getQueryForPrompt(
                 INPUT_TYPE_CUSTOM_QUERY
             ) {
                 queryDefinitionSteps.unshift({
-                    id: `py-custom-query-${index}-definition`,
+                    id: `py-custom-query-${tokens[customInputTokenIndex].key}-definition`,
                     widget: 'code',
                     parameters: {
                         type: 'py',
@@ -274,6 +343,20 @@ export function getQueryForPrompt(
             parameters: {
                 type: 'py',
                 code: getVectorQuery(),
+            },
+        });
+    }
+    if (
+        Object.values(customInputTypes).some(
+            (inputType) => inputType?.type === INPUT_TYPE_DATABASE,
+        )
+    ) {
+        queryDefinitionSteps.unshift({
+            id: 'py-database-query-definition',
+            widget: 'code',
+            parameters: {
+                type: 'py',
+                code: getDatabaseQuery(),
             },
         });
     }
