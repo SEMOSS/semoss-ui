@@ -1,7 +1,11 @@
-import React, { useEffect, useState, useCallback } from 'react';
-import { List, Typography, styled } from '@semoss/ui';
+import { useEffect, useState, useCallback } from 'react';
+import { Chip, List, Typography, styled } from '@semoss/ui';
 import { useBlocks, useWorkspace, useDesigner } from '@/hooks';
 import { ActionMessages, QueryState, BlockJSON } from '@/stores';
+
+const StyledListItem = styled(List.Item)(() => ({
+    padding: '0px 4px',
+}));
 
 const StyledListItemText = styled(List.ItemText)(() => ({
     overflow: 'hidden',
@@ -132,7 +136,7 @@ export const QueryMenuItem = (props: QueryMenuItemProps) => {
     }, [designer.drag.active, local, handleDocumentMouseUp]);
 
     return (
-        <List.Item onMouseDown={handleMouseDown}>
+        <StyledListItem onMouseDown={handleMouseDown}>
             <List.ItemButton
                 onClick={() => {
                     // switch the view
@@ -143,13 +147,25 @@ export const QueryMenuItem = (props: QueryMenuItemProps) => {
                 }}
             >
                 <StyledListItemText
+                    disableTypography
                     primary={
                         <Typography variant="subtitle2">{query.id}</Typography>
                     }
                     secondary={
                         <Typography variant="caption" noWrap={true}>
-                            {query.data ? (
-                                JSON.stringify(query.data)
+                            {query.isLoading ? (
+                                <em>Loading...</em>
+                            ) : query.data ? (
+                                <Chip
+                                    color={
+                                        query.isSuccessful ? 'green' : 'lcpink'
+                                    }
+                                    variant="outlined"
+                                    label={
+                                        query.isSuccessful ? 'Success' : 'Error'
+                                    }
+                                    size="small"
+                                />
                             ) : (
                                 <em>Query not yet executed</em>
                             )}
@@ -157,6 +173,6 @@ export const QueryMenuItem = (props: QueryMenuItemProps) => {
                     }
                 />
             </List.ItemButton>
-        </List.Item>
+        </StyledListItem>
     );
 };
