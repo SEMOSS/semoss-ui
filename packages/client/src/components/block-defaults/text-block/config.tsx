@@ -17,11 +17,7 @@ export const config: BlockConfig<TextBlockDef> = {
     widget: 'text',
     type: BLOCK_TYPE_DISPLAY,
     data: {
-        style: {
-            width: '100%',
-            height: '100%',
-            overflow: 'scroll',
-        },
+        style: {},
         text: 'Hello world',
     },
     listeners: {},

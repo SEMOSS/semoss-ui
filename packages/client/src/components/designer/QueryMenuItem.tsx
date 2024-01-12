@@ -18,6 +18,8 @@ export const QueryMenuItem = (props: QueryMenuItemProps) => {
     const { workspace } = useWorkspace();
     const { designer } = useDesigner();
 
+    // We can provide different options for user to display this data,
+    // Or we can take a look at the data if it's there and render a better block for it
     const json: BlockJSON = {
         widget: 'text',
         data: {
@@ -26,7 +28,6 @@ export const QueryMenuItem = (props: QueryMenuItemProps) => {
         slots: {} as BlockJSON['slots'],
         listeners: {},
     };
-    console.log(query);
 
     // track if it is this one that is dragging
     const [local, setLocal] = useState(false);
@@ -123,19 +124,17 @@ export const QueryMenuItem = (props: QueryMenuItemProps) => {
             return;
         }
 
-        console.log(designer.drag.active);
-
         document.addEventListener('mouseup', handleDocumentMouseUp);
 
         return () => {
             document.removeEventListener('mouseup', handleDocumentMouseUp);
         };
     }, [designer.drag.active, local, handleDocumentMouseUp]);
+
     return (
         <List.Item onMouseDown={handleMouseDown}>
             <List.ItemButton
                 onClick={() => {
-                    console.log('click');
                     // switch the view
                     workspace.setView('data');
 
