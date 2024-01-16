@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Button, Checkbox, Stack, styled } from '@semoss/ui';
+import { Button, Checkbox, Stack, Typography, styled } from '@semoss/ui';
 
 const Spacer = styled('div')(({}) => ({
     display: 'flex',
@@ -9,6 +9,12 @@ const Spacer = styled('div')(({}) => ({
 const StyledDiv = styled('div')(() => ({
     alignItems: 'end',
     display: 'flex',
+}));
+
+const StyledCheckbox = styled(Checkbox)(() => ({
+    '& .MuiSvgIcon-root': {
+        fontSize: '20px',
+    },
 }));
 
 // TODO: store "Don't show again" checkbox value on BE attached to user metadata
@@ -33,8 +39,12 @@ export const WelcomeStepActions = (props: {
     return (
         <Stack direction="row" spacing={2}>
             {props.isFirstStep ? (
-                <Checkbox
-                    label="Don't show again"
+                <StyledCheckbox
+                    label={
+                        <Typography variant="body2">
+                            Don't show again
+                        </Typography>
+                    }
                     checked={localStorageValue}
                     onChange={onCheckboxChange}
                 />
