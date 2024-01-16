@@ -66,8 +66,8 @@ export const ShareOverlay = observer((props: ShareOverlayProps) => {
                 {diffs && (
                     <Alert severity="warning" icon={<WarningAmberOutlined />}>
                         <Alert.Title>
-                            Save app to see recent changes reflected in shared
-                            source
+                            Save app prior to sharing to reflect the latest
+                            changes
                         </Alert.Title>
                     </Alert>
                 )}
