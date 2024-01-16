@@ -1,7 +1,11 @@
 import { useEffect, useState } from 'react';
-import { styled, Card, Modal, Stack, Typography, List, Box } from '@semoss/ui';
+import { styled, Card, Modal, Stack, Typography, List } from '@semoss/ui';
 import { WelcomeStepToolbar } from './WelcomeStepToolbar';
 import { WelcomeStepActions } from './WelcomeStepActions';
+import WelcomeSplash from '@/assets/img/welcome-splash.png';
+import WelcomeApps from '@/assets/img/welcome-apps.png';
+import WelcomeDocumentation from '@/assets/img/welcome-documentation.png';
+import { THEME } from '@/constants';
 
 const StyledCard = styled(Card)(() => ({
     flexDirection: 'row',
@@ -51,32 +55,36 @@ interface WelcomeModalStep {
     sidebarTitle: string;
     mainTitle: string;
     mainListItems: Array<string>;
+    img: string;
 }
 const WelcomeModalSteps: Array<WelcomeModalStep> = [
     {
         sidebarTitle: 'Welcome',
-        mainTitle: 'What you can do with CFG AI:',
+        mainTitle: `What you can do with ${THEME.name}:`,
         mainListItems: [
             'Build a custom app with no front end coding',
             'Automate tasks with large language models',
             "Run an app that connects your client's database with a large language model for efficient data reporting",
         ],
+        img: WelcomeSplash,
     },
     {
-        sidebarTitle: 'CFG AI Network',
-        mainTitle: 'CFG AI Network',
+        sidebarTitle: `${THEME.name} Network`,
+        mainTitle: `${THEME.name} Network`,
         mainListItems: [
-            "Public and discoverable apps: Try out awesome apps created by our community users and view each app's source code on the CFG AI GitHub",
-            'Blog: Read blogs created by our users for inspiration on how CFG AI can help you work faster and better',
+            `Public and discoverable apps: Try out awesome apps created by our community users and view each app's source code on the ${THEME.name} GitHub`,
+            `Blog: Read blogs created by our users for inspiration on how ${THEME.name} can help you work faster and better`,
         ],
+        img: WelcomeApps,
     },
     {
         sidebarTitle: 'Documentation',
         mainTitle: 'Documentation',
         mainListItems: [
-            'New to CFG AI? Learn about CFG AI key concepts, watch tutorials, use the starter kit, and more.',
-            'Already have a pre-built app that needs hosting on CFG AI? Read the How-To guide.',
+            `New to ${THEME.name}? Learn about ${THEME.name} key concepts, watch tutorials, use the starter kit, and more.`,
+            `Already have a pre-built app that needs hosting on ${THEME.name}? Read the How-To guide.`,
         ],
+        img: WelcomeDocumentation,
     },
 ];
 
@@ -112,7 +120,9 @@ export const WelcomeModal = () => {
         <Modal open={open} maxWidth="md" fullWidth>
             <StyledCard id="welcome-dialog-card">
                 <StyledSidebar>
-                    <StyledTitle variant="h4">Welcome to CFG AI</StyledTitle>
+                    <StyledTitle variant="h4">
+                        Welcome to {THEME.name}
+                    </StyledTitle>
                     <StyledList disablePadding dense>
                         {Array.from(
                             WelcomeModalSteps,
@@ -150,12 +160,8 @@ export const WelcomeModal = () => {
                             <WelcomeStepToolbar
                                 closeModal={() => setOpen(false)}
                             />
-                            {/* TODO: custom images here */}
-                            <Box
-                                sx={{
-                                    height: '100%',
-                                    border: '2px blue solid',
-                                }}
+                            <img
+                                src={WelcomeModalSteps[currentStepIndex].img}
                             />
                         </Stack>
                         <Stack height="45%">
