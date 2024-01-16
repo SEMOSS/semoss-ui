@@ -30,7 +30,7 @@ const StyledMain = styled(Stack)(({ theme }) => ({
     overflow: 'scroll',
 }));
 
-const StyledTopStack = styled(Stack)(({ theme }) => ({
+const StyledTopStack = styled(Stack)(() => ({
     height: '55%',
     overflow: 'hidden',
 }));
