@@ -83,13 +83,13 @@ const STEPS: Step[] = [
         content:
             'Welcome to the app landing page where you can view your apps and browse through discoverable apps.',
     },
-    {
-        tourAttr: 'app-library-title',
-        position: 'bottom',
-        highlightPadding: 4,
-        title: 'My Apps',
-        content: `By default, upon logging into ${THEME.name}, you will be taken to your App Library where you can open your apps and any public apps.`,
-    },
+    // {
+    //     tourAttr: 'app-library-title',
+    //     position: 'bottom',
+    //     highlightPadding: 4,
+    //     title: 'My Apps',
+    //     content: `By default, upon logging into ${THEME.name}, you will be taken to your App Library where you can open your apps and any public apps.`,
+    // },
     {
         tourAttr: 'nav-engine-function',
         position: 'right',
