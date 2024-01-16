@@ -1,9 +1,9 @@
-import React, { createElement, useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { styled, Card, Modal, Stack, Typography, List, Box } from '@semoss/ui';
-import { StepToolbar } from './StepToolbar';
-import { StepActions } from './StepActions';
+import { WelcomeStepToolbar } from './WelcomeStepToolbar';
+import { WelcomeStepActions } from './WelcomeStepActions';
 
-const StyledCard = styled(Card)(({ theme }) => ({
+const StyledCard = styled(Card)(() => ({
     flexDirection: 'row',
     height: '80vh',
 }));
@@ -97,10 +97,14 @@ export const WelcomeModal = () => {
     };
 
     // don't show modal within the same browser session
+    // or if the we have it set in local storage
     useEffect(() => {
-        if (!localStorage.getItem('platform-welcome')) {
+        if (
+            !sessionStorage.getItem('platform-welcome') &&
+            !localStorage.getItem('platform-welcome')
+        ) {
             setOpen(true);
-            localStorage.setItem('platform-welcome', 'true');
+            sessionStorage.setItem('platform-welcome', 'true');
         }
     }, []);
 
@@ -143,7 +147,9 @@ export const WelcomeModal = () => {
                         height="100%"
                     >
                         <Stack height="55%">
-                            <StepToolbar closeModal={() => setOpen(false)} />
+                            <WelcomeStepToolbar
+                                closeModal={() => setOpen(false)}
+                            />
                             {/* TODO: custom images here */}
                             <Box
                                 sx={{
@@ -174,7 +180,7 @@ export const WelcomeModal = () => {
                                 )}
                             </List>
                             <VerticalSpacer />
-                            <StepActions
+                            <WelcomeStepActions
                                 isFirstStep={currentStepIndex === 0}
                                 isLastStep={
                                     currentStepIndex ===

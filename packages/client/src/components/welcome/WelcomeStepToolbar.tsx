@@ -6,7 +6,7 @@ const StyledCardToolbar = styled('div')(() => ({
     justifyContent: 'flex-end',
 }));
 
-export const StepToolbar = (props: { closeModal: () => void }) => {
+export const WelcomeStepToolbar = (props: { closeModal: () => void }) => {
     return (
         <StyledCardToolbar>
             <IconButton size="small" onClick={() => props.closeModal()}>
