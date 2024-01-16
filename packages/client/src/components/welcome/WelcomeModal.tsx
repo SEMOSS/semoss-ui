@@ -24,15 +24,23 @@ const StyledTitle = styled(Typography)(({ theme }) => ({
     padding: `${theme.spacing(7)} ${theme.spacing(3)}`,
 }));
 
-const StyledMain = styled(Stack)(({ theme }) => ({
+const StyledMain = styled(Stack)(() => ({
     width: '70%',
-    padding: theme.spacing(2),
-    overflow: 'scroll',
 }));
 
-const StyledTopStack = styled(Stack)(() => ({
-    height: '55%',
+const StyledTopStack = styled(Stack)(({ theme }) => ({
+    height: '50%',
     overflow: 'hidden',
+    paddingLeft: theme.spacing(3),
+    paddingRight: theme.spacing(3),
+    paddingTop: theme.spacing(3),
+}));
+
+const StyledBottomStack = styled(Stack)(({ theme }) => ({
+    height: '50%',
+    paddingLeft: theme.spacing(3),
+    paddingRight: theme.spacing(3),
+    paddingBottom: theme.spacing(3),
 }));
 
 const VerticalSpacer = styled('div')(() => ({
@@ -42,7 +50,7 @@ const VerticalSpacer = styled('div')(() => ({
 }));
 
 const StyledList = styled(List)(({ theme }) => ({
-    height: '45%',
+    height: '50%',
     color: theme.palette.background.paper,
 }));
 
@@ -175,11 +183,11 @@ export const WelcomeModal = () => {
                                 src={WelcomeModalSteps[currentStepIndex].img}
                             />
                         </StyledTopStack>
-                        <Stack height="45%">
+                        <StyledBottomStack>
                             <Typography variant="h6">
                                 {WelcomeModalSteps[currentStepIndex].mainTitle}
                             </Typography>
-                            <List disablePadding>
+                            <List disablePadding sx={{ overflowY: 'scroll' }}>
                                 {Array.from(
                                     WelcomeModalSteps[currentStepIndex]
                                         .mainListItems,
@@ -206,7 +214,7 @@ export const WelcomeModal = () => {
                                 nextStepAction={nextStepAction}
                                 previousStepAction={previousStepAction}
                             />
-                        </Stack>
+                        </StyledBottomStack>
                     </Stack>
                 </StyledMain>
             </StyledCard>
