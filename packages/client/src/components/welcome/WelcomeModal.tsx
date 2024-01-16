@@ -6,6 +6,7 @@ import WelcomeSplash from '@/assets/img/welcome-splash.png';
 import WelcomeApps from '@/assets/img/welcome-apps.png';
 import WelcomeDocumentation from '@/assets/img/welcome-documentation.png';
 import { THEME } from '@/constants';
+import { Tour } from '../tour';
 
 const StyledCard = styled(Card)(() => ({
     flexDirection: 'row',
@@ -110,10 +111,12 @@ const WelcomeModalSteps: Array<WelcomeModalStep> = [
 export const WelcomeModal = () => {
     const [currentStepIndex, setCurrentStepIndex] = useState<number>(0);
     const [open, setOpen] = useState<boolean>(false);
+    const [showTour, setShowTour] = useState<boolean>(false);
 
     const nextStepAction = () => {
         if (currentStepIndex === WelcomeModalSteps.length - 1) {
             setOpen(false);
+            setShowTour(true);
         } else {
             setCurrentStepIndex((state) => state + 1);
         }
@@ -136,88 +139,99 @@ export const WelcomeModal = () => {
     }, []);
 
     return (
-        <Modal open={open} maxWidth="md" fullWidth>
-            <StyledCard id="welcome-dialog-card">
-                <StyledSidebar>
-                    <StyledTitle variant="h4">
-                        Welcome to {THEME.name}
-                    </StyledTitle>
-                    <StyledList disablePadding dense>
-                        {Array.from(
-                            WelcomeModalSteps,
-                            (step: WelcomeModalStep, index: number) => {
-                                return (
-                                    <StyledListItem
-                                        key={index}
-                                        disableGutters
-                                        disablePadding
-                                    >
-                                        <StyledListItemButton
-                                            onClick={() =>
-                                                setCurrentStepIndex(index)
-                                            }
-                                            selected={
-                                                currentStepIndex === index
-                                            }
+        <>
+            {showTour ? <Tour hideTour={() => setShowTour(false)} /> : <></>}
+            <Modal open={open} maxWidth="md" fullWidth>
+                <StyledCard id="welcome-dialog-card">
+                    <StyledSidebar>
+                        <StyledTitle variant="h4">
+                            Welcome to {THEME.name}
+                        </StyledTitle>
+                        <StyledList disablePadding dense>
+                            {Array.from(
+                                WelcomeModalSteps,
+                                (step: WelcomeModalStep, index: number) => {
+                                    return (
+                                        <StyledListItem
+                                            key={index}
+                                            disableGutters
+                                            disablePadding
                                         >
-                                            <List.ItemText
-                                                primary={step.sidebarTitle}
-                                            />
-                                        </StyledListItemButton>
-                                    </StyledListItem>
-                                );
-                            },
-                        )}
-                    </StyledList>
-                </StyledSidebar>
-                <StyledMain id="welcome-modal-main">
-                    <Stack
-                        id={`welcome-modal-step-${currentStepIndex}`}
-                        height="100%"
-                    >
-                        <StyledTopStack>
-                            <WelcomeStepToolbar
-                                closeModal={() => setOpen(false)}
-                            />
-                            <img
-                                src={WelcomeModalSteps[currentStepIndex].img}
-                            />
-                        </StyledTopStack>
-                        <StyledBottomStack>
-                            <Typography variant="h6">
-                                {WelcomeModalSteps[currentStepIndex].mainTitle}
-                            </Typography>
-                            <List disablePadding sx={{ overflowY: 'scroll' }}>
-                                {Array.from(
-                                    WelcomeModalSteps[currentStepIndex]
-                                        .mainListItems,
-                                    (text, index) => {
-                                        return (
-                                            <List.Item
-                                                key={`welcome-main-list-${index}`}
+                                            <StyledListItemButton
+                                                onClick={() =>
+                                                    setCurrentStepIndex(index)
+                                                }
+                                                selected={
+                                                    currentStepIndex === index
+                                                }
                                             >
                                                 <List.ItemText
-                                                    primary={`\u2022 ${text}`}
+                                                    primary={step.sidebarTitle}
                                                 />
-                                            </List.Item>
-                                        );
-                                    },
-                                )}
-                            </List>
-                            <VerticalSpacer />
-                            <WelcomeStepActions
-                                isFirstStep={currentStepIndex === 0}
-                                isLastStep={
-                                    currentStepIndex ===
-                                    WelcomeModalSteps.length - 1
-                                }
-                                nextStepAction={nextStepAction}
-                                previousStepAction={previousStepAction}
-                            />
-                        </StyledBottomStack>
-                    </Stack>
-                </StyledMain>
-            </StyledCard>
-        </Modal>
+                                            </StyledListItemButton>
+                                        </StyledListItem>
+                                    );
+                                },
+                            )}
+                        </StyledList>
+                    </StyledSidebar>
+                    <StyledMain id="welcome-modal-main">
+                        <Stack
+                            id={`welcome-modal-step-${currentStepIndex}`}
+                            height="100%"
+                        >
+                            <StyledTopStack>
+                                <WelcomeStepToolbar
+                                    closeModal={() => setOpen(false)}
+                                />
+                                <img
+                                    src={
+                                        WelcomeModalSteps[currentStepIndex].img
+                                    }
+                                />
+                            </StyledTopStack>
+                            <StyledBottomStack>
+                                <Typography variant="h6">
+                                    {
+                                        WelcomeModalSteps[currentStepIndex]
+                                            .mainTitle
+                                    }
+                                </Typography>
+                                <List
+                                    disablePadding
+                                    sx={{ overflowY: 'scroll' }}
+                                >
+                                    {Array.from(
+                                        WelcomeModalSteps[currentStepIndex]
+                                            .mainListItems,
+                                        (text, index) => {
+                                            return (
+                                                <List.Item
+                                                    key={`welcome-main-list-${index}`}
+                                                >
+                                                    <List.ItemText
+                                                        primary={`\u2022 ${text}`}
+                                                    />
+                                                </List.Item>
+                                            );
+                                        },
+                                    )}
+                                </List>
+                                <VerticalSpacer />
+                                <WelcomeStepActions
+                                    isFirstStep={currentStepIndex === 0}
+                                    isLastStep={
+                                        currentStepIndex ===
+                                        WelcomeModalSteps.length - 1
+                                    }
+                                    nextStepAction={nextStepAction}
+                                    previousStepAction={previousStepAction}
+                                />
+                            </StyledBottomStack>
+                        </Stack>
+                    </StyledMain>
+                </StyledCard>
+            </Modal>
+        </>
     );
 };

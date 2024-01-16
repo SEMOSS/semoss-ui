@@ -90,6 +90,7 @@ export const NavigatorLayout = observer((props) => {
             <StyledSidebar>
                 <Tooltip title={`Open App Library`} placement="right">
                     <StyledSidebarItem
+                        data-tour="nav-app-library"
                         to={'/'}
                         selected={!!matchPath('', pathname)}
                         aria-label={'Navigate to app library'}
@@ -107,6 +108,7 @@ export const NavigatorLayout = observer((props) => {
                         placement="right"
                     >
                         <StyledSidebarItem
+                            data-tour={`nav-engine-${r.path}`}
                             to={`/engine/${r.path}`}
                             selected={
                                 !!matchPath(`engine/${r.path}/*`, pathname)

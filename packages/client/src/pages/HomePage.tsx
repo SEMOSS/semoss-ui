@@ -88,7 +88,12 @@ export const HomePage = observer((): JSX.Element => {
                             alignItems={'center'}
                             spacing={2}
                         >
-                            <Typography variant={'h4'}>App Library</Typography>
+                            <Typography
+                                data-tour="app-library-title"
+                                variant={'h4'}
+                            >
+                                App Library
+                            </Typography>
                             <Search
                                 size={'small'}
                                 onChange={(e) => {
