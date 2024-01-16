@@ -10,6 +10,7 @@ import { THEME } from '@/constants';
 const StyledCard = styled(Card)(() => ({
     flexDirection: 'row',
     height: '80vh',
+    maxHeight: '750px',
 }));
 
 const StyledSidebar = styled(Stack)(({ theme }) => ({
@@ -20,12 +21,18 @@ const StyledSidebar = styled(Stack)(({ theme }) => ({
 }));
 
 const StyledTitle = styled(Typography)(({ theme }) => ({
-    padding: `${theme.spacing(8)} ${theme.spacing(4)}`,
+    padding: `${theme.spacing(7)} ${theme.spacing(3)}`,
 }));
 
 const StyledMain = styled(Stack)(({ theme }) => ({
     width: '70%',
     padding: theme.spacing(2),
+    overflow: 'scroll',
+}));
+
+const StyledTopStack = styled(Stack)(({ theme }) => ({
+    height: '55%',
+    overflow: 'hidden',
 }));
 
 const VerticalSpacer = styled('div')(() => ({
@@ -39,9 +46,13 @@ const StyledList = styled(List)(({ theme }) => ({
     color: theme.palette.background.paper,
 }));
 
-const StyledListItem = styled(List.Item)(() => ({
+const StyledListItem = styled(List.Item)(({ theme }) => ({
     '& .MuiListItemButton-root:hover': {
         backgroundColor: '#6D6D6D29!important',
+    },
+    '& .MuiListItemButton-root': {
+        paddingLeft: theme.spacing(3),
+        paddingRight: theme.spacing(3),
     },
 }));
 
@@ -151,19 +162,19 @@ export const WelcomeModal = () => {
                         )}
                     </StyledList>
                 </StyledSidebar>
-                <StyledMain>
+                <StyledMain id="welcome-modal-main">
                     <Stack
                         id={`welcome-modal-step-${currentStepIndex}`}
                         height="100%"
                     >
-                        <Stack height="55%">
+                        <StyledTopStack>
                             <WelcomeStepToolbar
                                 closeModal={() => setOpen(false)}
                             />
                             <img
                                 src={WelcomeModalSteps[currentStepIndex].img}
                             />
-                        </Stack>
+                        </StyledTopStack>
                         <Stack height="45%">
                             <Typography variant="h6">
                                 {WelcomeModalSteps[currentStepIndex].mainTitle}

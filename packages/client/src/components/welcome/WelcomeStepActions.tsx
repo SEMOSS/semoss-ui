@@ -6,6 +6,11 @@ const Spacer = styled('div')(({}) => ({
     flex: 1,
 }));
 
+const StyledDiv = styled('div')(() => ({
+    alignItems: 'end',
+    display: 'flex',
+}));
+
 // TODO: store "Don't show again" checkbox value on BE attached to user metadata
 export const WelcomeStepActions = (props: {
     isFirstStep: boolean;
@@ -48,13 +53,15 @@ export const WelcomeStepActions = (props: {
                     Back
                 </Button>
             )}
-            <Button
-                variant="contained"
-                color="primary"
-                onClick={props.nextStepAction}
-            >
-                {props?.isLastStep ? 'Finish' : 'Next'}
-            </Button>
+            <StyledDiv>
+                <Button
+                    variant="contained"
+                    color="primary"
+                    onClick={props.nextStepAction}
+                >
+                    {props?.isLastStep ? 'Finish' : 'Next'}
+                </Button>
+            </StyledDiv>
         </Stack>
     );
 };
