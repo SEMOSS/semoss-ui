@@ -9,8 +9,9 @@ import { ContentCopy, Delete } from '@mui/icons-material';
 const STYLED_BUTTON_GROUP_BUTTON_WIDTH = 116;
 const STYLED_BUTTON_GROUP_BUTTON_HEIGHT = 32;
 
-const StyledContainer = styled('div')(() => ({
+const StyledContainer = styled('div')(({ theme }) => ({
     position: 'absolute',
+    padding: theme.spacing(2),
     top: '0',
     right: '0',
     bottom: '0',
@@ -99,12 +100,6 @@ export const DeleteDuplicateMask = observer(() => {
         const hasRightOverflow =
             rootElementSize.right === selectedElementSize.right &&
             selectedElementSize.width < STYLED_BUTTON_GROUP_BUTTON_WIDTH * 2;
-        const positionBelow =
-            selectedElementSize.top <=
-            rootElementSize.top + rootElementSize.height / 3;
-        const hasBottomOverflow =
-            rootElementSize.bottom === selectedElementSize.bottom &&
-            positionBelow;
 
         const leftValue =
             size.left + size.width / 2 - STYLED_BUTTON_GROUP_BUTTON_WIDTH;
@@ -122,15 +117,7 @@ export const DeleteDuplicateMask = observer(() => {
             left = `${leftValue}px`;
         }
 
-        const topValue = positionBelow
-            ? size.top + size.height + 10
-            : size.top - 60;
-        let top: string;
-        if (hasBottomOverflow) {
-            top = `${topValue - 60}px`;
-        } else {
-            top = `${topValue}px`;
-        }
+        const top = size.top + size.height;
 
         return { top, left };
     };
