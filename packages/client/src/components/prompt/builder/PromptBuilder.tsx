@@ -85,8 +85,9 @@ const initialBuilder: Builder = {
 
 export const PromptBuilder = () => {
     const { monolithStore } = useRootStore();
-    const [builder, setBuilder] = useState(initialBuilder);
-    const [currentBuilderStep, changeBuilderStep] = useState(1);
+    const [builder, setBuilder] = useState<Builder>(initialBuilder);
+    const [currentBuilderStep, changeBuilderStep] = useState<number>(1);
+    const [createAppLoading, setCreateAppLoading] = useState<boolean>(false);
     const navigate = useNavigate();
 
     const setBuilderValue = (
@@ -108,6 +109,7 @@ export const PromptBuilder = () => {
 
     const nextButtonAction = () => {
         if (currentBuilderStep === PROMPT_BUILDER_PREVIEW_STEP) {
+            setCreateAppLoading(true);
             // prompt flow finished, move on
             setBlocksAndOpenUIBuilder(builder, monolithStore, navigate);
         } else if (currentBuilderStep === PROMPT_BUILDER_INPUTS_STEP) {
@@ -214,6 +216,7 @@ export const PromptBuilder = () => {
                     disabled={!isBuilderStepComplete(currentBuilderStep)}
                     variant="contained"
                     onClick={nextButtonAction}
+                    loading={createAppLoading}
                 >
                     {nextButtonText}
                 </Button>

@@ -29,6 +29,11 @@ export interface ListProps {
      * The system prop that allows defining system overrides as well as additional CSS styles.
      */
     sx?: SxProps;
+
+    /**
+     * 	String to use a HTML element for root node
+     */
+    component?: string;
 }
 
 export const List = (props: ListProps) => {
