@@ -6,7 +6,7 @@ import WelcomeSplash from '@/assets/img/welcome-splash.png';
 import WelcomeApps from '@/assets/img/welcome-apps.png';
 import WelcomeDocumentation from '@/assets/img/welcome-documentation.png';
 import { THEME } from '@/constants';
-import { Tour } from '../tour';
+import { Tour, TourStep } from '../tour';
 
 const StyledCard = styled(Card)(() => ({
     flexDirection: 'row',
@@ -108,6 +108,55 @@ const WelcomeModalSteps: Array<WelcomeModalStep> = [
     },
 ];
 
+const WelcomeTourSteps: TourStep[] = [
+    {
+        tourAttr: 'nav-app-library',
+        position: 'right',
+        highlightPadding: 0,
+        title: 'Apps',
+        content:
+            'Welcome to the app landing page where you can view your apps and browse through discoverable apps.',
+    },
+    {
+        tourAttr: 'nav-engine-function',
+        position: 'right',
+        highlightPadding: 0,
+        title: 'Function Catalog',
+        content:
+            'Expose and reuse large language model functionality in the form of functions to promote efficiency across app development.',
+    },
+    {
+        tourAttr: 'nav-engine-model',
+        position: 'right',
+        highlightPadding: 0,
+        title: 'Model Catalog',
+        content:
+            'Upload or use commercially-available large language model to supercharge your app.',
+    },
+    {
+        tourAttr: 'nav-engine-database',
+        position: 'right',
+        highlightPadding: 0,
+        title: 'Database Catalog',
+        content: 'Browse, upload, and connect data sources to your app.',
+    },
+    {
+        tourAttr: 'nav-engine-vector',
+        position: 'right',
+        highlightPadding: 0,
+        title: 'Vector Database Catalog',
+        content:
+            'Connect vector databases to your app to enable fast retrieval of information and semantic search.',
+    },
+    {
+        tourAttr: 'nav-engine-storage',
+        position: 'right',
+        highlightPadding: 0,
+        title: 'Storage Catalog',
+        content: "Pick and choose the storage option that's best for you.",
+    },
+];
+
 export const WelcomeModal = () => {
     const [currentStepIndex, setCurrentStepIndex] = useState<number>(0);
     const [open, setOpen] = useState<boolean>(false);
@@ -140,7 +189,14 @@ export const WelcomeModal = () => {
 
     return (
         <>
-            {showTour ? <Tour hideTour={() => setShowTour(false)} /> : <></>}
+            {showTour ? (
+                <Tour
+                    hideTour={() => setShowTour(false)}
+                    steps={WelcomeTourSteps}
+                />
+            ) : (
+                <></>
+            )}
             <Modal open={open} maxWidth="md" fullWidth>
                 <StyledCard id="welcome-dialog-card">
                     <StyledSidebar>
