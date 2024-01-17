@@ -183,7 +183,7 @@ export const WelcomeModal = () => {
             !localStorage.getItem('platform-welcome')
         ) {
             setOpen(true);
-            // sessionStorage.setItem('platform-welcome', 'true');
+            sessionStorage.setItem('platform-welcome', 'true');
         }
     }, []);
 
