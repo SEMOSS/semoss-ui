@@ -33,6 +33,16 @@ export interface ListItemTextProps {
     secondary?: React.ReactNode;
 
     /**
+     * Props to be applied to primary content
+     */
+    primaryTypographyProps?: object;
+
+    /**
+     * Props to be applied to secondary content
+     */
+    secondaryTypographyProps?: object;
+
+    /**
      * The system prop that allows defining system overrides as well as additional CSS styles.
      */
     sx?: SxProps;

@@ -98,4 +98,8 @@ export class NotebookStore {
         // select the step
         this._store.selectedSteps[queryId] = stepId;
     }
+
+    getQueryById(id: string) {
+        return this._state.queries[id];
+    }
 }
