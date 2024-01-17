@@ -9,6 +9,7 @@ import {
 } from '@semoss/ui';
 import { Close } from '@mui/icons-material';
 import { TourStep } from './types';
+import { Popper } from '@mui/material';
 
 interface TourOverlayProps {
     top: number;
@@ -39,17 +40,12 @@ const TourClickStop = styled('div')(() => ({
     position: 'absolute',
 }));
 
-interface TourCardProps {
-    top: number;
-    left: number;
-}
-const TourCard = styled(Card, {
-    shouldForwardProp: (prop) => !['top', 'left'].includes(prop as string),
-})<TourCardProps>(({ top, left }) => ({
+const TourPopper = styled(Popper)(() => ({
     zIndex: 102,
+}));
+
+const TourCard = styled(Card)(() => ({
     position: 'absolute',
-    top: `${top}px`,
-    left: `${left}px`,
     width: '480px',
     '&:hover': {
         boxShadow: 'unset!important',
@@ -69,12 +65,19 @@ const StyledIconButton = styled(IconButton)(({ theme }) => ({
 
 export const Tour = (props: { hideTour: () => void; steps: TourStep[] }) => {
     const [currentStepIndex, setCurrentStepIndex] = useState<number>(0);
-    const [stepTop, setStepTop] = useState<number>(0);
-    const [stepLeft, setStepLeft] = useState<number>(0);
-    const [stepWidth, setStepWidth] = useState<number>(0);
-    const [stepHeight, setStepHeight] = useState<number>(0);
-    const [stepCardTop, setStepCardTop] = useState<number>(0);
-    const [stepCardLeft, setStepCardLeft] = useState<number>(0);
+    const [stepElementHighlight, setStepElementHightlight] = useState<{
+        top: number;
+        left: number;
+        width: number;
+        height: number;
+    }>({
+        top: 0,
+        left: 0,
+        width: 0,
+        height: 0,
+    });
+    const [stepElementAnchor, setStepElementAnchor] =
+        useState<HTMLElement>(null);
 
     useEffect(() => {
         const currentStep = props.steps[currentStepIndex];
@@ -82,22 +85,14 @@ export const Tour = (props: { hideTour: () => void; steps: TourStep[] }) => {
             `[data-tour='${currentStep.tourAttr}']`,
         );
         const elementRect = element.getBoundingClientRect();
-        setStepTop(elementRect.top - currentStep.highlightPadding);
-        setStepLeft(elementRect.left - currentStep.highlightPadding);
-        setStepWidth(elementRect.width + currentStep.highlightPadding * 2);
-        setStepHeight(elementRect.height + currentStep.highlightPadding * 2);
+        setStepElementHightlight({
+            top: elementRect.top - currentStep.highlightPadding,
+            left: elementRect.left - currentStep.highlightPadding,
+            width: elementRect.width + currentStep.highlightPadding * 2,
+            height: elementRect.height + currentStep.highlightPadding * 2,
+        });
 
-        const distanceFromElement = 12;
-        switch (currentStep.position) {
-            case 'right':
-                setStepCardTop(elementRect.top - 16);
-                setStepCardLeft(elementRect.right + distanceFromElement);
-                break;
-            case 'bottom':
-                setStepCardTop(elementRect.bottom + distanceFromElement);
-                setStepCardLeft(elementRect.left - 16);
-                break;
-        }
+        setStepElementAnchor(element as HTMLElement);
     }, [currentStepIndex]);
 
     const previousStep = () => {
@@ -114,55 +109,95 @@ export const Tour = (props: { hideTour: () => void; steps: TourStep[] }) => {
     const nextStepLabel =
         currentStepIndex + 1 === props.steps.length ? 'Finish' : 'Next';
 
+    const calculateOffset = (position: 'top' | 'bottom' | 'left' | 'right') => {
+        const defaultOffset = 24;
+        switch (position) {
+            case 'top':
+            case 'bottom':
+                return [0, defaultOffset];
+            case 'right':
+            case 'left':
+                return [-1 * (stepElementHighlight.height + 8), defaultOffset];
+        }
+    };
+
     return (
         <>
             <TourOverlay
                 id="tour-overlay"
-                top={stepTop}
-                left={stepLeft}
-                width={stepWidth}
-                height={stepHeight}
+                top={stepElementHighlight.top}
+                left={stepElementHighlight.left}
+                width={stepElementHighlight.width}
+                height={stepElementHighlight.height}
             />
             <TourClickStop id="tour-click-stop" />
-            <TourCard top={stepCardTop} left={stepCardLeft}>
-                <TourCardHeader
-                    action={
-                        <StyledIconButton onClick={props.hideTour}>
-                            <Close />
-                        </StyledIconButton>
-                    }
-                    title={`${currentStepIndex + 1}/${props.steps.length}`}
-                />
-                <Card.Content>
-                    <Stack marginTop="16px">
-                        <Typography variant="h6">
-                            {props.steps[currentStepIndex].title}
-                        </Typography>
-                        <Typography variant="body1">
-                            {props.steps[currentStepIndex].content}
-                        </Typography>
-                    </Stack>
-                </Card.Content>
-                <Card.Actions>
-                    <Stack
-                        direction="row"
-                        justifyContent="end"
-                        spacing={2}
-                        width="100%"
-                    >
-                        {currentStepIndex === 0 ? (
-                            <></>
-                        ) : (
-                            <Button variant="text" onClick={previousStep}>
-                                Back
+            <TourPopper
+                id="tour-popper"
+                key={`tour-step-${currentStepIndex}`}
+                placement={props.steps[currentStepIndex].position}
+                open={Boolean(stepElementAnchor)}
+                anchorEl={stepElementAnchor}
+                modifiers={[
+                    {
+                        name: 'flip',
+                        enabled: true,
+                        options: {
+                            altBoundary: true,
+                            rootBoundary: 'document',
+                            padding: 8,
+                        },
+                    },
+                    {
+                        name: 'offset',
+                        enabled: true,
+                        options: {
+                            offset: calculateOffset(
+                                props.steps[currentStepIndex].position,
+                            ),
+                        },
+                    },
+                ]}
+            >
+                <TourCard>
+                    <TourCardHeader
+                        action={
+                            <StyledIconButton onClick={props.hideTour}>
+                                <Close />
+                            </StyledIconButton>
+                        }
+                        title={`${currentStepIndex + 1}/${props.steps.length}`}
+                    />
+                    <Card.Content>
+                        <Stack marginTop="16px">
+                            <Typography variant="h6">
+                                {props.steps[currentStepIndex].title}
+                            </Typography>
+                            <Typography variant="body1">
+                                {props.steps[currentStepIndex].content}
+                            </Typography>
+                        </Stack>
+                    </Card.Content>
+                    <Card.Actions>
+                        <Stack
+                            direction="row"
+                            justifyContent="end"
+                            spacing={2}
+                            width="100%"
+                        >
+                            {currentStepIndex === 0 ? (
+                                <></>
+                            ) : (
+                                <Button variant="text" onClick={previousStep}>
+                                    Back
+                                </Button>
+                            )}
+                            <Button variant="contained" onClick={nextStep}>
+                                {nextStepLabel}
                             </Button>
-                        )}
-                        <Button variant="contained" onClick={nextStep}>
-                            {nextStepLabel}
-                        </Button>
-                    </Stack>
-                </Card.Actions>
-            </TourCard>
+                        </Stack>
+                    </Card.Actions>
+                </TourCard>
+            </TourPopper>
         </>
     );
 };
