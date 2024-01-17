@@ -26,6 +26,7 @@ export const PageBlock: BlockComponent = observer(({ id }) => {
                 ...data.style,
             }}
             {...attrs}
+            data-page
         >
             <Slot slot={slots.content}></Slot>
         </div>

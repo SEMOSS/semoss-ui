@@ -22,10 +22,7 @@ const StyledContainer = styled('div')(({ theme }) => ({
     height: '100%',
     display: 'flex',
     flexGrow: 1,
-    paddingTop: theme.spacing(1),
-    paddingLeft: theme.spacing(2),
-    paddingBottom: theme.spacing(1),
-    paddingRight: theme.spacing(2),
+    padding: `${theme.spacing(2.5)} ${theme.spacing(2)}`,
     overflow: 'auto',
 }));
 
@@ -65,7 +62,7 @@ const StyledContentInner = styled('div', {
             pointerEvents: 'none!important',
         },
         // page scrolling is handled in the designer in design mode
-        '[data-block="page"]': {
+        '[data-page]': {
             height: 'unset!important',
         },
     }),
