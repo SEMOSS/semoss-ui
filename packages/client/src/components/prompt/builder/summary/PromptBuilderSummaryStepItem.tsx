@@ -1,3 +1,4 @@
+import { INPUT_TYPE_VECTOR, INPUT_TYPE_DATABASE } from '../../prompt.constants';
 import { Builder, BuilderStepItem } from '../../prompt.types';
 import { List } from '@semoss/ui';
 
@@ -22,9 +23,18 @@ export const PromptBuilderSummaryStepItem = (props: BuilderStepItemProps) => {
                 }
                 return (
                     Object.values(item.value).length &&
-                    Object.values(item.value).every((type: string | null) => {
-                        return !!type;
-                    })
+                    Object.values(item.value).every(
+                        (inputType: { type: string; meta: string }) => {
+                            if (
+                                inputType?.type === INPUT_TYPE_VECTOR ||
+                                inputType?.type === INPUT_TYPE_DATABASE
+                            ) {
+                                return !!inputType.meta;
+                            } else {
+                                return !!inputType.type;
+                            }
+                        },
+                    )
                 );
             default:
                 return !!item.value;
@@ -32,9 +42,9 @@ export const PromptBuilderSummaryStepItem = (props: BuilderStepItemProps) => {
     };
 
     return (
-        <List>
+        <List disablePadding>
             {Array.from(stepItemsForSummaryStep, (item: BuilderStepItem, i) => (
-                <List.Item key={i} sx={{ marginLeft: '16px' }}>
+                <List.Item disableGutters key={i} sx={{ marginLeft: '16px' }}>
                     <List.ItemText
                         primary={item.display}
                         secondary={

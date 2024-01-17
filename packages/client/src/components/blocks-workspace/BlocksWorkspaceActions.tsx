@@ -204,9 +204,26 @@ export const BlocksWorkspaceActions = observer(() => {
                 color={'secondary'}
                 variant={'outlined'}
                 startIcon={<Share />}
-                onClick={() => {
+                onClick={async () => {
+                    const pixelString = `GetAppBlocksJson ( project=['${workspace.appId}']);`;
+
+                    const response = await monolithStore.runQuery(pixelString);
+                    let output = undefined;
+                    let type = undefined;
+                    let diffs = false;
+
+                    output = response.pixelReturn[0].output;
+                    type = response.pixelReturn[0].operationType[0];
+
+                    const saved = JSON.stringify(output);
+                    const current = JSON.stringify(state.toJSON());
+
+                    // Track if there are differences
+                    diffs = saved !== current;
+
                     workspace.openOverlay(() => (
                         <ShareOverlay
+                            diffs={diffs}
                             appId={workspace.appId}
                             onClose={() => workspace.closeOverlay()}
                         />

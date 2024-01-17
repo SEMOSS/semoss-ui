@@ -1,6 +1,7 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { observer } from 'mobx-react-lite';
 import {
+    Alert,
     Button,
     IconButton,
     Modal,
@@ -11,7 +12,8 @@ import {
     Stack,
 } from '@semoss/ui';
 import { resolvePath } from 'react-router-dom';
-import { ContentCopyOutlined } from '@mui/icons-material';
+import { ContentCopyOutlined, WarningAmberOutlined } from '@mui/icons-material';
+import { useRootStore } from '@/hooks';
 
 interface ShareOverlayProps {
     /** Id of the app to share */
@@ -19,10 +21,13 @@ interface ShareOverlayProps {
 
     /** Method called to close overlay  */
     onClose: () => void;
+
+    /** Are there diffs */
+    diffs?: boolean;
 }
 
 export const ShareOverlay = observer((props: ShareOverlayProps) => {
-    const { appId, onClose = () => null } = props;
+    const { appId, diffs, onClose = () => null } = props;
 
     const notification = useNotification();
 
@@ -58,6 +63,14 @@ export const ShareOverlay = observer((props: ShareOverlayProps) => {
         <>
             <Modal.Title>Share</Modal.Title>
             <Modal.Content>
+                {diffs && (
+                    <Alert severity="warning" icon={<WarningAmberOutlined />}>
+                        <Alert.Title>
+                            Save app prior to sharing to reflect the latest
+                            changes
+                        </Alert.Title>
+                    </Alert>
+                )}
                 <Stack direction="column" spacing={2}>
                     <Tabs
                         value={shareModalTab}

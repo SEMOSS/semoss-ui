@@ -21,33 +21,31 @@ export const TOKEN_TYPE_TEXT = 'text';
 export const TOKEN_TYPE_INPUT = 'input';
 
 export const INPUT_TYPE_TEXT = 'text';
-export const INPUT_TYPE_NUMBER = 'number';
-export const INPUT_TYPE_VECTOR = 'vector';
-export const INPUT_TYPE_DATABASE = 'database';
-export const INPUT_TYPE_DATA_PRODUCT = 'data-product';
-export const INPUT_TYPE_DATE = 'date';
-export const INPUT_TYPE_RANGE = 'range';
 export const INPUT_TYPE_SELECT = 'select';
+export const INPUT_TYPE_VECTOR = 'vector';
+export const INPUT_TYPE_CUSTOM_QUERY = 'custom';
+export const INPUT_TYPE_DATABASE = 'database';
 export const INPUT_TYPES = [
     INPUT_TYPE_TEXT,
-    INPUT_TYPE_NUMBER,
-    INPUT_TYPE_DATE,
     INPUT_TYPE_SELECT,
-    // INPUT_TYPE_VECTOR,
-    // INPUT_TYPE_DATABASE,
-    // INPUT_TYPE_DATA_PRODUCT,
-    // INPUT_TYPE_RANGE,
+    INPUT_TYPE_VECTOR,
+    INPUT_TYPE_DATABASE,
+    INPUT_TYPE_CUSTOM_QUERY,
 ];
 export const INPUT_TYPE_DISPLAY = {
-    [INPUT_TYPE_TEXT]: 'Text',
-    [INPUT_TYPE_NUMBER]: 'Number',
-    [INPUT_TYPE_VECTOR]: 'Vector Database',
-    [INPUT_TYPE_DATABASE]: 'Database',
-    [INPUT_TYPE_DATA_PRODUCT]: 'Data Product',
-    [INPUT_TYPE_DATE]: 'Date',
-    [INPUT_TYPE_RANGE]: 'Range Slider',
+    [INPUT_TYPE_TEXT]: 'Text Field',
     [INPUT_TYPE_SELECT]: 'Select',
+    [INPUT_TYPE_VECTOR]: 'Knowledge Search',
+    [INPUT_TYPE_CUSTOM_QUERY]: 'Custom Query',
+    [INPUT_TYPE_DATABASE]: 'Database Query',
 };
+export const INPUT_TYPE_HELP_TEXT = {
+    [INPUT_TYPE_VECTOR]:
+        'This input will be used as a search term for the selected knowledge repository. The search results can be modified to fit your needs and will be used to support your prompt.',
+    [INPUT_TYPE_DATABASE]:
+        'This input will be used to query the selected database. The query results generated can be modified to fit your needs and will be used to support your prompt.',
+};
+
 export const SUMMARY_STEPS = [
     {
         title: 'Create Prompt',
