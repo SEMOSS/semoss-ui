@@ -1,9 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Builder, ConstraintSettings } from '../../prompt.types';
 import { StyledStepPaper } from '../../prompt.styled';
-import { Box, Stack, Typography } from '@semoss/ui';
-import { styled, Switch, SwitchProps } from '@mui/material';
-import { THEME } from '@/constants';
+import { styled, Box, Stack, Typography, Switch } from '@semoss/ui';
 
 interface Constraint {
     title: string;
@@ -70,19 +68,10 @@ const StyledBox = styled(Box)(({ theme }) => ({
     },
 }));
 
-const primaryMain = THEME.name === 'SEMOSS' ? '#1976d2' : '#26890D';
-// note: "primaryMain" doesn't seem to work in CFG AI context
-// giving SEMOSS blue instead of green
-const StyledSwitch = styled((props: SwitchProps) => (
-    <Switch
-        focusVisibleClassName=".Mui-focusVisible"
-        disableRipple
-        {...props}
-    />
-))(({ theme }) => ({
-    width: 42,
-    height: 26,
-    padding: 0,
+const StyledSwitch = styled(Switch)(({ theme }) => ({
+    width: '42px!important',
+    height: '26px!important',
+    padding: '0px!important',
     '& .MuiSwitch-switchBase': {
         padding: 0,
         margin: 2,
@@ -91,17 +80,13 @@ const StyledSwitch = styled((props: SwitchProps) => (
             transform: 'translateX(16px)',
             color: '#fff',
             '& + .MuiSwitch-track': {
-                backgroundColor: primaryMain,
+                backgroundColor: theme.palette.primary.main,
                 opacity: 1,
                 border: 0,
             },
             '&.Mui-disabled + .MuiSwitch-track': {
                 opacity: 0.5,
             },
-        },
-        '&.Mui-focusVisible .MuiSwitch-thumb': {
-            color: '#33cf4d',
-            border: '6px solid #fff',
         },
         '&.Mui-disabled .MuiSwitch-thumb': {
             color:
@@ -140,6 +125,7 @@ export const PromptBuilderConstraint = (props: {
     return (
         <StyledBox>
             <StyledSwitch
+                disableRipple
                 checked={
                     props.constraintSettings[props.constraint.key] ?? false
                 }

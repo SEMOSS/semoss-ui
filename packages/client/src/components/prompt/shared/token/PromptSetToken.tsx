@@ -2,19 +2,14 @@ import { useState, useEffect } from 'react';
 import { TOKEN_TYPE_TEXT, TOKEN_TYPE_INPUT } from '../../prompt.constants';
 import { Token } from '../../prompt.types';
 import { StyledTooltip } from '../../prompt.styled';
-import { Button, List } from '@semoss/ui';
-import { styled } from '@mui/material';
+import { styled, Button, List } from '@semoss/ui';
 import { SaveAlt, Sync } from '@mui/icons-material';
 import { PromptTokenChip } from './PromptTokenChip';
 import { PromptTokenTextButton } from './PromptTokenTextButton';
-import { THEME } from '@/constants';
 
-const primaryMain = THEME.name === 'SEMOSS' ? '#1976d2' : '#26890D';
-// note: "primaryMain" doesn't seem to work in CFG AI context
-// giving SEMOSS blue instead of green
-const StyledListItem = styled(List.Item)(() => ({
+const StyledListItem = styled(List.Item)(({ theme }) => ({
     padding: 0,
-    border: `1px solid ${primaryMain}`,
+    border: `1px solid ${theme.palette.primary.main}`,
     '&:not(:last-child)': {
         borderBottom: '0px',
     },
@@ -57,16 +52,6 @@ export const PromptSetToken = (props: {
                     disableBorder
                     disableHoverListener
                     open={isTooltipOpen}
-                    PopperProps={{
-                        modifiers: [
-                            {
-                                name: 'offset',
-                                options: {
-                                    offset: [0, -10],
-                                },
-                            },
-                        ],
-                    }}
                     title={
                         <List disablePadding>
                             {props.isSelectedLinkable !== false ? (
@@ -102,33 +87,39 @@ export const PromptSetToken = (props: {
                         </List>
                     }
                 >
-                    {props.token.type === TOKEN_TYPE_TEXT &&
-                    !isTokenSelected ? (
-                        <PromptTokenTextButton
-                            key={props.token.index}
-                            onClick={() =>
-                                props.addSelectedInputToken(props.token.index)
-                            }
-                            disableHover={false}
-                        >
-                            {props.token.display}
-                        </PromptTokenTextButton>
-                    ) : (
-                        <PromptTokenChip
-                            disableHover={false}
-                            isChipSelected={isTokenSelected}
-                            key={props.token.index}
-                            label={`{ } ${props.token.display}`}
-                            size="small"
-                            onClick={() => {
-                                props.token.type === TOKEN_TYPE_INPUT
-                                    ? props.resetInputToken(props.token.index)
-                                    : props.removeSelectedInputToken(
-                                          props.token.index,
-                                      );
-                            }}
-                        />
-                    )}
+                    <span>
+                        {props.token.type === TOKEN_TYPE_TEXT &&
+                        !isTokenSelected ? (
+                            <PromptTokenTextButton
+                                key={props.token.index}
+                                onClick={() => {
+                                    props.addSelectedInputToken(
+                                        props.token.index,
+                                    );
+                                }}
+                                disableHover={false}
+                            >
+                                {props.token.display}
+                            </PromptTokenTextButton>
+                        ) : (
+                            <PromptTokenChip
+                                disableHover={false}
+                                isChipSelected={isTokenSelected}
+                                key={props.token.index}
+                                label={`{ } ${props.token.display}`}
+                                size="small"
+                                onClick={() => {
+                                    props.token.type === TOKEN_TYPE_INPUT
+                                        ? props.resetInputToken(
+                                              props.token.index,
+                                          )
+                                        : props.removeSelectedInputToken(
+                                              props.token.index,
+                                          );
+                                }}
+                            />
+                        )}
+                    </span>
                 </StyledTooltip>
             )}
         </>
