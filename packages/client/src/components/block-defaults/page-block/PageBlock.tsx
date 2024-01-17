@@ -26,7 +26,6 @@ export const PageBlock: BlockComponent = observer(({ id }) => {
                 ...data.style,
             }}
             {...attrs}
-            root-page="true" // use to manage different scroll behaviors on designer vs preview
         >
             <Slot slot={slots.content}></Slot>
         </div>

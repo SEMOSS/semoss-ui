@@ -57,7 +57,6 @@ export const ButtonBlock: BlockComponent = observer(({ id }) => {
                 ...data.style,
             }}
             onClick={() => {
-                console.log('child clickk');
                 listeners.onClick();
             }}
             {...attrs}

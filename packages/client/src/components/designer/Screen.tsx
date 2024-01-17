@@ -65,7 +65,7 @@ const StyledContentInner = styled('div', {
             pointerEvents: 'none!important',
         },
         // page scrolling is handled in the designer in design mode
-        '[root-page]': {
+        '[data-block="page"]': {
             height: 'unset!important',
         },
     }),
