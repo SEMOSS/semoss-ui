@@ -7,10 +7,14 @@ import { styled } from '@mui/material';
 import { SaveAlt, Sync } from '@mui/icons-material';
 import { PromptTokenChip } from './PromptTokenChip';
 import { PromptTokenTextButton } from './PromptTokenTextButton';
+import { THEME } from '@/constants';
 
-const StyledListItem = styled(List.Item)(({ theme }) => ({
+const primaryMain = THEME.name === 'SEMOSS' ? '#1976d2' : '#26890D';
+// note: "primaryMain" doesn't seem to work in CFG AI context
+// giving SEMOSS blue instead of green
+const StyledListItem = styled(List.Item)(() => ({
     padding: 0,
-    border: `1px solid ${theme.palette.primary.main}`,
+    border: `1px solid ${primaryMain}`,
     '&:not(:last-child)': {
         borderBottom: '0px',
     },

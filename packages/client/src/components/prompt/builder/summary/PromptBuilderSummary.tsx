@@ -17,6 +17,18 @@ const StyledListItem = styled(ListItem)(({ theme }) => ({
     marginBottom: theme.spacing(1),
 }));
 
+const StyledCheckCircleOutlined = styled(CheckCircleOutlined)(({ theme }) => ({
+    color: theme.palette.primary.main,
+    marginTop: '8px',
+}));
+
+const StyledListItemTypography = styled(Typography, {
+    shouldForwardProp: (prop) => prop !== 'isStepComplete',
+})<{ isStepComplete: boolean }>(({ theme, isStepComplete }) => ({
+    color: isStepComplete ? theme.palette.primary.main : grey[900],
+    fontWeight: 'bold',
+}));
+
 export const PromptBuilderSummary = (props: {
     builder: Builder;
     currentBuilderStep: number;
@@ -91,10 +103,7 @@ export const PromptBuilderSummary = (props: {
                                 i + 1,
                                 props.currentBuilderStep,
                             ) ? (
-                                <CheckCircleOutlined
-                                    color="primary"
-                                    sx={{ marginTop: '8px' }}
-                                />
+                                <StyledCheckCircleOutlined />
                             ) : (
                                 <PendingOutlined sx={{ marginTop: '8px' }} />
                             )
@@ -116,16 +125,18 @@ export const PromptBuilderSummary = (props: {
                             </Avatar>
                         </ListItemAvatar>
                         <ListItemText
-                            primary={step.title}
-                            primaryTypographyProps={{
-                                fontWeight: 'bold',
-                                color: markBuilderStepComplete(
-                                    i + 1,
-                                    props.currentBuilderStep,
-                                )
-                                    ? 'primary'
-                                    : grey[900],
-                            }}
+                            disableTypography
+                            primary={
+                                <StyledListItemTypography
+                                    variant="subtitle1"
+                                    isStepComplete={markBuilderStepComplete(
+                                        i + 1,
+                                        props.currentBuilderStep,
+                                    )}
+                                >
+                                    {step.title}
+                                </StyledListItemTypography>
+                            }
                         />
                     </StyledListItem>
                     <Collapse in={props.currentBuilderStep === i + 1}>

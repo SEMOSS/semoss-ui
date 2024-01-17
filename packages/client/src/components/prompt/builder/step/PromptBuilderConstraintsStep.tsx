@@ -3,6 +3,7 @@ import { Builder, ConstraintSettings } from '../../prompt.types';
 import { StyledStepPaper } from '../../prompt.styled';
 import { Box, Stack, Typography } from '@semoss/ui';
 import { styled, Switch, SwitchProps } from '@mui/material';
+import { THEME } from '@/constants';
 
 interface Constraint {
     title: string;
@@ -69,6 +70,9 @@ const StyledBox = styled(Box)(({ theme }) => ({
     },
 }));
 
+const primaryMain = THEME.name === 'SEMOSS' ? '#1976d2' : '#26890D';
+// note: "primaryMain" doesn't seem to work in CFG AI context
+// giving SEMOSS blue instead of green
 const StyledSwitch = styled((props: SwitchProps) => (
     <Switch
         focusVisibleClassName=".Mui-focusVisible"
@@ -87,7 +91,7 @@ const StyledSwitch = styled((props: SwitchProps) => (
             transform: 'translateX(16px)',
             color: '#fff',
             '& + .MuiSwitch-track': {
-                backgroundColor: theme.palette.primary.main,
+                backgroundColor: primaryMain,
                 opacity: 1,
                 border: 0,
             },
@@ -136,8 +140,9 @@ export const PromptBuilderConstraint = (props: {
     return (
         <StyledBox>
             <StyledSwitch
-                value={props.constraintSettings[props.constraint.key]}
-                defaultChecked={props.constraintSettings[props.constraint.key]}
+                checked={
+                    props.constraintSettings[props.constraint.key] ?? false
+                }
                 onChange={(e) => {
                     props.toggleConstraintSetting(props.constraint.key);
                     props.setBuilderValue(
@@ -171,10 +176,7 @@ export function PromptBuilderConstraintsStep(props: {
     const toggleConstraintSetting = (constraintKey: string) => {
         setConstraintSettings((state) => ({
             ...state,
-            [constraintKey]: {
-                ...state[constraintKey],
-                value: !state[constraintKey].value,
-            },
+            [constraintKey]: !state[constraintKey],
         }));
     };
     useEffect(() => {
