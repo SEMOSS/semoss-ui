@@ -116,9 +116,7 @@ export const PromptBuilderInputTypeStep = (props: {
     }, []);
 
     useEffect(() => {
-        if (Object.values(inputTypes).every((inputType) => !!inputType)) {
-            props.setBuilderValue('inputTypes', inputTypes);
-        }
+        props.setBuilderValue('inputTypes', inputTypes);
     }, [inputTypes]);
 
     return (

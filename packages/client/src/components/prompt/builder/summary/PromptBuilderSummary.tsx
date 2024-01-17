@@ -4,13 +4,12 @@ import {
 } from '../../prompt.constants';
 import { Builder, BuilderStepItem } from '../../prompt.types';
 import { grey } from '@mui/material/colors';
-import { styled, Avatar, Collapse, Typography } from '@semoss/ui';
-import { List, ListItem, ListItemAvatar, ListItemText } from '@mui/material';
+import { styled, Avatar, Collapse, Typography, List } from '@semoss/ui';
 import { PendingOutlined, CheckCircleOutlined } from '@mui/icons-material';
 import { PromptBuilderSummaryStepItem } from './PromptBuilderSummaryStepItem';
 import { PromptBuilderSummaryProgress } from './PromptBuilderSummaryProgress';
 
-const StyledListItem = styled(ListItem)(({ theme }) => ({
+const StyledListItem = styled(List.Item)(({ theme }) => ({
     backgroundColor: grey[100],
     color: grey[900],
     borderRadius: theme.shape.borderRadius,
@@ -76,7 +75,7 @@ export const PromptBuilderSummary = (props: {
     return (
         <List component="nav">
             <StyledListItem>
-                <ListItemText
+                <List.ItemText
                     disableTypography
                     primary={
                         <Typography
@@ -109,7 +108,7 @@ export const PromptBuilderSummary = (props: {
                             )
                         }
                     >
-                        <ListItemAvatar>
+                        <List.ItemAvatar>
                             <Avatar
                                 sx={{
                                     backgroundColor: 'white',
@@ -123,8 +122,8 @@ export const PromptBuilderSummary = (props: {
                             >
                                 <step.icon />
                             </Avatar>
-                        </ListItemAvatar>
-                        <ListItemText
+                        </List.ItemAvatar>
+                        <List.ItemText
                             disableTypography
                             primary={
                                 <StyledListItemTypography

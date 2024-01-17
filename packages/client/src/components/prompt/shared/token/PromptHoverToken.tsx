@@ -25,13 +25,15 @@ export const PromptHoverToken = (props: {
                         </Typography>
                     }
                 >
-                    <PromptTokenChip
-                        isChipSelected={false}
-                        key={props.token.index}
-                        label={`{ } ${props.token.display}`}
-                        size="small"
-                        disableHover
-                    />
+                    <span>
+                        <PromptTokenChip
+                            isChipSelected={false}
+                            key={props.token.index}
+                            label={`{ } ${props.token.display}`}
+                            size="small"
+                            disableHover
+                        />
+                    </span>
                 </StyledTooltip>
             )}
         </>
