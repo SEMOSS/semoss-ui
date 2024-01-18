@@ -87,6 +87,7 @@ export const FileEmbedBlock: BlockComponent = observer(({ id }) => {
             extensions={[
                 '.pdf',
                 '.csv',
+                '.xlsx',
                 '.txt',
                 '.doc',
                 '.ppt',
