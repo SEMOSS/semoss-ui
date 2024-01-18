@@ -22,6 +22,7 @@ import {
     Edit,
     ContentCopy,
     Delete,
+    HourglassEmpty,
 } from '@mui/icons-material';
 import { NewQueryOverlay } from './NewQueryOverlay';
 import { ActionMessages } from '@/stores';
@@ -145,12 +146,26 @@ export const NotebookMenu = observer((): JSX.Element => {
                                             alignItems="center"
                                             paddingY="8px"
                                         >
-                                            {q.isError ? (
-                                                <Error color="error" />
+                                            {q.isLoading ? (
+                                                <HourglassEmpty
+                                                    color="disabled"
+                                                    titleAccess="Loading"
+                                                />
+                                            ) : q.isError ? (
+                                                <Error
+                                                    color="error"
+                                                    titleAccess="Error"
+                                                />
                                             ) : q.isSuccessful ? (
-                                                <CheckCircle color="success" />
+                                                <CheckCircle
+                                                    color="success"
+                                                    titleAccess="Success"
+                                                />
                                             ) : (
-                                                <Pending color="disabled" />
+                                                <Pending
+                                                    color="disabled"
+                                                    titleAccess="Pending"
+                                                />
                                             )}
                                             <IconButton
                                                 onClick={(
