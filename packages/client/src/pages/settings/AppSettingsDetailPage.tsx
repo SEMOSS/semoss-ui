@@ -29,14 +29,11 @@ const StyledContent = styled('div')(({ theme }) => ({
     flexShrink: '0',
 }));
 
-type VIEW = 'CURRENT' | 'PENDING' | 'APP';
-
 export const AppSettingsDetailPage = () => {
     const { id } = useParams();
     const navigate = useNavigate();
     const { adminMode } = useSettings();
 
-    const [view, setView] = useState<VIEW>('CURRENT');
     const [permission, setPermission] = useState<Role | null>(null);
 
     const getUserEnginePermission = useAPI(['getUserProjectPermission', id]);
@@ -91,11 +88,15 @@ export const AppSettingsDetailPage = () => {
                         }}
                     />
                 </StyledContent>
-            ) : null}
+            ) : (
+                <></>
+            )}
 
             {permission !== 'READ_ONLY' ? (
                 <PendingMembersTable mode={'app'} id={id} />
-            ) : null}
+            ) : (
+                <></>
+            )}
 
             <MembersTable
                 id={id}
@@ -104,54 +105,7 @@ export const AppSettingsDetailPage = () => {
                 refreshPermission={() => getUserEnginePermission.refresh()}
             />
 
-            {permission !== 'READ_ONLY' ? <AppSettings id={id} /> : null}
-
-            {/* original code chunk */}
-
-            {/* {permission === 'OWNER' ? (
-                <SettingsTiles
-                    mode={'app'}
-                    name={'app'}
-                    id={id}
-                    onDelete={() => {
-                        navigate('/settings/app');
-                    }}
-                />
-            ) : null} */}
-
-            {/* <StyledContent>
-                <ToggleTabsGroup
-                    value={view}
-                    onChange={(e, v) => setView(v as VIEW)}
-                    aria-label="basic tabs example"
-                >
-                    <ToggleTabsGroup.Item label="Member" value={'CURRENT'} />
-                    <ToggleTabsGroup.Item
-                        label="Pending Requests"
-                        disabled={permission === 'READ_ONLY'}
-                        value={'PENDING'}
-                    />
-                    <ToggleTabsGroup.Item
-                        label="Data Apps"
-                        disabled={permission === 'READ_ONLY'}
-                        value={'APP'}
-                    />
-                </ToggleTabsGroup>
-                {view === 'CURRENT' && (
-                    <MembersTable
-                        id={id}
-                        mode={'app'}
-                        name={'app'}
-                        refreshPermission={() =>
-                            getUserEnginePermission.refresh()
-                        }
-                    />
-                )}
-                {view === 'PENDING' && (
-                    <PendingMembersTable mode={'app'} id={id} />
-                )}
-                {view === 'APP' && <AppSettings id={id} />}
-            </StyledContent> */}
+            {permission !== 'READ_ONLY' ? <AppSettings id={id} /> : <></>}
         </StyledContainer>
     );
 };
