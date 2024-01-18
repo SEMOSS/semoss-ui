@@ -731,7 +731,7 @@ const CONNECTORS = {
                 display: 'Endpoint',
                 required: true,
                 description: '',
-                defaultValue: 'Monolith',
+                defaultValue: 'Monolith_Dev',
                 alias: 'endpoint',
             },
             {

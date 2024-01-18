@@ -69,6 +69,14 @@ export interface ListItemProps {
      * The system prop that allows defining system overrides as well as additional CSS styles.
      */
     sx?: SxProps;
+
+    /**
+     * Events we need access to for list items
+     */
+    onClick?: React.MouseEventHandler<HTMLLIElement>;
+    onMouseDown?: React.MouseEventHandler<HTMLLIElement>;
+    onFocus?: React.FocusEventHandler<HTMLLIElement>;
+    onBlur?: React.FocusEventHandler<HTMLLIElement>;
 }
 
 export const ListItem = (props: ListItemProps) => {

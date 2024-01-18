@@ -1,26 +1,47 @@
-import { useState, useEffect, useCallback } from 'react';
-import { observer } from 'mobx-react-lite';
-import { styled, Card } from '@semoss/ui';
+import { useEffect, useState, useCallback } from 'react';
+import { Chip, List, Typography, styled } from '@semoss/ui';
+import { useBlocks, useWorkspace, useDesigner } from '@/hooks';
+import { ActionMessages, QueryState, BlockJSON } from '@/stores';
 
-import { ActionMessages, BlockConfig, BlockJSON } from '@/stores';
-import { useDesigner } from '@/hooks';
-import { BlocksMenuCardContent } from './BlocksMenuCardContent';
-
-const StyledCard = styled(Card)(() => ({
-    borderRadius: '8px',
-    boxShadow: '0px 5px 22px 0px rgba(0, 0, 0, 0.06)',
-    cursor: 'grab',
+const StyledListItem = styled(List.Item)(() => ({
+    padding: '0px 4px',
 }));
 
-export const BlocksMenuCard = observer((props: { block: BlockConfig }) => {
-    const json: BlockJSON = {
-        widget: props.block.widget,
-        data: props.block.data,
-        slots: (props.block.slots || {}) as BlockJSON['slots'],
-        listeners: props.block.listeners || {},
-    };
+const StyledListItemText = styled(List.ItemText)(() => ({
+    overflow: 'hidden',
+    textOverflow: 'ellipsis',
+}));
 
+const StyledSuccessChip = styled(Chip)(({ theme }) => ({
+    backgroundColor: '#E7F4E5',
+    color: theme.palette.success.main,
+}));
+
+const StyledErrorChip = styled(Chip)(({ theme }) => ({
+    backgroundColor: '#FBE9E8',
+    color: theme.palette.error.main,
+}));
+
+interface QueryMenuItemProps {
+    query: QueryState;
+}
+
+export const QueryMenuItem = (props: QueryMenuItemProps) => {
+    const { query } = props;
+    const { notebook } = useBlocks();
+    const { workspace } = useWorkspace();
     const { designer } = useDesigner();
+
+    // We can provide different options for user to display this data,
+    // Or we can take a look at the data if it's there and render a better block for it
+    const json: BlockJSON = {
+        widget: 'text',
+        data: {
+            text: `{{${query.id}.data}}`,
+        },
+        slots: {} as BlockJSON['slots'],
+        listeners: {},
+    };
 
     // track if it is this one that is dragging
     const [local, setLocal] = useState(false);
@@ -30,7 +51,7 @@ export const BlocksMenuCard = observer((props: { block: BlockConfig }) => {
      */
     const handleMouseDown = () => {
         // set the dragged
-        designer.activateDrag(props.block.widget, () => {
+        designer.activateDrag('text', () => {
             return true;
         });
 
@@ -54,7 +75,7 @@ export const BlocksMenuCard = observer((props: { block: BlockConfig }) => {
 
         // apply the action
         const placeholderAction = designer.drag.placeholderAction;
-        console.log('placeholder Action', placeholderAction);
+
         if (placeholderAction) {
             if (
                 placeholderAction.type === 'before' ||
@@ -117,8 +138,6 @@ export const BlocksMenuCard = observer((props: { block: BlockConfig }) => {
             return;
         }
 
-        console.log(designer.drag.active);
-
         document.addEventListener('mouseup', handleDocumentMouseUp);
 
         return () => {
@@ -127,11 +146,44 @@ export const BlocksMenuCard = observer((props: { block: BlockConfig }) => {
     }, [designer.drag.active, local, handleDocumentMouseUp]);
 
     return (
-        <StyledCard onMouseDown={handleMouseDown}>
-            <BlocksMenuCardContent
-                widget={props.block.widget}
-                icon={props.block.icon}
-            />
-        </StyledCard>
+        <StyledListItem onMouseDown={handleMouseDown}>
+            <List.ItemButton
+                onClick={() => {
+                    // switch the view
+                    workspace.setView('data');
+
+                    // select the query
+                    notebook.selectQuery(query.id);
+                }}
+            >
+                <StyledListItemText
+                    disableTypography
+                    primary={
+                        <Typography variant="subtitle2">{query.id}</Typography>
+                    }
+                    secondary={
+                        <Typography variant="caption" noWrap={true}>
+                            {query.isLoading ? (
+                                <em>Loading...</em>
+                            ) : query.data ? (
+                                query.isSuccessful ? (
+                                    <StyledSuccessChip
+                                        label="Success"
+                                        size="small"
+                                    />
+                                ) : (
+                                    <StyledErrorChip
+                                        label="Error"
+                                        size="small"
+                                    />
+                                )
+                            ) : (
+                                <em>Query not yet executed</em>
+                            )}
+                        </Typography>
+                    }
+                />
+            </List.ItemButton>
+        </StyledListItem>
     );
-});
+};

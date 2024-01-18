@@ -4,17 +4,28 @@ import {
 } from '../../prompt.constants';
 import { Builder, BuilderStepItem } from '../../prompt.types';
 import { grey } from '@mui/material/colors';
-import { styled, Avatar, Collapse, Typography } from '@semoss/ui';
-import { List, ListItem, ListItemAvatar, ListItemText } from '@mui/material';
+import { styled, Avatar, Collapse, Typography, List } from '@semoss/ui';
 import { PendingOutlined, CheckCircleOutlined } from '@mui/icons-material';
 import { PromptBuilderSummaryStepItem } from './PromptBuilderSummaryStepItem';
 import { PromptBuilderSummaryProgress } from './PromptBuilderSummaryProgress';
 
-const StyledListItem = styled(ListItem)(({ theme }) => ({
+const StyledListItem = styled(List.Item)(({ theme }) => ({
     backgroundColor: grey[100],
     color: grey[900],
     borderRadius: theme.shape.borderRadius,
     marginBottom: theme.spacing(1),
+}));
+
+const StyledCheckCircleOutlined = styled(CheckCircleOutlined)(({ theme }) => ({
+    color: theme.palette.primary.main,
+    marginTop: '8px',
+}));
+
+const StyledListItemTypography = styled(Typography, {
+    shouldForwardProp: (prop) => prop !== 'isStepComplete',
+})<{ isStepComplete: boolean }>(({ theme, isStepComplete }) => ({
+    color: isStepComplete ? theme.palette.primary.main : grey[900],
+    fontWeight: 'bold',
 }));
 
 export const PromptBuilderSummary = (props: {
@@ -64,7 +75,7 @@ export const PromptBuilderSummary = (props: {
     return (
         <List component="nav">
             <StyledListItem>
-                <ListItemText
+                <List.ItemText
                     disableTypography
                     primary={
                         <Typography
@@ -91,16 +102,13 @@ export const PromptBuilderSummary = (props: {
                                 i + 1,
                                 props.currentBuilderStep,
                             ) ? (
-                                <CheckCircleOutlined
-                                    color="primary"
-                                    sx={{ marginTop: '8px' }}
-                                />
+                                <StyledCheckCircleOutlined />
                             ) : (
                                 <PendingOutlined sx={{ marginTop: '8px' }} />
                             )
                         }
                     >
-                        <ListItemAvatar>
+                        <List.ItemAvatar>
                             <Avatar
                                 sx={{
                                     backgroundColor: 'white',
@@ -114,18 +122,20 @@ export const PromptBuilderSummary = (props: {
                             >
                                 <step.icon />
                             </Avatar>
-                        </ListItemAvatar>
-                        <ListItemText
-                            primary={step.title}
-                            primaryTypographyProps={{
-                                fontWeight: 'bold',
-                                color: markBuilderStepComplete(
-                                    i + 1,
-                                    props.currentBuilderStep,
-                                )
-                                    ? 'primary'
-                                    : grey[900],
-                            }}
+                        </List.ItemAvatar>
+                        <List.ItemText
+                            disableTypography
+                            primary={
+                                <StyledListItemTypography
+                                    variant="subtitle1"
+                                    isStepComplete={markBuilderStepComplete(
+                                        i + 1,
+                                        props.currentBuilderStep,
+                                    )}
+                                >
+                                    {step.title}
+                                </StyledListItemTypography>
+                            }
                         />
                     </StyledListItem>
                     <Collapse in={props.currentBuilderStep === i + 1}>

@@ -47,6 +47,11 @@ export const PromptBuilderInputTypeStep = (props: {
         ids: [],
         display: {},
     });
+    const [cfgLibraryDatabases, setCfgLibraryDatabases] = useState({
+        loading: false,
+        ids: [],
+        display: {},
+    });
 
     const myVectorDbs = usePixel<{ app_id: string; app_name: string }[]>(
         `MyEngines(engineTypes=['VECTOR']);`,
@@ -69,6 +74,27 @@ export const PromptBuilderInputTypeStep = (props: {
         });
     }, [myVectorDbs.status, myVectorDbs.data]);
 
+    const myDbs = usePixel<{ app_id: string; app_name: string }[]>(
+        `MyEngines(engineTypes=['DATABASE']);`,
+    );
+    useMemo(() => {
+        if (myDbs.status !== 'SUCCESS') {
+            return;
+        }
+
+        let dbIds: string[] = [];
+        let dbDisplay = {};
+        myDbs.data.forEach((vector) => {
+            dbIds.push(vector.app_id);
+            dbDisplay[vector.app_id] = vector.app_name;
+        });
+        setCfgLibraryDatabases({
+            loading: false,
+            ids: dbIds,
+            display: dbDisplay,
+        });
+    }, [myDbs.status, myDbs.data]);
+
     useEffect(() => {
         const tokens = [...(props.builder.inputs.value as Token[])];
         const filteredTokens = tokens.filter(
@@ -90,9 +116,7 @@ export const PromptBuilderInputTypeStep = (props: {
     }, []);
 
     useEffect(() => {
-        if (Object.values(inputTypes).every((inputType) => !!inputType)) {
-            props.setBuilderValue('inputTypes', inputTypes);
-        }
+        props.setBuilderValue('inputTypes', inputTypes);
     }, [inputTypes]);
 
     return (
@@ -112,6 +136,7 @@ export const PromptBuilderInputTypeStep = (props: {
                         inputTypeMeta={inputTypes[inputToken.index].meta}
                         key={inputToken.index}
                         cfgLibraryVectorDbs={cfgLibraryVectorDbs}
+                        cfgLibraryDatabases={cfgLibraryDatabases}
                         setInputType={setInputType}
                     />
                 ))}
