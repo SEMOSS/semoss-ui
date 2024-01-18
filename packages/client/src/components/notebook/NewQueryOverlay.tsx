@@ -102,10 +102,16 @@ export const NewQueryOverlay = observer(
                     </Stack>
                 </Modal.Content>
                 <Modal.Actions>
-                    <Button variant="text" onClick={() => onClose()}>
+                    <Button
+                        variant="text"
+                        color="primary"
+                        onClick={() => onClose()}
+                    >
                         Cancel
                     </Button>
                     <Button
+                        variant="contained"
+                        color="primary"
                         disabled={!!errors?.ID?.message}
                         onClick={() => onSubmit()}
                     >

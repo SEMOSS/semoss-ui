@@ -126,7 +126,8 @@ export function getInputFormatPrompt(
             // don't pass database query into the prompt itself
             // we will just use the query results to supplement the prompt at the end
             if (
-                inputTypes[token.linkedInputToken].type === INPUT_TYPE_DATABASE
+                inputTypes[token?.linkedInputToken ?? token.index].type ===
+                INPUT_TYPE_DATABASE
             ) {
                 tokenStrings.push(token.display);
             } else {

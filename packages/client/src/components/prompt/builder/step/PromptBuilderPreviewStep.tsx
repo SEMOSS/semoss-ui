@@ -1,6 +1,6 @@
 import { Builder, Token } from '../../prompt.types';
 import { StyledStepPaper, StyledTextPaper } from '../../prompt.styled';
-import { Box, Typography } from '@mui/material';
+import { Box, Typography } from '@semoss/ui';
 import { PromptPreview } from '../../shared';
 
 export const PromptBuilderPreviewStep = (props: {
@@ -15,7 +15,7 @@ export const PromptBuilderPreviewStep = (props: {
         <StyledStepPaper elevation={2} square>
             <Box>
                 <Typography variant="h5">Preview Prompt</Typography>
-                <Typography>
+                <Typography variant="body1">
                     Preview your prompt before exporting to an app.
                 </Typography>
             </Box>

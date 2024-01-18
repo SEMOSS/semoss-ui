@@ -1,9 +1,11 @@
-import { blue } from '@mui/material/colors';
-import { styled } from '@mui/material';
+import { styled } from '@semoss/ui';
+import { THEME } from '@/constants';
+import { blue, green } from '@mui/material/colors';
 
 interface HoverButtonRootProps {
     disableHover: boolean;
 }
+
 export const PromptTokenTextButton = styled('button', {
     shouldForwardProp: (prop) => prop !== 'disableHover',
 })<HoverButtonRootProps>(({ disableHover }) => ({
@@ -20,6 +22,10 @@ export const PromptTokenTextButton = styled('button', {
     cursor: disableHover ? 'default' : 'pointer',
     outline: 'inherit',
     '&:hover': {
-        backgroundColor: disableHover ? 'unset' : blue[50],
+        backgroundColor: disableHover
+            ? 'unset'
+            : THEME.name === 'SEMOSS'
+            ? blue[50]
+            : green[50],
     },
 }));
