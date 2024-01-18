@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { styled, ToggleTabsGroup } from '@semoss/ui';
+import { styled, ToggleTabsGroup, Typography } from '@semoss/ui';
 
 import { Role } from '@/types';
 import { useSettings, useAPI } from '@/hooks';
@@ -17,7 +17,7 @@ const StyledContainer = styled('div')(({ theme }) => ({
     alignSelf: 'stretch',
     flexDirection: 'column',
     alignItems: 'flex-start',
-    gap: theme.spacing(2),
+    gap: theme.spacing(3),
 }));
 
 const StyledContent = styled('div')(({ theme }) => ({
@@ -25,7 +25,7 @@ const StyledContent = styled('div')(({ theme }) => ({
     width: '100%',
     flexDirection: 'column',
     alignItems: 'flex-start',
-    gap: theme.spacing(2),
+    gap: theme.spacing(3),
     flexShrink: '0',
 }));
 
@@ -80,6 +80,35 @@ export const AppSettingsDetailPage = () => {
     return (
         <StyledContainer>
             {permission === 'OWNER' ? (
+                <StyledContent>
+                    <Typography variant="h6">Access</Typography>
+                    <SettingsTiles
+                        mode={'app'}
+                        name={'app'}
+                        id={id}
+                        onDelete={() => {
+                            navigate('/settings/app');
+                        }}
+                    />
+                </StyledContent>
+            ) : null}
+
+            {permission !== 'READ_ONLY' ? (
+                <PendingMembersTable mode={'app'} id={id} />
+            ) : null}
+
+            <MembersTable
+                id={id}
+                mode={'app'}
+                name={'app'}
+                refreshPermission={() => getUserEnginePermission.refresh()}
+            />
+
+            {permission !== 'READ_ONLY' ? <AppSettings id={id} /> : null}
+
+            {/* original code chunk */}
+
+            {/* {permission === 'OWNER' ? (
                 <SettingsTiles
                     mode={'app'}
                     name={'app'}
@@ -88,8 +117,9 @@ export const AppSettingsDetailPage = () => {
                         navigate('/settings/app');
                     }}
                 />
-            ) : null}
-            <StyledContent>
+            ) : null} */}
+
+            {/* <StyledContent>
                 <ToggleTabsGroup
                     value={view}
                     onChange={(e, v) => setView(v as VIEW)}
@@ -121,7 +151,7 @@ export const AppSettingsDetailPage = () => {
                     <PendingMembersTable mode={'app'} id={id} />
                 )}
                 {view === 'APP' && <AppSettings id={id} />}
-            </StyledContent>
+            </StyledContent> */}
         </StyledContainer>
     );
 };

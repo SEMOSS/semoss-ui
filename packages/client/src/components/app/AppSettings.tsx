@@ -69,6 +69,7 @@ const StyledRightButton = styled(Button)(({ theme }) => ({
 
 const StyledCardDiv = styled('div')(({ theme }) => ({
     gap: theme.spacing(2),
+    background: '#FFF',
     flex: '1 0 0',
     display: 'flex',
     padding: theme.spacing(2),
