@@ -774,18 +774,20 @@ export class StateStore {
             this,
         );
 
-        this.newStep(
-            queryId,
-            `${Math.floor(Math.random() * 1000000000000)}`,
-            {
-                parameters: {
-                    code: '',
-                    type: 'pixel',
-                },
-                widget: 'code',
-            } as Omit<StepStateConfig, 'id'>,
-            '',
-        );
+        if (!config.steps.length) {
+            this.newStep(
+                queryId,
+                `${Math.floor(Math.random() * 1000000000000)}`,
+                {
+                    parameters: {
+                        code: '',
+                        type: 'pixel',
+                    },
+                    widget: 'code',
+                } as Omit<StepStateConfig, 'id'>,
+                '',
+            );
+        }
     };
 
     /**
