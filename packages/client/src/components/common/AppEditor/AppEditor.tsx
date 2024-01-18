@@ -1387,7 +1387,6 @@ export const AppEditor = (props: AppEditorProps) => {
                                 <CustomAccordionContent>
                                     <StyledTreeView
                                         multiSelect
-                                        // ### explanded
                                         expanded={expanded}
                                         selected={selected}
                                         onNodeToggle={handleToggle}
