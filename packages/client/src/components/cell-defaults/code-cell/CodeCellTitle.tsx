@@ -1,31 +1,135 @@
-import { Select } from '@semoss/ui';
-
+import { useState } from 'react';
+import { styled, Button, Menu, MenuProps, List } from '@semoss/ui';
 import { ActionMessages, CellComponent } from '@/stores';
 import { useBlocks } from '@/hooks';
 import { CodeCellDef } from './config';
+import { PythonIcon, RIcon } from './icons';
+import { KeyboardArrowDown, CodeOff } from '@mui/icons-material';
+
+const StyledButton = styled(Button)(({ theme }) => ({
+    color: theme.palette.text.secondary,
+    border: `1px solid ${theme.palette.text.secondary}`,
+}));
+
+const StyledButtonLabel = styled('span')(({ theme }) => ({
+    width: theme.spacing(5.5),
+    display: 'block',
+    textAlign: 'start',
+}));
+
+const StyledMenu = styled((props: MenuProps) => (
+    <Menu
+        anchorOrigin={{
+            vertical: 'bottom',
+            horizontal: 'right',
+        }}
+        transformOrigin={{
+            vertical: 'top',
+            horizontal: 'right',
+        }}
+        {...props}
+    />
+))(({ theme }) => ({
+    '& .MuiPaper-root': {
+        marginTop: theme.spacing(1),
+    },
+}));
+
+const StyledListIcon = styled(List.Icon)(({ theme }) => ({
+    width: theme.spacing(4),
+    minWidth: 'unset',
+}));
+
+const CodeCellOptions = {
+    py: {
+        display: 'Python',
+        value: 'py',
+        icon: PythonIcon,
+    },
+    r: {
+        display: 'R',
+        value: 'r',
+        icon: RIcon,
+    },
+    pixel: {
+        display: 'Pixel',
+        value: 'pixel',
+        icon: CodeOff,
+    },
+};
 
 export const CodeCellTitle: CellComponent<CodeCellDef> = (props) => {
     const { step } = props;
     const { state } = useBlocks();
+    const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
+    const open = Boolean(anchorEl);
+    const handleClose = () => {
+        setAnchorEl(null);
+    };
     return (
-        <Select
-            size="small"
-            value={step.parameters.type}
-            onChange={(e) =>
-                state.dispatch({
-                    message: ActionMessages.UPDATE_STEP,
-                    payload: {
-                        queryId: step.query.id,
-                        stepId: step.id,
-                        path: 'parameters.type',
-                        value: e.target.value,
-                    },
-                })
-            }
-        >
-            <Select.Item value="r"> R</Select.Item>
-            <Select.Item value="py"> Py</Select.Item>
-            <Select.Item value="pixel"> Pixel</Select.Item>
-        </Select>
+        <>
+            <StyledButton
+                aria-haspopup="true"
+                aria-expanded={open ? 'true' : undefined}
+                variant="outlined"
+                disableElevation
+                size="small"
+                onClick={(event: React.MouseEvent<HTMLElement>) => {
+                    setAnchorEl(event.currentTarget);
+                }}
+                startIcon={
+                    step.parameters.type === 'py' ? (
+                        <PythonIcon color="inherit" fontSize="small" />
+                    ) : step.parameters.type === 'r' ? (
+                        <RIcon color="inherit" fontSize="small" />
+                    ) : (
+                        <CodeOff color="inherit" fontSize="small" />
+                    )
+                }
+                endIcon={<KeyboardArrowDown />}
+            >
+                <StyledButtonLabel>
+                    {CodeCellOptions[step.parameters.type].display}
+                </StyledButtonLabel>
+            </StyledButton>
+            <StyledMenu anchorEl={anchorEl} open={open} onClose={handleClose}>
+                <List disablePadding dense>
+                    {Array.from(
+                        Object.values(CodeCellOptions),
+                        (codeCellOption) => (
+                            <List.Item
+                                disablePadding
+                                key={`${step.id}-${codeCellOption.value}`}
+                            >
+                                <List.ItemButton
+                                    onClick={() => {
+                                        state.dispatch({
+                                            message: ActionMessages.UPDATE_STEP,
+                                            payload: {
+                                                queryId: step.query.id,
+                                                stepId: step.id,
+                                                path: 'parameters.type',
+                                                value: codeCellOption.value,
+                                            },
+                                        });
+                                        handleClose();
+                                    }}
+                                >
+                                    <StyledListIcon>
+                                        <codeCellOption.icon
+                                            color="inherit"
+                                            fontSize="small"
+                                        />
+                                    </StyledListIcon>
+                                    <List.ItemText
+                                        primary={codeCellOption.display}
+                                    />
+                                </List.ItemButton>
+                            </List.Item>
+                        ),
+                    )}
+                </List>
+            </StyledMenu>
+        </>
     );
 };

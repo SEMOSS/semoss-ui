@@ -13,6 +13,12 @@ export interface StepStateStoreInterface<D extends CellDef = CellDef> {
     /** Track if the step is loading */
     isLoading: boolean;
 
+    /** Track when the step began */
+    executionStart: string | undefined;
+
+    /** Track how long the step took */
+    executionDurationMilliseconds: number | undefined;
+
     /** Operation associated with the step */
     operation: string[];
 
@@ -46,6 +52,8 @@ export class StepState<D extends CellDef = CellDef> {
     private _store: StepStateStoreInterface<D> = {
         id: '',
         isLoading: false,
+        executionStart: undefined,
+        executionDurationMilliseconds: undefined,
         operation: [],
         output: undefined,
         widget: '',
@@ -88,6 +96,16 @@ export class StepState<D extends CellDef = CellDef> {
      */
     get isLoading() {
         return this._store.isLoading;
+    }
+
+    /** Track when the step began */
+    get executionStart() {
+        return this._store.executionStart;
+    }
+
+    /** Track how long the step took */
+    get executionDurationMilliseconds() {
+        return this._store.executionDurationMilliseconds;
     }
 
     /**
@@ -223,14 +241,32 @@ export class StepState<D extends CellDef = CellDef> {
      * @param output - new output of the step
      */
     _sync(
+        isLoading: boolean,
+
         /** operation associated with the step */
-        operation: string[],
+        operation?: string[],
 
         /** Output associated with the step */
-        output: unknown,
+        output?: unknown,
+
+        executionStart?: string,
+
+        executionDurationMilliseconds?: number,
     ) {
-        this._store.operation = operation;
-        this._store.output = output;
+        this._store.isLoading = isLoading;
+        if (operation) {
+            this._store.operation = operation;
+        }
+        if (output) {
+            this._store.output = output;
+        }
+        if (executionStart) {
+            this._store.executionStart = executionStart;
+        }
+        if (executionDurationMilliseconds) {
+            this._store.executionDurationMilliseconds =
+                executionDurationMilliseconds;
+        }
     }
 
     /**
@@ -247,6 +283,11 @@ export class StepState<D extends CellDef = CellDef> {
 
             // start the loading screen
             this._store.isLoading = true;
+
+            const now = new Date();
+            this._store.executionStart = `${now.toDateString()} ${now.toLocaleTimeString(
+                'en-US',
+            )}`;
 
             // merge the options
             const merged = {
@@ -280,6 +321,10 @@ export class StepState<D extends CellDef = CellDef> {
                 this._store.output = output;
             });
         } finally {
+            const end = new Date();
+            const start = new Date(this._store.executionStart);
+            this._store.executionDurationMilliseconds =
+                end.getTime() - start.getTime();
             // stop the loading screen
             runInAction(() => {
                 this._store.isLoading = false;

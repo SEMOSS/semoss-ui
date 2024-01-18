@@ -270,20 +270,32 @@ export class QueryState {
                 );
             }
 
+            // CS question: why do we _sync instead of using _processRun?
             // update the existing steps with the pixel blocks
             // let data = undefined;
             for (let stepIdx = 0; stepIdx < stepLen; stepIdx++) {
                 const step = this._store.steps[stepIdx];
 
+                const stepStart = new Date();
+                step._sync(true);
                 const { operationType, output } = pixelReturn[stepIdx];
+                const stepEnd = new Date();
 
                 // // save the last successful data
                 // if (operationType.indexOf('ERROR') === -1) {
                 //     data = output;
                 // }
 
-                // sync the new operation type and output
-                step._sync(operationType, output);
+                // sync step information
+                step._sync(
+                    false,
+                    operationType,
+                    output,
+                    `${stepStart.toDateString()} ${stepStart.toLocaleTimeString(
+                        'en-US',
+                    )}`,
+                    stepEnd.getTime() - stepStart.getTime(),
+                );
             }
 
             runInAction(() => {
