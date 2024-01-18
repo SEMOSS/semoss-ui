@@ -73,6 +73,7 @@ export const CodeCellTitle: CellComponent<CodeCellDef> = (props) => {
                 aria-expanded={open ? 'true' : undefined}
                 variant="outlined"
                 disableElevation
+                disabled={step.isLoading}
                 size="small"
                 onClick={(event: React.MouseEvent<HTMLElement>) => {
                     setAnchorEl(event.currentTarget);
