@@ -14,6 +14,7 @@ import { NotebookStep } from './NotebookStep';
 import { NotebookNewStep } from './NotebookNewStep';
 import { ActionMessages } from '@/stores';
 import { DeleteOutlined, PlayArrowRounded } from '@mui/icons-material';
+import { NotebookQueryModeButton } from './NotebookQueryModeButton';
 
 const StyledSheet = styled('div')(() => ({
     display: 'flex',
@@ -22,10 +23,7 @@ const StyledSheet = styled('div')(() => ({
     width: '100%',
 }));
 
-const StyledTopbar = styled(Stack)(({ theme }) => ({
-    backgroundColor: theme.palette.background.paper,
-    boxShadow: '0px 5px 22px 0px rgba(0, 0, 0, 0.06)',
-}));
+const StyledTopbar = styled(Stack)(({ theme }) => ({}));
 
 const StyledContainer = styled(Container)(({ theme }) => ({
     flex: 1,
@@ -66,31 +64,13 @@ export const NotebookSheet = observer((): JSX.Element => {
                 alignItems={'center'}
                 justifyContent={'space-between'}
                 direction="row"
-                paddingX={2}
+                paddingLeft={3}
+                paddingRight={notebook.selectedQuery.steps.length > 1 ? 4 : 3}
                 paddingY={1.25}
                 spacing={2}
             >
                 <Stack direction="row" alignItems={'center'} spacing={2}>
-                    <Select
-                        size="small"
-                        value={notebook.selectedQuery.mode}
-                        onChange={(e) =>
-                            state.dispatch({
-                                message: ActionMessages.UPDATE_QUERY,
-                                payload: {
-                                    queryId: notebook.selectedQuery.id,
-                                    path: 'mode',
-                                    value: e.target.value,
-                                },
-                            })
-                        }
-                    >
-                        <Select.Item value="automatic"> Automatic </Select.Item>
-                        <Select.Item value="manual"> Manual </Select.Item>
-                    </Select>
-                    <Typography variant="subtitle2">
-                        {notebook.selectedQuery.id}
-                    </Typography>
+                    <NotebookQueryModeButton query={notebook.selectedQuery} />
                 </Stack>
                 <ButtonGroup size="small">
                     <ButtonGroup.Item

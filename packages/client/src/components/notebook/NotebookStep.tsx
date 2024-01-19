@@ -136,10 +136,10 @@ export const NotebookStep = observer(
             }
         };
         const getStepChipLabel = () => {
-            if (step.query.isLoading) {
-                return 'Query Loading';
-            } else if (step.isLoading) {
+            if (step.isLoading) {
                 return 'Loading';
+            } else if (step.query.isLoading) {
+                return 'Query Loading';
             } else if (step.isSuccessful) {
                 return 'Success';
             } else if (step.isError) {
