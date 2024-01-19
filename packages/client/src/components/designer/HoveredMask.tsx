@@ -45,6 +45,7 @@ const StyledTitle = styled('div')(({ theme }) => ({
     height: theme.spacing(3),
     paddingLeft: theme.spacing(1),
     paddingRight: theme.spacing(1),
+    //added to match figma
     borderRadius: '4px',
     // backgroundColor: theme.palette.primary.light,
     backgroundColor: theme.palette.primary.dark,

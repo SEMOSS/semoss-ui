@@ -19,7 +19,7 @@ const StyledContainer = styled('div')(({ theme }) => ({
     bottom: '0',
     left: '0',
     zIndex: '20',
-    moveEvents: 'none',
+    pointerEvents: 'none',
     userSelect: 'none',
     // outlineWidth: '2px',
     // outlineStyle: 'solid',
@@ -36,7 +36,7 @@ const StyledTitle = styled('div')(({ theme }) => ({
     left: `-1px`,
     height: theme.spacing(3),
     paddingLeft: theme.spacing(1),
-    moveEvents: 'auto',
+    pointerEvents: 'auto',
     cursor: 'grab',
     //added to match figma
     borderRadius: '4px',
