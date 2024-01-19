@@ -123,8 +123,11 @@ export const NotebookStep = observer(
             }
         };
 
+        // if we are able to get more granular step loading info when running the full query, we can remove the step.query.isLoading checks
         const getStepChipStatus = () => {
-            if (step.isSuccessful) {
+            if (step.isLoading || step.query.isLoading) {
+                return `disabled`;
+            } else if (step.isSuccessful) {
                 return 'success';
             } else if (step.isError) {
                 return 'error';
@@ -132,9 +135,10 @@ export const NotebookStep = observer(
                 return 'disabled';
             }
         };
-
         const getStepChipLabel = () => {
-            if (step.isLoading) {
+            if (step.query.isLoading) {
+                return 'Query Loading';
+            } else if (step.isLoading) {
                 return 'Loading';
             } else if (step.isSuccessful) {
                 return 'Success';
@@ -144,9 +148,10 @@ export const NotebookStep = observer(
                 return 'Pending Execution';
             }
         };
-
         const getStepChipIcon = () => {
-            if (step.isLoading || !step.isExecuted) {
+            if (step.isLoading) {
+                return <CircularProgress size="0.75rem" />;
+            } else if (step.query.isLoading) {
                 return <Pending color="inherit" />;
             } else if (step.isSuccessful) {
                 return <CheckCircle color="inherit" />;
