@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { styled, ToggleTabsGroup, Typography } from '@semoss/ui';
+import { styled, Typography } from '@semoss/ui';
 
 import { Role } from '@/types';
 import { useSettings, useAPI } from '@/hooks';

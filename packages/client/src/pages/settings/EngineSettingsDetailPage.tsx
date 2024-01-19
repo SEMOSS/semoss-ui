@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { styled, ToggleTabsGroup } from '@semoss/ui';
+import { styled, Typography } from '@semoss/ui';
 
 import { ENGINE_TYPES, Role } from '@/types';
 import { useSettings, useAPI } from '@/hooks';
@@ -17,7 +17,7 @@ const StyledContainer = styled('div')(({ theme }) => ({
     alignSelf: 'stretch',
     flexDirection: 'column',
     alignItems: 'flex-start',
-    gap: theme.spacing(2),
+    gap: theme.spacing(3),
 }));
 
 const StyledContent = styled('div')(({ theme }) => ({
@@ -25,11 +25,9 @@ const StyledContent = styled('div')(({ theme }) => ({
     width: '100%',
     flexDirection: 'column',
     alignItems: 'flex-start',
-    gap: theme.spacing(2),
+    gap: theme.spacing(3),
     flexShrink: '0',
 }));
-
-type VIEW = 'CURRENT' | 'PENDING';
 
 /**
  * Show detailed settings for an engine
@@ -53,7 +51,6 @@ export const EngineSettingsDetailPage = (
     const navigate = useNavigate();
     const { adminMode } = useSettings();
 
-    const [view, setView] = useState<VIEW>('CURRENT');
     const [permission, setPermission] = useState<Role | null>(null);
 
     const getUserEnginePermission = useAPI(['getUserEnginePermission', id]);
@@ -97,45 +94,38 @@ export const EngineSettingsDetailPage = (
     return (
         <StyledContainer>
             {permission === 'OWNER' ? (
-                <SettingsTiles
-                    mode="engine"
-                    name={name}
-                    id={id}
-                    onDelete={() => {
-                        navigate('..', { relative: 'path' });
-                    }}
-                />
-            ) : null}
-            <StyledContent>
-                <ToggleTabsGroup
-                    value={view}
-                    onChange={(e, v) => setView(v as VIEW)}
-                    aria-label="basic tabs example"
-                >
-                    <ToggleTabsGroup.Item label="Member" value={'CURRENT'} />
-                    <ToggleTabsGroup.Item
-                        label="Pending Requests"
-                        disabled={permission === 'READ_ONLY'}
-                        value={'PENDING'}
-                    />
-                </ToggleTabsGroup>
-                {view === 'CURRENT' && (
-                    <MembersTable
-                        mode={'engine'}
-                        id={id}
+                <StyledContent>
+                    <Typography variant="h6">Access</Typography>
+                    <SettingsTiles
+                        mode="engine"
                         name={name}
-                        refreshPermission={() =>
-                            getUserEnginePermission.refresh()
-                        }
+                        id={id}
+                        onDelete={() => {
+                            navigate('..', { relative: 'path' });
+                        }}
                     />
-                )}
-                {view === 'PENDING' && (
+                </StyledContent>
+            ) : (
+                <></>
+            )}
+            <StyledContent>
+                {permission !== 'READ_ONLY' ? (
                     <PendingMembersTable id={id} mode={'engine'} />
+                ) : (
+                    <></>
                 )}
+                <MembersTable
+                    mode={'engine'}
+                    id={id}
+                    name={name}
+                    refreshPermission={() => getUserEnginePermission.refresh()}
+                />
             </StyledContent>
             {permission === 'OWNER' ? (
                 <UpdateSMSS mode="engine" id={id} />
-            ) : null}
+            ) : (
+                <></>
+            )}
         </StyledContainer>
     );
 };
