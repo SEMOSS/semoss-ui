@@ -1,13 +1,5 @@
 import { observer } from 'mobx-react-lite';
-import {
-    styled,
-    Stack,
-    Container,
-    Select,
-    CircularProgress,
-    ButtonGroup,
-    Typography,
-} from '@semoss/ui';
+import { styled, Stack, Container, Button, CircularProgress } from '@semoss/ui';
 
 import { useBlocks } from '@/hooks';
 import { NotebookStep } from './NotebookStep';
@@ -22,8 +14,6 @@ const StyledSheet = styled('div')(() => ({
     height: '100%',
     width: '100%',
 }));
-
-const StyledTopbar = styled(Stack)(({ theme }) => ({}));
 
 const StyledContainer = styled(Container)(({ theme }) => ({
     flex: 1,
@@ -43,8 +33,19 @@ const StyledStep = styled('div')(({ theme }) => ({
     paddingBottom: theme.spacing(5),
 }));
 
-const StyledStepSpaccer = styled('div')(({ theme }) => ({
-    width: theme.spacing(3),
+const StyledContainedButton = styled(Button)(() => ({
+    lineHeight: '1.25rem',
+}));
+
+const StyledButton = styled(Button)(({ theme }) => ({
+    color: theme.palette.text.secondary,
+    border: `1px solid ${theme.palette.text.secondary}`,
+    minWidth: 'unset',
+}));
+
+const StyledButtonLabel = styled('div')(() => ({
+    display: 'flex',
+    alignItems: 'center',
 }));
 
 /**
@@ -60,7 +61,7 @@ export const NotebookSheet = observer((): JSX.Element => {
 
     return (
         <StyledSheet>
-            <StyledTopbar
+            <Stack
                 alignItems={'center'}
                 justifyContent={'space-between'}
                 direction="row"
@@ -69,17 +70,20 @@ export const NotebookSheet = observer((): JSX.Element => {
                 paddingY={1.25}
                 spacing={2}
             >
-                <Stack direction="row" alignItems={'center'} spacing={2}>
+                <Stack direction="row" alignItems="center" spacing={1}>
                     <NotebookQueryModeButton query={notebook.selectedQuery} />
                     <NotebookAddCellButton query={notebook.selectedQuery} />
                 </Stack>
-                <ButtonGroup size="small">
-                    <ButtonGroup.Item
-                        title="Run all of the steps"
-                        variant="outlined"
+                <Stack direction="row" alignItems="center" spacing={1}>
+                    <StyledContainedButton
+                        title="Run all cells"
+                        variant="contained"
+                        size="small"
+                        color="primary"
+                        disableElevation
                         startIcon={
                             notebook.selectedQuery.isLoading ? (
-                                <CircularProgress size="1em" />
+                                <CircularProgress size="0.75em" />
                             ) : (
                                 <PlayArrowRounded />
                             )
@@ -95,25 +99,32 @@ export const NotebookSheet = observer((): JSX.Element => {
                         }
                     >
                         Run All
-                    </ButtonGroup.Item>
-                    <ButtonGroup.Item
-                        title="Delete the query"
-                        variant="outlined"
+                    </StyledContainedButton>
+                    <StyledButton
+                        title="Delete query"
                         disabled={notebook.selectedQuery.isLoading}
+                        size="small"
+                        variant="outlined"
                         onClick={() => {
-                            // copy and add the step to the end
                             state.dispatch({
                                 message: ActionMessages.DELETE_QUERY,
                                 payload: {
                                     queryId: notebook.selectedQuery.id,
                                 },
                             });
+                            if (notebook.queriesList.length) {
+                                notebook.selectQuery(
+                                    notebook.queriesList[0].id,
+                                );
+                            }
                         }}
                     >
-                        <DeleteOutlined fontSize="small" />
-                    </ButtonGroup.Item>
-                </ButtonGroup>
-            </StyledTopbar>
+                        <StyledButtonLabel>
+                            <DeleteOutlined fontSize="small" />
+                        </StyledButtonLabel>
+                    </StyledButton>
+                </Stack>
+            </Stack>
             <StyledContainer maxWidth={'xl'}>
                 {notebook.selectedQuery.steps.map((s) => (
                     <StyledStep key={s.id}>
