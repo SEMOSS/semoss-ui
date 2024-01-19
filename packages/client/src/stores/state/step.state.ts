@@ -241,32 +241,18 @@ export class StepState<D extends CellDef = CellDef> {
      * @param output - new output of the step
      */
     _sync(
-        isLoading: boolean,
-
         /** operation associated with the step */
         operation?: string[],
 
         /** Output associated with the step */
         output?: unknown,
-
-        executionStart?: string,
-
-        executionDurationMilliseconds?: number,
     ) {
-        this._store.isLoading = isLoading;
-        if (operation) {
-            this._store.operation = operation;
-        }
-        if (output) {
-            this._store.output = output;
-        }
-        if (executionStart) {
-            this._store.executionStart = executionStart;
-        }
-        if (executionDurationMilliseconds) {
-            this._store.executionDurationMilliseconds =
-                executionDurationMilliseconds;
-        }
+        this._store.operation = operation;
+        this._store.output = output;
+
+        // syncing from query - we dont' have granular information about execution
+        this._store.executionStart = undefined;
+        this._store.executionDurationMilliseconds = undefined;
     }
 
     /**

@@ -229,10 +229,7 @@ export const NotebookStep = observer(
                                             message: ActionMessages.DELETE_STEP,
                                             payload: {
                                                 queryId: step.query.id,
-                                                stepId: `${Math.floor(
-                                                    Math.random() *
-                                                        1000000000000,
-                                                )}`,
+                                                stepId: step.id,
                                             },
                                         });
                                     }}

@@ -270,16 +270,12 @@ export class QueryState {
                 );
             }
 
-            // CS question: why do we _sync instead of using _processRun?
             // update the existing steps with the pixel blocks
             // let data = undefined;
             for (let stepIdx = 0; stepIdx < stepLen; stepIdx++) {
                 const step = this._store.steps[stepIdx];
 
-                const stepStart = new Date();
-                step._sync(true);
                 const { operationType, output } = pixelReturn[stepIdx];
-                const stepEnd = new Date();
 
                 // // save the last successful data
                 // if (operationType.indexOf('ERROR') === -1) {
@@ -287,15 +283,7 @@ export class QueryState {
                 // }
 
                 // sync step information
-                step._sync(
-                    false,
-                    operationType,
-                    output,
-                    `${stepStart.toDateString()} ${stepStart.toLocaleTimeString(
-                        'en-US',
-                    )}`,
-                    stepEnd.getTime() - stepStart.getTime(),
-                );
+                step._sync(operationType, output);
             }
 
             runInAction(() => {
@@ -304,7 +292,11 @@ export class QueryState {
                 // // update the data
                 // this._store.data = output;
             });
+            this._store.error = null;
         } catch (e) {
+            // TODO - because we use _sync steps instead of _processRun on them individually
+            // if a step errors out of the runPixel and causes a break/catch here,
+            // we're unable to get granular information about which step caused the error.
             runInAction(() => {
                 this._store.error = e;
             });
