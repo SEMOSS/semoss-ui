@@ -3,7 +3,6 @@ import { styled, Stack, Container, Button, CircularProgress } from '@semoss/ui';
 
 import { useBlocks } from '@/hooks';
 import { NotebookStep } from './NotebookStep';
-import { NotebookAddCellButton } from './NotebookAddCellButton';
 import { ActionMessages } from '@/stores';
 import { DeleteOutlined, PlayArrowRounded } from '@mui/icons-material';
 import { NotebookQueryModeButton } from './NotebookQueryModeButton';
@@ -29,7 +28,6 @@ const StyledStep = styled('div')(({ theme }) => ({
     display: 'flex',
     flexDirection: 'column',
     width: '100%',
-    gap: theme.spacing(5),
     paddingBottom: theme.spacing(5),
 }));
 
@@ -72,7 +70,6 @@ export const NotebookSheet = observer((): JSX.Element => {
             >
                 <Stack direction="row" alignItems="center" spacing={1}>
                     <NotebookQueryModeButton query={notebook.selectedQuery} />
-                    <NotebookAddCellButton query={notebook.selectedQuery} />
                 </Stack>
                 <Stack direction="row" alignItems="center" spacing={1}>
                     <StyledContainedButton
