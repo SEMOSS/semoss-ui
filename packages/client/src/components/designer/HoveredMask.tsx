@@ -28,9 +28,11 @@ const StyledContainer = styled('div', {
         zIndex: '20',
         opacity: hideHoveredMask ? 0 : 1,
         pointerEvents: 'none',
-        outlineWidth: '2px',
-        outlineStyle: 'solid',
-        outlineColor: theme.palette.primary.light,
+        // outlineWidth: '2px',
+        // outlineStyle: 'solid',
+        outlineWidth: '3px',
+        outlineStyle: 'dotted'
+        outlineColor: theme.palette.primary.dark,
     }),
 );
 
@@ -43,7 +45,9 @@ const StyledTitle = styled('div')(({ theme }) => ({
     height: theme.spacing(3),
     paddingLeft: theme.spacing(1),
     paddingRight: theme.spacing(1),
-    backgroundColor: theme.palette.primary.light,
+    borderRadius: '4px',
+    // backgroundColor: theme.palette.primary.light,
+    backgroundColor: theme.palette.primary.dark,
     color: theme.palette.common.white,
     whiteSpace: 'nowrap',
 }));

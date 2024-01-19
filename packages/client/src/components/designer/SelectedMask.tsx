@@ -19,9 +19,11 @@ const StyledContainer = styled('div')(({ theme }) => ({
     bottom: '0',
     left: '0',
     zIndex: '20',
-    pointerEvents: 'none',
+    moveEvents: 'none',
     userSelect: 'none',
-    outlineWidth: '2px',
+    // outlineWidth: '2px',
+    // outlineStyle: 'solid',
+    outlineWidth: '3px',
     outlineStyle: 'solid',
     outlineColor: theme.palette.primary.main,
 }));
@@ -34,9 +36,12 @@ const StyledTitle = styled('div')(({ theme }) => ({
     left: `-1px`,
     height: theme.spacing(3),
     paddingLeft: theme.spacing(1),
-    pointerEvents: 'auto',
+    moveEvents: 'auto',
     cursor: 'grab',
-    backgroundColor: theme.palette.primary.main,
+    //added to match figma
+    borderRadius: '4px',
+    // backgroundColor: theme.palette.primary.dark,
+    backgroundColor: theme.palette.primary.dark,
     color: theme.palette.common.white,
     whiteSpace: 'nowrap',
 }));

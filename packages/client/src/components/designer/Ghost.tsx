@@ -21,10 +21,10 @@ const StyledGhost = styled('div')(({ theme }) => ({
     zIndex: '20',
     paddingLeft: theme.spacing(1),
     paddingRight: theme.spacing(1),
-    pointerEvents: 'auto',
+    //pointerEvents: 'auto',
     userSelect: 'none',
     whiteSpace: 'nowrap',
-    cursor: 'grabbing',
+    cursor: 'move',
 }));
 
 /**
