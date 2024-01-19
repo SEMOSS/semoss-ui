@@ -11,7 +11,7 @@ import {
 
 import { useBlocks } from '@/hooks';
 import { NotebookStep } from './NotebookStep';
-import { NotebookNewStep } from './NotebookNewStep';
+import { NotebookAddCellButton } from './NotebookAddCellButton';
 import { ActionMessages } from '@/stores';
 import { DeleteOutlined, PlayArrowRounded } from '@mui/icons-material';
 import { NotebookQueryModeButton } from './NotebookQueryModeButton';
@@ -71,6 +71,7 @@ export const NotebookSheet = observer((): JSX.Element => {
             >
                 <Stack direction="row" alignItems={'center'} spacing={2}>
                     <NotebookQueryModeButton query={notebook.selectedQuery} />
+                    <NotebookAddCellButton query={notebook.selectedQuery} />
                 </Stack>
                 <ButtonGroup size="small">
                     <ButtonGroup.Item
@@ -117,27 +118,8 @@ export const NotebookSheet = observer((): JSX.Element => {
                 {notebook.selectedQuery.steps.map((s) => (
                     <StyledStep key={s.id}>
                         <NotebookStep step={s}></NotebookStep>
-                        {notebook.selectedStep &&
-                        notebook.selectedStep.id === s.id ? (
-                            <Stack
-                                direction="row"
-                                alignItems="center"
-                                spacing={2}
-                            >
-                                <StyledStepSpaccer />
-                                <NotebookNewStep step={s} />
-                            </Stack>
-                        ) : null}
                     </StyledStep>
                 ))}
-                {notebook.selectedQuery.steps.length === 0 && (
-                    <StyledStep>
-                        <Stack direction="row" alignItems="center" spacing={2}>
-                            <StyledStepSpaccer />
-                            <NotebookNewStep step={null} />
-                        </Stack>
-                    </StyledStep>
-                )}
             </StyledContainer>
         </StyledSheet>
     );
