@@ -282,7 +282,7 @@ export class QueryState {
                 //     data = output;
                 // }
 
-                // sync the new operation type and output
+                // sync step information
                 step._sync(operationType, output);
             }
 
@@ -292,7 +292,11 @@ export class QueryState {
                 // // update the data
                 // this._store.data = output;
             });
+            this._store.error = null;
         } catch (e) {
+            // TODO - because we use _sync steps instead of _processRun on them individually
+            // if a step errors out of the runPixel and causes a break/catch here,
+            // we're unable to get granular information about which step caused the error.
             runInAction(() => {
                 this._store.error = e;
             });

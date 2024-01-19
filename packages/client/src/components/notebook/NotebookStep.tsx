@@ -3,32 +3,46 @@ import { observer } from 'mobx-react-lite';
 import {
     styled,
     Stack,
-    Divider,
     Typography,
-    Chip,
     ButtonGroup,
     CircularProgress,
+    Card,
+    Chip,
+    Divider,
 } from '@semoss/ui';
 import {
-    ContentCopyOutlined,
+    ContentCopy,
     DeleteOutlined,
     PlayArrowRounded,
+    CheckCircle,
+    Error,
+    Pending,
 } from '@mui/icons-material';
 import { ActionMessages, StepState } from '@/stores';
 import { useBlocks } from '@/hooks';
 
-const StyledDivider = styled(Divider)(() => ({
-    flex: 1,
+const StyledButtonLabel = styled('div')(() => ({
+    display: 'flex',
+    alignItems: 'center',
 }));
 
-const StyledText = styled(Typography)(({ theme }) => ({
-    textAlign: 'center',
-    lineHeight: theme.spacing(3),
-    width: theme.spacing(3),
+const StyledButtonGroupButton = styled(ButtonGroup.Item)(({ theme }) => ({
+    color: theme.palette.text.secondary,
+    border: `1px solid ${theme.palette.text.secondary}`,
 }));
 
-const StyledHeader = styled(Stack)(({ theme }) => ({
-    borderBottom: `1px solid ${theme.palette.divider}`,
+const StyledStatusChip = styled(Chip, {
+    shouldForwardProp: (prop) => prop !== 'status',
+})<{ status?: 'success' | 'error' | 'disabled' }>(({ theme, status }) => ({
+    backgroundColor: status
+        ? status === 'disabled'
+            ? theme.palette.grey[400]
+            : theme.palette[status].main
+        : 'unset',
+    color: status ? theme.palette.background.paper : 'unset',
+    '.MuiChip-avatar': {
+        color: 'unset',
+    },
 }));
 
 const StyledContent = styled('div')(({ theme }) => ({
@@ -92,46 +106,77 @@ export const NotebookStep = observer(
             });
         }, [cell ? cell.view.input : null]);
 
+        const getExecutionTimeString = (
+            timeMilliseconds: number | undefined,
+        ) => {
+            if (timeMilliseconds) {
+                const milliseconds = Math.floor(
+                    (timeMilliseconds % 1000) / 100,
+                );
+                const seconds = Math.floor((timeMilliseconds / 1000) % 60);
+                const minutes = Math.floor(
+                    (timeMilliseconds / (1000 * 60)) % 60,
+                );
+                return `${minutes} min ${seconds} sec ${milliseconds} ms`;
+            } else {
+                return '';
+            }
+        };
+
+        // if we are able to get more granular step loading info when running the full query, we can remove the step.query.isLoading checks
+        const getStepChipStatus = () => {
+            if (step.isLoading || step.query.isLoading) {
+                return `disabled`;
+            } else if (step.isSuccessful) {
+                return 'success';
+            } else if (step.isError) {
+                return 'error';
+            } else {
+                return 'disabled';
+            }
+        };
+        const getStepChipLabel = () => {
+            if (step.query.isLoading) {
+                return 'Query Loading';
+            } else if (step.isLoading) {
+                return 'Loading';
+            } else if (step.isSuccessful) {
+                return 'Success';
+            } else if (step.isError) {
+                return 'Error';
+            } else {
+                return 'Pending Execution';
+            }
+        };
+        const getStepChipIcon = () => {
+            if (step.isLoading) {
+                return <CircularProgress size="0.75rem" />;
+            } else if (step.query.isLoading) {
+                return <Pending color="inherit" />;
+            } else if (step.isSuccessful) {
+                return <CheckCircle color="inherit" />;
+            } else if (step.isError) {
+                return <Error color="inherit" />;
+            } else {
+                return <Pending color="inherit" />;
+            }
+        };
+
         return (
-            <Stack
-                direction="row"
-                spacing={2}
-                onClick={() =>
-                    notebook.selectStep(notebook.selectedQuery.id, step.id)
-                }
-            >
-                <Stack
-                    direction="column"
-                    alignItems="center"
-                    paddingTop={2}
-                    spacing={2}
-                >
-                    <StyledText variant="body1">[1]</StyledText>
-                    <StyledDivider orientation="vertical" light={true} />
-                </Stack>
-                <Stack direction="column" spacing={3} flex={1} minWidth={0}>
-                    <StyledContent>
-                        <StyledHeader
-                            alignItems={'center'}
-                            justifyContent={'space-between'}
+            <Card>
+                <Card.Header
+                    title={
+                        <Stack
+                            alignItems="center"
+                            justifyContent="space-between"
                             direction="row"
-                            paddingX={2}
-                            paddingY={1.25}
-                            spacing={2}
                         >
                             {renderedTitle}
-                            <ButtonGroup size="small">
-                                <ButtonGroup.Item
-                                    title="Run the step"
-                                    variant="outlined"
-                                    startIcon={
-                                        step.isLoading ? (
-                                            <CircularProgress size="1em" />
-                                        ) : (
-                                            <PlayArrowRounded />
-                                        )
-                                    }
+                            <ButtonGroup variant="outlined">
+                                <StyledButtonGroupButton
+                                    title="Run step"
                                     disabled={step.isLoading}
+                                    size="small"
                                     onClick={() =>
                                         state.dispatch({
                                             message: ActionMessages.RUN_STEP,
@@ -142,11 +187,13 @@ export const NotebookStep = observer(
                                         })
                                     }
                                 >
-                                    Run
-                                </ButtonGroup.Item>
-                                <ButtonGroup.Item
-                                    title="Duplicate the step"
-                                    variant="outlined"
+                                    <StyledButtonLabel>
+                                        <PlayArrowRounded fontSize="small" />
+                                    </StyledButtonLabel>
+                                </StyledButtonGroupButton>
+                                <StyledButtonGroupButton
+                                    title="Duplicate step"
+                                    size="small"
                                     disabled={step.isLoading}
                                     onClick={() => {
                                         // copy and add the step to the end
@@ -171,83 +218,89 @@ export const NotebookStep = observer(
                                         });
                                     }}
                                 >
-                                    <ContentCopyOutlined fontSize="small" />
-                                </ButtonGroup.Item>
-                                <ButtonGroup.Item
-                                    title="Delete the step"
-                                    variant="outlined"
+                                    <StyledButtonLabel>
+                                        <ContentCopy
+                                            fontSize="small"
+                                            sx={{ padding: '2px' }}
+                                        />
+                                    </StyledButtonLabel>
+                                </StyledButtonGroupButton>
+                                <StyledButtonGroupButton
+                                    title="Delete step"
                                     disabled={step.isLoading}
+                                    size="small"
                                     onClick={() => {
-                                        // copy and add the step to the end
                                         state.dispatch({
                                             message: ActionMessages.DELETE_STEP,
                                             payload: {
                                                 queryId: step.query.id,
-                                                stepId: `${Math.floor(
-                                                    Math.random() *
-                                                        1000000000000,
-                                                )}`,
+                                                stepId: step.id,
                                             },
                                         });
                                     }}
                                 >
-                                    <DeleteOutlined fontSize="small" />
-                                </ButtonGroup.Item>
+                                    <StyledButtonLabel>
+                                        <DeleteOutlined fontSize="small" />
+                                    </StyledButtonLabel>
+                                </StyledButtonGroupButton>
                             </ButtonGroup>
-                        </StyledHeader>
-                        {renderedInput}
-                    </StyledContent>
-                    {step.isExecuted && (
-                        <>
-                            <Stack
-                                direction={'row'}
-                                spacing={1}
-                                alignItems={'flex-start'}
-                            >
-                                <svg
-                                    xmlns="http://www.w3.org/2000/svg"
-                                    width="30"
-                                    height="17"
-                                    viewBox="0 0 30 17"
-                                    fill="none"
+                        </Stack>
+                    }
+                />
+                <Divider />
+                <Card.Content>{renderedInput}</Card.Content>
+                <Card.Actions>
+                    <Stack spacing={2}>
+                        <Stack direction="row" spacing={2} alignItems="center">
+                            <StyledStatusChip
+                                size="small"
+                                avatar={getStepChipIcon()}
+                                label={getStepChipLabel()}
+                                status={getStepChipStatus()}
+                            />
+                            {step.executionDurationMilliseconds ? (
+                                <Typography variant="caption">
+                                    {getExecutionTimeString(
+                                        step.executionDurationMilliseconds,
+                                    )}
+                                </Typography>
+                            ) : (
+                                <></>
+                            )}
+                            {step.executionDurationMilliseconds &&
+                            step.executionStart ? (
+                                <Typography variant="caption">|</Typography>
+                            ) : (
+                                <></>
+                            )}
+                            {step.executionStart ? (
+                                <Typography variant="caption">
+                                    {step.executionStart}
+                                </Typography>
+                            ) : (
+                                <></>
+                            )}
+                        </Stack>
+                        {step.isError ? (
+                            <StyledContent>
+                                <Typography
+                                    variant="caption"
+                                    sx={{ padding: '16px', color: 'red' }}
                                 >
-                                    <path
-                                        d="M29.3536 13.3536C29.5488 13.1583 29.5488 12.8417 29.3536 12.6464L26.1716 9.46447C25.9763 9.2692 25.6597 9.2692 25.4645 9.46447C25.2692 9.65973 25.2692 9.97631 25.4645 10.1716L28.2929 13L25.4645 15.8284C25.2692 16.0237 25.2692 16.3403 25.4645 16.5355C25.6597 16.7308 25.9763 16.7308 26.1716 16.5355L29.3536 13.3536ZM0 13.5H29V12.5H0V13.5Z"
-                                        fill="#8E8E8E"
-                                    />
-                                    <line
-                                        x1="0.5"
-                                        y1="13"
-                                        x2="0.5"
-                                        stroke="#8E8E8E"
-                                    />
-                                </svg>
-                                <Chip
-                                    label={step.isError ? 'Error' : 'Success'}
-                                    color={step.isError ? 'lcpink' : 'green'}
-                                />
-                            </Stack>
-                            {step.isError ? (
-                                <StyledContent>
-                                    <Typography
-                                        variant="caption"
-                                        sx={{ padding: '16px', color: 'red' }}
-                                    >
-                                        {step.error}
-                                    </Typography>
-                                </StyledContent>
-                            ) : null}
-                            {step.isSuccessful ? (
-                                <StyledContent id="output-content">
-                                    <StyledJson>
-                                        {JSON.stringify(step.output, null, 4)}
-                                    </StyledJson>
-                                </StyledContent>
-                            ) : null}
-                        </>
-                    )}
-                </Stack>
-            </Stack>
+                                    {step.error}
+                                </Typography>
+                            </StyledContent>
+                        ) : null}
+                        {step.isSuccessful ? (
+                            <StyledContent id="output-content">
+                                <StyledJson>
+                                    {JSON.stringify(step.output, null, 4)}
+                                </StyledJson>
+                            </StyledContent>
+                        ) : null}
+                    </Stack>
+                </Card.Actions>
+            </Card>
         );
     },
 );

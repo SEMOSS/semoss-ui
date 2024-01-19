@@ -49,6 +49,11 @@ const StyledMenuScroll = styled('div')(({ theme }) => ({
     overflowY: 'auto',
 }));
 
+const StyledListIcon = styled(List.Icon)(({ theme }) => ({
+    width: theme.spacing(4),
+    minWidth: 'unset',
+}));
+
 /**
  * Render the side menu of the nodebook
  */
@@ -219,9 +224,9 @@ export const NotebookMenu = observer((): JSX.Element => {
                                     handleQueryOptionsMenuClose();
                                 }}
                             >
-                                <List.Icon>
+                                <StyledListIcon>
                                     <Edit color="inherit" fontSize="small" />
-                                </List.Icon>
+                                </StyledListIcon>
                                 <List.ItemText primary="Edit" />
                             </List.ItemButton>
                         </List.Item>
@@ -246,12 +251,12 @@ export const NotebookMenu = observer((): JSX.Element => {
                                     notebook.selectQuery(newQueryId);
                                 }}
                             >
-                                <List.Icon>
+                                <StyledListIcon>
                                     <ContentCopy
                                         color="inherit"
                                         fontSize="small"
                                     />
-                                </List.Icon>
+                                </StyledListIcon>
                                 <List.ItemText primary="Duplicate" />
                             </List.ItemButton>
                         </List.Item>
@@ -280,9 +285,9 @@ export const NotebookMenu = observer((): JSX.Element => {
                                     handleQueryOptionsMenuClose();
                                 }}
                             >
-                                <List.Icon>
+                                <StyledListIcon>
                                     <Delete color="error" fontSize="small" />
-                                </List.Icon>
+                                </StyledListIcon>
                                 <List.ItemText
                                     primary="Delete"
                                     primaryTypographyProps={{
