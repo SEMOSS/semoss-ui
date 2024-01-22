@@ -22,6 +22,7 @@ export const config: BlockConfig<ContainerBlockDef> = {
         style: {
             display: 'flex',
             gap: '2rem',
+            overflow: 'scroll',
         },
     },
     listeners: {},

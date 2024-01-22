@@ -320,10 +320,10 @@ export class StateStore {
             const v = this.calculateParameter(match);
 
             if (typeof v === 'string') {
-                return v;
+                return v?.replace(/"/g, '\\"').replace(/'/g, "\\'");
             }
 
-            return JSON.stringify(v);
+            return JSON.stringify(v)?.replace(/"/g, '\\"').replace(/'/g, "\\'");
         });
     };
 
@@ -773,6 +773,21 @@ export class StateStore {
             },
             this,
         );
+
+        if (!config.steps.length) {
+            this.newStep(
+                queryId,
+                `${Math.floor(Math.random() * 1000000000000)}`,
+                {
+                    parameters: {
+                        code: '',
+                        type: 'pixel',
+                    },
+                    widget: 'code',
+                } as Omit<StepStateConfig, 'id'>,
+                '',
+            );
+        }
     };
 
     /**

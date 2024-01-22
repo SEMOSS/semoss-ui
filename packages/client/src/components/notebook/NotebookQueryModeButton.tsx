@@ -1,10 +1,8 @@
 import { useState } from 'react';
 import { styled, Button, Menu, MenuProps, List } from '@semoss/ui';
-import { ActionMessages, CellComponent } from '@/stores';
+import { ActionMessages, QueryState } from '@/stores';
 import { useBlocks } from '@/hooks';
-import { CodeCellDef } from './config';
-import { PythonIcon, RIcon } from './icons';
-import { KeyboardArrowDown, CodeOff } from '@mui/icons-material';
+import { AutoMode, AdsClick, KeyboardArrowDown } from '@mui/icons-material';
 
 const StyledButton = styled(Button)(({ theme }) => ({
     color: theme.palette.text.secondary,
@@ -12,7 +10,7 @@ const StyledButton = styled(Button)(({ theme }) => ({
 }));
 
 const StyledButtonLabel = styled('span')(({ theme }) => ({
-    width: theme.spacing(5.5),
+    width: theme.spacing(8),
     display: 'block',
     textAlign: 'start',
 }));
@@ -40,26 +38,21 @@ const StyledListIcon = styled(List.Icon)(({ theme }) => ({
     minWidth: 'unset',
 }));
 
-const CodeCellOptions = {
-    py: {
-        display: 'Python',
-        value: 'py',
-        icon: PythonIcon,
+const QueryModeOptions = {
+    automatic: {
+        display: 'Automatic',
+        value: 'automatic',
+        icon: AutoMode,
     },
-    r: {
-        display: 'R',
-        value: 'r',
-        icon: RIcon,
-    },
-    pixel: {
-        display: 'Pixel',
-        value: 'pixel',
-        icon: CodeOff,
+    manual: {
+        display: 'Manual',
+        value: 'manual',
+        icon: AdsClick,
     },
 };
 
-export const CodeCellTitle: CellComponent<CodeCellDef> = (props) => {
-    const { step } = props;
+export const NotebookQueryModeButton = (props: { query: QueryState }) => {
+    const { query } = props;
     const { state } = useBlocks();
     const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
     const open = Boolean(anchorEl);
@@ -73,57 +66,55 @@ export const CodeCellTitle: CellComponent<CodeCellDef> = (props) => {
                 aria-expanded={open ? 'true' : undefined}
                 variant="outlined"
                 disableElevation
-                disabled={step.isLoading}
+                disabled={query.isLoading}
                 size="small"
                 onClick={(event: React.MouseEvent<HTMLElement>) => {
                     setAnchorEl(event.currentTarget);
                 }}
                 startIcon={
-                    step.parameters.type === 'py' ? (
-                        <PythonIcon color="inherit" fontSize="small" />
-                    ) : step.parameters.type === 'r' ? (
-                        <RIcon color="inherit" fontSize="small" />
+                    query.mode === 'automatic' ? (
+                        <AutoMode color="inherit" fontSize="small" />
                     ) : (
-                        <CodeOff color="inherit" fontSize="small" />
+                        <AdsClick />
                     )
                 }
                 endIcon={<KeyboardArrowDown />}
             >
                 <StyledButtonLabel>
-                    {CodeCellOptions[step.parameters.type].display}
+                    {QueryModeOptions[query.mode].display}
                 </StyledButtonLabel>
             </StyledButton>
             <StyledMenu anchorEl={anchorEl} open={open} onClose={handleClose}>
                 <List disablePadding dense>
                     {Array.from(
-                        Object.values(CodeCellOptions),
-                        (codeCellOption) => (
+                        Object.values(QueryModeOptions),
+                        (queryModeOption) => (
                             <List.Item
                                 disablePadding
-                                key={`${step.id}-${codeCellOption.value}`}
+                                key={`${query.id}-${queryModeOption.value}`}
                             >
                                 <List.ItemButton
-                                    onClick={() => {
+                                    onClick={(e) => {
                                         state.dispatch({
-                                            message: ActionMessages.UPDATE_STEP,
+                                            message:
+                                                ActionMessages.UPDATE_QUERY,
                                             payload: {
-                                                queryId: step.query.id,
-                                                stepId: step.id,
-                                                path: 'parameters.type',
-                                                value: codeCellOption.value,
+                                                queryId: query.id,
+                                                path: 'mode',
+                                                value: queryModeOption.value,
                                             },
                                         });
                                         handleClose();
                                     }}
                                 >
                                     <StyledListIcon>
-                                        <codeCellOption.icon
+                                        <queryModeOption.icon
                                             color="inherit"
                                             fontSize="small"
                                         />
                                     </StyledListIcon>
                                     <List.ItemText
-                                        primary={codeCellOption.display}
+                                        primary={queryModeOption.display}
                                     />
                                 </List.ItemButton>
                             </List.Item>

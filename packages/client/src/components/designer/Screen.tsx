@@ -20,7 +20,8 @@ import { DeleteDuplicateMask } from './DeleteDuplicateMask';
 const StyledContainer = styled('div')(({ theme }) => ({
     position: 'relative',
     height: '100%',
-    width: '100%',
+    display: 'flex',
+    flexGrow: 1,
     paddingTop: theme.spacing(1),
     paddingLeft: theme.spacing(2),
     paddingBottom: theme.spacing(1),

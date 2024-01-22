@@ -1,8 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Builder, ConstraintSettings } from '../../prompt.types';
 import { StyledStepPaper } from '../../prompt.styled';
-import { Box, Stack, Typography } from '@semoss/ui';
-import { styled, Switch, SwitchProps } from '@mui/material';
+import { styled, Box, Stack, Typography, Switch } from '@semoss/ui';
 
 interface Constraint {
     title: string;
@@ -69,16 +68,10 @@ const StyledBox = styled(Box)(({ theme }) => ({
     },
 }));
 
-const StyledSwitch = styled((props: SwitchProps) => (
-    <Switch
-        focusVisibleClassName=".Mui-focusVisible"
-        disableRipple
-        {...props}
-    />
-))(({ theme }) => ({
-    width: 42,
-    height: 26,
-    padding: 0,
+const StyledSwitch = styled(Switch)(({ theme }) => ({
+    width: '42px!important',
+    height: '26px!important',
+    padding: '0px!important',
     '& .MuiSwitch-switchBase': {
         padding: 0,
         margin: 2,
@@ -94,10 +87,6 @@ const StyledSwitch = styled((props: SwitchProps) => (
             '&.Mui-disabled + .MuiSwitch-track': {
                 opacity: 0.5,
             },
-        },
-        '&.Mui-focusVisible .MuiSwitch-thumb': {
-            color: '#33cf4d',
-            border: '6px solid #fff',
         },
         '&.Mui-disabled .MuiSwitch-thumb': {
             color:
@@ -136,8 +125,10 @@ export const PromptBuilderConstraint = (props: {
     return (
         <StyledBox>
             <StyledSwitch
-                value={props.constraintSettings[props.constraint.key]}
-                defaultChecked={props.constraintSettings[props.constraint.key]}
+                disableRipple
+                checked={
+                    props.constraintSettings[props.constraint.key] ?? false
+                }
                 onChange={(e) => {
                     props.toggleConstraintSetting(props.constraint.key);
                     props.setBuilderValue(
@@ -171,10 +162,7 @@ export function PromptBuilderConstraintsStep(props: {
     const toggleConstraintSetting = (constraintKey: string) => {
         setConstraintSettings((state) => ({
             ...state,
-            [constraintKey]: {
-                ...state[constraintKey],
-                value: !state[constraintKey].value,
-            },
+            [constraintKey]: !state[constraintKey],
         }));
     };
     useEffect(() => {

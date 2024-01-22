@@ -14,6 +14,8 @@ import {
     PROMPT_BUILDER_CONSTRAINTS_STEP,
     PROMPT_BUILDER_PREVIEW_STEP,
     TOKEN_TYPE_INPUT,
+    INPUT_TYPE_VECTOR,
+    INPUT_TYPE_DATABASE,
 } from '../prompt.constants';
 import { styled, Box, Button, Grid, Paper } from '@semoss/ui';
 import { PromptBuilderSummary } from './summary';
@@ -22,7 +24,11 @@ import { PromptBuilderStep } from './step';
 
 const StyledPaper = styled(Paper)(({ theme }) => ({
     padding: theme.spacing(4),
+    paddingBottom: 0,
     margin: theme.spacing(1),
+    height: '100%',
+    maxHeight: '100%',
+    overflow: 'scroll',
 }));
 
 const StyledBox = styled(Box)(({ theme }) => ({
@@ -50,12 +56,6 @@ const initialBuilder: Builder = {
         value: undefined,
         required: true,
         display: 'LLM',
-    },
-    vector: {
-        step: PROMPT_BUILDER_CONTEXT_STEP,
-        value: undefined,
-        required: false,
-        display: 'Knowledge Repository',
     },
     context: {
         step: PROMPT_BUILDER_CONTEXT_STEP,
@@ -85,8 +85,9 @@ const initialBuilder: Builder = {
 
 export const PromptBuilder = () => {
     const { monolithStore } = useRootStore();
-    const [builder, setBuilder] = useState(initialBuilder);
-    const [currentBuilderStep, changeBuilderStep] = useState(1);
+    const [builder, setBuilder] = useState<Builder>(initialBuilder);
+    const [currentBuilderStep, changeBuilderStep] = useState<number>(1);
+    const [createAppLoading, setCreateAppLoading] = useState<boolean>(false);
     const navigate = useNavigate();
 
     const setBuilderValue = (
@@ -108,10 +109,11 @@ export const PromptBuilder = () => {
 
     const nextButtonAction = () => {
         if (currentBuilderStep === PROMPT_BUILDER_PREVIEW_STEP) {
+            setCreateAppLoading(true);
             // prompt flow finished, move on
             setBlocksAndOpenUIBuilder(builder, monolithStore, navigate);
-        } else if (currentBuilderStep === 2) {
-            // skip input types step if not inputs configured
+        } else if (currentBuilderStep === PROMPT_BUILDER_INPUTS_STEP) {
+            // skip input types step if no inputs configured
             const hasInputs = (builder.inputs.value as Token[]).some(
                 (token: Token) => {
                     return token.type === TOKEN_TYPE_INPUT;
@@ -123,8 +125,8 @@ export const PromptBuilder = () => {
         }
     };
     const backButtonAction = () => {
-        if (currentBuilderStep === PROMPT_BUILDER_PREVIEW_STEP) {
-            // moving back from preview step - if no input types, skip that step moving backwards
+        if (currentBuilderStep === PROMPT_BUILDER_INPUT_TYPES_STEP + 1) {
+            // moving back from step after input types step - if no input types, skip that step moving backwards
             const hasInputs = (builder.inputs.value as Token[]).some(
                 (token: Token) => {
                     return token.type === TOKEN_TYPE_INPUT;
@@ -150,11 +152,20 @@ export const PromptBuilder = () => {
                 if (stepItems[0].value === undefined) {
                     return false;
                 }
+                // if there are inputs, make sure we have types for all
+                // and types that require extra info have the extra info
                 return (
                     Object.values(stepItems[0].value).length &&
                     Object.values(stepItems[0].value).every(
-                        (type: string | null) => {
-                            return !!type;
+                        (inputType: { type: string; meta: string }) => {
+                            if (
+                                inputType?.type === INPUT_TYPE_VECTOR ||
+                                inputType?.type === INPUT_TYPE_DATABASE
+                            ) {
+                                return !!inputType.meta;
+                            } else {
+                                return !!inputType.type;
+                            }
                         },
                     )
                 );
@@ -205,6 +216,7 @@ export const PromptBuilder = () => {
                     disabled={!isBuilderStepComplete(currentBuilderStep)}
                     variant="contained"
                     onClick={nextButtonAction}
+                    loading={createAppLoading}
                 >
                     {nextButtonText}
                 </Button>

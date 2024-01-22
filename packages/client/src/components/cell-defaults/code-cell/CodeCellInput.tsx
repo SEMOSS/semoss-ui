@@ -7,7 +7,8 @@ import { CodeCellDef } from './config';
 
 const StyledContent = styled('div')(() => ({
     position: 'relative',
-    height: '200px',
+    display: 'flex',
+    height: '150px',
     overflow: 'hidden',
 }));
 
@@ -15,17 +16,27 @@ export const CodeCellInput: CellComponent<CodeCellDef> = (props) => {
     const { step } = props;
     const { state } = useBlocks();
 
+    const getEditorLanguage = (stepLanguage: string) => {
+        switch (stepLanguage) {
+            case 'py':
+                return 'python';
+            default:
+                return stepLanguage;
+        }
+    };
+
     return (
         <StyledContent>
             <Editor
-                width={'100%'}
-                height={'100%'}
+                width="100%"
+                height="100%"
                 value={step.parameters.code}
-                language={step.parameters.type}
+                language={getEditorLanguage(step.parameters.type)}
                 options={{
-                    lineNumbers: 'off',
+                    lineNumbers: 'on',
                     readOnly: false,
                     minimap: { enabled: false },
+                    automaticLayout: true,
                 }}
                 onChange={(newValue) => {
                     if (step.isLoading) {
@@ -74,7 +85,7 @@ export const CodeCellInput: CellComponent<CodeCellDef> = (props) => {
                         },
                     });
                 }}
-            ></Editor>
+            />
         </StyledContent>
     );
 };

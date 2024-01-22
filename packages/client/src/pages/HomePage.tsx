@@ -7,6 +7,7 @@ import { useNavigate } from 'react-router-dom';
 import { usePixel, useRootStore } from '@/hooks';
 import { Page } from '@/components/ui';
 import { AppMetadata, AppTileCard, AddApp } from '@/components/app';
+import { WelcomeModal } from '@/components/welcome';
 
 const StyledContainer = styled('div')(({ theme }) => ({
     display: 'flex',
@@ -208,6 +209,7 @@ export const HomePage = observer((): JSX.Element => {
                 open={addAppModal}
                 onClose={(appId) => closeAddAppModal(appId)}
             />
+            <WelcomeModal />
         </Page>
     );
 });

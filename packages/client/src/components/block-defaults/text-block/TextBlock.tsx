@@ -20,6 +20,8 @@ export const TextBlock: BlockComponent = observer(({ id }) => {
         <span
             style={{
                 ...data.style,
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
             }}
             {...attrs}
         >

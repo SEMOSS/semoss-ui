@@ -1,5 +1,9 @@
 import { ReactNode } from 'react';
-import { Stack, Typography } from '@semoss/ui';
+import { styled, Stack, Typography } from '@semoss/ui';
+
+const StyledTypography = styled(Typography)(() => ({
+    width: '30%',
+}));
 
 /**
  * Standardized styling for all setting sections
@@ -15,13 +19,14 @@ export const BaseSettingSection = (props: {
             direction="row"
             alignItems="center"
             justifyContent="space-between"
+            spacing={2}
         >
-            <Typography variant="body2">{props.label}</Typography>
+            <StyledTypography variant="body2">{props.label}</StyledTypography>
             <Stack
                 direction="row"
                 justifyContent="end"
                 spacing={1}
-                width={props?.wide ? '60%' : '50%'}
+                width="100%"
             >
                 {props.children}
             </Stack>

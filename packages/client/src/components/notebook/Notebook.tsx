@@ -1,4 +1,4 @@
-import { Container, styled } from '@semoss/ui';
+import { styled } from '@semoss/ui';
 import { observer } from 'mobx-react-lite';
 
 import { NotebookMenu } from './NotebookMenu';
@@ -16,12 +16,12 @@ const StyledNotebook = styled('div')(() => ({
 const StyledLeftPanel = styled('div')(({ theme }) => ({
     backgroundColor: theme.palette.background.paper,
     height: '100%',
-    width: theme.spacing(32),
+    width: theme.spacing(45),
     overflow: 'hidden',
     boxShadow: '0px 5px 22px 0px rgba(0, 0, 0, 0.06)',
 }));
 
-const StyledRightPanel = styled('div')(({ theme }) => ({
+const StyledRightPanel = styled('div')(() => ({
     height: '100%',
     flex: 1,
     overflow: 'hidden',
