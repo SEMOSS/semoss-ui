@@ -79,6 +79,8 @@ export const Tour = (props: { hideTour: () => void; steps: TourStep[] }) => {
     const [stepElementAnchor, setStepElementAnchor] =
         useState<HTMLElement>(null);
 
+    const hasStepElement = Boolean(stepElementAnchor);
+
     useEffect(() => {
         const currentStep = props.steps[currentStepIndex];
         const element = document.querySelector(
@@ -123,19 +125,25 @@ export const Tour = (props: { hideTour: () => void; steps: TourStep[] }) => {
 
     return (
         <>
-            <TourOverlay
-                id="tour-overlay"
-                top={stepElementHighlight.top}
-                left={stepElementHighlight.left}
-                width={stepElementHighlight.width}
-                height={stepElementHighlight.height}
-            />
-            <TourClickStop id="tour-click-stop" />
+            {hasStepElement ? (
+                <>
+                    <TourOverlay
+                        id="tour-overlay"
+                        top={stepElementHighlight.top}
+                        left={stepElementHighlight.left}
+                        width={stepElementHighlight.width}
+                        height={stepElementHighlight.height}
+                    />
+                    <TourClickStop id="tour-click-stop" />
+                </>
+            ) : (
+                <></>
+            )}
             <TourPopper
                 id="tour-popper"
                 key={`tour-step-${currentStepIndex}`}
                 placement={props.steps[currentStepIndex].position}
-                open={Boolean(stepElementAnchor)}
+                open={hasStepElement}
                 anchorEl={stepElementAnchor}
                 modifiers={[
                     {
