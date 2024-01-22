@@ -132,7 +132,6 @@ export const NavigatorLayout = observer((props) => {
             </StyledSidebar>
             <StyledContent>
                 {/* TODO - Review this: */}
-                {/* I would like to wrap AddAppPage in NavigatorLayout and use the Outlet, quick fix using children if children */}
                 {props.children ? props.children : <Outlet />}
             </StyledContent>
         </>

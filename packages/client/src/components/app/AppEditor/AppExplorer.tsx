@@ -6,7 +6,7 @@ import React, {
     useMemo,
 } from 'react';
 import { useRootStore, useAPI } from '@/hooks';
-import { TextEditor, ControlledFile } from '../';
+import { TextEditor, ControlledFile } from '../../common';
 
 import {
     Button,
