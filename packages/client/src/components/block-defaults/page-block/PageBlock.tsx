@@ -20,12 +20,13 @@ export const PageBlock: BlockComponent = observer(({ id }) => {
         <div
             style={{
                 width: '100%',
-                minHeight: '100%',
+                height: '100%',
                 background: '#FFFFFF',
                 overflow: 'scroll',
                 ...data.style,
             }}
             {...attrs}
+            data-page
         >
             <Slot slot={slots.content}></Slot>
         </div>

@@ -1,4 +1,4 @@
-import { useEffect, useRef, useCallback } from 'react';
+import { useEffect, useState, useMemo, useRef, useCallback } from 'react';
 import { observer } from 'mobx-react-lite';
 import { styled } from '@semoss/ui';
 import { useDesigner } from '@/hooks';
@@ -22,10 +22,7 @@ const StyledContainer = styled('div')(({ theme }) => ({
     height: '100%',
     display: 'flex',
     flexGrow: 1,
-    paddingTop: theme.spacing(1),
-    paddingLeft: theme.spacing(2),
-    paddingBottom: theme.spacing(1),
-    paddingRight: theme.spacing(2),
+    padding: `${theme.spacing(2.5)} ${theme.spacing(2)}`,
     overflow: 'auto',
 }));
 
@@ -51,12 +48,25 @@ const StyledContentOuter = styled('div')(({ theme }) => ({
     height: '100%',
 }));
 
-const StyledContentInner = styled('div')(() => ({
-    flex: 1,
-    position: 'relative',
-    width: '100%',
-    height: '100%',
-}));
+const StyledContentInner = styled('div', {
+    shouldForwardProp: (prop) => prop !== 'isHoveredOverSelectedBlock',
+})<{ isHoveredOverSelectedBlock: boolean }>(
+    ({ isHoveredOverSelectedBlock }) => ({
+        flex: 1,
+        position: 'relative',
+        width: '100%',
+        height: '100%',
+        cursor: !isHoveredOverSelectedBlock ? 'pointer!important' : 'inherit',
+        // iframes should not get pointer events in design mode
+        iframe: {
+            pointerEvents: 'none!important',
+        },
+        // page scrolling is handled in the designer in design mode
+        '[data-page]': {
+            height: 'unset!important',
+        },
+    }),
+);
 
 interface ScreenProps {
     /** Children to render */
@@ -73,19 +83,20 @@ export const Screen = observer((props: ScreenProps) => {
     const { designer } = useDesigner();
 
     /**
-     * Handle the mousedown on the page. This will select the nearest block.
+     * Handle the click events on the page. This will select the hovered block and prevent block clicks if it hasn't been selected yet.
      *
      *  @param event - mouse event
      */
-    const handleMouseDown = (event: React.MouseEvent) => {
-        const id = getNearestBlock(event.target as Element);
-
-        // if there is no id ignore it
-        if (!id) {
+    const handleClickCapture = (event: React.MouseEvent) => {
+        if (!designer.hovered || designer.hovered === designer.selected) {
             return;
         }
 
-        designer.setSelected(id);
+        // prevent click events for elements until selected
+        event.stopPropagation();
+        event.preventDefault();
+
+        designer.setSelected(designer.hovered);
     };
 
     /**
@@ -96,8 +107,7 @@ export const Screen = observer((props: ScreenProps) => {
     const handleMouseOver = (event: React.MouseEvent) => {
         const id = getNearestBlock(event.target as Element);
 
-        // if there is no id ignore it
-        if (!id) {
+        if (!id || id == designer.hovered) {
             return;
         }
 
@@ -107,7 +117,7 @@ export const Screen = observer((props: ScreenProps) => {
     /**
      * Handle the mouseleave on the page. This will deselect hovered widgets
      */
-    const handleMouseLeave = () => {
+    const handleMouseLeave = (event: React.MouseEvent) => {
         designer.setHovered('');
 
         // reset the placeholder / clear the ghost if is its off the screen
@@ -239,6 +249,10 @@ export const Screen = observer((props: ScreenProps) => {
         };
     }, [designer.drag.active, handleDocumentMouseMove]);
 
+    const isHoveredOverSelectedBlock = useMemo(() => {
+        return designer.hovered == designer.selected;
+    }, [designer.hovered, designer.selected, handleMouseOver]);
+
     return (
         <StyledContainer data-block="root" ref={rootRef}>
             {designer.selected && <SelectedMask />}
@@ -252,8 +266,9 @@ export const Screen = observer((props: ScreenProps) => {
             <StyledContent off={designer.drag.active ? true : false}>
                 <StyledContentOuter onMouseLeave={handleMouseLeave}>
                     <StyledContentInner
-                        onMouseDown={handleMouseDown}
                         onMouseOver={handleMouseOver}
+                        isHoveredOverSelectedBlock={isHoveredOverSelectedBlock}
+                        onClickCapture={handleClickCapture}
                     >
                         {children}
                     </StyledContentInner>

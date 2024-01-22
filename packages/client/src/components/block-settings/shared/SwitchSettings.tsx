@@ -51,6 +51,8 @@ export const SwitchSettings = observer(
                     return false;
                 } else if (typeof v === 'string') {
                     return v === 'true';
+                } else if (typeof v === 'boolean') {
+                    return v;
                 }
 
                 return JSON.stringify(v) === 'true';
@@ -88,7 +90,7 @@ export const SwitchSettings = observer(
         return (
             <BaseSettingSection label={label}>
                 <Switch
-                    value={value}
+                    checked={value}
                     onChange={(e) => {
                         // sync the data on change
                         onChange(!value);

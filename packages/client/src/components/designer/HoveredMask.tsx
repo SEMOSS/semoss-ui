@@ -5,19 +5,34 @@ import { Typography, styled } from '@semoss/ui';
 import { getRelativeSize, getRootElement, getBlockElement } from '@/stores';
 import { useDesigner } from '@/hooks';
 
-const StyledContainer = styled('div')(({ theme }) => ({
-    position: 'absolute',
-    top: '0',
-    right: '0',
-    bottom: '0',
-    left: '0',
-    zIndex: '20',
-    pointerEvents: 'none',
-    userSelect: 'none',
-    outlineWidth: '1px',
-    outlineStyle: 'solid',
-    outlineColor: theme.palette.secondary.main,
-}));
+interface StyledContainerProps {
+    top: number;
+    left: number;
+    height: number;
+    width: number;
+    hideHoveredMask: boolean;
+}
+
+const StyledContainer = styled('div', {
+    shouldForwardProp: (prop) =>
+        !['top', 'left', 'height', 'width', 'hideHoveredMask'].includes(
+            prop as string,
+        ),
+})<StyledContainerProps>(
+    ({ theme, top, left, height, width, hideHoveredMask }) => ({
+        position: 'absolute',
+        top: `${top}px`,
+        left: `${left}px`,
+        height: `${height}px`,
+        width: `${width}px`,
+        zIndex: '20',
+        opacity: hideHoveredMask ? 0 : 1,
+        pointerEvents: 'none',
+        outlineWidth: '2px',
+        outlineStyle: 'solid',
+        outlineColor: theme.palette.primary.light,
+    }),
+);
 
 const StyledTitle = styled('div')(({ theme }) => ({
     display: 'inline-flex',
@@ -28,8 +43,7 @@ const StyledTitle = styled('div')(({ theme }) => ({
     height: theme.spacing(3),
     paddingLeft: theme.spacing(1),
     paddingRight: theme.spacing(1),
-    pointerEvents: 'auto',
-    backgroundColor: theme.palette.secondary.main,
+    backgroundColor: theme.palette.primary.light,
     color: theme.palette.common.white,
     whiteSpace: 'nowrap',
 }));
@@ -56,7 +70,7 @@ export const HoveredMask = observer(() => {
 
         // reposition the mask
         const repositionMask = () => {
-            // get the block elemenent
+            // get the block element
             const blockEle = getBlockElement(designer.hovered);
 
             if (!blockEle) {
@@ -89,13 +103,13 @@ export const HoveredMask = observer(() => {
 
     return (
         <StyledContainer
-            style={{
-                top: `${size.top}px`,
-                left: `${size.left}px`,
-                height: `${size.height}px`,
-                width: `${size.width}px`,
-                opacity: designer.drag.active ? 0 : 1,
-            }}
+            top={size.top}
+            left={size.left}
+            height={size.height}
+            width={size.width}
+            hideHoveredMask={
+                designer.hovered === designer.selected || designer.drag.active
+            }
         >
             <StyledTitle>
                 <Typography variant={'body2'}>{designer.hovered}</Typography>
