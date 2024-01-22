@@ -9,6 +9,7 @@ import {
     Card,
     Chip,
     Divider,
+    Collapse,
 } from '@semoss/ui';
 import {
     ContentCopy,
@@ -20,6 +21,15 @@ import {
 } from '@mui/icons-material';
 import { ActionMessages, StepState } from '@/stores';
 import { useBlocks } from '@/hooks';
+import { NotebookAddCellButton } from './NotebookAddCellButton';
+
+const StyledCard = styled(Card, {
+    shouldForwardProp: (prop) => prop !== 'isCardStepSelected',
+})<{ isCardStepSelected: boolean }>(({ theme, isCardStepSelected }) => ({
+    border: isCardStepSelected
+        ? `1px solid ${theme.palette.primary.main}`
+        : 'unset',
+}));
 
 const StyledButtonLabel = styled('div')(() => ({
     display: 'flex',
@@ -136,10 +146,10 @@ export const NotebookStep = observer(
             }
         };
         const getStepChipLabel = () => {
-            if (step.query.isLoading) {
-                return 'Query Loading';
-            } else if (step.isLoading) {
+            if (step.isLoading) {
                 return 'Loading';
+            } else if (step.query.isLoading) {
+                return 'Query Loading';
             } else if (step.isSuccessful) {
                 return 'Success';
             } else if (step.isError) {
@@ -163,144 +173,171 @@ export const NotebookStep = observer(
         };
 
         return (
-            <Card>
-                <Card.Header
-                    title={
-                        <Stack
-                            alignItems="center"
-                            justifyContent="space-between"
-                            direction="row"
-                        >
-                            {renderedTitle}
-                            <ButtonGroup variant="outlined">
-                                <StyledButtonGroupButton
-                                    title="Run step"
-                                    disabled={step.isLoading}
-                                    size="small"
-                                    onClick={() =>
-                                        state.dispatch({
-                                            message: ActionMessages.RUN_STEP,
-                                            payload: {
-                                                queryId: step.query.id,
-                                                stepId: step.id,
-                                            },
-                                        })
-                                    }
-                                >
-                                    <StyledButtonLabel>
-                                        <PlayArrowRounded fontSize="small" />
-                                    </StyledButtonLabel>
-                                </StyledButtonGroupButton>
-                                <StyledButtonGroupButton
-                                    title="Duplicate step"
-                                    size="small"
-                                    disabled={step.isLoading}
-                                    onClick={() => {
-                                        // copy and add the step to the end
-                                        state.dispatch({
-                                            message: ActionMessages.NEW_STEP,
-                                            payload: {
-                                                queryId: step.query.id,
-                                                stepId: `${Math.floor(
-                                                    Math.random() *
-                                                        1000000000000,
-                                                )}`,
-                                                previousStepId: step
-                                                    ? step.id
-                                                    : '',
-                                                config: {
-                                                    widget: step.widget,
-                                                    parameters: {
-                                                        ...step.parameters,
+            <>
+                <StyledCard
+                    isCardStepSelected={
+                        (notebook?.selectedStep?.id ?? '') == step.id
+                    }
+                    onClick={() => notebook.selectStep(step.query.id, step.id)}
+                >
+                    <Card.Header
+                        title={
+                            <Stack
+                                alignItems="center"
+                                justifyContent="space-between"
+                                direction="row"
+                            >
+                                {renderedTitle}
+                                <ButtonGroup variant="outlined">
+                                    <StyledButtonGroupButton
+                                        title="Run step"
+                                        disabled={step.isLoading}
+                                        size="small"
+                                        onClick={() =>
+                                            state.dispatch({
+                                                message:
+                                                    ActionMessages.RUN_STEP,
+                                                payload: {
+                                                    queryId: step.query.id,
+                                                    stepId: step.id,
+                                                },
+                                            })
+                                        }
+                                    >
+                                        <StyledButtonLabel>
+                                            <PlayArrowRounded fontSize="small" />
+                                        </StyledButtonLabel>
+                                    </StyledButtonGroupButton>
+                                    <StyledButtonGroupButton
+                                        title="Duplicate step"
+                                        size="small"
+                                        disabled={step.isLoading}
+                                        onClick={() => {
+                                            // copy and add the step to the end
+                                            state.dispatch({
+                                                message:
+                                                    ActionMessages.NEW_STEP,
+                                                payload: {
+                                                    queryId: step.query.id,
+                                                    stepId: `${Math.floor(
+                                                        Math.random() *
+                                                            1000000000000,
+                                                    )}`,
+                                                    previousStepId: step
+                                                        ? step.id
+                                                        : '',
+                                                    config: {
+                                                        widget: step.widget,
+                                                        parameters: {
+                                                            ...step.parameters,
+                                                        },
                                                     },
                                                 },
-                                            },
-                                        });
-                                    }}
-                                >
-                                    <StyledButtonLabel>
-                                        <ContentCopy
-                                            fontSize="small"
-                                            sx={{ padding: '2px' }}
-                                        />
-                                    </StyledButtonLabel>
-                                </StyledButtonGroupButton>
-                                <StyledButtonGroupButton
-                                    title="Delete step"
-                                    disabled={step.isLoading}
+                                            });
+                                        }}
+                                    >
+                                        <StyledButtonLabel>
+                                            <ContentCopy
+                                                fontSize="small"
+                                                sx={{ padding: '2px' }}
+                                            />
+                                        </StyledButtonLabel>
+                                    </StyledButtonGroupButton>
+                                    <StyledButtonGroupButton
+                                        title="Delete step"
+                                        disabled={step.isLoading}
+                                        size="small"
+                                        onClick={() => {
+                                            state.dispatch({
+                                                message:
+                                                    ActionMessages.DELETE_STEP,
+                                                payload: {
+                                                    queryId: step.query.id,
+                                                    stepId: step.id,
+                                                },
+                                            });
+                                        }}
+                                    >
+                                        <StyledButtonLabel>
+                                            <DeleteOutlined fontSize="small" />
+                                        </StyledButtonLabel>
+                                    </StyledButtonGroupButton>
+                                </ButtonGroup>
+                            </Stack>
+                        }
+                    />
+                    <Divider />
+                    <Card.Content>{renderedInput}</Card.Content>
+                    <Card.Actions>
+                        <Stack spacing={2}>
+                            <Stack
+                                direction="row"
+                                spacing={2}
+                                alignItems="center"
+                            >
+                                <StyledStatusChip
                                     size="small"
-                                    onClick={() => {
-                                        state.dispatch({
-                                            message: ActionMessages.DELETE_STEP,
-                                            payload: {
-                                                queryId: step.query.id,
-                                                stepId: step.id,
-                                            },
-                                        });
-                                    }}
-                                >
-                                    <StyledButtonLabel>
-                                        <DeleteOutlined fontSize="small" />
-                                    </StyledButtonLabel>
-                                </StyledButtonGroupButton>
-                            </ButtonGroup>
+                                    avatar={getStepChipIcon()}
+                                    label={getStepChipLabel()}
+                                    status={getStepChipStatus()}
+                                />
+                                {step.executionDurationMilliseconds ? (
+                                    <Typography variant="caption">
+                                        {getExecutionTimeString(
+                                            step.executionDurationMilliseconds,
+                                        )}
+                                    </Typography>
+                                ) : (
+                                    <></>
+                                )}
+                                {step.executionDurationMilliseconds &&
+                                step.executionStart ? (
+                                    <Typography variant="caption">|</Typography>
+                                ) : (
+                                    <></>
+                                )}
+                                {step.executionStart ? (
+                                    <Typography variant="caption">
+                                        {step.executionStart}
+                                    </Typography>
+                                ) : (
+                                    <></>
+                                )}
+                            </Stack>
+                            {step.isError ? (
+                                <StyledContent>
+                                    <Typography
+                                        variant="caption"
+                                        sx={{ padding: '16px', color: 'red' }}
+                                    >
+                                        {step.error}
+                                    </Typography>
+                                </StyledContent>
+                            ) : null}
+                            {step.isSuccessful ? (
+                                <StyledContent id="output-content">
+                                    <StyledJson>
+                                        {JSON.stringify(step.output, null, 4)}
+                                    </StyledJson>
+                                </StyledContent>
+                            ) : null}
                         </Stack>
-                    }
-                />
-                <Divider />
-                <Card.Content>{renderedInput}</Card.Content>
-                <Card.Actions>
-                    <Stack spacing={2}>
-                        <Stack direction="row" spacing={2} alignItems="center">
-                            <StyledStatusChip
-                                size="small"
-                                avatar={getStepChipIcon()}
-                                label={getStepChipLabel()}
-                                status={getStepChipStatus()}
-                            />
-                            {step.executionDurationMilliseconds ? (
-                                <Typography variant="caption">
-                                    {getExecutionTimeString(
-                                        step.executionDurationMilliseconds,
-                                    )}
-                                </Typography>
-                            ) : (
-                                <></>
-                            )}
-                            {step.executionDurationMilliseconds &&
-                            step.executionStart ? (
-                                <Typography variant="caption">|</Typography>
-                            ) : (
-                                <></>
-                            )}
-                            {step.executionStart ? (
-                                <Typography variant="caption">
-                                    {step.executionStart}
-                                </Typography>
-                            ) : (
-                                <></>
-                            )}
-                        </Stack>
-                        {step.isError ? (
-                            <StyledContent>
-                                <Typography
-                                    variant="caption"
-                                    sx={{ padding: '16px', color: 'red' }}
-                                >
-                                    {step.error}
-                                </Typography>
-                            </StyledContent>
-                        ) : null}
-                        {step.isSuccessful ? (
-                            <StyledContent id="output-content">
-                                <StyledJson>
-                                    {JSON.stringify(step.output, null, 4)}
-                                </StyledJson>
-                            </StyledContent>
-                        ) : null}
+                    </Card.Actions>
+                </StyledCard>
+                <Collapse in={(notebook?.selectedStep?.id ?? '') === step.id}>
+                    <Stack
+                        direction="row"
+                        spacing={1}
+                        paddingX={2}
+                        marginTop={2}
+                    >
+                        <NotebookAddCellButton
+                            query={step.query}
+                            previousStepId={step.id}
+                        />
                     </Stack>
-                </Card.Actions>
-            </Card>
+                </Collapse>
+            </>
         );
     },
 );

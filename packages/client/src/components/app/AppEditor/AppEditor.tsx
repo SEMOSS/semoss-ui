@@ -9,7 +9,11 @@
 
 import React, { useEffect, useState, useRef } from 'react';
 import { useRootStore } from '@/hooks';
-import { TextEditor, ControlledFile, TextEditorCodeGeneration } from '../';
+import {
+    TextEditor,
+    ControlledFile,
+    TextEditorCodeGeneration,
+} from '../../common';
 import {
     Accordion,
     Button,
@@ -28,7 +32,7 @@ import {
 import { LoadingScreen } from '@/components/ui';
 
 import { Icon as FiletypeIcon } from '@mdi/react';
-import { FILE_ICON_MAP } from '../TextEditor/text-editor.constants';
+import { FILE_ICON_MAP } from '../../common/TextEditor/text-editor.constants';
 
 import {
     ExpandMore,
