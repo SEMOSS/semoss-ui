@@ -3,7 +3,7 @@ import { observer } from 'mobx-react-lite';
 import { styled, Card } from '@semoss/ui';
 
 import { ActionMessages, BlockConfig, BlockJSON } from '@/stores';
-import { useDesigner } from '@/hooks';
+import { useBlocks, useDesigner } from '@/hooks';
 import { BlocksMenuCardContent } from './BlocksMenuCardContent';
 
 const StyledCard = styled(Card)(() => ({
@@ -20,6 +20,7 @@ export const BlocksMenuCard = observer((props: { block: BlockConfig }) => {
         listeners: props.block.listeners || {},
     };
 
+    const { state } = useBlocks();
     const { designer } = useDesigner();
 
     // track if it is this one that is dragging
@@ -60,12 +61,10 @@ export const BlocksMenuCard = observer((props: { block: BlockConfig }) => {
                 placeholderAction.type === 'before' ||
                 placeholderAction.type === 'after'
             ) {
-                const siblingWidget = designer.blocks.getBlock(
-                    placeholderAction.id,
-                );
+                const siblingWidget = state.getBlock(placeholderAction.id);
 
                 if (siblingWidget?.parent) {
-                    designer.blocks.dispatch({
+                    state.dispatch({
                         message: ActionMessages.ADD_BLOCK,
                         payload: {
                             json: json,
@@ -79,7 +78,7 @@ export const BlocksMenuCard = observer((props: { block: BlockConfig }) => {
                     });
                 }
             } else if (placeholderAction.type === 'replace') {
-                designer.blocks.dispatch({
+                state.dispatch({
                     message: ActionMessages.ADD_BLOCK,
                     payload: {
                         json: json,
@@ -108,7 +107,7 @@ export const BlocksMenuCard = observer((props: { block: BlockConfig }) => {
         designer.drag.active,
         designer.drag.placeholderAction,
         designer,
-        designer.blocks,
+        state,
     ]);
 
     // add the mouse up listener when dragged

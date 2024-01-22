@@ -3,7 +3,7 @@ import { observer } from 'mobx-react-lite';
 import { styled, ButtonGroup, Button } from '@semoss/ui';
 
 import { getRelativeSize, getRootElement, getBlockElement } from '@/stores';
-import { useBlock, useDesigner } from '@/hooks';
+import { useBlock, useBlocks, useDesigner } from '@/hooks';
 import { ContentCopy, Delete } from '@mui/icons-material';
 
 const STYLED_BUTTON_GROUP_BUTTON_WIDTH = 116;
@@ -42,13 +42,25 @@ export const DeleteDuplicateMask = observer(() => {
     } | null>(null);
 
     // get the store
+    const { registry, state } = useBlocks();
     const { designer } = useDesigner();
     const { clearBlock, deleteBlock, duplicateBlock } = useBlock(
         designer.selected,
     );
 
+    // get the block
+    const block = state.getBlock(designer.selected);
+
+    // check if it is visible
+    const isVisible =
+        block && registry[block.widget] && block.widget !== 'page';
+
     // get the root, watch changes, and reposition the mask
     useLayoutEffect(() => {
+        if (!isVisible) {
+            return;
+        }
+
         // get the root element
         const rootEle = getRootElement();
 
@@ -79,9 +91,9 @@ export const DeleteDuplicateMask = observer(() => {
         repositionMask();
 
         return () => observer.disconnect();
-    }, [designer.selected]);
+    }, [designer.selected, isVisible]);
 
-    if (!size) {
+    if (!size || !isVisible) {
         return <></>;
     }
 

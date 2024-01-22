@@ -206,32 +206,28 @@ export const OutlineMenu = observer((): JSX.Element => {
 
     return (
         <StyledMenu>
-            <StyledMenuHeader>
+            {/* <StyledMenuHeader>
                 <Typography variant="body1">Pages</Typography>
             </StyledMenuHeader>
-            <div>
-                {pages.length && (
-                    <List>
-                        {pages.map((p: [string, Block]) => {
-                            return (
-                                <StyledListItemButton
-                                    key={p[0]}
-                                    dense={true}
-                                    selected={false}
-                                    hovered={true}
-                                >
-                                    {/* TO-DO: Display link of active page */}
-                                    {/* p[1].id */}
-                                    <List.ItemText primary={'/'} />
-                                    <StyledIcon>
-                                        <Home />
-                                    </StyledIcon>
-                                </StyledListItemButton>
-                            );
-                        })}
-                    </List>
-                )}
-            </div>
+            {pages.length && (
+                <List>
+                    {pages.map((p: [string, Block]) => {
+                        return (
+                            <StyledListItemButton
+                                key={p[0]}
+                                dense={true}
+                                selected={false}
+                                hovered={true}
+                            >
+                                <List.ItemText primary={'/'} />
+                                <StyledIcon>
+                                    <Home />
+                                </StyledIcon>
+                            </StyledListItemButton>
+                        );
+                    })}
+                </List>
+            )} */}
 
             <StyledMenuHeader>
                 <Typography variant="body1">Layers</Typography>

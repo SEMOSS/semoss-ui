@@ -1,7 +1,7 @@
 import { useEffect, useState, useMemo, useRef, useCallback } from 'react';
 import { observer } from 'mobx-react-lite';
 import { styled } from '@semoss/ui';
-import { useDesigner } from '@/hooks';
+import { useBlocks, useDesigner } from '@/hooks';
 
 import {
     getRelativeSize,
@@ -80,6 +80,7 @@ export const Screen = observer((props: ScreenProps) => {
     const rootRef = useRef<HTMLDivElement | null>(null);
 
     // get the designer
+    const { state } = useBlocks();
     const { designer } = useDesigner();
 
     /**
@@ -190,7 +191,7 @@ export const Screen = observer((props: ScreenProps) => {
             }
 
             // get the block
-            const block = designer.blocks.getBlock(id);
+            const block = state.getBlock(id);
 
             // if there is no parent, we cannot add
             if (!block.parent) {
@@ -228,12 +229,7 @@ export const Screen = observer((props: ScreenProps) => {
                 );
             }
         },
-        [
-            designer.drag.active,
-            designer.drag.canDrop,
-            designer,
-            designer.blocks,
-        ],
+        [designer.drag.active, designer.drag.canDrop, designer, state],
     );
 
     // add the mouse up listener when dragged

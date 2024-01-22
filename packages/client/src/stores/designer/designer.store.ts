@@ -77,14 +77,6 @@ export class DesignerStore {
      * Getters
      */
     /**
-     * Get the blocks
-     * @returns the blocks
-     */
-    get blocks() {
-        return this._store.state;
-    }
-
-    /**
      * Get the selected block
      * @returns the selected block
      */
