@@ -86,15 +86,20 @@ export const Tour = (props: { hideTour: () => void; steps: TourStep[] }) => {
         const element = document.querySelector(
             `[data-tour='${currentStep.tourAttr}']`,
         );
-        const elementRect = element.getBoundingClientRect();
-        setStepElementHightlight({
-            top: elementRect.top - currentStep.highlightPadding,
-            left: elementRect.left - currentStep.highlightPadding,
-            width: elementRect.width + currentStep.highlightPadding * 2,
-            height: elementRect.height + currentStep.highlightPadding * 2,
-        });
-
-        setStepElementAnchor(element as HTMLElement);
+        if (element) {
+            const elementRect = element.getBoundingClientRect();
+            setStepElementHightlight({
+                top: elementRect.top - currentStep.highlightPadding,
+                left: elementRect.left - currentStep.highlightPadding,
+                width: elementRect.width + currentStep.highlightPadding * 2,
+                height: elementRect.height + currentStep.highlightPadding * 2,
+            });
+            setStepElementAnchor(element as HTMLElement);
+        } else {
+            // there was an issue finding the next step element, end the tour
+            setStepElementAnchor(null);
+            props.hideTour();
+        }
     }, [currentStepIndex]);
 
     const previousStep = () => {
