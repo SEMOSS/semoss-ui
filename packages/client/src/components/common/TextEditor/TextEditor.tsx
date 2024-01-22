@@ -5,6 +5,7 @@ import { Clear, SaveOutlined } from '@mui/icons-material';
 import { Icon as FiletypeIcon } from '@mdi/react';
 import { FILE_ICON_MAP } from './text-editor.constants';
 import {
+    TextArea,
     IconButton,
     Typography,
     Container,
@@ -20,11 +21,15 @@ import Editor from '@monaco-editor/react';
 import prettier from 'prettier';
 import parserBabel from 'prettier/parser-babel';
 import parserHtml from 'prettier/parser-html';
-import parserTypescript from 'prettier/parser-typescript';
+// import parserTypescript from 'prettier/parser-typescript';
 import parserCss from 'prettier/parser-postcss';
 
 import { runPixel } from '@/api';
 import { LoadingScreen } from '@/components/ui';
+
+const StyledLLMInput = styled(TextArea)(({ theme }) => ({
+    margin: '0 20px',
+}));
 
 const StyledModalContent = styled(Modal.Content)(({ theme }) => ({
     minWidth: '350px',
@@ -213,6 +218,7 @@ export const TextEditor = (props: TextEditorProps) => {
     const [LLMStarterModalOpen, setLLMStarterModalOpen] = useState(false);
     const [LLMLoading, setLLMLoading] = useState(false);
     const [showLLMStarter, setShowLLMStarter] = useState(true);
+    const [LLMPromptInput, setLLMPromptInput] = useState('');
 
     /**
      * Listen for Keyboard Shortcuts, save and --> etc down the road
@@ -412,35 +418,41 @@ export const TextEditor = (props: TextEditorProps) => {
 
     const createStarterCode = async () => {
         let promptString = '';
-        promptString += `Generate starter, boilerplate code for a file with the file name '${activeFile.name}'. `;
-        promptString += 'Include consise explanatory comments. ';
-        promptString +=
-            'Try to cover all possible interpretations of the file name. ';
-        promptString += 'Write accurate succinct code. ';
-        promptString += 'Use descriptive concise variable names. ';
-        promptString +=
-            'Make clear explanatory notes for dependencies or imports that will have to be installed or defined externally and include instructions on how to do this properly. ';
-        promptString +=
-            'Do not include the name of the file at the beginning of the file. ';
-        promptString += 'Do not make a file that is just notes. ';
-        promptString += 'You must include code. ';
-        promptString +=
-            'Include a reminder / warning about imports and dependencies but include the actual code for imports / dependencies. ';
-        promptString +=
-            'Use actual imports / dependencies, do not make them up. ';
-        promptString +=
-            'Do not use imports / dependencies that do not actually exist or that user cannot create themselves. ';
-        promptString +=
-            'When possible create arrays, lists or values rather than importing them. ';
-        promptString +=
-            'Make a complete and stand-alone application or file when possible. ';
-        promptString +=
-            'Close all open tags, functions, quotes and code blocks.';
-        promptString += 'Do not end or cut the file off pre-maturely.';
-        promptString += 'Finish everything you start.';
-        promptString += 'There is not character limit.';
+
+        if (LLMPromptInput.length == 0) {
+            promptString += `Generate starter, boilerplate code for a file with the file name '${activeFile.name}'. `;
+            promptString += 'Include consise explanatory comments. ';
+            promptString +=
+                'Try to cover all possible interpretations of the file name. ';
+            promptString += 'Write accurate succinct code. ';
+            promptString += 'Use descriptive concise variable names. ';
+            promptString +=
+                'Make clear explanatory notes for dependencies or imports that will have to be installed or defined externally and include instructions on how to do this properly. ';
+            promptString +=
+                'Do not include the name of the file at the beginning of the file. ';
+            promptString += 'Do not make a file that is just notes. ';
+            promptString += 'You must include code. ';
+            promptString +=
+                'Include a reminder / warning about imports and dependencies but include the actual code for imports / dependencies. ';
+            promptString +=
+                'Use actual imports / dependencies, do not make them up. ';
+            promptString +=
+                'Do not use imports / dependencies that do not actually exist or that user cannot create themselves. ';
+            promptString +=
+                'When possible create arrays, lists or values rather than importing them. ';
+            promptString +=
+                'Make a complete and stand-alone application or file when possible. ';
+            promptString +=
+                'Close all open tags, functions, quotes and code blocks.';
+            promptString += 'Do not end or cut the file off pre-maturely.';
+            promptString += 'Finish everything you start.';
+            promptString += 'There is not character limit.';
+        } else {
+            promptString += `Create starter code for a file titled ${activeFile.name} based on the following description. '${LLMPromptInput}'`;
+        }
 
         let pixel = `LLM(engine = "3def3347-30e1-4028-86a0-83a1e5ed619c", command = "${promptString}", paramValues = [ {} ] );`;
+        console.log('Prompting LLM', { activeFile, promptString, pixel });
 
         try {
             const res = await runPixel(pixel);
@@ -474,6 +486,8 @@ export const TextEditor = (props: TextEditorProps) => {
         if (af && af.content.length < 1 && showLLMStarter) {
             // open LLM starter modal
             setLLMStarterModalOpen(true);
+            setLLMPromptInput('');
+            // setLLMPromptInput(`Create a file with the name "${af.name}" including explanatory comments.`);
         }
         if (af) return af;
         return null;
@@ -677,11 +691,20 @@ export const TextEditor = (props: TextEditorProps) => {
                     <Modal open={LLMStarterModalOpen}>
                         <Modal.Title>Generate Starter Code?</Modal.Title>
                         <StyledModalContent>
-                            {/* This will delete <b>{fileToBeDeleted.name}</b> */}
-                            This file appears to be empty, would you like to
-                            populate it with starter code based on the file name
-                            and file type?
+                            Would you like to populate this file it with starter
+                            code?
                         </StyledModalContent>
+                        <StyledLLMInput
+                            size={'medium'}
+                            label="Starter Prompt"
+                            value={LLMPromptInput}
+                            onChange={(e) => {
+                                setLLMPromptInput(e.target.value);
+                            }}
+                            helperText={
+                                "Describe the file you'd to like generated."
+                            }
+                        />
                         <Modal.Actions>
                             <Checkbox
                                 label="Do not show again"
