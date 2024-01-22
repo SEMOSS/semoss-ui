@@ -1,9 +1,14 @@
 import { useState } from 'react';
-import { styled, Button, Stack, Typography, List, Grid } from '@semoss/ui';
+import { styled, Button, Stack, Typography } from '@semoss/ui';
 import { useNavigate } from 'react-router-dom';
 import { FileUploadOutlined } from '@mui/icons-material';
 
-import { NewAppStep, AddApp, AppTemplates } from '@/components/app';
+import {
+    NewAppStep,
+    AddApp,
+    AppTemplates,
+    NewAppModal,
+} from '@/components/app';
 import CodeSprite from '@/assets/img/CodeSprite.svg';
 import BlocksSprite from '@/assets/img/BlocksSprite.svg';
 import PromptSprite from '@/assets/img/PromptSprite.svg';
@@ -81,6 +86,11 @@ export const NewAppPage = () => {
 
     const [isLoading, setIsLoading] = useState(false);
     const [isUploadOpen, setIsUploadOpen] = useState(false);
+    const [newAppOptions, setNewAppOptions] = useState<
+        React.ComponentProps<typeof NewAppModal>['options'] | null
+    >(null);
+
+    const isNameOpen = !!newAppOptions;
 
     /**
      * Navigate to the app and open it
@@ -92,7 +102,7 @@ export const NewAppPage = () => {
             return;
         }
 
-        navigate(`${appId}`);
+        navigate(`/app/${appId}`);
     };
 
     return (
@@ -112,6 +122,21 @@ export const NewAppPage = () => {
 
                         // close it
                         setIsUploadOpen(false);
+                    }}
+                />
+            ) : null}
+
+            {isNameOpen ? (
+                <NewAppModal
+                    open={isNameOpen}
+                    options={newAppOptions}
+                    onClose={(appId) => {
+                        if (appId) {
+                            navigateApp(appId);
+                        }
+
+                        // close the modal
+                        setNewAppOptions(null);
                     }}
                 />
             ) : null}
@@ -162,6 +187,11 @@ export const NewAppPage = () => {
                                     sx={{
                                         width: 'fit-content',
                                     }}
+                                    onClick={() =>
+                                        setNewAppOptions({
+                                            type: 'code',
+                                        })
+                                    }
                                 >
                                     Get Started
                                 </Button>
@@ -191,6 +221,15 @@ export const NewAppPage = () => {
                                     sx={{
                                         width: 'fit-content',
                                     }}
+                                    onClick={() =>
+                                        setNewAppOptions({
+                                            type: 'blocks',
+                                            state: {
+                                                queries: {},
+                                                blocks: {},
+                                            },
+                                        })
+                                    }
                                 >
                                     Get Started
                                 </Button>
@@ -221,6 +260,11 @@ export const NewAppPage = () => {
                                     sx={{
                                         width: 'fit-content',
                                     }}
+                                    onClick={() =>
+                                        setNewAppOptions({
+                                            type: 'prompt',
+                                        })
+                                    }
                                 >
                                     Get Started
                                 </Button>
@@ -250,7 +294,14 @@ export const NewAppPage = () => {
                             app to your specific use case.
                         </Typography>
                     </Stack>
-                    <AppTemplates />
+                    <AppTemplates
+                        onUse={(t) => {
+                            setNewAppOptions({
+                                type: 'blocks',
+                                state: t.state,
+                            });
+                        }}
+                    />
                 </Stack>
             </Stack>
         </NewAppStep>

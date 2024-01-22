@@ -1,13 +1,10 @@
-import React, { useState } from 'react';
-import { Page } from '@/components/ui';
+import { useState } from 'react';
 import {
     Autocomplete,
     Button,
     Box,
     Card,
     FileDropzone,
-    Grid,
-    Stack,
     TextArea,
     TextField,
     Typography,
@@ -17,7 +14,6 @@ import {
 
 import { Controller, useForm } from 'react-hook-form';
 import { useRootStore } from '@/hooks';
-import { CSVQueryApp, HelloWorldApp, SerializedState } from '@/stores';
 
 import { AppMetadata } from './app.types';
 
@@ -286,7 +282,7 @@ export const ImportAppForm = (props: CreateAppProps) => {
             // TODO: allow creation from other jsons
             const pixel = `CreateAppFromBlocks ( project = [ "${
                 formVals.APP_NAME
-            }" ] , json =[${JSON.stringify(HelloWorldApp)}]  ) ;`;
+            }" ] , json =[${JSON.stringify({})}]  ) ;`;
 
             // create the app
             const { pixelReturn } = await monolithStore.runQuery<[AppMetadata]>(
@@ -300,7 +296,7 @@ export const ImportAppForm = (props: CreateAppProps) => {
             // TODO: fix this
             const pixel = `CreateAppFromBlocks ( project = [ "${
                 formVals.APP_NAME
-            }" ] , json =[${JSON.stringify(CSVQueryApp)}]  ) ;`;
+            }" ] , json =[${JSON.stringify({})}]  ) ;`;
 
             // create the app
             const { pixelReturn } = await monolithStore.runQuery<[AppMetadata]>(

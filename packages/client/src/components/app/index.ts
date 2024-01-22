@@ -10,4 +10,5 @@ export * from './ConnectEngines';
 export * from './ImportAppForm';
 export * from './ImportAppAccess';
 export * from './NewAppStep';
+export * from './NewAppModal';
 export * from './AppTemplates';
