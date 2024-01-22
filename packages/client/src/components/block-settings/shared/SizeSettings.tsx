@@ -3,7 +3,7 @@ import { computed } from 'mobx';
 import { observer } from 'mobx-react-lite';
 import { TextField, ToggleButton, ToggleButtonGroup } from '@semoss/ui';
 import { Paths, PathValue } from '@/types';
-import { useBlockSettings, useDesigner } from '@/hooks';
+import { useBlockSettings, useBlocks } from '@/hooks';
 import { ActionMessages, Block, BlockDef } from '@/stores';
 import { getValueByPath } from '@/utility';
 import { BaseSettingSection } from '../BaseSettingSection';
@@ -38,8 +38,8 @@ export const SizeSettings = observer(
         label = '',
         path,
     }: SizeSettingsProps<D>) => {
+        const { state } = useBlocks();
         const { data, setData } = useBlockSettings<D>(id);
-        const { designer } = useDesigner();
 
         // track the value
         const [value, setValue] = useState('');
@@ -119,7 +119,7 @@ export const SizeSettings = observer(
                         valueWithUnit as PathValue<D['data'], typeof path>,
                     );
                     // emit event to resize the block on the screen
-                    designer.blocks.dispatch({
+                    state.dispatch({
                         message: ActionMessages.DISPATCH_EVENT,
                         payload: {
                             name: 'blockResized',

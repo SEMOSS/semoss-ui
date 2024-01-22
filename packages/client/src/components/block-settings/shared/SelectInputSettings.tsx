@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { computed } from 'mobx';
 import { observer } from 'mobx-react-lite';
 import { Paths, PathValue } from '@/types';
-import { useBlockSettings, useDesigner } from '@/hooks';
+import { useBlockSettings, useBlocks } from '@/hooks';
 import { ActionMessages, Block, BlockDef } from '@/stores';
 import { getValueByPath } from '@/utility';
 import { BaseSettingSection } from '../BaseSettingSection';
@@ -66,7 +66,7 @@ export const SelectInputSettings = observer(
         resizeOnSet = false,
     }: SelectInputSettingsProps<D>) => {
         const { data, setData } = useBlockSettings(id);
-        const { designer } = useDesigner();
+        const { state } = useBlocks();
 
         const [autocompleteOptions, setAutocompleteOptions] = useState<
             Array<string>
@@ -131,7 +131,7 @@ export const SelectInputSettings = observer(
                     setData(path, value as PathValue<D['data'], typeof path>);
                     if (resizeOnSet) {
                         // emit event to resize the block on the screen
-                        designer.blocks.dispatch({
+                        state.dispatch({
                             message: ActionMessages.DISPATCH_EVENT,
                             payload: {
                                 name: 'blockResized',

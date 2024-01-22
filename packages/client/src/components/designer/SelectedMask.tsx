@@ -8,9 +8,9 @@ import {
     getRootElement,
     getBlockElement,
 } from '@/stores';
-import { useDesigner } from '@/hooks';
+import { useBlocks, useDesigner } from '@/hooks';
 
-import DragIndicatorIcon from '@mui/icons-material/DragIndicator';
+import { DragIndicator } from '@mui/icons-material';
 
 const StyledContainer = styled('div')(({ theme }) => ({
     position: 'absolute',
@@ -34,6 +34,7 @@ const StyledTitle = styled('div')(({ theme }) => ({
     left: `-1px`,
     height: theme.spacing(3),
     paddingLeft: theme.spacing(1),
+    paddingRight: theme.spacing(1),
     pointerEvents: 'auto',
     cursor: 'grab',
     backgroundColor: theme.palette.primary.main,
@@ -55,19 +56,28 @@ export const SelectedMask = observer(() => {
     const [local, setLocal] = useState(false);
 
     // get the store
+    const { registry, state } = useBlocks();
     const { designer } = useDesigner();
 
     // get the block
-    const block = designer.blocks.getBlock(designer.selected);
+    const block = state.getBlock(designer.selected);
+
+    // check if it is draggable
+    const isDraggable =
+        block && registry[block.widget] && block.widget !== 'page';
 
     /**
      * Handle the mousedown on the block.
      */
     const handleMouseDown = () => {
+        if (!isDraggable) {
+            return;
+        }
+
         // set the dragged
         designer.activateDrag(block.widget, (parent) => {
             // if the parent block is a child of the selected, we cannot add
-            if (designer.blocks.containsBlock(designer.selected, parent)) {
+            if (state.containsBlock(designer.selected, parent)) {
                 return false;
             }
 
@@ -96,12 +106,10 @@ export const SelectedMask = observer(() => {
                 placeholderAction.type === 'before' ||
                 placeholderAction.type === 'after'
             ) {
-                const siblingWidget = designer.blocks.getBlock(
-                    placeholderAction.id,
-                );
+                const siblingWidget = state.getBlock(placeholderAction.id);
 
                 if (siblingWidget.parent) {
-                    designer.blocks.dispatch({
+                    state.dispatch({
                         message: ActionMessages.MOVE_BLOCK,
                         payload: {
                             id: designer.selected,
@@ -115,7 +123,7 @@ export const SelectedMask = observer(() => {
                     });
                 }
             } else if (placeholderAction.type === 'replace') {
-                designer.blocks.dispatch({
+                state.dispatch({
                     message: ActionMessages.MOVE_BLOCK,
                     payload: {
                         id: designer.selected,
@@ -140,7 +148,7 @@ export const SelectedMask = observer(() => {
         designer.selected,
         designer.drag.active,
         designer.drag.placeholderAction,
-        designer.blocks,
+        state,
         designer,
     ]);
 
@@ -221,7 +229,12 @@ export const SelectedMask = observer(() => {
         >
             <StyledTitle onMouseDown={handleMouseDown}>
                 <Typography variant={'body2'}>{designer.selected}</Typography>
-                <DragIndicatorIcon sx={{ padding: '2px' }} />
+                {isDraggable && (
+                    <DragIndicator
+                        fontSize="inherit"
+                        sx={{ marginLeft: '2px' }}
+                    />
+                )}
             </StyledTitle>
         </StyledContainer>
     );

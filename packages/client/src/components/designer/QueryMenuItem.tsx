@@ -28,7 +28,7 @@ interface QueryMenuItemProps {
 
 export const QueryMenuItem = (props: QueryMenuItemProps) => {
     const { query } = props;
-    const { notebook } = useBlocks();
+    const { notebook, state } = useBlocks();
     const { workspace } = useWorkspace();
     const { designer } = useDesigner();
 
@@ -81,12 +81,10 @@ export const QueryMenuItem = (props: QueryMenuItemProps) => {
                 placeholderAction.type === 'before' ||
                 placeholderAction.type === 'after'
             ) {
-                const siblingWidget = designer.blocks.getBlock(
-                    placeholderAction.id,
-                );
+                const siblingWidget = state.getBlock(placeholderAction.id);
 
                 if (siblingWidget?.parent) {
-                    designer.blocks.dispatch({
+                    state.dispatch({
                         message: ActionMessages.ADD_BLOCK,
                         payload: {
                             json: json,
@@ -100,7 +98,7 @@ export const QueryMenuItem = (props: QueryMenuItemProps) => {
                     });
                 }
             } else if (placeholderAction.type === 'replace') {
-                designer.blocks.dispatch({
+                state.dispatch({
                     message: ActionMessages.ADD_BLOCK,
                     payload: {
                         json: json,
@@ -129,7 +127,7 @@ export const QueryMenuItem = (props: QueryMenuItemProps) => {
         designer.drag.active,
         designer.drag.placeholderAction,
         designer,
-        designer.blocks,
+        state,
     ]);
 
     // add the mouse up listener when dragged
