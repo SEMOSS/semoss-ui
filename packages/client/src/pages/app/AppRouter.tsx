@@ -1,28 +1,19 @@
 import { observer } from 'mobx-react-lite';
-import { Outlet, Routes, Route, Navigate } from 'react-router-dom';
+import { Routes, Route, Navigate } from 'react-router-dom';
 import { AppPage } from './AppPage';
-import { AddAppPage } from './AddAppPage';
-import { AddAppLayout } from './AddAppLayout';
+import { NewAppPage } from './NewAppPage';
 
 // Fix these
 import { NavigatorLayout } from '../NavigatorLayout';
+import { NewPromptBuilderAppPage } from './NewPromptBuilderAppPage';
 
 export const AppRouter = observer(() => {
     return (
         <Routes>
             {/* New Apps */}
-            <Route
-                path="new"
-                element={
-                    <NavigatorLayout>
-                        <AddAppLayout />
-                    </NavigatorLayout>
-                }
-            >
-                <Route index element={<AddAppPage />}></Route>
-                {/* Build with template */}
-                {/* <Route path="configure" element={<div></div>}></Route> */}
-                {/* <Route path="members" element={<div></div>}></Route>  */}
+            <Route path="new" element={<NavigatorLayout />}>
+                <Route index element={<NewAppPage />} />
+                <Route path="prompt" element={<NewPromptBuilderAppPage />} />
             </Route>
             {/* Already Built App */}
             <Route path=":appId" element={<AppPage />}></Route>
