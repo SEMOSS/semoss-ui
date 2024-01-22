@@ -21,10 +21,7 @@ interface NewAppModalProps {
     open: boolean;
 
     /** Options to load the modal with */
-    options:
-        | { type: 'blocks'; state: SerializedState }
-        | { type: 'code' }
-        | { type: 'prompt' };
+    options: { type: 'blocks'; state: SerializedState } | { type: 'code' };
 
     /** Callback that is triggered onClose */
     onClose: (appId?: string) => void;
@@ -90,8 +87,6 @@ export const NewAppModal = (props: NewAppModalProps) => {
                 }
 
                 appId = pixelReturn[0].output.project_id;
-            } else if (type === 'prompt') {
-                console.warn('TODO');
             } else {
                 return;
             }

@@ -5,19 +5,16 @@ import { NewAppPage } from './NewAppPage';
 
 // Fix these
 import { NavigatorLayout } from '../NavigatorLayout';
+import { NewPromptBuilderAppPage } from './NewPromptBuilderAppPage';
 
 export const AppRouter = observer(() => {
     return (
         <Routes>
             {/* New Apps */}
-            <Route
-                path="new"
-                element={
-                    <NavigatorLayout>
-                        <NewAppPage />
-                    </NavigatorLayout>
-                }
-            ></Route>
+            <Route path="new" element={<NavigatorLayout />}>
+                <Route index element={<NewAppPage />} />
+                <Route path="prompt" element={<NewPromptBuilderAppPage />} />
+            </Route>
             {/* Already Built App */}
             <Route path=":appId" element={<AppPage />}></Route>
             <Route path="*" element={<Navigate to={`/`} replace />} />

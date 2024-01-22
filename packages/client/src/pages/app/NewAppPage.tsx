@@ -108,7 +108,7 @@ export const NewAppPage = () => {
     return (
         <NewAppStep
             title={'Create New App'}
-            previous={{ title: 'App Libarary', onClick: () => navigate('/') }}
+            previous={{ title: 'App Library', onClick: () => navigate('/') }}
             isLoading={isLoading}
         >
             {isUploadOpen ? (
@@ -260,11 +260,7 @@ export const NewAppPage = () => {
                                     sx={{
                                         width: 'fit-content',
                                     }}
-                                    onClick={() =>
-                                        setNewAppOptions({
-                                            type: 'prompt',
-                                        })
-                                    }
+                                    onClick={() => navigate('./prompt')}
                                 >
                                     Get Started
                                 </Button>
