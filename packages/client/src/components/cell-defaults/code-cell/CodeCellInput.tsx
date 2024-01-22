@@ -2,33 +2,38 @@ import { useRef, useState } from 'react';
 import Editor from '@monaco-editor/react';
 import { styled } from '@semoss/ui';
 
-import { ActionMessages, CellComponent } from '@/stores';
+import { ActionMessages, Block, CellComponent, QueryState } from '@/stores';
 import { useBlocks } from '@/hooks';
 import { CodeCellDef } from './config';
+import { MenuBlocks } from '@/components/block-defaults';
+import { BLOCK_TYPE_INPUT } from '@/components/block-defaults/block-defaults.constants';
+
+const EditorLineHeight = 19;
 
 const StyledContent = styled('div')(() => ({
     position: 'relative',
     display: 'flex',
-    overflow: 'hidden',
+    '.monaco-editor': {
+        '.suggest-widget': {
+            maxHeight: `${EditorLineHeight * 4.5}px!important`,
+            overflowY: 'scroll',
+            overflowX: 'hidden',
+        },
+    },
 }));
 
-const EditorLineHeight = 19;
+const EditorLanguages = {
+    py: 'python',
+    pixel: 'pixel',
+    r: 'r',
+};
 
 export const CodeCellInput: CellComponent<CodeCellDef> = (props) => {
     const editorRef = useRef(null);
     const [editorHeight, setEditorHeight] = useState<number>(null);
 
     const { step } = props;
-    const { state } = useBlocks();
-
-    const getEditorLanguage = (stepLanguage: string) => {
-        switch (stepLanguage) {
-            case 'py':
-                return 'python';
-            default:
-                return stepLanguage;
-        }
-    };
+    const { state, notebook } = useBlocks();
 
     const handleMount = (editor, monaco) => {
         // first time you set the height based on content Height
@@ -63,11 +68,99 @@ export const CodeCellInput: CellComponent<CodeCellDef> = (props) => {
                 });
             },
         });
+
+        // add editor completion suggestions based on block values and query outputs
+        const generateSuggestions = (range) => {
+            let suggestions = [];
+            Object.values(state.blocks).forEach((block: Block) => {
+                // only input block types will have values
+                const inputBlockWidgets = Object.keys(MenuBlocks).filter(
+                    (block) => MenuBlocks[block].type === BLOCK_TYPE_INPUT,
+                );
+                if (inputBlockWidgets.includes(block.widget)) {
+                    suggestions.push({
+                        label: `{{${block.id}.value}}`,
+                        kind: monaco.languages.CompletionItemKind.Variable,
+                        documentation: `Reference the value of block ${block.id}`,
+                        insertText: `{{${block.id}.value}}`,
+                        range: range,
+                    });
+                }
+            });
+            notebook.queriesList.forEach((query: QueryState) => {
+                suggestions.push({
+                    label: `{{${query.id}.data.0.output}}`,
+                    kind: monaco.languages.CompletionItemKind.Variable,
+                    documentation: `Reference the output of query ${query.id}`,
+                    insertText: `{{${query.id}.data.0.output}}`,
+                    range: range,
+                });
+            });
+
+            return suggestions;
+        };
+
+        // register custom pixel language
+        monaco.languages.register({ id: 'pixel' });
+
+        // add suggestions for each language
+        Object.values(EditorLanguages).forEach((language) => {
+            monaco.languages.registerCompletionItemProvider(language, {
+                provideCompletionItems: (model, position) => {
+                    const word = model.getWordUntilPosition(position);
+                    // getWordUntilPosition doesn't track when words are led by special characters
+                    // we need to chack for wrapping curly brackets manually to know what to replace
+
+                    // triggerCharacters is triggered per character, so we need to check if the users has typed "{" or "{{"
+                    var specialCharacterStartRange = {
+                        startLineNumber: position.lineNumber,
+                        endLineNumber: position.lineNumber,
+                        startColumn: word.startColumn - 2,
+                        endColumn: word.startColumn,
+                    };
+                    const preceedingTwoCharacters = model.getValueInRange(
+                        specialCharacterStartRange,
+                    );
+                    const replaceRangeStartBuffer =
+                        preceedingTwoCharacters === '{{' ? 2 : 1;
+                    // python editor will automatically add closed bracket when you type a start one
+                    // need to replace the closed brackets appropriately
+                    var specialCharacterEndRange = {
+                        startLineNumber: position.lineNumber,
+                        endLineNumber: position.lineNumber,
+                        startColumn: word.endColumn,
+                        endColumn: word.endColumn + 2,
+                    };
+                    const followingTwoCharacters = model.getValueInRange(
+                        specialCharacterEndRange,
+                    );
+                    const replaceRangeEndBuffer =
+                        followingTwoCharacters === '}}'
+                            ? 2
+                            : followingTwoCharacters == '} ' ||
+                              followingTwoCharacters == '}'
+                            ? 1
+                            : 0;
+
+                    // compose range that we want to replace with the suggestion
+                    const replaceRange = {
+                        startLineNumber: position.lineNumber,
+                        endLineNumber: position.lineNumber,
+                        startColumn: word.startColumn - replaceRangeStartBuffer,
+                        endColumn: word.endColumn + replaceRangeEndBuffer,
+                    };
+                    return { suggestions: generateSuggestions(replaceRange) };
+                },
+                triggerCharacters: ['{'],
+            });
+        });
     };
 
     const handleChange = (newValue: string) => {
+        // pad an extra line so autocomplete is visible
         setEditorHeight(
-            editorRef.current.getModel().getLineCount() * EditorLineHeight,
+            (editorRef.current.getModel().getLineCount() + 2) *
+                EditorLineHeight,
         );
         if (step.isLoading) {
             return;
@@ -90,7 +183,7 @@ export const CodeCellInput: CellComponent<CodeCellDef> = (props) => {
                 width="100%"
                 height={editorHeight}
                 value={step.parameters.code}
-                language={getEditorLanguage(step.parameters.type)}
+                language={EditorLanguages[step.parameters.type]}
                 options={{
                     lineNumbers: 'on',
                     readOnly: false,
