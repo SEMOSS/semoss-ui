@@ -6,6 +6,7 @@ import { Icon as FiletypeIcon } from '@mdi/react';
 import { FILE_ICON_MAP } from './text-editor.constants';
 import {
     TextArea,
+    TextField,
     IconButton,
     Typography,
     Container,
@@ -26,6 +27,11 @@ import parserCss from 'prettier/parser-postcss';
 
 import { runPixel } from '@/api';
 import { LoadingScreen } from '@/components/ui';
+
+const StyledLabel = styled('strong')(({ theme }) => ({
+    marginRight: '10px',
+    fontSize: '16px',
+}));
 
 const StyledLLMInput = styled(TextArea)(({ theme }) => ({
     margin: '0 20px',
@@ -672,6 +678,40 @@ export const TextEditor = (props: TextEditorProps) => {
                         {formatFilePath(activeFile.id)}
                     </StyledActiveFilePath>
 
+                    <div
+                        style={{
+                            backgroundColor: '#D9D9D914',
+                            padding: '12px 16px 12px 16px',
+                            display: 'flex',
+                            alignItems: 'center',
+                        }}
+                    >
+                        <StyledLabel>Generate</StyledLabel>
+
+                        <TextField
+                            size="small"
+                            style={{ flexGrow: 1 }}
+                            placeholder="Enter prompt to generate the code"
+                            value={LLMPromptInput}
+                            onChange={(e) => {
+                                setLLMPromptInput(e.target.value);
+                            }}
+                            onKeyUp={(e) => {
+                                if (e.key == 'Enter') {
+                                    alert(LLMPromptInput);
+                                }
+                            }}
+                        />
+
+                        <StyledCloseTab
+                            size={'small'}
+                            onClick={async (e) => {
+                                alert('hello!');
+                            }}
+                        >
+                            <StyledClear />
+                        </StyledCloseTab>
+                    </div>
                     <Editor
                         // theme={'vs-dark'}
                         width={'100%'}
