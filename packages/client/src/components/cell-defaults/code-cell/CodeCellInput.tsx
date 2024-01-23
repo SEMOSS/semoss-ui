@@ -24,6 +24,9 @@ const EditorLanguages = {
     r: 'r',
 };
 
+// track completion providers outside of render context
+let completionItemProviders = {};
+
 export const CodeCellInput: CellComponent<CodeCellDef> = (props) => {
     const editorRef = useRef(null);
     const [editorHeight, setEditorHeight] = useState<number>(null);
@@ -67,35 +70,47 @@ export const CodeCellInput: CellComponent<CodeCellDef> = (props) => {
 
         // add editor completion suggestions based on block values and query outputs
         const generateSuggestions = (range) => {
-            let suggestions = {}; // prevent duplicates
+            let suggestions = [];
             Object.values(state.blocks).forEach((block: Block) => {
                 // only input block types will have values
                 const inputBlockWidgets = Object.keys(MenuBlocks).filter(
                     (block) => MenuBlocks[block].type === BLOCK_TYPE_INPUT,
                 );
                 if (inputBlockWidgets.includes(block.widget)) {
-                    suggestions[`block-${block.id}`] = {
-                        label: `{{${block.id}.value}}`,
+                    suggestions.push({
+                        label: {
+                            label: `{{${block.id}.value}}`,
+                            description: block.data?.value
+                                ? JSON.stringify(block.data?.value)
+                                : '',
+                        },
                         kind: monaco.languages.CompletionItemKind.Variable,
                         documentation: `Reference the value of block ${block.id}`,
                         insertText: `{{${block.id}.value}}`,
                         range: range,
-                    };
+                    });
                 }
             });
             notebook.queriesList.forEach((query: QueryState) => {
-                suggestions[`query-${query.id}`] = {
-                    label: `{{${query.id}.data.0.output}}`,
-                    kind: monaco.languages.CompletionItemKind.Variable,
-                    documentation: `Reference the output of query ${query.id}`,
-                    insertText: `{{${query.id}.data.0.output}}`,
-                    range: range,
-                };
+                // don't push the query that the step belongs to
+                if (query.id !== step.query.id) {
+                    suggestions.push({
+                        label: {
+                            label: `{{${query.id}.data}}`,
+                            description: query.data
+                                ? JSON.stringify(query.data)
+                                : '',
+                        },
+                        kind: monaco.languages.CompletionItemKind.Variable,
+                        documentation: `Reference the output of query ${query.id}`,
+                        insertText: `{{${query.id}.data}}`,
+                        range: range,
+                        detail: query.id,
+                    });
+                }
             });
 
-            console.log(Object.values(suggestions));
-
-            return Object.values(suggestions);
+            return suggestions;
         };
 
         // register custom pixel language
@@ -103,54 +118,70 @@ export const CodeCellInput: CellComponent<CodeCellDef> = (props) => {
 
         // add suggestions for each language
         Object.values(EditorLanguages).forEach((language) => {
-            monaco.languages.registerCompletionItemProvider(language, {
-                provideCompletionItems: (model, position) => {
-                    const word = model.getWordUntilPosition(position);
-                    // getWordUntilPosition doesn't track when words are led by special characters
-                    // we need to chack for wrapping curly brackets manually to know what to replace
+            // if suggestion already exist, dispose and re-add
+            // this may be superfluous at times but we re-add instead of setting up suggestions once
+            // so that we are pulling more real-time values off of the blocks/queries
+            if (!!completionItemProviders[language]) {
+                completionItemProviders[language].dispose();
+            }
+            completionItemProviders = {
+                ...completionItemProviders,
+                [language]: monaco.languages.registerCompletionItemProvider(
+                    language,
+                    {
+                        provideCompletionItems: (model, position) => {
+                            const word = model.getWordUntilPosition(position);
+                            // getWordUntilPosition doesn't track when words are led by special characters
+                            // we need to chack for wrapping curly brackets manually to know what to replace
 
-                    // triggerCharacters is triggered per character, so we need to check if the users has typed "{" or "{{"
-                    var specialCharacterStartRange = {
-                        startLineNumber: position.lineNumber,
-                        endLineNumber: position.lineNumber,
-                        startColumn: word.startColumn - 2,
-                        endColumn: word.startColumn,
-                    };
-                    const preceedingTwoCharacters = model.getValueInRange(
-                        specialCharacterStartRange,
-                    );
-                    const replaceRangeStartBuffer =
-                        preceedingTwoCharacters === '{{' ? 2 : 1;
-                    // python editor will automatically add closed bracket when you type a start one
-                    // need to replace the closed brackets appropriately
-                    var specialCharacterEndRange = {
-                        startLineNumber: position.lineNumber,
-                        endLineNumber: position.lineNumber,
-                        startColumn: word.endColumn,
-                        endColumn: word.endColumn + 2,
-                    };
-                    const followingTwoCharacters = model.getValueInRange(
-                        specialCharacterEndRange,
-                    );
-                    const replaceRangeEndBuffer =
-                        followingTwoCharacters === '}}'
-                            ? 2
-                            : followingTwoCharacters == '} ' ||
-                              followingTwoCharacters == '}'
-                            ? 1
-                            : 0;
+                            // triggerCharacters is triggered per character, so we need to check if the users has typed "{" or "{{"
+                            var specialCharacterStartRange = {
+                                startLineNumber: position.lineNumber,
+                                endLineNumber: position.lineNumber,
+                                startColumn: word.startColumn - 2,
+                                endColumn: word.startColumn,
+                            };
+                            const preceedingTwoCharacters =
+                                model.getValueInRange(
+                                    specialCharacterStartRange,
+                                );
+                            const replaceRangeStartBuffer =
+                                preceedingTwoCharacters === '{{' ? 2 : 1;
+                            // python editor will automatically add closed bracket when you type a start one
+                            // need to replace the closed brackets appropriately
+                            var specialCharacterEndRange = {
+                                startLineNumber: position.lineNumber,
+                                endLineNumber: position.lineNumber,
+                                startColumn: word.endColumn,
+                                endColumn: word.endColumn + 2,
+                            };
+                            const followingTwoCharacters =
+                                model.getValueInRange(specialCharacterEndRange);
+                            const replaceRangeEndBuffer =
+                                followingTwoCharacters === '}}'
+                                    ? 2
+                                    : followingTwoCharacters == '} ' ||
+                                      followingTwoCharacters == '}'
+                                    ? 1
+                                    : 0;
 
-                    // compose range that we want to replace with the suggestion
-                    const replaceRange = {
-                        startLineNumber: position.lineNumber,
-                        endLineNumber: position.lineNumber,
-                        startColumn: word.startColumn - replaceRangeStartBuffer,
-                        endColumn: word.endColumn + replaceRangeEndBuffer,
-                    };
-                    return { suggestions: generateSuggestions(replaceRange) };
-                },
-                triggerCharacters: ['{'],
-            });
+                            // compose range that we want to replace with the suggestion
+                            const replaceRange = {
+                                startLineNumber: position.lineNumber,
+                                endLineNumber: position.lineNumber,
+                                startColumn:
+                                    word.startColumn - replaceRangeStartBuffer,
+                                endColumn:
+                                    word.endColumn + replaceRangeEndBuffer,
+                            };
+                            return {
+                                suggestions: generateSuggestions(replaceRange),
+                            };
+                        },
+                        triggerCharacters: ['{'],
+                    },
+                ),
+            };
         });
     };
 
