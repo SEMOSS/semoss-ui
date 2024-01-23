@@ -81,6 +81,20 @@ export const Tour = (props: { hideTour: () => void; steps: TourStep[] }) => {
 
     const hasStepElement = Boolean(stepElementAnchor);
 
+    const previousStep = () => {
+        setCurrentStepIndex(currentStepIndex - 1);
+    };
+    const nextStep = () => {
+        if (currentStepIndex + 1 === props.steps.length) {
+            // tour is done
+            props.hideTour();
+        } else {
+            setCurrentStepIndex(currentStepIndex + 1);
+        }
+    };
+    const nextStepLabel =
+        currentStepIndex + 1 === props.steps.length ? 'Finish' : 'Next';
+
     useEffect(() => {
         const currentStep = props.steps[currentStepIndex];
         const element = document.querySelector(
@@ -96,25 +110,10 @@ export const Tour = (props: { hideTour: () => void; steps: TourStep[] }) => {
             });
             setStepElementAnchor(element as HTMLElement);
         } else {
-            // there was an issue finding the next step element, end the tour
-            setStepElementAnchor(null);
-            props.hideTour();
+            // there was an issue finding the next step element, try moving on to the next step
+            nextStep();
         }
     }, [currentStepIndex]);
-
-    const previousStep = () => {
-        setCurrentStepIndex(currentStepIndex - 1);
-    };
-    const nextStep = () => {
-        if (currentStepIndex + 1 === props.steps.length) {
-            // tour is done
-            props.hideTour();
-        } else {
-            setCurrentStepIndex(currentStepIndex + 1);
-        }
-    };
-    const nextStepLabel =
-        currentStepIndex + 1 === props.steps.length ? 'Finish' : 'Next';
 
     const calculateOffset = (position: 'top' | 'bottom' | 'left' | 'right') => {
         const defaultOffset = 24;
