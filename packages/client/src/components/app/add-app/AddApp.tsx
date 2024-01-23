@@ -125,7 +125,7 @@ export const AddApp = (props: AddAppProps) => {
 
     const [currentStepIndex, setCurrentStepIndex] = useState<number>(0);
 
-    const { getValues, handleSubmit, control } = useForm<AddAppForm>({
+    const { getValues, handleSubmit, watch, control } = useForm<AddAppForm>({
         defaultValues: {
             [ADD_APP_FORM_FIELD_NAME]: '',
             [ADD_APP_FORM_FIELD_DESCRIPTION]: '',
@@ -135,14 +135,15 @@ export const AddApp = (props: AddAppProps) => {
         },
     });
 
+    const watchAll = watch();
+
     const isStepComplete = useMemo(() => {
         return (
             AddAppFormSteps[currentStepIndex].requiredFields as any[]
         ).every((field) => {
-            console.log(getValues(field));
             return !!getValues(field);
         });
-    }, [getValues, control]);
+    }, [watchAll]);
 
     const isStepSelected = (index: number): boolean => {
         return currentStepIndex === index;
@@ -315,9 +316,6 @@ export const AddApp = (props: AddAppProps) => {
                         >
                             {nextStepLabel}
                         </Button>
-                        <span>
-                            {!isStepComplete ? 'disabled' : 'not disabled'}
-                        </span>
                     </Stack>
                 </Modal.Actions>
             </form>

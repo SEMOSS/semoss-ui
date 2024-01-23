@@ -15,7 +15,6 @@ export const AddAppDetailsStep = (props: { control: Control<any, any> }) => {
                 render={({ field }) => {
                     return (
                         <TextField
-                            required
                             label="Name"
                             variant="outlined"
                             value={field.value ? field.value : ''}
@@ -31,7 +30,6 @@ export const AddAppDetailsStep = (props: { control: Control<any, any> }) => {
                 render={({ field }) => {
                     return (
                         <TextArea
-                            required
                             label="Description"
                             variant="outlined"
                             value={field.value ? field.value : ''}
