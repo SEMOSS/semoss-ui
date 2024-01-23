@@ -15,7 +15,6 @@ export interface TextBlockDef extends BlockDef<'text'> {
 
 export const TextBlock: BlockComponent = observer(({ id }) => {
     const { attrs, data } = useBlock<TextBlockDef>(id);
-    console.log(data);
     return (
         <span
             style={{
