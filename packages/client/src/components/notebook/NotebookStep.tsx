@@ -29,6 +29,7 @@ const StyledCard = styled(Card, {
     border: isCardStepSelected
         ? `1px solid ${theme.palette.primary.main}`
         : 'unset',
+    overflow: 'visible',
 }));
 
 const StyledButtonLabel = styled('div')(() => ({

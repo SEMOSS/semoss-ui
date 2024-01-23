@@ -14,11 +14,7 @@ const StyledContent = styled('div')(() => ({
     position: 'relative',
     display: 'flex',
     '.monaco-editor': {
-        '.suggest-widget': {
-            maxHeight: `${EditorLineHeight * 4.5}px!important`,
-            overflowY: 'scroll',
-            overflowX: 'hidden',
-        },
+        overflow: 'visible',
     },
 }));
 
@@ -71,33 +67,35 @@ export const CodeCellInput: CellComponent<CodeCellDef> = (props) => {
 
         // add editor completion suggestions based on block values and query outputs
         const generateSuggestions = (range) => {
-            let suggestions = [];
+            let suggestions = {}; // prevent duplicates
             Object.values(state.blocks).forEach((block: Block) => {
                 // only input block types will have values
                 const inputBlockWidgets = Object.keys(MenuBlocks).filter(
                     (block) => MenuBlocks[block].type === BLOCK_TYPE_INPUT,
                 );
                 if (inputBlockWidgets.includes(block.widget)) {
-                    suggestions.push({
+                    suggestions[`block-${block.id}`] = {
                         label: `{{${block.id}.value}}`,
                         kind: monaco.languages.CompletionItemKind.Variable,
                         documentation: `Reference the value of block ${block.id}`,
                         insertText: `{{${block.id}.value}}`,
                         range: range,
-                    });
+                    };
                 }
             });
             notebook.queriesList.forEach((query: QueryState) => {
-                suggestions.push({
+                suggestions[`query-${query.id}`] = {
                     label: `{{${query.id}.data.0.output}}`,
                     kind: monaco.languages.CompletionItemKind.Variable,
                     documentation: `Reference the output of query ${query.id}`,
                     insertText: `{{${query.id}.data.0.output}}`,
                     range: range,
-                });
+                };
             });
 
-            return suggestions;
+            console.log(Object.values(suggestions));
+
+            return Object.values(suggestions);
         };
 
         // register custom pixel language
