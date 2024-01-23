@@ -304,7 +304,11 @@ export class StepState<D extends CellDef = CellDef> {
                 }
 
                 this._store.operation = operationType;
-                this._store.output = output;
+                if (Array.isArray(output) && output != undefined) {
+                    this._store.output = output[0].output;
+                } else {
+                    this._store.output = output;
+                }
             });
         } finally {
             const end = new Date();
