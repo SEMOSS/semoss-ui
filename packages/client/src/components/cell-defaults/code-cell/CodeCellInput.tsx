@@ -97,8 +97,8 @@ export const CodeCellInput: CellComponent<CodeCellDef> = (props) => {
                     suggestions.push({
                         label: {
                             label: `{{${query.id}.data}}`,
-                            description: query.data
-                                ? JSON.stringify(query.data)
+                            description: query.output
+                                ? JSON.stringify(query.output)
                                 : '',
                         },
                         kind: monaco.languages.CompletionItemKind.Variable,

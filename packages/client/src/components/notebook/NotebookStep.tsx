@@ -19,7 +19,7 @@ import {
     Error,
     Pending,
 } from '@mui/icons-material';
-import { ActionMessages, StepState } from '@/stores';
+import { ActionMessages } from '@/stores';
 import { useBlocks } from '@/hooks';
 import { NotebookAddCellButton } from './NotebookAddCellButton';
 
@@ -73,8 +73,11 @@ const StyledJson = styled('pre')(({ theme }) => ({
 }));
 
 interface NotebookStepProps {
-    /** Step to bind the notebook step to */
-    step: StepState;
+    /** Id of the  the query */
+    queryId: string;
+
+    /** Id of the step of the query */
+    stepId: string;
 }
 
 /**
@@ -82,9 +85,13 @@ interface NotebookStepProps {
  */
 export const NotebookStep = observer(
     (props: NotebookStepProps): JSX.Element => {
-        const { step } = props;
+        const { queryId, stepId } = props;
 
         const { state, notebook } = useBlocks();
+
+        // get the step
+        const query = state.getQuery(queryId);
+        const step = query.getStep(stepId);
 
         // get the view
         const cell = step.cell;
