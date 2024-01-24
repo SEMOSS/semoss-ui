@@ -1,6 +1,6 @@
 import { styled, Box, Switch, Stack, Typography } from '@semoss/ui';
 import { Control, Controller } from 'react-hook-form';
-import { ADD_APP_FORM_FIELD_IS_GLOBAL } from './add-app.constants';
+import { ADD_APP_FORM_FIELD_IS_GLOBAL } from './save-app.constants';
 
 const StyledBox = styled(Box)(({ theme }) => ({
     display: 'flex',
@@ -56,7 +56,7 @@ const StyledSwitch = styled(Switch)(({ theme }) => ({
     },
 }));
 
-export const AddAppAccessStep = (props: {
+export const AppAccessStep = (props: {
     control: Control<any, any>;
     disabled: boolean;
 }) => {

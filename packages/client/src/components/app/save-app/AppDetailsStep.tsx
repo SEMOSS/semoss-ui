@@ -3,9 +3,9 @@ import { Control, Controller } from 'react-hook-form';
 import {
     ADD_APP_FORM_FIELD_DESCRIPTION,
     ADD_APP_FORM_FIELD_NAME,
-} from './add-app.constants';
+} from './save-app.constants';
 
-export const AddAppDetailsStep = (props: { control: Control<any, any> }) => {
+export const AppDetailsStep = (props: { control: Control<any, any> }) => {
     return (
         <>
             <Controller

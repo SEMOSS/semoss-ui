@@ -1,8 +1,8 @@
 import { FileDropzone } from '@semoss/ui';
 import { Control, Controller } from 'react-hook-form';
-import { ADD_APP_FORM_FIELD_UPLOAD } from './add-app.constants';
+import { ADD_APP_FORM_FIELD_UPLOAD } from './save-app.constants';
 
-export const AddAppUploadStep = (props: { control: Control<any, any> }) => {
+export const AppUploadStep = (props: { control: Control<any, any> }) => {
     return (
         <Controller
             name={ADD_APP_FORM_FIELD_UPLOAD}
@@ -16,6 +16,7 @@ export const AddAppUploadStep = (props: { control: Control<any, any> }) => {
                         onChange={(newValues) => {
                             field.onChange(newValues);
                         }}
+                        extensions={['.zip']}
                     />
                 );
             }}

@@ -1,6 +1,6 @@
 export * from './app.types';
 
-export * from './add-app';
+export * from './save-app';
 export * from './AppCards';
 export * from './AppEditor';
 export * from './AppFilter';
