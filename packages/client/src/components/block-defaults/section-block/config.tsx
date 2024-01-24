@@ -37,6 +37,7 @@ export const config: BlockConfig<SectionBlockDef> = {
     },
     render: SectionBlock,
     icon: GridView,
+    isBlocksMenuEnabled: true,
     contentMenu: [],
     styleMenu: [
         {

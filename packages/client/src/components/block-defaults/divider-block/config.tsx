@@ -28,6 +28,7 @@ export const config: BlockConfig<DividerBlockDef> = {
     },
     render: DividerBlock,
     icon: HorizontalRule,
+    isBlocksMenuEnabled: true,
     contentMenu: [],
     styleMenu: [
         {

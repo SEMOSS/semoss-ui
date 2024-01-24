@@ -83,6 +83,9 @@ export interface BlockConfig<D extends BlockDef = BlockDef> {
     /** Icon to render in the builder sidebar */
     icon: React.FunctionComponent;
 
+    /** Whether the widget should appear in the blocks menu */
+    isBlocksMenuEnabled: boolean;
+
     /** Content Menu */
     contentMenu: {
         name: string;

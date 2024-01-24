@@ -26,6 +26,7 @@ export const config: BlockConfig<TextBlockDef> = {
     },
     render: TextBlock,
     icon: TextFields,
+    isBlocksMenuEnabled: true,
     contentMenu: [
         {
             name: 'General',

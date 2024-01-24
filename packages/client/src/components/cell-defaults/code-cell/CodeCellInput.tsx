@@ -5,7 +5,7 @@ import { styled } from '@semoss/ui';
 import { ActionMessages, Block, CellComponent, QueryState } from '@/stores';
 import { useBlocks } from '@/hooks';
 import { CodeCellDef } from './config';
-import { MenuBlocks } from '@/components/block-defaults';
+import { DefaultBlocks } from '@/components/block-defaults';
 import { BLOCK_TYPE_INPUT } from '@/components/block-defaults/block-defaults.constants';
 
 const EditorLineHeight = 19;
@@ -73,8 +73,8 @@ export const CodeCellInput: CellComponent<CodeCellDef> = (props) => {
             let suggestions = [];
             Object.values(state.blocks).forEach((block: Block) => {
                 // only input block types will have values
-                const inputBlockWidgets = Object.keys(MenuBlocks).filter(
-                    (block) => MenuBlocks[block].type === BLOCK_TYPE_INPUT,
+                const inputBlockWidgets = Object.keys(DefaultBlocks).filter(
+                    (block) => DefaultBlocks[block].type === BLOCK_TYPE_INPUT,
                 );
                 if (inputBlockWidgets.includes(block.widget)) {
                     suggestions.push({

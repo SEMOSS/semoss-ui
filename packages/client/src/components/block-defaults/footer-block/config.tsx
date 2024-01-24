@@ -28,6 +28,7 @@ export const config: BlockConfig<FooterBlockDef> = {
     },
     render: FooterBlock,
     icon: BorderBottom,
+    isBlocksMenuEnabled: true,
     contentMenu: [],
     styleMenu: [
         buildDimensionsSection(),

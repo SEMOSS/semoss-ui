@@ -37,6 +37,7 @@ export const config: BlockConfig<UploadBlockDef> = {
     },
     render: UploadBlock,
     icon: FormatShapes,
+    isBlocksMenuEnabled: true,
     contentMenu: [
         {
             name: 'General',

@@ -42,6 +42,7 @@ export const config: BlockConfig<TextFieldBlockDef> = {
     },
     render: TextFieldBlock,
     icon: FormatShapes,
+    isBlocksMenuEnabled: true,
     contentMenu: [
         {
             name: 'General',
