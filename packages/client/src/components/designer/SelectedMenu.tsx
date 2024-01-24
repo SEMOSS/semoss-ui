@@ -154,6 +154,8 @@ export const SelectedMenu = observer(() => {
         }
     }, [block]);
 
+    const blockDisplay = block ? block.widget.replaceAll('-', ' ') : '';
+
     // ignore if there is no menu
     if (!block) {
         return (
@@ -171,7 +173,7 @@ export const SelectedMenu = observer(() => {
                 <Stack flex={1} spacing={2} direction="row" alignItems="center">
                     <BlockAvatar icon={getIconForBlock(block.widget)} />
                     <StyledTypography variant="h6">
-                        {block.widget}
+                        {blockDisplay}
                     </StyledTypography>
                     <Stack
                         flex={1}

@@ -55,7 +55,6 @@ export const BlocksMenuCard = observer((props: { block: BlockConfig }) => {
 
         // apply the action
         const placeholderAction = designer.drag.placeholderAction;
-        console.log('placeholder Action', placeholderAction);
         if (placeholderAction) {
             if (
                 placeholderAction.type === 'before' ||
@@ -115,8 +114,6 @@ export const BlocksMenuCard = observer((props: { block: BlockConfig }) => {
         if (!designer.drag.active || !local) {
             return;
         }
-
-        console.log(designer.drag.active);
 
         document.addEventListener('mouseup', handleDocumentMouseUp);
 
