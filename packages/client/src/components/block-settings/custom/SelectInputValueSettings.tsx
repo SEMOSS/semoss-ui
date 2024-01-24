@@ -88,9 +88,9 @@ export const SelectInputValueSettings = observer(
         };
 
         const stringifiedOptions: string[] = useMemo(() => {
-            return (parsedData?.options ?? []).map((option) =>
-                JSON.stringify(option),
-            );
+            return (
+                !Array.isArray(parsedData?.options) ? [] : parsedData.options
+            ).map((option) => JSON.stringify(option));
         }, [parsedData.options]);
 
         return (

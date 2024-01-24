@@ -28,7 +28,9 @@ export const SelectBlock: BlockComponent = observer(({ id }) => {
     const { attrs, data, setData } = useBlock<SelectBlockDef>(id);
 
     const stringifiedOptions: string[] = useMemo(() => {
-        return (data?.options ?? []).map((option) => JSON.stringify(option));
+        return (!Array.isArray(data?.options) ? [] : data.options).map(
+            (option) => JSON.stringify(option),
+        );
     }, [data.options]);
 
     return (
