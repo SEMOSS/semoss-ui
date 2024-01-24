@@ -25,13 +25,8 @@ export const BASE_PAGE_BLOCKS = {
         },
         data: {
             style: {
-                background: 'white',
-                flexDirection: 'column',
-                gap: '16px',
                 padding: '32px',
                 width: '100%',
-                maxWidth: '900px',
-                margin: '0 auto',
             },
         },
         listeners: {},

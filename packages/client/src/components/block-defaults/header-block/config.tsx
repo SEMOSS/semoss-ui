@@ -45,31 +45,6 @@ export const config: BlockConfig<HeaderBlockDef> = {
                             label="Padding"
                             path="style.padding"
                         />
-                        // <SelectInputSettings
-                        //     id={id}
-                        //     path="style.padding"
-                        //     label="Padding"
-                        //     allowUnset
-                        //     allowCustomInput
-                        //     options={[
-                        //         {
-                        //             value: '1rem',
-                        //             display: 'Small',
-                        //         },
-                        //         {
-                        //             value: '2rem',
-                        //             display: 'Medium',
-                        //         },
-                        //         {
-                        //             value: '3rem',
-                        //             display: 'Large',
-                        //         },
-                        //         {
-                        //             value: '4rem',
-                        //             display: 'X-Large',
-                        //         },
-                        //     ]}
-                        // />
                     ),
                 },
             ],

@@ -1,7 +1,13 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { computed } from 'mobx';
 import { observer } from 'mobx-react-lite';
-import { MenuItem, Select, TextField } from '@semoss/ui';
+import {
+    MenuItem,
+    Select,
+    TextField,
+    ToggleButton,
+    ToggleButtonGroup,
+} from '@semoss/ui';
 import { Paths, PathValue } from '@/types';
 import { useBlockSettings } from '@/hooks';
 import { Block, BlockDef } from '@/stores';
@@ -23,14 +29,19 @@ interface BorderSettingsProps<D extends BlockDef = BlockDef> {
      */
     path: Paths<Block<D>['data'], 4>;
 }
+
+const SIZE_VALUE_TYPES = ['em', 'px', '%'];
+
 export const BorderSettings = observer(
     <D extends BlockDef = BlockDef>({ id, path }: BorderSettingsProps<D>) => {
         const { data, setData } = useBlockSettings(id);
 
         // track the value
-        const [borderSizeValue, setBorderSizeValue] = useState('');
-        const [borderStyleValue, setBorderStyleValue] = useState('');
+        const [borderSizeValue, setBorderSizeValue] = useState(null);
+        const [borderStyleValue, setBorderStyleValue] = useState(null);
         const [borderColorValue, setBorderColorValue] = useState('#FFFFFF');
+        // track the unit of the value, ex % or px
+        const [valueType, setValueType] = useState(null);
 
         // track the ref to debounce the input
         const timeoutRef = useRef<ReturnType<typeof setTimeout>>(null);
@@ -58,9 +69,16 @@ export const BorderSettings = observer(
                 setBorderStyleValue(borderValues[1]);
                 setBorderColorValue(borderValues[2]);
             } else {
-                setBorderSizeValue('');
-                setBorderStyleValue('');
-                setBorderColorValue('#FFFFFF');
+                setBorderSizeValue(null);
+                setBorderStyleValue(null);
+                setBorderColorValue(null);
+            }
+            if (computedValue.includes('%')) {
+                setValueType('%');
+            } else if (computedValue.includes('px')) {
+                setValueType('px');
+            } else if (computedValue.includes('em')) {
+                setValueType('em');
             }
         }, [computedValue]);
 
@@ -73,14 +91,15 @@ export const BorderSettings = observer(
             borderColor: string,
         ) => {
             // set the values
-            setBorderSizeValue(borderSize);
-            setBorderStyleValue(borderStyle);
+            setBorderSizeValue(borderSize ?? '0px');
+            setBorderStyleValue(borderStyle ?? 'solid');
             setBorderColorValue(borderColor ?? '#FFFFFF');
             // clear out the old timeout
             if (timeoutRef.current) {
                 clearTimeout(timeoutRef.current);
                 timeoutRef.current = null;
             }
+
             timeoutRef.current = setTimeout(() => {
                 try {
                     // set the value
@@ -96,44 +115,96 @@ export const BorderSettings = observer(
                 }
             }, 300);
         };
+
+        // numeric value for the text field
+        const numericSizeValue = useMemo(() => {
+            if (borderSizeValue) {
+                return borderSizeValue.replace(/\D+/g, '');
+            }
+        }, [borderSizeValue]);
+
+        // update data when unit changes
+        useMemo(() => {
+            if (numericSizeValue) {
+                onChange(
+                    `${numericSizeValue}${valueType}`,
+                    borderStyleValue ?? 'solid',
+                    borderColorValue ?? '#FFFFFF',
+                );
+            }
+        }, [valueType]);
+
+        // default value type % if one is not set when the value is set
+        // remove type when value is unset
+        useMemo(() => {
+            if (numericSizeValue && !valueType) {
+                setValueType('px');
+            } else if (!numericSizeValue) {
+                setValueType('');
+            }
+        }, [numericSizeValue]);
+
+        const getColorForButtonValue = (
+            buttonValue: string,
+        ): 'primary' | undefined => {
+            return valueType === buttonValue ? 'primary' : undefined;
+        };
+
         return (
             <>
                 <BaseSettingSection label="Border Size">
-                    <Select
+                    <TextField
                         fullWidth
-                        size="small"
-                        value={borderSizeValue}
+                        value={numericSizeValue ?? ''}
                         onChange={(e) => {
+                            // sync the data on change
                             if (e.target.value) {
                                 onChange(
-                                    e.target.value,
+                                    `${e.target.value}${valueType}`,
                                     borderStyleValue ?? 'solid',
-                                    borderColorValue ?? '#000000',
+                                    borderColorValue ?? '#FFFFFF',
                                 );
                             } else {
                                 onChange('', '', '');
                             }
                         }}
-                    >
-                        <MenuItem value={''}>
-                            <em>None</em>
-                        </MenuItem>
-                        <MenuItem value={'0.125rem'}>Small</MenuItem>
-                        <MenuItem value={'0.25rem'}>Medium</MenuItem>
-                        <MenuItem value={'0.5rem'}>Large</MenuItem>
-                    </Select>
+                        size="small"
+                        variant="outlined"
+                        autoComplete="off"
+                    />
+                    <ToggleButtonGroup value={valueType} exclusive size="small">
+                        {Array.from(
+                            SIZE_VALUE_TYPES,
+                            (buttonValueType: string) => {
+                                return (
+                                    <ToggleButton
+                                        key={buttonValueType}
+                                        value={buttonValueType}
+                                        color={getColorForButtonValue(
+                                            buttonValueType,
+                                        )}
+                                        onClick={() =>
+                                            setValueType(buttonValueType)
+                                        }
+                                    >
+                                        {buttonValueType}
+                                    </ToggleButton>
+                                );
+                            },
+                        )}
+                    </ToggleButtonGroup>
                 </BaseSettingSection>
                 <BaseSettingSection label="Border Style">
                     <Select
                         fullWidth
                         size="small"
-                        value={borderStyleValue}
+                        value={borderStyleValue ?? ''}
                         onChange={(e) => {
                             if (e.target.value) {
                                 onChange(
                                     borderSizeValue ?? '0.125rem',
                                     e.target.value,
-                                    borderColorValue ?? '#000000',
+                                    borderColorValue ?? '#FFFFFF',
                                 );
                             } else {
                                 onChange('', '', '');
@@ -152,7 +223,7 @@ export const BorderSettings = observer(
                     <TextField
                         fullWidth
                         type="color"
-                        value={borderColorValue}
+                        value={borderColorValue ?? '#FFFFFF'}
                         onChange={(e) => {
                             if (e.target.value) {
                                 onChange(

@@ -93,32 +93,6 @@ export const buildLayoutSection = () => ({
             description: 'Gap',
             render: ({ id }) => (
                 <SizeSettings id={id} label="Gap" path="style.gap" />
-                // <SelectInputSettings
-                //     id={id}
-                //     path="style.gap"
-                //     label="Gap"
-                //     resizeOnSet
-                //     allowUnset
-                //     allowCustomInput
-                //     options={[
-                //         {
-                //             value: '1rem',
-                //             display: 'Small',
-                //         },
-                //         {
-                //             value: '2rem',
-                //             display: 'Medium',
-                //         },
-                //         {
-                //             value: '3rem',
-                //             display: 'Large',
-                //         },
-                //         {
-                //             value: '4rem',
-                //             display: 'X-Large',
-                //         },
-                //     ]}
-                // />
             ),
         },
     ],
@@ -177,68 +151,12 @@ export const buildSpacingSection = () => ({
             description: 'Margin',
             render: ({ id }) => (
                 <SizeSettings id={id} label="Margin" path="style.margin" />
-                // <SelectInputSettings
-                //     id={id}
-                //     path="style.margin"
-                //     label="Margin"
-                //     resizeOnSet
-                //     allowUnset
-                //     allowCustomInput
-                //     options={[
-                //         {
-                //             value: 'auto',
-                //             display: 'Auto',
-                //         },
-                //         {
-                //             value: '1rem',
-                //             display: 'Small',
-                //         },
-                //         {
-                //             value: '2rem',
-                //             display: 'Medium',
-                //         },
-                //         {
-                //             value: '3rem',
-                //             display: 'Large',
-                //         },
-                //         {
-                //             value: '4rem',
-                //             display: 'X-Large',
-                //         },
-                //     ]}
-                // />
             ),
         },
         {
             description: 'Padding',
             render: ({ id }) => (
                 <SizeSettings id={id} label="Padding" path="style.padding" />
-                // <SelectInputSettings
-                //     id={id}
-                //     path="style.padding"
-                //     label="Padding"
-                //     resizeOnSet
-                //     allowUnset
-                //     allowCustomInput
-                //     options={[
-                //         {
-                //             value: '1rem',
-                //             display: 'Small',
-                //         },
-                //         {
-                //             value: '2rem',
-                //             display: 'Medium',
-                //         },
-                //         {
-                //             value: '3rem',
-                //             display: 'Large',
-                //         },
-                //         {
-                //             value: '4rem',
-                //             display: 'X-Large',
-                //         },
-                //     ]}
-                // />
             ),
         },
     ],
