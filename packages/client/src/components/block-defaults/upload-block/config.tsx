@@ -5,7 +5,7 @@ import {
 } from '@/components/block-settings';
 
 import { UploadBlockDef, UploadBlock } from './UploadBlock';
-import { FormatShapes } from '@mui/icons-material';
+import { Upload } from '@mui/icons-material';
 import {
     buildDimensionsSection,
     buildSpacingSection,
@@ -36,7 +36,7 @@ export const config: BlockConfig<UploadBlockDef> = {
         content: [],
     },
     render: UploadBlock,
-    icon: FormatShapes,
+    icon: Upload,
     isBlocksMenuEnabled: true,
     contentMenu: [
         {
