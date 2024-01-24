@@ -5,7 +5,7 @@ import { FileUploadOutlined } from '@mui/icons-material';
 
 import {
     NewAppStep,
-    AddApp,
+    AddAppModal,
     AppTemplates,
     NewAppModal,
 } from '@/components/app';
@@ -112,9 +112,9 @@ export const NewAppPage = () => {
             isLoading={isLoading}
         >
             {isUploadOpen ? (
-                <AddApp
+                <AddAppModal
                     open={isUploadOpen}
-                    onClose={(appId) => {
+                    handleClose={(appId) => {
                         // if there is an appId navigate to it
                         if (appId) {
                             navigateApp(appId);
