@@ -90,7 +90,7 @@ export class StateStore {
                     const q = this._store.queries[val];
 
                     // map id -> actual
-                    acc[q.id] = `${this.flattenParameter(q._toPixel())}--${
+                    acc[q.id] = `${this.flattenVariable(q.toPixel())}--${
                         q.mode
                     }`;
 
@@ -272,58 +272,88 @@ export class StateStore {
         }
     };
 
+    /** Variable Methods */
     /**
-     * Calculate the value of a parameter
-     * @param parameter - string with mustach syntax for inputs
-     * @returns the specific block information
+     * Parse a variable and return the value if it exists (otherwise return the expression)
      */
-    calculateParameter(parameter: string): unknown {
-        // check if there is actually a parameter (we only handle 1 for now)
-        let cleaned = parameter.trim();
-        if (!cleaned.startsWith('{{') || !cleaned.endsWith('}}')) {
-            return parameter;
+    parseVariable = (expression: string): unknown => {
+        // trim the whitespace
+        let cleaned = expression.trim();
+        if (!cleaned.startsWith('{{') && !cleaned.endsWith('}}')) {
+            return expression;
         }
 
         // remove the brackets
         cleaned = cleaned.slice(2, -2);
 
-        // extract the id and path
-        const split = cleaned.split('.');
+        // get the keys in the path
+        const path = cleaned.split('.');
 
-        // only continue loop if here is something meaninful to be split
-        // ex don't continue for something like {{query1}} or {{query1.}}
-        if (split.length > 1 && split[1]) {
-            const id = split.shift();
-            const path = split.join('.');
+        if (path[0] === 'query' && path[2] === 'step') {
+            // check if the id is there
+            const queryId = path[1];
+            const stepId = path[3];
 
-            // check if it is in the block's data
-            if (id && this._store.blocks[id]) {
-                return getValueByPath(this._store.blocks[id].data, path);
+            // get the query
+            const query = this._store.queries[queryId];
+            const step = query ? query.getStep(stepId) : null;
+            if (step) {
+                // if the key is a step, calculate as a step
+                const key = path[4];
+                if (key in step._exposed) {
+                    // get the search path
+                    const s = path.slice(4).join('.');
+                    return getValueByPath(step._exposed, s);
+                }
             }
+        } else if (path[0] === 'query' && path[2] !== 'step') {
+            // check if the id is there
+            const queryId = path[1];
 
-            // check if it is in a query
-            if (id && this._store.queries[id]) {
-                return getValueByPath(this._store.queries[id], path);
+            // get the attribute key
+            const key = path[2];
+
+            // get the query
+            const query = this._store.queries[queryId];
+            if (query) {
+                if (key in query._exposed) {
+                    // get the search path
+                    const s = path.slice(2).join('.');
+                    return getValueByPath(query._exposed, s);
+                }
+            }
+        } else if (path[0] === 'block') {
+            // check if the id is there
+            const blockId = path[1];
+
+            // get the block
+            const block = this._store.blocks[blockId];
+            if (block) {
+                // get the search path
+                const s = path.slice(2).join('.');
+                return getValueByPath(block.data, s);
             }
         }
 
-        return parameter;
-    }
+        return expression;
+    };
 
     /**
-     * Flatten a parameter into a string
-     * @param parameter - parameter to flatten
+     * Flatten a string containing multiple variables
+     * @param expression - expression to flatten
      * @returns the flatten parameter
      */
-    flattenParameter = (parameter: string): string => {
-        return parameter.replace(/{{(.*?)}}/g, (match) => {
-            const v = this.calculateParameter(match);
+    flattenVariable = (expression: string): string => {
+        return expression.replace(/{{(.*?)}}/g, (match) => {
+            // try to extract the variable
+            const v = this.parseVariable(match);
 
-            if (typeof v === 'string') {
-                return v?.replace(/"/g, '\\"').replace(/'/g, "\\'");
+            // if it is not a string, convert to a string
+            if (typeof v !== 'string') {
+                return JSON.stringify(v);
             }
 
-            return JSON.stringify(v)?.replace(/"/g, '\\"').replace(/'/g, "\\'");
+            return v;
         });
     };
 

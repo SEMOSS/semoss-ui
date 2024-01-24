@@ -15,13 +15,13 @@ export interface TextBlockDef extends BlockDef<'text'> {
 
 export const TextBlock: BlockComponent = observer(({ id }) => {
     const { attrs, data } = useBlock<TextBlockDef>(id);
-
     return (
         <span
             style={{
-                ...data.style,
-                overflow: 'hidden',
+                overflow: 'auto',
                 textOverflow: 'ellipsis',
+                padding: '16px',
+                ...data.style,
             }}
             {...attrs}
         >

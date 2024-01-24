@@ -64,7 +64,7 @@ export const NotebookSheet = observer((): JSX.Element => {
                 justifyContent={'space-between'}
                 direction="row"
                 paddingLeft={3}
-                paddingRight={notebook.selectedQuery.steps.length > 1 ? 4 : 3}
+                paddingRight={3}
                 paddingY={1.25}
                 spacing={2}
             >
@@ -123,9 +123,12 @@ export const NotebookSheet = observer((): JSX.Element => {
                 </Stack>
             </Stack>
             <StyledContainer maxWidth={'xl'}>
-                {notebook.selectedQuery.steps.map((s) => (
-                    <StyledStep key={s.id}>
-                        <NotebookStep step={s}></NotebookStep>
+                {notebook.selectedQuery.list.map((sId) => (
+                    <StyledStep key={sId}>
+                        <NotebookStep
+                            queryId={notebook.selectedQuery.id}
+                            stepId={sId}
+                        ></NotebookStep>
                     </StyledStep>
                 ))}
             </StyledContainer>

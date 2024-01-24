@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import {
     Button,
     TextField,
@@ -35,11 +35,17 @@ export const NewAppModal = (props: NewAppModalProps) => {
 
     const [isLoading, setIsLoading] = useState(false);
 
-    const { handleSubmit, control } = useForm<NewAppForm>({
+    const { getValues, handleSubmit, control, watch } = useForm<NewAppForm>({
         defaultValues: {
             APP_NAME: '',
         },
     });
+
+    const watchAll = watch();
+
+    const isFormValid = useMemo(() => {
+        return !!getValues('APP_NAME');
+    }, [watchAll]);
 
     /**
      * Method that is called to create the app
@@ -122,7 +128,6 @@ export const NewAppModal = (props: NewAppModalProps) => {
                             render={({ field }) => {
                                 return (
                                     <TextField
-                                        required
                                         label="Name"
                                         value={field.value ? field.value : ''}
                                         disabled={isLoading}
@@ -137,20 +142,27 @@ export const NewAppModal = (props: NewAppModalProps) => {
                     </Stack>
                 </Modal.Content>
                 <Modal.Actions>
-                    <Button
-                        type="button"
-                        disabled={isLoading}
-                        onClick={() => onClose()}
+                    <Stack
+                        direction="row"
+                        spacing={1}
+                        paddingX={2}
+                        paddingBottom={2}
                     >
-                        Cancel
-                    </Button>
-                    <Button
-                        type="submit"
-                        variant={'contained'}
-                        disabled={isLoading}
-                    >
-                        Create
-                    </Button>
+                        <Button
+                            type="button"
+                            disabled={isLoading}
+                            onClick={() => onClose()}
+                        >
+                            Cancel
+                        </Button>
+                        <Button
+                            type="submit"
+                            variant={'contained'}
+                            disabled={isLoading || !isFormValid}
+                        >
+                            Create
+                        </Button>
+                    </Stack>
                 </Modal.Actions>
             </form>
             {isLoading && <LinearProgress />}

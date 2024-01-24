@@ -8,9 +8,6 @@ export interface QueryStateStoreInterface {
     /** Id of the query */
     id: string;
 
-    /** Track if the query is initialized */
-    isInitialized: boolean;
-
     /** Track if the step is loading */
     isLoading: boolean;
 
@@ -21,7 +18,10 @@ export interface QueryStateStoreInterface {
     error: Error | null;
 
     /** Pixel Steps in the query */
-    steps: StepState[];
+    steps: Record<string, StepState>;
+
+    /** Ordered list of the steps in the query */
+    list: string[];
 }
 
 export interface QueryStateConfig {
@@ -42,11 +42,11 @@ export class QueryState {
     private _state: StateStore;
     private _store: QueryStateStoreInterface = {
         id: '',
-        isInitialized: false,
         isLoading: false,
         mode: 'manual',
         error: null,
-        steps: [],
+        steps: {},
+        list: [],
     };
 
     constructor(config: QueryStateConfig, state: StateStore) {
@@ -58,9 +58,21 @@ export class QueryState {
         this._store.mode = config.mode;
 
         // create the steps
-        this._store.steps = config.steps.map((s) => {
-            return new StepState(s, this, this._state);
-        }, {});
+        const { steps, list } = config.steps.reduce(
+            (acc, val) => {
+                acc.steps[val.id] = new StepState(val, this, this._state);
+                acc.list.push(val.id);
+
+                return acc;
+            },
+            {
+                steps: {},
+                list: [],
+            },
+        );
+
+        this._store.steps = steps;
+        this._store.list = list;
 
         // make it observable
         makeAutoObservable(this);
@@ -77,10 +89,11 @@ export class QueryState {
     }
 
     /**
-     * Track if the query is initialized
+     * Track if the query is executed
      */
-    get isInitialized() {
-        for (const step of this._store.steps) {
+    get isExecuted() {
+        for (const s of this._store.list) {
+            const step = this._store.steps[s];
             if (!step.isExecuted) {
                 return false;
             }
@@ -97,7 +110,8 @@ export class QueryState {
             return true;
         }
 
-        for (const step of this._store.steps) {
+        for (const s of this._store.list) {
+            const step = this._store.steps[s];
             if (step.isLoading) {
                 return true;
             }
@@ -114,7 +128,8 @@ export class QueryState {
             return true;
         }
 
-        for (const step of this._store.steps) {
+        for (const s of this._store.list) {
+            const step = this._store.steps[s];
             if (step.isError) {
                 return true;
             }
@@ -127,8 +142,9 @@ export class QueryState {
      * Track if the query successfully ran
      */
     get isSuccessful() {
-        for (const step of this._store.steps) {
-            if (step.output === undefined) {
+        for (const s of this._store.list) {
+            const step = this._store.steps[s];
+            if (!step.isExecuted || step.isError) {
                 return false;
             }
         }
@@ -154,11 +170,13 @@ export class QueryState {
 
         // collect the step errors
         const messages = [];
-        for (const step of this._store.steps) {
+        for (const s of this._store.list) {
+            const step = this._store.steps[s];
             if (step.isError) {
                 messages.push(step.error);
             }
         }
+
         if (messages.length > 0) {
             return messages.join('\r\n');
         }
@@ -167,15 +185,24 @@ export class QueryState {
     }
 
     /**
-     * Data associated with the query
+     * Output associated with the query
      */
-    get data() {
-        const stepLen = this._store.steps.length;
+    get output() {
+        const stepLen = this._store.list.length;
         if (stepLen > 0) {
-            return this._store.steps[stepLen - 1].output;
+            // get the last step
+            const sId = this._store.list[stepLen - 1];
+            return this._store.steps[sId].output;
         }
 
         return undefined;
+    }
+
+    /**
+     * Get list of the steps of the query
+     */
+    get list() {
+        return this._store.list;
     }
 
     /**
@@ -186,32 +213,11 @@ export class QueryState {
     }
 
     /**
-     * Get the index of a step
-     * @param id - id of the step to get index for
-     */
-    getStepIdx = (id: string): number => {
-        for (
-            let stepIdx = 0, stepLen = this._store.steps.length;
-            stepIdx < stepLen;
-            stepIdx++
-        ) {
-            if (this._store.steps[stepIdx].id === id) {
-                return stepIdx;
-            }
-        }
-
-        return -1;
-    };
-
-    /**
      * Get a step from the query
-     * @param id - id of the step to get index for
+     * @param id - id of the step to get
      */
     getStep = (id: string): StepState => {
-        // get the index
-        const stepIdx = this.getStepIdx(id);
-
-        return this._store.steps[stepIdx];
+        return this._store.steps[id];
     };
 
     /**
@@ -224,25 +230,24 @@ export class QueryState {
         return {
             id: this._store.id,
             mode: this._store.mode,
-            steps: this._store.steps.map((s) => s.toJSON()),
+            steps: this._store.list.map((s) => this._store.steps[s].toJSON()),
         };
+    };
+
+    /**
+     * Convert the query to pixel
+     */
+    toPixel = () => {
+        return this._store.list
+            .map((s) => this._store.steps[s].toPixel())
+            .join(';');
     };
 
     /**
      * Helpers
      */
     /**
-     * Convert the query to pixel
-     */
-    _toPixel = () => {
-        return this._store.steps.map((s) => s._toPixel()).join(';');
-    };
-
-    /**
      * Process running of a pixel
-     */
-    /**
-     * Process running of the query
      */
     _processRun = async () => {
         try {
@@ -255,44 +260,39 @@ export class QueryState {
             this._store.isLoading = true;
 
             // convert the steps to the raw pixel
-            const raw = this._toPixel();
+            const raw = this.toPixel();
 
             // fill the braces {{ }} to create the final pixel
-            const filled = this._state.flattenParameter(raw);
+            const filled = this._state.flattenVariable(raw);
 
             // run as a single pixel block;
             const { pixelReturn } = await this._state._runPixel(filled);
 
-            const stepLen = this._store.steps.length;
+            const stepLen = this._store.list.length;
             if (pixelReturn.length !== stepLen) {
                 throw new Error(
                     'Error processing pixel. Steps do not equal pixelReturn',
                 );
             }
 
-            // update the existing steps with the pixel blocks
-            // let data = undefined;
-            for (let stepIdx = 0; stepIdx < stepLen; stepIdx++) {
-                const step = this._store.steps[stepIdx];
-
-                const { operationType, output } = pixelReturn[stepIdx];
-
-                // // save the last successful data
-                // if (operationType.indexOf('ERROR') === -1) {
-                //     data = output;
-                // }
-
-                // sync step information
-                step._sync(operationType, output);
-            }
-
             runInAction(() => {
-                // // save the data as the last step of the output
-                // const { output } = pixelReturn[stepLen - 1];
-                // // update the data
-                // this._store.data = output;
+                // update the existing steps with the pixel blocks
+                // let data = undefined;
+                for (let stepIdx = 0; stepIdx < stepLen; stepIdx++) {
+                    const sId = this._store.list[stepIdx];
+
+                    // get the step
+                    const step = this._store.steps[sId];
+
+                    const { operationType, output } = pixelReturn[stepIdx];
+
+                    // sync step information
+                    step._sync(operationType, output);
+                }
+
+                // clear the error
+                this._store.error = null;
             });
-            this._store.error = null;
         } catch (e) {
             // TODO - because we use _sync steps instead of _processRun on them individually
             // if a step errors out of the runPixel and causes a break/catch here,
@@ -344,16 +344,23 @@ export class QueryState {
             this._state,
         );
 
-        if (!previousStepId) {
-            this._store.steps.push(step);
+        // save the step
+        this._store.steps[stepId] = step;
+
+        // get the index of the previous one
+        let previousStepIdx = -1;
+        if (previousStepId) {
+            previousStepIdx = this._store.list.indexOf(previousStepId);
+        }
+
+        // add to end if there is no previous step
+        if (previousStepIdx === -1) {
+            this._store.list.push(stepId);
             return;
         }
 
-        // get the index of the previous one
-        const addStepIdx = this.getStepIdx(previousStepId);
-
         // add it
-        this._store.steps.splice(addStepIdx + 1, 0, step);
+        this._store.list.splice(previousStepIdx + 1, 0, stepId);
     };
 
     /**
@@ -362,12 +369,34 @@ export class QueryState {
      */
     _processDeleteStep = (id: string) => {
         // find the index to delete at
-        const deleteStepIdx = this.getStepIdx(id);
+        const deleteStepIdx = this._store.list.indexOf(id);
         if (deleteStepIdx === -1) {
             throw new Error(`Unable to find step ${id}. This was not deleted`);
         }
 
-        // remove it
-        this._store.steps.splice(deleteStepIdx, 1);
+        // remove it by index
+        this._store.list.splice(deleteStepIdx, 1);
+
+        // remove it by id
+        if (this._store.steps[id]) {
+            delete this._store.steps[id];
+        }
     };
+
+    /**
+     * Get the exposed value that can be accesed by a variable
+     */
+    get _exposed() {
+        return {
+            id: this._store.id,
+            isExecuted: this.isExecuted,
+            isLoading: this.isLoading,
+            isError: this.isError,
+            isSuccessful: this.isSuccessful,
+            error: this.error,
+            mode: this.mode,
+            output: this.output,
+            list: this.list,
+        };
+    }
 }

@@ -132,7 +132,7 @@ export function getInputFormatPrompt(
                 tokenStrings.push(token.display);
             } else {
                 const keyIndex = inputTokenParts.indexOf(token.key);
-                inputTokenParts[keyIndex] = `{{${getIdForInput(
+                inputTokenParts[keyIndex] = `{{block.${getIdForInput(
                     token.linkedInputToken !== undefined
                         ? inputTypes[token.linkedInputToken].type
                         : inputTypes[token.index].type,
@@ -299,7 +299,7 @@ export function getQueryForPrompt(
         Object.keys(customInputTypes).length ? ', ' : ''
     }${Object.keys(customInputTypes)
         .map((customInputTokenIndex) => {
-            return `"{{${getIdForInput(
+            return `"{{block.${getIdForInput(
                 customInputTypes[customInputTokenIndex].type,
                 parseInt(customInputTokenIndex),
             )}.value}}"`;
@@ -518,7 +518,7 @@ export async function setBlocksAndOpenUIBuilder(
                         width: '125px',
                     },
                     label: 'Submit',
-                    loading: `{{${PROMPT_QUERY_ID}.isLoading}}`,
+                    loading: `{{query.${PROMPT_QUERY_ID}.isLoading}}`,
                 },
                 listeners: {
                     onClick: [
@@ -541,7 +541,7 @@ export async function setBlocksAndOpenUIBuilder(
                 },
                 data: {
                     style: {},
-                    markdown: `{{${PROMPT_QUERY_ID}.data.0.output}}`,
+                    markdown: `{{query.${PROMPT_QUERY_ID}.output}}`,
                 },
                 listeners: {},
                 slots: {},
