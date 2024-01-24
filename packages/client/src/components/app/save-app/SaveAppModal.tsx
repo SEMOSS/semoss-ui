@@ -31,7 +31,7 @@ const StyledStepChip = styled(Chip, {
 }));
 
 const StyledModalContent = styled(Modal.Content)(() => ({
-    height: '225px',
+    height: '300px',
 }));
 
 interface SaveAppProps {
