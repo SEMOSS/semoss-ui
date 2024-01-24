@@ -87,11 +87,17 @@ export const SelectInputValueSettings = observer(
             }, 300);
         };
 
+        const stringifiedOptions: string[] = useMemo(() => {
+            return (parsedData?.options ?? []).map((option) =>
+                JSON.stringify(option),
+            );
+        }, [parsedData.options]);
+
         return (
             <BaseSettingSection label="Value">
                 <Autocomplete
                     fullWidth
-                    options={(parsedData?.options as string[]) ?? []}
+                    options={stringifiedOptions}
                     value={value}
                     onChange={(_, newValue: string) => {
                         // sync the data on change
