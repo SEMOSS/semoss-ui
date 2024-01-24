@@ -27,6 +27,7 @@ export const config: BlockConfig<MarkdownBlockDef> = {
     },
     render: MarkdownBlock,
     icon: FormatListBulleted,
+    isBlocksMenuEnabled: true,
     contentMenu: [
         {
             name: 'General',

@@ -29,6 +29,7 @@ export const config: BlockConfig<BodyBlockDef> = {
     },
     render: BodyBlock,
     icon: BorderClear,
+    isBlocksMenuEnabled: true,
     contentMenu: [],
     styleMenu: [
         buildDimensionsSection(),
