@@ -55,8 +55,6 @@ export const DefaultBlocks: Registry<DefaultBlockDefinitions> = {
     [CheckboxBlockConfig.widget]: CheckboxBlockConfig,
     [ContainerBlockConfig.widget]: ContainerBlockConfig,
     [CellBlockConfig.widget]: CellBlockConfig,
-    [FormBlockConfig.widget]: FormBlockConfig,
-    [IframeBlockConfig.widget]: IframeBlockConfig,
     [MarkdownBlockConfig.widget]: MarkdownBlockConfig,
     [PageBlockConfig.widget]: PageBlockConfig,
     [SelectBlockConfig.widget]: SelectBlockConfig,
