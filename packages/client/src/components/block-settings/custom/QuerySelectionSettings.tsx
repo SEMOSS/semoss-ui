@@ -28,10 +28,6 @@ interface QuerySelectionSettingsProps<D extends BlockDef = BlockDef> {
      * Query path to bind to
      */
     queryPath: 'isLoading' | 'output';
-
-    /**
-     * Query path value
-     */
 }
 
 /**
@@ -116,8 +112,8 @@ export const QuerySelectionSettings = observer(
                     size="small"
                     value={value}
                     options={Object.keys(queries)}
-                    getOptionLabel={(queryLoadingInput: string) =>
-                        queries[queryLoadingInput] ?? ''
+                    getOptionLabel={(mustachedQueryPath: string) =>
+                        queries[mustachedQueryPath] ?? ''
                     }
                     onChange={(_, value) => {
                         onChange(value);
