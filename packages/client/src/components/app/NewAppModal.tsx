@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import {
     Button,
     TextField,
@@ -35,11 +35,17 @@ export const NewAppModal = (props: NewAppModalProps) => {
 
     const [isLoading, setIsLoading] = useState(false);
 
-    const { handleSubmit, control } = useForm<NewAppForm>({
+    const { getValues, handleSubmit, control, watch } = useForm<NewAppForm>({
         defaultValues: {
             APP_NAME: '',
         },
     });
+
+    const watchAll = watch();
+
+    const isFormValid = useMemo(() => {
+        return !!getValues('APP_NAME');
+    }, [watchAll]);
 
     /**
      * Method that is called to create the app
@@ -122,7 +128,6 @@ export const NewAppModal = (props: NewAppModalProps) => {
                             render={({ field }) => {
                                 return (
                                     <TextField
-                                        required
                                         label="Name"
                                         value={field.value ? field.value : ''}
                                         disabled={isLoading}
@@ -147,7 +152,7 @@ export const NewAppModal = (props: NewAppModalProps) => {
                     <Button
                         type="submit"
                         variant={'contained'}
-                        disabled={isLoading}
+                        disabled={isLoading || !isFormValid}
                     >
                         Create
                     </Button>
