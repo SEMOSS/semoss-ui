@@ -4,10 +4,11 @@ import { observer } from 'mobx-react-lite';
 import { TextField } from '@semoss/ui';
 import { Autocomplete } from '@mui/material';
 import { Paths, PathValue } from '@/types';
-import { useBlockSettings } from '@/hooks';
+import { useBlock, useBlockSettings } from '@/hooks';
 import { Block, BlockDef } from '@/stores';
 import { getValueByPath } from '@/utility';
 import { BaseSettingSection } from '../BaseSettingSection';
+import { SelectBlockDef } from '@/components/block-defaults/select-block';
 
 /**
  * Used to set the values setting on a select block
@@ -32,6 +33,7 @@ export const SelectInputValueSettings = observer(
         path,
     }: SelectInputValueSettingsProps<D>) => {
         const { data, setData } = useBlockSettings(id);
+        const { data: parsedData } = useBlock<SelectBlockDef>(id);
 
         // track the value
         const [value, setValue] = useState(null);
@@ -88,7 +90,8 @@ export const SelectInputValueSettings = observer(
         return (
             <BaseSettingSection label="Value">
                 <Autocomplete
-                    options={data.options as string[]}
+                    fullWidth
+                    options={(parsedData?.options as string[]) ?? []}
                     value={value}
                     onChange={(_, newValue: string) => {
                         // sync the data on change
@@ -99,7 +102,6 @@ export const SelectInputValueSettings = observer(
                             {...params}
                             size="small"
                             variant="outlined"
-                            fullWidth={true}
                         />
                     )}
                 />

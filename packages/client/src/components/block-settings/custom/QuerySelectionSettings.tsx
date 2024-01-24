@@ -23,6 +23,15 @@ interface QuerySelectionSettingsProps<D extends BlockDef = BlockDef> {
      * Settings label
      */
     label: string;
+
+    /**
+     * Query path to bind to
+     */
+    queryPath: 'isLoading' | 'output';
+
+    /**
+     * Query path value
+     */
 }
 
 /**
@@ -33,6 +42,7 @@ export const QuerySelectionSettings = observer(
         id,
         path,
         label,
+        queryPath,
     }: QuerySelectionSettingsProps<D>) => {
         const { data, setData } = useBlockSettings(id);
         const { state } = useBlocks();
@@ -69,7 +79,10 @@ export const QuerySelectionSettings = observer(
         // available queries for autocomplete
         const queries = useMemo(() => {
             return Object.keys(state.queries).reduce((acc, queryKey) => {
-                return { ...acc, [`{{${queryKey}.isLoading}}`]: queryKey };
+                return {
+                    ...acc,
+                    [`{{query.${queryKey}.${queryPath}}}`]: queryKey,
+                };
             }, {});
         }, [Object.keys(state.queries).length]);
 

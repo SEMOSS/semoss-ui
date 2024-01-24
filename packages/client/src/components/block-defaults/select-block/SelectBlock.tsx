@@ -30,7 +30,7 @@ export const SelectBlock: BlockComponent = observer(({ id }) => {
     return (
         <Autocomplete
             disableClearable
-            options={data.options}
+            options={data?.options ?? []}
             value={data.value}
             disabled={data?.disabled || data?.loading}
             sx={{

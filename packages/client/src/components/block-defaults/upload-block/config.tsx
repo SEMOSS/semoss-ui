@@ -71,6 +71,7 @@ export const config: BlockConfig<UploadBlockDef> = {
                             id={id}
                             label="Loading"
                             path="loading"
+                            queryPath="isLoading"
                         />
                     ),
                 },
