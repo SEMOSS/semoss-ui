@@ -58,10 +58,8 @@ export const DefaultBlocks: Registry<DefaultBlockDefinitions> = {
     [MarkdownBlockConfig.widget]: MarkdownBlockConfig,
     [PageBlockConfig.widget]: PageBlockConfig,
     [SelectBlockConfig.widget]: SelectBlockConfig,
-    [TableBlockConfig.widget]: TableBlockConfig,
     [TextBlockConfig.widget]: TextBlockConfig,
     [TextFieldBlockConfig.widget]: TextFieldBlockConfig,
-    [SectionBlockConfig.widget]: SectionBlockConfig,
     [UploadBlockConfig.widget]: UploadBlockConfig,
 };
 

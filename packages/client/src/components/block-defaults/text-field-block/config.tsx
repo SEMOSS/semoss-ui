@@ -119,5 +119,5 @@ export const config: BlockConfig<TextFieldBlockDef> = {
             ],
         },
     ],
-    styleMenu: [buildSpacingSection(), buildDimensionsSection()],
+    styleMenu: [],
 };
