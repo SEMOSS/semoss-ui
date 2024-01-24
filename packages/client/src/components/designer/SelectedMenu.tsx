@@ -221,13 +221,17 @@ export const SelectedMenu = observer(() => {
                 ) : (
                     <></>
                 )}
-                <SelectedMenuSection
-                    id={block.id}
-                    sectionTitle="Appearance"
-                    menu={styleMenu}
-                    accordion={styleAccordion}
-                    setAccordion={setStyleAccordion}
-                />
+                {styleMenu.length ? (
+                    <SelectedMenuSection
+                        id={block.id}
+                        sectionTitle="Appearance"
+                        menu={styleMenu}
+                        accordion={styleAccordion}
+                        setAccordion={setStyleAccordion}
+                    />
+                ) : (
+                    <></>
+                )}
             </StyledMenuScroll>
         </StyledMenu>
     );

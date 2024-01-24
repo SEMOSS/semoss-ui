@@ -50,6 +50,7 @@ export const config: BlockConfig<ButtonBlockDef> = {
                             id={id}
                             label="Loading"
                             path="loading"
+                            queryPath="isLoading"
                         />
                     ),
                 },

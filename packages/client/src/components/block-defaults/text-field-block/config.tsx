@@ -113,6 +113,7 @@ export const config: BlockConfig<TextFieldBlockDef> = {
                             id={id}
                             label="Loading"
                             path="loading"
+                            queryPath="isLoading"
                         />
                     ),
                 },
