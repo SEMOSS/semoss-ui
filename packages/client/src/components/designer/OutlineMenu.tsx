@@ -201,9 +201,6 @@ export const OutlineMenu = observer((): JSX.Element => {
         return children;
     }, [designer.rendered, search]);
 
-    console.log('blocks', state.blocks);
-    console.log('queries', state.queries);
-
     return (
         <StyledMenu>
             {/* <StyledMenuHeader>

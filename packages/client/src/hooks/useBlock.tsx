@@ -234,7 +234,8 @@ export const useBlock = <D extends BlockDef = BlockDef>(
     const data = computed(() => {
         return copy(block.data, (instance) => {
             if (typeof instance === 'string') {
-                return state.calculateParameter(instance);
+                // try to extract the variable
+                return state.parseVariable(instance);
             }
 
             return instance;

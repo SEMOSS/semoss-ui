@@ -10,6 +10,7 @@ import {
     IconButton,
     Stack,
     Menu,
+    useNotification,
 } from '@semoss/ui';
 import { useBlocks, useWorkspace } from '@/hooks';
 import {
@@ -17,7 +18,7 @@ import {
     Search,
     CheckCircle,
     MoreVert,
-    Error,
+    Error as ErrorIcon,
     Pending,
     Edit,
     ContentCopy,
@@ -60,6 +61,7 @@ const StyledListIcon = styled(List.Icon)(({ theme }) => ({
 export const NotebookMenu = observer((): JSX.Element => {
     const { state, notebook } = useBlocks();
     const { workspace } = useWorkspace();
+    const notification = useNotification();
 
     const [search, setSearch] = useState<string>('');
     const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
@@ -96,6 +98,51 @@ export const NotebookMenu = observer((): JSX.Element => {
         workspace.openOverlay(() => (
             <NewQueryOverlay onClose={() => workspace.closeOverlay()} />
         ));
+    };
+
+    /**
+     * Copy a query
+     * @param id - id of the query to copy
+     */
+    const copyQuery = (id: string) => {
+        try {
+            // get the query
+            const query = state.getQuery(id);
+            if (!query) {
+                throw new Error(`Cannot find query ${id}`);
+            }
+
+            // get the json
+            const json = query.toJSON();
+
+            // get a new id
+            const newQueryId = `${json.id} Copy`;
+
+            // dispatch it
+            state.dispatch({
+                message: ActionMessages.NEW_QUERY,
+                payload: {
+                    queryId: newQueryId,
+                    config: {
+                        mode: json.mode,
+                        steps: json.steps,
+                    },
+                },
+            });
+
+            // close the options and select it
+            handleQueryOptionsMenuClose();
+            notebook.selectQuery(newQueryId);
+        } catch (e) {
+            // log it
+            console.error(e);
+
+            // notify the user
+            notification.add({
+                color: 'error',
+                message: e.message,
+            });
+        }
     };
 
     const handleQueryOptionsMenuClose = () => {
@@ -157,7 +204,7 @@ export const NotebookMenu = observer((): JSX.Element => {
                                                     titleAccess="Loading"
                                                 />
                                             ) : q.isError ? (
-                                                <Error
+                                                <ErrorIcon
                                                     color="error"
                                                     titleAccess="Error"
                                                 />
@@ -233,22 +280,7 @@ export const NotebookMenu = observer((): JSX.Element => {
                         <List.Item disablePadding>
                             <List.ItemButton
                                 onClick={() => {
-                                    const query = notebook.getQueryById(
-                                        anchorQuery?.id,
-                                    );
-                                    const newQueryId = `${anchorQuery?.id} Copy`;
-                                    state.dispatch({
-                                        message: ActionMessages.NEW_QUERY,
-                                        payload: {
-                                            queryId: newQueryId,
-                                            config: {
-                                                mode: query.mode,
-                                                steps: [...query.steps],
-                                            },
-                                        },
-                                    });
-                                    handleQueryOptionsMenuClose();
-                                    notebook.selectQuery(newQueryId);
+                                    copyQuery(anchorQuery?.id);
                                 }}
                             >
                                 <StyledListIcon>

@@ -93,7 +93,7 @@ export const DEFAULT_TEMPLATE: Template[] = [
                             widget: 'code',
                             parameters: {
                                 type: 'pixel',
-                                code: `FileRead ( filePath = [ "{{file.value}}" ], delimiter=",") | Import ( frame = [ CreateFrame ( frameType = [ PY ] , override = [ true ] ) .as ( [ "NLP_FRAME" ] ) ] );`,
+                                code: `FileRead ( filePath = [ "{{block.file.value}}" ], delimiter=",") | Import ( frame = [ CreateFrame ( frameType = [ PY ] , override = [ true ] ) .as ( [ "NLP_FRAME" ] ) ] );`,
                             },
                         },
                         {
@@ -101,7 +101,7 @@ export const DEFAULT_TEMPLATE: Template[] = [
                             widget: 'code',
                             parameters: {
                                 type: 'pixel',
-                                code: `NLPQuery2(engine=["4801422a-5c62-421e-a00c-05c6a9e15de8"], command=["{{question.value}}"])`,
+                                code: `NLPQuery2(engine=["4801422a-5c62-421e-a00c-05c6a9e15de8"], command=["{{block.question.value}}"])`,
                             },
                         },
                     ],
@@ -263,7 +263,7 @@ export const DEFAULT_TEMPLATE: Template[] = [
                             width: '100%',
                         },
                         label: 'Ask',
-                        loading: '{{ask-model.isLoading}}',
+                        loading: '{{query.ask-model.isLoading}}',
                     },
                     listeners: {
                         onClick: [
@@ -285,7 +285,7 @@ export const DEFAULT_TEMPLATE: Template[] = [
                         slot: 'children',
                     },
                     data: {
-                        text: '{{ask-model.data.0.output.Query}}',
+                        text: '{{query.ask-model.output.0.output.Query}}',
                     },
                     listeners: {},
                     slots: {},
