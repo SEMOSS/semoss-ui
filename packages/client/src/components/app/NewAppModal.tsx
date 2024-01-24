@@ -142,20 +142,27 @@ export const NewAppModal = (props: NewAppModalProps) => {
                     </Stack>
                 </Modal.Content>
                 <Modal.Actions>
-                    <Button
-                        type="button"
-                        disabled={isLoading}
-                        onClick={() => onClose()}
+                    <Stack
+                        direction="row"
+                        spacing={1}
+                        paddingX={2}
+                        paddingBottom={2}
                     >
-                        Cancel
-                    </Button>
-                    <Button
-                        type="submit"
-                        variant={'contained'}
-                        disabled={isLoading || !isFormValid}
-                    >
-                        Create
-                    </Button>
+                        <Button
+                            type="button"
+                            disabled={isLoading}
+                            onClick={() => onClose()}
+                        >
+                            Cancel
+                        </Button>
+                        <Button
+                            type="submit"
+                            variant={'contained'}
+                            disabled={isLoading || !isFormValid}
+                        >
+                            Create
+                        </Button>
+                    </Stack>
                 </Modal.Actions>
             </form>
             {isLoading && <LinearProgress />}
