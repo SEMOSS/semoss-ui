@@ -144,8 +144,8 @@ export class QueryState {
     get isSuccessful() {
         for (const s of this._store.list) {
             const step = this._store.steps[s];
-            if (step.output === undefined) {
-                return true;
+            if (!step.isExecuted || step.isError) {
+                return false;
             }
         }
 
@@ -190,8 +190,8 @@ export class QueryState {
     get output() {
         const stepLen = this._store.list.length;
         if (stepLen > 0) {
+            // get the last step
             const sId = this._store.list[stepLen - 1];
-
             return this._store.steps[sId].output;
         }
 
@@ -374,7 +374,10 @@ export class QueryState {
             throw new Error(`Unable to find step ${id}. This was not deleted`);
         }
 
-        // remove it
+        // remove it by index
+        this._store.list.splice(deleteStepIdx, 1);
+
+        // remove it by id
         if (this._store.steps[id]) {
             delete this._store.steps[id];
         }

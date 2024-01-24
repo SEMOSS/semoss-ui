@@ -285,7 +285,7 @@ export const DEFAULT_TEMPLATE: Template[] = [
                         slot: 'children',
                     },
                     data: {
-                        text: '{{query.ask-model.output.Query}}',
+                        text: '{{query.ask-model.output.0.output.Query}}',
                     },
                     listeners: {},
                     slots: {},
