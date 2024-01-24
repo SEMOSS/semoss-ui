@@ -28,17 +28,12 @@ export const UploadBlock: BlockComponent = observer(({ id }) => {
     const { state } = useBlocks();
     const { attrs, data, setData } = useBlock<UploadBlockDef>(id);
 
-    console.log('upload block');
-
     /**
      * Upload a file to the server
      * @param file - file to upload to the server
      * @returns
      */
     const uploadFile = async (file: File) => {
-        console.log(file);
-        console.log('here');
-
         if (!file) {
             // clear the value
             setData('value', '');

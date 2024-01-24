@@ -31,6 +31,7 @@ export const config: BlockConfig<ContainerBlockDef> = {
     },
     render: ContainerBlock,
     icon: HighlightAlt,
+    isBlocksMenuEnabled: true,
     contentMenu: [],
     styleMenu: [
         buildLayoutSection(),

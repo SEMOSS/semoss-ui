@@ -11,19 +11,26 @@ import { InputOptions } from "./InputOptions";
 import { useValue } from "./useValue";
 
 import { Button } from "../Button";
-import { Icon } from "../Icon";
+import { IconButton } from "../IconButton";
+
+import { OpenInBrowserOutlined } from "@mui/icons-material";
 
 import { FileDisplay } from "./FileDisplay";
 
 const StyledContainer = styled("div")({
     height: "50%",
     width: "100%",
-    padding: "1rem",
 });
 
-const StyledButton = styled(Button)({
-    marginTop: "0.5rem",
-});
+const StyledIconButton = styled(IconButton)(({ theme }) => ({
+    backgroundColor: `${theme.palette.primary.main}1D`,
+}));
+
+const StyledButton = styled(Button)(() => ({
+    "&:hover": {
+        backgroundColor: "unset!important",
+    },
+}));
 
 const StyledDropzone = styled("div", {
     shouldForwardProp: (prop) =>
@@ -37,7 +44,7 @@ const StyledDropzone = styled("div", {
     flexDirection: "column",
     justifyContent: "center",
     alignItems: "center",
-    borderWidth: "2px",
+    borderWidth: "1px",
     borderStyle: "dashed",
     borderRadius: "0.25rem",
     width: "100%",
@@ -49,8 +56,7 @@ const StyledDropzone = styled("div", {
         ? "#40A0FF"
         : !valid
         ? "#F84C34"
-        : "#000",
-    backgroudnColor: disabled ? "#F8F8F8" : "",
+        : "#D9D9D9",
     color: disabled ? "#BDBDBD" : dragging ? "#40A0FF" : "BDBDBD",
     cursor: disabled || dragging ? "default" : "",
 }));
@@ -62,11 +68,12 @@ const StyledContentContainer = styled("div")({
     alignItems: "center",
 });
 
-const StyledDropzoneDescription = styled("div")({
+const StyledDropzoneDescription = styled("div")(({ theme }) => ({
     fontSize: "12px",
     marginTop: "8px",
     marginBottom: "16px 8px",
-});
+    color: theme.palette.grey[600],
+}));
 
 const StyledFileUploadInput = styled("input")({
     display: "none",
@@ -129,7 +136,7 @@ const _FileDropzone = <Multiple extends boolean>(
         multiple = false,
         disabled = false,
         valid = true,
-        description = "Drag and Drop File(s)",
+        description = "or drop file to upload",
         extensions = [],
         inputProps,
         ...otherProps
@@ -364,43 +371,34 @@ const _FileDropzone = <Multiple extends boolean>(
                 onDrop={handleDropzoneDrop}
             >
                 <StyledContentContainer>
-                    <Icon aria-hidden="true" sx={{ fontSize: "1.5rem" }}>
-                        <svg
-                            xmlns="http://www.w3.org/2000/svg"
-                            fill="none"
-                            viewBox="0 0 24 24"
-                            strokeWidth={1.5}
-                            stroke="currentColor"
-                        >
-                            <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                d={mdiFolderUpload}
-                            />
-                        </svg>
-                    </Icon>
+                    <StyledIconButton
+                        size="small"
+                        onClick={() => inputRef.current?.click()}
+                        disabled={disabled}
+                    >
+                        <OpenInBrowserOutlined color="primary" />
+                    </StyledIconButton>
+                    <StyledButton
+                        size="small"
+                        variant="text"
+                        color="primary"
+                        onClick={() => inputRef.current?.click()}
+                        disabled={disabled}
+                    >
+                        Browse
+                    </StyledButton>
                     <StyledDropzoneDescription>
                         {description}
                     </StyledDropzoneDescription>
-                    <div>
-                        <StyledFileUploadInput
-                            type="file"
-                            id={id}
-                            ref={inputRef}
-                            onChange={handleInputChange}
-                            accept={extensions.join(",")}
-                            multiple={multiple}
-                            {...inputProps}
-                        />
-                        <StyledButton
-                            size="small"
-                            variant="outlined"
-                            onClick={() => inputRef.current?.click()}
-                            disabled={disabled}
-                        >
-                            or upload file(s)
-                        </StyledButton>
-                    </div>
+                    <StyledFileUploadInput
+                        type="file"
+                        id={id}
+                        ref={inputRef}
+                        onChange={handleInputChange}
+                        accept={extensions.join(",")}
+                        multiple={multiple}
+                        {...inputProps}
+                    />
                 </StyledContentContainer>
             </StyledDropzone>
             <StyledFileListContainer>{renderFiles()}</StyledFileListContainer>

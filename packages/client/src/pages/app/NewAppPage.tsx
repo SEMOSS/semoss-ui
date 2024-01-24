@@ -5,13 +5,14 @@ import { FileUploadOutlined } from '@mui/icons-material';
 
 import {
     NewAppStep,
-    AddApp,
+    AddAppModal,
     AppTemplates,
     NewAppModal,
 } from '@/components/app';
 import CodeSprite from '@/assets/img/CodeSprite.svg';
 import BlocksSprite from '@/assets/img/BlocksSprite.svg';
 import PromptSprite from '@/assets/img/PromptSprite.svg';
+import { BASE_PAGE_BLOCKS } from './app.constants';
 
 const StyledBox = styled('div', {
     shouldForwardProp: (prop) => prop !== 'color',
@@ -112,9 +113,9 @@ export const NewAppPage = () => {
             isLoading={isLoading}
         >
             {isUploadOpen ? (
-                <AddApp
+                <AddAppModal
                     open={isUploadOpen}
-                    onClose={(appId) => {
+                    handleClose={(appId) => {
                         // if there is an appId navigate to it
                         if (appId) {
                             navigateApp(appId);
@@ -133,10 +134,10 @@ export const NewAppPage = () => {
                     onClose={(appId) => {
                         if (appId) {
                             navigateApp(appId);
+                        } else {
+                            // close the modal
+                            setNewAppOptions(null);
                         }
-
-                        // close the modal
-                        setNewAppOptions(null);
                     }}
                 />
             ) : null}
@@ -226,7 +227,7 @@ export const NewAppPage = () => {
                                             type: 'blocks',
                                             state: {
                                                 queries: {},
-                                                blocks: {},
+                                                blocks: BASE_PAGE_BLOCKS,
                                             },
                                         })
                                     }
