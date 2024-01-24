@@ -12,6 +12,7 @@ import {
 import CodeSprite from '@/assets/img/CodeSprite.svg';
 import BlocksSprite from '@/assets/img/BlocksSprite.svg';
 import PromptSprite from '@/assets/img/PromptSprite.svg';
+import { BASE_PAGE_BLOCKS } from './app.constants';
 
 const StyledBox = styled('div', {
     shouldForwardProp: (prop) => prop !== 'color',
@@ -133,10 +134,10 @@ export const NewAppPage = () => {
                     onClose={(appId) => {
                         if (appId) {
                             navigateApp(appId);
+                        } else {
+                            // close the modal
+                            setNewAppOptions(null);
                         }
-
-                        // close the modal
-                        setNewAppOptions(null);
                     }}
                 />
             ) : null}
@@ -226,7 +227,7 @@ export const NewAppPage = () => {
                                             type: 'blocks',
                                             state: {
                                                 queries: {},
-                                                blocks: {},
+                                                blocks: BASE_PAGE_BLOCKS,
                                             },
                                         })
                                     }
