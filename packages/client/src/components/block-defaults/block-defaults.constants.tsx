@@ -8,7 +8,6 @@ export const BLOCK_TYPE_DATA = 'data';
 export const BLOCK_TYPES = [
     BLOCK_TYPE_LAYOUT,
     BLOCK_TYPE_DISPLAY,
-    BLOCK_TYPE_DATA,
     BLOCK_TYPE_INPUT,
     BLOCK_TYPE_ACTION,
 ];
