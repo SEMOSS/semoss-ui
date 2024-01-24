@@ -37,8 +37,6 @@ export const config: BlockConfig<ContainerBlockDef> = {
         buildLayoutSection(),
         buildSpacingSection(),
         buildDimensionsSection(),
-        buildColorSection(),
         buildBorderSection(),
-        buildTypographySection(),
     ],
 };

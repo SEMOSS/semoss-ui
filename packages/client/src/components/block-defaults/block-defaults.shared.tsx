@@ -217,12 +217,6 @@ export const buildColorSection = () => ({
                 />
             ),
         },
-        {
-            description: 'Color',
-            render: ({ id }) => (
-                <ColorSettings id={id} label="Color" path="style.color" />
-            ),
-        },
     ],
 });
 
@@ -331,6 +325,12 @@ export const buildTypographySection = () => ({
                     sizePath="style.fontSize"
                     weightPath="style.fontWeight"
                 />
+            ),
+        },
+        {
+            description: 'Color',
+            render: ({ id }) => (
+                <ColorSettings id={id} label="Color" path="style.color" />
             ),
         },
     ],

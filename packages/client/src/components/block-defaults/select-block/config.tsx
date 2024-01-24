@@ -84,5 +84,5 @@ export const config: BlockConfig<SelectBlockDef> = {
             ],
         },
     ],
-    styleMenu: [buildSpacingSection()],
+    styleMenu: [],
 };

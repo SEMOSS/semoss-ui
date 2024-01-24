@@ -45,12 +45,5 @@ export const config: BlockConfig<MarkdownBlockDef> = {
             ],
         },
     ],
-    styleMenu: [
-        buildTypographySection(),
-        buildTextAlignSection(),
-        buildColorSection(),
-        buildBorderSection(),
-        buildSpacingSection(),
-        buildDimensionsSection(),
-    ],
+    styleMenu: [buildTypographySection(), buildTextAlignSection()],
 };

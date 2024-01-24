@@ -55,15 +55,11 @@ export const DefaultBlocks: Registry<DefaultBlockDefinitions> = {
     [CheckboxBlockConfig.widget]: CheckboxBlockConfig,
     [ContainerBlockConfig.widget]: ContainerBlockConfig,
     [CellBlockConfig.widget]: CellBlockConfig,
-    [FormBlockConfig.widget]: FormBlockConfig,
-    [IframeBlockConfig.widget]: IframeBlockConfig,
     [MarkdownBlockConfig.widget]: MarkdownBlockConfig,
     [PageBlockConfig.widget]: PageBlockConfig,
     [SelectBlockConfig.widget]: SelectBlockConfig,
-    [TableBlockConfig.widget]: TableBlockConfig,
     [TextBlockConfig.widget]: TextBlockConfig,
     [TextFieldBlockConfig.widget]: TextFieldBlockConfig,
-    [SectionBlockConfig.widget]: SectionBlockConfig,
     [UploadBlockConfig.widget]: UploadBlockConfig,
 };
 

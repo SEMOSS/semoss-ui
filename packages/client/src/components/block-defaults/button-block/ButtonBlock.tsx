@@ -35,8 +35,8 @@ export interface ButtonBlockDef extends BlockDef<'button'> {
         label: string;
         loading?: boolean;
         disabled?: boolean;
-        // Will add other properties in later PRs
-        // size?: string;
+        variant: 'contained' | 'outlined' | 'text';
+        color: 'primary' | 'secondary' | 'success' | 'warning' | 'error';
     };
     listeners: {
         onClick: true;
@@ -49,8 +49,8 @@ export const ButtonBlock: BlockComponent = observer(({ id }) => {
     return (
         <StyledButton
             size="medium"
-            color={'primary'}
-            variant={'contained'}
+            color={data.color}
+            variant={data.variant}
             loading={data?.loading}
             disabled={data?.disabled || data?.loading}
             sx={{
