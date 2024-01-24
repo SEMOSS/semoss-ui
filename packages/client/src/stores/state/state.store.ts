@@ -303,7 +303,7 @@ export class StateStore {
                 if (key in step._exposed) {
                     // get the search path
                     const s = path.slice(4).join('.');
-                    return getValueByPath(step, s);
+                    return getValueByPath(step._exposed, s);
                 }
             }
         } else if (path[0] === 'query' && path[2] !== 'step') {
@@ -319,7 +319,7 @@ export class StateStore {
                 if (key in query._exposed) {
                     // get the search path
                     const s = path.slice(2).join('.');
-                    return getValueByPath(query, s);
+                    return getValueByPath(query._exposed, s);
                 }
             }
         } else if (path[0] === 'block') {
