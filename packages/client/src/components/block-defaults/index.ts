@@ -51,15 +51,11 @@ export type DefaultBlockDefinitions =
     | UploadBlockDef;
 
 export const DefaultBlocks: Registry<DefaultBlockDefinitions> = {
-    // [BodyBlockConfig.widget]: BodyBlockConfig,
     [ButtonBlockConfig.widget]: ButtonBlockConfig,
     [CheckboxBlockConfig.widget]: CheckboxBlockConfig,
     [ContainerBlockConfig.widget]: ContainerBlockConfig,
     [CellBlockConfig.widget]: CellBlockConfig,
-    // [DividerBlockConfig.widget]: DividerBlockConfig,
-    // [FooterBlockConfig.widget]: FooterBlockConfig,
     [FormBlockConfig.widget]: FormBlockConfig,
-    // [HeaderBlockConfig.widget]: HeaderBlockConfig,
     [IframeBlockConfig.widget]: IframeBlockConfig,
     [MarkdownBlockConfig.widget]: MarkdownBlockConfig,
     [PageBlockConfig.widget]: PageBlockConfig,
