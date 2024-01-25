@@ -296,10 +296,11 @@ export class QueryState {
                             operationType.includes('CODE_EXECUTION') &&
                             output != undefined
                         ) {
-                            const modifiedOutput =
-                                Array.isArray(output) && output.length > 0
+                            const modifiedOutput = Array.isArray(output)
+                                ? output.length > 0
                                     ? output[0].output
-                                    : output;
+                                    : null
+                                : output;
                             step._sync(operationType, modifiedOutput);
                         } else {
                             step._sync(operationType, output);

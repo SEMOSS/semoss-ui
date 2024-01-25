@@ -314,10 +314,11 @@ export class StepState<D extends CellDef = CellDef> {
                         operationType.includes('CODE_EXECUTION') &&
                         output != undefined
                     ) {
-                        this._store.output =
-                            Array.isArray(output) && output.length > 0
+                        this._store.output = Array.isArray(output)
+                            ? output.length > 0
                                 ? output[0].output
-                                : output;
+                                : null
+                            : output;
                     } else {
                         this._store.output = output;
                     }
