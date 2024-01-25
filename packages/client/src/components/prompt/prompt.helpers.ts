@@ -158,28 +158,28 @@ export function getInputFormatPrompt(
 }
 
 function getVectorQuery() {
-    let vectorQueryFunctionString = `def runVectorSearch(search_statement:str, vector_engine_id:str, limit:int) -> str:`;
+    let vectorQueryFunctionString = `def runVectorSearch(search_statement:str, vector_engine_id:str, limit:int) -> str:\r\n`;
 
-    vectorQueryFunctionString += `from gaas_gpt_vector import VectorEngine;`;
-    vectorQueryFunctionString += `vector = VectorEngine(engine_id = vector_engine_id, insight_id = '\${i}', insight_folder = '\${if}');`;
-    vectorQueryFunctionString += `matches = vector.nearestNeighbor(search_statement = search_statement, limit = limit);`;
+    vectorQueryFunctionString += `\tfrom gaas_gpt_vector import VectorEngine\r\n`;
+    vectorQueryFunctionString += `\tvector = VectorEngine(engine_id = vector_engine_id, insight_id = '\${i}', insight_folder = '\${if}')\r\n`;
+    vectorQueryFunctionString += `\tmatches = vector.nearestNeighbor(search_statement = search_statement, limit = limit)\r\n`;
 
-    vectorQueryFunctionString += `return ' '.join([matchItem['Content'] for matchItem in matches]);`;
+    vectorQueryFunctionString += `\treturn ' '.join([matchItem['Content'] for matchItem in matches])`;
 
     return vectorQueryFunctionString;
 }
 
 function getCustomQuery(index: number) {
-    return `def runCustom_${index}(search_statement:str) -> str: return search_statement;`;
+    return `def runCustom_${index}(search_statement:str) -> str:\r\n\treturn search_statement`;
 }
 
 function getDatabaseQuery() {
-    let databaseQueryFunctionString = `def runDatabaseQuery(query:str, database_engine_id:str) -> str:`;
+    let databaseQueryFunctionString = `def runDatabaseQuery(query:str, database_engine_id:str) -> str:\r\n`;
 
-    databaseQueryFunctionString += `from gaas_gpt_database import DatabaseEngine;`;
-    databaseQueryFunctionString += `databaseEngine = DatabaseEngine(engine_id = database_engine_id, insight_id = '\${i}');`;
-    databaseQueryFunctionString += `result_df = databaseEngine.execQuery(query = query);`;
-    databaseQueryFunctionString += `return f"Use the following list of objects representing each row in table to inform your answer: {result_df.to_dict(orient='records')}. The are the headers for the table are: {list(result_df.columns)}";`;
+    databaseQueryFunctionString += `\tfrom gaas_gpt_database import DatabaseEngine\r\n`;
+    databaseQueryFunctionString += `\tdatabaseEngine = DatabaseEngine(engine_id = database_engine_id, insight_id = '\${i}');\r\n`;
+    databaseQueryFunctionString += `\tresult_df = databaseEngine.execQuery(query = query)\r\n`;
+    databaseQueryFunctionString += `\treturn f"Use the following list of objects representing each row in table to inform your answer: {result_df.to_dict(orient='records')}. The are the headers for the table are: {list(result_df.columns)}"\r\n`;
 
     return databaseQueryFunctionString;
 }
@@ -217,12 +217,12 @@ export function getQueryForPrompt(
             })
             .join(', ')}${
             Object.keys(customInputTypes).length ? ', ' : ''
-        }limit = 5) -> str:`;
+        }limit = 5) -> str:\r\n`;
 
         promptQueryFunctionString +=
-            `import json;` +
-            `from gaas_gpt_model import ModelEngine;` +
-            `model = ModelEngine(engine_id = "${model}", insight_id = '\${i}');`;
+            `\timport json\r\n` +
+            `\tfrom gaas_gpt_model import ModelEngine\r\n` +
+            `\tmodel = ModelEngine(engine_id = "${model}", insight_id = '\${i}')\r\n`;
 
         Object.keys(customInputTypes).forEach(
             (customInputTokenIndex, index: number) => {
@@ -230,24 +230,24 @@ export function getQueryForPrompt(
                     customInputTypes[customInputTokenIndex]?.type ===
                     INPUT_TYPE_VECTOR
                 ) {
-                    promptQueryFunctionString += `${customInputTypes[customInputTokenIndex].type}_${index} = runVectorSearch(${customInputTypes[customInputTokenIndex]?.type}_${index}_statement,"${customInputTypes[customInputTokenIndex]?.meta}",limit);`;
+                    promptQueryFunctionString += `\t${customInputTypes[customInputTokenIndex].type}_${index} = runVectorSearch(${customInputTypes[customInputTokenIndex]?.type}_${index}_statement,"${customInputTypes[customInputTokenIndex]?.meta}",limit)\r\n`;
                 }
                 if (
                     customInputTypes[customInputTokenIndex]?.type ===
                     INPUT_TYPE_CUSTOM_QUERY
                 ) {
-                    promptQueryFunctionString += `${customInputTypes[customInputTokenIndex].type}_${index} = runCustom_${index}(${customInputTypes[customInputTokenIndex]?.type}_${index}_statement);`;
+                    promptQueryFunctionString += `\t${customInputTypes[customInputTokenIndex].type}_${index} = runCustom_${index}(${customInputTypes[customInputTokenIndex]?.type}_${index}_statement)\r\n`;
                 }
                 if (
                     customInputTypes[customInputTokenIndex]?.type ===
                     INPUT_TYPE_DATABASE
                 ) {
-                    promptQueryFunctionString += `${customInputTypes[customInputTokenIndex].type}_${index} = runDatabaseQuery(${customInputTypes[customInputTokenIndex]?.type}_${index}_query,"${customInputTypes[customInputTokenIndex]?.meta}");`;
+                    promptQueryFunctionString += `\t${customInputTypes[customInputTokenIndex].type}_${index} = runDatabaseQuery(${customInputTypes[customInputTokenIndex]?.type}_${index}_query,"${customInputTypes[customInputTokenIndex]?.meta}")\r\n`;
                 }
             },
         );
 
-        promptQueryFunctionString += `prompt = search_statement`;
+        promptQueryFunctionString += `\tprompt = search_statement`;
         if (
             Object.values(customInputTypes).some(
                 (inputType) =>
@@ -286,11 +286,11 @@ export function getQueryForPrompt(
                 })
                 .join(` + `)}`;
         }
-        promptQueryFunctionString += ` + ' Format the result as markdown.';`;
+        promptQueryFunctionString += ` + ' Format the result as markdown.'\r\n`;
 
         promptQueryFunctionString +=
-            `response = model.ask(question = prompt);` +
-            `return json.dumps(response[0]['response']);`;
+            `\tresponse = model.ask(question = prompt)\r\n` +
+            `\treturn json.dumps(response[0]['response'])\r\n`;
 
         return promptQueryFunctionString;
     };
@@ -579,7 +579,7 @@ export async function setBlocksAndOpenUIBuilder(
 
     const pixel = `CreateAppFromBlocks ( project = [ "${
         builder.title.value
-    }" ] , json =[${JSON.stringify(state)}]  ) ;`;
+    }" ] , json =["<encode>${JSON.stringify(state)}</encode>"]  ) ;`;
 
     // create the app
     const { pixelReturn } = await monolithStore.runQuery<[AppMetadata]>(pixel);
